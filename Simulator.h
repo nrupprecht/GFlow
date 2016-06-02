@@ -45,17 +45,26 @@ class Simulator {
   string printAveVSqr();
   string printNetMomentum();
   string printNetVelocity();
+  string printNetAngularV();
+  string printAveAngularVSqr();
+  string printNetAngularP();
+  string printNetTorque();
   
  private:
 
   /// Utility functions  
-  double maxVelocity(); // Finds the maximum velocity of any particle
-  double maxAcceleration(); // Finds the maximum acceleration of any particle
-  double minRatio(); // Finds the minimum ratio of velocity to acceleration of any particle
+  inline double maxVelocity(); // Finds the maximum velocity of any particle
+  inline double maxAcceleration(); // Finds the maximum acceleration of any particle
+  inline double minRatio(); // Finds the minimum ratio of velocity to acceleration of any particle
+  inline double netAngV();
+  inline double aveAngVSqr();
+  inline double netAngP();
+  inline double netTorque();
 
-  void interactions();
-  void update(Particle* &);
-  bool inBounds(Particle*);
+  inline void interactions();
+  inline void update(Particle* &);
+  inline void record();
+  inline bool inBounds(Particle*);
 
   /// Data
   double right; // Right edge of the simulation
@@ -82,7 +91,10 @@ class Simulator {
   vector<double> rec_aveVsqr;
   vector<vect<>> rec_netP;
   vector<vect<>> rec_netV;
-
+  vector<double> rec_netAngV;
+  vector<double> rec_aveAngVSqr;
+  vector<double> rec_netAngP;
+  vector<double> rec_netTorque;
 };
 
 #endif

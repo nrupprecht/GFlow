@@ -9,7 +9,7 @@ Simulator::~Simulator() {
 
 void Simulator::createHopper() {
   // Set up a hopper
-  double R = 0.02;
+  double R = 0.025;
   cout << "r=" << R << ";\n"; //**
 
   double gap = 0.075;
@@ -55,7 +55,7 @@ void Simulator::run(double runLength) {
   iter = 0;
   while(ctnu) { // Terminate based on internal condition
     // Gravity
-    for (auto P : particles) if (P) P->accelerate(gravity);
+    for (auto P : particles) if (P) P->applyForce(gravity);
 
     // Calculate particle-particle and particle-wall forces
     interactions();
@@ -73,25 +73,14 @@ void Simulator::run(double runLength) {
       if (epsilon<minepsilon) minepsilon = epsilon;
     }
 
-    // Update simulation
-    for (auto &P : particles) if(P) update(P);
-
     // Update internal variable
     time += epsilon;
     iter++;
-    // Record data
-    if (time - lastDisp > dispTime) {
-      // Record positions
-      for (int i=0; i<watchlist.size(); i++)
-	watchPos.at(i).push_back(watchlist.at(i)->getPosition());
-      rec_maxV.push_back(maxVelocity());
-      rec_aveV.push_back(aveVelocity());
-      rec_aveVsqr.push_back(aveVelocitySqr());
-      rec_netP.push_back(netMomentum());
-      rec_netV.push_back(netVelocity());
-      // Update time
-      lastDisp = time;
-    }
+    // Record data (do this before calling "update" on the particles
+    if (time - lastDisp > dispTime) record();
+
+    // Update simulation
+    for (auto &P : particles) if(P) update(P);
 
     // Ending condition
     if (time > runLength) ctnu = false;
@@ -237,7 +226,39 @@ string Simulator::printNetVelocity() {
   return str;
 }
 
-double Simulator::maxVelocity() {
+string Simulator::printNetAngularV() {
+  stringstream stream;
+  stream << rec_netAngV;
+  string str;
+  stream >> str;
+  return str;
+}
+
+string Simulator::printAveAngularVSqr() {
+  stringstream stream;
+  stream << rec_aveAngVSqr;
+  string str;
+  stream >> str;
+  return str;
+}
+
+string Simulator::printNetAngularP() {
+  stringstream stream;
+  stream << rec_netAngP;
+  string str;
+  stream >> str;
+  return str;
+}
+
+string Simulator::printNetTorque() {
+  stringstream stream;
+  stream << rec_netTorque;
+  string str;
+  stream >> str;
+  return str;
+}
+
+inline double Simulator::maxVelocity() {
   double maxVsqr = -1.0;
   for (auto P : particles) {
     if (P) {
@@ -248,7 +269,7 @@ double Simulator::maxVelocity() {
   return maxVsqr>0 ? sqrt(maxVsqr) : -1.0;
 }
 
-double Simulator::maxAcceleration() {
+inline double Simulator::maxAcceleration() {
   double maxAsqr = -1.0;
   for (auto P : particles) {
     if (P) {
@@ -259,7 +280,36 @@ double Simulator::maxAcceleration() {
   return maxAsqr>0 ? sqrt(maxAsqr) : -1.0;
 }
 
-double Simulator::minRatio() {
+inline double Simulator::netAngV() {
+  double angV = 0;
+  for (auto P : particles) if (P) angV += P->getAngV();
+  return angV;
+}
+
+inline double Simulator::aveAngVSqr() {
+  double angV = 0;
+  int N = 0;
+  for (auto P : particles) 
+    if (P) {
+      angV += sqr(P->getAngV());
+      N++;
+    }
+  return N>0 ? angV/N : -1.0;
+}
+
+inline double Simulator::netAngP() {
+  double angP = 0;
+  for (auto P : particles) if (P) angP += P->getAngP();
+  return angP;
+}
+
+inline double Simulator::netTorque() {
+  double torque = 0;
+  for (auto P : particles) torque += P->getTorque();
+  return torque;
+}
+
+inline double Simulator::minRatio() {
   double minRatio = 1.0;
   for (auto P : particles) {
     if (P) {
@@ -270,7 +320,7 @@ double Simulator::minRatio() {
   return minRatio;
 }
 
-void Simulator::interactions() {
+inline void Simulator::interactions() {
   // Calculate particle-particle forces
   // Naive solution for now
   for (auto P : particles) 
@@ -286,7 +336,7 @@ void Simulator::interactions() {
 	if (P!=0) W->interact(P);
 }
 
-void Simulator::update(Particle* &P) {
+inline void Simulator::update(Particle* &P) {
   // Update particle
   P->update(epsilon);
   
@@ -305,7 +355,24 @@ void Simulator::update(Particle* &P) {
   
 }
 
-bool Simulator::inBounds(Particle* P) {
+inline void Simulator::record() {
+  // Record positions
+  for (int i=0; i<watchlist.size(); i++)
+    watchPos.at(i).push_back(watchlist.at(i)->getPosition());
+  rec_maxV.push_back(maxVelocity());
+  rec_aveV.push_back(aveVelocity());
+  rec_aveVsqr.push_back(aveVelocitySqr());
+  rec_netP.push_back(netMomentum());
+  rec_netV.push_back(netVelocity());
+  rec_netAngV.push_back(netAngV());
+  rec_aveAngVSqr.push_back(aveAngVSqr());
+  rec_netAngP.push_back(netAngP());
+  rec_netTorque.push_back(netTorque());
+  // Update time
+  lastDisp = time;
+}
+
+inline bool Simulator::inBounds(Particle* P) {
   vect<> pos = P->getPosition();
   double radius = P->getRadius();
   if (pos.x+radius<0 || pos.x-radius>right) return false;
