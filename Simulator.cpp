@@ -1,16 +1,19 @@
 #include "Simulator.h"
 
-Simulator::Simulator() : epsilon(default_epsilon), lastDisp(0), dispTime(0.02), time(0), iter(0), top(1.0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0.0, -1.0)) {};
+Simulator::Simulator() : epsilon(default_epsilon), lastDisp(0), dispTime(0.02), time(0), iter(0), top(1.0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0.0, -9.8)) {
+  xLBound = WRAP;
+  xRBound = WRAP;
+  yTBound = NONE;
+  yBBound = WRAP;
+};
 
 Simulator::~Simulator() {
   for (auto P : particles) if (P) delete P;
   for (auto W : walls) if (W) delete W;
 }
 
-void Simulator::createHopper() {
+void Simulator::createHopper(int N) {
   // Set up a hopper
-  double R = 0.025;
-  cout << "r=" << R << ";\n"; //**
 
   double gap = 0.075;
   addWall(new Wall(vect<>(0, 1), vect<>(0,0.25), true));
@@ -18,16 +21,18 @@ void Simulator::createHopper() {
   addWall(new Wall(vect<>(0, 0.25), vect<>(0.5-0.5*gap, 0.05), true));
   addWall(new Wall(vect<>(1, 0.25), vect<>(0.5+0.5*gap, 0.05), true));
 
+  addParticles(N, 0.025, 1, 0.25, 0, 1);
+
   // Add some particles
+  /*
   bool C = true;
-  int N = 100;
   int maxFail = 50;
   int count = 0, failed = 0;
-
+  double R = 0.025;
   while (count<N && C) {
     vect<> pos(0.1+0.8*drand48(),0.7*drand48()+0.3);
     if (!wouldOverlap(pos, R)) {
-      addWatchedParticle(new Sphere(pos, R));
+      addWatchedParticle(new RTSphere(pos, R*(1+0.25*drand48())));
       count++;
       failed = 0;
     }
@@ -36,6 +41,16 @@ void Simulator::createHopper() {
       if (failed > maxFail) C = false; // To many failed tries
     }
   }
+  */
+}
+
+void Simulator::createPipe(int N) {
+  gravity = vect<>();
+
+  addWall(new Wall(vect<>(0,0), vect<>(1,0), true));
+  addWall(new Wall(vect<>(0,1), vect<>(1,1), true));
+  
+  addParticles(N, 0.05, 1, 0, 0, 1);
 }
 
 bool Simulator::wouldOverlap(vect<> pos, double R) {
@@ -55,7 +70,7 @@ void Simulator::run(double runLength) {
   iter = 0;
   while(ctnu) { // Terminate based on internal condition
     // Gravity
-    for (auto P : particles) if (P) P->applyForce(gravity);
+    for (auto P : particles) if (P) P->applyForce(P->getMass()*gravity);
 
     // Calculate particle-particle and particle-wall forces
     interactions();
@@ -63,12 +78,10 @@ void Simulator::run(double runLength) {
     // Calculate appropriate epsilon
     double vmax = maxVelocity();
     double amax = maxAcceleration();
-    double ratio = minRatio();
     double M = max(amax, vmax);
     if (M<=0) epsilon = default_epsilon;
     else {
       epsilon = min(default_epsilon, default_epsilon/M);
-      //epsilon = min(epsilon, 0.05*ratio);
       epsilon = max(min_epsilon, epsilon);
       if (epsilon<minepsilon) minepsilon = epsilon;
     }
@@ -171,6 +184,16 @@ string Simulator::printWatchList() {
     stream >> str2;
     str += str2;
   }
+  str += "\nR={";
+  for (int i=0; i<watchlist.size(); i++) {
+    stream.clear();
+    stream << watchlist.at(i)->getRadius();
+    if (i!=watchlist.size()-1) stream << ",";
+    stream >> str2;
+    str += str2;
+  }
+  str += "};";
+			    
   return str;
 }
 
@@ -178,7 +201,7 @@ string Simulator::printAnimationCommand() {
   stringstream stream;
   stream << "ListAnimate[Table[Show[walls";
   for (int i=0; i<watchlist.size(); i++) {
-    stream << ",Graphics[Circle[pos" << i << "[[i]],r]]";
+    stream << ",Graphics[Circle[pos" << i << "[[i]],R[[" << i+1 << "]]]]";
   }
   stream << ",PlotRange->{{0," << right << "},{0," << top << "}}],{i,1,Length[pos0]}]," << ceil(1.0/dispTime) << "]";
   string str;
@@ -309,17 +332,6 @@ inline double Simulator::netTorque() {
   return torque;
 }
 
-inline double Simulator::minRatio() {
-  double minRatio = 1.0;
-  for (auto P : particles) {
-    if (P) {
-      double ratio = P->getRatio();
-      if (ratio<minRatio) minRatio = ratio;
-    }
-  }
-  return minRatio;
-}
-
 inline void Simulator::interactions() {
   // Calculate particle-particle forces
   // Naive solution for now
@@ -342,15 +354,79 @@ inline void Simulator::update(Particle* &P) {
   
   // Keep particles in bounds
   vect<> pos = P->getPosition();
-  while (pos.x < 0.0) pos.x += right;
-  while (pos.x > right) pos.x -= right;
-
-
-  if (pos.y < 0.0) {
-    pos = vect<>(0.1+0.8*drand48(), top);
-    P->freeze();
+  
+  switch(xLBound) {
+  case WRAP: {
+    while (pos.x < 0.0) pos.x += right;
+    break;
   }
-  while (pos.y > top) pos.y -= top;
+  case RANDOM: {
+    pos.x = right;
+    pos.y = (top-2*P->getRadius())*drand48()+P->getRadius();
+    P->freeze();
+    break;
+  }
+  case HARD: {
+    break;
+  }
+  case NONE: break;
+  }
+
+  switch (xRBound) {
+  default:
+  case WRAP: {
+    while (pos.x>right) pos.x-=right;
+    break;
+  }
+  case RANDOM: {
+    pos.x = 0;
+    pos.y = (top-2*P->getRadius())*drand48()+P->getRadius();
+    P->freeze();
+    break;
+  }
+  case HARD: {
+    break;
+  }
+  case NONE: break;
+  }
+
+  switch (yBBound) {
+  default:
+  case WRAP: {
+    while (pos.y<0) pos.y+=top;
+    break;
+  }
+  case RANDOM: {
+    pos.y = top;
+    pos.x = (right-2*P->getRadius())*drand48()+P->getRadius();
+    P->freeze();
+    break;
+  }
+  case HARD: {
+    break;
+  }
+  case NONE: break;
+  }
+
+  switch (yTBound) {
+  default:
+  case WRAP: {
+    while (pos.y>top) pos.y-=top;
+    break;
+  }
+  case RANDOM: {
+    pos.y = 0;
+    pos.x = (right-2*P->getRadius())*drand48()+P->getRadius();
+    P->freeze();
+    break;
+  }
+  case HARD: {
+    break;
+  }
+  case NONE: break;
+  }
+
+  // Update the particle's position
   P->getPosition() = pos;
   
 }
@@ -378,4 +454,24 @@ inline bool Simulator::inBounds(Particle* P) {
   if (pos.x+radius<0 || pos.x-radius>right) return false;
   if (pos.y+radius<0 || pos.y-radius>top) return false;
   return true;
+}
+
+inline void Simulator::addParticles(int N, double R, double top, double bottom, double left, double right) {
+  bool C = true;
+  int maxFail = 50;
+  int count = 0, failed = 0;
+  double diffX = right - left - 2*R;
+  double diffY = top - bottom - 2*R;
+  while (count<N && C) {
+    vect<> pos(left+diffX*drand48()+R,bottom+diffY*drand48()+R);
+    if (!wouldOverlap(pos, R)) {
+      addWatchedParticle(new RTSphere(pos, R*(1+0.25*drand48())));
+      count++;
+      failed = 0;
+    }
+    else {
+      failed++;
+      if (failed > maxFail) C = false; // To many failed tries
+    }
+  }
 }

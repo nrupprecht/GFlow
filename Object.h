@@ -8,10 +8,10 @@
 
 const double sphere_repulsion = 5000.0;
 const double sphere_dissipation = 50.0;
-const double wall_repulsion = 5000.0;
-const double wall_dissipation = 50.0;
+const double sphere_coeff = 0.5;
+const double wall_repulsion = 50000.0;
+const double wall_dissipation = 80.0;
 const double wall_gamma = 5;
-const double drag = 2.5;
 const double torque_mult = 10.0;
 
 inline int sign(double x) {
@@ -25,7 +25,9 @@ class Wall; // Forward declaration
 
 class Particle {
  public:
-  Particle(vect<> pos, double rad);
+  Particle(vect<> pos, double rad, double repulse=sphere_repulsion, double dissipate=sphere_dissipation, double coeff=sphere_coeff);
+
+  void initialize();
   
   // Accessors
   vect<>& getPosition() { return position; }
@@ -36,7 +38,6 @@ class Particle {
   double getAngV() { return angularV; }
   double getAngP() { return II*angularV; }
   double getTorque() { return torque; }
-  double getRatio();
   double getMass() { return mass; }
   double getRadius() { return radius; }
   double getRepulsion() { return repulsion; }
@@ -47,6 +48,7 @@ class Particle {
   // Mutators
   void setAngularV(double omega) { angularV = omega; }
   void setVelocity(vect<> V) { velocity = V; }
+  void setDrag(double d) { drag = d; }
 
   /// Control functions
   virtual void interact(Particle*);
@@ -79,14 +81,30 @@ class Particle {
   double II;
   double invMass;
   double invII;
+  double drag;
   double repulsion;
   double dissipation;
   double coeff;
 };
 
-class Sphere : public Particle {
+const double default_run = 0.1;
+const double default_tumble = 0.4;
+const double run_force = 10.0;
+
+class RTSphere : public Particle {
  public:
- Sphere(vect<> pos, double rad) : Particle(pos, rad) {};
+  RTSphere(vect<> pos, double rad);
+  RTSphere(vect<> pos, double rad, double runF);
+
+  virtual void update(double);
+
+ private:
+  double runTime;
+  double runForce;
+  vect<> runDirection;
+  double tumbleTime;
+  double timer;
+  bool running;
 };
 
 class Stationary {

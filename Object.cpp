@@ -1,10 +1,19 @@
 #include "Object.h"
 
-Particle::Particle(vect<> pos, double rad) : position(pos), velocity(vect<>()), acceleration(vect<>()), radius(rad), mass(10.0), invMass(0.1), repulsion(sphere_repulsion), dissipation(sphere_dissipation), angularV(0), angularA(0), theta(0), II(10.0), invII(0.1), coeff(0.5) {};
+Particle::Particle(vect<> pos, double rad, double repulse, double dissipate, double coeff) : position(pos), radius(rad), repulsion(repulse), dissipation(dissipate), coeff(coeff), drag(5.0) {
+  initialize();
+}
 
-double Particle::getRatio() { 
-  if (acceleration*acceleration == 0 || velocity*velocity == 0) return 1.0;
-  return sqrt((velocity*velocity)/(acceleration*acceleration)); 
+void Particle::initialize() {
+  velocity = vect<>(); // Zero
+  acceleration = vect<>(); // Zero
+  angularV = 0;
+  angularA = 0;
+  theta = 0;
+  mass = 10;
+  invMass = 1.0/mass;
+  II = 5;
+  invII = 1.0/II;
 }
 
 void Particle::interact(Particle* P) {
@@ -39,8 +48,6 @@ void Particle::update(double epsilon) {
   // Drag force
   vect<> dragF = -drag*velocity*velocity*normalize(velocity);
 
-  dragF = vect<>();
-
   vect<> netF = dragF + normalF + shearF + force;
   vect<> acceleration_t = acceleration;
   acceleration = invMass*netF;
@@ -57,6 +64,32 @@ void Particle::update(double epsilon) {
 
   torque = 0;
   dragF = normalF = shearF = force = vect<>();
+}
+
+RTSphere::RTSphere(vect<> pos, double rad) : Particle(pos, rad), runTime(default_run), tumbleTime(default_tumble), timer(0), running(true), runDirection(randV()), runForce(run_force) {};
+
+RTSphere::RTSphere(vect<> pos, double rad, double runF) : Particle(pos, rad), runTime(default_run), tumbleTime(default_tumble), timer(0), running(true), runDirection(randV()), runForce(runF) {};
+
+void RTSphere::update(double epsilon) {
+  if (running) {
+    if (timer<runTime) {
+      applyForce(runForce*runDirection);
+    }
+    else {
+      timer = 0;
+      running = false;
+    }
+  }
+  else {
+    if (timer<tumbleTime); // Do nothing
+    else {
+      timer = 0;
+      running = true;
+      runDirection = randV();
+    }
+  }
+  timer += epsilon;
+  Particle::update(epsilon);
 }
 
 Wall::Wall(vect<> origin, vect<> wall) : origin(origin), wall(wall), coeff(0.5), repulsion(wall_repulsion), dissipation(wall_dissipation), gamma(wall_gamma) {

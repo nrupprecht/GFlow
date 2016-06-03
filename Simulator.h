@@ -9,13 +9,16 @@
 const double default_epsilon = 0.005;
 const double min_epsilon = 1e-5;
 
+enum BType { WRAP, RANDOM, HARD, NONE };
+
 class Simulator {
  public:
   Simulator();
   ~Simulator(); 
 
   // Initialization
-  void createHopper();
+  void createHopper(int);
+  void createPipe(int);
 
   // Simulation
   void run(double runLength);
@@ -66,10 +69,13 @@ class Simulator {
   inline void record();
   inline bool inBounds(Particle*);
 
+  inline void addParticles(int N, double R, double top, double bottom, double left, double right);
+
   /// Data
   double right; // Right edge of the simulation
   double top;   // Top edge of the simulation
-
+  BType xLBound, xRBound, yTBound, yBBound;
+  
   double time;
   double epsilon;
   double minepsilon; // The smallest epsilon that was ever used

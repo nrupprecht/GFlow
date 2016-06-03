@@ -24,10 +24,12 @@ using std::endl;
 using std::string;
 using std::stringstream;
 
-const float PI = 3.14159265f;
+const double PI = 3.14159265;
 
 /// Random number function
-inline float getRand() { return drand48(); }
+inline double getRand() { return drand48(); }
+
+inline double limit_prec(double x) { return fabs(x)<1e-4 ? 0 : x; }
 
 /// Forward declaration for Vector Field
 struct VectorField;
@@ -84,7 +86,7 @@ vect(const vect<T>& V) : x(V.x), y(V.y) {};
     }
     
   friend std::ostream& operator<<(std::ostream& os, const vect& v) {
-    os << "{" << v.x << "," << v.y << "}";
+    os << "{" << limit_prec(v.x) << "," << limit_prec(v.y) << "}";
     return os;
   }
     

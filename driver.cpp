@@ -3,7 +3,7 @@
 int main() {
 
   Simulator simulation;
-  simulation.createHopper();
+  simulation.createHopper(100);
 
   simulation.run(20);
 
