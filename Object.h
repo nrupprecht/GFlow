@@ -6,13 +6,14 @@
 
 #include "Utility.h"
 
-const double sphere_repulsion = 5000.0;
+const double sphere_repulsion = 50000.0;
 const double sphere_dissipation = 50.0;
-const double sphere_coeff = 0.5;
+const double sphere_coeff = sqrt(0.5);
 const double wall_repulsion = 50000.0;
-const double wall_dissipation = 80.0;
+const double wall_dissipation = 1000.0;
+const double wall_coeff = 0; //sqrt(0.5);
 const double wall_gamma = 5;
-const double torque_mult = 10.0;
+const double torque_mult = 1.0;
 
 inline int sign(double x) {
   if (x==0) return 0;
@@ -32,23 +33,28 @@ class Particle {
   // Accessors
   vect<>& getPosition() { return position; }
   vect<>& getVelocity() { return velocity; }
+  vect<> getMomentum() { return 1.0/invMass*velocity; }
   vect<>& getAcceleration() { return acceleration; }
   double getTheta() { return theta; }
-  double getTangentialV() { return angularV*radius; }
-  double getAngV() { return angularV; }
-  double getAngP() { return II*angularV; }
+  double getTangentialV() { return omega*radius; }
+  double getOmega() { return omega; }
+  double getAngP() { return omega/invII; }
   double getTorque() { return torque; }
-  double getMass() { return mass; }
+  double getMass() { return 1.0/invMass; }
   double getRadius() { return radius; }
   double getRepulsion() { return repulsion; }
+  double getDissipation() { return dissipation; }
+  double getCoeff() { return coeff; }
   vect<> getForce() { return force; }
   vect<> getNormalForce() { return normalF; }
   vect<> getShearForce() { return shearF; }
 
   // Mutators
-  void setAngularV(double omega) { angularV = omega; }
+  void setAngularV(double om) { omega = om; }
   void setVelocity(vect<> V) { velocity = V; }
   void setDrag(double d) { drag = d; }
+  void setMass(double);
+  void setII(double);
 
   /// Control functions
   virtual void interact(Particle*);
@@ -62,13 +68,19 @@ class Particle {
   void freeze() {
     velocity = vect<>();
     acceleration = vect<>();
+    omega = 0;
+    alpha = 0;
   }
+
+  // Exception classes
+  class BadMassError {};
+  class BadInertiaError {};
   
  protected:
   vect<> position;
   vect<> velocity;
   vect<> acceleration;
-  double angularV, angularA, theta; // Angular variables
+  double theta, omega, alpha; // Angular variables
 
   // Record forces and torques
   vect<> force;
@@ -76,20 +88,33 @@ class Particle {
   vect<> shearF;
   double torque;
 
-  double radius;
-  double mass;
-  double II;
-  double invMass;
-  double invII;
-  double drag;
-  double repulsion;
-  double dissipation;
-  double coeff;
+  // Characteristic variables
+  double radius;      // Disc radius
+  double invMass;     // We only need the inverse of mass
+  double invII;       // We also only need the inverse of inertia
+  double drag;        // Coefficient of drag
+  double repulsion;   // Coefficient of repulsion
+  double dissipation; // Coefficient of dissipation
+  double coeff;       // Coefficient of friction
 };
 
 const double default_run = 0.1;
 const double default_tumble = 0.4;
 const double run_force = 10.0;
+
+class Active : public Particle {
+ public:
+  Active(vect<> pos, double rad);
+  Active(vect<> pos, double rad, double runF);
+
+  virtual void update(double);
+
+ private:
+  double runTime;
+  double tumbleTime;
+  double timer;
+  bool running;
+};
 
 class RTSphere : public Particle {
  public:
@@ -109,7 +134,7 @@ class RTSphere : public Particle {
 
 class Stationary {
  public:
- Stationary() : coeff(0), repulsion(wall_repulsion), dissipation(wall_dissipation) {};
+ Stationary() : coeff(wall_coeff), repulsion(wall_repulsion), dissipation(wall_dissipation) {};
   virtual void interact(Particle*)=0;
  protected:
   double coeff; // Coefficient of friction
@@ -124,6 +149,11 @@ class Wall {
 
   vect<> getPosition() { return origin; }
   vect<> getEnd() { return origin+wall; }
+
+  /// Mutators
+  void setRepulsion(double r) { repulsion = r; }
+  void setDissipation(double d) { dissipation = d; }
+  void setCoeff(double c) { coeff = c; }
 
   virtual void interact(Particle*);
 

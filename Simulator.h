@@ -5,11 +5,14 @@
 #define SIMULATOR_H
 
 #include "Object.h"
+#include <list>
+using std::list;
 
 const double default_epsilon = 0.005;
-const double min_epsilon = 1e-5;
+const double min_epsilon = 1e-7;
 
 enum BType { WRAP, RANDOM, HARD, NONE };
+enum PType { PASSIVE, RTSPHERE };
 
 class Simulator {
  public:
@@ -19,6 +22,7 @@ class Simulator {
   // Initialization
   void createHopper(int);
   void createPipe(int);
+  void createIdealGas(int);
 
   // Simulation
   void run(double runLength);
@@ -33,12 +37,15 @@ class Simulator {
   double aveVelocitySqr();
   vect<> netMomentum();
   vect<> netVelocity();
-    
+  
   // Mutators
+  void setDispRate(double r) { dispTime = 1.0/r; }
+  void setDispFactor(double f) { dispFactor = f; }
+  // Creation Functions
   void addWall(Wall*);
   void addParticle(Particle*);
   void addWatchedParticle(Particle* p);
-  
+
   // Display functions
   string printWalls();
   string printWatchList();
@@ -48,8 +55,8 @@ class Simulator {
   string printAveVSqr();
   string printNetMomentum();
   string printNetVelocity();
-  string printNetAngularV();
-  string printAveAngularVSqr();
+  string printNetOmega();
+  string printAveOmegaSqr();
   string printNetAngularP();
   string printNetTorque();
   
@@ -69,7 +76,7 @@ class Simulator {
   inline void record();
   inline bool inBounds(Particle*);
 
-  inline void addParticles(int N, double R, double top, double bottom, double left, double right);
+  inline void addParticles(int N, double R, double var, double left, double right, double bottom, double top, PType type=PASSIVE, double vmax=-1);
 
   /// Data
   double right; // Right edge of the simulation
@@ -79,7 +86,8 @@ class Simulator {
   double time;
   double epsilon;
   double minepsilon; // The smallest epsilon that was ever used
-  double dispTime; // Time between recordings
+  double dispTime; // Time between recordings (1/dispRate)
+  double dispFactor; // Speed up or slow down animation (e.g. 2 -> 2x speed)
   double lastDisp; // Last time data was recorded
   int iter;
   vect<> gravity;
@@ -97,10 +105,17 @@ class Simulator {
   vector<double> rec_aveVsqr;
   vector<vect<>> rec_netP;
   vector<vect<>> rec_netV;
-  vector<double> rec_netAngV;
-  vector<double> rec_aveAngVSqr;
+  vector<double> rec_netOmega;
+  vector<double> rec_aveOmegaSqr;
   vector<double> rec_netAngP;
   vector<double> rec_netTorque;
+
+  /// Sectorization
+  void ppInteract();
+  list<Particle*>* sectors; // Sectors
+  int secX, secY; // Width and height of sector grid
+  
+
 };
 
 #endif

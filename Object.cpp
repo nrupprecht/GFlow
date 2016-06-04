@@ -7,12 +7,20 @@ Particle::Particle(vect<> pos, double rad, double repulse, double dissipate, dou
 void Particle::initialize() {
   velocity = vect<>(); // Zero
   acceleration = vect<>(); // Zero
-  angularV = 0;
-  angularA = 0;
+  omega = 0;
+  alpha = 0;
   theta = 0;
-  mass = 10;
-  invMass = 1.0/mass;
-  II = 5;
+  invMass = 1.0/(10.0); // mass = 10.0
+  invII = 1.0/(5.0); // II = 5.0
+}
+
+void Particle::setMass(double m) {
+  if (m<=0) throw BadMassError();
+  invMass = 1.0/m;
+}
+
+void Particle::setII(double II) {
+  if (II<=0) throw BadInertiaError();
   invII = 1.0/II;
 }
 
@@ -28,12 +36,12 @@ void Particle::interact(Particle* P) {
     double dist = sqrt(distSqr);
     vect<> normal = (1.0/dist) * displacement;
     vect<> shear = vect<>(normal.y, -normal.x);
-    double overlap = cutoff - dist;
+    double overlap = 1.0 - dist/cutoff;
     double Vn = (P->getVelocity() - velocity)*normal;
-    double Vs = (P->getVelocity() - velocity)*shear + angularV*radius + P->getTangentialV();
+    double Vs = (P->getVelocity() - velocity)*shear + radius*omega + P->getTangentialV();
     // Damped harmonic oscillator
     double Fn = -repulsion*overlap-dissipation*clamp(-Vn);
-    double Fs = -coeff*Fn*sign(Vs);
+    double Fs = -(coeff*P->getCoeff())*Fn*sign(Vs);
     
     applyNormalForce(Fn*normal);
     applyShearForce(Fs*shear);
@@ -52,15 +60,15 @@ void Particle::update(double epsilon) {
   vect<> acceleration_t = acceleration;
   acceleration = invMass*netF;
 
-  // Update velocity and position (velocity verlet) //**
+  // Update velocity and position (velocity verlet)
   position += epsilon*(velocity + 0.5*epsilon*acceleration);
   velocity += 0.5*epsilon*(acceleration+acceleration_t);
 
-  // Update angular variables
-  double angularA_t = angularA;
-  angularA = invII*torque;
-  theta += epsilon*(angularV + 0.5*epsilon*angularA);
-  angularV += 0.5*epsilon*(angularA+angularA_t);
+  // Update angular variables (velocity verlet)
+  double alpha_t = alpha;
+  alpha = invII*torque;
+  theta += epsilon*(omega + 0.5*epsilon*alpha);
+  omega += 0.5*epsilon*(alpha+alpha_t);
 
   torque = 0;
   dragF = normalF = shearF = force = vect<>();
@@ -92,7 +100,7 @@ void RTSphere::update(double epsilon) {
   Particle::update(epsilon);
 }
 
-Wall::Wall(vect<> origin, vect<> wall) : origin(origin), wall(wall), coeff(0.5), repulsion(wall_repulsion), dissipation(wall_dissipation), gamma(wall_gamma) {
+Wall::Wall(vect<> origin, vect<> wall) : origin(origin), wall(wall), coeff(wall_coeff), repulsion(wall_repulsion), dissipation(wall_dissipation), gamma(wall_gamma) {
   normal = wall;
   normal.normalize();
   length = wall.norm();
@@ -127,13 +135,13 @@ void Wall::interact(Particle* P) {
     double dist = sqrt(distSqr);
     vect<> normal = (1.0/dist) * displacement;
     vect<> shear = vect<>(normal.y, -normal.x);
-    double overlap = radius - dist;
+    double overlap = 1.0 - dist/radius;
     double Vn = P->getVelocity()*normal;
     double Vs = P->getVelocity()*shear + P->getTangentialV();
 
     // Damped harmonic oscillator
     double Fn = -repulsion*overlap-dissipation*(-Vn); //clamp(-Vn);
-    double Fs = min(fabs(coeff*Fn),fabs(Vs)*gamma)*sign(Vs);
+    double Fs = min(fabs((coeff*P->getCoeff())*Fn),fabs(Vs)*gamma)*sign(Vs);
 
     P->applyNormalForce(-Fn*normal);
     P->applyShearForce(-Fs*shear);

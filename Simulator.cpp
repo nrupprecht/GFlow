@@ -1,9 +1,9 @@
 #include "Simulator.h"
 
-Simulator::Simulator() : epsilon(default_epsilon), lastDisp(0), dispTime(0.02), time(0), iter(0), top(1.0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0.0, -9.8)) {
+Simulator::Simulator() : epsilon(default_epsilon), lastDisp(0), dispTime(1.0/50), dispFactor(1), time(0), iter(0), top(1.0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)) {
   xLBound = WRAP;
   xRBound = WRAP;
-  yTBound = NONE;
+  yTBound = WRAP;
   yBBound = WRAP;
 };
 
@@ -14,43 +14,56 @@ Simulator::~Simulator() {
 
 void Simulator::createHopper(int N) {
   // Set up a hopper
-
-  double gap = 0.075;
-  addWall(new Wall(vect<>(0, 1), vect<>(0,0.25), true));
-  addWall(new Wall(vect<>(1, 1), vect<>(1,0.25), true));
-  addWall(new Wall(vect<>(0, 0.25), vect<>(0.5-0.5*gap, 0.05), true));
-  addWall(new Wall(vect<>(1, 0.25), vect<>(0.5+0.5*gap, 0.05), true));
-
-  addParticles(N, 0.025, 1, 0.25, 0, 1);
-
-  // Add some particles
-  /*
-  bool C = true;
-  int maxFail = 50;
-  int count = 0, failed = 0;
-  double R = 0.025;
-  while (count<N && C) {
-    vect<> pos(0.1+0.8*drand48(),0.7*drand48()+0.3);
-    if (!wouldOverlap(pos, R)) {
-      addWatchedParticle(new RTSphere(pos, R*(1+0.25*drand48())));
-      count++;
-      failed = 0;
-    }
-    else {
-      failed++;
-      if (failed > maxFail) C = false; // To many failed tries
-    }
-  }
-  */
+  right = 1; top = 2;
+  double radius = 0.025;
+  double gap = 0.15;
+  double bottomGap = 0.05;
+  double troughHeight = 0.5;
+  double space = 1.0;
+  double var = 0, mx = (1+var)*radius;
+  addWall(new Wall(vect<>(0, troughHeight), vect<>(0,top), true));
+  addWall(new Wall(vect<>(right, troughHeight), vect<>(right,top), true));
+  addWall(new Wall(vect<>(0, troughHeight), vect<>(0.5-0.5*gap, bottomGap), true));
+  addWall(new Wall(vect<>(1, troughHeight), vect<>(0.5+0.5*gap, bottomGap), true));
+  addParticles(N, radius, var, mx, right-mx, troughHeight+mx, top-mx);
+  xLBound = WRAP;
+  xRBound = WRAP;
+  yTBound = NONE;
+  yBBound = RANDOM;
 }
 
 void Simulator::createPipe(int N) {
   gravity = vect<>();
+  top = 1; right = 5;
+  addWall(new Wall(vect<>(0,0), vect<>(right,0), true));
+  addWall(new Wall(vect<>(0,top), vect<>(right,top), true));
+  addParticles(N, 0.02, 0, 0, right, 0, top, RTSPHERE);
+  xLBound = WRAP;
+  xRBound = WRAP;
+  yTBound = NONE;
+  yBBound = NONE;
+}
 
-  addWall(new Wall(vect<>(0,0), vect<>(1,0), true));
-  addWall(new Wall(vect<>(0,1), vect<>(1,1), true));
-  
-  addParticles(N, 0.05, 1, 0, 0, 1);
+void Simulator::createIdealGas(int N) {
+  gravity = vect<>();
+  Wall* W = new Wall(vect<>(0,0), vect<>(right,0), true);
+  W->setDissipation(0);
+  W->setCoeff(0);
+  addWall(W); // bottom
+  W = new Wall(vect<>(0,top), vect<>(right,top), true);
+  W->setDissipation(0);
+  W->setCoeff(0);
+  addWall(W); // top
+  W = new Wall(vect<>(0,0), vect<>(0,top), true);
+  W->setDissipation(0);
+  W->setCoeff(0);
+  addWall(W); // left
+  W = new Wall(vect<>(right,0), vect<>(right,top), true);
+  W->setDissipation(0);
+  W->setCoeff(0);
+  addWall(W); // right
+
+  addParticles(N, 0.02, 0, 0, right, 0, top, PASSIVE, 5);
 }
 
 bool Simulator::wouldOverlap(vect<> pos, double R) {
@@ -166,7 +179,7 @@ string Simulator::printWalls() {
     stream << "Graphics[{Thick,Red,Line[{" << walls.at(i)->getPosition() << "," << walls.at(i)->getEnd() << "}]}]";
     if (i!=walls.size()-1) stream << ",";
   }
-  stream << "]";
+  stream << ",PlotRange->{{0," << right << "},{0," << top << "}}]";
 
   string str;
   stream >> str;
@@ -199,13 +212,18 @@ string Simulator::printWatchList() {
 
 string Simulator::printAnimationCommand() {
   stringstream stream;
-  stream << "ListAnimate[Table[Show[walls";
+  string str = "frames=Table[Show[walls", str2;
   for (int i=0; i<watchlist.size(); i++) {
     stream << ",Graphics[Circle[pos" << i << "[[i]],R[[" << i+1 << "]]]]";
   }
-  stream << ",PlotRange->{{0," << right << "},{0," << top << "}}],{i,1,Length[pos0]}]," << ceil(1.0/dispTime) << "]";
-  string str;
-  stream >> str;
+  stream << ",PlotRange->{{0," << right << "},{0," << top << "}}],{i,1,Length[pos0]}];";
+  stream >> str2;
+  str += str2;
+  str += "\n";
+  stream.clear();
+  stream << "vid=ListAnimate[frames,AnimationRate->" << max(1.0, ceil(1.0/dispTime)*dispFactor) << "]";
+  stream >> str2;
+  str += str2;
   return str;
 }
 
@@ -249,17 +267,17 @@ string Simulator::printNetVelocity() {
   return str;
 }
 
-string Simulator::printNetAngularV() {
+string Simulator::printNetOmega() {
   stringstream stream;
-  stream << rec_netAngV;
+  stream << rec_netOmega;
   string str;
   stream >> str;
   return str;
 }
 
-string Simulator::printAveAngularVSqr() {
+string Simulator::printAveOmegaSqr() {
   stringstream stream;
-  stream << rec_aveAngVSqr;
+  stream << rec_aveOmegaSqr;
   string str;
   stream >> str;
   return str;
@@ -284,7 +302,7 @@ string Simulator::printNetTorque() {
 inline double Simulator::maxVelocity() {
   double maxVsqr = -1.0;
   for (auto P : particles) {
-    if (P) {
+    if (P && inBounds(P)) {
       double Vsqr = P->getVelocity().normSqr();
       if (Vsqr > maxVsqr) maxVsqr = Vsqr;
     }
@@ -295,7 +313,7 @@ inline double Simulator::maxVelocity() {
 inline double Simulator::maxAcceleration() {
   double maxAsqr = -1.0;
   for (auto P : particles) {
-    if (P) {
+    if (P && inBounds(P)) {
       double Asqr = P->getAcceleration().normSqr();
       if (Asqr > maxAsqr) maxAsqr = Asqr;
     }
@@ -305,7 +323,9 @@ inline double Simulator::maxAcceleration() {
 
 inline double Simulator::netAngV() {
   double angV = 0;
-  for (auto P : particles) if (P) angV += P->getAngV();
+  for (auto P : particles) 
+    if (P && inBounds(P)) 
+      angV += P->getOmega();
   return angV;
 }
 
@@ -313,8 +333,8 @@ inline double Simulator::aveAngVSqr() {
   double angV = 0;
   int N = 0;
   for (auto P : particles) 
-    if (P) {
-      angV += sqr(P->getAngV());
+    if (P && inBounds(P)) {
+      angV += sqr(P->getOmega());
       N++;
     }
   return N>0 ? angV/N : -1.0;
@@ -322,13 +342,17 @@ inline double Simulator::aveAngVSqr() {
 
 inline double Simulator::netAngP() {
   double angP = 0;
-  for (auto P : particles) if (P) angP += P->getAngP();
+  for (auto P : particles) 
+    if (P && inBounds(P)) 
+      angP += P->getAngP();
   return angP;
 }
 
 inline double Simulator::netTorque() {
   double torque = 0;
-  for (auto P : particles) torque += P->getTorque();
+  for (auto P : particles)
+    if (P && inBounds(P)) 
+      torque += P->getTorque();
   return torque;
 }
 
@@ -355,15 +379,19 @@ inline void Simulator::update(Particle* &P) {
   // Keep particles in bounds
   vect<> pos = P->getPosition();
   
+  ///** HARD cases yet to be implemented
+
   switch(xLBound) {
   case WRAP: {
     while (pos.x < 0.0) pos.x += right;
     break;
   }
   case RANDOM: {
-    pos.x = right;
-    pos.y = (top-2*P->getRadius())*drand48()+P->getRadius();
-    P->freeze();
+    if (pos.x<0) {
+      pos.x = right;
+      pos.y = (top-2*P->getRadius())*drand48()+P->getRadius();
+      P->freeze();
+    }
     break;
   }
   case HARD: {
@@ -379,9 +407,11 @@ inline void Simulator::update(Particle* &P) {
     break;
   }
   case RANDOM: {
-    pos.x = 0;
-    pos.y = (top-2*P->getRadius())*drand48()+P->getRadius();
-    P->freeze();
+    if (pos.x>right) {
+      pos.x = 0;
+      pos.y = (top-2*P->getRadius())*drand48()+P->getRadius();
+      P->freeze();
+    }
     break;
   }
   case HARD: {
@@ -397,9 +427,11 @@ inline void Simulator::update(Particle* &P) {
     break;
   }
   case RANDOM: {
-    pos.y = top;
-    pos.x = (right-2*P->getRadius())*drand48()+P->getRadius();
-    P->freeze();
+    if (pos.y<0) {
+      pos.y = top;
+      pos.x = (right-2*P->getRadius())*drand48()+P->getRadius();
+      P->freeze();
+    }
     break;
   }
   case HARD: {
@@ -415,9 +447,11 @@ inline void Simulator::update(Particle* &P) {
     break;
   }
   case RANDOM: {
-    pos.y = 0;
-    pos.x = (right-2*P->getRadius())*drand48()+P->getRadius();
-    P->freeze();
+    if (pos.y>top) {
+      pos.y = 0;
+      pos.x = (right-2*P->getRadius())*drand48()+P->getRadius();
+      P->freeze();
+    }
     break;
   }
   case HARD: {
@@ -440,8 +474,8 @@ inline void Simulator::record() {
   rec_aveVsqr.push_back(aveVelocitySqr());
   rec_netP.push_back(netMomentum());
   rec_netV.push_back(netVelocity());
-  rec_netAngV.push_back(netAngV());
-  rec_aveAngVSqr.push_back(aveAngVSqr());
+  rec_netOmega.push_back(netAngV());
+  rec_aveOmegaSqr.push_back(aveAngVSqr());
   rec_netAngP.push_back(netAngP());
   rec_netTorque.push_back(netTorque());
   // Update time
@@ -456,16 +490,30 @@ inline bool Simulator::inBounds(Particle* P) {
   return true;
 }
 
-inline void Simulator::addParticles(int N, double R, double top, double bottom, double left, double right) {
+inline void Simulator::addParticles(int N, double R, double var, double lft, double rght, double bttm, double tp, PType type, double vmax) {
   bool C = true;
   int maxFail = 50;
   int count = 0, failed = 0;
-  double diffX = right - left - 2*R;
-  double diffY = top - bottom - 2*R;
+  double diffX = rght - lft - 2*R;
+  double diffY = tp - bttm - 2*R;
   while (count<N && C) {
-    vect<> pos(left+diffX*drand48()+R,bottom+diffY*drand48()+R);
+    vect<> pos(lft+diffX*drand48()+R, bttm+diffY*drand48()+R);
     if (!wouldOverlap(pos, R)) {
-      addWatchedParticle(new RTSphere(pos, R*(1+0.25*drand48())));
+      double rad = R*(1+var*drand48());
+      Particle *P;
+      switch (type) {
+      default:
+      case PASSIVE: {
+	P = new Particle(pos, rad);
+	break;
+      }
+      case RTSPHERE: {
+	P = new RTSphere(pos, rad);
+	break;
+      }
+      }
+      addWatchedParticle(P);
+      if (vmax > 0) P->setVelocity(randV());
       count++;
       failed = 0;
     }
@@ -474,4 +522,17 @@ inline void Simulator::addParticles(int N, double R, double top, double bottom, 
       if (failed > maxFail) C = false; // To many failed tries
     }
   }
+}
+
+inline void Simulator::ppInteract() {
+  for (int y=1; y<secY; y++)
+    for (int x=1; x<=secX; x++) {
+      // Check in surrounding sectors
+      for (auto P : sectors[y*secX+x])
+	for (int j=y-1; j<=y+1; j++)
+	  for (int i=x-1; i<=x+1; i++) {
+	    for (auto Q : sectors[j*secX+i])
+	      P->interact(Q);
+	  }
+    }
 }
