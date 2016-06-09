@@ -125,6 +125,11 @@ vect(const vect<T>& V) : x(V.x), y(V.y) {};
   static vect<> rand() {
     return vect<>(0.5-drand48(), 0.5-drand48());
   }
+
+  T& operator[] (int i) {
+    if (i<0 || i>1) throw 1;
+    return i==0 ? x : y;
+  }
     
   /// The actual data
   T x, y;

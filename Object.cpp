@@ -1,6 +1,6 @@
 #include "Object.h"
 
-Particle::Particle(vect<> pos, double rad, double repulse, double dissipate, double coeff) : position(pos), radius(rad), repulsion(repulse), dissipation(dissipate), coeff(coeff), drag(5.0) {
+Particle::Particle(vect<> pos, double rad, double repulse, double dissipate, double coeff) : position(pos), radius(rad), repulsion(repulse), dissipation(dissipate), coeff(coeff), drag(sphere_drag) {
   initialize();
 }
 
@@ -10,23 +10,24 @@ void Particle::initialize() {
   omega = 0;
   alpha = 0;
   theta = 0;
-  invMass = 1.0/(10.0); // mass = 10.0
-  invII = 1.0/(5.0); // II = 5.0
+  double mass = 10;
+  invMass = 1.0/mass;
+  invII = 1.0/(0.5*mass*sqr(radius));
 }
 
 void Particle::setMass(double m) {
   if (m<=0) throw BadMassError();
+  // Should we reset the inertia too?
   invMass = 1.0/m;
 }
 
 void Particle::setII(double II) {
   if (II<=0) throw BadInertiaError();
+  // Should we reset the mass too?
   invII = 1.0/II;
 }
 
 void Particle::interact(Particle* P) {
-  // Exert this particles force on both particles (in opposite directions of course)
-
   vect<> displacement = P->getPosition() - position;
   double distSqr = sqr(displacement);
   double cutoff = radius + P->getRadius();
@@ -37,39 +38,45 @@ void Particle::interact(Particle* P) {
     vect<> normal = (1.0/dist) * displacement;
     vect<> shear = vect<>(normal.y, -normal.x);
     double overlap = 1.0 - dist/cutoff;
-    double Vn = (P->getVelocity() - velocity)*normal;
-    double Vs = (P->getVelocity() - velocity)*shear + radius*omega + P->getTangentialV();
+    vect<> dV = P->getVelocity() - velocity;
+    double Vn = dV*normal;
+    double Vs = dV*shear + radius*omega + P->getTangentialV();
     // Damped harmonic oscillator
     double Fn = -repulsion*overlap-dissipation*clamp(-Vn);
     double Fs = -(coeff*P->getCoeff())*Fn*sign(Vs);
     
     applyNormalForce(Fn*normal);
     applyShearForce(Fs*shear);
+    applyTorque(Fs*radius);
+    /*
     P->applyNormalForce(-Fn*normal);
     P->applyShearForce(-Fs*shear);
-    applyTorque(Fs*radius);
-    P->applyTorque(-Fs*P->getRadius()*torque_mult);
+    P->applyTorque(Fs*P->getRadius()); // The force and radius are both negative so the torque is the same
+    */
   }
 }
 
 void Particle::update(double epsilon) {
   // Drag force
   vect<> dragF = -drag*velocity*velocity*normalize(velocity);
-
+  // Calculate net force/acceleration, record last acceleration
   vect<> netF = dragF + normalF + shearF + force;
-  vect<> acceleration_t = acceleration;
+  //vect<> acceleration_t = acceleration;
   acceleration = invMass*netF;
 
-  // Update velocity and position (velocity verlet)
+  // Update velocity and position (velocity verlet) --- V. Verlet seems to conserve energy worse then this
   position += epsilon*(velocity + 0.5*epsilon*acceleration);
-  velocity += 0.5*epsilon*(acceleration+acceleration_t);
+  // velocity += 0.5*epsilon*(acceleration+acceleration_t);
+  velocity += epsilon*acceleration;
 
   // Update angular variables (velocity verlet)
   double alpha_t = alpha;
   alpha = invII*torque;
   theta += epsilon*(omega + 0.5*epsilon*alpha);
-  omega += 0.5*epsilon*(alpha+alpha_t);
+  // omega += 0.5*epsilon*(alpha+alpha_t);
+  omega += epsilon*alpha;
 
+  // Reset forces and torques
   torque = 0;
   dragF = normalF = shearF = force = vect<>();
 }
@@ -140,8 +147,10 @@ void Wall::interact(Particle* P) {
     double Vs = P->getVelocity()*shear + P->getTangentialV();
 
     // Damped harmonic oscillator
-    double Fn = -repulsion*overlap-dissipation*(-Vn); //clamp(-Vn);
+    double Fn = -repulsion*overlap-dissipation*(-Vn);
     double Fs = min(fabs((coeff*P->getCoeff())*Fn),fabs(Vs)*gamma)*sign(Vs);
+
+    pressureF += Fn;
 
     P->applyNormalForce(-Fn*normal);
     P->applyShearForce(-Fs*shear);

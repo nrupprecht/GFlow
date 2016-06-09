@@ -7,13 +7,13 @@
 #include "Utility.h"
 
 const double sphere_repulsion = 50000.0;
-const double sphere_dissipation = 50.0;
+const double sphere_dissipation = 1000.0;
 const double sphere_coeff = sqrt(0.5);
+const double sphere_drag = 5.0;
 const double wall_repulsion = 50000.0;
 const double wall_dissipation = 1000.0;
-const double wall_coeff = 0; //sqrt(0.5);
+const double wall_coeff = sqrt(0.5);
 const double wall_gamma = 5;
-const double torque_mult = 1.0;
 
 inline int sign(double x) {
   if (x==0) return 0;
@@ -45,13 +45,17 @@ class Particle {
   double getRepulsion() { return repulsion; }
   double getDissipation() { return dissipation; }
   double getCoeff() { return coeff; }
+  double getKE() { return 0.5*(sqr(velocity)/invMass + sqr(omega)/invII); }
   vect<> getForce() { return force; }
   vect<> getNormalForce() { return normalF; }
   vect<> getShearForce() { return shearF; }
+  //int getNumber() { return number; }
 
   // Mutators
   void setAngularV(double om) { omega = om; }
   void setVelocity(vect<> V) { velocity = V; }
+  void setDissipation(double d) { dissipation = d; }
+  void setCoeff(double c) { coeff = c; }
   void setDrag(double d) { drag = d; }
   void setMass(double);
   void setII(double);
@@ -76,13 +80,15 @@ class Particle {
   class BadMassError {};
   class BadInertiaError {};
   
+  //static int numCounter;
+
  protected:
   vect<> position;
   vect<> velocity;
   vect<> acceleration;
   double theta, omega, alpha; // Angular variables
 
-  // Record forces and torques
+  // Forces and torques
   vect<> force;
   vect<> normalF;
   vect<> shearF;
@@ -96,6 +102,12 @@ class Particle {
   double repulsion;   // Coefficient of repulsion
   double dissipation; // Coefficient of dissipation
   double coeff;       // Coefficient of friction
+};
+
+//** TODO **//
+class Rod : public Particle {
+ public:
+ private:
 };
 
 const double default_run = 0.1;
@@ -149,6 +161,7 @@ class Wall {
 
   vect<> getPosition() { return origin; }
   vect<> getEnd() { return origin+wall; }
+  double getPressure() { return pressureF/length; }
 
   /// Mutators
   void setRepulsion(double r) { repulsion = r; }
@@ -168,6 +181,8 @@ class Wall {
   double repulsion;
   double dissipation;
   double gamma;
+
+  double pressureF; // Record the pressure currently exerted on the wall
 };
 
 #endif
