@@ -33,6 +33,11 @@ void Particle::interact(Particle* P) {
   double cutoff = radius + P->getRadius();
   double cutoffsqr = sqr(cutoff);
 
+  /*          ^ normal
+              |
+              |
+              |------> shear      */
+  
   if (distSqr < cutoffsqr) { // Interaction
     double dist = sqrt(distSqr);
     vect<> normal = (1.0/dist) * displacement;
@@ -47,7 +52,8 @@ void Particle::interact(Particle* P) {
     
     applyNormalForce(Fn*normal);
     applyShearForce(Fs*shear);
-    applyTorque(Fs*radius);
+    applyTorque(-Fs*radius);
+
     /*
     P->applyNormalForce(-Fn*normal);
     P->applyShearForce(-Fs*shear);
@@ -154,6 +160,6 @@ void Wall::interact(Particle* P) {
 
     P->applyNormalForce(-Fn*normal);
     P->applyShearForce(-Fs*shear);
-    P->applyTorque(-Fs*P->getRadius()*torque_mult);
+    P->applyTorque(-Fs*P->getRadius());
   }
 }

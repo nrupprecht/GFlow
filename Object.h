@@ -52,7 +52,7 @@ class Particle {
   //int getNumber() { return number; }
 
   // Mutators
-  void setAngularV(double om) { omega = om; }
+  void setOmega(double om) { omega = om; }
   void setVelocity(vect<> V) { velocity = V; }
   void setDissipation(double d) { dissipation = d; }
   void setCoeff(double c) { coeff = c; }

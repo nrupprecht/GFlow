@@ -36,20 +36,22 @@ void Simulator::createHopper(int N, double radius) {
   discard();
   // Set up a hopper
   left = 0; bottom = 0;
-  right = 1; top = 2;
-  double gap = 0.11;
+  right = 1; top = 3;
+  double gap = 0.14;
   double bottomGap = 0.05;
   double troughHeight = 0.5;
   double space = 1.0;
-  double var = 0, mx = (1+var)*radius;
-  addWall(new Wall(vect<>(0, troughHeight), vect<>(0,top), true));
-  addWall(new Wall(vect<>(right, troughHeight), vect<>(right,top), true));
+  double var = 0.25, mx = (1+var)*radius;
+  addWall(new Wall(vect<>(0, troughHeight), vect<>(0,2*top), true));
+  addWall(new Wall(vect<>(right, troughHeight), vect<>(right,2*top), true));
   addWall(new Wall(vect<>(0, troughHeight), vect<>(0.5-0.5*gap, bottomGap), true));
   addWall(new Wall(vect<>(1, troughHeight), vect<>(0.5+0.5*gap, bottomGap), true));
 
   addTempWall(new Wall(vect<>(0,troughHeight), vect<>(1,troughHeight), true), 3.0);
+  //addWall(new Wall(vect<>(0,troughHeight), vect<>(1,troughHeight), true));
 
-  addParticles(N, radius, var, mx, right-mx, troughHeight+mx, top-mx);
+  double upper = 5; // Instead of top
+  addParticles(N, radius, var, mx, right-mx, troughHeight+mx, upper-mx);
   xLBound = WRAP;
   xRBound = WRAP;
   yTBound = NONE;
@@ -89,22 +91,18 @@ void Simulator::createIdealGas(int N, double radius) {
   addWall(new Wall(vect<>(0,top), vect<>(right,top), true)); // top
   addWall(new Wall(vect<>(0,0), vect<>(0,top), true)); // left
   addWall(new Wall(vect<>(right,0), vect<>(right,top), true)); // right
-  /*
-  Particle *P = new Particle(vect<>(0.395, 0.5), 0.1);
-  P->setVelocity(vect<>(0.25,0));
-  addWatchedParticle(P);
-
-  P = new Particle(vect<>(1-0.395, 0.5), 0.1);
-  P->setVelocity(vect<>(-0.25,0));
-  addWatchedParticle(P);
-  */
 
   addParticles(N, radius, 0, 0, right, 0, top, PASSIVE, 0.1);
-  setParticleDissipation(30);
+  // setParticleDissipation(30);
+  setParticleDissipation(0);
   setParticleCoeff(0);
   setParticleDrag(0);
-  setWallDissipation(30);
+  // setWallDissipation(30);
+  setWallDissipation(0);
   setWallCoeff(0);
+
+  min_epsilon = 1e-5;
+  default_epsilon = 1e-5;
 
   // epsilon 1e-5 -> dissipation 30
 }
@@ -240,6 +238,24 @@ vect<> Simulator::netVelocity() {
     if(P && inBounds(P)) velocity += P->getVelocity();
   }
   return velocity;
+}
+
+void Simulator::setSectorDims(int sx, int sy) {
+  sx = sx<1 ? 1 : sx;
+  sy = sy<1 ? 1 : sy;
+  // Create new sectors
+  secX = sx; secY = sy;
+  if (sectors) delete [] sectors;
+  sectors = new list<Particle*>[(secX+2)*(secY+2)+1];
+  // Add particles to the new sectors
+  for (auto P : particles) {
+    int sec = getSec(P->getPosition());
+    sectors[sec].push_back(P);
+  }
+}
+
+void Simulator::setDimensions(double l, double r, double b, double t) {
+  left = l; right = r; bottom = b; top = t;
 }
 
 void Simulator::addWall(Wall* wall) {
@@ -639,9 +655,9 @@ inline void Simulator::wrap(Particle *P, BType bound, int coord, double start, d
   }
 }
 
-inline void Simulator::addParticles(int N, double R, double var, double lft, double rght, double bttm, double tp, PType type, double vmax) {
+void Simulator::addParticles(int N, double R, double var, double lft, double rght, double bttm, double tp, PType type, double vmax, bool watched) {
   bool C = true;
-  int maxFail = 50;
+  int maxFail = 250;
   int count = 0, failed = 0;
   double diffX = rght - lft - 2*R;
   double diffY = tp - bttm - 2*R;
@@ -661,7 +677,8 @@ inline void Simulator::addParticles(int N, double R, double var, double lft, dou
 	break;
       }
       }
-      addWatchedParticle(P);
+      if (watched) addWatchedParticle(P);
+      else addParticle(P);
       if (vmax > 0) P->setVelocity(vmax*randV());
       count++;
       failed = 0;
@@ -671,6 +688,10 @@ inline void Simulator::addParticles(int N, double R, double var, double lft, dou
       if (failed > maxFail) C = false; // To many failed tries
     }
   }
+}
+
+void Simulator::addNWParticles(int N, double R, double var, double lft, double rght, double bttm, double tp, PType type, double vmax) {
+  addParticles(N, R, var, lft, rght, bttm, tp, type, vmax, false);
 }
 
 inline void Simulator::updateSectors() {
@@ -696,21 +717,25 @@ inline void Simulator::ppInteract() {
 	for (int j=y-1; j<=y+1; j++)
 	  for (int i=x-1; i<=x+1; i++)
 	    for (auto Q : sectors[j*(secX+2)+i])
-	      if(P!=Q) P->interact(Q);
+	      if (P!=Q) P->interact(Q);
+  // Have to try to interact everything in the special sector with everything else
+  for (auto P : sectors[(secX+2)*(secY+2)])
+    for (auto Q : particles)
+      if (P!=Q) P->interact(Q);
 }
 
 inline int Simulator::getSec(vect<> pos) {
   int X = static_cast<int>((pos.x-left)/(right-left)*secX);
   int Y = static_cast<int>((pos.y-bottom)/(top-bottom)*secY);  
-
+  
   if (X<0 || Y<0 || X>secX || Y>secY) { // Out of bounds, put in the special sector
     return (secX+2)*(secY+2);
   }
-
+  
   return (X+1)+(secX+2)*(Y+1);
 }
 
-inline void Simulator::discard() {
+void Simulator::discard() {
   for (int i=0; i<(secX+2)*(secY+2); i++) sectors[i].clear();
   for (auto P : particles) if (P) delete P;
   particles.clear();

@@ -43,13 +43,24 @@ class Simulator {
   void setDispRate(double r) { dispTime = 1.0/r; }
   void setDispFactor(double f) { dispFactor = f; }
   void setSectorize(bool s) { sectorize = s; }
+  void setSectorDims(int sx, int sy);
+  void setDimensions(double left, double right, double bottom, double top);
   void setAdjustEpsilon(bool a) { adjust_epsilon = a; }
   void setDefaultEpsilon(double e) { default_epsilon = e; }
   void setMinEpsilon(double m) { min_epsilon = m; }
+  void setXLBound(BType b) { xLBound = b; }
+  void setXRBound(BType b) { xRBound = b; }
+  void setYTBound(BType b) { yTBound = b; }
+  void setYBBound(BType b) { yBBound = b; }
+  void setGravity(vect<> g) { gravity = g; }
+  void discard();
+
   // Creation Functions
   void addWall(Wall*);
   void addTempWall(Wall*, double);
   void addParticle(Particle*);
+  void addParticles(int N, double R, double var, double left, double right, double bottom, double top, PType type=PASSIVE, double vmax=-1, bool watched=true);
+  void addNWParticles(int N, double R, double var, double left, double right, double bottom, double top, PType type=PASSIVE, double vmax=-1);
   void addWatchedParticle(Particle* p);
 
   // Display functions
@@ -90,9 +101,6 @@ class Simulator {
   inline void record();
   inline bool inBounds(Particle*);
   inline void wrap(Particle*, BType, int, double, double);
-  inline void discard();
-
-  inline void addParticles(int N, double R, double var, double left, double right, double bottom, double top, PType type=PASSIVE, double vmax=-1);
 
   /// Data
   double left, right; // Right edge of the simulation
