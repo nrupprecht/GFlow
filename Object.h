@@ -7,11 +7,11 @@
 #include "Utility.h"
 
 const double sphere_repulsion = 50000.0;
-const double sphere_dissipation = 1000.0;
+const double sphere_dissipation = 3000.0;
 const double sphere_coeff = sqrt(0.5);
 const double sphere_drag = 5.0;
 const double wall_repulsion = 50000.0;
-const double wall_dissipation = 1000.0;
+const double wall_dissipation = 3000.0;
 const double wall_coeff = sqrt(0.5);
 const double wall_gamma = 5;
 
@@ -61,7 +61,8 @@ class Particle {
   void setII(double);
 
   /// Control functions
-  virtual void interact(Particle*);
+  virtual void interact(Particle*); // Interact with another particle
+  virtual vect<> interact(vect<> pos, vect<> fU, double cp, double vis); // Interact with a fluid
   virtual void update(double);
 
   void applyForce(vect<> F) { force += F; }
@@ -76,6 +77,8 @@ class Particle {
     alpha = 0;
   }
 
+  void fix(bool f) { fixed = f; }
+
   // Exception classes
   class BadMassError {};
   class BadInertiaError {};
@@ -87,6 +90,7 @@ class Particle {
   vect<> velocity;
   vect<> acceleration;
   double theta, omega, alpha; // Angular variables
+  bool fixed; // Whether the particle can move or not
 
   // Forces and torques
   vect<> force;

@@ -69,39 +69,51 @@ vect(const vect<T>& V) : x(V.x), y(V.y) {};
     
   T norm() { return sqrtf(x*x + y*y); }
   T normSqr() { return x*x + y*y; }
-    
+  
   void normalize() {
     T nrm = norm();
     T n = nrm!=0 ? 1.f/nrm : 1;
     x *= n; y *= n;
   }
-    
+  
   vect<T>& operator=(const vect<T>& V) {
     x = V.x; y = V.y;
     return *this;
   }
     
-    bool operator==(const vect<T>& V) {
+    bool operator==(const vect<T>& V) const {
       return x==V.x && y==V.y;
     }
-    
+  
+  bool operator!=(const vect<T>& V) const {
+    return x!=V.x || y!=V.y;
+  }
+
   friend std::ostream& operator<<(std::ostream& os, const vect& v) {
     os << "{" << limit_prec(v.x) << "," << limit_prec(v.y) << "}";
     return os;
   }
     
-  T operator*(const vect<T>& B) {
+  T operator*(const vect<T>& B) const {
     return x*B.x + y*B.y;
   }
+
+  friend vect<T> operator*(vect<T>& A, T B) {
+    return vect<>(A.x*B, A.y*B);
+  }
     
-  vect<T> operator+(const vect<T>& B) {
+  vect<T> operator+(const vect<T>& B) const {
     return vect<T>(x+B.x, y+B.y);
   }
 
-  vect<T> operator-(const vect<T>& B) {
+  vect<T> operator-(const vect<T>& B) const {
     return vect<T>(x-B.x, y-B.y);
   }
     
+  vect<T> operator-() const {
+    return vect<T>(-x,-y);
+  }
+
   vect<T> operator+=(const vect<T>& B) {
     x += B.x; y += B.y;
     return *this;
@@ -134,6 +146,11 @@ vect(const vect<T>& V) : x(V.x), y(V.y) {};
   /// The actual data
   T x, y;
 };
+
+/// Some common vectors
+const vect<double> Zero(0,0);
+const vect<double> E0(1,0);
+const vect<double> E1(0,1);
 
 template<typename T> vect<T> normalize(vect<T> V) {
   V.normalize();

@@ -1,19 +1,17 @@
 #include "Simulator.h"
 
 int main() {
-  int number = 600;
-  double time = 30;
+  int number = 1000;
+  double time = 20;
   double radius = 0.03;
 
   //----------------------------------------
   Simulator simulation;
-  // simulation.createHopper(number, radius);
+  simulation.createHopper(number, radius);
   // simulation.createPipe(number);
-  simulation.createIdealGas(number, 0.03);
+  // simulation.createIdealGas(number, 0.03);
   // simulation.createEntropyBox(number);
   // simulation.createSquare(1);
-
-  simulation.setSectorize(true);
 
   simulation.setDispRate(50);
   //simulation.setDispFactor(0.3);

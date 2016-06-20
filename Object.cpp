@@ -5,6 +5,7 @@ Particle::Particle(vect<> pos, double rad, double repulse, double dissipate, dou
 }
 
 void Particle::initialize() {
+  fixed = false;
   velocity = vect<>(); // Zero
   acceleration = vect<>(); // Zero
   omega = 0;
@@ -13,6 +14,8 @@ void Particle::initialize() {
   double mass = 10;
   invMass = 1.0/mass;
   invII = 1.0/(0.5*mass*sqr(radius));
+
+  normalF = shearF = force = Zero;
 }
 
 void Particle::setMass(double m) {
@@ -28,6 +31,7 @@ void Particle::setII(double II) {
 }
 
 void Particle::interact(Particle* P) {
+  if (fixed) return;
   vect<> displacement = P->getPosition() - position;
   double distSqr = sqr(displacement);
   double cutoff = radius + P->getRadius();
@@ -49,7 +53,7 @@ void Particle::interact(Particle* P) {
     // Damped harmonic oscillator
     double Fn = -repulsion*overlap-dissipation*clamp(-Vn);
     double Fs = -(coeff*P->getCoeff())*Fn*sign(Vs);
-    
+
     applyNormalForce(Fn*normal);
     applyShearForce(Fs*shear);
     applyTorque(-Fs*radius);
@@ -60,6 +64,38 @@ void Particle::interact(Particle* P) {
     P->applyTorque(Fs*P->getRadius()); // The force and radius are both negative so the torque is the same
     */
   }
+}
+
+/// Returns the force on the fluid element
+/// pos - position of the fluid element
+/// fU  - fluid velocity vector
+/// cp  - coefficient of pressure, F = cp*fU
+/// vis - viscosity, how much shear force can be applied to the particle
+vect<> Particle::interact(vect<> pos, vect<> fU, double cp, double vis) {
+
+  return Zero; // Fluid part doesn't work yet
+
+  vect<> displacement = position - pos; // Points towards particle
+  double distSqr = sqr(displacement);
+  if (distSqr < sqr(radius)) { // Interaction (same potiential as particle-particle)
+    double dist = sqrt(distSqr);
+    vect<> normal = (1.0/dist) * displacement;
+    vect<> shear = vect<>(normal.y, -normal.x);
+    double overlap = 1.0 - dist/radius;
+    vect<> dV = fU - velocity;
+    double Vn = dV*normal;
+    double Vs = dV*shear + radius*omega;
+    // Damped harmonic oscillator
+    double Fn = -repulsion*overlap-dissipation*clamp(-Vn);
+    double Fs = -(coeff*vis)*Fn*sign(Vs);
+
+    applyNormalForce(Fn*normal);
+    applyShearForce(Fs*shear);
+    applyTorque(-Fs*radius);
+
+    return -1*(Fn*normal+Fs*shear);
+  }
+  return vect<>(); // No interaction
 }
 
 void Particle::update(double epsilon) {

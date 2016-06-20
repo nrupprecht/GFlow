@@ -44,6 +44,8 @@ class Simulator {
   void setDispFactor(double f) { dispFactor = f; }
   void setSectorize(bool s) { sectorize = s; }
   void setSectorDims(int sx, int sy);
+  void setDoFluid(bool f) { doFluid = f; }
+  void setFluidDims(int fx, int fy);
   void setDimensions(double left, double right, double bottom, double top);
   void setAdjustEpsilon(bool a) { adjust_epsilon = a; }
   void setDefaultEpsilon(double e) { default_epsilon = e; }
@@ -54,6 +56,12 @@ class Simulator {
   void setYBBound(BType b) { yBBound = b; }
   void setGravity(vect<> g) { gravity = g; }
   void discard();
+  /// Global set functions
+  void setParticleDissipation(double);
+  void setWallDissipation(double);
+  void setParticleCoeff(double);
+  void setWallCoeff(double);
+  void setParticleDrag(double);
 
   // Creation Functions
   void addWall(Wall*);
@@ -79,14 +87,11 @@ class Simulator {
   string printNetAngularP();
   string printNetTorque();
   
- private:
-  /// Global set functions
-  inline void setParticleDissipation(double);
-  inline void setWallDissipation(double);
-  inline void setParticleCoeff(double);
-  inline void setWallCoeff(double);
-  inline void setParticleDrag(double);
+  // Error Classes
+  class BadDimChoice {};
+  class BadFluidElementChoice {};
 
+ private:
   /// Utility functions  
   inline double maxVelocity(); // Finds the maximum velocity of any particle
   inline double maxAcceleration(); // Finds the maximum acceleration of any particle
@@ -139,6 +144,22 @@ class Simulator {
   vector<double> rec_netAngP;
   vector<double> rec_netTorque;
 
+  /// Fluid dynamics
+  bool doFluid;   // Whether we want a fluid simulation
+  int feX, feY;   // Width and height of fluid elements grid
+  double fx, fy;  // Width and height of a single fluid element
+  vect<> *fU;     // Flow velocity
+  vect<> *forces; // Fluid body forces
+  
+  inline vect<> getFPos(int);
+  inline vect<> getFU(int x, int y);
+  inline vect<> DV_DX(int, int);
+  inline vect<> D2V_DX2(int, int);
+  inline vect<> DV_DY(int, int);
+  inline vect<> D2V_DY2(int, int);
+  inline void fluidInteract();
+  inline void updateFluid();
+
   /// Sectorization
   inline void updateSectors();
   inline void ppInteract(); 
@@ -146,6 +167,7 @@ class Simulator {
   list<Particle*>* sectors; // Sectors (buffer of empty sectors surrounds, extra sector for out of bounds particles [x = 0, y = secY+3])
   int secX, secY; // Width and height of sector grid
   bool sectorize; // Whether to use sector based interactions
+  bool ssecInteract; // Whether objects in the special sector should interact with other objects
 };
 
 #endif
