@@ -1,31 +1,35 @@
 #include "Field.h"
 
 Field::Field() {
+  initialize();
+}
+
+Field::Field(int x, int y) {
+  initialize();
+  setDims(x,y);
+}
+
+void Field::initialize() {
   dX = dY = 0;
+  invDist = Zero; // invDist is meaningless
   array = 0;
   wrapX = true; wrapY = false;
   usesLocks = false;
   locks = 0;
-  solveIterations = 125;
-  tollerance = 0.01;
-}
-
-Field::Field(int x, int y) {
-  dX = x; dY = y;
-  array = new double[dX*dY];
-  for (int i=0; i<dX*dY; i++) array[i] = 0;
-  wrapX = true; wrapY = false;
-  usesLocks = false;
-  locks = 0;
-  solveIterations = 125;
+  solveIterations = 500;
   tollerance = 0.01;
 }
 
 void Field::setDims(int x, int y) {
+  wrapX = true; wrapY = false;
   dX = x; dY = y;
+  if (wrapX) invDist.x = (right-left)/dX;
+  else invDist.x = (right-left)/(dX-1);
+  if (wrapY) invDist.y = (top-bottom)/dY;
+  else invDist.y = (top-bottom)/(dY-1);
+	       
   array = new double[dX*dY];
   for (int i=0; i<dX*dY; i++) array[i] = 0;
-  wrapX = true; wrapY = false;
   if (usesLocks) createLocks(x,y);
 }
 
@@ -65,6 +69,21 @@ string Field::print() {
   return str;
 }
 
+string Field::print3D() {
+  stringstream stream;
+  stream << '{';
+  for (int y=dY-1; y>=0; y--)
+    for (int x=0; x<dX; x++) {
+      stream << '{' << x << ',' << y << ',' << at(x,y) << '}';
+      if (x!=dX-1 || y!=0) stream << ',';
+    }
+  stream << '}';
+
+  string str;
+  stream >> str;
+  return str;
+}
+
 void Field::lock(int x, int y, bool l) {
   if (usesLocks) {
     locks[x+dX*y] = l;
@@ -88,27 +107,27 @@ bool& Field::lockAt(int x, int y) {
 
 double Field::DX(int x, int y) {
   if (wrapX) {
-    if (x==0) return 0.5*invDist*(at(1,y)-at(dX-1,y));
-    else if (x==dX-1) return 0.5*invDist*(at(0,y)-at(dX-2,y));
-    else return 0.5*invDist*(at(x+1,y)-at(x-1,y));
+    if (x==0) return 0.5*invDist.x*(at(1,y)-at(dX-1,y));
+    else if (x==dX-1) return 0.5*invDist.x*(at(0,y)-at(dX-2,y));
+    else return 0.5*invDist.x*(at(x+1,y)-at(x-1,y));
   }
   else {
-    if (y==0) return invDist*(at(1,y)-at(0,y));
-    else if (y==dY-1) return invDist*(at(dX-1,y)-at(dX-2,y));
-    else return 0.5*invDist*(at(x+1,y)-at(x-1,y));
+    if (y==0) return invDist.x*(at(1,y)-at(0,y));
+    else if (y==dY-1) return invDist.x*(at(dX-1,y)-at(dX-2,y));
+    else return 0.5*invDist.x*(at(x+1,y)-at(x-1,y));
   }
 }
 
 double Field::DY(int x, int y) {
   if (wrapY) {
-    if (y==0) return 0.5*invDist*(at(x,1)-at(x,dY-1));
-    else if (y==dY-1) return 0.5*invDist*(at(x,0)-at(x,dY-2));
-    else return 0.5*invDist*(at(x,y+1)-at(x,y-1));
+    if (y==0) return 0.5*invDist.y*(at(x,1)-at(x,dY-1));
+    else if (y==dY-1) return 0.5*invDist.y*(at(x,0)-at(x,dY-2));
+    else return 0.5*invDist.y*(at(x,y+1)-at(x,y-1));
   }
   else {
-    if (y==0) return invDist*(at(x,1)-at(x,0));
-    else if (y==dY-1) return invDist*(at(x,dY-1)-at(x,dY-2));
-    else return 0.5*invDist*(at(x,y+1)-at(x,y-1));
+    if (y==0) return invDist.y*(at(x,1)-at(x,0));
+    else if (y==dY-1) return invDist.y*(at(x,dY-1)-at(x,dY-2));
+    else return 0.5*invDist.y*(at(x,y+1)-at(x,y-1));
   }
 }
 
@@ -124,7 +143,7 @@ void grad(Field& field, VField& vfield) {
 }
 
 vect<> Field::getPos(int x, int y) {
-  return vect<>(left + x*(left-right)/dX, bottom + y*(top-bottom)/dY);
+  return vect<>(left + x/invDist.x, bottom + y*invDist.y);
 }
 
 void Field::resetLocks() {
@@ -153,54 +172,61 @@ void Field::SOR_solver(Field& source) {
   double maxDelta = 1e9;
   for (int iter=0; iter<solveIterations && maxDelta>tollerance; iter++) {
     // Even squares
+
+    //** HAVE TO DO SOMETHING ABOUT [invDist]
+
     maxDelta = 0;
     for (int y=0; y<dY; y++)
       for (int x=0; x<dX; x++)
         if ((x+y)%2==0 && !lockAt(x,y)) {
-          auto value = (1-omega)*at(x,y) + 0.25*omega*(at(x-1,y)+at(x+1,y)+at(x,y-1)+at(x,y+1)+sqr(invDist)*source(x,y));
+          auto value = (1-omega)*at(x,y) + 0.25*omega*(at(x-1,y)+at(x+1,y)+at(x,y-1)+at(x,y+1)+sqr(invDist.x)*source(x,y));
           double delta = sqr(at(x,y)-value);
-          if (delta>maxDelta) maxDelta = delta;
+          if (delta>maxDelta) maxDelta = delta/sqr(at(x,y));
           at(x,y) = value;
         }
     // Odd squares
     for (int y=0; y<dY; y++)
       for (int x=0; x<dX; x++)
         if ((x+y)%2 && !lockAt(x,y)) {
-          auto value = (1-omega)*at(x,y) + 0.25*omega*(at(x-1,y)+at(x+1,y)+at(x,y-1)+at(x,y+1)+sqr(invDist)*source(x,y));
+          auto value = (1-omega)*at(x,y) + 0.25*omega*(at(x-1,y)+at(x+1,y)+at(x,y-1)+at(x,y+1)+sqr(invDist.x)*source(x,y));
           double delta = sqr(at(x,y)-value);
-          if (delta>maxDelta) maxDelta = delta;
+          if (delta>maxDelta) maxDelta = delta/sqr(at(x,y));
           at(x,y) = value;
         }
-    cout << maxDelta << endl; //**
   }
 }
 
 /// ************* VField Functions *****************
 
 VField::VField() {
+  initialize();
+}
+
+VField::VField(int x, int y) {
+  initialize();
+  setDims(x,y);
+}
+
+void VField::initialize() {
   dX = dY = 0;
   array = 0;
   wrapX = true; wrapY = false;
   usesLocks = false;
   locks = 0;
-  solveIterations = 125;
-  tollerance = 0.01;
-}
-
-VField::VField(int x, int y) {
-  dX = x; dY = y;
-  array = new vect<>[dX*dY];
-  wrapX = true; wrapY = false;
-  usesLocks = false;
-  locks = 0;
-  solveIterations = 125;
+  solveIterations = 500;
   tollerance = 0.01;
 }
 
 void VField::setDims(int x, int y) {
-  dX = x; dY = y;
-  array = new vect<>[dX*dY];
   wrapX = true; wrapY = false;
+  dX = x; dY = y;
+  if (wrapX) invDist.x = (right-left)/dX;
+  else invDist.x = (right-left)/(dX-1);
+  if (wrapY) invDist.y = (top-bottom)/dY;
+  else invDist.y = (top-bottom)/(dY-1);
+
+  array = new vect<>[dX*dY];
+  for (int i=0; i<dX*dY; i++) array[i] = Zero;
   if (usesLocks) createLocks(x,y);
 }
 
@@ -244,27 +270,27 @@ bool& VField::lockAt(int x, int y) {
 
 vect<> VField::DX(int x, int y) {
   if (wrapX) {
-    if (x==0) return 0.5*invDist*(at(1,y)-at(dX-1,y));
-    else if (x==dX-1) return 0.5*invDist*(at(0,y)-at(dX-2,y));
-    else return 0.5*invDist*(at(x+1,y)-at(x-1,y));
+    if (x==0) return 0.5*invDist^(at(1,y)-at(dX-1,y));
+    else if (x==dX-1) return 0.5*invDist^(at(0,y)-at(dX-2,y));
+    else return 0.5*invDist^(at(x+1,y)-at(x-1,y));
   }
   else {
-    if (y==0) return invDist*(at(1,y)-at(0,y));
-    else if (y==dY-1) return invDist*(at(dX-1,y)-at(dX-2,y));
-    else return 0.5*invDist*(at(x+1,y)-at(x-1,y));
+    if (y==0) return invDist^(at(1,y)-at(0,y));
+    else if (y==dY-1) return invDist^(at(dX-1,y)-at(dX-2,y));
+    else return 0.5*invDist^(at(x+1,y)-at(x-1,y));
   }
 }
 
 vect<> VField::DY(int x, int y) {
   if (wrapY) {
-    if (y==0) return 0.5*invDist*(at(x,1)-at(x,dY-1));
-    else if (y==dY-1) return 0.5*invDist*(at(x,0)-at(x,dY-2));
-    else return 0.5*invDist*(at(x,y+1)-at(x,y-1));
+    if (y==0) return 0.5*invDist^(at(x,1)-at(x,dY-1));
+    else if (y==dY-1) return 0.5*invDist^(at(x,0)-at(x,dY-2));
+    else return 0.5*invDist^(at(x,y+1)-at(x,y-1));
   }
   else {
-    if (y==0) return invDist*(at(x,1)-at(x,0));
-    else if (y==dY-1) return invDist*(at(x,dY-1)-at(x,dY-2));
-    else return 0.5*invDist*(at(x,y+1)-at(x,y-1));
+    if (y==0) return invDist^(at(x,1)-at(x,0));
+    else if (y==dY-1) return invDist^(at(x,dY-1)-at(x,dY-2));
+    else return 0.5*invDist^(at(x,y+1)-at(x,y-1));
   }
 }
 
@@ -274,7 +300,10 @@ vect<vect<>> VField::grad(int x, int y) {
 
 vect<> VField::delSqr(int x, int y) {
   // Won't work on edges
-  return sqr(invDist)*(at(x-1,y)+at(x+1,y)+at(x,y-1)+at(x,y+1)-4*at(x,y));
+
+  //** HAVE TO DO SOMETHING ABOUT [invDist]
+
+  return sqr(invDist.x)*(at(x-1,y)+at(x+1,y)+at(x,y-1)+at(x,y+1)-4*at(x,y));
 }
 
 void div(VField& vfield, Field& field) {
@@ -292,7 +321,7 @@ void delSqr(VField& vfield, VField& vout) {
 }
 
 vect<> VField::getPos(int x, int y) {
-  return vect<>(left + x*(left-right)/dX, bottom + y*(top-bottom)/dY);
+  return vect<>(left + x*invDist.x, bottom + y*invDist.y);
 }
 
 void VField::resetLocks() {
@@ -315,24 +344,26 @@ void VField::SOR_solver(VField& source) {
   double maxDelta = 1e9;
   for (int iter=0; iter<solveIterations && maxDelta>tollerance; iter++) {
     // Even squares
+
+    //** HAVE TO DO SOMETHING ABOUT [invDist]
+
     maxDelta = 0;
     for (int y=0; y<dY; y++)
       for (int x=0; x<dX; x++)
         if ((x+y)%2==0 && !lockAt(x,y)) {
-	  auto value = (1-omega)*at(x,y) + 0.25*omega*(at(x-1,y)+at(x+1,y)+at(x,y-1)+at(x,y+1)+sqr(invDist)*source(x,y));
+	  auto value = (1-omega)*at(x,y) + 0.25*omega*(at(x-1,y)+at(x+1,y)+at(x,y-1)+at(x,y+1)+sqr(invDist.x)*source(x,y));
 	  double delta = sqr(at(x,y)-value);
-	  if (delta>maxDelta) maxDelta = delta;
+	  if (delta>maxDelta) maxDelta = delta/sqr(at(x,y));
           at(x,y) = value;
 	}
     // Odd squares
     for (int y=0; y<dY; y++)
       for (int x=0; x<dX; x++)
         if ((x+y)%2 && !lockAt(x,y)) {
-	  auto value = (1-omega)*at(x,y) + 0.25*omega*(at(x-1,y)+at(x+1,y)+at(x,y-1)+at(x,y+1)+sqr(invDist)*source(x,y));
+	  auto value = (1-omega)*at(x,y) + 0.25*omega*(at(x-1,y)+at(x+1,y)+at(x,y-1)+at(x,y+1)+sqr(invDist.x)*source(x,y));
           double delta = sqr(at(x,y)-value);
-          if (delta>maxDelta) maxDelta = delta;
+          if (delta>maxDelta) maxDelta = delta/sqr(at(x,y));
           at(x,y) = value;
 	}
-    cout << maxDelta << endl; //**
   }
 }

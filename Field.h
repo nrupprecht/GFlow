@@ -14,16 +14,22 @@ class Field {
   Field(int x, int y);
 
   // Accessors
-  double& at(int x, int y);
-  double& operator()(int x, int y);
+  double& at(int x, int y); // Access grid points
+  double& operator()(int x, int y); // Access grid points
+  double at(vect<> pos); // Interpolate
+  double operator()(vect<> pos); // Interpolate
+  
   vect<> getPos(int x, int y); // Gets the spatial position at a grid point
   string print();
+  string print3D();
 
   // Mutators
   void setDims(int x, int y); 
   void setWrapX(bool w) { wrapX = w; }
   void setWrapY(bool w) { wrapY = w; }
-
+  void setTollerance(double t) { tollerance = t; }
+  void setMaxIters(int i) { solveIterations = i; }
+  
   // Locking
   void resetLocks();
   void useLocks(); // IMPLEMENT //**
@@ -46,11 +52,12 @@ class Field {
  private:
   /// Helper functions
   void createLocks(int x, int y);
+  void initialize();
 
   /// Data
   int dX, dY;
   double left, right, bottom, top; // Bounds on the field
-  double invDist; // Inverse of the distance b/w adjacent field points
+  vect<> invDist; // Inverse of the distance b/w adjacent field points
   bool wrapX, wrapY;
   double* array;
   
@@ -64,27 +71,40 @@ class Field {
 /// Vector field class
 class VField {
  public:
-  
+  // Constructors
   VField();
   VField(int x, int y);
 
-  void setDims(int x, int y);
-  vect<>& at(int x, int y);
-  vect<>& operator()(int x, int y);
+  // Accessors
+  vect<>& at(int x, int y); // Access grid points
+  vect<>& operator()(int x, int y); // Access grid points
+  vect<> at(vect<> pos); // Interpolate <---
+  vect<> operator()(vect<> pos); // Interpolate <---
 
+  vect<>getPos(int x, int y);
+  string print(); // <---
+
+  // Mutators
+  void setDims(int x, int y);
+  void setWrapX(bool w) { wrapX = w; }
+  void setWrapY(bool w) { wrapY = w; }
+  void setTollerance(double t) { tollerance = t; }
+  void setMaxIters(int i) { solveIterations = i; }
+
+  // Locking
+  void resetLocks();
   void lock(int x, int y, bool l);
   bool& lockAt(int x, int y);  
 
+  // Calculus
   vect<> DX(int x, int y); 
   vect<> DY(int x, int y);
   vect<vect<>> grad(int x, int y);
   vect<> delSqr(int x, int y);
   friend void div(VField& vfield, Field& field);
   friend void delSqr(VField& vfield, VField& vout);
- 
-  vect<>getPos(int x, int y);
-  void resetLocks();
-
+  
+  // Solvers
   void SOR_solver(VField& source);
   
   /// Exception Classes
@@ -94,11 +114,12 @@ class VField {
  private:
   /// Helper functions
   void createLocks(int x, int y);
+  void initialize();
 
   /// Date
   int dX, dY;
   double left, right, bottom, top; // Bounds on the field
-  double invDist; // Inverse of the distance b/w adjacent field points
+  vect<> invDist;
   bool wrapX, wrapY;
   vect<>* array;
   

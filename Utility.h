@@ -101,7 +101,12 @@ vect(const vect<T>& V) : x(V.x), y(V.y) {};
   }
 
   friend vect<T> operator*(vect<T>& A, T B) {
-    return vect<>(A.x*B, A.y*B);
+    return vect<T>(A.x*B, A.y*B);
+  }
+
+  // Hadamard product
+  vect<T> operator^(const vect<T>& B) const {
+    return vect<T>(x*B.x, y*B.y);
   }
     
   vect<T> operator+(const vect<T>& B) const {
