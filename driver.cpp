@@ -1,12 +1,23 @@
 #include "Simulator.h"
 
+#include <ctime>
+
 int main() {
-  int number = 1000;
-  double time = 20;
-  double radius = 0.03;
+  int number = 100;
+  double time = 5000;
+  double radius = 0.05;
+
+  srand48( std::time(0) );
+  srand( std::time(0) );
 
   //----------------------------------------
   Simulator simulation;
+
+  double delayTime = 20.;
+  simulation.setMarkWatch(true);
+  simulation.setDelayTime(delayTime);
+  simulation.setStartTime(4.);
+
   simulation.createHopper(number, radius);
   // simulation.createPipe(number);
   // simulation.createIdealGas(number, 0.03);
@@ -14,8 +25,10 @@ int main() {
   // simulation.createSquare(1);
 
   simulation.setDispRate(50);
-  //simulation.setDispFactor(0.3);
+  simulation.setDispFactor(0.3);
   simulation.run(time);
+  
+  cout << "timeMarks=" << simulation.getTimeMarks() << ";" << endl;
   
   cout << simulation.printWatchList() << endl;
   cout << "walls=" << simulation.printWalls() << ";\n";

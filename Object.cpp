@@ -6,8 +6,8 @@ Particle::Particle(vect<> pos, double rad, double repulse, double dissipate, dou
 
 void Particle::initialize() {
   fixed = false;
-  velocity = vect<>(); // Zero
-  acceleration = vect<>(); // Zero
+  velocity = Zero;
+  acceleration = Zero;
   omega = 0;
   alpha = 0;
   theta = 0;
@@ -16,6 +16,7 @@ void Particle::initialize() {
   invII = 1.0/(0.5*mass*sqr(radius));
 
   normalF = shearF = force = Zero;
+  torque = 0;
 }
 
 void Particle::setMass(double m) {

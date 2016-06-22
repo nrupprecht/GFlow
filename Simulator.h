@@ -5,6 +5,8 @@
 #define SIMULATOR_H
 
 #include "Object.h"
+#include "Field.h"
+
 #include <list>
 using std::list;
 
@@ -18,7 +20,7 @@ class Simulator {
 
   // Initialization
   void createSquare(int, double=0.025);
-  void createHopper(int, double=0.025);
+  void createHopper(int, double=0.025, double=0.14, double=1.);
   void createPipe(int, double=0.02);
   void createIdealGas(int, double=0.02);
   void createEntropyBox(int, double=0.02);
@@ -32,12 +34,14 @@ class Simulator {
   double getDisplayTime() { return dispTime; }
   int getIter() { return iter; }
   double getRunTime() { return runTime; }
+  double getTime() { return time; }
   // Statistic functions
   double aveVelocity();
   double aveVelocitySqr();
   double aveKE();
   vect<> netMomentum();
   vect<> netVelocity();
+  vector<double> getTimeMarks() { return timeMarks; }
   
   // Mutators
   void setDispRate(double r) { dispTime = 1.0/r; }
@@ -55,6 +59,9 @@ class Simulator {
   void setYTBound(BType b) { yTBound = b; }
   void setYBBound(BType b) { yBBound = b; }
   void setGravity(vect<> g) { gravity = g; }
+  void setMarkWatch(bool w) { markWatch = w; }
+  void setStartTime(double t) { startTime = t; }
+  void setDelayTime(double t) { delayTime = t; }
   void discard();
   /// Global set functions
   void setParticleDissipation(double);
@@ -143,22 +150,25 @@ class Simulator {
   vector<double> rec_aveOmegaSqr;
   vector<double> rec_netAngP;
   vector<double> rec_netTorque;
+  
+  vector<double> timeMarks;
+  double lastMark;   // The last time a time mark was recorded
+  bool markWatch;    // Whether we should break the simulation based on marks
+  double startTime;  // When to start looking for time marks
+  double delayTime;  // How long between marks counts as a jam
 
   /// Fluid dynamics
   bool doFluid;   // Whether we want a fluid simulation
   int feX, feY;   // Width and height of fluid elements grid
-  double fx, fy;  // Width and height of a single fluid element
-  vect<> *fU;     // Flow velocity
-  vect<> *forces; // Fluid body forces
+  double fx, fy;  // Width and height of a single fluid element  
+  // Fluid related fields
+  VField fV;
+  Field advectFV;
+  Field pressure;
+  VField gradP;
+
+  void particleBC();
   
-  inline vect<> getFPos(int);
-  inline vect<> getFU(int x, int y);
-  inline vect<> DV_DX(int, int);
-  inline vect<> D2V_DX2(int, int);
-  inline vect<> DV_DY(int, int);
-  inline vect<> D2V_DY2(int, int);
-  inline void fluidInteract();
-  inline void updateFluid();
 
   /// Sectorization
   inline void updateSectors();

@@ -16,6 +16,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <ctime>
 
 using std::vector;
 using std::pair;
@@ -23,6 +24,7 @@ using std::cout;
 using std::endl;
 using std::string;
 using std::stringstream;
+using std::time;
 
 const double PI = 3.14159265;
 

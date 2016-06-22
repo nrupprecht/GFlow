@@ -47,7 +47,7 @@ int main() {
   simulation.setSectorDims(10,10);
   simulation.run(10);
   cout << "Sectors 10x10: " << simulation.getRunTime() << endl;
-  cout << "Target: 85s\n";
+  cout << "Target: 1.4s\n";
   cout << "Check: " << simulation.aveKE() << endl << endl;
   
   srand(0);
@@ -55,7 +55,7 @@ int main() {
   simulation.setSectorDims(5,5);
   simulation.run(10);
   cout << "Sectors 5x5: " << simulation.getRunTime() << endl;
-  cout << "Target: 92s\n";
+  cout << "Target: 1.63s\n";
   cout << "Check: " << simulation.aveKE() << endl << endl;
   
   srand(0);
@@ -63,7 +63,7 @@ int main() {
   simulation.setSectorize(false);
   simulation.run(10);
   cout << "No sectors: " << simulation.getRunTime() << endl;
-  cout << "Target: 136s\n";
+  cout << "Target: 2.0s\n";
   cout << "Check: " << simulation.aveKE() << endl << endl;
   
   return 0;

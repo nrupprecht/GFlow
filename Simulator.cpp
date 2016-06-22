@@ -1,6 +1,6 @@
 #include "Simulator.h"
 
-Simulator::Simulator() : lastDisp(0), dispTime(1.0/50), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)) {
+Simulator::Simulator() : lastDisp(0), dispTime(1.0/50), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startTime(1), delayTime(5) {
   default_epsilon = 1e-5;
   epsilon = default_epsilon;
   min_epsilon = 1e-7;
@@ -19,16 +19,23 @@ Simulator::Simulator() : lastDisp(0), dispTime(1.0/50), dispFactor(1), time(0), 
   doFluid = true;
   feX = 50; feY = 50;
   fx = (right-left)/feX; fy = (top-bottom)/feY;
-  fU = new vect<>[(feX+2)*(feY+2)];
-  forces = new vect<>[(feX+2)*(feY+2)];
 };
 
 Simulator::~Simulator() {
-  for (auto P : particles) if (P) delete P;
-  for (auto W : walls) if (W) delete W;
-  if (sectors) delete [] sectors;
-  if (fU) delete [] fU;
-  if (forces) delete [] forces;
+  for (auto P : particles) 
+    if (P) {
+      delete P;
+      P = 0;
+    }
+  for (auto W : walls)
+    if (W) {
+      delete W;
+      W = 0;
+    }
+  if (sectors) {
+    delete [] sectors;
+    sectors = 0;
+  }
 }
 
 void Simulator::createSquare(int N, double radius) {
@@ -43,21 +50,21 @@ void Simulator::createSquare(int N, double radius) {
   setParticleDrag(0);
 }
 
-void Simulator::createHopper(int N, double radius) {
+void Simulator::createHopper(int N, double radius, double gap, double width) {
   discard();
   // Set up a hopper
   left = 0; bottom = 0;
-  right = 1; top = 3;
-  double gap = 0.14;
+  right = width; top = 3;
   double bottomGap = 0.05;
   double troughHeight = 0.5;
   double space = 1.0;
   double var = 0, mx = (1+var)*radius;
   addWall(new Wall(vect<>(0, troughHeight), vect<>(0,2*top), true));
   addWall(new Wall(vect<>(right, troughHeight), vect<>(right,2*top), true));
-  addWall(new Wall(vect<>(0, troughHeight), vect<>(0.5-0.5*gap, bottomGap), true));
-  addWall(new Wall(vect<>(1, troughHeight), vect<>(0.5+0.5*gap, bottomGap), true));
+  addWall(new Wall(vect<>(0, troughHeight), vect<>(0.5*right-0.5*gap, bottomGap), true));
+  addWall(new Wall(vect<>(1, troughHeight), vect<>(0.5*right+0.5*gap, bottomGap), true));
 
+  //addTempWall(new Wall(vect<>(0.5*(right-gap),bottomGap), vect<>(0.5*(right+gap),bottomGap), true), 3.0);
   addTempWall(new Wall(vect<>(0,troughHeight), vect<>(1,troughHeight), true), 3.0);
   // addWall(new Wall(vect<>(0,troughHeight), vect<>(1,troughHeight), true));
 
@@ -151,10 +158,11 @@ bool Simulator::wouldOverlap(vect<> pos, double R) {
 
 void Simulator::run(double runLength) {
   time = 0;  
+  lastMark = startTime;
   iter = 0;
-  minepsilon = 1e9;
   clock_t start = clock();
-  while(time<runLength) { // Terminate based on internal condition
+  bool running = true;
+  while(time<runLength && running) { // Terminate based on internal condition
     // Gravity
     for (auto P : particles) if (P) P->applyForce(P->getMass()*gravity);
 
@@ -182,11 +190,12 @@ void Simulator::run(double runLength) {
     iter++;
     // Record data (do this before calling "update" on the particles
     if (time - lastDisp > dispTime) record();
+    if (markWatch && time>startTime && time-lastMark>delayTime) running = false;
 
     // Update simulation
     for (auto &P : particles) if(P) update(P);
     if (sectorize) updateSectors();
-    if (doFluid) updateFluid();
+
     // Update temp walls
     if (!tempWalls.empty()) {
       vector<list<pair<Wall*,double>>::iterator> removal;
@@ -270,10 +279,9 @@ void Simulator::setFluidDims(int fex, int fey) {
   if (fex<1 || fey<1) throw BadFluidElementChoice();
   feX = fex; feY = fey;
   fx = (right-left)/feX; fy = (top-bottom)/feY;
-  if (fU) delete [] fU;
-  if (forces) delete [] forces;
-  fU = new vect<>[(feX+2)*(feY+2)];
-  forces = new vect<>[(feX+2)*(feY+2)];
+
+  // Reset Field Sizes
+
 }
 
 void Simulator::setDimensions(double l, double r, double b, double t) {
@@ -525,8 +533,6 @@ inline void Simulator::interactions() {
       if (P!=0)
 	for (auto Q : particles)
 	  if (Q!=0 && P!=Q) P->interact(Q);
-					       
-  //if (doFluid) fluidInteract();
 
   // Calculate particle-wall forces
   // Do wall forces last so we can easily calculate friction (which just cancels 
@@ -591,10 +597,14 @@ inline void Simulator::update(Particle* &P) {
   switch (yBBound) {
   default:
   case WRAP:
+    timeMarks.push_back(time); // Record time
+    lastMark = time;
     while (pos.y<0) pos.y+=top;
     break;
   case RANDOM:
     if (pos.y<0) {
+      timeMarks.push_back(time); // Record time
+      lastMark = time;
       pos.y = top;
       pos.x = (right-2*P->getRadius())*drand48()+P->getRadius();
       int count = 0;
@@ -743,79 +753,13 @@ inline void Simulator::ppInteract() {
 	for (int j=y-1; j<=y+1; j++)
 	  for (int i=x-1; i<=x+1; i++)
 	    for (auto Q : sectors[j*(secX+2)+i])
-	      if (P!=Q) P->interact(Q);
+	      if (P && P!=Q) P->interact(Q);
   // Have to try to interact everything in the special sector with everything else
   if (ssecInteract) {
     for (auto P : sectors[(secX+2)*(secY+2)])
       for (auto Q : particles)
-	if (P!=Q) P->interact(Q);
+	if (P && P!=Q) P->interact(Q);
   }
-}
-
-inline void Simulator::fluidInteract() {
-  // Naive solution for now
-  for (auto P : particles)
-    for (int i=0; i<(feX+2)*(feY+2); i++)
-      forces[i] += P->interact(getFPos(i), fU[i], 1, 1);
-}
-
-inline void Simulator::updateFluid() {
-  // STUB //**
-  for (int y=1; y<feY+2; y++)
-    for (int x=1; x<feX+2; x++) {
-      // D[ux]/Dx
-      double invEp = 1.0/(2*fx);
-      vect<> DV_DX = invEp*(getFU(x+1,y)-getFU(x-1,y));
-      vect<> DV_DY = invEp*(getFU(x,y-1)-getFU(x,y-1));
-      
-      double nu = 1.;
-      vect<> &U = fU[(feX+2)*y+x];
-      vect<> force = forces[(feX+2)*y+x];
-      vect<> diff = (gravity+force) - U.x*DV_DX - U.y*DV_DY + nu*D2V_DX2(x,y) + nu*D2V_DY2(x,y);
-      U += epsilon*diff;
-      
-    }
-}
-
-inline vect<> Simulator::getFU(int x, int y) {
-  return fU[y*(feX+2)+x];
-}
-
-inline vect<> Simulator::DV_DX(int x, int y) {
-  double invEp = 1.0/(2*fx);
-  int end = feX-1;
-  // Assumes feX is >= 1
-  if (x>0 && x<end) return invEp*(getFU(x+1,y)-getFU(x-1,y));
-  else if (x==0) return 2*invEp*(getFU(1,y)-getFU(0,y));
-  return 2*invEp*(getFU(end,y)-getFU(end-1,y));
-}
-
-inline vect<> Simulator::D2V_DX2(int x, int y) {
-  // Assumes x,y>0, x,y<limit-1
-  double invEp = 1.0/(2*fx);
-  int end = feX-1;
-  // Assumes feX is >= 1
-  if (x>0 && x<end) return invEp*(DV_DX(x+1,y)-DV_DX(x-1,y));
-  else if (x==0) return 2*invEp*(DV_DX(1,y)-DV_DX(0,y));
-  return 2*invEp*(DV_DX(end,y)-DV_DX(end-1,y));
-}
-
-inline vect<> Simulator::DV_DY(int x, int y) {
-  double invEp = 1.0/(2*fy);
-  int end = feY-1;
-  // Assumes feY >= 1
-  if (y>0 && y<end) return invEp*(getFU(x,y+1)-getFU(x,y-1));
-  else if (y==0) return 2*invEp*(getFU(x,1)-getFU(x,0));
-  return 2*invEp*(getFU(x,end)-getFU(x,end-1));
-}
-
-inline vect<> Simulator::D2V_DY2(int x, int y) {
-  double invEp = 1.0/(2*fy);
-  int end = feY-1;
-  // Assumes feY >= 1
-  if (y>0 && y<end) return invEp*(DV_DY(x,y+1)-DV_DY(x,y-1));
-  else if (y==0) return 2*invEp*(DV_DY(x,1)-DV_DY(x,0));
-  return 2*invEp*(DV_DY(x,end)-DV_DY(x,end-1));
 }
 
 inline int Simulator::getSec(vect<> pos) {
@@ -830,12 +774,52 @@ inline int Simulator::getSec(vect<> pos) {
 
 void Simulator::discard() {
   for (int i=0; i<(secX+2)*(secY+2); i++) sectors[i].clear();
-  for (auto P : particles) if (P) delete P;
+  for (auto P : particles) 
+    if (P) {
+      delete P;
+      P = 0;
+    }
   particles.clear();
+  watchlist.clear();
+  for (auto W : walls) 
+    if (W) {
+      delete W;
+      W = 0;
+    }
+  walls.clear();
+  for (auto W : tempWalls) 
+    if (W.first) {
+      delete W.first;
+      W.first = 0;
+    }
+  tempWalls.clear();
+  // Clear records
+  rec_maxV.clear();
+  rec_aveV.clear();
+  rec_aveVsqr.clear();
+  rec_aveKE.clear();
+  rec_netP.clear();
+  rec_netV.clear();
+  rec_netOmega.clear();
+  rec_aveOmegaSqr.clear();
+  rec_netAngP.clear();
+  rec_netTorque.clear();
+
+  timeMarks.clear();
 }
 
-inline vect<> Simulator::getFPos(int i) {
-  int x = i / feX;
-  int y = i % feY;
-  return vect<>(left+fx*x+0.5*fx, bottom+fy*y+0.5*fy);
+void Simulator::particleBC() {
+  // Set fluid velocity of cells 'in' particles to be that of the particles
+  for (auto P : particles) { // This is a naive way ---
+    vect<> pos = P->getPosition();
+    vect<> vel = P->getVelocity();
+    double radSqr = sqr(P->getRadius());
+    for (int y=0; y<feY; y++)
+      for (int x=0; x<feX; x++) {
+	if (sqr(pos-fV.getPos(x,y))<radSqr) {
+	  fV.at(x,y) = vel;
+	  fV.lock(x,y,true);
+	}
+      }
+  }
 }
