@@ -17,8 +17,20 @@ Simulator::Simulator() : lastDisp(0), dispTime(1.0/50), dispFactor(1), time(0), 
   sectors = new list<Particle*>[(secX+2)*(secY+2)+1];
 
   doFluid = true;
-  feX = 50; feY = 50;
+  rho = 1;
+  feX = 10; feY = 10;
   fx = (right-left)/feX; fy = (top-bottom)/feY;
+  area = fx*fy;
+  
+  fV.setDims(feX, feY);
+  divVstar.setDims(feX, feY);
+  advectV.setDims(feX, feY);
+  pressure.setDims(feX, feY);
+  gradP.setDims(feX, feY);
+
+  //** For now
+  pressure.setEdges(1);
+  pressure.lockEdges(true);
 };
 
 Simulator::~Simulator() {
@@ -38,9 +50,21 @@ Simulator::~Simulator() {
   }
 }
 
+void Simulator::createFluidBox() {
+  pressure.setEdges(1);
+  pressure.lockEdges(true);
+
+  gravity = vect<>(0,-1);
+
+  left = bottom = 0;
+  top = right = 1;
+
+  addWatchedParticle(new Particle(vect<>(0.5,0.5), 0.3));
+}
+
 void Simulator::createSquare(int N, double radius) {
   discard();
-  gravity = vect<>();
+  gravity = Zero;
   xLBound = WRAP;
   xRBound = WRAP;
   yTBound = WRAP;
@@ -168,6 +192,16 @@ void Simulator::run(double runLength) {
 
     // Calculate particle-particle and particle-wall forces
     interactions();
+    if (doFluid) {
+      // Reset particle bc from last time
+      fV.resetLocks();
+      // Set the particle imposed b/c
+      particleBC();
+      // Calculate Fluid
+      updateFluid();
+      // Calculate effect of fluid on particle
+      fluidForces();
+    }
 
     // Calculate appropriate epsilon
     if (adjust_epsilon) {
@@ -279,8 +313,8 @@ void Simulator::setFluidDims(int fex, int fey) {
   if (fex<1 || fey<1) throw BadFluidElementChoice();
   feX = fex; feY = fey;
   fx = (right-left)/feX; fy = (top-bottom)/feY;
-
-  // Reset Field Sizes
+  area = fx*fy;
+  // Reset Field Sizes //**
 
 }
 
@@ -288,6 +322,7 @@ void Simulator::setDimensions(double l, double r, double b, double t) {
   if (left>=right || bottom>=top) throw BadDimChoice();
   left = l; right = r; bottom = b; top = t;
   fx = (right-left)/feX; fy = (top-bottom)/feY;
+  area = fx*fy;
 }
 
 void Simulator::addWall(Wall* wall) {
@@ -820,6 +855,35 @@ void Simulator::particleBC() {
 	  fV.at(x,y) = vel;
 	  fV.lock(x,y,true);
 	}
+      }
+  }
+}
+
+void Simulator::updateFluid() {
+  advect(fV, advectV);  // Calculate (V * grad) V
+
+  fV += epsilon*gravity; // Force of gravity
+  fV.plusEq(advectV, epsilon);
+  // We now have "fV" = fV*
+
+  // Remove divergence from velocity field by calculating pressure
+  /*
+  div(fV, divVstar); // divVstar is part of the source for finding pressure
+  pressure.SOR_solver(divVstar, rho/epsilon); // This solves for pressure
+  grad(pressure, gradP); // Calculate grad P
+  fV.minusEq(gradP, epsilon); // This should give us a divergence free field
+  */
+}
+
+void Simulator::fluidForces() {
+  for (auto P : particles) {
+    vect<> pos = P->getPosition();
+    double radSqr = sqr(P->getRadius());
+    for (int y=0; y<feY; y++)
+      for (int x=0; x<feX; x++) {
+        if (sqr(pos-pressure.getPos(x,y))<radSqr) {
+	  P->interact(pressure.getPos(x,y), pressure.at(x,y)*area);
+        }
       }
   }
 }

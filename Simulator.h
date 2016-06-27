@@ -19,6 +19,7 @@ class Simulator {
   ~Simulator(); 
 
   // Initialization
+  void createFluidBox();
   void createSquare(int, double=0.025);
   void createHopper(int, double=0.025, double=0.14, double=1.);
   void createPipe(int, double=0.02);
@@ -27,6 +28,11 @@ class Simulator {
 
   // Simulation
   void run(double runLength);
+
+  // Printing
+  string printPressure() { return pressure.print(); }
+  string printPressure3D() { return pressure.print3D(); }
+  string printFV() { return fV.print(); }
 
   // Accessors
   bool wouldOverlap(vect<> pos, double R);
@@ -159,16 +165,20 @@ class Simulator {
 
   /// Fluid dynamics
   bool doFluid;   // Whether we want a fluid simulation
-  int feX, feY;   // Width and height of fluid elements grid
-  double fx, fy;  // Width and height of a single fluid element  
+  double rho;     // Fluid density
+  int feX, feY;
+  double fx, fy;
+  double area;
   // Fluid related fields
   VField fV;
-  Field advectFV;
+  Field divVstar;
+  VField advectV;
   Field pressure;
   VField gradP;
-
-  void particleBC();
-  
+  // Fluid helper functions
+  void particleBC();  
+  void updateFluid();
+  void fluidForces();
 
   /// Sectorization
   inline void updateSectors();

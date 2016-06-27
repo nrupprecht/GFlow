@@ -73,9 +73,6 @@ void Particle::interact(Particle* P) {
 /// cp  - coefficient of pressure, F = cp*fU
 /// vis - viscosity, how much shear force can be applied to the particle
 vect<> Particle::interact(vect<> pos, vect<> fU, double cp, double vis) {
-
-  return Zero; // Fluid part doesn't work yet
-
   vect<> displacement = position - pos; // Points towards particle
   double distSqr = sqr(displacement);
   if (distSqr < sqr(radius)) { // Interaction (same potiential as particle-particle)
@@ -97,6 +94,19 @@ vect<> Particle::interact(vect<> pos, vect<> fU, double cp, double vis) {
     return -1*(Fn*normal+Fs*shear);
   }
   return vect<>(); // No interaction
+}
+
+void Particle::interact(vect<> pos, double force) {
+  vect<> displacement = position - pos; // Points towards particle
+  double distSqr = sqr(displacement);
+  if (distSqr < sqr(radius)) { // Interaction (same potiential as particle-particle)
+    double dist = sqrt(distSqr);
+    vect<> normal = (1.0/dist) * displacement;
+    //vect<> shear = vect<>(normal.y, -normal.x);
+    
+    // Pressure force
+    applyNormalForce(force*normal);
+  }
 }
 
 void Particle::update(double epsilon) {

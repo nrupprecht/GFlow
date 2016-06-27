@@ -23,7 +23,7 @@ fdriver: fdriver.o Fluid.o
 
 # Object files
 %.o : %.cpp
-	$(CC) -c $(FLAGS) $<
+	$(CC) -c $(FLAGS) $^
 
 .PHONY: clean
 clean:

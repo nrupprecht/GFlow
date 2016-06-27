@@ -67,6 +67,7 @@ template<typename T> inline T sqr(T x) { return x*x; }
 template<typename T=double> struct vect {
 vect(T x, T y) : x(x), y(y) {};
 vect() : x(T(0)), y(T(0)) {};
+vect(T v) : x(v), y(v) {};
 vect(const vect<T>& V) : x(V.x), y(V.y) {};
     
   T norm() { return sqrtf(x*x + y*y); }

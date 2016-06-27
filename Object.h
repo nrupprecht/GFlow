@@ -62,6 +62,7 @@ class Particle {
 
   /// Control functions
   virtual void interact(Particle*); // Interact with another particle
+  virtual void interact(vect<> pos, double force);
   virtual vect<> interact(vect<> pos, vect<> fU, double cp, double vis); // Interact with a fluid
   virtual void update(double);
 
