@@ -33,6 +33,7 @@ class Simulator {
   string printPressure() { return pressure.print(); }
   string printPressure3D() { return pressure.print3D(); }
   string printFV() { return fV.print(); }
+  string printFVLocks() { return fV.printLocks(); }
 
   // Accessors
   bool wouldOverlap(vect<> pos, double R);
@@ -99,7 +100,9 @@ class Simulator {
   string printAveOmegaSqr();
   string printNetAngularP();
   string printNetTorque();
-  
+
+  string getPressurePrint() { return pressurePrint; }
+
   // Error Classes
   class BadDimChoice {};
   class BadFluidElementChoice {};
@@ -156,6 +159,8 @@ class Simulator {
   vector<double> rec_aveOmegaSqr;
   vector<double> rec_netAngP;
   vector<double> rec_netTorque;
+
+  string pressurePrint;
   
   vector<double> timeMarks;
   double lastMark;   // The last time a time mark was recorded
@@ -178,6 +183,7 @@ class Simulator {
   // Fluid helper functions
   void particleBC();  
   void updateFluid();
+  void fluidBC();
   void fluidForces();
 
   /// Sectorization

@@ -69,23 +69,29 @@ vect<> VField::delSqr(int x, int y) const {
 }
 
 void delSqr(const VField& vfield, VField& vout) {
-  // FIELDS COULD MISMATCH //**
+  // Make sure field dims match
+  vfield.matches(&vout);
+  // Take laplacian
   int dX = vfield.getDX(), dY = vfield.getDY();
   for (int y=0; y<dY; y++)
     for (int x=0; x<dX; x++)
       vout.at(x,y) = vfield.delSqr(x,y);
 }
 
-void div(const VField& vfield, Field& field) {
-  // FIELDS COULD MISMATCH
+void div(const VField& vfield, Field& vout) {
+  // Make sure field dims match
+  vfield.matches(&vout);
+  // Take divergence
   int dX = vfield.getDX(), dY = vfield.getDY();
   for (int y=0; y<dY; y++)
     for (int x=0; x<dX; x++)
-      field.at(x,y) = vfield.DX(x,y).x + vfield.DY(x,y).y;
+      vout.at(x,y) = vfield.DX(x,y).x + vfield.DY(x,y).y;
 }
 
 void advect(const VField& vfield, VField& vout) {
-  // FIELDS COULD MISMATCH //**
+  // Make sure field dims match
+  vfield.matches(&vout);
+  // Take advection, (v * Del) v
   int dX = vfield.getDX(), dY = vfield.getDY();
   for (int y=0; y<dY; y++)
     for (int x=0; x<dX; x++)

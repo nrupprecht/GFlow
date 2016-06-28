@@ -1,7 +1,7 @@
 #include "Simulator.h"
 
 Simulator::Simulator() : lastDisp(0), dispTime(1.0/50), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startTime(1), delayTime(5) {
-  default_epsilon = 1e-5;
+  default_epsilon = 1e-3;
   epsilon = default_epsilon;
   min_epsilon = 1e-7;
   adjust_epsilon = false;
@@ -18,19 +18,20 @@ Simulator::Simulator() : lastDisp(0), dispTime(1.0/50), dispFactor(1), time(0), 
 
   doFluid = true;
   rho = 1;
-  feX = 10; feY = 10;
+  feX = 50; feY = 50;
   fx = (right-left)/feX; fy = (top-bottom)/feY;
   area = fx*fy;
   
   fV.setDims(feX, feY);
+  fV.useLocks();
   divVstar.setDims(feX, feY);
   advectV.setDims(feX, feY);
   pressure.setDims(feX, feY);
   gradP.setDims(feX, feY);
 
-  //** For now
-  pressure.setEdges(1);
-  pressure.lockEdges(true);
+  // Set up pressure conditions
+  pressure.useLocks();
+  pressure.setEdge(0, 0); // Set the top edge to have P=0
 };
 
 Simulator::~Simulator() {
@@ -51,15 +52,28 @@ Simulator::~Simulator() {
 }
 
 void Simulator::createFluidBox() {
-  pressure.setEdges(1);
-  pressure.lockEdges(true);
-
+  discard();
   gravity = vect<>(0,-1);
+  xLBound = WRAP;
+  xRBound = WRAP;
+  yTBound = NONE;
+  yBBound = NONE;
 
+  pressure.setWrapX(true);
+  pressure.setWrapY(false);
+  fV.setWrapX(true);
+  fV.setWrapY(false);
+  
   left = bottom = 0;
   top = right = 1;
 
-  addWatchedParticle(new Particle(vect<>(0.5,0.5), 0.3));
+  addWall(new Wall(vect<>(0,0), vect<>(1,0), true)); // Add a floor
+  addWall(new Wall(vect<>(0,1), vect<>(1,1), true)); // Add a ceiling
+
+  pressure.setEdge(0, 0, true); // Set and lock the top edge as having zero pressure
+  
+  Particle *P = new Particle(vect<>(0.5,0.5), 0.3);
+  addWatchedParticle(P);
 }
 
 void Simulator::createSquare(int N, double radius) {
@@ -69,6 +83,9 @@ void Simulator::createSquare(int N, double radius) {
   xRBound = WRAP;
   yTBound = WRAP;
   yBBound = WRAP;
+
+  left = bottom = 0;
+  top = right = 1;
 
   addParticles(N, radius, 0, left+0.5*radius, right-0.5*radius, bottom+0.5*radius, top-0.5*radius, PASSIVE, 1);
   setParticleDrag(0);
@@ -224,11 +241,13 @@ void Simulator::run(double runLength) {
     iter++;
     // Record data (do this before calling "update" on the particles
     if (time - lastDisp > dispTime) record();
+    // If we have set the simulation to cancel if some event does not occur for some 
+    // amount of time, handle that here
     if (markWatch && time>startTime && time-lastMark>delayTime) running = false;
 
     // Update simulation
-    for (auto &P : particles) if(P) update(P);
-    if (sectorize) updateSectors();
+    for (auto &P : particles) if(P) update(P); // Update particles 
+    if (sectorize) updateSectors(); // Update sectors
 
     // Update temp walls
     if (!tempWalls.empty()) {
@@ -585,7 +604,6 @@ inline void Simulator::interactions() {
 inline void Simulator::update(Particle* &P) {
   // Update particle
   P->update(epsilon);
-  
   // Keep particles in bounds
   vect<> pos = P->getPosition();
 
@@ -693,6 +711,8 @@ inline void Simulator::record() {
   rec_netTorque.push_back(netTorque());
   // Update time
   lastDisp = time;
+
+  pressurePrint += (pressure.print() + ","); //**
 }
 
 inline bool Simulator::inBounds(Particle* P) {
@@ -853,10 +873,14 @@ void Simulator::particleBC() {
       for (int x=0; x<feX; x++) {
 	if (sqr(pos-fV.getPos(x,y))<radSqr) {
 	  fV.at(x,y) = vel;
-	  fV.lock(x,y,true);
+	  fV.lockAt(x,y) = true;	  
 	}
       }
   }
+}
+
+void Simulator::fluidBC() {
+  // STUB //**
 }
 
 void Simulator::updateFluid() {
@@ -867,23 +891,25 @@ void Simulator::updateFluid() {
   // We now have "fV" = fV*
 
   // Remove divergence from velocity field by calculating pressure
-  /*
   div(fV, divVstar); // divVstar is part of the source for finding pressure
   pressure.SOR_solver(divVstar, rho/epsilon); // This solves for pressure
   grad(pressure, gradP); // Calculate grad P
   fV.minusEq(gradP, epsilon); // This should give us a divergence free field
-  */
 }
 
 void Simulator::fluidForces() {
+  int iters = 16; // How many sites to sample
   for (auto P : particles) {
     vect<> pos = P->getPosition();
-    double radSqr = sqr(P->getRadius());
-    for (int y=0; y<feY; y++)
-      for (int x=0; x<feX; x++) {
-        if (sqr(pos-pressure.getPos(x,y))<radSqr) {
-	  P->interact(pressure.getPos(x,y), pressure.at(x,y)*area);
-        }
-      }
+    double radius = P->getRadius();
+    double area = 2.*PI*radius/iters;
+    // Look at the effects of pressure from a number of surrounding areas
+    vect<> force;
+    for (int i=0; i<iters; i++) {
+      vect<> normal = vect<>(cos(i/8.0*PI), sin(i/8.0*PI));
+      vect<> loc = pos + radius*normal;
+      force -= area*pressure(loc, false)*normal;
+    }
+    P->applyForce(force);
   }
 }

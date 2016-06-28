@@ -12,14 +12,17 @@ template<typename T> class FieldBase {
   T& at(int x, int y); // Access grid points
   T at(int x, int y) const;
   T& operator()(int x, int y); // Access grid points
-  T at(vect<> pos) const; // Interpolate
-  T operator()(vect<> pos) const; // Interpolate
+  T at(vect<> pos, bool thrw=true) const; // Interpolate
+  T operator()(vect<> pos, bool thrw=true) const; // Interpolate
   pair<int,int> getDims() { return pair<int,int>(dX,dY); }
   int getDX() const { return dX; }
   int getDY() const { return dY; }
 
   vect<> getPos(int x, int y) const; // Gets the spatial position at a grid point
+
+  // Printing functions
   virtual string print() const;
+  string printLocks() const;
 
   // Mutators
   void setDims(int x, int y);
@@ -28,12 +31,13 @@ template<typename T> class FieldBase {
   void setTollerance(double t) { tollerance = t; }
   void setMaxIters(int i) { solveIterations = i; }
   void setEdges(double x);
+  void setEdge(int edge, double x, bool lock=true);
 
   // Locking
   void resetLocks();
-  void useLocks(); // IMPLEMENT //**
-  void lock(int x, int y, bool l);
+  void useLocks();
   bool& lockAt(int x, int y);
+  bool lockAt(int x, int y) const;
   void lockEdges(bool l);
 
   // Arithmetic
@@ -44,23 +48,30 @@ template<typename T> class FieldBase {
   // Calculus
   T DX(int x, int y) const; // Partial derivative: X
   T DY(int x, int y) const; // Partial derivative: Y
-  //vect<> grad(int x, int y) const; // Gradient
-  //friend void grad(Field& field, VField& vfield);
-  //double delSqr(int x, int y) const; // Laplacian
-  //friend void advect(Field& field, VField& out);
 
   // Solvers
   void SOR_solver();
   void SOR_solver(FieldBase& source, double=1);
 
   /// Exception classes
-  class FieldMismatch {};
-  class OutOfBounds {};
+  struct FieldMismatch {};
+  struct OutOfBounds {
+  OutOfBounds(int x, int y) : x(x), y(y) {};
+    int x,y;
+  };
+  struct InterpolateOutOfBounds {
+  InterpolateOutOfBounds(double x, double y) : x(x), y(y) {};
+    double x,y;
+  };
+  struct NoLocks {};
 
  protected:
   /// Helper functions
   void createLocks();
   void initialize();
+  void correctPos(vect<>& pos) const;
+  bool checkPos(const vect<> pos, bool thrw=true) const;
+  template<typename S> bool matches(const FieldBase<S>* B) const;
 
   /// Data
   int dX, dY;
