@@ -27,22 +27,22 @@ int main() {
   // simulation.createSquare(1);
   simulation.createFluidBox();
 
-  simulation.setDispRate(150);
+  simulation.setDispRate(50);
   simulation.setDispFactor(0.3);
 
+  // simulation.setMaxIters(150);
+  // simulation.setRecAllIters(true);
   simulation.run(time);
 
   cout << "press={" << simulation.getPressurePrint() << "};\n";
-  
-  //cout << /* "press=" << */ simulation.printPressure() << ";\n";
-  cout << "vf=" << simulation.printFV() << ";\n";
+  cout << "vf=" << simulation.printFVNorm() << ";\n";
 
   //cout << "timeMarks=" << simulation.getTimeMarks() << ";" << endl;
-  cout << simulation.printWatchList() << endl;
-  cout << "walls=" << simulation.printWalls() << ";\n";
+  //cout << simulation.printWatchList() << endl;
+  //cout << "walls=" << simulation.printWalls() << ";\n";
   //cout << "aveKE=" << simulation.printKE() << ";\n";
   //cout << "netOmega=" << simulation.printNetOmega() << ";\n";
-  cout << simulation.printAnimationCommand() << endl;
+  //cout << simulation.printAnimationCommand() << endl;
   //cout << "Print[\"Average kinetic energy\"]\nListLinePlot[aveKE, PlotRange->All, PlotStyle->Black]\n";
   //cout << "Print[\"Net Angular Velocity\"]\nListLinePlot[netOmega, PlotRange->All, PlotStyle->Black]\n";
   //cout << simulation.getMinEpsilon() << ";\n";

@@ -5,6 +5,25 @@ Field::Field() : FieldBase<double>() {};
 
 Field::Field(int x, int y) : FieldBase<double>(x,y) {};
 
+string Field::print() const {
+  stringstream stream;
+  stream << '{';
+  for (int y=dY-1; y>=0; y--) {
+    stream << '{';
+    for (int x=0; x<dX; x++) {
+      stream << limit_prec(at(x,y));
+      if (x!=dX-1) stream << ',';
+    }
+    stream << '}';
+    if (y!=0) stream << ',';
+  }
+  stream << '}';
+
+  string str;
+  stream >> str;
+  return str;
+}
+
 string Field::print3D() const {
   stringstream stream;
   stream << '{';
@@ -47,12 +66,32 @@ VField::VField(int x, int y) : FieldBase< vect<> >(x,y) {};
 string VField::print() const {
   stringstream stream;
   stream << "{";
-  for (int y=0; y<dY; y++)
+  for (int y=0; y<dY; y++) {
     for (int x=0; x<dX; x++) {
       stream << "{{" << x << "," << y << "},";
       stream << at(x,y) << "}";
       if (x!=dX-1) stream << ",";
     }
+    if (y!=dY-1) stream << ",";
+  }
+  stream << "}";
+  string str;
+  stream >> str;
+  return str;
+}
+
+string VField::printNorm() const {
+  stringstream stream;
+  stream << "{";
+  for (int y=0; y<dY; y++) {
+    stream << "{";
+    for (int x=0; x<dX; x++) {
+      stream << limit_prec(at(x,y).norm());
+      if (x!=dX-1) stream << ",";
+    }
+    stream << "}";
+    if (y!=dY-1) stream << ",";
+  }
   stream << "}";
   string str;
   stream >> str;
@@ -96,4 +135,19 @@ void advect(const VField& vfield, VField& vout) {
   for (int y=0; y<dY; y++)
     for (int x=0; x<dX; x++)
       vout.at(x,y) = vfield.at(x,y).x*vfield.DX(x,y) + vfield.at(x,y).y*vfield.DY(x,y);
+}
+
+void VField::doBC() {
+  if (!wrapX) { // Slip B.C.
+    for (int i=0; i<dY; i++) {
+      at(0,i) -= (at(0,i)*vect<>(1,0))*vect<>(1,0);
+      at(dX-1,i) -= (at(dX-1,i)*vect<>(1,0))*vect<>(1,0);
+    }
+  }
+  if (!wrapY) {
+    for(int i=0; i<dX; i++) {
+      at(i,0) -= (at(i,0)*vect<>(0,1))*vect<>(0,1);
+      at(i,dY-1) -= (at(i,dY-1)*vect<>(0,1))*vect<>(0,1);
+    }
+  }
 }

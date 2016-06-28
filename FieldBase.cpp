@@ -18,16 +18,15 @@ void FieldBase<T>::initialize() {
   dX = dY = 0;
   invDist = Zero; // invDist is meaningless
   array = 0;
-  wrapX = true; wrapY = false;
+  wrapX = true; wrapY = true;
   usesLocks = false;
   locks = 0;
   solveIterations = 500;
-  tollerance = 0.01;
+  tollerance = 0.0001;
 }
 
 template<typename T>
 void FieldBase<T>::setDims(int x, int y) {
-  wrapX = true; wrapY = false;
   dX = x; dY = y;
   if (wrapX) invDist.x = (right-left)/dX;
   else invDist.x = (right-left)/(dX-1);
@@ -58,6 +57,11 @@ void FieldBase<T>::setWrapY(bool w) {
   else (top-bottom)/(dY-1);
   LFactor = 2*(sqr(invDist.x)+sqr(invDist.y));
   invLFactor = 1./LFactor;
+}
+
+template<typename T>
+void FieldBase<T>::setWrap(bool x, bool y) {
+  setWrapX(x); setWrapY(y);
 }
 
 template<typename T>
@@ -101,6 +105,11 @@ void FieldBase<T>::setEdge(int edge, double value, bool lock) {
     break;
   default: break; // Anything else
   }
+}
+
+template<typename T>
+void FieldBase<T>::setAll(const T& value) {
+  for (int i=0; i<dX*dY; i++) array[i] = value;
 }
 
 template<typename T>
@@ -273,13 +282,16 @@ void FieldBase<T>::minusEq(FieldBase& field, double mult) {
 template<typename T>
 T FieldBase<T>::DX(int x, int y) const {
   if (wrapX) {
+    return 0.5*invDist.x*(at(x+1,y)-at(x-1,y));
+    /*
     if (x==0) return 0.5*invDist.x*(at(1,y)-at(dX-1,y));
     else if (x==dX-1) return 0.5*invDist.x*(at(0,y)-at(dX-2,y));
     else return 0.5*invDist.x*(at(x+1,y)-at(x-1,y));
+    */
   }
   else { // Don't wrap x
-    if (y==0) return invDist.x*(at(1,y)-at(0,y));
-    else if (y==dY-1) return invDist.x*(at(dX-1,y)-at(dX-2,y));
+    if (x==0) return invDist.x*(at(1,y)-at(0,y));
+    else if (x==dX-1) return invDist.x*(at(dX-1,y)-at(dX-2,y));
     else return 0.5*invDist.x*(at(x+1,y)-at(x-1,y));
   }
 }
@@ -287,9 +299,12 @@ T FieldBase<T>::DX(int x, int y) const {
 template<typename T>
 T FieldBase<T>::DY(int x, int y) const {
   if (wrapY) {
+    return 0.5*invDist.y*(at(x,y+1)-at(x,y-1));
+    /*
     if (y==0) return 0.5*invDist.y*(at(x,1)-at(x,dY-1));
     else if (y==dY-1) return 0.5*invDist.y*(at(x,0)-at(x,dY-2));
     else return 0.5*invDist.y*(at(x,y+1)-at(x,y-1));
+    */
   }
   else { // Don't wrap y
     if (y==0) return invDist.y*(at(x,1)-at(x,0));
@@ -336,8 +351,8 @@ void FieldBase<T>::SOR_solver() {
     maxDelta = 0;
     for (int y=sy; y<ey; y++)
       for (int x=sx; x<ex; x++)
-        if ((x+y)%2==0 && !lockAt(x,y)) {
-          auto value = (1-omega)*at(x,y) + omega*invLFactor*(sqr(invDist.x)*(at(x+1,y)+at(x-1,y)) + sqr(invDist.y)*(at(x,y+1)+at(x,y-1)));
+        if ((x+y)%2==0 && (!usesLocks || !lockAt(x,y))) {
+          T value = (1-omega)*at(x,y) + omega*invLFactor*(sqr(invDist.x)*(at(x+1,y)+at(x-1,y)) + sqr(invDist.y)*(at(x,y+1)+at(x,y-1)));
           double delta = sqr(at(x,y)-value);
           if (delta>maxDelta) maxDelta = delta/sqr(at(x,y));
           at(x,y) = value;
@@ -345,8 +360,8 @@ void FieldBase<T>::SOR_solver() {
     // Odd squares
     for (int y=sy; y<ey; y++)
       for (int x=sx; x<ex; x++)
-	if ((x+y)%2 && !lockAt(x,y)) {
-          auto value = (1-omega)*at(x,y) + omega*invLFactor*(sqr(invDist.x)*(at(x+1,y)+at(x-1,y)) + sqr(invDist.y)*(at(x,y+1)+at(x,y-1)));
+	if ((x+y)%2 && (!usesLocks || !lockAt(x,y))) {
+          T value = (1-omega)*at(x,y) + omega*invLFactor*(sqr(invDist.x)*(at(x+1,y)+at(x-1,y)) + sqr(invDist.y)*(at(x,y+1)+at(x,y-1)));
           double delta = sqr(at(x,y)-value);
           if (delta>maxDelta) maxDelta = delta/sqr(at(x,y));
           at(x,y) = value;
@@ -354,13 +369,13 @@ void FieldBase<T>::SOR_solver() {
     // Boundaries
     if (!wrapY)
       for (int x=0; x<dX; x++) {
-        if (!lockAt(x,0)) at(x,0) = at(x,1);
-        if (!lockAt(x,dY-1)) at(x,dY-1) = at(x,dY-2);
+        if (!usesLocks || !lockAt(x,0)) at(x,0) = at(x,1);
+        if (!usesLocks ||!lockAt(x,dY-1)) at(x,dY-1) = at(x,dY-2);
       }
     if (!wrapX)
       for (int y=0; y<dY; y++) {
-        if (!lockAt(0,y)) at(0,y) = at(1,y);
-        if (!lockAt(dX-1,y)) at(dX-1,y) = at(dX-2,y);
+        if (!usesLocks || !lockAt(0,y)) at(0,y) = at(1,y);
+        if (!usesLocks || !lockAt(dX-1,y)) at(dX-1,y) = at(dX-2,y);
       }
   }
 }
@@ -381,8 +396,8 @@ void FieldBase<T>::SOR_solver(FieldBase& source, double mult) {
     // Even squares
     for (int y=sy; y<ey; y++)
       for (int x=sx; x<ex; x++)
-        if ((x+y)%2==0 && !lockAt(x,y)) {
-          auto value = (1-omega)*at(x,y) + omega*invLFactor*(sqr(invDist.x)*(at(x+1,y)+at(x-1,y)) + sqr(invDist.y)*(at(x,y+1)+at(x,y-1)) - mult*source(x,y));
+        if ((x+y)%2==0 && (!usesLocks || !lockAt(x,y))) {
+          T value = (1-omega)*at(x,y) + omega*invLFactor*(sqr(invDist.x)*(at(x+1,y)+at(x-1,y)) + sqr(invDist.y)*(at(x,y+1)+at(x,y-1)) - mult*source(x,y));
           double delta = sqr(at(x,y)-value);
           if (delta>maxDelta) maxDelta = delta/sqr(at(x,y));
           at(x,y) = value;
@@ -390,8 +405,8 @@ void FieldBase<T>::SOR_solver(FieldBase& source, double mult) {
     // Odd squares
     for (int y=sy; y<ey; y++)
       for (int x=sx; x<ex; x++)
-        if ((x+y)%2 && !lockAt(x,y)) {
-          auto value = (1-omega)*at(x,y) + omega*invLFactor*(sqr(invDist.x)*(at(x+1,y)+at(x-1,y)) + sqr(invDist.y)*(at(x,y+1)+at(x,y-1)) - mult*source(x,y));
+        if ((x+y)%2 && (!usesLocks || !lockAt(x,y))) {
+          T value = (1-omega)*at(x,y) + omega*invLFactor*(sqr(invDist.x)*(at(x+1,y)+at(x-1,y)) + sqr(invDist.y)*(at(x,y+1)+at(x,y-1)) - mult*source(x,y));
           double delta = sqr(at(x,y)-value);
           if (delta>maxDelta) maxDelta = delta/sqr(at(x,y));
           at(x,y) = value;
@@ -399,13 +414,13 @@ void FieldBase<T>::SOR_solver(FieldBase& source, double mult) {
     // Boundaries
     if (!wrapY) 
       for (int x=0; x<dX; x++) {
-	if (!lockAt(x,0)) at(x,0) = at(x,1);
-	if (!lockAt(x,dY-1)) at(x,dY-1) = at(x,dY-2);
+	if (!usesLocks || !lockAt(x,0)) at(x,0) = at(x,1);
+	if (!usesLocks || !lockAt(x,dY-1)) at(x,dY-1) = at(x,dY-2);
       }
     if (!wrapX) 
       for (int y=0; y<dY; y++) {
-	if (!lockAt(0,y)) at(0,y) = at(1,y);
-	if (!lockAt(dX-1,y)) at(dX-1,y) = at(dX-2,y);
+	if (!usesLocks || !lockAt(0,y)) at(0,y) = at(1,y);
+	if (!usesLocks || !lockAt(dX-1,y)) at(dX-1,y) = at(dX-2,y);
       }
   }
 }

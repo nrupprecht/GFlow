@@ -33,6 +33,7 @@ class Simulator {
   string printPressure() { return pressure.print(); }
   string printPressure3D() { return pressure.print3D(); }
   string printFV() { return fV.print(); }
+  string printFVNorm() { return fV.printNorm(); }
   string printFVLocks() { return fV.printLocks(); }
 
   // Accessors
@@ -69,6 +70,8 @@ class Simulator {
   void setMarkWatch(bool w) { markWatch = w; }
   void setStartTime(double t) { startTime = t; }
   void setDelayTime(double t) { delayTime = t; }
+  void setMaxIters(int it) { maxIters = it; }
+  void setRecAllIters(bool r) { recAllIters = r; }
   void discard();
   /// Global set functions
   void setParticleDissipation(double);
@@ -137,6 +140,7 @@ class Simulator {
   double dispFactor; // Speed up or slow down animation (e.g. 2 -> 2x speed)
   double lastDisp; // Last time data was recorded
   int iter;
+  int maxIters;
   double runTime; // How long the simulation took to run
   vect<> gravity;
   
@@ -159,6 +163,7 @@ class Simulator {
   vector<double> rec_aveOmegaSqr;
   vector<double> rec_netAngP;
   vector<double> rec_netTorque;
+  bool recAllIters;
 
   string pressurePrint;
   

@@ -12,6 +12,7 @@ class Field : public FieldBase<double> {
   Field(int,int);
 
   // Printing
+  virtual string print() const;
   string print3D() const;
 
   // Calculus
@@ -28,12 +29,16 @@ class VField : public FieldBase< vect<> > {
 
   // Printing
   virtual string print() const;
+  string printNorm() const;
 
   // Calculus
   vect<> delSqr(int,int) const;
   friend void delSqr(const VField&, VField&);
   friend void div(const VField&, Field&);
   friend void advect(const VField&, VField&);
+
+  // Boundary conditions
+  void doBC();
 };
 
 #endif

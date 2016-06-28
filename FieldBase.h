@@ -17,6 +17,8 @@ template<typename T> class FieldBase {
   pair<int,int> getDims() { return pair<int,int>(dX,dY); }
   int getDX() const { return dX; }
   int getDY() const { return dY; }
+  bool getWrapX() { return wrapX; }
+  bool getWrapY() { return wrapY; }
 
   vect<> getPos(int x, int y) const; // Gets the spatial position at a grid point
 
@@ -28,10 +30,12 @@ template<typename T> class FieldBase {
   void setDims(int x, int y);
   void setWrapX(bool w);
   void setWrapY(bool w);
+  void setWrap(bool x, bool y);
   void setTollerance(double t) { tollerance = t; }
   void setMaxIters(int i) { solveIterations = i; }
   void setEdges(double x);
   void setEdge(int edge, double x, bool lock=true);
+  void setAll(const T& value);
 
   // Locking
   void resetLocks();

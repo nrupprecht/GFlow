@@ -1,6 +1,6 @@
 #include "Simulator.h"
 
-Simulator::Simulator() : lastDisp(0), dispTime(1.0/50), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startTime(1), delayTime(5) {
+Simulator::Simulator() : lastDisp(0), dispTime(1.0/50), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startTime(1), delayTime(5), maxIters(-1), recAllIters(false) {
   default_epsilon = 1e-3;
   epsilon = default_epsilon;
   min_epsilon = 1e-7;
@@ -23,14 +23,23 @@ Simulator::Simulator() : lastDisp(0), dispTime(1.0/50), dispFactor(1), time(0), 
   area = fx*fy;
   
   fV.setDims(feX, feY);
+  fV.setWrap(true, false);
   fV.useLocks();
+
   divVstar.setDims(feX, feY);
+  divVstar.setWrap(true, false);
+
   advectV.setDims(feX, feY);
+  advectV.setWrap(true, false);
+
   pressure.setDims(feX, feY);
+  pressure.setWrap(true, false);
+  pressure.useLocks();
+
   gradP.setDims(feX, feY);
+  gradP.setWrap(true, false);
 
   // Set up pressure conditions
-  pressure.useLocks();
   pressure.setEdge(0, 0); // Set the top edge to have P=0
 };
 
@@ -239,8 +248,9 @@ void Simulator::run(double runLength) {
     // Update internal variable
     time += epsilon;
     iter++;
+    if (maxIters>0 && iter>maxIters) running = false;
     // Record data (do this before calling "update" on the particles
-    if (time - lastDisp > dispTime) record();
+    if (time - lastDisp > dispTime || recAllIters) record();
     // If we have set the simulation to cancel if some event does not occur for some 
     // amount of time, handle that here
     if (markWatch && time>startTime && time-lastMark>delayTime) running = false;
@@ -880,18 +890,32 @@ void Simulator::particleBC() {
 }
 
 void Simulator::fluidBC() {
-  // STUB //**
+  fV.doBC();
+  // More ???
 }
 
 void Simulator::updateFluid() {
-  advect(fV, advectV);  // Calculate (V * grad) V
+  //static int it = 0; //**  
 
-  fV += epsilon*gravity; // Force of gravity
+  // Do advection and body forces
+  advect(fV, advectV);  // Calculate (V * grad) V
+  // fV += epsilon*gravity; // Force of gravity
   fV.plusEq(advectV, epsilon);
   // We now have "fV" = fV*
 
+  // Enforce fluid B.C.s
+  //fluidBC(); 
+
+  //cout << "vf" << it << "=" << fV.printNorm() << ";\n"; //**
+
   // Remove divergence from velocity field by calculating pressure
   div(fV, divVstar); // divVstar is part of the source for finding pressure
+
+  //******
+  //cout << "div" << it << "=" << divVstar.print() << ";\n";
+  //it++;
+  //******
+
   pressure.SOR_solver(divVstar, rho/epsilon); // This solves for pressure
   grad(pressure, gradP); // Calculate grad P
   fV.minusEq(gradP, epsilon); // This should give us a divergence free field
