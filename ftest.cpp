@@ -1,44 +1,23 @@
 #include "Field.h"
+#include "MAC.h"
 
-int main() {
-  int dim = 51;
+int main(int argc, char* argv[]) {
+  int dim = 10;
+  int maxiter = 15;
 
-  bool wx = true, wy = true;
-
-  Field base(dim,dim);
-  base.setWrap(wx, wy);
-  VField field(dim,dim);
-  field.setWrap(wx, wy);
-  Field f2(dim,dim);
-  f2.setWrap(wx, wy);
-  Field pressure(dim,dim);
-  pressure.setWrap(wx, wy);
-  VField gradP(dim,dim);
-  gradP.setWrap(wx, wy);
-
-  double mult = 50;
-  for (int i=0; i<dim; i++)
-    for (int j=0; j<dim; j++)
-      base.at(i,j) = mult*exp(-sqr((i-0.5*(dim-1))/dim)-sqr((j-0.5*(dim-1))/dim));
-
-  try {    
-    cout << "base=" << base.print() << ";\n";
-    grad(base, field);
-    cout << "initial=" << field.print() << ";\n";
-    div(field, f2);
-    cout << "div=" << f2.print() << ";\n";
-    pressure.SOR_solver(f2);
-    cout << "pressure=" << pressure.print() << ";\n";
-    grad(pressure, gradP);
-    cout << "gradP=" << gradP.print() << ";\n";
-    field.minusEq(gradP);
-    div(field, f2);
-    cout << "final=" << field.print() << ";\n";
-    cout << "finaldiv=" << f2.print() << ";\n";
+  stringstream stream;
+  if (argc>1) {
+    stream << argv[1];
+    stream >> dim;
   }
-  catch(FieldBase<double>::OutOfBounds ex) {
-    cout << "Exception Caught: Out of bounds. Access: " << ex.x << ", " << ex.y << endl;
+
+  if (argc>2) {
+    stream << argv[2];
+    stream >> maxiter;
   }
+
+  MAC test(dim,dim);
+  test.run(maxiter);
 
   return 0;
 

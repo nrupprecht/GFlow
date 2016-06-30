@@ -6,12 +6,12 @@
 
 #include "Utility.h"
 
-const double sphere_repulsion = 50000.0;
-const double sphere_dissipation = 3000.0;
+const double sphere_repulsion = 10000.0;
+const double sphere_dissipation = 7500.0;
 const double sphere_coeff = sqrt(0.5);
 const double sphere_drag = 5.0;
-const double wall_repulsion = 50000.0;
-const double wall_dissipation = 3000.0;
+const double wall_repulsion = 10000.0;
+const double wall_dissipation = 7500.0;
 const double wall_coeff = sqrt(0.5);
 const double wall_gamma = 5;
 
@@ -78,7 +78,7 @@ class Particle {
     alpha = 0;
   }
 
-  void fix(bool f) { fixed = f; }
+  void fix(bool f=true) { fixed = f; }
 
   // Exception classes
   class BadMassError {};

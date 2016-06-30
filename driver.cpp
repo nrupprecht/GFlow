@@ -3,7 +3,7 @@
 #include <ctime>
 
 int main() {
-  int number = 1;
+  int number = 100;
   double time = 1;
   double radius = 0.05;
 
@@ -13,29 +13,19 @@ int main() {
   //----------------------------------------
   Simulator simulation;
 
-  // simulation.setDoFluid(false);
-
-  double delayTime = 20.;
-  simulation.setMarkWatch(true);
-  simulation.setDelayTime(delayTime);
-  simulation.setStartTime(4.);
-
-  // simulation.createHopper(number, radius);
-  // simulation.createPipe(number);
-  // simulation.createIdealGas(number, 0.03);
-  // simulation.createEntropyBox(number);
-  // simulation.createSquare(1);
   simulation.createFluidBox();
 
-  simulation.setDispRate(50);
-  simulation.setDispFactor(0.3);
-
-  // simulation.setMaxIters(150);
-  // simulation.setRecAllIters(true);
+  simulation.setMaxIters(150);
+  simulation.setRecAllIters(true);
+  simulation.setDefaultEpsilon(1e-3);
   simulation.run(time);
 
   cout << "press={" << simulation.getPressurePrint() << "};\n";
-  cout << "vf=" << simulation.printFVNorm() << ";\n";
+  cout << "vf={" << simulation.getFVNormPrint() << "};\n";
+  cout << "frames=Table[MatrixPlot[press[[i]]],{i,1,Length[press]-1}];\n";
+  cout << "ListAnimate[frames]\n";
+  cout << "vframes=Table[MatrixPlot[vf[[i]]],{i,1,Length[vf]-1}];\n";
+  cout << "ListAnimate[vframes]";
 
   //cout << "timeMarks=" << simulation.getTimeMarks() << ";" << endl;
   //cout << simulation.printWatchList() << endl;

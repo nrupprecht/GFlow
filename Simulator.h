@@ -72,6 +72,7 @@ class Simulator {
   void setDelayTime(double t) { delayTime = t; }
   void setMaxIters(int it) { maxIters = it; }
   void setRecAllIters(bool r) { recAllIters = r; }
+  void setPSamples(int p) { pSamples = p; }
   void discard();
   /// Global set functions
   void setParticleDissipation(double);
@@ -105,6 +106,7 @@ class Simulator {
   string printNetTorque();
 
   string getPressurePrint() { return pressurePrint; }
+  string getFVNormPrint() { return fvNormPrint; }
 
   // Error Classes
   class BadDimChoice {};
@@ -125,6 +127,8 @@ class Simulator {
   inline void record();
   inline bool inBounds(Particle*);
   inline void wrap(Particle*, BType, int, double, double);
+  inline void setFieldWrapping(bool, bool);
+  inline void setFieldDims(int, int);
 
   /// Data
   double left, right; // Right edge of the simulation
@@ -166,7 +170,8 @@ class Simulator {
   bool recAllIters;
 
   string pressurePrint;
-  
+  string fvNormPrint;
+
   vector<double> timeMarks;
   double lastMark;   // The last time a time mark was recorded
   bool markWatch;    // Whether we should break the simulation based on marks
@@ -179,10 +184,12 @@ class Simulator {
   int feX, feY;
   double fx, fy;
   double area;
+  double viscosity;
   // Fluid related fields
   VField fV;
   Field divVstar;
   VField advectV;
+  VField lapV;
   Field pressure;
   VField gradP;
   // Fluid helper functions
@@ -190,6 +197,7 @@ class Simulator {
   void updateFluid();
   void fluidBC();
   void fluidForces();
+  int pSamples;
 
   /// Sectorization
   inline void updateSectors();

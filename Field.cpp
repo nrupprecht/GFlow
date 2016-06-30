@@ -51,6 +51,8 @@ void grad(Field& field, VField& vfield)  {
 }
 
 double Field::delSqr(int x, int y) const {
+  //** Won't work on edges
+
   static double idxsqr = sqr(invDist.x);
   static double idysqr = sqr(invDist.y);
   static double factor = 2*(idxsqr+idysqr);

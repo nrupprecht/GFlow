@@ -73,6 +73,7 @@ void Particle::interact(Particle* P) {
 /// cp  - coefficient of pressure, F = cp*fU
 /// vis - viscosity, how much shear force can be applied to the particle
 vect<> Particle::interact(vect<> pos, vect<> fU, double cp, double vis) {
+  if (fixed) return Zero;
   vect<> displacement = position - pos; // Points towards particle
   double distSqr = sqr(displacement);
   if (distSqr < sqr(radius)) { // Interaction (same potiential as particle-particle)
@@ -97,6 +98,7 @@ vect<> Particle::interact(vect<> pos, vect<> fU, double cp, double vis) {
 }
 
 void Particle::interact(vect<> pos, double force) {
+  if (fixed) return;
   vect<> displacement = position - pos; // Points towards particle
   double distSqr = sqr(displacement);
   if (distSqr < sqr(radius)) { // Interaction (same potiential as particle-particle)
@@ -110,6 +112,7 @@ void Particle::interact(vect<> pos, double force) {
 }
 
 void Particle::update(double epsilon) {
+  if (fixed) return;
   // Drag force
   vect<> dragF = -drag*velocity*velocity*normalize(velocity);
   // Calculate net force/acceleration, record last acceleration

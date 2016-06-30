@@ -369,12 +369,17 @@ void FieldBase<T>::SOR_solver() {
     // Boundaries
     if (!wrapY)
       for (int x=0; x<dX; x++) {
+	//if (!usesLocks || !lockAt(x,0)) at(x,0) = 2*at(x,1)-at(x,2);
+        //if (!usesLocks || !lockAt(x,dY-1)) at(x,dY-1) = 2*at(x,dY-2)-at(x,dY-3);
         if (!usesLocks || !lockAt(x,0)) at(x,0) = at(x,1);
-        if (!usesLocks ||!lockAt(x,dY-1)) at(x,dY-1) = at(x,dY-2);
+        if (!usesLocks || !lockAt(x,dY-1)) at(x,dY-1) = at(x,dY-2);
+
       }
     if (!wrapX)
       for (int y=0; y<dY; y++) {
-        if (!usesLocks || !lockAt(0,y)) at(0,y) = at(1,y);
+        //if (!usesLocks || !lockAt(0,y)) at(0,y) = 2*at(1,y)-at(2,y);
+	//if (!usesLocks || !lockAt(dX-1,y)) at(dX-1,y) = 2*at(dX-2,y)-at(dX-3,y);
+	if (!usesLocks || !lockAt(0,y)) at(0,y) = at(1,y);
         if (!usesLocks || !lockAt(dX-1,y)) at(dX-1,y) = at(dX-2,y);
       }
   }
@@ -414,11 +419,16 @@ void FieldBase<T>::SOR_solver(FieldBase& source, double mult) {
     // Boundaries
     if (!wrapY) 
       for (int x=0; x<dX; x++) {
+	//if (!usesLocks || !lockAt(x,0)) at(x,0) = 2*at(x,1)-at(x,2);
+	//if (!usesLocks || !lockAt(x,dY-1)) at(x,dY-1) = 2*at(x,dY-2)-at(x,dY-3);
 	if (!usesLocks || !lockAt(x,0)) at(x,0) = at(x,1);
 	if (!usesLocks || !lockAt(x,dY-1)) at(x,dY-1) = at(x,dY-2);
+
       }
     if (!wrapX) 
       for (int y=0; y<dY; y++) {
+	//if (!usesLocks || !lockAt(0,y)) at(0,y) = 2*at(1,y)-at(2,y);
+	//if (!usesLocks || !lockAt(dX-1,y)) at(dX-1,y) = 2*at(dX-2,y)-at(dX-3,y);
 	if (!usesLocks || !lockAt(0,y)) at(0,y) = at(1,y);
 	if (!usesLocks || !lockAt(dX-1,y)) at(dX-1,y) = at(dX-2,y);
       }
