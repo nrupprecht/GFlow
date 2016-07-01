@@ -22,23 +22,30 @@ class MAC {
   void update(double);
 
   string printVF();
-  string printVFNorm();
+  string printVFNorm(bool=true);
+  string printTVFNorm(bool=true);
   string printPressure();
   string printPressure3D();
+  string printU();
+  string printUt();
+  string printV();
+  string printVt();
 
   vect<> U_pos(int, int);
   vect<> V_pos(int, int);
   vect<> P_pos(int, int);
 
+  void setEpsilon(double e) { epsilon = e; }
+
  private:
   /// Helper functions
 
-  inline double& U(int x, int y) { return _U[x+(nx+1)*y]; }
-  inline double& V(int x, int y) { return _V[x+(nx+2)*y]; }
-  inline double& Ut(int x, int y) { return _Ut[x+(nx+1)*y]; }
-  inline double& Vt(int x, int y) { return _Vt[x+(nx+2)*y]; }
-  inline double& P(int x, int y) { return _P[x+(nx+2)*y]; }
-  inline double& C(int x, int y) { return _C[x+(nx+2)*y]; }
+  inline double& U(int x, int y);
+  inline double& V(int x, int y);
+  inline double& Ut(int x, int y);
+  inline double& Vt(int x, int y);
+  inline double& P(int x, int y);
+  inline double& C(int x, int y);
 
   inline void velocities(double epsilon);
   inline double c(int, int);
@@ -95,7 +102,12 @@ class MAC {
   double rho; // Density
   double mu;  // Viscosity
   double gravity;
-  
+
+  int solveIters;
+
+  double epsilon;  // Time step
+  double time;
+  double iter;
 };
 
 #endif // MAC.h

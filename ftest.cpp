@@ -2,8 +2,8 @@
 #include "MAC.h"
 
 int main(int argc, char* argv[]) {
-  int dim = 10;
-  int maxiter = 15;
+  int dim = 40;
+  int maxiter = 1000;
 
   stringstream stream;
   if (argc>1) {
@@ -12,6 +12,7 @@ int main(int argc, char* argv[]) {
   }
 
   if (argc>2) {
+    stream.clear();
     stream << argv[2];
     stream >> maxiter;
   }

@@ -7,18 +7,22 @@ MAC::MAC(int width, int height) : nx(width), ny(height) {
   wrapY = false;
   left = bottom = 0.;
   right = top = 1.;
-  hx = 0.1;
-  hy = 0.1;
+  hx = (right-left)/nx;
+  hy = (top-bottom)/ny;
   invHx = 1/hx;
   invHy = 1/hy;
-  gravity = 0;
-  rho = 1;
+  gravity = 1;
+  rho = 1.03*nx*ny;
   mu = 0.1;
+  epsilon = 0.001;
+  time = 0;
+  iter = 0;
+  solveIters = 10;
   
   allocate();
 
   un=1;
-  us=0;
+  us=1;
   ve=0;
   vw=0;
 }
@@ -28,38 +32,32 @@ MAC::~MAC() {
 }
 
 void MAC::run(int maxiter) {
-  double epsilon = 0.0002;
-  double time = 0;
-
-  for (int i=0; i<maxiter; i++) {
+  time = 0;
+  for (iter=0; iter<maxiter; iter++) {
     boundary();    
     velocities(epsilon);
+    if (gravity>0) bodyForces(epsilon);
     pressures(epsilon);
     correct(epsilon);
 
     time += epsilon;
   }
-
+  
+  cout << "Iters: " << iter << endl;
   cout << "p=" << printPressure() << ";\n";
   cout << "p3d=" << printPressure3D() << ";\n";
   cout << "vfn=" << printVFNorm() << ";\n";
   cout << "vf=" << printVF() << ";\n";
-
+  
 }
 
 void MAC::update(double epsilon) {
-  boundary(); // This probably doesn't need to be called every time
-
-  //advect(epsilon);
-  //viscousDiffusion(epsilon);
-  //bodyForces(epsilon);
-
-  velocities(epsilon);
+  boundary();
+  advect(epsilon);
+  viscousDiffusion(epsilon);
+  bodyForces(epsilon);  
   pressures(epsilon);
   correct(epsilon);
-
-  //computePressure(epsilon);
-  //subtractPressure(epsilon);
 }
 
 string MAC::printVF() {
@@ -79,7 +77,7 @@ string MAC::printVF() {
   return str;
 }
 
-string MAC::printVFNorm() {
+string MAC::printVFNorm(bool truncate) {
   stringstream stream;
   stream << "{";
   for (int y=ny; y>0; y--) {
@@ -87,7 +85,29 @@ string MAC::printVFNorm() {
     for (int x=1; x<nx+1; x++) {
       double u = 0.5*(U(x,y)+U(x-1,y));
       double v = 0.5*(V(x,y)+V(x,y-1));
-      stream << limit_prec(sqr(u)+sqr(v));
+      if (truncate) stream << limit_prec(sqr(u)+sqr(v));
+      else stream << sqr(u)+sqr(v);
+      if (x!=nx) stream << ",";
+    }
+    stream << "}";
+    if (y!=1) stream << ",";
+  }
+  stream << "}";
+  string str;
+  stream >> str;
+  return str;
+}
+
+string MAC::printTVFNorm(bool truncate) {
+  stringstream stream;
+  stream << "{";
+  for (int y=ny; y>0; y--) {
+    stream << "{";
+    for (int x=1; x<nx+1; x++) {
+      double u = 0.5*(Ut(x,y)+Ut(x-1,y));
+      double v = 0.5*(Vt(x,y)+Vt(x,y-1));
+      if (truncate) stream << limit_prec(sqr(u)+sqr(v));
+      else stream << sqr(u)+sqr(v);
       if (x!=nx) stream << ",";
     }
     stream << "}";
@@ -102,14 +122,16 @@ string MAC::printVFNorm() {
 string MAC::printPressure() {
   stringstream stream;
   stream << "{";
-  for (int y=ny; y>0; y--) {
+  //for (int y=ny; y>0; y--) {
+  for (int y=0; y<ny+2; y++) {
     stream << "{";
-    for (int x=1; x<nx+1; x++) {
+    for (int x=0; x<nx+2; x++) {
       stream << limit_prec(P(x,y));
-      if (x!=nx) stream << ",";
+      if (x!=nx+1) stream << ",";
     }
     stream << "}";
-    if (y!=1) stream << ",";
+    //if (y!=1) stream << ",";
+    if (y!=ny+1) stream << ",";
   }
   stream << "}";
   string str;
@@ -170,28 +192,124 @@ vect<> MAC::P_pos(int x, int y) {
 }
 
 inline void MAC::velocities(double epsilon) {
-
   for (int i=1; i<nx; i++)
-    for (int j=1; j<ny+1; j++) // temporary u-velocity
-      Ut(i,j)=U(i,j)+epsilon*(-(0.25/hx)*sqr((U(i+1,j)+U(i,j))-sqr(U(i,j)+U(i-1,j))+(U(i,j+1)+U(i,j))*(V(i+1,j)+V(i,j))-(U(i,j)+U(i,j-1))*(V(i+1,j-1)+V(i,j-1)))+(mu/sqr(hx))*(U(i+1,j)+U(i-1,j)+U(i,j+1)+U(i,j-1)-4*U(i,j)));
+    for (int j=1; j<ny+1; j++) {// temporary u-velocity
+      double t1 = sqr(U(i+1,j)+U(i,j))-sqr(U(i,j)+U(i-1,j));
+      double t2 = (U(i,j+1)+U(i,j))*(V(i+1,j)+V(i,j));
+      double t3 = (U(i,j)+U(i,j-1))*(V(i+1,j-1)+V(i,j-1));
+      double t4 = -(0.25/hx)*(t1+t2-t3);
+      double t5 = U(i+1,j)+U(i-1,j)+U(i,j+1)+U(i,j-1)-4*U(i,j);
+      double t6 = (mu/sqr(hx))*t5;
+      double t7 = U(i,j) + epsilon*(t4+t6);
+      Ut(i,j) = t7;
+    }
  
   for (int i=1; i<nx+1; i++)
-    for (int j=1; j<ny; j++) // temporary v-velocity
+    for (int j=1; j<ny; j++) { // temporary v-velocity
       Vt(i,j)=V(i,j)+epsilon*(-(0.25/hy)*((U(i,j+1)+U(i,j))*(V(i+1,j)+V(i,j))-(U(i-1,j+1)+U(i-1,j))*(V(i,j)+V(i-1,j))+sqr(V(i,j+1)+V(i,j))-sqr(V(i,j)+V(i,j-1)))+(mu/sqr(hy))*(V(i+1,j)+V(i-1,j)+V(i,j+1)+V(i,j-1)-4*V(i,j)));
+    }
+}
 
+string MAC::printU() {
+  stringstream stream;
+  stream << "{";
+  for (int i=0; i<nx+1; i++) {
+    stream << "{";
+    for (int j=0; j<ny+2; j++) {
+      stream << U(i,j);
+      if (j!=ny+1) stream << ",";
+    }
+    stream << "}";
+    if (i!=nx) stream << ",";
+  }
+  stream << "}";
+  string str;
+  stream >> str;
+  return str;
+}
+
+string MAC::printUt() {
+  stringstream stream;
+  stream << "{";
+  for (int i=0; i<nx+1; i++) {
+    stream << "{";
+    for (int j=0; j<ny+2; j++) {
+      stream << Ut(i,j);
+      if (j!=ny+1) stream << ",";
+    }
+    stream << "}";
+    if (i!=nx) stream << ",";
+  }
+  stream << "}";
+  string str;
+  stream >> str;
+  return str;
+}
+
+string MAC::printV() {
+  stringstream stream;
+  stream << "{";
+  for (int i=0; i<nx+2; i++) {
+    stream << "{";
+    for (int j=0; j<ny+1; j++) {
+      stream << V(i,j);
+      if (j!=ny) stream<< ",";
+    }
+    stream << "}";
+    if (i!=nx+1) stream<< ",";
+  }
+  stream << "}";
+  string str;
+  stream >> str;
+  return str;
+}
+
+string MAC::printVt() {
+  stringstream stream;
+  stream << "{";
+  for (int i=0; i<nx+2; i++) {
+    stream << "{";
+    for (int j=0; j<ny+1; j++) {
+      stream << Vt(i,j);
+      if (j!=ny) stream<< ",";
+    }
+    stream << "}";
+    if (i!=nx+1) stream<< ",";
+  }
+  stream << "}";
+  string str;
+  stream >> str;
+  return str;
 }
 
 inline void MAC::pressures(double epsilon) {
   double beta = 2.0/(1+PI/nx); // 1.2
-  int maxit = 100;
+  double maxDSqr;
 
-  for (int i=0; i<(nx+2)*(ny+2); i++) _P[i] = 0; //**
+  for (int it=0; it<solveIters; it++) { // solve for pressure
+    maxDSqr = 0;
+    for (int i=1; i<nx+1; i++) {
+      for (int j=1; j<ny+1; j++) {
+	double prs = P(i+1,j)+P(i-1,j)+P(i,j+1)+P(i,j-1);
+	double vls = (hx/epsilon)*(Ut(i,j)-Ut(i-1,j)+Vt(i,j)-Vt(i,j-1));
+	double old = (1-beta)*P(i,j);
+	double value = beta*C(i,j)*(prs - vls) + old;
+	double dSqr = sqr(value-P(i,j));
 
-  for (int it=0; it<maxit; it++) // solve for pressure
-    for (int i=1; i<nx+1; i++)
-      for (int j=1; j<ny+1; j++)
-	P(i,j)=beta*C(i,j)*(P(i+1,j)+P(i-1,j)+P(i,j+1)+P(i,j-1)-(hx/epsilon)*(Ut(i,j)-Ut(i-1,j)+Vt(i,j)-Vt(i,j-1)))+(1-beta)*P(i,j);
+	/*
+	if (iter==19 && it==solveIters-1) {
+	  cout << prs << " " << vls << " " << old << " " << value << endl;
+	  cout << dSqr << endl << endl;
+	}
+	*/
 
+	if (dSqr>maxDSqr) maxDSqr = dSqr;
+	P(i,j)=value;
+      }
+    }
+  }
+  //cout << maxDSqr << endl;
+  //cout << P(25,16) << " " << P(25,17) << " " << P(25,18) << " " << P(25,19) << endl;
 }
 
 inline void MAC::correct(double epsilon) {
@@ -201,6 +319,36 @@ inline void MAC::correct(double epsilon) {
   for (int i=1; i<nx+1; i++)
     for (int j=1; j<ny; j++)
       V(i,j)=Vt(i,j)-(epsilon/hy)*(P(i,j+1)-P(i,j));
+}
+
+inline double& MAC::U(int x, int y) { 
+  if (x<0 || nx+1<=x || y<0 || ny+2<=y) throw "U";
+  return _U[x+(nx+1)*y]; 
+}
+
+inline double& MAC::V(int x, int y) { 
+  if (x<0 || nx+2<=x || y<0 || ny+1<=y) throw "V";
+  return _V[x+(nx+2)*y]; 
+}
+
+inline double& MAC::Ut(int x, int y) { 
+  if (x<0 || nx+1<=x || y<0 || ny+2<=y) throw "Ut";
+  return _Ut[x+(nx+1)*y]; 
+}
+
+inline double& MAC::Vt(int x, int y) { 
+  if (x<0 || nx+2<=x || y<0 || ny+1<=y) throw "Vt";
+  return _Vt[x+(nx+2)*y]; 
+}
+
+inline double& MAC::P(int x, int y) { 
+  if (x<0 || nx+2<=x || y<0 || ny+2<=y) throw 'P';
+  return _P[x+(nx+2)*y]; 
+}
+
+inline double& MAC::C(int x, int y) { 
+  if (x<0 || nx+2<=x || y<0 || ny+2<=y) throw 'C';
+  return _C[x+(nx+2)*y]; 
 }
 
 void MAC::discard() {
@@ -226,15 +374,25 @@ inline void MAC::boundary() {
 
 
 inline void MAC::advect(double epsilon) {
-
+  
 }
 
 inline void MAC::viscousDiffusion(double epsilon) {
+  return ;
+  for (int i=1; i<nx; i++)
+    for (int j=1; j<ny+1; j++)
+      Ut(i,j)=epsilon*mu/sqr(hx)*(U(i+1,j)+U(i-1,j)+U(i,j+1)+U(i,j-1)-4*U(i,j));
 
+  for (int i=1; i<nx+1; i++)
+    for (int j=1; j<ny; j++)
+      Vt(i,j)=V(i,j)+epsilon*mu/sqr(hy)*(V(i+1,j)+V(i-1,j)+V(i,j+1)+V(i,j-1)-4*V(i,j));
 }
 
 inline void MAC::bodyForces(double epsilon) {
-  
+  double mt = epsilon*rho*hx*hy;
+  for (int i=1; i<nx+1; i++)
+    for (int j=1; j<ny; j++)
+      Vt(i,j) -= mt*gravity;
 }
 
 inline void MAC::computePressure(double epsilon) {
