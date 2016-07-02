@@ -7,20 +7,16 @@
 
 #include "Utility.h"
 
-// Some helper functions
-inline void safe_delete(double* P) { if (P) { delete [] P; P=0; }}
-template<typename T> inline void swap(T &a, T &b) { T t=a; a=b; b=t; }
-
-/// The Marker and Cell class
+/// The Marker and Cell fluid simulator class
 class MAC {
  public:
   MAC(int width, int height);
   ~MAC();
 
-  void run(int);
-  
+  void run(double);  
   void update(double);
 
+  // Printing functions
   string printVF();
   string printVFNorm(bool=true);
   string printTVFNorm(bool=true);
@@ -31,15 +27,21 @@ class MAC {
   string printV();
   string printVt();
 
+  // Accessors
   vect<> U_pos(int, int);
   vect<> V_pos(int, int);
   vect<> P_pos(int, int);
+  string getPressureRec() { return pressureRec; }
+  int getIter() { return iter; }
+  double getRealTime() { return realTime; }
 
+  // Mutators
   void setEpsilon(double e) { epsilon = e; }
+  void setDispDelay(double dt) { dispDelay = dt; }
+  void setInSphere(vect<> pos, double r, vect<> v);
 
- private:
-  /// Helper functions
-
+ protected:
+  /// Field access Functions
   inline double& U(int x, int y);
   inline double& V(int x, int y);
   inline double& Ut(int x, int y);
@@ -47,14 +49,11 @@ class MAC {
   inline double& P(int x, int y);
   inline double& C(int x, int y);
 
-  inline void velocities(double epsilon);
-  inline double c(int, int);
   inline void pressures(double epsilon);
-  inline void correct(double epsilon);
 
   double un, us, ve, vw;
 
-  //*****************
+  ///*** MAIN FUNCTIONS ***
 
   // Discards arrays (if they exist)
   void discard();
@@ -62,14 +61,14 @@ class MAC {
   // Allocated arrays for U, V, P based on width, height, and wrapping
   void allocate();
 
+  // Initialize the simulation
+  inline virtual void initialize();
+
   // Set boundary conditions
   inline void boundary();
 
-  // Lagrangian advection
-  inline void advect(double);
-
-  // Viscous diffusion of velocity
-  inline void viscousDiffusion(double);
+  // Do advection and viscous diffusion of velocities
+  inline void velocities(double);
 
   // Apply body forces
   inline void bodyForces(double);
@@ -77,17 +76,20 @@ class MAC {
   // Compute the pressure (used to make the velocity divergence free)
   inline void computePressure(double);
 
+  // Correct velocities (make divergence free)
+  inline void correct(double);
+
+  // Other Updates
+  inline virtual void updates(double) {};
+
+  // Anything that needs to be done at the end
+  inline virtual void ending() {};
+
   // Updated a site using SOR
-  inline void SOR_site(int, int, double, double, double, double&);
+  inline void SOR_site(int, int, double&);
 
-  // Do a checkerboard SOR iteration of the pressure field
-  inline void SOR_cbIteration(double, double, double&);
-  
-  // Do a SOR iteration on the pressure field
-  inline void SOR_iteration(double, double, double&);
-
-  // Subtracts grad P from V to make velocity divergence free
-  inline void subtractPressure(double);
+  /// Printing
+  string pressureRec;
 
   /// Data
   int nx, ny; // Number of fluid cells
@@ -99,15 +101,20 @@ class MAC {
   double *_U, *_Ut, *_V, *_Vt, *_P; // Arrays for x, y components of velocity and pressure
   double *_C; // Coefficient array
 
-  double rho; // Density
-  double mu;  // Viscosity
-  double gravity;
+  double rho, rhoS; // Density and scaled density
+  double mu, nu;  // Viscosity and Kinematic viscosity (mu/rho)
+  vect<> gravity;
 
   int solveIters;
+  double tollerance;
+  double beta;
 
   double epsilon;  // Time step
-  double time;
-  double iter;
+  double time, realTime; // Simulation time and real time
+  double iter; // The number of simulation iterations that have occured
+
+  double dispCount; // Counts the amount of time since information was last displayed
+  double dispDelay; // Length of time between recording information (inverse of fps)
 };
 
 #endif // MAC.h

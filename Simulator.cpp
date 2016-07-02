@@ -605,8 +605,6 @@ inline void Simulator::interactions() {
 	  if (Q!=0 && P!=Q) P->interact(Q);
 
   // Calculate particle-wall forces
-  // Do wall forces last so we can easily calculate friction (which just cancels 
-  // other forces)
   for (auto W : walls)
     if (W!=0)
       for (auto P : particles)

@@ -1,16 +1,13 @@
 CC = icpc
-FLAGS = -std=c++11 -g #-O3
+FLAGS = -std=c++11 -g -O3
 
-targets = driver time Jamming test ftest
+targets = driver time Jamming ftest
 files = Simulator.o Object.o Field.o
 
 all: $(targets)
 
 # Executables
-ftest: ftest.o Field.o MAC.o
-	$(CC) $^ -o $@
-
-test: test.o Field.o
+ftest: ftest.o GFlow.o MAC.o Object.o
 	$(CC) $^ -o $@
 
 Jamming: Jamming.o $(files)
@@ -32,4 +29,4 @@ clean:
 
 .PHONY: fclean
 fclean:
-	rm Fluid.o MAC.o ftest.o ftest
+	rm MAC.o ftest.o ftest

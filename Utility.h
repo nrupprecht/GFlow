@@ -29,12 +29,27 @@ using std::time;
 const double PI = 3.14159265;
 
 /// Random number function
-inline double getRand() { return drand48(); }
+inline double getRand() { 
+  return drand48(); 
+}
 
-inline double limit_prec(double x) { return fabs(x)<1e-4 ? 0 : x; }
+/// Precision clamp
+inline double limit_prec(double x) { 
+  return fabs(x)<1e-4 ? 0 : x; 
+}
 
-/// Forward declaration for Vector Field
-struct VectorField;
+/// Safe array delete function
+template<typename T> inline void safe_delete(T* P) { 
+  if (P) { 
+    delete [] P; 
+    P=0; 
+  }
+}
+
+/// Swap function
+template<typename T> inline void swap(T &a, T &b) { 
+  T t=a; a=b; b=t; 
+}
 
 /// Helper two argument min function
 template<typename T> inline T min(T a, T b) {
@@ -83,6 +98,11 @@ vect(const vect<T>& V) : x(V.x), y(V.y) {};
     x = V.x; y = V.y;
     return *this;
   }
+
+    vect<T>& operator=(const T v) {
+      x = v; y = v;
+      return *this;
+    }
     
     bool operator==(const vect<T>& V) const {
       return x==V.x && y==V.y;
@@ -160,12 +180,15 @@ const vect<double> Zero(0,0);
 const vect<double> E0(1,0);
 const vect<double> E1(0,1);
 
+/// Vector Squaring function
+template<typename T> T sqr(vect<T> V) { 
+  return V*V; 
+}
+
 template<typename T> vect<T> normalize(vect<T> V) {
   V.normalize();
   return V;
 }
-
-template<typename T> T sqr(vect<T> V) { return V*V; }
 
 template<typename T> inline vect<T> normalV(T x, T y) {
   T ns = x*x + y*y;
@@ -191,18 +214,6 @@ template<typename T> inline std::ostream& operator<<(std::ostream& out, vector<T
   out << "}";
   return out;
 }
-
-/*
-inline std::ostream& operator<<(std::ostream& out, vector<vect<>> lst) {
-  out << "{";
-  for (int i=0; i<lst.size(); i++) {
-    out << lst.at(i);
-    if (i!=lst.size()-1) out << ",";
-  }
-  out << "}";
-  return out;
-}
-*/
 
 // A useful typedef
 typedef pair<vect<float>, bool> vtype;
