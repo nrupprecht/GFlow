@@ -20,6 +20,16 @@ class GFlow : public MAC {
   void addTempWall(Wall*, double);
   void addParticle(Particle*);
   void addParticles(int N, double R, double var, double left, double right, double bottom, double top, PType type=PASSIVE, double vmax=-1);
+
+  /// Display functions
+  string printRadiusRec();
+  string printWalls();
+  string printPositionRec();
+  string printPositionAnimationCommand(string="frames");
+  //string printPressureAnimationCommand(string="press", string="frames");
+
+  // Mutators
+  void setRecPos(bool r) { recPos = r; }
   
  private:
   ///*** MAIN FUNCTIONS
@@ -48,6 +58,9 @@ class GFlow : public MAC {
   // Update particles' fluid boundary conditions
   inline void particleBC();
 
+  // Record data if neccessary
+  inline virtual void record();
+
   // Check whether a particle placed at this position would overlap any other particles
   inline bool wouldOverlap(vect<>, double);
   
@@ -55,6 +68,13 @@ class GFlow : public MAC {
   vector<Particle*> particles; // Particles
   vector<Wall*> walls; // Walls
   list<pair<Wall*,double>> tempWalls; // Temporary walls
+
+  vector<vector<vect<> > > posRec; // Record of positions (for display purposes)
+  bool recPos; // If true, we record the positions of particles
+
+  bool SCF, FCS; // Whether the solid couples to the fluid and the fluid couples to the solid
+  int pSamples;
+  vect<> *norms;
 
   /// Sectorization
   inline void updateSectors();

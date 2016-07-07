@@ -1,6 +1,6 @@
 #include "Object.h"
 
-Particle::Particle(vect<> pos, double rad, double repulse, double dissipate, double coeff) : position(pos), radius(rad), repulsion(repulse), dissipation(dissipate), coeff(coeff), drag(sphere_drag) {
+Particle::Particle(vect<> pos, double rad, double repulse, double dissipate, double coeff) : position(pos), radius(rad), repulsion(repulse), dissipation(dissipate), coeff(coeff), drag(0) {
   initialize();
 }
 
@@ -11,7 +11,7 @@ void Particle::initialize() {
   omega = 0;
   alpha = 0;
   theta = 0;
-  double mass = 10;
+  double mass = 5;
   invMass = 1.0/mass;
   invII = 1.0/(0.5*mass*sqr(radius));
 
@@ -117,11 +117,13 @@ void Particle::update(double epsilon) {
   vect<> dragF = -drag*velocity*velocity*normalize(velocity);
   // Calculate net force/acceleration, record last acceleration
   vect<> netF = dragF + normalF + shearF + force;
+
   //vect<> acceleration_t = acceleration;
   acceleration = invMass*netF;
 
   // Update velocity and position (velocity verlet) --- V. Verlet seems to conserve energy worse then this
   position += epsilon*(velocity + 0.5*epsilon*acceleration);
+
   // velocity += 0.5*epsilon*(acceleration+acceleration_t);
   velocity += epsilon*acceleration;
 
@@ -135,6 +137,16 @@ void Particle::update(double epsilon) {
   // Reset forces and torques
   torque = 0;
   dragF = normalF = shearF = force = vect<>();
+
+  /*
+  cout << "Fnet=" << netF << endl; //**
+  cout << "pos=" << position << endl; //**
+  cout << "V=" << velocity << endl; //**
+  cout << "Ep: " << epsilon << endl; //**
+  cout << "A=" << acceleration << endl; //**
+  cout << "dP=" << (epsilon*(velocity + 0.5*epsilon*acceleration)) << endl; //**
+  cout << "dA.y=" << (epsilon*acceleration) << endl << endl; //**
+  */
 }
 
 RTSphere::RTSphere(vect<> pos, double rad) : Particle(pos, rad), runTime(default_run), tumbleTime(default_tumble), timer(0), running(true), runDirection(randV()), runForce(run_force) {};
@@ -163,13 +175,13 @@ void RTSphere::update(double epsilon) {
   Particle::update(epsilon);
 }
 
-Wall::Wall(vect<> origin, vect<> wall) : origin(origin), wall(wall), coeff(wall_coeff), repulsion(wall_repulsion), dissipation(wall_dissipation), gamma(wall_gamma) {
+Wall::Wall(vect<> origin, vect<> end) : origin(origin), wall(end-origin), coeff(wall_coeff), repulsion(wall_repulsion), dissipation(wall_dissipation), gamma(wall_gamma) {
   normal = wall;
   normal.normalize();
   length = wall.norm();
 }
 
-Wall::Wall(vect<> origin, vect<> end, bool) : origin(origin), wall(end-origin), coeff(0.5), repulsion(wall_repulsion), dissipation(wall_dissipation), gamma(wall_gamma) {
+Wall::Wall(vect<> origin, vect<> wall, bool) : origin(origin), wall(wall), coeff(wall_coeff), repulsion(wall_repulsion), dissipation(wall_dissipation), gamma(wall_gamma) {
   normal = wall;
   normal.normalize();
   length = wall.norm();

@@ -79,8 +79,8 @@ void Simulator::createFluidBox() {
 	fV.at(i,j) = vect<>(1,0);
     }
 
-  //addWall(new Wall(vect<>(0,0), vect<>(1,0), true)); // Add a floor
-  //addWall(new Wall(vect<>(0,1), vect<>(1,1), true)); // Add a ceiling
+  //addWall(new Wall(vect<>(0,0), vect<>(1,0))); // Add a floor
+  //addWall(new Wall(vect<>(0,1), vect<>(1,1)); // Add a ceiling
   //Particle *P = new Particle(vect<>(0.5,0.5), 0.15);
   //P->fix();
   //addWatchedParticle(P);
@@ -112,14 +112,14 @@ void Simulator::createHopper(int N, double radius, double gap, double width) {
   double troughHeight = 0.5;
   double space = 1.0;
   double var = 0, mx = (1+var)*radius;
-  addWall(new Wall(vect<>(0, troughHeight), vect<>(0,2*top), true));
-  addWall(new Wall(vect<>(right, troughHeight), vect<>(right,2*top), true));
-  addWall(new Wall(vect<>(0, troughHeight), vect<>(0.5*right-0.5*gap, bottomGap), true));
-  addWall(new Wall(vect<>(1, troughHeight), vect<>(0.5*right+0.5*gap, bottomGap), true));
+  addWall(new Wall(vect<>(0, troughHeight), vect<>(0,2*top)));
+  addWall(new Wall(vect<>(right, troughHeight), vect<>(right,2*top)));
+  addWall(new Wall(vect<>(0, troughHeight), vect<>(0.5*right-0.5*gap, bottomGap)));
+  addWall(new Wall(vect<>(1, troughHeight), vect<>(0.5*right+0.5*gap, bottomGap)));
 
-  //addTempWall(new Wall(vect<>(0.5*(right-gap),bottomGap), vect<>(0.5*(right+gap),bottomGap), true), 3.0);
-  addTempWall(new Wall(vect<>(0,troughHeight), vect<>(1,troughHeight), true), 3.0);
-  // addWall(new Wall(vect<>(0,troughHeight), vect<>(1,troughHeight), true));
+  //addTempWall(new Wall(vect<>(0.5*(right-gap),bottomGap), vect<>(0.5*(right+gap),bottomGap)), 3.0);
+  addTempWall(new Wall(vect<>(0,troughHeight), vect<>(1,troughHeight)), 3.0);
+  // addWall(new Wall(vect<>(0,troughHeight), vect<>(1,troughHeight)));
 
   double upper = 5; // Instead of top
   addParticles(N, radius, var, mx, right-mx, troughHeight+mx, upper-mx);
@@ -147,8 +147,8 @@ void Simulator::createPipe(int N, double radius) {
   gravity = vect<>();
   left = 0; bottom = 0;
   top = 1; right = 5;
-  addWall(new Wall(vect<>(0,0), vect<>(right,0), true));
-  addWall(new Wall(vect<>(0,top), vect<>(right,top), true));
+  addWall(new Wall(vect<>(0,0), vect<>(right,0)));
+  addWall(new Wall(vect<>(0,top), vect<>(right,top)));
   addParticles(N, radius, 0, 0, right, 0, top, RTSPHERE);
   xLBound = WRAP;
   xRBound = WRAP;
@@ -160,10 +160,10 @@ void Simulator::createIdealGas(int N, double radius) {
   discard();
   setDoFluid(false);
   gravity = vect<>();
-  addWall(new Wall(vect<>(0,0), vect<>(right,0), true)); // bottom
-  addWall(new Wall(vect<>(0,top), vect<>(right,top), true)); // top
-  addWall(new Wall(vect<>(0,0), vect<>(0,top), true)); // left
-  addWall(new Wall(vect<>(right,0), vect<>(right,top), true)); // right
+  addWall(new Wall(vect<>(0,0), vect<>(right,0))); // bottom
+  addWall(new Wall(vect<>(0,top), vect<>(right,top))); // top
+  addWall(new Wall(vect<>(0,0), vect<>(0,top))); // left
+  addWall(new Wall(vect<>(right,0), vect<>(right,top))); // right
 
   addParticles(N, radius, 0, 0, right, 0, top, PASSIVE, 0.1);
   // setParticleDissipation(30);
@@ -185,12 +185,12 @@ void Simulator::createEntropyBox(int N, double radius) {
   setDoFluid(false);
   gravity = vect<>();
   double gap = 0.1;
-  addWall(new Wall(vect<>(0,0), vect<>(right,0), true)); // bottom
-  addWall(new Wall(vect<>(0,top), vect<>(right,top), true)); // top
-  addWall(new Wall(vect<>(0,0), vect<>(0,top), true)); // left
-  addWall(new Wall(vect<>(right,0), vect<>(right,top), true)); // right
-  addWall(new Wall(vect<>(0.5,0), vect<>(0.5,0.5*(1.0-gap)), true)); // bottom partition
-  addWall(new Wall(vect<>(0.5,1), vect<>(0.5,0.5*(1.0+gap)), true)); // bottom partition
+  addWall(new Wall(vect<>(0,0), vect<>(right,0))); // bottom
+  addWall(new Wall(vect<>(0,top), vect<>(right,top))); // top
+  addWall(new Wall(vect<>(0,0), vect<>(0,top))); // left
+  addWall(new Wall(vect<>(right,0), vect<>(right,top))); // right
+  addWall(new Wall(vect<>(0.5,0), vect<>(0.5,0.5*(1.0-gap)))); // bottom partition
+  addWall(new Wall(vect<>(0.5,1), vect<>(0.5,0.5*(1.0+gap)))); // bottom partition
 
   addParticles(N/2, radius, 0, radius, 0.5-radius, radius, top-radius, PASSIVE, 1);
   addParticles(N/2, radius, 0, 0.5+radius, 1-radius, radius, top-radius, PASSIVE, 0.1);

@@ -1,9 +1,21 @@
 #include "GFlow.h"
 
 GFlow::GFlow(int x, int y) : MAC(x,y) {
+  // Coupling
+  FCS = true;
+  SCF = true;
+  // Recording
+  recPos = true;
+  // Set up particle interaction sectorization
   ssecInteract = false;
   secX = 10; secY = 10;
   sectors = new list<Particle*>[(secX+2)*(secY+2)+1];
+  // Number of pressure samples to take
+  pSamples = 10;
+  // Set up array of normal vectors
+  norms = new vect<>[pSamples];
+  for (int i=0; i<pSamples; i++)
+    norms[i] = vect<>(cos(2.*PI*i/pSamples), sin(2.*PI*i/pSamples));
 }
 
 GFlow::~GFlow() {
@@ -13,6 +25,7 @@ GFlow::~GFlow() {
 }
 
 void GFlow::addWall(Wall* wall) {
+  createWallBC(wall->getPosition(), wall->getEnd());
   walls.push_back(wall);
 }
 
@@ -61,12 +74,68 @@ void GFlow::addParticles(int N, double R, double var, double lft, double rght, d
   }
 }
 
+string GFlow::printRadiusRec() {
+  if (particles.empty()) return "{}";
+  stringstream stream;
+  stream << "{";
+  for (auto P : particles) stream << P->getRadius() << ',';
+  stream << "}";
+  string str;
+  stream >> str;
+  return str;
+}
+
+string GFlow::printWalls() {
+  if (walls.empty()) return "{}";
+  stringstream stream;
+  stream << "Show[";
+  for (int i=0; i<walls.size(); i++) {
+    stream << "Graphics[{Thick,Red,Line[{" << walls.at(i)->getPosition() << "," << walls.at(i)->getEnd() << "}]}]";
+    if (i!=walls.size()-1) stream << ",";
+  }
+  stream << ",PlotRange->{{0," << right << "},{0," << top << "}}]";
+
+  string str;
+  stream >> str;
+  return str;
+}
+
+string GFlow::printPositionRec() {
+  if (!recPos) return "{}";
+  stringstream stream;
+  string str, str2;
+  for (int i=0; i<posRec.size(); i++) {
+    stream.clear();
+    stream << "pos" << i << "=" << posRec.at(i) << ";" << endl;
+    stream >> str2;
+    str += str2;
+  }
+  return str;
+}
+
+string GFlow::printPositionAnimationCommand(string frames) {
+  stringstream stream;
+  string str = frames + "=Table[Show[walls", str2;
+  for (int i=0; i<particles.size(); i++) stream << ",Graphics[Circle[pos" << i << "[[i]],R[[" << i+1 << "]]]]";
+  stream << ",PlotRange->{{0," << right << "},{0," << top << "}}],{i,1,Length[pos0]}];";
+  stream >> str2;
+  str += str2;
+  str += "\n";
+  stream.clear();
+  stream << "vid=ListAnimate[" + frames + ",AnimationRate->" << max(1.0, ceil(1.0/dispDelay)) << "]";
+  stream >> str2;
+  str += str2;
+  return str;
+}
+
 inline void GFlow::initialize() {
+  MAC::initialize();
+  if (recPos) posRec = vector<vector<vect<> > >(particles.size());
   particleBC();
 }
 
 inline void GFlow::ending() {
-  for (auto P : particles) cout << P->getPosition() << endl;
+  MAC::ending();
 }
 
 inline void GFlow::updates(double epsilon) {
@@ -79,8 +148,20 @@ inline void GFlow::updates(double epsilon) {
   particleBC();
 }
 
-inline void GFlow::updateParticles() { // May be able to get rid of
-  for (auto P : particles) updateP(P);
+inline void GFlow::updateParticles() { // May be able to fold updateP into this
+  for (auto P : particles) {
+    // Integrate pressures
+    if (FCS) { // If the fluid is couples to the solid, allowing it to effect the solid
+      double radius = P->getRadius();
+      double circ = 2*PI*radius;
+      vect<> force, pos = P->getPosition();
+      for (int i=0; i<pSamples; i++) force -= pressure(pos + radius*norms[i])*norms[i];
+      force *= circ/pSamples;
+      P->applyForce(force);
+    }
+    // Update particle
+    updateP(P);
+  }
 }
 
 inline void GFlow::updateP(Particle* &P) {
@@ -108,8 +189,16 @@ inline void GFlow::interactions() {
 }
 
 inline void GFlow::particleBC() {
-  for (auto P : particles)
-    setInSphere(P->getPosition(), P->getRadius(), P->getVelocity());
+  if (SCF) // If the solid couples to fluid, allowing it to effect the fluid
+    for (auto P : particles)
+      setInSphere(P->getPosition(), P->getRadius(), P->getVelocity());
+}
+
+inline void GFlow::record() {
+  MAC::record();
+  if (recPos)
+    for (int i=0; i<particles.size(); i++)
+      posRec.at(i).push_back(particles.at(i)->getPosition());
 }
 
 inline bool GFlow::wouldOverlap(vect<> pos, double R) {

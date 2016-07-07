@@ -18,36 +18,60 @@ class MAC {
 
   // Printing functions
   string printVF();
+  string printVFN();
   string printVFNorm(bool=true);
   string printTVFNorm(bool=true);
-  string printPressure();
+  string printPressure(bool=true); // True - density plot, False - matrix plot
+  string printPressureAnimationCommand(bool=true, string="press", string="frames");
   string printPressure3D();
   string printU();
   string printUt();
   string printV();
   string printVt();
 
+  string printP_bdd();
+  string printC();
+  string printU_bdd();
+  string printV_bdd();
+
   // Accessors
   vect<> U_pos(int, int);
   vect<> V_pos(int, int);
   vect<> P_pos(int, int);
+  double pressure(double, double);
+  double pressure(vect<>);
   string getPressureRec() { return pressureRec; }
   int getIter() { return iter; }
   double getRealTime() { return realTime; }
+  double getEpsilon() { return epsilon; }
 
   // Mutators
+  void setBounds(double,double,double,double);
+  void setResolution(int,int);
   void setEpsilon(double e) { epsilon = e; }
+  void resetEpsilon();
+  void setGravity(vect<> g) { gravity = g; }
   void setDispDelay(double dt) { dispDelay = dt; }
   void setInSphere(vect<> pos, double r, vect<> v);
+  void setStickBC(bool s) { stickBC = s; }
+  void setViscosity(double);
+  void createWallBC(vect<>, vect<>);
 
  protected:
+  inline void setDistances();
+  inline void setSOR();
+  inline void setCoeffs();
+
   /// Field access Functions
-  inline double& U(int x, int y);
-  inline double& V(int x, int y);
-  inline double& Ut(int x, int y);
-  inline double& Vt(int x, int y);
-  inline double& P(int x, int y);
-  inline double& C(int x, int y);
+  inline double& U(int x, int y, bool=true);
+  inline double& V(int x, int y, bool=true);
+  inline double& Ut(int x, int y, bool=true);
+  inline double& Vt(int x, int y, bool=true);
+  inline double& P(int x, int y, bool=true);
+  inline double& C(int x, int y, bool=true);
+  inline pair<bool,vect<> >& U_bdd(int,int, bool=true);
+  inline pair<bool,vect<> >& V_bdd(int,int, bool=true);
+  inline bool& P_bdd(int,int, bool=true);
 
   inline void pressures(double epsilon);
 
@@ -82,6 +106,9 @@ class MAC {
   // Other Updates
   inline virtual void updates(double) {};
 
+  // Record data if neccessary
+  inline virtual void record();
+
   // Anything that needs to be done at the end
   inline virtual void ending() {};
 
@@ -99,20 +126,30 @@ class MAC {
   bool wrapX, wrapY; // Boundary conditions
 
   double *_U, *_Ut, *_V, *_Vt, *_P; // Arrays for x, y components of velocity and pressure
-  double *_C; // Coefficient array
 
+  /// Boundary condition data
+  double *_C; // Coefficient array  
+  pair<bool,vect<> > *_U_bdd, *_V_bdd; // Data structure for velocity boundary conditions, bool for whether the point is subject to a boundary condition, vect for the normal vector
+  bool *_P_bdd; // Data structure for pressure boundary conditions
+  bool stickBC;
+
+  /// Liquid specs
   double rho, rhoS; // Density and scaled density
   double mu, nu;  // Viscosity and Kinematic viscosity (mu/rho)
   vect<> gravity;
 
+  /// SOR specs
   int solveIters;
   double tollerance;
   double beta;
 
+  /// Simulation Specs
   double epsilon;  // Time step
+  double runTime;  // How long the simulation is supposed to run
   double time, realTime; // Simulation time and real time
   double iter; // The number of simulation iterations that have occured
 
+  /// Display/Record specs
   double dispCount; // Counts the amount of time since information was last displayed
   double dispDelay; // Length of time between recording information (inverse of fps)
 };
