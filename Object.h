@@ -15,11 +15,6 @@ const double wall_dissipation = 7500.0;
 const double wall_coeff = sqrt(0.5);
 const double wall_gamma = 5;
 
-inline int sign(double x) {
-  if (x==0) return 0;
-  return x>0 ? 1 : -1;
-}
-
 inline double clamp(double x) { return x>0 ? x : 0; }
 
 class Wall; // Forward declaration

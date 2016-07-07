@@ -1,8 +1,8 @@
 #include "GFlow.h"
 
 int main(int argc, char* argv[]) {
-  int dim = 25;
-  double time = 0.1;
+  int dim = 10;
+  double time = 0.00064;
 
   // See rands
   srand48(std::time(0));
@@ -27,9 +27,9 @@ int main(int argc, char* argv[]) {
   // test.setBounds(0,2,0,2);
   //*****
 
-  test.setGravity(vect<>());
+  // test.setGravity(Zero);
   // test.setViscosity(0.1);
-  // test.setEpsilon(1e-4);
+  // test.setEpsilon(5e-6);
 
   /*
   double R = 0.1;
@@ -47,19 +47,17 @@ int main(int argc, char* argv[]) {
   test.addWall(new Wall(vect<>(0,1), vect<>(1,1), true));
   */
 
-  //test.addWall(new Wall(vect<>(0,0), vect<>(1,0)));
+  test.addWall(new Wall(vect<>(0.5,0), vect<>(0.5,1)));
 
   test.setDispDelay(1./60.);
   test.run(time);
   cout << "Epsilon: " << test.getEpsilon() << endl;
   cout << "Time: " << test.getRealTime() << endl;
   
-  /*
   cout << "Pbdd=" << test.printP_bdd() << ";\n";
   cout << "Ubdd=" << test.printU_bdd() << ";\n";
   cout << "Vbdd=" << test.printV_bdd() << ";\n";
   cout << "coeff=" << test.printC() << ";\n";
-  */
 
   /*
   cout << "press=" << test.getPressureRec() << ";\n";
@@ -77,7 +75,7 @@ int main(int argc, char* argv[]) {
   cout << "vfmag=" << test.printVFNorm() << ";\n";
   cout << "vf=" << test.printVF() << ";\n";
   cout << "vfn=" << test.printVFN() << ";";
-  
+
   return 0;
 
 }

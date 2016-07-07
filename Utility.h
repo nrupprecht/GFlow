@@ -38,6 +38,13 @@ inline double limit_prec(double x) {
   return fabs(x)<1e-4 ? 0 : x; 
 }
 
+/// Signum
+inline double sign(double x) {
+  if (x>0) return 1;
+  else if (x<0) return -1;
+  else return 0;
+}
+
 /// Safe array delete function
 template<typename T> inline void safe_delete(T* P) { 
   if (P) { 
@@ -113,7 +120,8 @@ vect(const vect<T>& V) : x(V.x), y(V.y) {};
   }
 
   friend std::ostream& operator<<(std::ostream& os, const vect& v) {
-    os << "{" << limit_prec(v.x) << "," << limit_prec(v.y) << "}";
+    //os << "{" << limit_prec(v.x) << "," << limit_prec(v.y) << "}";
+    os << "{" << v.x << "," << v.y << "}";
     return os;
   }
     

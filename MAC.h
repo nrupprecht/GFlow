@@ -18,6 +18,7 @@ class MAC {
 
   // Printing functions
   string printVF();
+  string printVFt();
   string printVFN();
   string printVFNorm(bool=true);
   string printTVFNorm(bool=true);
@@ -90,6 +91,9 @@ class MAC {
 
   // Set boundary conditions
   inline void boundary();
+  
+  // Set the wall boundaries for velocity
+  inline void velocityBoundary();
 
   // Do advection and viscous diffusion of velocities
   inline void velocities(double);

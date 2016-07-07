@@ -14,7 +14,7 @@ MAC::MAC(int width, int height) : nx(width), ny(height), time(0), iter(0), dispD
 
   gravity = vect<>(0,-1);
 
-  mu = 0.05; // Viscosity
+  mu = 0.5; // Viscosity
   nu = mu/rho; // Kinematic viscosity
 
   // Find maximum stable epsilon
@@ -40,17 +40,30 @@ void MAC::run(double runtime) {
   initialize();  
 
   pressureRec = "{";
+  boundary();
   while (time<runTime) {
-    // Boundary conditions
-    boundary();    
-
     // Main updates
     velocities(epsilon);
     bodyForces(epsilon);
+
+    //cout << "v1=" << printVFt() << ";\n"; //**
+
+    velocityBoundary(); 
+
+    //cout << "v2=" << printVFt() << ";\n"; //**
+
     computePressure(epsilon);
     correct(epsilon);
+
+    //cout << "v3=" << printVF() << ";\n"; //**
+
     updates(epsilon); // Do other updates
-    
+
+    // Boundary conditions
+    boundary();    
+
+    //cout << "v4=" << printVF() << ";\n"; //**
+
     // Advance
     time += epsilon;
     dispCount += epsilon;
@@ -84,6 +97,23 @@ string MAC::printVF() {
     for (int x=1; x<nx+1; x++) {
       double u = 0.5*(U(x,y)+U(x-1,y));
       double v = 0.5*(V(x,y)+V(x,y-1));
+      stream << "{{" << x << "," << y << "},{" << limit_prec(u) << "," << limit_prec(v) << "}}";
+      if (!(x==nx && y==1)) stream << ",";
+    }
+  }
+  stream << "}";
+  string str;
+  stream >> str;
+  return str;
+}
+
+string MAC::printVFt() {
+  stringstream stream;
+  stream << "{";
+  for (int y=ny; y>0; y--) {
+    for (int x=1; x<nx+1; x++) {
+      double u = 0.5*(Ut(x,y)+Ut(x-1,y));
+      double v = 0.5*(Vt(x,y)+Vt(x,y-1));
       stream << "{{" << x << "," << y << "},{" << limit_prec(u) << "," << limit_prec(v) << "}}";
       if (!(x==nx && y==1)) stream << ",";
     }
@@ -216,17 +246,23 @@ void MAC::allocate() {
   discard();
 
   _U = new double[(nx+1)*(ny+2)];
+  for (int i=0; i<(nx+1)*(ny+2); i++) _U[i]=0;
   _V = new double[(nx+2)*(ny+1)];
+  for (int i=0; i<(nx+2)*(ny+1); i++) _V[i]=0;
   _Ut = new double[(nx+1)*(ny+2)];
+  for (int i=0; i<(nx+1)*(ny+2); i++) _Ut[i]=0;
   _Vt = new double[(nx+2)*(ny+1)];
+  for (int i=0; i<(nx+2)*(ny+1); i++) _Vt[i]=0;
   _P = new double[(nx+2)*(ny+2)];
+  for (int i=0; i<(nx+2)*(ny+2); i++) _P[i]=0;
   _C = new double[(nx+2)*(ny+2)];
+  for (int i=0;i<(nx+2)*(ny+2); i++) _C[i]=0;
 
   _U_bdd = new pair<bool,vect<> >[(nx+1)*(ny+2)];
+  for (int i=0; i<(nx+1)*(ny+2); i++) _U_bdd[i] = pair<bool,vect<> >(false, Zero);
   _V_bdd = new pair<bool,vect<> >[(nx+2)*(ny+1)];
+  for (int i=0; i<(nx+2)*(ny+1); i++) _V_bdd[i] = pair<bool,vect<> >(false, Zero);
   _P_bdd = new bool[(nx+2)*(ny+2)];
-
-  // Pressure BCs
   for (int i=0; i<(nx+2)*(ny+2); i++) _P_bdd[i] = false;
   for (int i=0; i<nx+2; i++) {
     P_bdd(i,0) = true;
@@ -238,8 +274,6 @@ void MAC::allocate() {
   }
 
   // U BCs
-  for (int i=0; i<(nx+1)*(ny+2); i++) _U_bdd[i] = pair<bool,vect<> >(false, Zero);
-  for (int i=0; i<(nx+2)*(ny+1); i++) _V_bdd[i] = pair<bool,vect<> >(false, Zero);
   setCoeffs(); // Set C array
 }
 
@@ -297,24 +331,24 @@ void MAC::createWallBC(vect<> start, vect<> end) {
 
   // X pass
   if (end.x<start.x) swap(start, end);
-  int sec1 = (int)(start.x*invHx), sec2 = (int)(end.x*invHx);
+  int sec1 = max((int)(start.x*invHx),0), sec2 = min((int)(end.x*invHx),nx+1);
   if (start.x==end.x) { // Vertical wall case
     if (lnorm*vect<>(-1,0)<0) lnorm *= -1; // Make sure lnorm points left
     int y1 = (int)(start.y*invHy), y2 = (int)(end.y*invHy);
     for (int y=y1; y<=y2; y++) {
       // Set U
-      U_bdd(sec1,y) = pair<bool,vect<> >(true, -lnorm); // Left
-      U_bdd(sec1-1,y) = pair<bool,vect<> >(true, lnorm); // Right
-      P_bdd(sec1,y) = true;
-      P(sec1,y) = 0;
+      U_bdd(sec1,y,false) = pair<bool,vect<> >(true, -lnorm); // Left
+      U_bdd(sec1-1,y,false) = pair<bool,vect<> >(true, lnorm); // Right
+      P_bdd(sec1,y,false) = true;
+      P(sec1,y,false) = 0;
       // Set V
       if ((sec1+0.5)*hx<start.x) { // Wall is right of center
-	V_bdd(sec1,y) = pair<bool,vect<> >(true, lnorm); // Left
-	V_bdd(sec1+1,y) = pair<bool,vect<> >(true, -lnorm); // Right
+	V_bdd(sec1,y,false) = pair<bool,vect<> >(true, lnorm); // Left
+	V_bdd(sec1+1,y,false) = pair<bool,vect<> >(true, -lnorm); // Right
       }
       else { // Wall is left of center
-	V_bdd(sec1,y) = pair<bool,vect<> >(true, -lnorm); // Right
-	V_bdd(sec1-1,y) = pair<bool,vect<> >(true, lnorm); // Left
+	V_bdd(sec1,y,false) = pair<bool,vect<> >(true, -lnorm); // Right
+	V_bdd(sec1-1,y,false) = pair<bool,vect<> >(true, lnorm); // Left
       }
     }
   }
@@ -335,8 +369,8 @@ void MAC::createWallBC(vect<> start, vect<> end) {
       V_bdd(s,sm,false) = pair<bool,vect<> >(true,-lnorm); // Below
       V_bdd(s,sm+1,false) = pair<bool,vect<> >(true,lnorm); // Above
       
-      P_bdd(s,sm) = true;
-      P(s,sm) = 0;
+      P_bdd(s,sm,false) = true;
+      P(s,sm,false) = 0;
       
       // Advance
       sx = ex;
@@ -348,7 +382,7 @@ void MAC::createWallBC(vect<> start, vect<> end) {
 
   // Y pass
   if (start.y<end.y) swap(start,end);
-  sec1 = (int)(start.y*invHy); sec2 = (int)(end.y*invHy);
+  sec1 = max((int)(start.y*invHy),0); sec2 = min((int)(end.y*invHy),ny+1);
   if (start.y==end.y) { // Horizontal wall case
     if (lnorm*vect<>(0,1)<0) lnorm *= -1; // Make sure lnorm points up
     int x1 = (int)(start.x*invHx), x2 = (int)(end.x*invHx);
@@ -357,7 +391,7 @@ void MAC::createWallBC(vect<> start, vect<> end) {
       V_bdd(x,sec1,false) = pair<bool,vect<> >(true, -lnorm); // Top
       V_bdd(x,sec1-1,false) = pair<bool,vect<> >(true, lnorm); // Bottom
       P_bdd(x,sec1,false) = true;
-      P(x,sec1) = 0;
+      P(x,sec1,false) = 0;
       // Set U
       if ((sec1+0.5)*hy<start.y) { // Wall is above center
         U_bdd(x,sec1,false) = pair<bool,vect<> >(true, lnorm); // Above
@@ -396,6 +430,7 @@ void MAC::createWallBC(vect<> start, vect<> end) {
       ex += hy*slope;
     }
   }
+  
   // Reset coefficient matrix
   setCoeffs();
 }
@@ -431,33 +466,37 @@ inline void MAC::setCoeffs() {
 inline void MAC::velocities(double epsilon) {
   for (int i=1; i<nx; i++)
     for (int j=1; j<ny+1; j++) {// temporary u-velocity
-      double t1 = sqr(U(i+1,j)+U(i,j))-sqr(U(i,j)+U(i-1,j));
-      double t2 = (U(i,j+1)+U(i,j))*(V(i+1,j)+V(i,j));
-      double t3 = (U(i,j)+U(i,j-1))*(V(i+1,j-1)+V(i,j-1));
-      double t4 = -(0.25/hx)*(t1+t2-t3);
-      double t5 = U(i+1,j)+U(i-1,j)+U(i,j+1)+U(i,j-1)-4*U(i,j);
-      double t6 = (nu/sqr(hx))*t5;
-      double t7 = U(i,j) + epsilon*(t4+t6);
-      Ut(i,j) = t7;
+      if (!U_bdd(i,j).first) {
+	double t1 = sqr(U(i+1,j)+U(i,j))-sqr(U(i,j)+U(i-1,j));
+	double t2 = (U(i,j+1)+U(i,j))*(V(i+1,j)+V(i,j));
+	double t3 = (U(i,j)+U(i,j-1))*(V(i+1,j-1)+V(i,j-1));
+	double t4 = -(0.25/hx)*(t1+t2-t3);
+	double t5 = U(i+1,j)+U(i-1,j)+U(i,j+1)+U(i,j-1)-4*U(i,j);
+	double t6 = (nu/sqr(hx))*t5;
+	double t7 = U(i,j) + epsilon*(t4+t6);
+	Ut(i,j) = t7;
+      }
     }
  
   for (int i=1; i<nx+1; i++)
     for (int j=1; j<ny; j++) { // temporary v-velocity
-      Vt(i,j)=V(i,j)+epsilon*(-(0.25/hy)*((U(i,j+1)+U(i,j))*(V(i+1,j)+V(i,j))-(U(i-1,j+1)+U(i-1,j))*(V(i,j)+V(i-1,j))+sqr(V(i,j+1)+V(i,j))-sqr(V(i,j)+V(i,j-1)))+(nu/sqr(hy))*(V(i+1,j)+V(i-1,j)+V(i,j+1)+V(i,j-1)-4*V(i,j)));
+      if (!V_bdd(i,j).first) {
+	Vt(i,j)=V(i,j)+epsilon*(-(0.25/hy)*((U(i,j+1)+U(i,j))*(V(i+1,j)+V(i,j))-(U(i-1,j+1)+U(i-1,j))*(V(i,j)+V(i-1,j))+sqr(V(i,j+1)+V(i,j))-sqr(V(i,j)+V(i,j-1)))+(nu/sqr(hy))*(V(i+1,j)+V(i-1,j)+V(i,j+1)+V(i,j-1)-4*V(i,j)));
+      }
     }
 }
 
 string MAC::printU() {
   stringstream stream;
   stream << "{";
-  for (int i=0; i<nx+1; i++) {
+  for (int y=ny+1; y>=0; y--) {
     stream << "{";
-    for (int j=0; j<ny+2; j++) {
-      stream << U(i,j);
-      if (j!=ny+1) stream << ",";
+    for (int x=0; x<nx+1; x++) {
+      stream << U(x,y);
+      if (x!=nx+1) stream<< ",";
     }
     stream << "}";
-    if (i!=nx) stream << ",";
+    if (y!=0) stream<< ",";
   }
   stream << "}";
   string str;
@@ -468,14 +507,14 @@ string MAC::printU() {
 string MAC::printUt() {
   stringstream stream;
   stream << "{";
-  for (int i=0; i<nx+1; i++) {
+  for (int y=ny+1; y>=0; y--) {
     stream << "{";
-    for (int j=0; j<ny+2; j++) {
-      stream << Ut(i,j);
-      if (j!=ny+1) stream << ",";
+    for (int x=0; x<nx+1; x++) {
+      stream << Ut(x,y);
+      if (x!=nx+1) stream<< ",";
     }
     stream << "}";
-    if (i!=nx) stream << ",";
+    if (y!=0) stream<< ",";
   }
   stream << "}";
   string str;
@@ -486,14 +525,14 @@ string MAC::printUt() {
 string MAC::printV() {
   stringstream stream;
   stream << "{";
-  for (int i=0; i<nx+2; i++) {
+  for (int y=ny; y>=0; y--) {
     stream << "{";
-    for (int j=0; j<ny+1; j++) {
-      stream << V(i,j);
-      if (j!=ny) stream<< ",";
+    for (int x=0; x<nx+2; x++) {
+      stream << V(x,y);
+      if (x!=nx+1) stream<< ",";
     }
     stream << "}";
-    if (i!=nx+1) stream<< ",";
+    if (y!=0) stream<< ",";
   }
   stream << "}";
   string str;
@@ -560,14 +599,20 @@ string MAC::printC() {
 string MAC::printU_bdd() {
   stringstream stream;
   stream << "{";
-  for (int i=0; i<nx+1; i++) {
+  vect<> V1=vect<>(3,7), V2=vect<>(8,3);
+  for (int y=ny+1; y>=0; y--) {
     stream << "{";
-    for (int j=0; j<ny+2; j++) {
-      stream << U_bdd(i,j).first ? 1 : 0;
-      if (j!=ny+1) stream << ",";
+    for (int x=0; x<nx+1; x++) {
+      if (U_bdd(x,y).first) {
+	double p = U_bdd(x,y).second*V1;
+	if (p!=0) stream << sign(p);
+	else stream << sign(U_bdd(x,y).second*V2);
+      }
+      else stream << "0";
+      if (x!=nx) stream << ",";
     }
-    stream << "}";
-    if (i!=nx) stream << ",";
+    stream << "}"; 
+    if (y!=0) stream << ",";
   }
   stream << "}";
   string str;
@@ -578,14 +623,20 @@ string MAC::printU_bdd() {
 string MAC::printV_bdd() {
   stringstream stream;
   stream << "{";
-  for (int i=0; i<nx+2; i++) {
+  vect<> V1=vect<>(3,7), V2=vect<>(8,3);
+  for (int y=ny; y>=0; y--) {
     stream << "{";
-    for (int j=0; j<ny+1; j++) {
-      stream << V_bdd(i,j).first ? 1 : 0;
-      if (j!=ny) stream<< ",";
+    for (int x=0; x<nx+2; x++) {
+      if (V_bdd(x,y).first) {
+        double p = V_bdd(x,y).second*V1;
+        if (p!=0) stream << sign(p);
+        else stream << sign(V_bdd(x,y).second*V2);
+      }
+      else stream << "0";
+      if (x!=nx+1) stream<< ",";
     }
     stream << "}";
-    if (i!=nx+1) stream<< ",";
+    if (y!=0) stream<< ",";
   }
   stream << "}";
   string str;
@@ -756,21 +807,57 @@ inline void MAC::boundary() {
     for (int x=1; x<nx; x++) {
       pair<bool, vect<> > pr = U_bdd(x,y);
       if (pr.first) {
+	U(x,y) = 0;
+	/*
+	vect<> n = pr.second;
 	double v = 0.25*(V(x,y)+V(x+1,y)+V(x,y-1)+V(x+1,y-1));
-	U(x,y) -= (pr.second.x*U(x,y)+pr.second.y*v)*pr.second.y;
+	U(x,y) -= (n.x*U(x,y)+n.y*v)*n.x;
+	*/
       }
     }
-
   //V
   for (int y=1; y<ny; y++)
     for (int x=1; x<nx+1; x++) {
       pair<bool, vect<> > pr = V_bdd(x,y);
       if (pr.first) {
+	V(x,y) = 0;
+	/*
+	vect<> n = pr.second;
 	double u = 0.25*(U(x,y)+U(x-1,y)+U(x,y+1)+U(x-1,y+1));
-	V(x,y) -= (pr.second.x*u+pr.second.y*V(x,y))*pr.second.y;
+	V(x,y) -= (n.x*u+n.y*V(x,y))*n.y;
+	*/
+      }
+    }
+}
+
+inline void MAC::velocityBoundary() {
+  // Ut
+  for (int y=1; y<ny+1; y++)
+    for (int x=1; x<nx; x++) {
+      pair<bool, vect<> > pr = U_bdd(x,y);
+      if (pr.first) {
+	Ut(x,y) = 0; //**
+	/*
+	vect<> n = pr.second;
+        double v = 0.25*(Vt(x,y)+Vt(x+1,y)+Vt(x,y-1)+Vt(x+1,y-1));
+        Ut(x,y) -= (n.x*Ut(x,y)+n.y*v)*n.x;
+	*/
       }
     }
 
+  //Vt
+  for (int y=1; y<ny; y++)
+    for (int x=1; x<nx+1; x++) {
+      pair<bool, vect<> > pr = V_bdd(x,y);
+      if (pr.first) {
+	Vt(x,y) = 0; //**
+	/*
+	vect<> n = pr.second;
+        double u = 0.25*(Ut(x,y)+Ut(x-1,y)+Ut(x,y+1)+Ut(x-1,y+1));
+        Vt(x,y) -= (n.x*u+n.y*Vt(x,y))*n.y;
+	*/
+      }
+    }
 }
 
 inline void MAC::bodyForces(double epsilon) {
@@ -778,10 +865,10 @@ inline void MAC::bodyForces(double epsilon) {
   // Apply gravity
   for (int y=1; y<ny+1; y++)
     for (int x=1; x<nx; x++)
-      Ut(x,y) += mt*gravity.x;
+      if (!U_bdd(x,y).first) Ut(x,y) += mt*gravity.x;
   for (int y=1; y<ny; y++)
     for (int x=1; x<nx+1; x++)
-      Vt(x,y) += mt*gravity.y;
+      if (!V_bdd(x,y).first) Vt(x,y) += mt*gravity.y;
 }
 
 inline void MAC::computePressure(double epsilon) {
@@ -791,7 +878,7 @@ inline void MAC::computePressure(double epsilon) {
     maxDSqr = 0;
     for (int i=1; i<nx+1; i++)
       for (int j=1; j<ny+1; j++) { 
-	SOR_site(i,j,maxDSqr);
+	if (!P_bdd(i,j)) SOR_site(i,j,maxDSqr);
       }
   }
 }
