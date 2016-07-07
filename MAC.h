@@ -7,6 +7,15 @@
 
 #include "Utility.h"
 
+struct Bdd {
+  Bdd() : left(false), bc(false) {};
+  Bdd(bool b, bool l) : left(l), bc(b), x(0) {};
+  Bdd(bool b, bool l, double x) : left(l), bc(b), x(x) {};
+  bool left; // Whether this cell is on the left (or above) a wall
+  bool bc; // Whether this cell has a boundary condition on it
+  bool x; // x1/hx
+};
+
 /// The Marker and Cell fluid simulator class
 class MAC {
  public:
@@ -18,6 +27,7 @@ class MAC {
 
   // Printing functions
   string printVF();
+  string printVFAnimationCommand(string="vel",string="frames");
   string printVFt();
   string printVFN();
   string printVFNorm(bool=true);
@@ -42,6 +52,7 @@ class MAC {
   double pressure(double, double);
   double pressure(vect<>);
   string getPressureRec() { return pressureRec; }
+  string getVelocityRec() { return velocityRec; }
   int getIter() { return iter; }
   double getRealTime() { return realTime; }
   double getEpsilon() { return epsilon; }
@@ -70,8 +81,8 @@ class MAC {
   inline double& Vt(int x, int y, bool=true);
   inline double& P(int x, int y, bool=true);
   inline double& C(int x, int y, bool=true);
-  inline pair<bool,vect<> >& U_bdd(int,int, bool=true);
-  inline pair<bool,vect<> >& V_bdd(int,int, bool=true);
+  inline Bdd& U_bdd(int,int, bool=true);
+  inline Bdd& V_bdd(int,int, bool=true);
   inline bool& P_bdd(int,int, bool=true);
 
   inline void pressures(double epsilon);
@@ -121,7 +132,8 @@ class MAC {
 
   /// Printing
   string pressureRec;
-
+  string velocityRec;
+  
   /// Data
   int nx, ny; // Number of fluid cells
   double hx, hy, invHx, invHy; // Width of fluid cells and inverse grid spacing
@@ -130,10 +142,11 @@ class MAC {
   bool wrapX, wrapY; // Boundary conditions
 
   double *_U, *_Ut, *_V, *_Vt, *_P; // Arrays for x, y components of velocity and pressure
+  double *_Ug, *_Vg; // Arrays for ghost cells
 
   /// Boundary condition data
   double *_C; // Coefficient array  
-  pair<bool,vect<> > *_U_bdd, *_V_bdd; // Data structure for velocity boundary conditions, bool for whether the point is subject to a boundary condition, vect for the normal vector
+  Bdd *_U_bdd, *_V_bdd; // Data structure for velocity boundary conditions, bool for whether the point is subject to a boundary condition, vect for the normal vector
   bool *_P_bdd; // Data structure for pressure boundary conditions
   bool stickBC;
 

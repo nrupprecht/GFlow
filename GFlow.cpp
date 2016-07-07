@@ -130,7 +130,8 @@ string GFlow::printPositionAnimationCommand(string frames) {
 
 inline void GFlow::initialize() {
   MAC::initialize();
-  if (recPos) posRec = vector<vector<vect<> > >(particles.size());
+  int size = particles.size();
+  if (recPos && size>0) posRec = vector<vector<vect<> > >(particles.size());
   particleBC();
 }
 
