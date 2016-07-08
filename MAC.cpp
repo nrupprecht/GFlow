@@ -38,7 +38,6 @@ void MAC::run(double runtime) {
   runTime = runtime;
   clock_t start = clock();
   initialize();  
-
   pressureRec = "{";
   velocityRec = "{";
   boundary();
@@ -334,6 +333,12 @@ void MAC::setViscosity(double v) {
   epsilon = min(0.02, epsilon);
 }
 
+void MAC::lockP(int x, int y, double p) {
+  //** CHECK
+  P(x,y) = p;
+  P_bdd(x,y) = true;
+}
+
 void MAC::createWallBC(vect<> start, vect<> end) {
   // Wall normal (above or left)
   vect<> lnorm = vect<>(start.y-end.y, end.x-start.x); 
@@ -486,6 +491,7 @@ inline void MAC::setDistances() {
 inline void MAC::setSOR() {
   // There is also a lower bound on the number of solveIters we need
   solveIters = 2*max(nx,ny);
+  tollerance = 1e-8;
   beta = 2.0/(1+2*PI/(nx+ny));
 }
 
@@ -924,11 +930,18 @@ inline void MAC::bodyForces(double epsilon) {
 inline void MAC::computePressure(double epsilon) {
   // Solve the pressure poisson equation using Successive Over-Relaxation
   double maxDSqr=1.;
-  for (int it=0; it<solveIters && tollerance<maxDSqr; it++) { // solve for pressure
+  int it;
+  for (it=0; it<solveIters && tollerance<maxDSqr; it++) { // solve for pressure
     maxDSqr = 0;
     for (int i=1; i<nx+1; i++)
       for (int j=1; j<ny+1; j++) { 
-	if (!P_bdd(i,j)) SOR_site(i,j,maxDSqr);
+	if ((i+j)%2==0 && !P_bdd(i,j)) 
+	  SOR_site(i,j,maxDSqr);
+      }
+    for (int i=1; i<nx+1; i++)
+      for (int j=1; j<ny+1; j++) {
+        if ((i+j)%2!=0 && !P_bdd(i,j))
+          SOR_site(i,j,maxDSqr);
       }
   }
 }

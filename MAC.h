@@ -67,6 +67,11 @@ class MAC {
   void setInSphere(vect<> pos, double r, vect<> v);
   void setStickBC(bool s) { stickBC = s; }
   void setViscosity(double);
+  void setUN(double u) { un = u; }
+  void setUS(double u) { us = u; }
+  void setVE(double v) { ve = v; }
+  void setVW(double v) { vw = v; }
+  void lockP(int,int,double);
   void createWallBC(vect<>, vect<>);
 
  protected:
@@ -164,7 +169,7 @@ class MAC {
   double epsilon;  // Time step
   double runTime;  // How long the simulation is supposed to run
   double time, realTime; // Simulation time and real time
-  double iter; // The number of simulation iterations that have occured
+  int iter; // The number of simulation iterations that have occured
 
   /// Display/Record specs
   double dispCount; // Counts the amount of time since information was last displayed
