@@ -6,12 +6,13 @@
 
 #include "Utility.h"
 
+const double sphere_mass = 1.;
 const double sphere_repulsion = 10000.0;
 const double sphere_dissipation = 7500.0;
 const double sphere_coeff = sqrt(0.5);
 const double sphere_drag = 5.0;
 const double wall_repulsion = 10000.0;
-const double wall_dissipation = 7500.0;
+const double wall_dissipation = 5000.0;
 const double wall_coeff = sqrt(0.5);
 const double wall_gamma = 5;
 
@@ -44,7 +45,6 @@ class Particle {
   vect<> getForce() { return force; }
   vect<> getNormalForce() { return normalF; }
   vect<> getShearForce() { return shearF; }
-  //int getNumber() { return number; }
 
   // Mutators
   void setOmega(double om) { omega = om; }
@@ -57,10 +57,12 @@ class Particle {
 
   /// Control functions
   virtual void interact(Particle*); // Interact with another particle
+  virtual void interact(Particle*, vect<>);
   virtual void interact(vect<> pos, double force);
   virtual vect<> interact(vect<> pos, vect<> fU, double cp, double vis); // Interact with a fluid
   virtual void update(double);
 
+  void flowForce(vect<> F);
   void applyForce(vect<> F) { force += F; }
   void applyNormalForce(vect<> force) { normalF += force; }
   void applyShearForce(vect<> force) { shearF += force; }
@@ -78,8 +80,6 @@ class Particle {
   // Exception classes
   class BadMassError {};
   class BadInertiaError {};
-  
-  //static int numCounter;
 
  protected:
   vect<> position;
@@ -112,7 +112,7 @@ class Rod : public Particle {
 
 const double default_run = 0.1;
 const double default_tumble = 0.4;
-const double run_force = 10.0;
+const double run_force = 50.0;
 
 class Active : public Particle {
  public:

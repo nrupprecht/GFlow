@@ -1,8 +1,11 @@
 #include "Simulator.h"
 
-Simulator::Simulator() : lastDisp(0), dispTime(1.0/50), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), pSamples(16) {
+Simulator::Simulator() : lastDisp(0), dispTime(1.0/50), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false) {
+  // Flow
+  hasDrag = true;
+  flow = Zero;
   // Time steps
-  default_epsilon = 1e-5;
+  default_epsilon = 1e-4;
   epsilon = default_epsilon;
   min_epsilon = 1e-7;
   adjust_epsilon = false;
@@ -16,22 +19,6 @@ Simulator::Simulator() : lastDisp(0), dispTime(1.0/50), dispFactor(1), time(0), 
   ssecInteract = false;
   secX = 10; secY = 10;
   sectors = new list<Particle*>[(secX+2)*(secY+2)+1];
-  // Fluids
-  doFluid = true;
-  rho = 1;
-  viscosity = 1;
-  feX = 75; feY = 75;
-  fx = (right-left)/feX; fy = (top-bottom)/feY;
-  area = fx*fy;
-  
-  setFieldWrapping(true, false);
-  setFieldDims(feX, feY);
-  fV.useLocks();
-  pressure.useLocks();
-
-  // Set up pressure conditions
-  pressure.setEdge(0, 0); // Set the top edge to have P=0
-  //pressure.setEdge(2, rho*(top-bottom));
 };
 
 Simulator::~Simulator() {
@@ -51,44 +38,8 @@ Simulator::~Simulator() {
   }
 }
 
-void Simulator::createFluidBox() {
-  discard();
-  setDoFluid(true);
-  gravity = Zero;
-  xLBound = WRAP;
-  xRBound = WRAP;
-  yTBound = WRAP;
-  yBBound = WRAP;
-
-  setFieldDims(40,40);
-  setFieldWrapping(true, true);
-  /*
-  pressure.setEdge(0, 0, true);
-  pressure.setEdge(1, 0, true);
-  pressure.setEdge(2, 0, true);
-  pressure.setEdge(3, 0, true);
-  */
-
-  left = bottom = 0;
-  top = right = 1;
-
-  // Initialize fluid velocity
-  for (int i=0; i<feX; i++)
-    for (int j=0; j<feY; j++) {
-      if (sqr(fV.getPos(i,j)-vect<>(0.5,0.5))<sqr(0.2))
-	fV.at(i,j) = vect<>(1,0);
-    }
-
-  //addWall(new Wall(vect<>(0,0), vect<>(1,0))); // Add a floor
-  //addWall(new Wall(vect<>(0,1), vect<>(1,1)); // Add a ceiling
-  //Particle *P = new Particle(vect<>(0.5,0.5), 0.15);
-  //P->fix();
-  //addWatchedParticle(P);
-}
-
 void Simulator::createSquare(int N, double radius) {
   discard();
-  setDoFluid(false);
   gravity = Zero;
   xLBound = WRAP;
   xRBound = WRAP;
@@ -99,52 +50,56 @@ void Simulator::createSquare(int N, double radius) {
   top = right = 1;
 
   addParticles(N, radius, 0, left+0.5*radius, right-0.5*radius, bottom+0.5*radius, top-0.5*radius, PASSIVE, 1);
+
   setParticleDrag(0);
 }
 
-void Simulator::createHopper(int N, double radius, double gap, double width) {
+void Simulator::createHopper(int N, double radius, double gap, double width, double height, double act) {
   discard();
-  setDoFluid(false);
   // Set up a hopper
   left = 0; bottom = 0;
-  right = width; top = 3;
-  double bottomGap = 0.05;
-  double troughHeight = 0.5;
+  right = width; top = height;
+
+  double bottomGap = 2*radius;
+  double troughHeight = 0.5*width; // Keep the angle at 45 degrees
   double space = 1.0;
   double var = 0, mx = (1+var)*radius;
   addWall(new Wall(vect<>(0, troughHeight), vect<>(0,2*top)));
   addWall(new Wall(vect<>(right, troughHeight), vect<>(right,2*top)));
   addWall(new Wall(vect<>(0, troughHeight), vect<>(0.5*right-0.5*gap, bottomGap)));
-  addWall(new Wall(vect<>(1, troughHeight), vect<>(0.5*right+0.5*gap, bottomGap)));
-
-  //addTempWall(new Wall(vect<>(0.5*(right-gap),bottomGap), vect<>(0.5*(right+gap),bottomGap)), 3.0);
-  addTempWall(new Wall(vect<>(0,troughHeight), vect<>(1,troughHeight)), 3.0);
-  // addWall(new Wall(vect<>(0,troughHeight), vect<>(1,troughHeight)));
+  addWall(new Wall(vect<>(right, troughHeight), vect<>(0.5*right+0.5*gap, bottomGap)));
+  addTempWall(new Wall(vect<>(0,troughHeight), vect<>(right,troughHeight)), 3.0);
 
   double upper = 5; // Instead of top
-  addParticles(N, radius, var, mx, right-mx, troughHeight+mx, upper-mx);
+  act = act>1 ? 1 : act;
+  act = act<0 ? 0 : act;
+  addParticles(act*N, radius, var, mx, right-mx, troughHeight+mx, upper-mx, RTSPHERE); // Active particles
+  addParticles((1-act)*N, radius, var, mx, right-mx, troughHeight+mx, upper-mx); // Passive particles
   xLBound = WRAP;
   xRBound = WRAP;
   yTBound = NONE;
   yBBound = RANDOM;
   // Set physical parameters
   setParticleCoeff(0); // --> No torques, shear forces
-
   setParticleDissipation(sphere_dissipation);
-  //setParticleCoeff(sphere_coeff);
   setParticleDrag(sphere_drag);
   setWallDissipation(wall_dissipation);
   setWallCoeff(wall_coeff);
   
+  int sx = (int)(width/(2*(radius+var))), sy = (int)(top/(2*(radius+var)));
+  setSectorDims(sx, sy);
+
+  // Set where particles will be reinserted
+  yTop = troughHeight + 1.3*particles.size()*PI*sqr(radius)/width; // Estimate where the top will be
+
   // Set neccessary times
-  default_epsilon = 0.001;
+  default_epsilon = 1e-4;
   min_epsilon = 1e-8;
 }
 
 void Simulator::createPipe(int N, double radius) {
   discard();
-  setDoFluid(false);
-  gravity = vect<>();
+  gravity = Zero;
   left = 0; bottom = 0;
   top = 1; right = 5;
   addWall(new Wall(vect<>(0,0), vect<>(right,0)));
@@ -154,12 +109,14 @@ void Simulator::createPipe(int N, double radius) {
   xRBound = WRAP;
   yTBound = NONE;
   yBBound = NONE;
+
+  default_epsilon = 1e-4;
+  min_epsilon = 1e-8;
 }
 
 void Simulator::createIdealGas(int N, double radius) {
   discard();
-  setDoFluid(false);
-  gravity = vect<>();
+  gravity = Zero;
   addWall(new Wall(vect<>(0,0), vect<>(right,0))); // bottom
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // top
   addWall(new Wall(vect<>(0,0), vect<>(0,top))); // left
@@ -182,8 +139,7 @@ void Simulator::createIdealGas(int N, double radius) {
 
 void Simulator::createEntropyBox(int N, double radius) {
   discard();
-  setDoFluid(false);
-  gravity = vect<>();
+  gravity = Zero;
   double gap = 0.1;
   addWall(new Wall(vect<>(0,0), vect<>(right,0))); // bottom
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // top
@@ -216,24 +172,20 @@ void Simulator::run(double runLength) {
   time = 0;  
   lastMark = startTime;
   iter = 0;
-  clock_t start = clock();
+  delayTriggeredExit = false;
+  lastDisp = -1e9;
   bool running = true;
+  // Run the simulation
+  clock_t start = clock();
   while(time<runLength && running) { // Terminate based on internal condition
     // Gravity
-    for (auto P : particles) if (P) P->applyForce(P->getMass()*gravity);
-
+    if (gravity!=Zero)
+      for (auto P : particles) P->applyForce(P->getMass()*gravity);
+    // Flow
+    if (hasDrag)
+      for (auto P : particles) P->flowForce(flow);
     // Calculate particle-particle and particle-wall forces
     interactions();
-    if (doFluid) {
-      // Reset particle bc from last time
-      fV.resetLocks();
-      // Set the particle imposed b/c
-      particleBC();
-      // Calculate Fluid
-      updateFluid();
-      // Calculate effect of fluid on particle
-      fluidForces();
-    }
 
     // Calculate appropriate epsilon
     if (adjust_epsilon) {
@@ -256,10 +208,13 @@ void Simulator::run(double runLength) {
     iter++;
     if (maxIters>0 && iter>maxIters) running = false;
     // Record data (do this before calling "update" on the particles
-    if (time - lastDisp > dispTime || recAllIters) record();
+    if (time>startRecording && time<stopRecording && time-lastDisp>dispTime || recAllIters) record();
     // If we have set the simulation to cancel if some event does not occur for some 
     // amount of time, handle that here
-    if (markWatch && time>startTime && time-lastMark>delayTime) running = false;
+    if (markWatch && time>startTime && time-lastMark>delayTime) {
+      running = false;
+      delayTriggeredExit = true;
+    }
 
     // Update simulation
     for (auto &P : particles) if(P) update(P); // Update particles 
@@ -275,6 +230,25 @@ void Simulator::run(double runLength) {
   }
   clock_t end = clock();
   runTime = (double)(end-start)/CLOCKS_PER_SEC;
+}
+
+double Simulator::getMark(int i) {
+  return timeMarks.at(i);
+}
+
+double Simulator::getMarkSlope() {
+  if (timeMarks.size()<2) return 0;
+  return timeMarks.size()/(timeMarks.at(timeMarks.size()-1)-timeMarks.at(0));
+}
+
+double Simulator::getMarkDiff() {
+  if (timeMarks.size()<2) return 0;
+  return timeMarks.at(timeMarks.size()-1)-timeMarks.at(0);
+}
+
+void Simulator::addStatistic(statfunc func) {
+  statistics.push_back(func);
+  statRec.push_back(vector<double>());
 }
 
 double Simulator::aveVelocity() {
@@ -314,6 +288,15 @@ double Simulator::aveKE() {
   return N>0 ? KE/N : -1.0;
 }
 
+double Simulator::highestPosition() {
+  double y = bottom;
+  for (auto P : particles) {
+    vect<> p = P->getPosition();
+    if (p.y>y) y = p.y;
+  }
+  return y;
+}
+
 vect<> Simulator::netMomentum() {
   vect<> momentum;
   for (auto P : particles) {
@@ -344,20 +327,10 @@ void Simulator::setSectorDims(int sx, int sy) {
   }
 }
 
-void Simulator::setFluidDims(int fex, int fey) {
-  if (fex<1 || fey<1) throw BadFluidElementChoice();
-  feX = fex; feY = fey;
-  fx = (right-left)/feX; fy = (top-bottom)/feY;
-  area = fx*fy;
-  // Reset Field Sizes //**
-
-}
-
 void Simulator::setDimensions(double l, double r, double b, double t) {
   if (left>=right || bottom>=top) throw BadDimChoice();
   left = l; right = r; bottom = b; top = t;
-  fx = (right-left)/feX; fy = (top-bottom)/feY;
-  area = fx*fy;
+  yTop = top;
 }
 
 void Simulator::addWall(Wall* wall) {
@@ -438,86 +411,6 @@ string Simulator::printAnimationCommand() {
   return str;
 }
 
-string Simulator::printMaxV() {
-  stringstream stream;
-  stream << rec_maxV;
-  string str;
-  stream >> str;
-  return str;
-}
-
-string Simulator::printAveV() {
-  stringstream stream;
-  stream << rec_aveV;
-  string str;
-  stream >> str;
-  return str;
-}
-
-string Simulator::printAveVSqr() {
-  stringstream stream;
-  stream << rec_aveVsqr;
-  string str;
-  stream >> str;
-  return str;
-}
-
-string Simulator::printKE() {
-  stringstream stream;
-  stream << rec_aveKE;
-  string str;
-  stream >> str;
-  return str;
-}
-
-string Simulator::printNetMomentum() {
-  stringstream stream;
-  stream << rec_netP;
-  string str;
-  stream >> str;
-  return str;
-}
-
-string Simulator::printNetVelocity() {
-  stringstream stream;
-  stream << rec_netV;
-  string str;
-  stream >> str;
-  return str;
-}
-
-string Simulator::printNetOmega() {
-  stringstream stream;
-  stream << rec_netOmega;
-  string str;
-  stream >> str;
-  return str;
-}
-
-string Simulator::printAveOmegaSqr() {
-  stringstream stream;
-  stream << rec_aveOmegaSqr;
-  string str;
-  stream >> str;
-  return str;
-}
-
-string Simulator::printNetAngularP() {
-  stringstream stream;
-  stream << rec_netAngP;
-  string str;
-  stream >> str;
-  return str;
-}
-
-string Simulator::printNetTorque() {
-  stringstream stream;
-  stream << rec_netTorque;
-  string str;
-  stream >> str;
-  return str;
-}
-
 void Simulator::setParticleDissipation(double d) {
   for (auto P : particles) P->setDissipation(d);
 }
@@ -560,39 +453,27 @@ inline double Simulator::maxAcceleration() {
   return maxAsqr>0 ? sqrt(maxAsqr) : -1.0;
 }
 
-inline double Simulator::netAngV() {
-  double angV = 0;
-  for (auto P : particles) 
-    if (P && inBounds(P)) 
-      angV += P->getOmega();
-  return angV;
-}
-
-inline double Simulator::aveAngVSqr() {
-  double angV = 0;
-  int N = 0;
-  for (auto P : particles) 
-    if (P && inBounds(P)) {
-      angV += sqr(P->getOmega());
-      N++;
+inline vect<> Simulator::getDisplacement(vect<> A, vect<> B) {
+  // Get the correct (minimal) displacement vector pointing from B to A
+  double X = A.x-B.x;
+  double Y = A.y-B.y;
+  if (xLBound==WRAP || xRBound==WRAP) {
+    double dx = (right-left)-fabs(X);
+    if (dx<fabs(X)) {
+      if (X>0) X=-dx;
+      else X=dx;
     }
-  return N>0 ? angV/N : -1.0;
-}
+  }
+  
+  if (yBBound==WRAP || yTBound==WRAP) {
+    double dy =(top-bottom)-fabs(Y);
+    if (dy<fabs(Y)) {
+      if (Y>0) Y=-dy;
+      else Y=dy;
+    }
+  }
 
-inline double Simulator::netAngP() {
-  double angP = 0;
-  for (auto P : particles) 
-    if (P && inBounds(P)) 
-      angP += P->getAngP();
-  return angP;
-}
-
-inline double Simulator::netTorque() {
-  double torque = 0;
-  for (auto P : particles)
-    if (P && inBounds(P)) 
-      torque += P->getTorque();
-  return torque;
+  return vect<>(X,Y);
 }
 
 inline void Simulator::interactions() {
@@ -672,10 +553,11 @@ inline void Simulator::update(Particle* &P) {
     if (pos.y<0) {
       timeMarks.push_back(time); // Record time
       lastMark = time;
-      pos.y = top;
+      pos.y = yTop+4*P->getRadius()*drand48();
       pos.x = (right-2*P->getRadius())*drand48()+P->getRadius();
       int count = 0;
       while(wouldOverlap(pos, P->getRadius()) && count<10) {
+	pos.y = yTop+4*P->getRadius()*drand48();
 	pos.x = (right-2*P->getRadius())*drand48()+P->getRadius();
 	count++;
       }
@@ -713,22 +595,13 @@ inline void Simulator::record() {
   // Record positions
   for (int i=0; i<watchlist.size(); i++)
     watchPos.at(i).push_back(watchlist.at(i)->getPosition());
-  rec_maxV.push_back(maxVelocity());
-  rec_aveV.push_back(aveVelocity());
-  rec_aveVsqr.push_back(aveVelocitySqr());
-  rec_aveKE.push_back(aveKE());
-  rec_netP.push_back(netMomentum());
-  rec_netV.push_back(netVelocity());
-  rec_netOmega.push_back(netAngV());
-  rec_aveOmegaSqr.push_back(aveAngVSqr());
-  rec_netAngP.push_back(netAngP());
-  rec_netTorque.push_back(netTorque());
+
+  // Record statistics
+  for (int i=0; i<statistics.size(); i++)
+    statRec.at(i).push_back(statistics.at(i)(particles));
+
   // Update time
   lastDisp = time;
-
-  // Update recording strings
-  pressurePrint += (pressure.print() + ",");
-  fvNormPrint += (fV.printNorm() + ",");
 }
 
 inline bool Simulator::inBounds(Particle* P) {
@@ -801,24 +674,6 @@ void Simulator::addNWParticles(int N, double R, double var, double lft, double r
   addParticles(N, R, var, lft, rght, bttm, tp, type, vmax, false);
 }
 
-inline void Simulator::setFieldWrapping(bool wx, bool wy) {
-  fV.setWrap(wx, wy);
-  divVstar.setWrap(wx, wy);
-  advectV.setWrap(wx, wy);
-  lapV.setWrap(wx, wy);
-  pressure.setWrap(wx, wy);
-  gradP.setWrap(wx, wy);
-}
-
-inline void Simulator::setFieldDims(int x, int y) {
-  fV.setDims(x, y);
-  divVstar.setDims(x, y);
-  advectV.setDims(x, y);
-  lapV.setDims(x, y);
-  pressure.setDims(x, y);
-  gradP.setDims(x, y);
-}
-
 inline void Simulator::updateSectors() {
   for (int i=0; i<(secX+2)*(secY+2)+1; i++) {
     vector<list<Particle*>::iterator> remove;
@@ -838,16 +693,32 @@ inline void Simulator::ppInteract() {
   for (int y=1; y<secY+1; y++)
     for (int x=1; x<secX+1; x++)
       // Check in surrounding sectors
-      for (auto P : sectors[y*(secX+2)+x])
-	for (int j=y-1; j<=y+1; j++)
-	  for (int i=x-1; i<=x+1; i++)
-	    for (auto Q : sectors[j*(secX+2)+i])
-	      if (P && P!=Q) P->interact(Q);
+      for (auto P : sectors[y*(secX+2)+x]) {
+	// Check surrounding sectors
+	for (int j=y-1; j<=y+1; j++) {
+	  int sy = j;
+	  if ((yBBound==WRAP || yTBound==WRAP) && j==0) sy=secY;
+	  else if ((yBBound==WRAP ||yTBound==WRAP) && j==secY+1) sy=1;
+	  for (int i=x-1; i<=x+1; i++) {
+	    int sx = i;
+	    if ((xLBound==WRAP || xRBound==WRAP) && i==0) sx=secX;
+	    else if ((xLBound==WRAP || xRBound==WRAP) && i==secX+1) sx=1;
+	    for (auto Q : sectors[sy*(secX+2)+sx])
+	      if (P!=Q) {
+		vect<> disp = getDisplacement(Q->getPosition(), P->getPosition());
+		P->interact(Q, disp);
+	      }
+	  }
+	}
+      }
   // Have to try to interact everything in the special sector with everything else
   if (ssecInteract) {
     for (auto P : sectors[(secX+2)*(secY+2)])
       for (auto Q : particles)
-	if (P && P!=Q) P->interact(Q);
+	if (P!=Q) {
+	  vect<> disp = getDisplacement(Q->getPosition(), P->getPosition());
+	  P->interact(Q);
+	}
   }
 }
 
@@ -870,6 +741,7 @@ void Simulator::discard() {
     }
   particles.clear();
   watchlist.clear();
+  watchPos.clear();
   for (auto W : walls) 
     if (W) {
       delete W;
@@ -882,80 +754,7 @@ void Simulator::discard() {
       W.first = 0;
     }
   tempWalls.clear();
-  // Clear records
-  rec_maxV.clear();
-  rec_aveV.clear();
-  rec_aveVsqr.clear();
-  rec_aveKE.clear();
-  rec_netP.clear();
-  rec_netV.clear();
-  rec_netOmega.clear();
-  rec_aveOmegaSqr.clear();
-  rec_netAngP.clear();
-  rec_netTorque.clear();
-
+  // Clear time marks and statistics
   timeMarks.clear();
-}
-
-void Simulator::particleBC() {
-  // Set fluid velocity of cells 'in' particles to be that of the particles
-  for (auto P : particles) { // This is a naive way ---
-    vect<> pos = P->getPosition();
-    vect<> vel = P->getVelocity();
-    double radSqr = sqr(P->getRadius());
-    for (int y=0; y<feY; y++)
-      for (int x=0; x<feX; x++) {
-	if (sqr(pos-fV.getPos(x,y))<radSqr) {
-	  fV.at(x,y) = vel;
-	  fV.lockAt(x,y) = true;	  
-	}
-      }
-  }
-}
-
-void Simulator::fluidBC() {
-  fV.doBC();
-  // More ???
-}
-
-void Simulator::updateFluid() {
-  // Enforce fluid B.C.s
-  fluidBC(); //** Where to do this?
-
-  // Do advection and body forces
-  advect(fV, advectV);  // Calculate (V * grad) V
-  double mass = fx*fy*rho;
-  fV += epsilon*mass*gravity; // Force of gravity
-  //delSqr(fV, lapV); // Laplacian, for viscous velocity diffusion
-  //fV.plusEq(lapV, epsilon*viscosity);
-  fV.plusEq(advectV, epsilon);
-  // We now have "fV" = fV*
-
-  // Remove divergence from velocity field by calculating pressure
-  /*
-  div(fV, divVstar); // divVstar is part of the source for finding pressure
-  pressure.SOR_solver(divVstar, rho/epsilon); // This solves for pressure
-  grad(pressure, gradP); // Calculate grad P
-  fV.minusEq(gradP, epsilon); // This should give us a divergence free field
-  */
-}
-
-void Simulator::fluidForces() {
-  double invPS = 1.0/pSamples;
-  for (auto P : particles) {
-    vect<> pos = P->getPosition();
-    double radius = P->getRadius();
-    double area = 2.*PI*radius*invPS;
-
-    //cout << "Area: " << area << endl;
-
-    // Look at the effects of pressure from a number of surrounding areas
-    vect<> force;
-    for (int i=0; i<pSamples; i++) {
-      vect<> normal = vect<>(cos(2*PI*invPS*i), sin(2*PI*invPS*i));
-      vect<> loc = pos + radius*normal;
-      force -= area*pressure(loc, false)*normal;
-    }
-    P->applyForce(force);
-  }
+  for (auto V : statRec) statRec.clear();
 }

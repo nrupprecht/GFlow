@@ -11,7 +11,7 @@ void Particle::initialize() {
   omega = 0;
   alpha = 0;
   theta = 0;
-  double mass = 5;
+  double mass = sphere_mass;
   invMass = 1.0/mass;
   invII = 1.0/(0.5*mass*sqr(radius));
 
@@ -34,6 +34,11 @@ void Particle::setII(double II) {
 void Particle::interact(Particle* P) {
   if (fixed) return;
   vect<> displacement = P->getPosition() - position;
+  interact(P, displacement);
+}
+
+void Particle::interact(Particle* P, vect<> displacement) {
+  if (fixed) return;
   double distSqr = sqr(displacement);
   double cutoff = radius + P->getRadius();
   double cutoffsqr = sqr(cutoff);
@@ -113,10 +118,8 @@ void Particle::interact(vect<> pos, double force) {
 
 void Particle::update(double epsilon) {
   if (fixed) return;
-  // Drag force
-  vect<> dragF = -drag*velocity*velocity*normalize(velocity);
   // Calculate net force/acceleration, record last acceleration
-  vect<> netF = dragF + normalF + shearF + force;
+  vect<> netF = normalF + shearF + force;
 
   //vect<> acceleration_t = acceleration;
   acceleration = invMass*netF;
@@ -136,17 +139,15 @@ void Particle::update(double epsilon) {
 
   // Reset forces and torques
   torque = 0;
-  dragF = normalF = shearF = force = vect<>();
+  normalF = shearF = force = Zero;
+}
 
-  /*
-  cout << "Fnet=" << netF << endl; //**
-  cout << "pos=" << position << endl; //**
-  cout << "V=" << velocity << endl; //**
-  cout << "Ep: " << epsilon << endl; //**
-  cout << "A=" << acceleration << endl; //**
-  cout << "dP=" << (epsilon*(velocity + 0.5*epsilon*acceleration)) << endl; //**
-  cout << "dA.y=" << (epsilon*acceleration) << endl << endl; //**
-  */
+void Particle::flowForce(vect<> F) {
+  // A current is pushing on the particles
+  vect<> diff = F-velocity;
+  double dsqr = sqr(diff);
+  diff.normalize();
+  applyForce(drag*dsqr*diff); // Apply the drag force
 }
 
 RTSphere::RTSphere(vect<> pos, double rad) : Particle(pos, rad), runTime(default_run), tumbleTime(default_tumble), timer(0), running(true), runDirection(randV()), runForce(run_force) {};

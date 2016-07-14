@@ -4,8 +4,7 @@
 #ifndef SIMULATOR_H
 #define SIMULATOR_H
 
-#include "Object.h"
-#include "Field.h"
+#include "StatFunc.h"
 
 #include <list>
 using std::list;
@@ -13,28 +12,21 @@ using std::list;
 enum BType { WRAP, RANDOM, NONE };
 enum PType { PASSIVE, RTSPHERE };
 
+/// The simulator class
 class Simulator {
  public:
   Simulator();
   ~Simulator(); 
 
   // Initialization
-  void createFluidBox();
   void createSquare(int, double=0.025);
-  void createHopper(int, double=0.025, double=0.14, double=1.);
+  void createHopper(int, double=0.025, double=0.14, double=1., double=3., double=0.);
   void createPipe(int, double=0.02);
   void createIdealGas(int, double=0.02);
   void createEntropyBox(int, double=0.02);
 
   // Simulation
   void run(double runLength);
-
-  // Printing
-  string printPressure() { return pressure.print(); }
-  string printPressure3D() { return pressure.print3D(); }
-  string printFV() { return fV.print(); }
-  string printFVNorm() { return fV.printNorm(); }
-  string printFVLocks() { return fV.printLocks(); }
 
   // Accessors
   bool wouldOverlap(vect<> pos, double R);
@@ -43,10 +35,24 @@ class Simulator {
   int getIter() { return iter; }
   double getRunTime() { return runTime; }
   double getTime() { return time; }
+  bool getDelayTriggeredExit() { return delayTriggeredExit; }
+  int getSecX() { return secX; }
+  int getSecY() { return secY; }
+  double getMark(int); // Accesses the value of a mark
+  int getMarkSize() { return timeMarks.size(); } // Returns the number of time marks
+  double getMarkSlope(); // Gets the ave rate at which marks occur (while marks are occuring)
+  double getMarkDiff(); // Gets the difference in time between the first and last marks
+  int getPSize() { return particles.size(); }
+  int getWSize() { return walls.size(); }
   // Statistic functions
+  void addStatistic(statfunc); // Adds a statistic to track
+  int numStatistics() { return statistics.size(); } // Returns the number of statistics we are tracking
+  vector<double>& getStatistic(int i) { return statRec.at(i); } // Returns a statistic record
+
   double aveVelocity();
   double aveVelocitySqr();
   double aveKE();
+  double highestPosition();
   vect<> netMomentum();
   vect<> netVelocity();
   vector<double> getTimeMarks() { return timeMarks; }
@@ -56,8 +62,6 @@ class Simulator {
   void setDispFactor(double f) { dispFactor = f; }
   void setSectorize(bool s) { sectorize = s; }
   void setSectorDims(int sx, int sy);
-  void setDoFluid(bool f) { doFluid = f; }
-  void setFluidDims(int fx, int fy);
   void setDimensions(double left, double right, double bottom, double top);
   void setAdjustEpsilon(bool a) { adjust_epsilon = a; }
   void setDefaultEpsilon(double e) { default_epsilon = e; }
@@ -66,13 +70,17 @@ class Simulator {
   void setXRBound(BType b) { xRBound = b; }
   void setYTBound(BType b) { yTBound = b; }
   void setYBBound(BType b) { yBBound = b; }
+  void setYTop(double y) { yTop = y; }
   void setGravity(vect<> g) { gravity = g; }
   void setMarkWatch(bool w) { markWatch = w; }
+  void setStartRecording(double t) { startRecording = t; }
+  void setStopRecording(double t) { stopRecording = t; }
   void setStartTime(double t) { startTime = t; }
   void setDelayTime(double t) { delayTime = t; }
   void setMaxIters(int it) { maxIters = it; }
   void setRecAllIters(bool r) { recAllIters = r; }
-  void setPSamples(int p) { pSamples = p; }
+  void setHasDrag(bool d) { hasDrag = d; }
+  void setFlow(vect<> f) { flow = f; }
   void discard();
   /// Global set functions
   void setParticleDissipation(double);
@@ -105,22 +113,14 @@ class Simulator {
   string printNetAngularP();
   string printNetTorque();
 
-  string getPressurePrint() { return pressurePrint; }
-  string getFVNormPrint() { return fvNormPrint; }
-
   // Error Classes
   class BadDimChoice {};
-  class BadFluidElementChoice {};
 
  private:
   /// Utility functions  
   inline double maxVelocity(); // Finds the maximum velocity of any particle
   inline double maxAcceleration(); // Finds the maximum acceleration of any particle
-  inline double minRatio(); // Finds the minimum ratio of velocity to acceleration of any particle
-  inline double netAngV();
-  inline double aveAngVSqr();
-  inline double netAngP();
-  inline double netTorque();
+  inline vect<> getDisplacement(vect<>, vect<>);
 
   inline void interactions();
   inline void update(Particle* &);
@@ -134,7 +134,12 @@ class Simulator {
   double left, right; // Right edge of the simulation
   double bottom, top;   // Top edge of the simulation
   BType xLBound, xRBound, yTBound, yBBound;
+  double yTop;    // Where to put the particles back into the simulation (for random insertion)
+  vect<> gravity; // Acceleration due to gravity
+  vect<> flow;    // A uniform current
+  bool hasDrag;   // Whether we should apply a drag force to particles
   
+  /// Times etc.
   double time;
   double epsilon;
   double default_epsilon, min_epsilon;
@@ -146,8 +151,8 @@ class Simulator {
   int iter;
   int maxIters;
   double runTime; // How long the simulation took to run
-  vect<> gravity;
-  
+
+  /// Objects
   vector<Wall*> walls;
   list<pair<Wall*,double>> tempWalls;
   vector<Particle*> particles;
@@ -156,48 +161,20 @@ class Simulator {
   vector<Particle*> watchlist;
   vector<vector<vect<>>> watchPos;
 
-  /// Records
-  vector<double> rec_maxV;
-  vector<double> rec_aveV;
-  vector<double> rec_aveVsqr;
-  vector<double> rec_aveKE;
-  vector<vect<>> rec_netP;
-  vector<vect<>> rec_netV;
-  vector<double> rec_netOmega;
-  vector<double> rec_aveOmegaSqr;
-  vector<double> rec_netAngP;
-  vector<double> rec_netTorque;
+  /// Statistics
+  vector<statfunc> statistics;
+  vector<vector<double> > statRec;
   bool recAllIters;
 
-  string pressurePrint;
-  string fvNormPrint;
-
+  /// Marks and recording
   vector<double> timeMarks;
   double lastMark;   // The last time a time mark was recorded
   bool markWatch;    // Whether we should break the simulation based on marks
+  double startRecording; // When to start recording position (and other) data
+  double stopRecording; // When to stop recording position (and other) data
   double startTime;  // When to start looking for time marks
   double delayTime;  // How long between marks counts as a jam
-
-  /// Fluid dynamics
-  bool doFluid;   // Whether we want a fluid simulation
-  double rho;     // Fluid density
-  int feX, feY;
-  double fx, fy;
-  double area;
-  double viscosity;
-  // Fluid related fields
-  VField fV;
-  Field divVstar;
-  VField advectV;
-  VField lapV;
-  Field pressure;
-  VField gradP;
-  // Fluid helper functions
-  void particleBC();  
-  void updateFluid();
-  void fluidBC();
-  void fluidForces();
-  int pSamples;
+  bool delayTriggeredExit; // If a long enough delay between marks causes the simulation to stop running
 
   /// Sectorization
   inline void updateSectors();
