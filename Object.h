@@ -6,16 +6,21 @@
 
 #include "Utility.h"
 
+/// Default parameters
 const double sphere_mass = 1.;
 const double sphere_repulsion = 10000.0;
 const double sphere_dissipation = 7500.0;
 const double sphere_coeff = sqrt(0.5);
-const double sphere_drag = 5.0;
+const double sphere_drag = 1.0;
 const double wall_repulsion = 10000.0;
 const double wall_dissipation = 5000.0;
 const double wall_coeff = sqrt(0.5);
 const double wall_gamma = 5;
+const double default_run = 0.2;
+const double default_tumble = 0.1;
+const double default_run_force = 15.0;
 
+/// Clamp function
 inline double clamp(double x) { return x>0 ? x : 0; }
 
 class Wall; // Forward declaration
@@ -45,7 +50,8 @@ class Particle {
   vect<> getForce() { return force; }
   vect<> getNormalForce() { return normalF; }
   vect<> getShearForce() { return shearF; }
-
+  bool isActive() { return active; }
+  
   // Mutators
   void setOmega(double om) { omega = om; }
   void setVelocity(vect<> V) { velocity = V; }
@@ -59,10 +65,11 @@ class Particle {
   virtual void interact(Particle*); // Interact with another particle
   virtual void interact(Particle*, vect<>);
   virtual void interact(vect<> pos, double force);
-  virtual vect<> interact(vect<> pos, vect<> fU, double cp, double vis); // Interact with a fluid
   virtual void update(double);
 
   void flowForce(vect<> F);
+  void flowForce(vect<> (*func)(vect<>));
+  void flowForce(std::function<vect<>(vect<>)>);
   void applyForce(vect<> F) { force += F; }
   void applyNormalForce(vect<> force) { normalF += force; }
   void applyShearForce(vect<> force) { shearF += force; }
@@ -87,6 +94,7 @@ class Particle {
   vect<> acceleration;
   double theta, omega, alpha; // Angular variables
   bool fixed; // Whether the particle can move or not
+  bool active; // Whether this is an active particle or not
 
   // Forces and torques
   vect<> force;
@@ -110,35 +118,23 @@ class Rod : public Particle {
  private:
 };
 
-const double default_run = 0.1;
-const double default_tumble = 0.4;
-const double run_force = 50.0;
-
-class Active : public Particle {
- public:
-  Active(vect<> pos, double rad);
-  Active(vect<> pos, double rad, double runF);
-
-  virtual void update(double);
-
- private:
-  double runTime;
-  double tumbleTime;
-  double timer;
-  bool running;
-};
-
+/// Roll and Tumble Sphere
 class RTSphere : public Particle {
  public:
   RTSphere(vect<> pos, double rad);
   RTSphere(vect<> pos, double rad, double runF);
+  RTSphere(vect<> pos, double rad, vect<> bias);
 
   virtual void update(double);
 
  private:
+
+  void initialize();
+
   double runTime;
   double runForce;
   vect<> runDirection;
+  vect<> bias; // Run direction bias
   double tumbleTime;
   double timer;
   bool running;

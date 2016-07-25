@@ -5,6 +5,7 @@
 #define SIMULATOR_H
 
 #include "StatFunc.h"
+#include <functional>
 
 #include <list>
 using std::list;
@@ -21,8 +22,9 @@ class Simulator {
   // Initialization
   void createSquare(int, double=0.025);
   void createHopper(int, double=0.025, double=0.14, double=1., double=3., double=0.);
-  void createPipe(int, double=0.02);
-  void createIdealGas(int, double=0.02);
+  void createPipe(int, double=0.02, double=1., int=0);
+  void createControlPipe(int N, int A, double radius=0.02, double=1., vect<> bias=Zero, double rA=-1, double width=5., double height=2.);
+  void createIdealGas(int, double=0.02, double=0.1);
   void createEntropyBox(int, double=0.02);
 
   // Simulation
@@ -42,12 +44,14 @@ class Simulator {
   int getMarkSize() { return timeMarks.size(); } // Returns the number of time marks
   double getMarkSlope(); // Gets the ave rate at which marks occur (while marks are occuring)
   double getMarkDiff(); // Gets the difference in time between the first and last marks
-  int getPSize() { return particles.size(); }
-  int getWSize() { return walls.size(); }
+  int getSize() { return particles.size(); }
+  int getWallSize() { return walls.size(); }
   // Statistic functions
   void addStatistic(statfunc); // Adds a statistic to track
   int numStatistics() { return statistics.size(); } // Returns the number of statistics we are tracking
-  vector<double>& getStatistic(int i) { return statRec.at(i); } // Returns a statistic record
+  vector<vect<>>& getStatistic(int i) { return statRec.at(i); } // Returns a statistic record
+  int getPSize() { return psize; }
+  int getASize() { return asize; }
 
   double aveVelocity();
   double aveVelocitySqr();
@@ -80,7 +84,8 @@ class Simulator {
   void setMaxIters(int it) { maxIters = it; }
   void setRecAllIters(bool r) { recAllIters = r; }
   void setHasDrag(bool d) { hasDrag = d; }
-  void setFlow(vect<> f) { flow = f; }
+  //void setFlowFunc(vect<> (*f)(vect<>)) { flowFunc = f; }
+  void setFlowFunc(std::function<vect<>(vect<>)> f) { flowFunc = f; }
   void discard();
   /// Global set functions
   void setParticleDissipation(double);
@@ -88,13 +93,15 @@ class Simulator {
   void setParticleCoeff(double);
   void setWallCoeff(double);
   void setParticleDrag(double);
+  void setParticleFix(bool);
 
   // Creation Functions
   void addWall(Wall*);
   void addTempWall(Wall*, double);
   void addParticle(Particle*);
-  void addParticles(int N, double R, double var, double left, double right, double bottom, double top, PType type=PASSIVE, double vmax=-1, bool watched=true);
+  void addParticles(int N, double R, double var, double left, double right, double bottom, double top, PType type=PASSIVE, double vmax=-1, bool watched=true, vect<> bias=Zero);
   void addNWParticles(int N, double R, double var, double left, double right, double bottom, double top, PType type=PASSIVE, double vmax=-1);
+  void addRTSpheres(int N, double R, double var, double left, double right, double bottom, double top, vect<> bias);
   void addWatchedParticle(Particle* p);
 
   // Display functions
@@ -136,8 +143,9 @@ class Simulator {
   BType xLBound, xRBound, yTBound, yBBound;
   double yTop;    // Where to put the particles back into the simulation (for random insertion)
   vect<> gravity; // Acceleration due to gravity
-  vect<> flow;    // A uniform current
+  std::function<vect<>(vect<>)> flowFunc;
   bool hasDrag;   // Whether we should apply a drag force to particles
+  double flowV;   // Velocity of the flow (if any)
   
   /// Times etc.
   double time;
@@ -156,6 +164,7 @@ class Simulator {
   vector<Wall*> walls;
   list<pair<Wall*,double>> tempWalls;
   vector<Particle*> particles;
+  int psize, asize; // Record the number of passive and active particles
 
   /// Watchlist
   vector<Particle*> watchlist;
@@ -163,7 +172,8 @@ class Simulator {
 
   /// Statistics
   vector<statfunc> statistics;
-  vector<vector<double> > statRec;
+  vector<vector<vect<> > > statRec; // the vect is for {t, f(t)}
+  void resetStatistics();
   bool recAllIters;
 
   /// Marks and recording

@@ -17,6 +17,8 @@
 #include <string>
 #include <sstream>
 #include <ctime>
+#include <functional>
+#include <random>
 
 using std::vector;
 using std::pair;
@@ -27,6 +29,9 @@ using std::stringstream;
 using std::time;
 
 const double PI = 3.14159265;
+
+static std::mt19937 generator;
+static std::normal_distribution<double> distribution(0., 0.25);
 
 /// Random number function
 inline double getRand() { 

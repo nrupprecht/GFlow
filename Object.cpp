@@ -1,6 +1,6 @@
 #include "Object.h"
 
-Particle::Particle(vect<> pos, double rad, double repulse, double dissipate, double coeff) : position(pos), radius(rad), repulsion(repulse), dissipation(dissipate), coeff(coeff), drag(0) {
+Particle::Particle(vect<> pos, double rad, double repulse, double dissipate, double coeff) : position(pos), radius(rad), repulsion(repulse), dissipation(dissipate), coeff(coeff) {
   initialize();
 }
 
@@ -14,6 +14,9 @@ void Particle::initialize() {
   double mass = sphere_mass;
   invMass = 1.0/mass;
   invII = 1.0/(0.5*mass*sqr(radius));
+  active = false;
+
+  drag = sphere_drag*radius;
 
   normalF = shearF = force = Zero;
   torque = 0;
@@ -54,52 +57,20 @@ void Particle::interact(Particle* P, vect<> displacement) {
     vect<> shear = vect<>(normal.y, -normal.x);
     double overlap = 1.0 - dist/cutoff;
     vect<> dV = P->getVelocity() - velocity;
-    double Vn = dV*normal;
-    double Vs = dV*shear + radius*omega + P->getTangentialV();
-    // Damped harmonic oscillator
-    double Fn = -repulsion*overlap-dissipation*clamp(-Vn);
+    double Vn = dV*normal; // Normal velocity
+    double Vs = dV*shear + radius*omega + P->getTangentialV(); // Shear velocity
+    // Calculate the normal force
+    double Fn = -repulsion*overlap-dissipation*clamp(-Vn); // Damped harmonic oscillator
+    // double K = 0.05, N = (2.-4.*K-sqr(K))/6.;
+    // double Fn = -repulsion/N*(sqr(overlap-K)/(overlap+2)-0.5*sqr(K)) - dissipation*clamp(-Vn); // Sticky force
+
+    // Calculate the Shear force
     double Fs = -(coeff*P->getCoeff())*Fn*sign(Vs);
 
     applyNormalForce(Fn*normal);
     applyShearForce(Fs*shear);
     applyTorque(-Fs*radius);
-
-    /*
-    P->applyNormalForce(-Fn*normal);
-    P->applyShearForce(-Fs*shear);
-    P->applyTorque(Fs*P->getRadius()); // The force and radius are both negative so the torque is the same
-    */
   }
-}
-
-/// Returns the force on the fluid element
-/// pos - position of the fluid element
-/// fU  - fluid velocity vector
-/// cp  - coefficient of pressure, F = cp*fU
-/// vis - viscosity, how much shear force can be applied to the particle
-vect<> Particle::interact(vect<> pos, vect<> fU, double cp, double vis) {
-  if (fixed) return Zero;
-  vect<> displacement = position - pos; // Points towards particle
-  double distSqr = sqr(displacement);
-  if (distSqr < sqr(radius)) { // Interaction (same potiential as particle-particle)
-    double dist = sqrt(distSqr);
-    vect<> normal = (1.0/dist) * displacement;
-    vect<> shear = vect<>(normal.y, -normal.x);
-    double overlap = 1.0 - dist/radius;
-    vect<> dV = fU - velocity;
-    double Vn = dV*normal;
-    double Vs = dV*shear + radius*omega;
-    // Damped harmonic oscillator
-    double Fn = -repulsion*overlap-dissipation*clamp(-Vn);
-    double Fs = -(coeff*vis)*Fn*sign(Vs);
-
-    applyNormalForce(Fn*normal);
-    applyShearForce(Fs*shear);
-    applyTorque(-Fs*radius);
-
-    return -1*(Fn*normal+Fs*shear);
-  }
-  return vect<>(); // No interaction
 }
 
 void Particle::interact(vect<> pos, double force) {
@@ -150,9 +121,42 @@ void Particle::flowForce(vect<> F) {
   applyForce(drag*dsqr*diff); // Apply the drag force
 }
 
-RTSphere::RTSphere(vect<> pos, double rad) : Particle(pos, rad), runTime(default_run), tumbleTime(default_tumble), timer(0), running(true), runDirection(randV()), runForce(run_force) {};
+void Particle::flowForce(vect<> (*func)(vect<>)) {
+  // func gives flow velocity as a function of position
+  vect<> F = func(position);
+  flowForce(F);
+}
 
-RTSphere::RTSphere(vect<> pos, double rad, double runF) : Particle(pos, rad), runTime(default_run), tumbleTime(default_tumble), timer(0), running(true), runDirection(randV()), runForce(runF) {};
+void Particle::flowForce(std::function<vect<>(vect<>)> func) {
+  // func gives flow velocity as a function of position
+  vect<> F = func(position);
+  flowForce(F);
+}
+
+RTSphere::RTSphere(vect<> pos, double rad) : Particle(pos, rad) {
+  initialize();
+};
+
+RTSphere::RTSphere(vect<> pos, double rad, double runF) : Particle(pos, rad) {
+  initialize();
+  runForce = runF;
+};
+
+RTSphere::RTSphere(vect<> pos, double rad, vect<> bias) : Particle(pos, rad) {
+  initialize();
+  this->bias = bias;
+}
+
+void RTSphere::initialize() {
+  runForce = default_run_force;
+  runTime = default_run;
+  tumbleTime = default_tumble;
+  timer = drand48()*(runTime+tumbleTime);
+  running = timer<runTime;
+  runDirection = randV();
+  bias = 0;
+  active = true;
+}
 
 void RTSphere::update(double epsilon) {
   if (running) {
@@ -169,7 +173,7 @@ void RTSphere::update(double epsilon) {
     else {
       timer = 0;
       running = true;
-      runDirection = randV();
+      runDirection = randV() + bias;
     }
   }
   timer += epsilon;

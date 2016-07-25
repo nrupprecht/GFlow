@@ -1,9 +1,9 @@
 #include "Simulator.h"
 
-Simulator::Simulator() : lastDisp(0), dispTime(1.0/50), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false) {
+Simulator::Simulator() : lastDisp(0), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false) {
   // Flow
   hasDrag = true;
-  flow = Zero;
+  flowFunc = 0;
   // Time steps
   default_epsilon = 1e-4;
   epsilon = default_epsilon;
@@ -97,24 +97,77 @@ void Simulator::createHopper(int N, double radius, double gap, double width, dou
   min_epsilon = 1e-8;
 }
 
-void Simulator::createPipe(int N, double radius) {
+void Simulator::createPipe(int N, double radius, double V, int NObst) {
   discard();
   gravity = Zero;
   left = 0; bottom = 0;
-  top = 1; right = 5;
+  top = 2; right = 5;
+
   addWall(new Wall(vect<>(0,0), vect<>(right,0)));
   addWall(new Wall(vect<>(0,top), vect<>(right,top)));
-  addParticles(N, radius, 0, 0, right, 0, top, RTSPHERE);
+  // Add stationary obstacles
+  addParticles(NObst, 2*radius, 0, 0, right, 0, top);
+  setParticleFix(true);
+  // Add mobile particles
+  addParticles(N, radius, 0, 0, right, 0, top);
   xLBound = WRAP;
   xRBound = WRAP;
   yTBound = NONE;
   yBBound = NONE;
 
+  flowV = V;
+  flowFunc = [&] (vect<> pos) { return vect<>(flowV*(1-sqr(pos.y-0.5*(top-bottom)))/sqr(0.5),0); };
+  hasDrag = true;
+  for (auto P : particles) P->setVelocity(flowFunc(P->getPosition()));
+
+  // Set physical parameters
+  setParticleCoeff(0); // --> No torques, shear forces
+  setParticleDissipation(sphere_dissipation);
+  setParticleDrag(sphere_drag);
+  setWallDissipation(wall_dissipation);
+  setWallCoeff(wall_coeff);
+
   default_epsilon = 1e-4;
   min_epsilon = 1e-8;
 }
 
-void Simulator::createIdealGas(int N, double radius) {
+void Simulator::createControlPipe(int N, int A, double radius, double V, vect<> bias, double rA, double width, double height) {
+  discard();
+  gravity = Zero;
+  left = 0; bottom = 0;
+  top = height; right = width;
+  if (rA==-1) rA = radius;
+  
+  addWall(new Wall(vect<>(0,bottom), vect<>(right,bottom))); // Bottom wall
+  addWall(new Wall(vect<>(0,top), vect<>(right,top))); // Top wall
+
+  // Add active particles
+  addRTSpheres(A, rA, 0, 0, right, 0, top, bias);
+  // Add passive particles
+  addParticles(N, radius, 0, 0, right, 0, top);
+
+  xLBound = WRAP;
+  xRBound = WRAP;
+  yTBound = NONE;
+  yBBound = NONE;
+
+  flowV = V;
+  flowFunc = [&] (vect<> pos) { return vect<>(flowV*(1-sqr(pos.y-0.5*(top-bottom)))/sqr(0.5),0); };
+  hasDrag = true;
+  for (auto P : particles) P->setVelocity(flowFunc(P->getPosition()));
+
+  // Set physical parameters
+  setParticleCoeff(0); // --> No torques, shear forces
+  setParticleDissipation(sphere_dissipation);
+  setParticleDrag(sphere_drag);
+  setWallDissipation(wall_dissipation);
+  setWallCoeff(wall_coeff);
+
+  default_epsilon = 1e-4;
+  min_epsilon = 1e-8;
+}
+
+void Simulator::createIdealGas(int N, double radius, double v) {
   discard();
   gravity = Zero;
   addWall(new Wall(vect<>(0,0), vect<>(right,0))); // bottom
@@ -122,12 +175,12 @@ void Simulator::createIdealGas(int N, double radius) {
   addWall(new Wall(vect<>(0,0), vect<>(0,top))); // left
   addWall(new Wall(vect<>(right,0), vect<>(right,top))); // right
 
-  addParticles(N, radius, 0, 0, right, 0, top, PASSIVE, 0.1);
-  // setParticleDissipation(30);
-  setParticleDissipation(0);
+  addParticles(N, radius, 0, 0, right, 0, top, PASSIVE, v);
+  double diss = 1.17;
   setParticleCoeff(0);
   setParticleDrag(0);
-  // setWallDissipation(30);
+  setWallDissipation(diss);
+  setParticleDissipation(diss);
   setWallDissipation(0);
   setWallCoeff(0);
 
@@ -174,16 +227,23 @@ void Simulator::run(double runLength) {
   iter = 0;
   delayTriggeredExit = false;
   lastDisp = -1e9;
+  minepsilon = default_epsilon;
   bool running = true;
+  resetStatistics();
   // Run the simulation
   clock_t start = clock();
+  if (time>=startRecording && time<stopRecording || recAllIters) record();
   while(time<runLength && running) { // Terminate based on internal condition
     // Gravity
     if (gravity!=Zero)
       for (auto P : particles) P->applyForce(P->getMass()*gravity);
     // Flow
-    if (hasDrag)
-      for (auto P : particles) P->flowForce(flow);
+    if (hasDrag) {
+      if (flowFunc)
+	for (auto P : particles) P->flowForce(flowFunc);
+      else 
+	for (auto P : particles) P->flowForce(Zero);
+    }
     // Calculate particle-particle and particle-wall forces
     interactions();
 
@@ -248,7 +308,7 @@ double Simulator::getMarkDiff() {
 
 void Simulator::addStatistic(statfunc func) {
   statistics.push_back(func);
-  statRec.push_back(vector<double>());
+  statRec.push_back(vector<vect<>>());
 }
 
 double Simulator::aveVelocity() {
@@ -343,7 +403,8 @@ void Simulator::addTempWall(Wall* wall, double duration) {
 }
 
 void Simulator::addParticle(Particle* particle) {
-  // Sectorize later  
+  if (particle->isActive()) asize++;
+  else psize++;
   int sec = getSec(particle->getPosition());
   sectors[sec].push_back(particle);
   particles.push_back(particle);
@@ -397,9 +458,7 @@ string Simulator::printWatchList() {
 string Simulator::printAnimationCommand() {
   stringstream stream;
   string str = "frames=Table[Show[walls", str2;
-  for (int i=0; i<watchlist.size(); i++) {
-    stream << ",Graphics[Circle[pos" << i << "[[i]],R[[" << i+1 << "]]]]";
-  }
+  for (int i=0; i<watchlist.size(); i++) stream << ",Graphics[Circle[pos" << i << "[[i]],R[[" << i+1 << "]]]]";
   stream << ",PlotRange->{{0," << right << "},{0," << top << "}}],{i,1,Length[pos0]}];";
   stream >> str2;
   str += str2;
@@ -429,6 +488,10 @@ void Simulator::setWallCoeff(double c) {
 
 void Simulator::setParticleDrag(double d) {
   for (auto P : particles) P->setDrag(d);
+}
+
+void Simulator::setParticleFix(bool f) {
+  for (auto P : particles) P->fix(f);
 }
 
 inline double Simulator::maxVelocity() {
@@ -598,7 +661,7 @@ inline void Simulator::record() {
 
   // Record statistics
   for (int i=0; i<statistics.size(); i++)
-    statRec.at(i).push_back(statistics.at(i)(particles));
+    statRec.at(i).push_back(vect<>(time, statistics.at(i)(particles)));
 
   // Update time
   lastDisp = time;
@@ -635,7 +698,7 @@ inline void Simulator::wrap(Particle *P, BType bound, int coord, double start, d
   }
 }
 
-void Simulator::addParticles(int N, double R, double var, double lft, double rght, double bttm, double tp, PType type, double vmax, bool watched) {
+void Simulator::addParticles(int N, double R, double var, double lft, double rght, double bttm, double tp, PType type, double vmax, bool watched, vect<> bias) {
   bool C = true;
   int maxFail = 250;
   int count = 0, failed = 0;
@@ -653,7 +716,7 @@ void Simulator::addParticles(int N, double R, double var, double lft, double rgh
 	break;
       }
       case RTSPHERE: {
-	P = new RTSphere(pos, rad);
+	P = new RTSphere(pos, rad, bias);
 	break;
       }
       }
@@ -672,6 +735,14 @@ void Simulator::addParticles(int N, double R, double var, double lft, double rgh
 
 void Simulator::addNWParticles(int N, double R, double var, double lft, double rght, double bttm, double tp, PType type, double vmax) {
   addParticles(N, R, var, lft, rght, bttm, tp, type, vmax, false);
+}
+
+void Simulator::addRTSpheres(int N, double R, double var, double lft, double rght, double bttm, double tp, vect<> bias) {
+  addParticles(N, R, var, lft, rght, bttm, tp, RTSPHERE, -1, true, bias);
+}
+
+void Simulator::resetStatistics() {
+  for (auto vec : statRec) vec.clear();
 }
 
 inline void Simulator::updateSectors() {
@@ -733,6 +804,7 @@ inline int Simulator::getSec(vect<> pos) {
 }
 
 void Simulator::discard() {
+  psize = asize = 0;
   for (int i=0; i<(secX+2)*(secY+2); i++) sectors[i].clear();
   for (auto P : particles) 
     if (P) {
@@ -756,5 +828,5 @@ void Simulator::discard() {
   tempWalls.clear();
   // Clear time marks and statistics
   timeMarks.clear();
-  for (auto V : statRec) statRec.clear();
+  for (auto V : statRec) V.clear();
 }
