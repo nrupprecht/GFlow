@@ -60,6 +60,7 @@ class Particle {
   void setDrag(double d) { drag = d; }
   void setMass(double);
   void setII(double);
+  void setRadius(double r) { radius = r; }
 
   /// Control functions
   virtual void interact(Particle*); // Interact with another particle

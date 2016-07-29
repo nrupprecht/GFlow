@@ -141,11 +141,13 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, vect<> 
   addWall(new Wall(vect<>(0,bottom), vect<>(right,bottom))); // Bottom wall
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // Top wall
 
-  // Add active particles
-  addRTSpheres(A, rA, 0, 0, right, 0, top, bias);
-  // Add passive particles
-  addParticles(N, radius, 0, 0, right, 0, top);
+  vector<vect<> > pos = findPackedSolution(N+A, radius, 0, right, 0, top);
+  int i;
 
+  // Add the particles in at the appropriate positions
+  for (i=0; i<A; i++) addWatchedParticle(new RTSphere(pos.at(i), rA, bias));
+  for (; i<N+A; i++) addWatchedParticle(new Particle(pos.at(i), radius));
+  
   xLBound = WRAP;
   xRBound = WRAP;
   yTBound = NONE;
@@ -162,7 +164,7 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, vect<> 
   setParticleDrag(sphere_drag);
   setWallDissipation(wall_dissipation);
   setWallCoeff(wall_coeff);
-
+  
   default_epsilon = 1e-4;
   min_epsilon = 1e-8;
 }
@@ -246,7 +248,7 @@ void Simulator::run(double runLength) {
     }
     // Calculate particle-particle and particle-wall forces
     interactions();
-
+    
     // Calculate appropriate epsilon
     if (adjust_epsilon) {
       double vmax = fabs(maxVelocity());
@@ -416,6 +418,55 @@ void Simulator::addWatchedParticle(Particle* p) {
   watchPos.push_back(vector<vect<>>());
 }
 
+vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, double right, double bottom, double top) {
+  vector<Particle*> parts;
+  vector<Wall*> bounds;
+  bounds.push_back(new Wall(vect<>(left,bottom), vect<>(left,top)));
+  bounds.push_back(new Wall(vect<>(left,top), vect<>(right,top)));
+  bounds.push_back(new Wall(vect<>(right,top), vect<>(right,bottom)));
+  bounds.push_back(new Wall(vect<>(right,bottom), vect<>(left,bottom)));
+  
+  // Add particles in with small radii
+  double l = left + 0.05*R, x = right - 0.05*R - l;
+  double b = bottom + 0.05*R, y = top - 0.05*R - b;
+  for (int i=0; i<N; i++) {
+    vect<> pos = vect<>(b+x*drand48(), b+y*drand48());
+    //addParticle(new Particle(pos, 0.05*R));
+    parts.push_back(new Particle(pos, 0.05*R));
+  }
+
+  // Enlarge particles and thermally agitate
+  int steps = 5000;
+  double dr = (R-0.05*R)/(double)steps, radius = 0.05*R;;
+  double mag = 5, dm = mag/(double)steps;
+  for (int i=0; i<steps; i++) {
+    // Particle - particle interactions
+    //ppInteract();
+    
+    for (auto P : parts)
+      for (auto Q : parts)
+        if (P!=Q) P->interact(Q);
+    
+    // Thermal agitation
+    mag -= dm;
+    for (auto P: parts) P->applyForce(mag*randV());
+    // Boundary walls
+    for (auto W : bounds)
+      for (auto P : parts)
+	W->interact(P);
+    // Adjust radius
+    radius += dr;
+    for (auto &P : parts) P->setRadius(radius);
+    for (auto &P : parts) update(P);
+  }
+
+  // Return list of positions
+  vector<vect<> > pos;
+  for (auto P : parts) pos.push_back(P->getPosition());
+  //particles.clear();
+  return pos;
+}
+
 string Simulator::printWalls() {
   if (walls.empty()) return "{}";
   stringstream stream;
@@ -458,7 +509,10 @@ string Simulator::printWatchList() {
 string Simulator::printAnimationCommand() {
   stringstream stream;
   string str = "frames=Table[Show[walls", str2;
-  for (int i=0; i<watchlist.size(); i++) stream << ",Graphics[Circle[pos" << i << "[[i]],R[[" << i+1 << "]]]]";
+  for (int i=0; i<watchlist.size(); i++) {
+    string col = watchlist.at(i)->isActive() ? "Blue,Thick," : "Black,";
+    stream << ",Graphics[{" << col << "Circle[pos" << i << "[[i]],R[[" << i+1 << "]]]}]";
+  }
   stream << ",PlotRange->{{0," << right << "},{0," << top << "}}],{i,1,Length[pos0]}];";
   stream >> str2;
   str += str2;
@@ -544,19 +598,16 @@ inline void Simulator::interactions() {
   if (sectorize) ppInteract();
   else // Naive solution
     for (auto P : particles) 
-      if (P!=0)
-	for (auto Q : particles)
-	  if (Q!=0 && P!=Q) P->interact(Q);
-
+      for (auto Q : particles)
+	if (P!=Q) P->interact(Q);
+  
   // Calculate particle-wall forces
   for (auto W : walls)
-    if (W!=0)
-      for (auto P : particles)
-	if (P!=0) W->interact(P);
+    for (auto P : particles)
+      W->interact(P);
   for (auto W : tempWalls) 
-    if (W.first!=0)
-      for (auto P : particles)
-	if (P!=0) W.first->interact(P);
+    for (auto P : particles)
+      W.first->interact(P);
 }
 
 inline void Simulator::update(Particle* &P) {

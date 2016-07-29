@@ -28,7 +28,7 @@ void standardHopper(Simulator &simulation, int number) {
   simulation.setWallDissipation(wall_dissipation);
   simulation.setWallCoeff(wall_coeff);
 
-  simulation.setDefaultEpsilon(0.001);
+  simulation.setDefaultEpsilon(1e-4);
   simulation.setMinEpsilon(1e-8);
 }
 
@@ -46,25 +46,25 @@ int main() {
   standardHopper(simulation, number1);
   simulation.setSectorDims(10,10);
   simulation.run(10);
-  cout << "Sectors 10x10: " << simulation.getRunTime() << endl;
-  cout << "Target: 0.44 s\n";
-  cout << "Check: " << simulation.aveKE() << " (11.1872)\n\n";
+  cout << "Sectors 10x10: " << simulation.getRunTime() << " s\n";
+  cout << "Target: 5.4 s\n";
+  cout << "Check: " << simulation.aveKE() << " (1.67722)\n\n";
   
   srand(0);
   standardHopper(simulation, number1);
   simulation.setSectorDims(5,5);
   simulation.run(10);
-  cout << "Sectors 5x5: " << simulation.getRunTime() << endl;
-  cout << "Target: 0.58 s\n";
-  cout << "Check: " << simulation.aveKE() << " (10.3574)\n\n";
+  cout << "Sectors 5x5: " << simulation.getRunTime() << " s\n";
+  cout << "Target: 7.36 s\n";
+  cout << "Check: " << simulation.aveKE() << " (1.46621)\n\n";
   
   srand(0);
   standardHopper(simulation, number1);
   simulation.setSectorize(false);
   simulation.run(10);
-  cout << "No sectors: " << simulation.getRunTime() << endl;
-  cout << "Target: 0.95 s\n";
-  cout << "Check: " << simulation.aveKE() << " (10.4644)\n\n";
+  cout << "No sectors: " << simulation.getRunTime() << " s\n";
+  cout << "Target: 10.3 s\n";
+  cout << "Check: " << simulation.aveKE() << " (1.53687)\n\n";
   
   return 0;
 }

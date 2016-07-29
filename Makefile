@@ -1,13 +1,16 @@
 CC = icpc
 FLAGS = -std=c++14 -g -O3
 
-targets = driver control Jamming JamShape time ftest tune
+targets = driver control controlPhi Jamming JamShape time ftest tune
 files = Simulator.o Object.o Field.o
 
 all: $(targets)
 
 # Executables
 control: control.o $(files)
+	$(CC) $^ -o $@
+
+controlPhi: controlPhi.o $(files)
 	$(CC) $^ -o $@
 
 tune: tune.o $(files)

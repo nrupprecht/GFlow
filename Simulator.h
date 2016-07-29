@@ -103,6 +103,7 @@ class Simulator {
   void addNWParticles(int N, double R, double var, double left, double right, double bottom, double top, PType type=PASSIVE, double vmax=-1);
   void addRTSpheres(int N, double R, double var, double left, double right, double bottom, double top, vect<> bias);
   void addWatchedParticle(Particle* p);
+  vector<vect<> > findPackedSolution(int N, double R, double left, double right, double bottom, double top); // Finds where we can put particles for high packing
 
   // Display functions
   string printWalls();

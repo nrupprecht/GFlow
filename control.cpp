@@ -2,21 +2,14 @@
 
 #include <ctime>
 
-double average(vector<vect<>> lst) {
-  if (lst.empty()) return 0;
-  double ave = 0;
-  for (auto V : lst) ave += V.y;
-  return ave/lst.size();
-}
-
 int main() {
   // Parameters
   double width = 5.;
   double height = 2;
-  int number = 250; // Total number of particles
+  int number = 500; // Total number of particles
   double pA = 0.1;  // Portion that are active
-  int trials = 1;   // Number of trials to average over
-  double time = 30; // Time to run the simulation for
+  int trials = 5;   // Number of trials to average over
+  double time = 20; // Time to run the simulation for
   double startRec = 3; // What time to start recording data
   double radius = 0.05;
   double rA = 0.05;
@@ -59,7 +52,7 @@ int main() {
   cout << "Passive: " << psize << ", Active: " << asize << endl;
   cout << "Pipe width, height: " << width << ", " << height << endl;
   cout << "Packing: " << (psize*PI*sqr(radius)+asize*PI*sqr(rA))/(width*height) << endl;
-  cout << "Time: " << (double)(end-start)/CLOCKS_PER_SEC;
+  cout << "Time: " << (double)(end-start)/CLOCKS_PER_SEC << endl;
 
   cout << "act=" << dataA << ";\n";
   cout << "pass=" << dataP << ";";

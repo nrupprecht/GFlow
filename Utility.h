@@ -228,6 +228,14 @@ template<typename T> inline std::ostream& operator<<(std::ostream& out, vector<T
   return out;
 }
 
+/// Helper averaging function
+inline double average(vector<vect<>> lst) {
+  if (lst.empty()) return 0;
+  double ave = 0;
+  for (auto V : lst) ave += V.y;
+  return ave/lst.size();
+}
+
 // A useful typedef
 typedef pair<vect<float>, bool> vtype;
 typedef pair<int,int> ipair;
