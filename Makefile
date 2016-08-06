@@ -1,39 +1,42 @@
 CC = icpc
-FLAGS = -std=c++14 -g -O3
-
-targets = driver control controlPhi Jamming JamShape time ftest tune
+OPT = -parallel
+FLAGS = -std=c++14 -g -O3 $(OPT)
+targets = driver control controlPhi Jamming JamShape time tune theory
 files = Simulator.o Object.o Field.o
 
 all: $(targets)
 
 # Executables
 control: control.o $(files)
-	$(CC) $^ -o $@
+	$(CC) $(OPT) $^ -o $@
 
 controlPhi: controlPhi.o $(files)
-	$(CC) $^ -o $@
+	$(CC) $(OPT) $^ -o $@
 
 tune: tune.o $(files)
-	$(CC) $^ -o $@
-
-ftest: ftest.o GFlow.o MAC.o Object.o
-	$(CC) $^ -o $@
+	$(CC) $(OPT) $^ -o $@
 
 Jamming: Jamming.o $(files)
-	$(CC) $^ -o $@
+	$(CC) $(OPT) $^ -o $@
 
 JamShape: JamShape.o $(files)
-	$(CC) $^ -o $@
+	$(CC) $(OPT) $^ -o $@
 
 driver: driver.o $(files)
-	$(CC) $^ -o $@
+	$(CC) $(OPT) $^ -o $@
 
 time: time.o $(files)
+	$(CC) $(OPT) $^ -o $@
+
+theory: theory.o
 	$(CC) $^ -o $@
 
 # Object files
 %.o : %.cpp
 	$(CC) -c $(FLAGS) $^
+
+theory.o : theory.cpp
+	$(CC) -c $^
 
 .PHONY: clean
 clean:

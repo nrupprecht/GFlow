@@ -131,7 +131,7 @@ void Simulator::createPipe(int N, double radius, double V, int NObst) {
   min_epsilon = 1e-8;
 }
 
-void Simulator::createControlPipe(int N, int A, double radius, double V, vect<> bias, double rA, double width, double height) {
+void Simulator::createControlPipe(int N, int A, double radius, double V, vect<> bias, double rA, double width, double height, double var) {
   discard();
   gravity = Zero;
   left = 0; bottom = 0;
@@ -141,9 +141,12 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, vect<> 
   addWall(new Wall(vect<>(0,bottom), vect<>(right,bottom))); // Bottom wall
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // Top wall
 
+  double R = max(radius, rA);
+  int sx = (int)(width/(2*(R+var))), sy = (int)(top/(2*(R+var)));
+  setSectorDims(sx, sy);
+
   vector<vect<> > pos = findPackedSolution(N+A, radius, 0, right, 0, top);
   int i;
-
   // Add the particles in at the appropriate positions
   for (i=0; i<A; i++) addWatchedParticle(new RTSphere(pos.at(i), rA, bias));
   for (; i<N+A; i++) addWatchedParticle(new Particle(pos.at(i), radius));
@@ -154,7 +157,7 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, vect<> 
   yBBound = NONE;
 
   flowV = V;
-  flowFunc = [&] (vect<> pos) { return vect<>(flowV*(1-sqr(pos.y-0.5*(top-bottom)))/sqr(0.5),0); };
+  flowFunc = [&] (vect<> pos) { return vect<>(flowV*(1-sqr(pos.y-0.5*(top-bottom))/sqr(0.5*(top-bottom))),0); };
   hasDrag = true;
   for (auto P : particles) P->setVelocity(flowFunc(P->getPosition()));
 
@@ -308,9 +311,37 @@ double Simulator::getMarkDiff() {
   return timeMarks.at(timeMarks.size()-1)-timeMarks.at(0);
 }
 
+vector<double> Simulator::getAveProfile() {
+  return aveProfile();
+}
+
 void Simulator::addStatistic(statfunc func) {
   statistics.push_back(func);
   statRec.push_back(vector<vect<>>());
+}
+
+vector<double> Simulator::getDensityXProfile() {
+  double size =particles.size();
+  vector<double> profile;
+  for(int x=1; x<=secX; x++) {
+    int total = 0;
+    for (int y=1; y<=secY; y++)
+      total += sectors[x+(secX+2)*y].size();
+    profile.push_back(total/size);
+  }
+  return profile;
+}
+
+vector<double> Simulator::getDensityYProfile() {
+  double size = particles.size();
+  vector<double> profile;
+  for (int y=1; y<=secY; y++) {
+    int total = 0;
+    for (int x=1; x<=secX; x++)
+      total += sectors[x+(secX+2)*y].size();
+    profile.push_back(total/size);
+  }
+  return profile;
 }
 
 double Simulator::aveVelocity() {
@@ -443,10 +474,19 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
     // Particle - particle interactions
     //ppInteract();
     
+    
+    for (auto P = parts.begin(); P!=parts.end(); ++P) {
+      //#pragma omp parallel for
+      for(auto Q= parts.begin(); Q!=parts.end(); ++Q)
+	if (*P!=*Q) (*P)->interact(*Q);
+    }
+    
+    /*
     for (auto P : parts)
       for (auto Q : parts)
         if (P!=Q) P->interact(Q);
-    
+    */
+
     // Thermal agitation
     mag -= dm;
     for (auto P: parts) P->applyForce(mag*randV());
@@ -454,6 +494,10 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
     for (auto W : bounds)
       for (auto P : parts)
 	W->interact(P);
+    // Other walls (so we don't put particles inside of walls)
+    for (auto W : walls)
+      for (auto P : parts)
+        W->interact(P);
     // Adjust radius
     radius += dr;
     for (auto &P : parts) P->setRadius(radius);
@@ -714,6 +758,9 @@ inline void Simulator::record() {
   for (int i=0; i<statistics.size(); i++)
     statRec.at(i).push_back(vect<>(time, statistics.at(i)(particles)));
 
+  // Record density profile //** Temporary?
+  profiles.push_back(getDensityYProfile());
+
   // Update time
   lastDisp = time;
 }
@@ -793,7 +840,7 @@ void Simulator::addRTSpheres(int N, double R, double var, double lft, double rgh
 }
 
 void Simulator::resetStatistics() {
-  for (auto vec : statRec) vec.clear();
+  for (auto &vec : statRec) vec.clear();
 }
 
 inline void Simulator::updateSectors() {
@@ -824,7 +871,7 @@ inline void Simulator::ppInteract() {
 	  for (int i=x-1; i<=x+1; i++) {
 	    int sx = i;
 	    if ((xLBound==WRAP || xRBound==WRAP) && i==0) sx=secX;
-	    else if ((xLBound==WRAP || xRBound==WRAP) && i==secX+1) sx=1;
+	    else if ((xLBound==WRAP || xRBound==WRAP) && i==secX+1) sx=1;	    
 	    for (auto Q : sectors[sy*(secX+2)+sx])
 	      if (P!=Q) {
 		vect<> disp = getDisplacement(Q->getPosition(), P->getPosition());
@@ -880,4 +927,20 @@ void Simulator::discard() {
   // Clear time marks and statistics
   timeMarks.clear();
   for (auto V : statRec) V.clear();
+}
+
+inline vector<double> Simulator::aveProfile() {
+  if (profiles.empty()) return vector<double>();
+  int size = profiles.at(0).size();
+  vector<double> ave = vector<double>(size, 0);
+  for (auto p : profiles) {
+    if (p.size() != size) throw 1;
+    for (int i=0; i<size; i++)
+      ave.at(i) += p.at(i);
+  }
+  // Normalize
+  double total = 0;
+  for (auto d : ave) total += d;
+  for (auto &d : ave) d /= total;
+  return ave;
 }

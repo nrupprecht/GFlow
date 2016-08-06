@@ -18,7 +18,7 @@ const double wall_coeff = sqrt(0.5);
 const double wall_gamma = 5;
 const double default_run = 0.2;
 const double default_tumble = 0.1;
-const double default_run_force = 15.0;
+const double default_run_force = 5.0;
 
 /// Clamp function
 inline double clamp(double x) { return x>0 ? x : 0; }

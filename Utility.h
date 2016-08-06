@@ -19,6 +19,7 @@
 #include <ctime>
 #include <functional>
 #include <random>
+#include <omp.h>
 
 using std::vector;
 using std::pair;

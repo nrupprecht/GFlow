@@ -23,7 +23,7 @@ class Simulator {
   void createSquare(int, double=0.025);
   void createHopper(int, double=0.025, double=0.14, double=1., double=3., double=0.);
   void createPipe(int, double=0.02, double=1., int=0);
-  void createControlPipe(int N, int A, double radius=0.02, double=1., vect<> bias=Zero, double rA=-1, double width=5., double height=2.);
+  void createControlPipe(int N, int A, double radius=0.02, double=1., vect<> bias=Zero, double rA=-1, double width=5., double height=2., double var=0.);
   void createIdealGas(int, double=0.02, double=0.1);
   void createEntropyBox(int, double=0.02);
 
@@ -46,13 +46,17 @@ class Simulator {
   double getMarkDiff(); // Gets the difference in time between the first and last marks
   int getSize() { return particles.size(); }
   int getWallSize() { return walls.size(); }
+  vector<vector<double> > getProfile() { return profiles; }
+  vector<double> getAveProfile();
+
   // Statistic functions
   void addStatistic(statfunc); // Adds a statistic to track
   int numStatistics() { return statistics.size(); } // Returns the number of statistics we are tracking
   vector<vect<>>& getStatistic(int i) { return statRec.at(i); } // Returns a statistic record
   int getPSize() { return psize; }
   int getASize() { return asize; }
-
+  vector<double> getDensityXProfile();
+  vector<double> getDensityYProfile();
   double aveVelocity();
   double aveVelocitySqr();
   double aveKE();
@@ -195,6 +199,9 @@ class Simulator {
   int secX, secY; // Width and height of sector grid
   bool sectorize; // Whether to use sector based interactions
   bool ssecInteract; // Whether objects in the special sector should interact with other objects
+
+  vector<vector<double> > profiles; // For density y-profile //**
+  inline vector<double> aveProfile(); // For computing the average profile
 };
 
 #endif
