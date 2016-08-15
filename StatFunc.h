@@ -12,6 +12,18 @@ inline double statKE(vector<Particle*> particles) {
   return ke/particles.size();
 }
 
+inline double statPassiveKE(vector<Particle*> particles) {
+  if (particles.empty()) return 0;
+  double ke = 0;
+  int p=0;
+  for (auto P : particles)
+    if (!P->isActive()) {
+      ke += P->getKE();
+      p++;
+    }
+  return p>0? ke/p : 0;
+}
+
 inline double statNetOmega(vector<Particle*> particles){
   if (particles.empty()) return 0;
   double omega = 0;

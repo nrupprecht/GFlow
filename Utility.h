@@ -29,6 +29,8 @@ using std::string;
 using std::stringstream;
 using std::time;
 
+#include "ArgParse.h"
+
 const double PI = 3.14159265;
 
 static std::mt19937 generator;

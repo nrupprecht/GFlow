@@ -1,7 +1,7 @@
 CC = icpc
-OPT = -parallel
+OPT = 
 FLAGS = -std=c++14 -g -O3 $(OPT)
-targets = driver control controlPhi Jamming JamShape time tune theory
+targets = driver control controlPhi Jamming JamShape time tune solver
 files = Simulator.o Object.o Field.o
 
 all: $(targets)
@@ -28,20 +28,13 @@ driver: driver.o $(files)
 time: time.o $(files)
 	$(CC) $(OPT) $^ -o $@
 
-theory: theory.o
+solver: solver.o Theory.o
 	$(CC) $^ -o $@
 
 # Object files
 %.o : %.cpp
 	$(CC) -c $(FLAGS) $^
 
-theory.o : theory.cpp
-	$(CC) -c $^
-
 .PHONY: clean
 clean:
 	rm *.o $(targets)
-
-.PHONY: fclean
-fclean:
-	rm MAC.o ftest.o ftest

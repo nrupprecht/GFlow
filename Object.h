@@ -123,7 +123,7 @@ class Rod : public Particle {
 class RTSphere : public Particle {
  public:
   RTSphere(vect<> pos, double rad);
-  RTSphere(vect<> pos, double rad, double runF);
+  RTSphere(vect<> pos, double rad, double runF, double=default_run, double=default_tumble, vect<> bias=Zero);
   RTSphere(vect<> pos, double rad, vect<> bias);
 
   virtual void update(double);

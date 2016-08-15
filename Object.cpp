@@ -137,9 +137,11 @@ RTSphere::RTSphere(vect<> pos, double rad) : Particle(pos, rad) {
   initialize();
 };
 
-RTSphere::RTSphere(vect<> pos, double rad, double runF) : Particle(pos, rad) {
+RTSphere::RTSphere(vect<> pos, double rad, double runF, double runT, double tumbleT, vect<> bias) : Particle(pos, rad) {
   initialize();
   runForce = runF;
+  runTime = runT;
+  tumbleTime = tumbleT;
 };
 
 RTSphere::RTSphere(vect<> pos, double rad, vect<> bias) : Particle(pos, rad) {

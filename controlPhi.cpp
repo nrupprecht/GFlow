@@ -41,7 +41,7 @@ int main() {
     int NP = number*(1-pA), NA = number-NP;
     for (int i=0; i<trials; i++) {
       // Create a new control pipe
-      simulation.createControlPipe(NP, NA, radius, vel, bias, rA, width, height);
+      simulation.createControlPipe(NP, NA, radius, vel, default_run_force, rA, width, height);
       // Run the simulation
       simulation.run(time);
       // Record data

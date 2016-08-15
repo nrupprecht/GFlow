@@ -1,6 +1,11 @@
 #include "Simulator.h"
 
-Simulator::Simulator() : lastDisp(0), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false) {
+Simulator::Simulator() : lastDisp(0), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0) {
+
+  
+  samplePoints = 100;
+  //cout << "SP: " << samplePoints << endl;
+
   // Flow
   hasDrag = true;
   flowFunc = 0;
@@ -131,16 +136,20 @@ void Simulator::createPipe(int N, double radius, double V, int NObst) {
   min_epsilon = 1e-8;
 }
 
-void Simulator::createControlPipe(int N, int A, double radius, double V, vect<> bias, double rA, double width, double height, double var) {
+void Simulator::createControlPipe(int N, int A, double radius, double V, double F, double rA, double width, double height, double runT, double tumT, double var, vect<> bias) {
   discard();
   gravity = Zero;
   left = 0; bottom = 0;
   top = height; right = width;
   if (rA==-1) rA = radius;
   
+  // Set sample points
+  samplePoints = 1.1547*(top-bottom)/(2*radius);
+
   addWall(new Wall(vect<>(0,bottom), vect<>(right,bottom))); // Bottom wall
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // Top wall
 
+  // Use the maximum number of sectors
   double R = max(radius, rA);
   int sx = (int)(width/(2*(R+var))), sy = (int)(top/(2*(R+var)));
   setSectorDims(sx, sy);
@@ -148,7 +157,7 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, vect<> 
   vector<vect<> > pos = findPackedSolution(N+A, radius, 0, right, 0, top);
   int i;
   // Add the particles in at the appropriate positions
-  for (i=0; i<A; i++) addWatchedParticle(new RTSphere(pos.at(i), rA, bias));
+  for (i=0; i<A; i++) addWatchedParticle(new RTSphere(pos.at(i), rA, F, runT, tumT, bias));
   for (; i<N+A; i++) addWatchedParticle(new Particle(pos.at(i), radius));
   
   xLBound = WRAP;
@@ -227,6 +236,7 @@ bool Simulator::wouldOverlap(vect<> pos, double R) {
 }
 
 void Simulator::run(double runLength) {
+  recIt = 0;
   time = 0;  
   lastMark = startTime;
   iter = 0;
@@ -311,7 +321,7 @@ double Simulator::getMarkDiff() {
   return timeMarks.at(timeMarks.size()-1)-timeMarks.at(0);
 }
 
-vector<double> Simulator::getAveProfile() {
+vector<vect<> > Simulator::getAveProfile() {
   return aveProfile();
 }
 
@@ -320,26 +330,28 @@ void Simulator::addStatistic(statfunc func) {
   statRec.push_back(vector<vect<>>());
 }
 
+vector<vect<> > Simulator::getStatistic(int i) {
+  if (i<statistics.size()) return statRec.at(i);
+  return vector<vect<> >();
+}
+
 vector<double> Simulator::getDensityXProfile() {
-  double size =particles.size();
   vector<double> profile;
   for(int x=1; x<=secX; x++) {
     int total = 0;
     for (int y=1; y<=secY; y++)
       total += sectors[x+(secX+2)*y].size();
-    profile.push_back(total/size);
+    profile.push_back(total);
   }
   return profile;
 }
 
 vector<double> Simulator::getDensityYProfile() {
-  double size = particles.size();
-  vector<double> profile;
-  for (int y=1; y<=secY; y++) {
-    int total = 0;
-    for (int x=1; x<=secX; x++)
-      total += sectors[x+(secX+2)*y].size();
-    profile.push_back(total/size);
+  vector<double> profile(samplePoints,0);
+  double invdy = samplePoints/(top-bottom);
+  for (auto P : particles) {
+    double y = P->getPosition().y;
+    profile.at(y*invdy)++;
   }
   return profile;
 }
@@ -467,25 +479,16 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
   }
 
   // Enlarge particles and thermally agitate
-  int steps = 5000;
+  int steps = 2500;
   double dr = (R-0.05*R)/(double)steps, radius = 0.05*R;;
   double mag = 5, dm = mag/(double)steps;
   for (int i=0; i<steps; i++) {
     // Particle - particle interactions
     //ppInteract();
     
-    
-    for (auto P = parts.begin(); P!=parts.end(); ++P) {
-      //#pragma omp parallel for
-      for(auto Q= parts.begin(); Q!=parts.end(); ++Q)
-	if (*P!=*Q) (*P)->interact(*Q);
-    }
-    
-    /*
     for (auto P : parts)
       for (auto Q : parts)
         if (P!=Q) P->interact(Q);
-    */
 
     // Thermal agitation
     mag -= dm;
@@ -527,6 +530,7 @@ string Simulator::printWalls() {
 }
 
 string Simulator::printWatchList() {
+  if (recIt==0) return "";
   // Print out watch list record
   stringstream stream;
   string str, str2;
@@ -551,6 +555,7 @@ string Simulator::printWatchList() {
 }
 
 string Simulator::printAnimationCommand() {
+  if (recIt==0) return "";
   stringstream stream;
   string str = "frames=Table[Show[walls", str2;
   for (int i=0; i<watchlist.size(); i++) {
@@ -757,12 +762,13 @@ inline void Simulator::record() {
   // Record statistics
   for (int i=0; i<statistics.size(); i++)
     statRec.at(i).push_back(vect<>(time, statistics.at(i)(particles)));
-
+  
   // Record density profile //** Temporary?
   profiles.push_back(getDensityYProfile());
 
   // Update time
   lastDisp = time;
+  recIt++;
 }
 
 inline bool Simulator::inBounds(Particle* P) {
@@ -771,29 +777,6 @@ inline bool Simulator::inBounds(Particle* P) {
   if (pos.x+radius<0 || pos.x-radius>right) return false;
   if (pos.y+radius<0 || pos.y-radius>top) return false;
   return true;
-}
-
-inline void Simulator::wrap(Particle *P, BType bound, int coord, double start, double end) {
-
-  ///** Still have to figure out a good way to do this **//
-
-  vect<> pos = P->getPosition();
-
-  switch(bound) {
-  case WRAP: {
-    while (pos[coord] < start) pos[coord] += end;
-    break;
-  }
-  case RANDOM: {
-    if (pos.x<0) {
-      pos.x = right;
-      pos.y = (top-2*P->getRadius())*drand48()+P->getRadius();
-      P->freeze();
-    }
-    break;
-  }
-  case NONE: break;
-  }
 }
 
 void Simulator::addParticles(int N, double R, double var, double lft, double rght, double bttm, double tp, PType type, double vmax, bool watched, vect<> bias) {
@@ -844,6 +827,14 @@ void Simulator::resetStatistics() {
 }
 
 inline void Simulator::updateSectors() {
+  /*
+  for (int i=0; i<(secX+2)*(secY+2)+1; i++) sectors[i].clear();
+  for (auto P : particles) {
+    int sec = getSec(P->getPosition());
+    sectors[sec].push_back(P);
+  }
+  */
+
   for (int i=0; i<(secX+2)*(secY+2)+1; i++) {
     vector<list<Particle*>::iterator> remove;
     for (auto p=sectors[i].begin(); p!=sectors[i].end(); ++p) {
@@ -929,18 +920,14 @@ void Simulator::discard() {
   for (auto V : statRec) V.clear();
 }
 
-inline vector<double> Simulator::aveProfile() {
-  if (profiles.empty()) return vector<double>();
-  int size = profiles.at(0).size();
-  vector<double> ave = vector<double>(size, 0);
-  for (auto p : profiles) {
-    if (p.size() != size) throw 1;
-    for (int i=0; i<size; i++)
-      ave.at(i) += p.at(i);
-  }
-  // Normalize
-  double total = 0;
-  for (auto d : ave) total += d;
-  for (auto &d : ave) d /= total;
+inline vector<vect<> > Simulator::aveProfile() {
+  if (profiles.empty()) return vector<vect<> >();
+  vector<vect<> > ave = vector<vect<> >(samplePoints, vect<>());
+  for (int i=0; i<samplePoints; i++) ave.at(i).x = (double)i/samplePoints;
+  for (auto p : profiles)
+    for (int i=0; i<samplePoints; i++) ave.at(i).y += p.at(i);
+
+  double factor = (double)samplePoints/(profiles.size()*(right-left));
+  for (auto &d : ave) d.y *= factor;
   return ave;
 }

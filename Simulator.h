@@ -23,7 +23,7 @@ class Simulator {
   void createSquare(int, double=0.025);
   void createHopper(int, double=0.025, double=0.14, double=1., double=3., double=0.);
   void createPipe(int, double=0.02, double=1., int=0);
-  void createControlPipe(int N, int A, double radius=0.02, double=1., vect<> bias=Zero, double rA=-1, double width=5., double height=2., double var=0.);
+  void createControlPipe(int N, int A, double radius=0.02, double=1., double=default_run_force, double rA=-1, double width=5., double height=2., double runT=default_run, double tumT=default_tumble, double var=0., vect<> bias=Zero);
   void createIdealGas(int, double=0.02, double=0.1);
   void createEntropyBox(int, double=0.02);
 
@@ -47,12 +47,12 @@ class Simulator {
   int getSize() { return particles.size(); }
   int getWallSize() { return walls.size(); }
   vector<vector<double> > getProfile() { return profiles; }
-  vector<double> getAveProfile();
+  vector<vect<> > getAveProfile();
 
   // Statistic functions
   void addStatistic(statfunc); // Adds a statistic to track
   int numStatistics() { return statistics.size(); } // Returns the number of statistics we are tracking
-  vector<vect<>>& getStatistic(int i) { return statRec.at(i); } // Returns a statistic record
+  vector<vect<> > getStatistic(int i); // Returns a statistic record
   int getPSize() { return psize; }
   int getASize() { return asize; }
   vector<double> getDensityXProfile();
@@ -88,7 +88,7 @@ class Simulator {
   void setMaxIters(int it) { maxIters = it; }
   void setRecAllIters(bool r) { recAllIters = r; }
   void setHasDrag(bool d) { hasDrag = d; }
-  //void setFlowFunc(vect<> (*f)(vect<>)) { flowFunc = f; }
+  void setSamplePoints(int p) { samplePoints = p; }
   void setFlowFunc(std::function<vect<>(vect<>)> f) { flowFunc = f; }
   void discard();
   /// Global set functions
@@ -138,7 +138,6 @@ class Simulator {
   inline void update(Particle* &);
   inline void record();
   inline bool inBounds(Particle*);
-  inline void wrap(Particle*, BType, int, double, double);
   inline void setFieldWrapping(bool, bool);
   inline void setFieldDims(int, int);
 
@@ -158,22 +157,23 @@ class Simulator {
   double default_epsilon, min_epsilon;
   double minepsilon; // The smallest epsilon that was ever used
   bool adjust_epsilon;
-  double dispTime; // Time between recordings (1/dispRate)
+  double dispTime;   // Time between recordings (1/dispRate)
   double dispFactor; // Speed up or slow down animation (e.g. 2 -> 2x speed)
-  double lastDisp; // Last time data was recorded
-  int iter;
-  int maxIters;
-  double runTime; // How long the simulation took to run
+  double lastDisp;   // Last time data was recorded
+  int iter;          // Simulation iteration
+  int recIt;         // Number of times we have recorded data
+  int maxIters;      // How many iterations the simulation lasts
+  double runTime;    // How long the simulation took to run
 
   /// Objects
   vector<Wall*> walls;
-  list<pair<Wall*,double>> tempWalls;
+  list<pair<Wall*,double> > tempWalls;
   vector<Particle*> particles;
   int psize, asize; // Record the number of passive and active particles
 
   /// Watchlist
   vector<Particle*> watchlist;
-  vector<vector<vect<>>> watchPos;
+  vector<vector<vect<> > > watchPos;
 
   /// Statistics
   vector<statfunc> statistics;
@@ -199,9 +199,10 @@ class Simulator {
   int secX, secY; // Width and height of sector grid
   bool sectorize; // Whether to use sector based interactions
   bool ssecInteract; // Whether objects in the special sector should interact with other objects
-
+  
+  int samplePoints;
   vector<vector<double> > profiles; // For density y-profile //**
-  inline vector<double> aveProfile(); // For computing the average profile
+  inline vector<vect<> > aveProfile(); // For computing the average profile
 };
 
 #endif
