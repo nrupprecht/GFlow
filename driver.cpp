@@ -3,8 +3,8 @@
 int main(int argc, char** argv) {
   auto start_t = clock();
   // Parameters
-  double width = 8.; // 4
-  double height = 4.; // 2
+  double width = 2.; // 4
+  double height = 1.; // 2
   double radius = 0.05;
   double velocity = 0.5;
   double phi = 0.5;
@@ -12,12 +12,12 @@ int main(int argc, char** argv) {
   double start = 30;
   double pA = 0.;
   double activeF = 0.1; // default is 5
-  int samplePoints = -1;
+  int samplePoints = -1; 
 
   // Display parameters
   bool animate = false;
   bool dispKE = false;
-  bool aveKE = true;
+  bool aveKE = false;
   bool dispFlow = false;
   bool dispProfile = false;
   bool dispAveProfile = true;

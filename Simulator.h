@@ -5,13 +5,14 @@
 #define SIMULATOR_H
 
 #include "StatFunc.h"
+#include "Field.h"
 #include <functional>
 
 #include <list>
 using std::list;
 
 enum BType { WRAP, RANDOM, NONE };
-enum PType { PASSIVE, RTSPHERE };
+enum PType { PASSIVE, RTSPHERE, BACTERIA };
 
 /// The simulator class
 class Simulator {
@@ -26,9 +27,11 @@ class Simulator {
   void createControlPipe(int N, int A, double radius=0.02, double=1., double=default_run_force, double rA=-1, double width=5., double height=2., double runT=default_run, double tumT=default_tumble, double var=0., vect<> bias=Zero);
   void createIdealGas(int, double=0.02, double=0.1);
   void createEntropyBox(int, double=0.02);
+  void createBacteriaBox(int, double=0.02, double=1., double=1., double=1.);
 
   // Simulation
   void run(double runLength);
+  void bacteriaRun(double runLength);
 
   // Accessors
   bool wouldOverlap(vect<> pos, double R);
@@ -67,6 +70,9 @@ class Simulator {
   
   // Mutators
   void setDispRate(double r) { dispTime = 1.0/r; }
+  void setRecFields(bool r) { recFields = r; }
+  void setReplenish(double r) { replenish = r; }
+  void setWasteSource(double r) { wasteSource = r; }
   void setDispFactor(double f) { dispFactor = f; }
   void setSectorize(bool s) { sectorize = s; }
   void setSectorDims(int sx, int sy);
@@ -80,6 +86,7 @@ class Simulator {
   void setYBBound(BType b) { yBBound = b; }
   void setYTop(double y) { yTop = y; }
   void setGravity(vect<> g) { gravity = g; }
+  void setTemperature(double T) { temperature=T; }
   void setMarkWatch(bool w) { markWatch = w; }
   void setStartRecording(double t) { startRecording = t; }
   void setStopRecording(double t) { stopRecording = t; }
@@ -113,6 +120,13 @@ class Simulator {
   string printWalls();
   string printWatchList();
   string printAnimationCommand();
+  string printResource();
+  string printWaste();
+  string printFitness();
+  
+  string printResourceRec();
+  string printWasteRec();
+  string printFitnessRec();
 
   string printMaxV();
   string printAveV();
@@ -129,10 +143,19 @@ class Simulator {
   class BadDimChoice {};
 
  private:
+  /// Helper functions
+  inline void resetVariables();  // Reset all neccessary variables for the start of a run
+  inline void initializeFields(); // Initialize the values of the waste and resource fields
+  inline void calculateForces(); // Gravity, flow, particle-particle, and particle-wall forces
+  inline void logisticUpdates(); // Time, iteration, and data recording
+  inline void objectUpdates();   // Update particles, sectors, and temp walls
+  inline void bacteriaUpdate(); 
+  inline void updateFields();   // Diffusion for fields
   /// Utility functions  
   inline double maxVelocity(); // Finds the maximum velocity of any particle
   inline double maxAcceleration(); // Finds the maximum acceleration of any particle
   inline vect<> getDisplacement(vect<>, vect<>);
+  inline double getFitness(int, int);
 
   inline void interactions();
   inline void update(Particle* &);
@@ -150,7 +173,17 @@ class Simulator {
   std::function<vect<>(vect<>)> flowFunc;
   bool hasDrag;   // Whether we should apply a drag force to particles
   double flowV;   // Velocity of the flow (if any)
-  
+  double temperature; // Temperature of the system
+  double charRadius; // A characteristic radius, for animating the spheres
+
+  /// Bacteria
+  double resourceDiffusion, wasteDiffusion;
+  double secretionRate, eatRate;
+  double replenish, wasteSource;
+  Field resource, waste, buffer;
+  bool recFields; // Whether we should record field data or not
+  string resourceStr, wasteStr, fitnessStr;
+
   /// Times etc.
   double time;
   double epsilon;
@@ -164,15 +197,16 @@ class Simulator {
   int recIt;         // Number of times we have recorded data
   int maxIters;      // How many iterations the simulation lasts
   double runTime;    // How long the simulation took to run
+  bool running;      // Is the simulation running
 
   /// Objects
   vector<Wall*> walls;
   list<pair<Wall*,double> > tempWalls;
-  vector<Particle*> particles;
+  list<Particle*> particles; // vector is about 3% faster
   int psize, asize; // Record the number of passive and active particles
 
   /// Watchlist
-  vector<Particle*> watchlist;
+  list<Particle*> watchlist;
   vector<vector<vect<> > > watchPos;
 
   /// Statistics

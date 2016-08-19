@@ -20,6 +20,9 @@ const double default_run = 0.2;
 const double default_tumble = 0.1;
 const double default_run_force = 5.0;
 
+const double default_expansion_time = 0.5;
+const double default_reproduction_delay = 0.1;
+
 /// Clamp function
 inline double clamp(double x) { return x>0 ? x : 0; }
 
@@ -111,6 +114,24 @@ class Particle {
   double repulsion;   // Coefficient of repulsion
   double dissipation; // Coefficient of dissipation
   double coeff;       // Coefficient of friction
+};
+
+class Bacteria : public Particle {
+ public:
+  Bacteria(vect<> pos, double rad, double expTime=default_expansion_time);
+
+  virtual void update(double);
+  bool canReproduce();
+  double getRepDelay() { return repDelay; }
+  double getMaxRadius() { return maxRadius; }
+  void resetTimer() { timer=0; }
+
+ private:
+  // For expansion
+  double dR, maxRadius; 
+  double expansionTime;
+  double timer;
+  double repDelay; // Reproduction ability check delay
 };
 
 //** TODO **//

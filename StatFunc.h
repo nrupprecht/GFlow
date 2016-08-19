@@ -3,16 +3,16 @@
 
 #include "Object.h"
 
-typedef double (*statfunc)(vector<Particle*>);
+typedef double (*statfunc)(list<Particle*>);
 
-inline double statKE(vector<Particle*> particles) {
+inline double statKE(list<Particle*> particles) {
   if (particles.empty()) return 0;
   double ke = 0;
   for (auto P : particles) ke += P->getKE();
   return ke/particles.size();
 }
 
-inline double statPassiveKE(vector<Particle*> particles) {
+inline double statPassiveKE(list<Particle*> particles) {
   if (particles.empty()) return 0;
   double ke = 0;
   int p=0;
@@ -24,21 +24,21 @@ inline double statPassiveKE(vector<Particle*> particles) {
   return p>0? ke/p : 0;
 }
 
-inline double statNetOmega(vector<Particle*> particles){
+inline double statNetOmega(list<Particle*> particles){
   if (particles.empty()) return 0;
   double omega = 0;
   for (auto P : particles) omega += P->getOmega();
   return omega;
 }
 
-inline double statFlow(vector<Particle*> particles) {
+inline double statFlow(list<Particle*> particles) {
   if (particles.empty()) return 0;
   double flow = 0;
   for (auto P : particles) flow += (vect<>(1,0)*P->getVelocity());
   return flow/particles.size();
 }
 
-inline double statPassiveFlow(vector<Particle*> particles) {
+inline double statPassiveFlow(list<Particle*> particles) {
   if (particles.empty()) return 0;
   double flow = 0;
   int p = 0;
@@ -49,7 +49,7 @@ inline double statPassiveFlow(vector<Particle*> particles) {
   return p>0 ? flow/p : 0;
 }
 
-inline double statActiveFlow(vector<Particle*> particles) {
+inline double statActiveFlow(list<Particle*> particles) {
   if (particles.empty()) return 0;
   double flow = 0;
   int a = 0;
@@ -60,7 +60,7 @@ inline double statActiveFlow(vector<Particle*> particles) {
   return a>0 ? flow/a : 0;
 }
 
-inline double statFlowRatio(vector<Particle*> particles) {
+inline double statFlowRatio(list<Particle*> particles) {
   double aFlow = statActiveFlow(particles);
   double pFlow = statPassiveFlow(particles);
   return aFlow>0 ? pFlow/aFlow : 0;

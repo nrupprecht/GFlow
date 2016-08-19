@@ -8,6 +8,8 @@ template<typename T> class FieldBase {
   FieldBase();
   FieldBase(int x, int y);
 
+  FieldBase& operator=(T val);
+
   // Accessors
   T& at(int x, int y); // Access grid points
   T at(int x, int y) const;
@@ -19,7 +21,6 @@ template<typename T> class FieldBase {
   int getDY() const { return dY; }
   bool getWrapX() { return wrapX; }
   bool getWrapY() { return wrapY; }
-
   vect<> getPos(int x, int y) const; // Gets the spatial position at a grid point
 
   // Printing functions
@@ -28,6 +29,7 @@ template<typename T> class FieldBase {
 
   // Mutators
   void setDims(int x, int y);
+  void setBounds(double, double, double, double);
   void setWrapX(bool w);
   void setWrapY(bool w);
   void setWrap(bool x, bool y);
@@ -50,9 +52,11 @@ template<typename T> class FieldBase {
   void minusEq(FieldBase& field, double=1);
 
   // Calculus
-  T DX(int x, int y) const; // Partial derivative: X
-  T DY(int x, int y) const; // Partial derivative: Y
-
+  T DX(int, int) const; // Partial derivative: X
+  T DY(int, int) const; // Partial derivative: Y
+  T D2X(int, int) const; // Second partial: D^2/DX^2
+  T D2Y(int, int) const; //Second partial: D^2/DY^2
+  
   // Solvers
   void SOR_solver();
   void SOR_solver(FieldBase& source, double=1);

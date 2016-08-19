@@ -51,12 +51,15 @@ void grad(Field& field, VField& vfield)  {
 }
 
 double Field::delSqr(int x, int y) const {
-  //** Won't work on edges
+  return D2X(x,y) + D2Y(x,y);
+}
 
-  static double idxsqr = sqr(invDist.x);
-  static double idysqr = sqr(invDist.y);
-  static double factor = 2*(idxsqr+idysqr);
-  return idxsqr*(at(x+1,y)+at(x-1,y)) + idysqr*(at(x,y+1)+at(x,y-1)) - factor*at(x,y);
+void delSqr(const Field& field, Field& buffer) {
+  if (field.dX!=buffer.dX || field.dY!=buffer.dY) throw FieldBase<double>::FieldMismatch();
+  for (int y=0; y<field.dY; y++)
+    for (int x=0; x<field.dX; x++)
+      buffer.at(x,y) = field.D2X(x,y) + field.D2Y(x,y);
+
 }
 
 //***** VField Functions *****

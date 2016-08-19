@@ -26,6 +26,12 @@ int main(int argc, char** argv) {
     stream << opt.second;
     stream >> size;
   }
+  opt=parser.find("points");
+  if (!opt.first.empty()) {
+    stream.clear();
+    stream << opt.second;
+    stream >> size;
+  }
   opt =parser.find("sigma");
   if (!opt.first.empty()) {
     stream.clear();

@@ -4,7 +4,7 @@ Theory::Theory(int size, double sigma, double phi) : array(0), d_array(0) {
   propIters = 20;
   epsilon = 0.001;
   drag = 0;
-  V0 = 1.0;
+  V0 = 0.5;
   R0 = 0.5;
   runTime = 0;
   

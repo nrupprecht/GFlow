@@ -26,19 +26,39 @@ void FieldBase<T>::initialize() {
 }
 
 template<typename T>
+FieldBase<T>& FieldBase<T>::operator=(T val) {
+  for (int y=0; y<dY; y++)
+    for (int x=0; x<dX; x++)
+      at(x,y) = val;
+  return *this;
+}
+
+template<typename T>
 void FieldBase<T>::setDims(int x, int y) {
   dX = x; dY = y;
+  // Recompute distances
   if (wrapX) invDist.x = (right-left)/dX;
   else invDist.x = (right-left)/(dX-1);
   if (wrapY) invDist.y = (top-bottom)/dY;
   else invDist.y = (top-bottom)/(dY-1);
-
   LFactor = 2*(sqr(invDist.x)+sqr(invDist.y));
   invLFactor = 1./LFactor;
-
+  // Create new array
   array = new T[dX*dY];
   for (int i=0; i<dX*dY; i++) array[i] = T(0);
   if (usesLocks) createLocks();
+}
+
+template<typename T>
+void FieldBase<T>::setBounds(double l, double r, double b, double t) {
+  left = l; right = r; bottom = b; top = t;
+  // Recompute distances
+  if (wrapX) invDist.x = (right-left)/dX;
+  else invDist.x = (right-left)/(dX-1);
+  if (wrapY) invDist.y = (top-bottom)/dY;
+  else invDist.y = (top-bottom)/(dY-1);
+  LFactor = 2*(sqr(invDist.x)+sqr(invDist.y));
+  invLFactor = 1./LFactor;
 }
 
 template<typename T>
@@ -310,6 +330,26 @@ T FieldBase<T>::DY(int x, int y) const {
     if (y==0) return invDist.y*(at(x,1)-at(x,0));
     else if (y==dY-1) return invDist.y*(at(x,dY-1)-at(x,dY-2));
     else return 0.5*invDist.y*(at(x,y+1)-at(x,y-1));
+  }
+}
+
+template<typename T>
+T FieldBase<T>::D2X(int x, int y) const {
+  if (wrapX) return sqr(invDist.x)*(at(x+1,y)-2*at(x,y)+at(x-1,y));
+  else {
+    if (x==0) return 2*D2X(1,y)-D2X(2,y); // Linearly interpolate
+    else if (x==dX-1) return 2*D2X(dX-2,y)-D2X(dX-3,y); // Linearly interpolate
+    else return sqr(invDist.x)*(at(x+1,y)-2*at(x,y)+at(x-1,y));
+  }
+}
+
+template<typename T>
+T FieldBase<T>::D2Y(int x, int y) const{
+  if (wrapY) return sqr(invDist.y)*(at(x,y+1)-2*at(x,y)+at(x,y-1));
+  else {
+    if (y==0) return 2*D2X(x,1)-D2X(x,2); // Linearly interpolate
+    else if (y==dY-1) return 2*D2X(x,dY-2)-D2X(x,dY-3); // Linearly interpolate
+    else return sqr(invDist.y)*(at(x,y+1)-2*at(x,y)+at(x,y-1));
   }
 }
 

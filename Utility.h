@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <vector>
+#include <list>
 #include <math.h>
 #include <iostream>
 #include <string>
@@ -23,6 +24,7 @@
 
 using std::vector;
 using std::pair;
+using std::list;
 using std::cout;
 using std::endl;
 using std::string;
@@ -228,6 +230,20 @@ template<typename T> inline std::ostream& operator<<(std::ostream& out, vector<T
     if (i!=lst.size()-1) out << ",";
   }
   out << "}";
+  return out;
+}
+
+// Get rid of all the "e-"s for mathematica
+inline string mmPreproc(string s) {
+  int size = s.size();
+  string out;
+  out.reserve(size);
+  for (int i=0; i<size; i++) {
+    if (s.at(i)=='e' && i+2<size && s.at(i+1)=='-' && isdigit(s.at(i+2))) {
+      out += "*10^";
+    }
+    else out.push_back(s.at(i));
+  }
   return out;
 }
 

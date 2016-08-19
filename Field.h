@@ -11,6 +11,8 @@ class Field : public FieldBase<double> {
   Field();
   Field(int,int);
 
+  using FieldBase<double>::operator=; // Able to use the inherited = operator
+
   // Printing
   virtual string print() const;
   string print3D() const;
@@ -19,6 +21,7 @@ class Field : public FieldBase<double> {
   vect<> grad(int,int) const;
   friend void grad(Field& field, VField& vfield);
   double delSqr(int,int) const;
+  friend void delSqr(const Field& field, Field&);
 };
 
 /// A vector field type
@@ -26,6 +29,8 @@ class VField : public FieldBase< vect<> > {
  public:
   VField();
   VField(int,int);
+
+  using FieldBase<vect<> >::operator=; // Able to use the inherited = operator
 
   // Printing
   virtual string print() const;
