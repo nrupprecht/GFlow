@@ -8,7 +8,8 @@ template<typename T> class FieldBase {
   FieldBase();
   FieldBase(int x, int y);
 
-  FieldBase& operator=(T val);
+  FieldBase& operator=(T);
+  FieldBase& operator=(FieldBase<T>&);
 
   // Accessors
   T& at(int x, int y); // Access grid points
@@ -16,6 +17,10 @@ template<typename T> class FieldBase {
   T& operator()(int x, int y); // Access grid points
   T at(vect<> pos, bool thrw=true) const; // Interpolate
   T operator()(vect<> pos, bool thrw=true) const; // Interpolate
+  friend ostream& operator<<(ostream& out, const FieldBase<T>& field) {
+    out << field.print();
+    return out;
+  }
   pair<int,int> getDims() { return pair<int,int>(dX,dY); }
   int getDX() const { return dX; }
   int getDY() const { return dY; }

@@ -43,6 +43,22 @@ vect<> Field::grad(int x, int y) const {
   return vect<>(DX(x,y), DY(x,y));
 }
 
+vect<> Field::grad(vect<> pos) const {
+  correctPos(pos);
+  if (!checkPos(pos, true)) return Zero;
+
+  double X = (pos.x-left)*invDist.x, Y = (pos.y-bottom)*invDist.y;
+  double bx = (int)X, by = (int)Y;
+
+  double x = X-bx, y = Y-by;
+
+  vect<> tl = grad(bx, by+1), tr = grad(bx+1, by+1);
+  vect<> bl = grad(bx, by), br = grad(bx+1, by);
+  vect<> p_E = x*invDist.x*(br-bl) + bl;
+  vect<> p_F = x*invDist.x*(tr-tl) + tl;
+  return y*invDist.y*(p_F-p_E) + p_E;
+}
+
 void grad(Field& field, VField& vfield)  {
   int dX = field.dX, dY = field.dY;
   for (int y=0; y<dY; y++)

@@ -19,6 +19,7 @@ class Field : public FieldBase<double> {
 
   // Calculus
   vect<> grad(int,int) const;
+  vect<> grad(vect<>) const;
   friend void grad(Field& field, VField& vfield);
   double delSqr(int,int) const;
   friend void delSqr(const Field& field, Field&);

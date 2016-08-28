@@ -34,13 +34,40 @@ FieldBase<T>& FieldBase<T>::operator=(T val) {
 }
 
 template<typename T>
+FieldBase<T>& FieldBase<T>::operator=(FieldBase<T>& field) {
+  // Reset dimensions if neccessary
+  if (field.dX!=dX || field.dY!=dY) {
+    dX = field.dX; dY = field.dY;
+    // Create new array
+    if (array) delete [] array;
+    array = new T[dX*dY];
+    for (int i=0; i<dX*dY; i++) array[i] = T(0);
+    if (usesLocks) createLocks();
+  }
+  // Copy properties
+  wrapX = field.wrapX; wrapY = field.wrapY;
+  left = field.left; right = field.right; 
+  top = field.top; bottom = field.bottom;
+  invDist = field.invDist;
+  usesLocks = field.usesLocks;
+  solveIterations = field.solveIterations;
+  tollerance = field.tollerance;
+  LFactor = field.LFactor;
+  invLFactor = field.invLFactor;
+  // Set values
+  for (int y=0; y<dY; y++)
+    for (int x=0; x<dX; x++)
+      at(x,y) = field.at(x,y);
+}
+
+template<typename T>
 void FieldBase<T>::setDims(int x, int y) {
   dX = x; dY = y;
   // Recompute distances
-  if (wrapX) invDist.x = (right-left)/dX;
-  else invDist.x = (right-left)/(dX-1);
-  if (wrapY) invDist.y = (top-bottom)/dY;
-  else invDist.y = (top-bottom)/(dY-1);
+  if (wrapX) invDist.x = 1./((right-left)/dX);
+  else invDist.x = 1./((right-left)/(dX-1));
+  if (wrapY) invDist.y = 1./((top-bottom)/dY);
+  else invDist.y = 1./((top-bottom)/(dY-1));
   LFactor = 2*(sqr(invDist.x)+sqr(invDist.y));
   invLFactor = 1./LFactor;
   // Create new array
@@ -53,10 +80,10 @@ template<typename T>
 void FieldBase<T>::setBounds(double l, double r, double b, double t) {
   left = l; right = r; bottom = b; top = t;
   // Recompute distances
-  if (wrapX) invDist.x = (right-left)/dX;
-  else invDist.x = (right-left)/(dX-1);
-  if (wrapY) invDist.y = (top-bottom)/dY;
-  else invDist.y = (top-bottom)/(dY-1);
+  if (wrapX) invDist.x = 1./((right-left)/dX);
+  else invDist.x = 1./((right-left)/(dX-1));
+  if (wrapY) invDist.y = 1./((top-bottom)/dY);
+  else invDist.y = 1./((top-bottom)/(dY-1));
   LFactor = 2*(sqr(invDist.x)+sqr(invDist.y));
   invLFactor = 1./LFactor;
 }
@@ -64,8 +91,8 @@ void FieldBase<T>::setBounds(double l, double r, double b, double t) {
 template<typename T>
 void FieldBase<T>::setWrapX(bool w) {
   wrapX = w;
-  if (w) invDist.x = (right-left)/dX;
-  else invDist.x = (right-left)/(dX-1);
+  if (w) invDist.x = 1./((right-left)/dX);
+  else invDist.x = 1./((right-left)/(dX-1));
   LFactor = 2*(sqr(invDist.x)+sqr(invDist.y));
   invLFactor = 1./LFactor;
 }
@@ -73,8 +100,8 @@ void FieldBase<T>::setWrapX(bool w) {
 template<typename T>
 void FieldBase<T>::setWrapY(bool w) {
   wrapY = w;
-  if (w) invDist.y = (top-bottom)/dY;
-  else (top-bottom)/(dY-1);
+  if (w) invDist.y = 1./((top-bottom)/dY);
+  else 1./((top-bottom)/(dY-1));
   LFactor = 2*(sqr(invDist.x)+sqr(invDist.y));
   invLFactor = 1./LFactor;
 }
@@ -167,36 +194,21 @@ T& FieldBase<T>::operator()(int x, int y) {
 
 template<typename T>
 T FieldBase<T>::at(vect<> pos, bool thrw) const {
-  correctPos(pos);
-  if (!checkPos(pos, thrw)) return T(0);
-
-  double X = (pos.x-left)*invDist.x, Y = (pos.y-bottom)*invDist.y;
-  double bx = (int)X, by = (int)Y;
-
-  double x = X-bx, y = Y-by;
-
-  T tl = at(bx, by+1), tr = at(bx+1, by+1);
-  T bl = at(bx, by), br = at(bx+1, by);
-  T p_E = x*(br-bl)*invDist.x + bl;
-  T p_F = x*(tr-tl)*invDist.x + tl;
-  return y*(p_F-p_E)*invDist.y + p_E;
+  return operator(pos, thrw);
 }
 
 template<typename T>
 T FieldBase<T>::operator()(vect<> pos, bool thrw) const {
   correctPos(pos);
   if (!checkPos(pos, thrw)) return T(0);
-
   double X = (pos.x-left)*invDist.x, Y = (pos.y-bottom)*invDist.y;
-  double bx = (int)X, by = (int)Y;
-
-  double x = X-bx, y = Y-by;
-
+  double bx = (int)X, by = (int)Y;  
+  double x = X-bx, y = Y-by; // in [0,1]
   T tl = at(bx, by+1), tr = at(bx+1, by+1);
   T bl = at(bx, by), br = at(bx+1, by);
-  T p_E = x*(br-bl)*invDist.x +bl;
-  T p_F= x*(tr-tl)*invDist.x +tl;
-  return y*(p_F-p_E)*invDist.y + p_E;
+  T p_E = x*(br-bl) + bl; // Bottom
+  T p_F= x*(tr-tl) + tl;  // Top
+  return y*(p_F-p_E) + p_E;
 }
 
 template<typename T>

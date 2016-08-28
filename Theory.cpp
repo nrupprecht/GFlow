@@ -29,12 +29,6 @@ void Theory::initialize(int size, double sigma, double phi) {
 }
 
 void Theory::solve(int max) {
-
-  cout << "Radius: " << sigma << "\n";
-  cout << "Cutoff: " << cutoff << " bins;\n";
-  cout << "Scale: " << scale << ";\n";
-  cout << "Initial: " << phi/(PI*sqr(sigma)) << ";\n";
-
   int i;
   double *deposit = new double[size];
 
@@ -187,8 +181,8 @@ string Theory::printPropagation() {
   stream << '{';
   for (int i=0; i<size; i++) {
     stream << '{';
-    getPropagation(i, freqL(i), freqR(i), deposit);
-    //getPropagation(i, 0.5, 0.5, deposit);
+    //getPropagation(i, freqL(i), freqR(i), deposit);
+    getPropagation(i, 0.5, 0.5, deposit);
     for (int j=0; j<size; j++) {
       stream << deposit[j];
       if (j!=size-1) stream << ',';
@@ -238,16 +232,15 @@ void Theory::getPropagation(int ri, double fL, double fR, double* deposit) {
   // If you are hit from the left, you travel right and vice versa
   double PR = fL, PL = fR;
   // Rightwards propagation
-  for (int rr=ri+1; rr<size-1; rr++) {
-    double Pf = 1; // Probability of transmission
-    // Integrate over the circumference of the disc
-    for (int k=0; k<=propIters; k++) {
-      double r2 = rr + height(k*sigma/propIters)/scale; // Plus
-      Pf *= factor(r2);
-    }
-    Pf = pow(Pf, 1.0/(double)propIters);
-    Pf *= (1-scale*drag); // Incorporate drag
+  for (int rr=ri; rr<size-1; rr++) {
+    double Pf = PUnobstructedR(rr);
+    //Pf *= (1-scale*drag); // Incorporate drag
     double diff = (1-Pf)*PR ; // This could still be wrong 
+
+    deposit[rr] += diff;
+    PR -= diff;
+    if (PR<=0) break;
+    /*
     if (diff<PR) {
       deposit[rr] += diff;
       PR -= diff;
@@ -257,20 +250,19 @@ void Theory::getPropagation(int ri, double fL, double fR, double* deposit) {
       PR = 0;
       break;
     }
+    */
   }
   if (PR>0) deposit[size-1] += PR;
   
   // Leftwards propagation
-  for (int rr=ri-1; 0<rr; rr--) {
-    double Pf = 1;
-    // Integrate over the circumference of the disc
-    for (int k=0; k<=propIters; k++) {
-      double r2 = rr - height(k*sigma/propIters)/scale; // Minus
-      Pf *= factor(r2);
-    }
-    Pf = pow(Pf, 1.0/(double)propIters);
-    Pf *= (1-scale*drag);
-    double diff = (1-Pf)*PL;
+  for (int rr=ri; 0<rr; rr--) {
+    double Pf = PUnobstructedL(rr);
+    //Pf *= (1-scale*drag); // Incorporate drag
+    double diff = (1-Pf)*PL;    
+    deposit[rr] += diff;
+    PL -= diff;
+    if (PL<=0) break;
+    /*
     if (diff<PL) {
       deposit[rr] += diff;
       PL -= diff;
@@ -280,6 +272,7 @@ void Theory::getPropagation(int ri, double fL, double fR, double* deposit) {
       PL = 0;
       break;
     }
+    */
   }
   if (PL>0) deposit[0] += PL;
 }
@@ -295,7 +288,7 @@ double Theory::vel(int i) {
   return V0*(1-sqr((i-R)/R));
 }
 
-/// x is a BIN number, but the function can interpolate between bins
+/// x is in BIN units (distance to the center of the other sphere along r, NOT to the intersection point), but the function can interpolate between bins
 double Theory::gamma(double x) { 
   return fabs(scale*x*0.5) < sigma ? 2*sqrt(1-0.25*sqr(scale*x/sigma)) : 0;
 }
@@ -323,13 +316,22 @@ double Theory::freq(int r1, int r2) {
 // Return -1 for inf
 double Theory::freqL(int r) {
   double F=0;
+
+  if (r==1 || r==48) cout << "Freq L: R=" << r << endl; //**
+
   // Integrate
   for (int i=max(0,r-cutoff); i<r; i++) {
     double fr = freq(r,i);
+
+    if (r==1 || r==48) cout << i << " " << fr << endl;
+
     if (fr<0) return -1.;
     F += fr;
   }
-  F*=scale; //
+  F*=scale;
+
+  if (r==1 || r==48) cout << "F= " << F << endl << endl; //**
+
   return F;
 }
 
@@ -337,13 +339,22 @@ double Theory::freqL(int r) {
 // Return -1 for inf
 double Theory::freqR(int r) {
   double F=0;
+
+  if (r==1 || r==48) cout << "Freq R: R=" << r << endl; //**
+
   // Integrate
   for (int i=r+1; i<=min(size-1,r+cutoff); i++) {
     double fr = freq(r,i);
+
+    if (r==1 || r==48) cout << i << " " << fr << endl; //**
+
     if (fr<0) return -1.;
     F += fr;
   }
-  F*=scale; //
+  F*=scale;
+
+  if (r==1 || r==48) cout << "F= " << F << endl << endl; //**
+
   return F;
 }
 
@@ -351,11 +362,11 @@ double Theory::freqR(int r) {
 double Theory::freq(int r) {
   double F=0;
   for (int i=max(0,r-cutoff); i<min(size,r+cutoff); i++) {
-    double fr = freq(r,i);
+    double fr = freq(r,r+i);
     if (fr<0) return -1;
     F += fr;
   }
-  F*=scale; //
+  F*=scale;
   return F;
 }
 
@@ -371,6 +382,31 @@ double Theory::at(double r) {
 
 double Theory::height(double x) {
   return sqrt(sqr(sigma)-sqr(x));
+}
+
+
+double Theory::PUnobstructedR(int r0) {
+  // Hits a wall
+  if (size-cutoff/2<=r0) return 0;
+  double punob = 1;
+  for (int i=1; i<cutoff && r0+i<size; i++) {
+    double factor = 1-2*sigma*gamma(i)*array[r0+i]*scale;
+    factor = factor<0 ? 0 : factor;
+    punob *= factor;
+  }
+  return punob;
+}
+
+double Theory::PUnobstructedL(int r0) {
+  // Hits a wall
+  if (r0<=cutoff/2) return 0;
+  double punob = 1;
+  for (int i=1; i<cutoff && 0<=r0-i; i++) {
+    double factor = 1-2*sigma*gamma(i)*array[r0-i]*scale;
+    factor = factor<0 ? 0 : factor;
+    punob *= factor;
+  }
+  return punob;
 }
 
 double Theory::int_d_array() {

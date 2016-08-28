@@ -72,15 +72,19 @@ int main(int argc, char** argv) {
   */
 
   solver.solve(iters);
-  cout << "Time: " << solver.getRunTime() << ";\n\n";
+  cout << "Time: " << solver.getRunTime() << ";\n";
+  cout << "Iters: " << iters << ";\n";
+  cout << "Size: " << size << ";\n";
+  cout << "Sigma: " << sigma << ";\n";
+  cout << "Phi: " << phi << ";\n\n";
 
   // Print out all information
   cout << "Print[\"Distribution\"]\n";
-  cout << "Dist=" << solver.print() << ";\nListLinePlot[Dist,PlotStyle->Black,PlotRange->All,ImageSize->Large]\n";
+  cout << "Dist=" << mmPreproc(solver.print()) << ";\nListLinePlot[Dist,PlotStyle->Black,PlotRange->All,ImageSize->Large]\n";
   cout << "Print[\"Free Length\"]\n";
-  cout << "FL=" << solver.printFreeLength() << ";\nListLinePlot[FL,PlotStyle->Black,ImageSize->Large,PlotRange->{0,1}]\n";
+  cout << "FL=" << mmPreproc(solver.printFreeLength()) << ";\nListLinePlot[FL,PlotStyle->Black,ImageSize->Large,PlotRange->{0,1}]\n";
   cout << "Print[\"Collision frequency\"]\n";
-  cout << "Freq=" << solver.printFrequency() << ";\nMatrixPlot[Freq,ImageSize->Large]\n";
+  cout << "Freq=" << mmPreproc(solver.printFrequency()) << ";\nMatrixPlot[Freq,ImageSize->Large]\n";
   /*
   cout << "Print[\"Freq L\"]\n";
   cout << "FreqL=" << solver.printFreqL() << ";\nListLinePlot[FreqL,ImageSize->Large,PlotStyle->Black]\n";
@@ -88,9 +92,9 @@ int main(int argc, char** argv) {
   cout << "FreqR=" << solver.printFreqR() << ";\nListLinePlot[FreqR,ImageSize->Large,PlotStyle->Black]\n";
   */
   cout << "Print[\"Deposition\"]\n";
-  cout << "Dep=" << solver.printPropagation() << ";\nMatrixPlot[Dep,ImageSize->Large]\n";
+  cout << "Dep=" << mmPreproc(solver.printPropagation()) << ";\nMatrixPlot[Dep,ImageSize->Large]\n";
   cout << "Print[\"Difference\"]\n";
-  cout << "Diff=" << solver.printDArray() << ";\nListLinePlot[Diff,ImageSize->Large,PlotStyle->Black,PlotRange->All]\n";
+  cout << "Diff=" << mmPreproc(solver.printDArray()) << ";\nListLinePlot[Diff,ImageSize->Large,PlotStyle->Black,PlotRange->All]\n";
   
 
   solver.printPropagation();

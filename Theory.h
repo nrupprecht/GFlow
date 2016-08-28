@@ -40,6 +40,9 @@ class Theory {
   double at(double);
   double height(double);
 
+  double PUnobstructedR(int); //** Try this as probability
+  double PUnobstructedL(int); //** Try this as probability
+
   double int_d_array();
 
   double phi;
