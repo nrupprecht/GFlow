@@ -15,6 +15,7 @@
 #include <list>
 #include <math.h>
 #include <iostream>
+#include <ostream>
 #include <string>
 #include <sstream>
 #include <ctime>
@@ -30,6 +31,7 @@ using std::endl;
 using std::string;
 using std::stringstream;
 using std::time;
+using std::ostream;
 
 #include "ArgParse.h"
 

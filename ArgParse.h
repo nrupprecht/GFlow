@@ -7,8 +7,12 @@ using std::string;
 #include <sstream>
 using std::stringstream;
 
+#include <vector>
+using std::pair;
+using std::vector;
+
 /// Command line argument parsing class
-class ArgParse{
+class ArgParse {
 public:
   ArgParse(int argc, char** argv) {
     this->argc = argc;
@@ -16,6 +20,7 @@ public:
     parse();
   }
   
+  // Parse the command line arguments for information
   void parse() {
     for (int i=1; i<argc; i++) {
       if (argv[i][0]=='-') { // Our cue that this is a token
@@ -34,7 +39,7 @@ public:
 	while(c!='\0') { // Get the value
 	  val.push_back(c);
 	  j++;
-          c = argv[i][j];
+	  c = argv[i][j];
 	}
 	tlist.push_back(pair<string,string>(tok,val));
       }
@@ -50,6 +55,15 @@ public:
       }
     }
     return opt;
+  }
+
+  template<typename T> void get(const string& token, T& var) {
+    pair<string,string> opt = find(token);
+    if (!opt.first.empty()) {
+      stringstream stream;
+      stream << opt.second;
+      stream >> var;
+    }
   }
 
 private:

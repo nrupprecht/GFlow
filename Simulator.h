@@ -73,6 +73,8 @@ class Simulator {
   void setRecFields(bool r) { recFields = r; }
   void setReplenish(double r) { replenish = r; }
   void setWasteSource(double r) { wasteSource = r; }
+  void setEatRate(double e) { eatRate = e; }
+  void setSecretionRate(double s) { secretionRate = s; }
   void setDispFactor(double f) { dispFactor = f; }
   void setSectorize(bool s) { sectorize = s; }
   void setSectorDims(int sx, int sy);

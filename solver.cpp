@@ -81,23 +81,14 @@ int main(int argc, char** argv) {
   // Print out all information
   cout << "Print[\"Distribution\"]\n";
   cout << "Dist=" << mmPreproc(solver.print()) << ";\nListLinePlot[Dist,PlotStyle->Black,PlotRange->All,ImageSize->Large]\n";
+  cout << "Print[\"Right\"]\n";
+  cout << "right=" << mmPreproc(solver.printRight()) << ";\nListLinePlot[right,PlotStyle->Black,PlotRange->All,ImageSize->Large]\n";
+  cout << "Print[\"Left\"]\n";
+  cout << "left=" << mmPreproc(solver.printLeft()) << ";\nListLinePlot[left,PlotStyle->Black,PlotRange->All,ImageSize->Large]\n";
+  // Free length
   cout << "Print[\"Free Length\"]\n";
   cout << "FL=" << mmPreproc(solver.printFreeLength()) << ";\nListLinePlot[FL,PlotStyle->Black,ImageSize->Large,PlotRange->{0,1}]\n";
   cout << "Print[\"Collision frequency\"]\n";
-  cout << "Freq=" << mmPreproc(solver.printFrequency()) << ";\nMatrixPlot[Freq,ImageSize->Large]\n";
-  /*
-  cout << "Print[\"Freq L\"]\n";
-  cout << "FreqL=" << solver.printFreqL() << ";\nListLinePlot[FreqL,ImageSize->Large,PlotStyle->Black]\n";
-  cout << "Print[\"Freq R\"]\n";
-  cout << "FreqR=" << solver.printFreqR() << ";\nListLinePlot[FreqR,ImageSize->Large,PlotStyle->Black]\n";
-  */
-  cout << "Print[\"Deposition\"]\n";
-  cout << "Dep=" << mmPreproc(solver.printPropagation()) << ";\nMatrixPlot[Dep,ImageSize->Large]\n";
-  cout << "Print[\"Difference\"]\n";
-  cout << "Diff=" << mmPreproc(solver.printDArray()) << ";\nListLinePlot[Diff,ImageSize->Large,PlotStyle->Black,PlotRange->All]\n";
-  
-
-  solver.printPropagation();
 
   return 0;
 }
