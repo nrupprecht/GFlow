@@ -67,8 +67,11 @@ class Simulator {
   vect<> netMomentum();
   vect<> netVelocity();
   vector<double> getTimeMarks() { return timeMarks; }
-  
+  vector<vect<> > getVelocityDistribution();
+  vector<vect<> > getAuxVelocityDistribution();
+
   // Mutators
+  void setFlowV(double);
   void setDispRate(double r) { dispTime = 1.0/r; }
   void setRecFields(bool r) { recFields = r; }
   void setReplenish(double r) { replenish = r; }
@@ -216,6 +219,13 @@ class Simulator {
   vector<vector<vect<> > > statRec; // the vect is for {t, f(t)}
   void resetStatistics();
   bool recAllIters;
+  
+  /// Velocity analysis
+  vector<double> velocityDistribution;
+  vector<double> auxVelocityDistribution;
+  double maxV; // Maximum velocity to bin
+  double maxF; // Maximum proportional velocity to bin
+  int vbins;
 
   /// Marks and recording
   vector<double> timeMarks;

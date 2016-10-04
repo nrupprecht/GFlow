@@ -106,6 +106,11 @@ class Particle {
   vect<> shearF;
   double torque;
 
+  // For calculating "bump frequency"
+  double normForces;
+  double recentForceAve;
+  double timeWindow;
+
   // Characteristic variables
   double radius;      // Disc radius
   double invMass;     // We only need the inverse of mass
@@ -134,13 +139,7 @@ class Bacteria : public Particle {
   double repDelay; // Reproduction ability check delay
 };
 
-//** TODO **//
-class Rod : public Particle {
- public:
- private:
-};
-
-/// Roll and Tumble Sphere
+/// Run and Tumble Sphere
 class RTSphere : public Particle {
  public:
   RTSphere(vect<> pos, double rad);

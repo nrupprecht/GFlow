@@ -19,6 +19,12 @@ Simulator::Simulator() : lastDisp(0), dispTime(1./15.), dispFactor(1), time(0), 
   ssecInteract = false;
   secX = 10; secY = 10;
   sectors = new list<Particle*>[(secX+2)*(secY+2)+1];
+  // Velocity analysis
+  vbins = 200;
+  maxF = 3.25;
+  maxV = 2.; // flowV is zero
+  velocityDistribution = vector<double>(vbins,0);
+  auxVelocityDistribution = vector<double>(vbins,0);
 };
 
 Simulator::~Simulator() {
@@ -118,7 +124,7 @@ void Simulator::createPipe(int N, double radius, double V, int NObst) {
   yTBound = NONE;
   yBBound = NONE;
 
-  flowV = V;
+  setFlowV(V);
   flowFunc = [&] (vect<> pos) { return vect<>(flowV*(1-sqr(pos.y-0.5*(top-bottom)))/sqr(0.5),0); };
   hasDrag = true;
   for (auto P : particles) P->setVelocity(flowFunc(P->getPosition()));
@@ -152,7 +158,6 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, double 
   double R = max(radius, rA);
   int sx = (int)(width/(2*(R+var))), sy = (int)(top/(2*(R+var)));
   setSectorDims(sx, sy);
-
   vector<vect<> > pos = findPackedSolution(N+A, radius, 0, right, 0, top);
   int i;
   // Add the particles in at the appropriate positions
@@ -164,7 +169,7 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, double 
   yTBound = NONE;
   yBBound = NONE;
 
-  flowV = V;
+  setFlowV(V);
   flowFunc = [&] (vect<> pos) { return vect<>(flowV*(1-sqr(pos.y-0.5*(top-bottom))/sqr(0.5*(top-bottom))),0); };
   hasDrag = true;
   for (auto P : particles) P->setVelocity(flowFunc(P->getPosition()));
@@ -257,7 +262,7 @@ void Simulator::createBacteriaBox(int N, double radius, double width, double hei
   yTBound = NONE;
   yBBound = NONE;
 
-  flowV = V;
+  setFlowV(V);
   flowFunc = [&] (vect<> pos) { return vect<>(flowV*(1-sqr(pos.y-0.5*(top-bottom))/sqr(0.5*(top-bottom))),0); };
   hasDrag = true;
   for (auto P : particles) P->setVelocity(flowFunc(P->getPosition()));
@@ -458,6 +463,35 @@ void Simulator::setSectorDims(int sx, int sy) {
     int sec = getSec(P->getPosition());
     sectors[sec].push_back(P);
   }
+}
+
+vector<vect<> > Simulator::getVelocityDistribution() {
+  if (velocityDistribution.empty()) return vector<vect<> >();
+  vector<vect<> > V;
+  int i=0;
+  double factor1 = maxV/vbins, factor2 = recIt*particles.size();
+  for (auto v : velocityDistribution) {
+    V.push_back(vect<>(i*factor1, v*factor2));
+    i++;
+  }
+  return V;
+}
+
+vector<vect<> > Simulator::getAuxVelocityDistribution() {
+  if (auxVelocityDistribution.empty()) return vector<vect<> >();
+  vector<vect<> > V;
+  int i=0;
+  double factor1 = maxV/vbins, factor2 = recIt*particles.size();
+  for (auto v : auxVelocityDistribution) {
+    V.push_back(vect<>(i*factor1, v*factor2));
+    i++;
+  }
+  return V;
+}
+
+void Simulator::setFlowV(double fv) {
+  flowV = fv;
+  maxV = fabs(fv)>0 ? 2.*fabs(fv) : 1.;
 }
 
 void Simulator::setDimensions(double l, double r, double b, double t) {
@@ -1000,6 +1034,28 @@ inline void Simulator::record() {
   
   // Record density profile //** Temporary? Find a more general way to do this?
   profiles.push_back(getDensityYProfile());
+
+  // Record velocity distribution
+  for (auto P : particles) {
+    double vel = sqrt(sqr(P->getVelocity()));
+    double fvel = sqrt(sqr(flowFunc(P->getPosition())));
+    int B = (int)(vel/maxV*vbins);
+    int Bf = fvel>0 ? (int)(vel/fvel/maxF*vbins) : vbins-1;
+    B = B>=vbins ? vbins-1 : B;
+    Bf = Bf>=vbins ? vbins-1 : Bf;
+
+    try {
+    velocityDistribution.at(B)++;
+    auxVelocityDistribution.at(Bf)++;
+    }
+    catch(...) {
+
+      cout << vel << " " << maxV << " " << fvel << endl;
+
+      cout << B << " " << Bf << " " << vbins << endl;
+      throw;
+    }
+  }
 
   // Record fields
   if (recFields) {

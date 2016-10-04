@@ -20,6 +20,9 @@ void Particle::initialize() {
 
   normalF = shearF = force = Zero;
   torque = 0;
+
+  normForces = 0;
+  timeWindow = 3.; // 3 Seconds
 }
 
 void Particle::setMass(double m) {
@@ -70,6 +73,8 @@ void Particle::interact(Particle* P, vect<> displacement) {
     applyNormalForce(Fn*normal);
     applyShearForce(Fs*shear);
     applyTorque(-Fs*radius);
+
+    normForces += Fn; //** Should also take into account shear force
   }
 }
 
@@ -84,6 +89,8 @@ void Particle::interact(vect<> pos, double force) {
     
     // Pressure force
     applyNormalForce(force*normal);
+    
+    normForces += force;
   }
 }
 
@@ -111,6 +118,10 @@ void Particle::update(double epsilon) {
   // Reset forces and torques
   torque = 0;
   normalF = shearF = force = Zero;
+
+  // Update rolling average
+  recentForceAve = (timeWindow-epsilon)*recentForceAve + epsilon*normForces;
+  normForces = 0;
 }
 
 void Particle::flowForce(vect<> F) {

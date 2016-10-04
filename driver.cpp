@@ -3,16 +3,16 @@
 int main(int argc, char** argv) {
   auto start_t = clock();
   // Parameters
-  double width = 2.; // 4
-  double height = 1.; // 2
-  double radius = 0.05;
-  double velocity = 0.5;
-  double phi = 0.5;
-  double time = 600.;
-  double start = 30;
-  double pA = 0.;
-  double activeF = 0.1; // default is 5
-  int samplePoints = -1; 
+  double width = 4.;     // Height of the pipe
+  double height = 2.;    // Width of the pipe
+  double radius = 0.05;  // Disc radius
+  double velocity = 0.5; // Fluid velocity (at center)
+  double phi = 0.5;      // Packing density
+  double time = 600.;    // How long the entire simulation should last
+  double start = 30;     // At what time we start recording data
+  double pA = 0.;        // What percent of the particles are active
+  double activeF = 0.25; // Active force (default is 5)
+  int samplePoints = -1; // How many bins we should use when making a density profile
 
   // Display parameters
   bool animate = false;
@@ -21,6 +21,7 @@ int main(int argc, char** argv) {
   bool dispFlow = false;
   bool dispProfile = false;
   bool dispAveProfile = true;
+  bool dispVelDist = true;
 
   //----------------------------------------
   // Parse command line arguments
@@ -28,102 +29,23 @@ int main(int argc, char** argv) {
   ArgParse parser(argc, argv);
   pair<string,string> opt;
   stringstream stream;
-  opt = parser.find("width");
-  if (!opt.first.empty()) {
-    stream.clear();
-    stream << opt.second;
-    stream >> width;
-  }
-  opt = parser.find("height");
-  if (!opt.first.empty()) {
-    stream.clear();
-    stream << opt.second;
-    stream >> height;
-  }
-  opt = parser.find("radius");
-  if (!opt.first.empty()) {
-    stream.clear();
-    stream << opt.second;
-    stream >> radius;
-  }
-  opt = parser.find("velocity");
-  if (!opt.first.empty()) {
-    stream.clear();
-    stream << opt.second;
-    stream >> velocity;
-  }
-  opt = parser.find("phi");
-  if (!opt.first.empty()) {
-    stream.clear();
-    stream << opt.second;
-    stream >> phi;
-  }
-  opt = parser.find("time");
-  if (!opt.first.empty()) {
-    stream.clear();
-    stream << opt.second;
-    stream >> time;
-  }
-  opt = parser.find("start");
-  if (!opt.first.empty()) {
-    stream.clear();
-    stream << opt.second;
-    stream >> start;
-  }
-  opt = parser.find("active");
-  if (!opt.first.empty()) {
-    stream.clear();
-    stream << opt.second;
-    stream >> pA;
-  }
-  opt = parser.find("force");
-  if (!opt.first.empty()) {
-    stream.clear();
-    stream << opt.second;
-    stream >> activeF;
-  }
-  opt = parser.find("animate");
-  if (!opt.first.empty()) {
-    stream.clear();
-    stream << opt.second;
-    stream >> animate;
-  }
-  opt = parser.find("dispKE");
-  if (!opt.first.empty()) {
-    stream.clear();
-    stream << opt.second;
-    stream >> dispKE;
-  }
-  opt = parser.find("aveKE");
-  if (!opt.first.empty()) {
-    stream.clear();
-    stream << opt.second;
-    stream >> aveKE;
-  }
-  opt = parser.find("flow");
-  if (!opt.first.empty()) {
-    stream.clear();
-    stream << opt.second;
-    stream >> dispFlow;
-  }
-  opt = parser.find("profileMap");
-  if (!opt.first.empty()) {
-    stream.clear();
-    stream << opt.second;
-    stream >> dispProfile;
-  }
-  opt = parser.find("profile");
-  if (!opt.first.empty()) {
-    stream.clear();
-    stream << opt.second;
-    stream >> dispAveProfile;
-  }
-  opt = parser.find("points");
-  if (!opt.first.empty()) {
-    stream.clear();
-    stream << opt.second;
-    stream >> samplePoints;
-  }
+  parser.get("width", width);
+  parser.get("height", height);
+  parser.get("radius", radius);
+  parser.get("velocity", velocity);
+  parser.get("phi", phi);
+  parser.get("time", time);
+  parser.get("start", start);
+  parser.get("active", pA);
+  parser.get("force", activeF);
+  parser.get("points", samplePoints);
+  parser.get("animate", animate);
+  parser.get("dispKE", dispKE);
+  parser.get("aveKE", aveKE);
+  parser.get("flow", dispFlow);
+  parser.get("profileMap", dispProfile);
+  parser.get("profile", dispAveProfile);
+  parser.get("velDist", dispVelDist);
   //----------------------------------------
 
   // Dependent variables
@@ -161,7 +83,9 @@ int main(int argc, char** argv) {
   cout << "Start Time: " << start << "\n";
   cout << "Actual (total) program run time: " << (double)(end_t-start_t)/CLOCKS_PER_SEC << "\n";
   cout << "Iters: " << simulation.getIter() << "\n\n";
-  
+  cout << "Command: ";
+  for (int i=0; i<argc; i++) cout << argv[i] << " ";
+  cout << "\n-------------------------------------\n";
 
   /// Print data
   if (animate) {
@@ -192,6 +116,12 @@ int main(int argc, char** argv) {
   if (dispAveProfile) {
     cout << "aveProf=" << simulation.getAveProfile() << ";\n";
     cout << "Print[\"Average Profile\"]\nListLinePlot[aveProf,PlotStyle->Black,ImageSize->Large]\n";
+  }
+  if (dispVelDist) {
+    cout << "velDist=" << simulation.getVelocityDistribution() << ";\n";
+    cout << "Print[\"Velocity Distribution\"]\nListLinePlot[velDist,PlotStyle->Black,ImageSize->Large,PlotRange->All]\n";
+    cout << "aVelDist=" << simulation.getAuxVelocityDistribution() << ";\n";
+    cout << "Print[\"Auxilary Velocity Distribution\"]\nListLinePlot[aVelDist,PlotStyle->Black,ImageSize->Large,PlotRange->All]\n";
   }
 
   return 0;

@@ -146,11 +146,8 @@ int main(int argc, char** argv) {
   simulation.addStatistic(statActiveFlow);
   simulation.addStatistic(statFlowRatio);
   simulation.setStartRecording(start);
-
-
   simulation.createControlPipe(NP, NA, radius, velocity, activeF, rA, width, height);
   simulation.run(time);
-
   auto end_t = clock();
   
   /// Print condition summary

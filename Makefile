@@ -1,7 +1,6 @@
 CC = icpc
-OPT = 
-FLAGS = -std=c++14 -g -O3 $(OPT)
-targets = driver bacteria control controlPhi Jamming JamShape time tune solver
+FLAGS = -std=c++14 -g -O3
+targets = driver bacteria control controlPhi Jamming JamShape time tune solver master
 files = Simulator.o Object.o Field.o
 
 all: $(targets)
@@ -32,6 +31,9 @@ time: time.o $(files)
 	$(CC) $(OPT) $^ -o $@
 
 solver: solver.o Theory.o
+	$(CC) $^ -o $@
+
+master: master.o MasterEquation.o
 	$(CC) $^ -o $@
 
 # Object files
