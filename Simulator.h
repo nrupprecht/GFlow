@@ -8,11 +8,17 @@
 #include "Field.h"
 #include <functional>
 
+#include "Tensor.h"
+
 #include <list>
 using std::list;
 
 enum BType { WRAP, RANDOM, NONE };
 enum PType { PASSIVE, RTSPHERE, BACTERIA };
+
+// A function that takes a double (time) and returns a wall position
+typedef pair<vect<>, vect<> > WPair;
+typedef std::function<WPair(double)> WFunc;
 
 /// The simulator class
 class Simulator {
@@ -21,10 +27,12 @@ class Simulator {
   ~Simulator(); 
 
   // Initialization
-  void createSquare(int, double=0.025);
+  void createSquare(int, double=0.025, double=1, double=1);
   void createHopper(int, double=0.025, double=0.14, double=1., double=3., double=0.);
   void createPipe(int, double=0.02, double=1., int=0);
   void createControlPipe(int N, int A, double radius=0.02, double=1., double=default_run_force, double rA=-1, double width=5., double height=2., double runT=default_run, double tumT=default_tumble, double var=0., vect<> bias=Zero);
+  void createSphereFluid(int N, int A, double radius=0.02, double=1., double=default_run_force, double=-1, double=10., double=2.);
+  void createJamPipe(int N, int A, double radius=0.02, double=1., double=default_run_force, double rA=-1, double width=5., double height=2., double percent=0.5, double runT=default_run, double tumT=default_tumble, double var=0.);
   void createIdealGas(int, double=0.02, double=0.1);
   void createEntropyBox(int, double=0.02);
   void createBacteriaBox(int, double=0.02, double=1., double=1., double=1.);
@@ -37,6 +45,17 @@ class Simulator {
   bool wouldOverlap(vect<> pos, double R);
   double getMinEpsilon() { return minepsilon; }
   double getDisplayTime() { return dispTime; }
+  double getBinXWidth() { return (right-left)/bins; }
+  double getBinYWidth() { return (top-bottom)/bins; }
+  double getVBinXWidth() { return (maxVx-minVx)/vbins; }
+  double getVBinYWidth() { return (maxVy-minVy)/vbins; }
+  int getVBinXZero() { return (int)(-vbins*minVx/(maxVx-minVx)); }
+  int getVBinYZero() { return (int)(-vbins*minVy/(maxVy-minVy)); }
+  double getMaxV() { return maxV; }
+  double getMaxVx() { return maxVx; }
+  double getMinVx() { return minVx; }
+  double getMaxVy() { return maxVy; }
+  double getMinVy() { return minVy; }
   int getIter() { return iter; }
   double getRunTime() { return runTime; }
   double getTime() { return time; }
@@ -69,9 +88,13 @@ class Simulator {
   vector<double> getTimeMarks() { return timeMarks; }
   vector<vect<> > getVelocityDistribution();
   vector<vect<> > getAuxVelocityDistribution();
+  Tensor getDistribution();
+  Tensor getCollapsedDistribution(int=0); // Average out one of the spatial indices
+  Tensor getSpeedDistribution();
 
   // Mutators
   void setFlowV(double);
+  void setUseVelocityDiff(bool d) { useVelocityDiff = d; }
   void setDispRate(double r) { dispTime = 1.0/r; }
   void setRecFields(bool r) { recFields = r; }
   void setReplenish(double r) { replenish = r; }
@@ -100,7 +123,15 @@ class Simulator {
   void setMaxIters(int it) { maxIters = it; }
   void setRecAllIters(bool r) { recAllIters = r; }
   void setHasDrag(bool d) { hasDrag = d; }
-  void setSamplePoints(int p) { samplePoints = p; }
+  void setBins(int p);
+  void setVBins(int p);
+  void setMaxV(double v) { maxV = v; }
+  void setMaxVx(double v) { maxVx = v; }
+  void setMinVx(double v) { minVx = v; }
+  void setVx(double v) { minVx=maxVx=v; }
+  void setMaxVy(double v) { maxVy = v; }
+  void setMinVy(double v) { minVy = v; }
+  void setVy(double v) { minVy=maxVy=v; }
   void setFlowFunc(std::function<vect<>(vect<>)> f) { flowFunc = f; }
   void discard();
   /// Global set functions
@@ -114,6 +145,7 @@ class Simulator {
   // Creation Functions
   void addWall(Wall*);
   void addTempWall(Wall*, double);
+  void addMovingWall(Wall*, WFunc);
   void addParticle(Particle*);
   void addParticles(int N, double R, double var, double left, double right, double bottom, double top, PType type=PASSIVE, double vmax=-1, bool watched=true, vect<> bias=Zero);
   void addNWParticles(int N, double R, double var, double left, double right, double bottom, double top, PType type=PASSIVE, double vmax=-1);
@@ -180,6 +212,7 @@ class Simulator {
   double flowV;   // Velocity of the flow (if any)
   double temperature; // Temperature of the system
   double charRadius; // A characteristic radius, for animating the spheres
+  double percent;    // How much of a jamPipe should be obstructed
 
   /// Bacteria
   double resourceDiffusion, wasteDiffusion;
@@ -190,7 +223,7 @@ class Simulator {
   string resourceStr, wasteStr, fitnessStr;
 
   /// Times etc.
-  double time;
+  double time;       // The simulated time
   double epsilon;
   double default_epsilon, min_epsilon;
   double minepsilon; // The smallest epsilon that was ever used
@@ -207,13 +240,15 @@ class Simulator {
   /// Objects
   vector<Wall*> walls;
   list<pair<Wall*,double> > tempWalls;
+  vector<pair<Wall*,WFunc> > movingWalls;
   list<Particle*> particles; // vector is about 3% faster
   int psize, asize; // Record the number of passive and active particles
 
   /// Watchlist
   list<Particle*> watchlist;
-  vector<vector<vect<> > > watchPos;
-
+  vector<vector<vect<> > > watchPos; // [ recIt ] [ vect<>(positions) ]
+  vector<vector<WPair> > wallPos; // [ recIt ] [ Wall # ] [ WPair ] For moving walls
+  
   /// Statistics
   vector<statfunc> statistics;
   vector<vector<vect<> > > statRec; // the vect is for {t, f(t)}
@@ -223,9 +258,15 @@ class Simulator {
   /// Velocity analysis
   vector<double> velocityDistribution;
   vector<double> auxVelocityDistribution;
-  double maxV; // Maximum velocity to bin
+  double maxV; // Maximum velocity magnitude to bin
   double maxF; // Maximum proportional velocity to bin
   int vbins;
+
+  /// Total distribution P[position][velocity]
+  Tensor distribution;
+  double maxVx, minVx, maxVy, minVy; // Maximum/Minimum velocities to bin for full distribution
+  vect<> binVelocity(int, int);
+  bool useVelocityDiff;
 
   /// Marks and recording
   vector<double> timeMarks;
@@ -246,7 +287,7 @@ class Simulator {
   bool sectorize; // Whether to use sector based interactions
   bool ssecInteract; // Whether objects in the special sector should interact with other objects
   
-  int samplePoints;
+  int bins;                         // Binning for space
   vector<vector<double> > profiles; // For density y-profile //**
   inline vector<vect<> > aveProfile(); // For computing the average profile
 };

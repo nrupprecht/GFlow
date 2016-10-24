@@ -1,18 +1,26 @@
 #include "Simulator.h"
+#include "Checker.h"
 
 int main(int argc, char** argv) {
   auto start_t = clock();
   // Parameters
-  double width = 4.;     // Height of the pipe
-  double height = 2.;    // Width of the pipe
+  double width = 4.;     // Length of the pipe
+  double height = 2.;    // 2*Radius of the pipe
   double radius = 0.05;  // Disc radius
   double velocity = 0.5; // Fluid velocity (at center)
   double phi = 0.5;      // Packing density
   double time = 600.;    // How long the entire simulation should last
   double start = 30;     // At what time we start recording data
   double pA = 0.;        // What percent of the particles are active
-  double activeF = 0.25; // Active force (default is 5)
-  int samplePoints = -1; // How many bins we should use when making a density profile
+  double activeF = 1.5;  // Active force (default is 5)
+  double maxV = 1.5;     // Max velocity to bin
+  double minVx = -0.1;
+  double maxVx = 0.6;
+  double minVy = -0.1;
+  double maxVy = 0.1;
+  double percent = 0.5;  // What percent of the jamPipe is closed off
+  int bins = -1;         // How many bins we should use when making a density profile
+  int vbins = -1;        // How many velocity bins we should use
 
   // Display parameters
   bool animate = false;
@@ -20,15 +28,16 @@ int main(int argc, char** argv) {
   bool aveKE = false;
   bool dispFlow = false;
   bool dispProfile = false;
-  bool dispAveProfile = true;
-  bool dispVelDist = true;
+  bool dispAveProfile = false;
+  bool dispVelDist = false;
+  bool totalDist = false;
+  bool useVelDiff = false;
+  bool everything = false;
 
   //----------------------------------------
   // Parse command line arguments
   //----------------------------------------
   ArgParse parser(argc, argv);
-  pair<string,string> opt;
-  stringstream stream;
   parser.get("width", width);
   parser.get("height", height);
   parser.get("radius", radius);
@@ -38,7 +47,14 @@ int main(int argc, char** argv) {
   parser.get("start", start);
   parser.get("active", pA);
   parser.get("force", activeF);
-  parser.get("points", samplePoints);
+  parser.get("bins", bins);
+  parser.get("vbins", vbins);
+  parser.get("maxV", maxV);
+  parser.get("maxVx", maxVx);
+  parser.get("minVx", minVx);
+  parser.get("maxVy", maxVy);
+  parser.get("minVy", minVy);
+  parser.get("percent", percent);
   parser.get("animate", animate);
   parser.get("dispKE", dispKE);
   parser.get("aveKE", aveKE);
@@ -46,6 +62,9 @@ int main(int argc, char** argv) {
   parser.get("profileMap", dispProfile);
   parser.get("profile", dispAveProfile);
   parser.get("velDist", dispVelDist);
+  parser.get("totalDist", totalDist);
+  parser.get("useVelDiff", useVelDiff);
+  parser.get("everything", everything);
   //----------------------------------------
 
   // Dependent variables
@@ -59,18 +78,46 @@ int main(int argc, char** argv) {
   srand( std::time(0) );
   
   //----------------------------------------
-  
+
   Simulator simulation;
-  simulation.addStatistic(statPassiveKE);
+  simulation.addStatistic(statKE);
   simulation.addStatistic(statPassiveFlow);
   simulation.addStatistic(statActiveFlow);
   simulation.addStatistic(statFlowRatio);
   simulation.setStartRecording(start);
+
+  // Set up the simulation
   simulation.createControlPipe(NP, NA, radius, velocity, activeF, rA, width, height);
-  if (samplePoints>0) simulation.setSamplePoints(samplePoints);
+  //simulation.createJamPipe(NP, NA, radius, velocity, activeF, rA, width, height, percent);
+  //simulation.createSquare(NP+NA, radius, width, height);
+
+  
+  if (bins>0) simulation.setBins(bins);
+  if (vbins>0) simulation.setVBins(vbins);
+  simulation.setMaxV(maxV);
+  simulation.setMinVx(minVx);
+  simulation.setMaxVx(maxVx);
+  simulation.setMinVy(minVy);
+  simulation.setMaxVy(maxVy);
+  simulation.setUseVelocityDiff(useVelDiff);
   simulation.run(time);
   auto end_t = clock();
-  
+
+  /*
+  Checker checker;
+  checker.setField(simulation.getDistribution());
+  checker.initialize(simulation.getVBinXZero(),
+		     simulation.getVBinYZero(),
+		     simulation.getBinXWidth(),
+		     simulation.getBinYWidth(),
+		     simulation.getVBinXWidth(),
+		     simulation.getVBinYWidth(),
+		     radius,
+		     sphere_drag*radius);
+		     		     
+  checker.derivative();
+  */
+
   /// Print condition summary
   cout << "Dimensions: " << width << " x " << height << "\n";
   cout << "Radius: " << radius << "\n";
@@ -83,17 +130,23 @@ int main(int argc, char** argv) {
   cout << "Start Time: " << start << "\n";
   cout << "Actual (total) program run time: " << (double)(end_t-start_t)/CLOCKS_PER_SEC << "\n";
   cout << "Iters: " << simulation.getIter() << "\n\n";
+  cout << "Max V: " << simulation.getMaxV() << ", Min/Max Vx: " << simulation.getMinVx() << ", " << simulation.getMaxVx() << ", Min/Max Vy: " << simulation.getMinVy() << ", " << simulation.getMaxVy() << endl;
+  cout << "Bin X: " << simulation.getBinXWidth() << ", Bin Y: " << simulation.getBinYWidth() << ", vBin X: " << simulation.getVBinXWidth() << ", vBin Y: " << simulation.getVBinYWidth() << endl;
+  cout << "vBin X Zero: " << simulation.getVBinXZero() << ", vBin Y Zero: " << simulation.getVBinYZero() << endl;
   cout << "Command: ";
   for (int i=0; i<argc; i++) cout << argv[i] << " ";
-  cout << "\n-------------------------------------\n";
+  cout << "\n\n-------------------------------------\n\n";
 
   /// Print data
+
+  //  cout << "sdist=" << simulation.getSpeedDistribution() << ";\n"; //**
+  //  cout << "MatrixPlot[sdist,ImageSize->Large]\n";
+
   if (animate) {
     cout << simulation.printWatchList() << endl;
-    cout << "walls=" << simulation.printWalls() << ";\n";
+    cout << simulation.printWalls() << endl;
     cout << simulation.printAnimationCommand() << endl;
-  }
-  
+  }  
   if (dispKE) {
     cout << "aveKE=" << simulation.getStatistic(0) << ";\n";
     cout << "Print[\"Average kinetic energy\"]\nListLinePlot[aveKE,PlotRange->All,PlotStyle->Black]\n";
@@ -123,6 +176,30 @@ int main(int argc, char** argv) {
     cout << "aVelDist=" << simulation.getAuxVelocityDistribution() << ";\n";
     cout << "Print[\"Auxilary Velocity Distribution\"]\nListLinePlot[aVelDist,PlotStyle->Black,ImageSize->Large,PlotRange->All]\n";
   }
-
+  if (totalDist) {
+    stringstream stream;
+    string str;
+    stream << simulation.getCollapsedDistribution(0);
+    stream >> str;
+    cout << "dist=" << mmPreproc(str) << ";\n";
+  }
+  if (everything) {
+    stringstream stream;
+    string str;
+    stream << simulation.getDistribution();
+    stream >> str;
+    cout << "fullDist=" << mmPreproc(str) << ";\n";
+    stream.clear(); str.clear();
+  
+    /*
+    stream << checker.getDFDT();
+    stream >> str;
+    cout << "derivative=" << mmPreproc(str) << ";\n";
+    stream.clear(); str.clear();
+    stream << checker.getProfile();
+    stream >> str;
+    cout << "theoryProfile=" << mmPreproc(str) << ";\n";
+    */
+  }
   return 0;
 }

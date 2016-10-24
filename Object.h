@@ -23,6 +23,8 @@ const double default_run_force = 5.0;
 const double default_expansion_time = 0.5;
 const double default_reproduction_delay = 0.1;
 
+typedef pair<vect<>, vect<> > WPair;
+
 /// Clamp function
 inline double clamp(double x) { return x>0 ? x : 0; }
 
@@ -161,6 +163,32 @@ class RTSphere : public Particle {
   bool running;
 };
 
+class ABP : public Particle { // Active Brownian Particle
+ public:
+  ABP(vect<>, double);
+  ABP(vect<>, double, double);
+
+  virtual void update(double);
+
+ private:
+  double bForce;
+};
+
+class PSphere : public Particle {
+ public:
+  PSphere(vect<>, double);
+  PSphere(vect<>, double, double);
+
+  virtual void update(double);
+
+ private:
+  double runForce;
+  vect<> runDirection;
+
+  double randDelay; // How long to wait between possibly changing directions
+  double delay;     // How long the delay has been so far
+};
+
 class Stationary {
  public:
  Stationary() : coeff(wall_coeff), repulsion(wall_repulsion), dissipation(wall_dissipation) {};
@@ -178,12 +206,15 @@ class Wall {
 
   vect<> getPosition() { return origin; }
   vect<> getEnd() { return origin+wall; }
+  WPair getWPair() { return WPair(origin, origin+wall); }
   double getPressure() { return pressureF/length; }
 
   /// Mutators
   void setRepulsion(double r) { repulsion = r; }
   void setDissipation(double d) { dissipation = d; }
   void setCoeff(double c) { coeff = c; }
+  void setPosition(vect<>, vect<>);
+  void setPosition(WPair w) { setPosition(w.first, w.second); }
 
   virtual void interact(Particle*);
 

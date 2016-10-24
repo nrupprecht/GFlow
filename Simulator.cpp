@@ -1,6 +1,6 @@
 #include "Simulator.h"
 
-Simulator::Simulator() : lastDisp(0), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), samplePoints(100), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), recFields(false), replenish(0), wasteSource(0) {
+Simulator::Simulator() : lastDisp(0), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), recFields(false), replenish(0), wasteSource(0) {
   // Flow
   hasDrag = true;
   flowFunc = 0;
@@ -19,12 +19,20 @@ Simulator::Simulator() : lastDisp(0), dispTime(1./15.), dispFactor(1), time(0), 
   ssecInteract = false;
   secX = 10; secY = 10;
   sectors = new list<Particle*>[(secX+2)*(secY+2)+1];
-  // Velocity analysis
-  vbins = 200;
+  // Binning & Velocity analysis
+  bins = 100;
+  vbins = 30;
   maxF = 3.25;
-  maxV = 2.; // flowV is zero
+  maxV = 1.5;  // flowV is zero here, so we don't initialize based on that
+  minVx = -0.1;
+  maxVx = 1.;
+  minVy = -0.05;
+  maxVy = 0.05;
   velocityDistribution = vector<double>(vbins,0);
   auxVelocityDistribution = vector<double>(vbins,0);
+  // Total distribution
+  distribution = Tensor(bins, bins, vbins, vbins);
+  useVelocityDiff = false;
 };
 
 Simulator::~Simulator() {
@@ -44,7 +52,7 @@ Simulator::~Simulator() {
   }
 }
 
-void Simulator::createSquare(int N, double radius) {
+void Simulator::createSquare(int N, double radius, double width, double height) {
   discard();
   gravity = Zero;
   xLBound = WRAP;
@@ -54,11 +62,34 @@ void Simulator::createSquare(int N, double radius) {
 
   charRadius = radius;
   left = bottom = 0;
-  top = right = 1;
+  right = width;
+  top = height;
 
-  addParticles(N, radius, 0, left+0.5*radius, right-0.5*radius, bottom+0.5*radius, top-0.5*radius, PASSIVE, 1);
+  //addParticles(N, radius, 0, left+0.5*radius, right-0.5*radius, bottom+0.5*radius, top-0.5*radius, PASSIVE, 1);
 
-  setParticleDrag(0);
+  // Use the maximum number of sectors
+  int sx = (int)(right/(2*radius)), sy = (int)(top/(2*radius));
+  setSectorDims(sx, sy);
+
+  // Place the particles
+  vector<vect<> > pos = findPackedSolution(N, radius, 0, right, 0, top);
+  // Add the particles in at the appropriate positions
+  for (int i=0; i<N; i++) addWatchedParticle(new PSphere(pos.at(i), radius));
+
+  addWall(new Wall(vect<>(left,bottom), vect<>(left,top)));
+  addWall(new Wall(vect<>(left,top), vect<>(right,top)));
+  addWall(new Wall(vect<>(right,top), vect<>(right,bottom)));
+  addWall(new Wall(vect<>(right,bottom), vect<>(left,bottom)));
+
+  // Particle parameters
+  setParticleCoeff(0); // --> No torques, shear forces
+  setParticleDissipation(sphere_dissipation);
+  setParticleDrag(sphere_drag);
+  setWallDissipation(wall_dissipation);
+  setWallCoeff(wall_coeff);
+
+  default_epsilon = 1e-4;
+  min_epsilon = 1e-8;
 }
 
 void Simulator::createHopper(int N, double radius, double gap, double width, double height, double act) {
@@ -149,7 +180,7 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, double 
   if (rA==-1) rA = radius;
   
   // Set sample points
-  samplePoints = 1.1547*(top-bottom)/(2*radius);
+  setBins(1.1547*(top-bottom)/(2*radius));
 
   addWall(new Wall(vect<>(0,bottom), vect<>(right,bottom))); // Bottom wall
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // Top wall
@@ -161,7 +192,8 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, double 
   vector<vect<> > pos = findPackedSolution(N+A, radius, 0, right, 0, top);
   int i;
   // Add the particles in at the appropriate positions
-  for (i=0; i<A; i++) addWatchedParticle(new RTSphere(pos.at(i), rA, F, runT, tumT, bias));
+  //for (i=0; i<A; i++) addWatchedParticle(new RTSphere(pos.at(i), rA, F, runT, tumT, bias));
+  for (i=0; i<A; i++) addWatchedParticle(new PSphere(pos.at(i), rA, F));
   for (; i<N+A; i++) addWatchedParticle(new Particle(pos.at(i), radius));
   
   xLBound = WRAP;
@@ -183,6 +215,91 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, double 
   
   default_epsilon = 1e-4;
   min_epsilon = 1e-8;
+}
+
+void Simulator::createSphereFluid(int N, int A, double radius, double V, double F, double rA, double width, double height) {
+  discard();
+  gravity = Zero;
+  charRadius = radius;
+  left = 0; bottom = 0;
+  top = height; right = width;
+  if (rA==-1) rA = radius;
+  
+  // Set sample points
+  setBins(1.1547*(top-bottom)/(2*radius));
+
+  addWall(new Wall(vect<>(0,bottom), vect<>(right,bottom))); // Bottom wall
+  addWall(new Wall(vect<>(0,top), vect<>(right,top))); // Top wall
+
+  // Moving wall drives 'fluid'
+  setFlowV(V);
+  addMovingWall(new Wall(vect<>(0,0), vect<>(0,top)),
+                [&] (double time) {
+                  return WPair(vect<>(fmod(flowV*time,right),0),
+                               vect<>(fmod(flowV*time,right),top));
+                });
+
+  // Use the maximum number of sectors
+  double R = max(radius, rA);
+  int sx = (int)(width/(2*R)), sy = (int)(top/(2*R));
+  setSectorDims(sx, sy);
+  vector<vect<> > pos = findPackedSolution(N+A, radius, 0, right, 0, top);
+  int i;
+  // Add the particles in at the appropriate positions
+  for (i=0; i<A; i++) addWatchedParticle(new RTSphere(pos.at(i), rA));
+  for (; i<N+A; i++) addWatchedParticle(new Particle(pos.at(i), radius));
+
+  xLBound = WRAP;
+  xRBound = WRAP;
+  yTBound = NONE;
+  yBBound = NONE;
+
+  setFlowV(V);
+  flowFunc = [&] (vect<> pos) { return Zero; };
+  hasDrag = false;
+
+  // Set physical parameters
+  setParticleCoeff(0); // --> No torques, shear forces
+  setParticleDissipation(sphere_dissipation);
+  setParticleDrag(sphere_drag);
+  setWallDissipation(wall_dissipation);
+  setWallCoeff(wall_coeff);
+
+  default_epsilon = 1e-4;
+  min_epsilon = 1e-8;
+}
+
+void Simulator::createJamPipe(int N, int A, double radius, double V, double F, double rA, double width, double height, double perc, double runT, double tumT, double var) {
+  this->percent = perc;
+  createControlPipe(N, A, radius, V, F, rA, width, height, runT, tumT, var);
+  
+  addMovingWall(new Wall(vect<>(0.5*width,0), vect<>(0.5*width,0)),
+		[&] (double time) {
+                  return time<1 ?
+			      WPair(
+				    vect<>(0.5*(right-left),(1.-0.5*percent*time)*(top-bottom)),
+				    vect<>(0.5*(right-left),(top-bottom))
+				    ) 
+			      : 
+		    WPair(
+			  vect<>(0.5*(right-left),(1.-0.5*percent)*(top-bottom)),
+			  vect<>(0.5*(right-left),(top-bottom))
+			  );
+                });
+
+  addMovingWall(new Wall(vect<>(0.5*width,0), vect<>(0.5*width,0)),
+		[&] (double time) {
+                  return time<1 ?
+			      WPair(
+				    vect<>(0.5*(right-left), 0.5*percent*time*(top-bottom)),
+				    vect<>(0.5*(right-left),0)
+				    )
+			      : 
+		    WPair(
+			  vect<>(0.5*(right-left),0.5*percent*(top-bottom)),
+			  vect<>(0.5*(right-left),0)
+			  );
+                });
 }
 
 void Simulator::createIdealGas(int N, double radius, double v) {
@@ -244,7 +361,7 @@ void Simulator::createBacteriaBox(int N, double radius, double width, double hei
   top = height; right = width;
 
   // Set sample points
-  samplePoints = 1.1547*(top-bottom)/(2*radius);
+  setBins(1.1547*(top-bottom)/(2*radius));
 
   addWall(new Wall(vect<>(0,bottom), vect<>(right,bottom))); // Bottom wall
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // Top wall
@@ -382,12 +499,12 @@ vector<double> Simulator::getDensityXProfile() {
 }
 
 vector<double> Simulator::getDensityYProfile() {
-  vector<double> profile(samplePoints,0);
-  double invdy = samplePoints/(top-bottom);
+  vector<double> profile(bins,0);
+  double invdy = bins/(top-bottom);
   for (auto P : particles) {
     double y = P->getPosition().y-bottom;
     int index = (int)(y*invdy);
-    if (0<=index || index<samplePoints) profile.at(index)++;
+    if ((0<=index || index<bins) && index<profile.size()) profile.at(index)++;
   }
   return profile;
 }
@@ -489,6 +606,77 @@ vector<vect<> > Simulator::getAuxVelocityDistribution() {
   return V;
 }
 
+Tensor Simulator::getDistribution() {
+  if (recIt==0) return Tensor();
+  int num = particles.size();
+  double total = num*recIt;
+  Tensor dist = distribution;
+  timesEq(dist, 1./total);
+  return dist;
+}
+
+Tensor Simulator::getCollapsedDistribution(int index) {
+  if (recIt==0) return Tensor();
+  double invTotal = 1./(particles.size()*recIt);
+  if (index==0) { // Average over x
+    Tensor dist(bins, vbins, vbins);
+    for (int y=0; y<bins; y++)
+      for (int x=0; x<bins; x++)
+	for (int vy=0; vy<vbins; vy++)
+	  for (int vx=0; vx<vbins; vx++)
+	    dist.at(y,vx,vy) += distribution.at(x,y,vx,vy);
+    timesEq(dist, invTotal);
+    return dist;
+  }
+  if (index==1) { // Average over y
+    Tensor dist(bins, vbins, vbins);
+    for(int y=0; y<bins; y++)
+      for (int x=0; x<bins; x++)
+	for (int vy=0; vy<vbins; vy++)
+	  for (int vx=0; vx<vbins; vx++)
+            dist.at(x,vx,vy) += distribution.at(x,y,vx,vy);
+    timesEq(dist, invTotal);
+    return dist;
+  }
+  else {
+    Tensor dist = distribution;
+    timesEq(dist, invTotal);
+    return dist;
+  }
+}
+
+Tensor Simulator::getSpeedDistribution() {
+  double dS = max((maxVy-minVy)/vbins, (maxVx-minVx)/vbins);
+  double maxS = min( min(fabs(minVx), fabs(minVy)), min(maxVx, maxVy) );
+  int vb = maxS/dS;
+  Tensor coll = getCollapsedDistribution();
+  Tensor dist(vb+1, bins);
+  for (int y=0; y<bins; y++) {
+    // Speed cutoffs
+    double S=dS;
+    int i=0;
+    for (; S<maxS, i<vb; S+=dS, i++)
+      // Which velocities should go in this speed bin
+      for (int vx=0; vx<vbins; vx++)
+	for (int vy=0; vy<vbins; vy++) {
+	  // Find the velocity relative to the flow velocity at that point
+	  double ypos = (double)(y)/bins*(top-bottom);
+	  vect<> DS = binVelocity(vx,vy)-flowFunc(vect<>(0,ypos));
+	  double speed = DS.norm();
+	  if ((S-dS)<speed && speed<=S) dist.at(i,y) += coll.at(y,vx,vy);
+	}
+    // Out of binning range
+    for (int vx=0; vx<vbins; vx++)
+      for (int vy=0; vy<vbins; vy++) {
+	// Find the velocity relative to the flow velocity at that point
+	vect<> DS = binVelocity(vx,vy)-flowFunc(vect<>(0,y));
+	double speed = DS.norm();
+	if (S<speed) dist.at(i,y) += coll.at(y,vx,vy);
+      }
+  }
+  return dist;
+}
+
 void Simulator::setFlowV(double fv) {
   flowV = fv;
   maxV = fabs(fv)>0 ? 2.*fabs(fv) : 1.;
@@ -507,6 +695,10 @@ void Simulator::addWall(Wall* wall) {
 
 void Simulator::addTempWall(Wall* wall, double duration) {
   tempWalls.push_back(pair<Wall*,double>(wall, duration));
+}
+
+void Simulator::addMovingWall(Wall* wall, WFunc f) {
+  movingWalls.push_back(pair<Wall*,WFunc>(wall, f));
 }
 
 void Simulator::addParticle(Particle* particle) {
@@ -540,8 +732,9 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
   }
 
   // Enlarge particles and thermally agitate
-  int steps = 2500;
-  double dr = (R-0.05*R)/(double)steps, radius = 0.05*R;;
+  int steps = 2000;
+  // Make dr s.t. the final radius is a bit larger then R
+  double dr = (R+0.15*R)/(double)steps, radius = 0.05*R; 
   double mag = 5, dm = mag/(double)steps;
   for (int i=0; i<steps; i++) {
     // Particle - particle interactions
@@ -578,15 +771,25 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
 string Simulator::printWalls() {
   if (walls.empty()) return "{}";
   stringstream stream;
-  stream << "Show[";
+  string str;
+  stream << "walls=Show[";
   for (int i=0; i<walls.size(); i++) {
     stream << "Graphics[{Thick,Red,Line[{" << walls.at(i)->getPosition() << "," << walls.at(i)->getEnd() << "}]}]";
     if (i!=walls.size()-1) stream << ",";
   }
-  stream << ",PlotRange->{{0," << right << "},{0," << top << "}}]";
-
-  string str;
+  stream << ",PlotRange->{{0," << right << "},{0," << top << "}}];";
   stream >> str;
+  
+  // Print position records of moving walls (if applicable)  
+  if (!wallPos.empty()) {
+    stream.clear();
+    str += '\n';
+    stream << "movingWalls=" << wallPos << ";";
+    string str2;
+    stream >> str2;
+    str += str2;
+  }
+
   return str;
 }
 
@@ -594,14 +797,51 @@ string Simulator::printWatchList() {
   if (recIt==0) return "{}";
   // Print out watch list record
   stringstream stream;
-  string str;
-  stream << "pos={";
-  for (int i=0; i<watchPos.size(); i++) {
-    stream << watchPos.at(i);
-    if (i!=watchPos.size()-1) stream << ",";
+  string str, tstr;
+  // Record positions of passive particles
+  if (psize>0) {
+    stream << "pos={";
+    for (int i=0; i<watchPos.size(); i++) {
+      int j=0;
+      stream << "{";
+      for (auto P : watchlist) {
+	if (!P->isActive()) stream << watchPos.at(i).at(j) << ",";
+	j++;
+      }
+      stream >> tstr;
+      tstr.pop_back();
+      tstr += "},";
+      str += tstr;
+      // Clear
+      stream.clear();
+      tstr.clear();
+    }
+    str.pop_back(); // Get rid of the last ','
+    str += "};\n";
   }
-  stream << "};";
-  stream >> str;
+  // Record positions of active particles
+  if (asize>0) {
+    stream.clear();
+    tstr.clear();
+    stream << "apos={";
+    for (int i=0; i<watchPos.size(); i++) {
+      stream << "{";
+      int j=0;
+      for (auto P : watchlist) {
+	if (P->isActive()) stream << watchPos.at(i).at(j) << ",";
+	j++;
+      }
+      stream >> tstr;
+      tstr.pop_back();
+      tstr += "},";
+      str += tstr;
+      // Clear
+      stream.clear();
+      tstr.clear();
+    }
+    str.pop_back(); // Get rid of the last ','
+    str += "};\n";
+  }
   return str;
 }
 
@@ -613,7 +853,30 @@ string Simulator::printAnimationCommand() {
   stream << "R=" << charRadius << ";";
   stream >> str1;
   stream.clear();
-  str1 += "\nframes=Table[Show[walls,Graphics[Table[Circle[pos[[j]][[i]],R],{i,1,Length[pos[[j]]]}]]],{j,1,Length[pos]}];\n";
+  // Start table
+  stream << "len=" << recIt << ";";
+  stream >> str2;
+  stream.clear();
+  str1 += ('\n'+str2+'\n');
+  str2.clear();
+  str1 += "frames=Table[Show[";
+  // Print walls animation command
+  if (!walls.empty()) str1 += "walls";
+  else str1 += "{}";
+  // Print passive particle animation command
+  if (psize>0) str1 += ",Graphics[Table[Circle[pos[[j]][[i]], R], {i, 1, Length[pos[[j]]]}]]";
+  // Print active particle animation command
+  if (asize>0) str1 += ",Graphics[Table[{Green, Circle[apos[[j]][[i]], R]}, {i, 1, Length[apos[[j]]]}]]";
+  // Print moving wall animation command
+  if (!wallPos.empty()) str1 += ",Graphics[Table[{Thick,Red,Line[movingWalls[[j]][[i]]]},{i,1,Length[movingWalls[[j]]]}]]";
+  // Finish Table
+  stream << ",PlotRange->{{" << left << "," << right << "},{" << bottom << "," << top << "}}";
+  stream >> str2;
+  stream.clear();
+  str1 += str2;
+  str2.clear();
+  str1 += "],{j,1,len}];\n";
+  // Add animation command
   stream << "vid=ListAnimate[frames,AnimationRate->" << max(1.0, ceil(1.0/dispTime)*dispFactor) << "]";
   stream >> str2;
   return str1+str2;
@@ -786,6 +1049,11 @@ inline void Simulator::objectUpdates() {
       if (w->second<time) removal.push_back(w);
     for (auto w : removal) tempWalls.erase(w);
   }
+  // Update movint walls
+  if (!movingWalls.empty()) {
+    for (auto W : movingWalls)
+      W.first->setPosition(W.second(time));
+  }
 }
 
 inline void Simulator::bacteriaUpdate() {
@@ -888,20 +1156,12 @@ inline vect<> Simulator::getDisplacement(vect<> A, vect<> B) {
   double Y = A.y-B.y;
   if (xLBound==WRAP || xRBound==WRAP) {
     double dx = (right-left)-fabs(X);
-    if (dx<fabs(X)) {
-      if (X>0) X=-dx;
-      else X=dx;
-    }
+    if (dx<fabs(X)) X = X>0 ? X-dx : dx;
   }
-  
   if (yBBound==WRAP || yTBound==WRAP) {
     double dy =(top-bottom)-fabs(Y);
-    if (dy<fabs(Y)) {
-      if (Y>0) Y=-dy;
-      else Y=dy;
-    }
+    if (dy<fabs(Y)) Y = Y>0 ? Y-dy : dy;
   }
-
   return vect<>(X,Y);
 }
 
@@ -925,6 +1185,9 @@ inline void Simulator::interactions() {
   for (auto W : tempWalls) 
     for (auto P : particles)
       W.first->interact(P);
+  for (auto W : movingWalls) 
+    for (auto P : particles)
+      W.first->interact(P);
 }
 
 inline void Simulator::update(Particle* &P) {
@@ -936,7 +1199,8 @@ inline void Simulator::update(Particle* &P) {
   switch(xLBound) {
   default:
   case WRAP:
-    while (pos.x < left) pos.x += (right-left);
+    //while (pos.x < left) pos.x += (right-left);
+    if (pos.x < left) pos.x = right-fmod(right-pos.x, right-left);
     break;
   case RANDOM:
     if (pos.x<0) {
@@ -956,7 +1220,8 @@ inline void Simulator::update(Particle* &P) {
   switch (xRBound) {
   default:
   case WRAP:
-    while (pos.x>right) pos.x-=(right-left);
+    //while (pos.x>right) pos.x-=(right-left);
+    if (pos.x>right) pos.x = fmod(pos.x-left, right-left)+left;
     break;
   case RANDOM:
     if (pos.x>right) {
@@ -972,13 +1237,14 @@ inline void Simulator::update(Particle* &P) {
     break;
   case NONE: break;
   }
-
+  
   switch (yBBound) {
   default:
   case WRAP:
     timeMarks.push_back(time); // Record time
     lastMark = time;
-    while (pos.y<bottom) pos.y+=(top-bottom);
+    //while (pos.y<bottom) pos.y+=(top-bottom);
+    if (pos.y<bottom) pos.y = top-fmod(top-pos.y, top-bottom);
     break;
   case RANDOM:
     if (pos.y<0) {
@@ -1001,7 +1267,8 @@ inline void Simulator::update(Particle* &P) {
   switch (yTBound) {
   default:
   case WRAP:
-    while (pos.y>top) pos.y-=(top-bottom);
+    //while (pos.y>top) pos.y-=(top-bottom);
+    if (pos.y<bottom) pos.y = fmod(pos.y-bottom, top-bottom);
     break;
   case RANDOM:
     if (pos.y>top) {
@@ -1028,6 +1295,13 @@ inline void Simulator::record() {
   for (auto P : watchlist)
     watchPos.at(recIt).push_back(P->getPosition());
 
+  // Record moving wall positions
+  if (!movingWalls.empty()) {
+    wallPos.push_back(vector<WPair>());
+    for (auto W : movingWalls)
+      wallPos.at(recIt).push_back(W.first->getWPair());
+  }
+
   // Record statistics
   for (int i=0; i<statistics.size(); i++)
   statRec.at(i).push_back(vect<>(time, statistics.at(i)(particles)));
@@ -1036,24 +1310,35 @@ inline void Simulator::record() {
   profiles.push_back(getDensityYProfile());
 
   // Record velocity distribution
-  for (auto P : particles) {
-    double vel = sqrt(sqr(P->getVelocity()));
-    double fvel = sqrt(sqr(flowFunc(P->getPosition())));
-    int B = (int)(vel/maxV*vbins);
-    int Bf = fvel>0 ? (int)(vel/fvel/maxF*vbins) : vbins-1;
-    B = B>=vbins ? vbins-1 : B;
-    Bf = Bf>=vbins ? vbins-1 : Bf;
-
-    try {
-    velocityDistribution.at(B)++;
-    auxVelocityDistribution.at(Bf)++;
-    }
-    catch(...) {
-
-      cout << vel << " " << maxV << " " << fvel << endl;
-
-      cout << B << " " << Bf << " " << vbins << endl;
-      throw;
+  if (!particles.empty()) {
+    for (auto P : particles) {
+      double vel = sqrt(sqr(P->getVelocity()));
+      double fvel = flowFunc==0 ? 0 : sqrt(sqr(flowFunc(P->getPosition())));
+      int B = (int)(vel/maxV*vbins);
+      int Bf = fvel>0 ? (int)(vel/fvel/maxF*vbins) : vbins-1;
+      B = B>=vbins ? vbins-1 : B;
+      B = B<0 ? 0 : B;
+      Bf = Bf>=vbins ? vbins-1 : Bf;
+      Bf = Bf<0 ? 0 : Bf;
+      velocityDistribution.at(B)++;
+      auxVelocityDistribution.at(Bf)++;
+    }    
+    // Record total distribution
+    for (auto P : particles) {
+      vect<> V = P->getVelocity();
+      vect<> pos = P->getPosition();
+      if (useVelocityDiff && flowFunc) V -= flowFunc(pos);
+      int Bx = (pos.x-left)/(right-left)*bins;
+      int By = (pos.y-bottom)/(top-bottom)*bins;
+      Bx = bins<=Bx ? bins-1 : Bx; By = bins<=By ? bins-1 : By;
+      Bx = Bx<0 ? 0 : Bx; By = By<0 ? 0 : By;
+      int Vx = (int)((V.x-minVx)/(maxVx-minVx)*vbins);
+      int Vy = (int)((V.y-minVy)/(maxVy-minVy)*vbins);
+      Vx = vbins<=Vx ? vbins-1 : Vx; 
+      Vx = Vx<0 ? 0 : Vx;
+      Vy = vbins<=Vy ? vbins-1 : Vy;
+      Vy = Vy<0 ? 0 : Vy;
+      distribution.at(Bx,By,Vx,Vy)++;
     }
   }
 
@@ -1128,6 +1413,12 @@ void Simulator::resetStatistics() {
   for (auto &vec : statRec) vec.clear();
 }
 
+vect<> Simulator::binVelocity(int vx, int vy) {
+  double VX = (maxVx-minVx)/vbins*vx + minVx;
+  double VY = (maxVy-minVy)/vbins*vy + minVy;
+  return vect<>(VX, VY);
+}
+
 inline void Simulator::updateSectors() {
   for (int i=0; i<(secX+2)*(secY+2)+1; i++) {
     vector<list<Particle*>::iterator> remove;
@@ -1186,6 +1477,18 @@ inline int Simulator::getSec(vect<> pos) {
   return (X+1)+(secX+2)*(Y+1);
 }
 
+void Simulator::setBins(int b) {
+  bins = b;
+  distribution = Tensor(bins, bins, vbins, vbins);
+}
+
+void Simulator::setVBins(int p) {
+  vbins = p;
+  distribution = Tensor(bins, bins, vbins, vbins);
+  velocityDistribution = vector<double>(vbins,0);
+  auxVelocityDistribution = vector<double>(vbins,0);
+}
+
 void Simulator::discard() {
   psize = asize = 0;
   for (int i=0; i<(secX+2)*(secY+2); i++) sectors[i].clear();
@@ -1216,12 +1519,12 @@ void Simulator::discard() {
 
 inline vector<vect<> > Simulator::aveProfile() {
   if (profiles.empty()) return vector<vect<> >();
-  vector<vect<> > ave = vector<vect<> >(samplePoints, vect<>());
-  for (int i=0; i<samplePoints; i++) ave.at(i).x = (double)i/samplePoints;
+  vector<vect<> > ave = vector<vect<> >(bins, vect<>());
+  for (int i=0; i<bins; i++) ave.at(i).x = (double)i/bins;
   for (auto p : profiles)
-    for (int i=0; i<samplePoints; i++) ave.at(i).y += p.at(i);
+    for (int i=0; i<bins; i++) ave.at(i).y += p.at(i);
 
-  double factor = (double)samplePoints/(profiles.size()*(right-left));
+  double factor = (double)bins/(profiles.size()*(right-left));
   for (auto &d : ave) d.y *= factor;
   return ave;
 }

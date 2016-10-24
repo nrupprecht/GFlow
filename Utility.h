@@ -70,14 +70,9 @@ template<typename T> inline void swap(T &a, T &b) {
   T t=a; a=b; b=t; 
 }
 
-/// Helper two argument min function
-template<typename T> inline T min(T a, T b) {
-  return a<b ? a : b;
-}
-
-template<typename T> inline T max(T a, T b) {
-  return a<b ? b : a;
-}
+// Min/Max functions
+template<typename T> T min(T a, T b) { return a<b?a:b; }
+template<typename T> T max(T a, T b) { return a<b?b:a; }
 
 /// Helper function two argument absmin function
 template<typename T> inline T absmin(T a, T b) {
@@ -96,6 +91,18 @@ template<typename T> inline T absmin(T a, T b, T c) {
 
 /// Helper squaring function
 template<typename T> inline T sqr(T x) { return x*x; }
+
+// Get rid of all the "e-"s for mathematica
+inline string mmPreproc(string s) {
+  int size = s.size();
+  string out;
+  out.reserve(size);
+  for (int i=0; i<size; i++) {
+    if (s.at(i)=='e' && i+2<size && (s.at(i+1)=='-' || s.at(i+1)=='+') && isdigit(s.at(i+2))) out += "*10^";
+    else out.push_back(s.at(i));
+  }
+  return out;
+}
 
 /// A simple 2-D vector struct
 template<typename T=double> struct vect {
@@ -132,8 +139,11 @@ vect(const vect<T>& V) : x(V.x), y(V.y) {};
   }
 
   friend std::ostream& operator<<(std::ostream& os, const vect& v) {
-    //os << "{" << limit_prec(v.x) << "," << limit_prec(v.y) << "}";
-    os << "{" << v.x << "," << v.y << "}";
+    stringstream stream;
+    string str;
+    stream << "{" << v.x << "," << v.y << "}";
+    stream >> str;
+    os << mmPreproc(str);
     return os;
   }
     
@@ -226,26 +236,16 @@ inline vect<> randV() {
 }
 
 template<typename T> inline std::ostream& operator<<(std::ostream& out, vector<T> lst) {
-  out << "{";
+  stringstream stream;
+  string str;
+  stream << "{";
   for (int i=0; i<lst.size(); i++) {
-    out << lst.at(i);
-    if (i!=lst.size()-1) out << ",";
+    stream << lst.at(i);
+    if (i!=lst.size()-1) stream << ",";
   }
-  out << "}";
-  return out;
-}
-
-// Get rid of all the "e-"s for mathematica
-inline string mmPreproc(string s) {
-  int size = s.size();
-  string out;
-  out.reserve(size);
-  for (int i=0; i<size; i++) {
-    if (s.at(i)=='e' && i+2<size && s.at(i+1)=='-' && isdigit(s.at(i+2))) {
-      out += "*10^";
-    }
-    else out.push_back(s.at(i));
-  }
+  stream << "}";
+  stream >> str;
+  out << mmPreproc(str);
   return out;
 }
 
@@ -272,11 +272,9 @@ struct Agent {
   vect<> initPos;     // The initial position the agent started at
   ipair sector;
   int ID;
-  
-  bool operator==(const Agent A) const { return ID==A.ID; }
-    
+  bool operator==(const Agent A) const { return ID==A.ID; }    
   void reset() { position = initPos; }
-    
+  
   float __pad;
 };
 

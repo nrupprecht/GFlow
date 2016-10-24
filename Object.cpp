@@ -15,13 +15,11 @@ void Particle::initialize() {
   invMass = 1.0/mass;
   invII = 1.0/(0.5*mass*sqr(radius));
   active = false;
-
   drag = sphere_drag*radius;
-
   normalF = shearF = force = Zero;
   torque = 0;
-
   normForces = 0;
+  recentForceAve = 0;
   timeWindow = 3.; // 3 Seconds
 }
 
@@ -70,11 +68,10 @@ void Particle::interact(Particle* P, vect<> displacement) {
     // Calculate the Shear force
     double Fs = -(coeff*P->getCoeff())*Fn*sign(Vs);
 
+    normForces += fabs(Fn); //** Should also take into account shear force (?)
     applyNormalForce(Fn*normal);
     applyShearForce(Fs*shear);
     applyTorque(-Fs*radius);
-
-    normForces += Fn; //** Should also take into account shear force
   }
 }
 
@@ -88,9 +85,8 @@ void Particle::interact(vect<> pos, double force) {
     //vect<> shear = vect<>(normal.y, -normal.x);
     
     // Pressure force
+    normForces += fabs(force);
     applyNormalForce(force*normal);
-    
-    normForces += force;
   }
 }
 
@@ -120,7 +116,9 @@ void Particle::update(double epsilon) {
   normalF = shearF = force = Zero;
 
   // Update rolling average
-  recentForceAve = (timeWindow-epsilon)*recentForceAve + epsilon*normForces;
+  double ef = epsilon/timeWindow; // Factor
+  recentForceAve *= 1-ef;
+  recentForceAve += ef*normForces;
   normForces = 0;
 }
 
@@ -215,6 +213,32 @@ void RTSphere::update(double epsilon) {
   Particle::update(epsilon);
 }
 
+ABP::ABP(vect<> pos, double rad) : Particle(pos, rad), bForce(default_run_force) { active=true; }
+
+ABP::ABP(vect<> pos, double rad, double force) : Particle(pos, rad), bForce(force) { active=true;}
+
+void ABP::update(double epsilon) {
+  vect<> dir = randV();
+  applyForce(bForce*dir);
+  Particle::update(epsilon);
+}
+
+PSphere::PSphere(vect<> pos, double rad) : Particle(pos, rad), runForce(default_run_force), runDirection(randV()) { active=true; }
+
+PSphere::PSphere(vect<> pos, double rad, double force) : Particle(pos, rad), runForce(force), runDirection(randV()) { active=true; }
+
+void PSphere::update(double epsilon) {
+  if (delay>randDelay) {
+    delay = 0;
+    double r = drand48();
+    double prob = recentForceAve; //**
+    if (r<prob) runDirection = randV();
+  }
+  delay += epsilon;
+  applyForce(runForce*runDirection);
+  Particle::update(epsilon);
+}
+
 Wall::Wall(vect<> origin, vect<> end) : origin(origin), wall(end-origin), coeff(wall_coeff), repulsion(wall_repulsion), dissipation(wall_dissipation), gamma(wall_gamma) {
   normal = wall;
   normal.normalize();
@@ -225,6 +249,14 @@ Wall::Wall(vect<> origin, vect<> wall, bool) : origin(origin), wall(wall), coeff
   normal = wall;
   normal.normalize();
   length = wall.norm();
+}
+
+void Wall::setPosition(vect<> A, vect<> B) {
+  origin = A;
+  wall = B-A;
+  normal = B-A;
+  length = normal.norm();
+  normal.normalize();
 }
 
 void Wall::interact(Particle* P) {
@@ -259,7 +291,6 @@ void Wall::interact(Particle* P) {
     double Fs = min(fabs((coeff*P->getCoeff())*Fn),fabs(Vs)*gamma)*sign(Vs);
 
     pressureF += Fn;
-
     P->applyNormalForce(-Fn*normal);
     P->applyShearForce(-Fs*shear);
     P->applyTorque(-Fs*P->getRadius());
