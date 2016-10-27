@@ -19,6 +19,7 @@ const double wall_gamma = 5;
 const double default_run = 0.2;
 const double default_tumble = 0.1;
 const double default_run_force = 5.0;
+const double default_abp_force = 0.5;
 
 const double default_expansion_time = 0.5;
 const double default_reproduction_delay = 0.1;
@@ -186,6 +187,8 @@ class PSphere : public Particle {
   vect<> runDirection;
 
   double randDelay; // How long to wait between possibly changing directions
+  double invZeroPointProb; // The inverse of the probability that we tumble under no influences
+  double fconst;    // Multiplier of recentForceAve
   double delay;     // How long the delay has been so far
 };
 

@@ -81,6 +81,9 @@ void Simulator::createSquare(int N, double radius, double width, double height) 
   addWall(new Wall(vect<>(right,top), vect<>(right,bottom)));
   addWall(new Wall(vect<>(right,bottom), vect<>(left,bottom)));
 
+  // Use some drag
+  hasDrag = true;
+
   // Particle parameters
   setParticleCoeff(0); // --> No torques, shear forces
   setParticleDissipation(sphere_dissipation);
@@ -196,11 +199,10 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, double 
   for (i=0; i<A; i++) addWatchedParticle(new PSphere(pos.at(i), rA, F));
   for (; i<N+A; i++) addWatchedParticle(new Particle(pos.at(i), radius));
   
-  xLBound = WRAP;
-  xRBound = WRAP;
-  yTBound = NONE;
-  yBBound = NONE;
+  // Set Boundary wrapping
+  xLBound = WRAP; xRBound = WRAP; yTBound = WRAP; yBBound = WRAP;
 
+  // Set up fluid flow
   setFlowV(V);
   flowFunc = [&] (vect<> pos) { return vect<>(flowV*(1-sqr(pos.y-0.5*(top-bottom))/sqr(0.5*(top-bottom))),0); };
   hasDrag = true;
@@ -399,7 +401,7 @@ bool Simulator::wouldOverlap(vect<> pos, double R) {
   if (pos.x-R<left || right<pos.x+R || pos.y-R<bottom || top<pos.y+R) return true;
   for (auto P : particles) {
     if (P) {
-      vect<> displacement = P->getPosition()-pos;
+      vect<> displacement = getDisplacement(P->getPosition(), pos);
       double minSepSqr = sqr(R + P->getRadius());
       if (displacement*displacement < minSepSqr) return true;
     }
@@ -738,11 +740,13 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
   double mag = 5, dm = mag/(double)steps;
   for (int i=0; i<steps; i++) {
     // Particle - particle interactions
-    //ppInteract();
-    
     for (auto P : parts)
       for (auto Q : parts)
-        if (P!=Q) P->interact(Q);
+        if (P!=Q) {
+	  //vect<> disp = getDisplacement(Q->getPosition(), P->getPosition()); //** This should go here (unless it messes things up)
+	  //P->interact(Q, disp);
+	  P->interact(Q);
+	}
 
     // Thermal agitation
     mag -= dm;
@@ -864,9 +868,9 @@ string Simulator::printAnimationCommand() {
   if (!walls.empty()) str1 += "walls";
   else str1 += "{}";
   // Print passive particle animation command
-  if (psize>0) str1 += ",Graphics[Table[Circle[pos[[j]][[i]], R], {i, 1, Length[pos[[j]]]}]]";
+  if (psize>0) str1 += ",Graphics[Table[Circle[Mod[pos[[j]][[i]]+{2,0},4], R], {i, 1, Length[pos[[j]]]}]]"; //** Added a Mod
   // Print active particle animation command
-  if (asize>0) str1 += ",Graphics[Table[{Green, Circle[apos[[j]][[i]], R]}, {i, 1, Length[apos[[j]]]}]]";
+  if (asize>0) str1 += ",Graphics[Table[{Green, Circle[Mod[apos[[j]][[i]]+{2,0},4], R]}, {i, 1, Length[apos[[j]]]}]]"; //** Added a Mod
   // Print moving wall animation command
   if (!wallPos.empty()) str1 += ",Graphics[Table[{Thick,Red,Line[movingWalls[[j]][[i]]]},{i,1,Length[movingWalls[[j]]]}]]";
   // Finish Table
@@ -1049,7 +1053,7 @@ inline void Simulator::objectUpdates() {
       if (w->second<time) removal.push_back(w);
     for (auto w : removal) tempWalls.erase(w);
   }
-  // Update movint walls
+  // Update moving walls
   if (!movingWalls.empty()) {
     for (auto W : movingWalls)
       W.first->setPosition(W.second(time));
@@ -1157,6 +1161,11 @@ inline vect<> Simulator::getDisplacement(vect<> A, vect<> B) {
   if (xLBound==WRAP || xRBound==WRAP) {
     double dx = (right-left)-fabs(X);
     if (dx<fabs(X)) X = X>0 ? X-dx : dx;
+    /*
+    double width = right-left;
+    if (0.5*width>X) X-=width;
+    if (X<-0.5*width) X+=width;
+    */
   }
   if (yBBound==WRAP || yTBound==WRAP) {
     double dy =(top-bottom)-fabs(Y);
@@ -1176,8 +1185,10 @@ inline void Simulator::interactions() {
   else // Naive solution
     for (auto P : particles) 
       for (auto Q : particles)
-	if (P!=Q) P->interact(Q);
-  
+	if (P!=Q) {
+	  vect<> disp = getDisplacement(Q->getPosition(), P->getPosition());
+	  P->interact(Q, disp);
+	}
   // Calculate particle-wall forces
   for (auto W : walls)
     for (auto P : particles)
@@ -1196,11 +1207,11 @@ inline void Simulator::update(Particle* &P) {
   // Keep particles in bounds
   vect<> pos = P->getPosition();
 
+  // Handle boundaries
   switch(xLBound) {
   default:
   case WRAP:
-    //while (pos.x < left) pos.x += (right-left);
-    if (pos.x < left) pos.x = right-fmod(right-pos.x, right-left);
+    if (pos.x<left) pos.x=right-fmod(right-pos.x, right-left);
     break;
   case RANDOM:
     if (pos.x<0) {
@@ -1220,8 +1231,7 @@ inline void Simulator::update(Particle* &P) {
   switch (xRBound) {
   default:
   case WRAP:
-    //while (pos.x>right) pos.x-=(right-left);
-    if (pos.x>right) pos.x = fmod(pos.x-left, right-left)+left;
+    if (pos.x>right) pos.x=left+fmod(pos.x-left, right-left);
     break;
   case RANDOM:
     if (pos.x>right) {
@@ -1243,8 +1253,7 @@ inline void Simulator::update(Particle* &P) {
   case WRAP:
     timeMarks.push_back(time); // Record time
     lastMark = time;
-    //while (pos.y<bottom) pos.y+=(top-bottom);
-    if (pos.y<bottom) pos.y = top-fmod(top-pos.y, top-bottom);
+    if (pos.y<bottom) pos.y=top-fmod(top-pos.y, top-bottom);
     break;
   case RANDOM:
     if (pos.y<0) {
@@ -1267,8 +1276,7 @@ inline void Simulator::update(Particle* &P) {
   switch (yTBound) {
   default:
   case WRAP:
-    //while (pos.y>top) pos.y-=(top-bottom);
-    if (pos.y<bottom) pos.y = fmod(pos.y-bottom, top-bottom);
+    if (top<pos.y) pos.y=bottom+fmod(pos.y-bottom, top-bottom);
     break;
   case RANDOM:
     if (pos.y>top) {
@@ -1357,8 +1365,7 @@ inline void Simulator::record() {
 inline bool Simulator::inBounds(Particle* P) {
   vect<> pos = P->getPosition();
   double radius = P->getRadius();
-  if (pos.x+radius<0 || pos.x-radius>right) return false;
-  if (pos.y+radius<0 || pos.y-radius>top) return false;
+  if (pos.x<0 || pos.x>right || pos.y<0 || pos.y>top) return false;
   return true;
 }
 

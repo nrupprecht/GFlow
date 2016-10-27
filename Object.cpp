@@ -46,12 +46,12 @@ void Particle::interact(Particle* P, vect<> displacement) {
   double distSqr = sqr(displacement);
   double cutoff = radius + P->getRadius();
   double cutoffsqr = sqr(cutoff);
-
-  /*          ^ normal
+  /*
+              ^ normal
               |
               |
-              |------> shear      */
-  
+              |------> shear      
+  */
   if (distSqr < cutoffsqr) { // Interaction
     double dist = sqrt(distSqr);
     vect<> normal = (1.0/dist) * displacement;
@@ -115,7 +115,7 @@ void Particle::update(double epsilon) {
   torque = 0;
   normalF = shearF = force = Zero;
 
-  // Update rolling average
+  // Update rolling pressure average
   double ef = epsilon/timeWindow; // Factor
   recentForceAve *= 1-ef;
   recentForceAve += ef*normForces;
@@ -213,31 +213,38 @@ void RTSphere::update(double epsilon) {
   Particle::update(epsilon);
 }
 
-ABP::ABP(vect<> pos, double rad) : Particle(pos, rad), bForce(default_run_force) { active=true; }
+// ********** ABP ********** //
+
+ABP::ABP(vect<> pos, double rad) : Particle(pos, rad), bForce(default_abp_force) { active=true; }
 
 ABP::ABP(vect<> pos, double rad, double force) : Particle(pos, rad), bForce(force) { active=true;}
 
 void ABP::update(double epsilon) {
   vect<> dir = randV();
-  applyForce(bForce*dir);
+  applyForce(bForce/epsilon*dir);
   Particle::update(epsilon);
 }
 
-PSphere::PSphere(vect<> pos, double rad) : Particle(pos, rad), runForce(default_run_force), runDirection(randV()) { active=true; }
+// ********** PSPHERE ********** //
 
-PSphere::PSphere(vect<> pos, double rad, double force) : Particle(pos, rad), runForce(force), runDirection(randV()) { active=true; }
+PSphere::PSphere(vect<> pos, double rad) : Particle(pos, rad), runForce(default_run_force), runDirection(randV()), delay(fmod(drand48(), randDelay)), invZeroPointProb(2.), randDelay(0.1), fconst(10.) { active=true; }
+
+PSphere::PSphere(vect<> pos, double rad, double force) : Particle(pos, rad), runForce(force), runDirection(randV()), delay(fmod(drand48(), randDelay)), invZeroPointProb(2.), randDelay(0.1), fconst(10.) { active=true; }
 
 void PSphere::update(double epsilon) {
   if (delay>randDelay) {
     delay = 0;
     double r = drand48();
-    double prob = recentForceAve; //**
-    if (r<prob) runDirection = randV();
+    // Calculate a probability of tumbling
+    double prob = 1./(fconst*recentForceAve+invZeroPointProb);
+    if (r<prob/randDelay) runDirection = randV();
   }
   delay += epsilon;
   applyForce(runForce*runDirection);
   Particle::update(epsilon);
 }
+
+// ********** WALLS  ********** //
 
 Wall::Wall(vect<> origin, vect<> end) : origin(origin), wall(end-origin), coeff(wall_coeff), repulsion(wall_repulsion), dissipation(wall_dissipation), gamma(wall_gamma) {
   normal = wall;
@@ -260,23 +267,18 @@ void Wall::setPosition(vect<> A, vect<> B) {
 }
 
 void Wall::interact(Particle* P) {
-
   vect<> displacement = P->getPosition() - origin;
   double l_par = displacement*normal;
   vect<> d_par = l_par*normal;
   vect<> d_perp = displacement - d_par;
-  
   // Check whether the particle is between the start and end of the wall
   double radius = P->getRadius();
   double radSqr = sqr(radius);
-  
   if (l_par>=0) { // Located forward of the origin
     if (length>l_par) displacement = d_perp;  // The particle is above the wall (in the perp. direction)
     else displacement -= wall; // Displacement from the nearest end (the far end) of the wall    
   }
-
   double distSqr = sqr(displacement);   // Located behind the origin
-
   /// We now have the correct displacement vector and distSqr value
   if (distSqr<=radSqr) {
     double dist = sqrt(distSqr);

@@ -21,6 +21,7 @@ int main(int argc, char** argv) {
   double percent = 0.5;  // What percent of the jamPipe is closed off
   int bins = -1;         // How many bins we should use when making a density profile
   int vbins = -1;        // How many velocity bins we should use
+  int number = -1;       // Override usual automatic particle numbers and use prescribed number
 
   // Display parameters
   bool animate = false;
@@ -55,6 +56,7 @@ int main(int argc, char** argv) {
   parser.get("maxVy", maxVy);
   parser.get("minVy", minVy);
   parser.get("percent", percent);
+  parser.get("number", number);
   parser.get("animate", animate);
   parser.get("dispKE", dispKE);
   parser.get("aveKE", aveKE);
@@ -70,12 +72,14 @@ int main(int argc, char** argv) {
   // Dependent variables
   double Vol = width*height;
   double rA = radius;
-  int number = Vol/(PI*sqr(radius))*phi;
+  int num = Vol/(PI*sqr(radius))*phi;
+  if (number<0) number = num;
   int NA = number*pA, NP = number-NA;
-  
+
   // Seed random number generators
-  srand48( std::time(0) );
-  srand( std::time(0) );
+  //**
+  //srand48( std::time(0) );
+  //srand( std::time(0) );
   
   //----------------------------------------
 
@@ -90,7 +94,6 @@ int main(int argc, char** argv) {
   simulation.createControlPipe(NP, NA, radius, velocity, activeF, rA, width, height);
   //simulation.createJamPipe(NP, NA, radius, velocity, activeF, rA, width, height, percent);
   //simulation.createSquare(NP+NA, radius, width, height);
-
   
   if (bins>0) simulation.setBins(bins);
   if (vbins>0) simulation.setVBins(vbins);
@@ -102,21 +105,6 @@ int main(int argc, char** argv) {
   simulation.setUseVelocityDiff(useVelDiff);
   simulation.run(time);
   auto end_t = clock();
-
-  /*
-  Checker checker;
-  checker.setField(simulation.getDistribution());
-  checker.initialize(simulation.getVBinXZero(),
-		     simulation.getVBinYZero(),
-		     simulation.getBinXWidth(),
-		     simulation.getBinYWidth(),
-		     simulation.getVBinXWidth(),
-		     simulation.getVBinYWidth(),
-		     radius,
-		     sphere_drag*radius);
-		     		     
-  checker.derivative();
-  */
 
   /// Print condition summary
   cout << "Dimensions: " << width << " x " << height << "\n";
@@ -190,16 +178,6 @@ int main(int argc, char** argv) {
     stream >> str;
     cout << "fullDist=" << mmPreproc(str) << ";\n";
     stream.clear(); str.clear();
-  
-    /*
-    stream << checker.getDFDT();
-    stream >> str;
-    cout << "derivative=" << mmPreproc(str) << ";\n";
-    stream.clear(); str.clear();
-    stream << checker.getProfile();
-    stream >> str;
-    cout << "theoryProfile=" << mmPreproc(str) << ";\n";
-    */
   }
   return 0;
 }
