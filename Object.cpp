@@ -64,7 +64,7 @@ void Particle::interact(Particle* P, vect<> displacement) {
     double Fn = -repulsion*overlap-dissipation*clamp(-Vn); // Damped harmonic oscillator
     // double K = 0.05, N = (2.-4.*K-sqr(K))/6.;
     // double Fn = -repulsion/N*(sqr(overlap-K)/(overlap+2)-0.5*sqr(K)) - dissipation*clamp(-Vn); // Sticky force
-
+    
     // Calculate the Shear force
     double Fs = -(coeff*P->getCoeff())*Fn*sign(Vs);
 

@@ -1,6 +1,6 @@
 #include "Simulator.h"
 
-Simulator::Simulator() : lastDisp(0), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), recFields(false), replenish(0), wasteSource(0) {
+Simulator::Simulator() : lastDisp(0), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), recFields(false), replenish(0), wasteSource(0), indicator(false) {
   // Flow
   hasDrag = true;
   flowFunc = 0;
@@ -61,11 +61,10 @@ void Simulator::createSquare(int N, double radius, double width, double height) 
   yBBound = WRAP;
 
   charRadius = radius;
-  left = bottom = 0;
+  left = 0;
+  bottom = 0;
   right = width;
   top = height;
-
-  //addParticles(N, radius, 0, left+0.5*radius, right-0.5*radius, bottom+0.5*radius, top-0.5*radius, PASSIVE, 1);
 
   // Use the maximum number of sectors
   int sx = (int)(right/(2*radius)), sy = (int)(top/(2*radius));
@@ -75,11 +74,6 @@ void Simulator::createSquare(int N, double radius, double width, double height) 
   vector<vect<> > pos = findPackedSolution(N, radius, 0, right, 0, top);
   // Add the particles in at the appropriate positions
   for (int i=0; i<N; i++) addWatchedParticle(new PSphere(pos.at(i), radius));
-
-  addWall(new Wall(vect<>(left,bottom), vect<>(left,top)));
-  addWall(new Wall(vect<>(left,top), vect<>(right,top)));
-  addWall(new Wall(vect<>(right,top), vect<>(right,bottom)));
-  addWall(new Wall(vect<>(right,bottom), vect<>(left,bottom)));
 
   // Use some drag
   hasDrag = true;
@@ -416,6 +410,7 @@ void Simulator::run(double runLength) {
   clock_t start = clock();
   // Initial record of data
   if (time>=startRecording && time<stopRecording || recAllIters) record();
+  indicator = true;
   while(time<runLength && running) { // Terminate based on internal condition
     // Gravity, flow, particle-particle, and particle-wall forces
     calculateForces();
@@ -424,6 +419,7 @@ void Simulator::run(double runLength) {
     // Update particles, sectors, and temp walls
     objectUpdates();
   }
+  indicator = false;
   clock_t end = clock();
   runTime = (double)(end-start)/CLOCKS_PER_SEC;
 }
@@ -743,9 +739,8 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
     for (auto P : parts)
       for (auto Q : parts)
         if (P!=Q) {
-	  //vect<> disp = getDisplacement(Q->getPosition(), P->getPosition()); //** This should go here (unless it messes things up)
-	  //P->interact(Q, disp);
-	  P->interact(Q);
+	  vect<> disp = getDisplacement(Q->getPosition(), P->getPosition());
+	  P->interact(Q, disp);
 	}
 
     // Thermal agitation
@@ -868,9 +863,9 @@ string Simulator::printAnimationCommand() {
   if (!walls.empty()) str1 += "walls";
   else str1 += "{}";
   // Print passive particle animation command
-  if (psize>0) str1 += ",Graphics[Table[Circle[Mod[pos[[j]][[i]]+{2,0},4], R], {i, 1, Length[pos[[j]]]}]]"; //** Added a Mod
+  if (psize>0) str1 += ",Graphics[Table[Circle[pos[[j]][[i]], R], {i, 1, Length[pos[[j]]]}]]";
   // Print active particle animation command
-  if (asize>0) str1 += ",Graphics[Table[{Green, Circle[Mod[apos[[j]][[i]]+{2,0},4], R]}, {i, 1, Length[apos[[j]]]}]]"; //** Added a Mod
+  if (asize>0) str1 += ",Graphics[Table[{Green, Circle[apos[[j]][[i]], R]}, {i, 1, Length[apos[[j]]]}]]";
   // Print moving wall animation command
   if (!wallPos.empty()) str1 += ",Graphics[Table[{Thick,Red,Line[movingWalls[[j]][[i]]]},{i,1,Length[movingWalls[[j]]]}]]";
   // Finish Table
@@ -1160,16 +1155,11 @@ inline vect<> Simulator::getDisplacement(vect<> A, vect<> B) {
   double Y = A.y-B.y;
   if (xLBound==WRAP || xRBound==WRAP) {
     double dx = (right-left)-fabs(X);
-    if (dx<fabs(X)) X = X>0 ? X-dx : dx;
-    /*
-    double width = right-left;
-    if (0.5*width>X) X-=width;
-    if (X<-0.5*width) X+=width;
-    */
+    if (dx<fabs(X)) X = X>0 ? -dx : dx;
   }
   if (yBBound==WRAP || yTBound==WRAP) {
     double dy =(top-bottom)-fabs(Y);
-    if (dy<fabs(Y)) Y = Y>0 ? Y-dy : dy;
+    if (dy<fabs(Y)) Y = Y>0 ? -dy : dy;
   }
   return vect<>(X,Y);
 }
@@ -1314,7 +1304,7 @@ inline void Simulator::record() {
   for (int i=0; i<statistics.size(); i++)
   statRec.at(i).push_back(vect<>(time, statistics.at(i)(particles)));
   
-  // Record density profile //** Temporary? Find a more general way to do this?
+  // Record density profile
   profiles.push_back(getDensityYProfile());
 
   // Record velocity distribution
@@ -1444,8 +1434,7 @@ inline void Simulator::updateSectors() {
 inline void Simulator::ppInteract() {
   for (int y=1; y<secY+1; y++)
     for (int x=1; x<secX+1; x++)
-      // Check in surrounding sectors
-      for (auto P : sectors[y*(secX+2)+x]) {
+      for (auto P : sectors[y*(secX+2)+x]) { // For each particle in the sector
 	// Check surrounding sectors
 	for (int j=y-1; j<=y+1; j++) {
 	  int sy = j;

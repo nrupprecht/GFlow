@@ -290,6 +290,8 @@ class Simulator {
   int bins;                         // Binning for space
   vector<vector<double> > profiles; // For density y-profile //**
   inline vector<vect<> > aveProfile(); // For computing the average profile
+
+  bool indicator; // True when the actual simulation is running
 };
 
 #endif

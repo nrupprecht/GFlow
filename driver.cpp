@@ -91,9 +91,9 @@ int main(int argc, char** argv) {
   simulation.setStartRecording(start);
 
   // Set up the simulation
-  simulation.createControlPipe(NP, NA, radius, velocity, activeF, rA, width, height);
+  //simulation.createControlPipe(NP, NA, radius, velocity, activeF, rA, width, height);
   //simulation.createJamPipe(NP, NA, radius, velocity, activeF, rA, width, height, percent);
-  //simulation.createSquare(NP+NA, radius, width, height);
+  simulation.createSquare(NP+NA, radius, width, height);
   
   if (bins>0) simulation.setBins(bins);
   if (vbins>0) simulation.setVBins(vbins);
@@ -121,6 +121,7 @@ int main(int argc, char** argv) {
   cout << "Max V: " << simulation.getMaxV() << ", Min/Max Vx: " << simulation.getMinVx() << ", " << simulation.getMaxVx() << ", Min/Max Vy: " << simulation.getMinVy() << ", " << simulation.getMaxVy() << endl;
   cout << "Bin X: " << simulation.getBinXWidth() << ", Bin Y: " << simulation.getBinYWidth() << ", vBin X: " << simulation.getVBinXWidth() << ", vBin Y: " << simulation.getVBinYWidth() << endl;
   cout << "vBin X Zero: " << simulation.getVBinXZero() << ", vBin Y Zero: " << simulation.getVBinYZero() << endl;
+  cout << "Sectors: " << simulation.getSecX() << ", " << simulation.getSecY() << endl;
   cout << "Command: ";
   for (int i=0; i<argc; i++) cout << argv[i] << " ";
   cout << "\n\n-------------------------------------\n\n";
