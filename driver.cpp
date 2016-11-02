@@ -155,7 +155,8 @@ int main(int argc, char** argv) {
 
   /// Print data
   if (animate) {
-    cout << simulation.printWatchList() << endl;
+    if (bacteria) cout << simulation.printWatchListVaryingSize() << endl;
+    else cout << simulation.printWatchList() << endl;
     cout << simulation.printWalls() << endl;
     cout << simulation.printAnimationCommand() << endl;
   }  

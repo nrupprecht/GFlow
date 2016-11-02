@@ -158,6 +158,7 @@ class Simulator {
   // Display functions
   string printWalls();
   string printWatchList();
+  string printWatchListVaryingSize();
   string printAnimationCommand();
   string printResource();
   string printWaste();
