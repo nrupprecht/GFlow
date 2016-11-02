@@ -1,6 +1,6 @@
 #include "Simulator.h"
 
-Simulator::Simulator() : lastDisp(0), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), recFields(false), replenish(0), wasteSource(0), indicator(false), recordDist(false) {
+Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), recFields(false), replenish(0), wasteSource(0), indicator(false), recordDist(false), alphaR(1.0), alphaW(1.0), betaR(1.0), csatR(1.0), csatW(1.0), lamR(0.0), lamW(0.0)   {
   // Flow
   hasDrag = true;
   flowFunc = 0;
@@ -1089,10 +1089,10 @@ inline void Simulator::bacteriaUpdate() {
 	// Update waste and resource fields
 	double &res = resource.at(x-1,y-1), &wst = waste.at(x-1,y-1);
 	wst += epsilon*secretionRate*number;
-	res -= epsilon*eatRate*res*number;
+	res += epsilon*eatRate*res*number; // eatRate = resource secretion
 	res = res<0 ? 0 : res;
 	// Calculate fitness
-	double fitness = res/(res+1)-wst/(wst+1);
+	double fitness = alphaR*res/(res+csatR)-alphaW*wst/(wst+csatW) - betaR*secretionRate;
 	// Die if neccessary
 	if (fitness<0) {
 	  for (auto p=sect.begin(); p!=sect.end(); ++p) {

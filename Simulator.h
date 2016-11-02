@@ -71,6 +71,18 @@ class Simulator {
   vector<double> getClusteringRec() { return clusteringRec; }
   vector<vector<double> > getProfile() { return profiles; }
   vector<vect<> > getAveProfile();
+  //// More bacteria accessors
+  double getResourceBenefit() { return alphaR; }
+  double getWasteHarm() { return alphaW; }
+  double getSecretionCost() { return betaR; }
+  double getResourceSaturation() { return csatR; }
+  double getWasteSaturation() { return csatW; }
+  double getResourceDecay() { return lamR; }
+  double getWasteDecay() { return lamW; }
+  double getSecretionRate() { return secretionRate; }
+  double getEatRate() { return eatRate; }
+  double getResourceDiffusion() { return resourceDiffusion; }
+  double getWasteDiffusion() { return wasteDiffusion; }
 
   // Statistic functions
   void addStatistic(statfunc); // Adds a statistic to track
@@ -136,6 +148,16 @@ class Simulator {
   void setVy(double v) { minVy=maxVy=v; }
   void setFlowFunc(std::function<vect<>(vect<>)> f) { flowFunc = f; }
   void discard();
+  //// More bacteria mutators
+  void setResourceDiffusion(double d) { resourceDiffusion = d; }
+  void setWasteDiffusion(double d) { wasteDiffusion = d; }
+  void setResourceBenefit(double a) { alphaR = a; }
+  void setWasteHarm(double a) { alphaW = a; }
+  void setResourceSaturation(double k) { csatR = k; }
+  void setWasteSaturation(double k) { csatW = k; }
+  void setSecretionCost(double b) { betaR = b; }
+  void setResourceDecay(double l) { lamR = l; }
+  void setWasteDecay(double l) { lamW = l; }
   /// Global set functions
   void setParticleDissipation(double);
   void setWallDissipation(double);
@@ -224,6 +246,10 @@ class Simulator {
   Field resource, waste, buffer;
   bool recFields; // Whether we should record field data or not
   string resourceStr, wasteStr, fitnessStr;
+  //// More bacteria parameters
+  double alphaR, alphaW, betaR;	// benefit/harm constants
+  double csatR, csatW; 		// saturation constants
+  double lamR, lamW; 	        // decay constants for fields
 
   /// Times etc.
   double time;       // The simulated time
