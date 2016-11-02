@@ -1555,7 +1555,7 @@ inline vector<vect<> > Simulator::aveProfile() {
       total += p.at(i);
     }
 
-  double factor = 1./(total*(right-left));
+  double factor = (double)bins/(total*(right-left));
   for (auto &d : ave) d.y *= factor;
   return ave;
 }

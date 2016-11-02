@@ -1,5 +1,10 @@
+/// driver.cpp - The program that creates and runs simulations
+/// For a bacteria simulation, use the option -bacteria=1
+///
+///
+/// Author: Nathaniel Rupprecht
+
 #include "Simulator.h"
-#include "Checker.h"
 
 int main(int argc, char** argv) {
   auto start_t = clock();
@@ -8,6 +13,7 @@ int main(int argc, char** argv) {
   double height = 2.;    // 2*Radius of the pipe
   double radius = 0.05;  // Disc radius
   double velocity = 0.5; // Fluid velocity (at center)
+  double temperature = 0; // Temperature
   double phi = 0.5;      // Packing density
   double time = 600.;    // How long the entire simulation should last
   double start = 30;     // At what time we start recording data
@@ -22,6 +28,11 @@ int main(int argc, char** argv) {
   int bins = -1;         // How many bins we should use when making a density profile
   int vbins = -1;        // How many velocity bins we should use
   int number = -1;       // Override usual automatic particle numbers and use prescribed number
+
+  double replenish = 0;  // Replenish rate
+
+  // Run Type
+  bool bacteria = false; // Bacteria box
 
   // Display parameters
   bool animate = false;
@@ -44,6 +55,7 @@ int main(int argc, char** argv) {
   parser.get("height", height);
   parser.get("radius", radius);
   parser.get("velocity", velocity);
+  parser.get("temperature", temperature);
   parser.get("phi", phi);
   parser.get("time", time);
   parser.get("start", start);
@@ -58,6 +70,8 @@ int main(int argc, char** argv) {
   parser.get("minVy", minVy);
   parser.get("percent", percent);
   parser.get("number", number);
+  parser.get("replenish", replenish);
+  parser.get("bacteria", bacteria);
   parser.get("animate", animate);
   parser.get("dispKE", dispKE);
   parser.get("aveKE", aveKE);
@@ -91,7 +105,11 @@ int main(int argc, char** argv) {
   simulation.setStartRecording(start);
 
   // Set up the simulation
-  simulation.createControlPipe(NP, NA, radius, velocity, activeF, rA, width, height);
+  if (bacteria) {
+    simulation.setReplenish(replenish);
+    simulation.createBacteriaBox(number, radius, width, height, velocity);
+  }
+  else simulation.createControlPipe(NP, NA, radius, velocity, activeF, rA, width, height);
   //simulation.createJamPipe(NP, NA, radius, velocity, activeF, rA, width, height, percent);
   //simulation.createIdealGas(NP+NA, radius, velocity, width, height);
   //simulation.createSquare(NP, NA, radius, width, height);
@@ -122,8 +140,9 @@ int main(int argc, char** argv) {
   cout << "\n\n...........................................\n\n";
 
   // Run the actual program
-  simulation.run(time);
-  auto end_t = clock();
+  if (bacteria) simulation.bacteriaRun(time);
+  else simulation.run(time);
+  auto end_t = clock(); // End timing
 
   // Print the run information
   cout << "Sim Time: " << time << ", Run time: " << simulation.getRunTime() << ", Ratio: " << time/simulation.getRunTime() << endl;
