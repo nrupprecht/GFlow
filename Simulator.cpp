@@ -697,6 +697,12 @@ void Simulator::setFlowV(double fv) {
   maxV = fabs(fv)>0 ? 2.*fabs(fv) : 1.;
 }
 
+void Simulator::setRecordDist(bool r) {
+  recordDist = r;
+  Shape S(bins, bins, vbins, vbins);
+  if (r && distribution.getShape()!=S) distribution = Tensor(S);
+}
+
 void Simulator::setDimensions(double l, double r, double b, double t) {
   if (left>=right || bottom>=top) throw BadDimChoice();
   left = l; right = r; bottom = b; top = t;

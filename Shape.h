@@ -90,6 +90,10 @@ struct Shape {
       if (S.dims[i]!=dims[i]) return false;
     return true;
   }
+  
+  bool operator!=(const Shape& S) const {
+    return !(*this==S);
+  }
 
   int getTotal() const { return total; }
 

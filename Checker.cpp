@@ -167,6 +167,17 @@ string Checker::getAdvection() {
   return mmPreproc(str);
 }
 
+vect<> Checker::getDisplacement(vect<> A, vect<> B) {
+  // Get the correct (minimal) displacement vector pointing from B to A
+  double X = A.x-B.x;
+  // X wraps
+  double dx = (right-left)-fabs(X);
+  if (dx<fabs(X)) X = X>0 ? -dx : dx;
+  // Y does not
+  double Y = A.y-B.y;
+  return vect<>(X,Y);
+}
+
 vect<> Checker::gradR(int x, int y, int vx, int vy) {
   double DX, DY;
   // Compute partial x
@@ -230,15 +241,7 @@ vect<> Checker::integrateF(int x, int y, int vx, int vy) {
   // Integrate
   for (int i=sx; (i%width)!=ex; i++) 
     for (int j=sy; j!=ey+1; j++) {
-      // Same way we get dispacement for periodic b.c. as in Simulator
-      //** CHECK THIS
-      double diffX = (x-i)*dx;
-      double max = 0.5*(right-left);
-      if (diffX>max) diffX -= 2*max;
-      else if (diffX<-max) diffX += 2*max;
-      // Y direction does not wrap
-      double diffY = (y-j)*dy;
-      vect<> R(diffX, diffY);
+      vect<> R = getDisplacement(vect<>(x*dx,y*dy), vect<>(i*dx, j*dy));
       value += force(R, Zero, Zero)*profile.at(sx,sy);
     }
   return value;

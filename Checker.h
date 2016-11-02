@@ -30,6 +30,8 @@ class Checker {
   string getAdvection();
 
  private:
+  vect<> getDisplacement(vect<>, vect<>);
+
   // Derivatives
   vect<> gradR(int, int, int, int);
   vect<> gradV(int, int, int, int);
