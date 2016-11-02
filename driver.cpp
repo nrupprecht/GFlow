@@ -33,6 +33,7 @@ int main(int argc, char** argv) {
   bool dispVelDist = false;
   bool totalDist = false;
   bool useVelDiff = false;
+  bool clustering = false;
   bool everything = false;
 
   //----------------------------------------
@@ -66,6 +67,7 @@ int main(int argc, char** argv) {
   parser.get("velDist", dispVelDist);
   parser.get("totalDist", totalDist);
   parser.get("useVelDiff", useVelDiff);
+  parser.get("clustering", clustering);
   parser.get("everything", everything);
   //----------------------------------------
 
@@ -77,10 +79,8 @@ int main(int argc, char** argv) {
   int NA = number*pA, NP = number-NA;
 
   // Seed random number generators
-  //**
-  //srand48( std::time(0) );
-  //srand( std::time(0) );
-  
+  srand48( std::time(0) );
+  srand( std::time(0) );
   //----------------------------------------
 
   Simulator simulation;
@@ -91,9 +91,10 @@ int main(int argc, char** argv) {
   simulation.setStartRecording(start);
 
   // Set up the simulation
-  //simulation.createControlPipe(NP, NA, radius, velocity, activeF, rA, width, height);
+  simulation.createControlPipe(NP, NA, radius, velocity, activeF, rA, width, height);
   //simulation.createJamPipe(NP, NA, radius, velocity, activeF, rA, width, height, percent);
-  simulation.createSquare(NP+NA, radius, width, height);
+  //simulation.createIdealGas(NP+NA, radius, velocity, width, height);
+  //simulation.createSquare(NP, NA, radius, width, height);
   
   if (bins>0) simulation.setBins(bins);
   if (vbins>0) simulation.setVBins(vbins);
@@ -103,8 +104,6 @@ int main(int argc, char** argv) {
   simulation.setMinVy(minVy);
   simulation.setMaxVy(maxVy);
   simulation.setUseVelocityDiff(useVelDiff);
-  simulation.run(time);
-  auto end_t = clock();
 
   /// Print condition summary
   cout << "Dimensions: " << width << " x " << height << "\n";
@@ -114,23 +113,28 @@ int main(int argc, char** argv) {
   cout << "Percent Active: " << pA*100 << "%, (Actual %: " << 100.*NA/(double)(NA+NP) << ")\n";
   if (NA>0) cout << "Active Force: " << activeF << endl;
   cout << "N Active: " << NA << ", N Passive: " << NP << "\n";
-  cout << "Sim Time: " << time << ", Run time: " << simulation.getRunTime() << ", Ratio: " << time/simulation.getRunTime() << endl;
-  cout << "Start Time: " << start << "\n";
-  cout << "Actual (total) program run time: " << (double)(end_t-start_t)/CLOCKS_PER_SEC << "\n";
-  cout << "Iters: " << simulation.getIter() << "\n\n";
   cout << "Max V: " << simulation.getMaxV() << ", Min/Max Vx: " << simulation.getMinVx() << ", " << simulation.getMaxVx() << ", Min/Max Vy: " << simulation.getMinVy() << ", " << simulation.getMaxVy() << endl;
   cout << "Bin X: " << simulation.getBinXWidth() << ", Bin Y: " << simulation.getBinYWidth() << ", vBin X: " << simulation.getVBinXWidth() << ", vBin Y: " << simulation.getVBinYWidth() << endl;
   cout << "vBin X Zero: " << simulation.getVBinXZero() << ", vBin Y Zero: " << simulation.getVBinYZero() << endl;
   cout << "Sectors: " << simulation.getSecX() << ", " << simulation.getSecY() << endl;
   cout << "Command: ";
   for (int i=0; i<argc; i++) cout << argv[i] << " ";
+  cout << "\n\n...........................................\n\n";
+
+  // Run the actual program
+  simulation.run(time);
+  auto end_t = clock();
+
+  // Print the run information
+  cout << "Sim Time: " << time << ", Run time: " << simulation.getRunTime() << ", Ratio: " << time/simulation.getRunTime() << endl;
+  cout << "Start Time: " << start << "\n";
+  cout << "Actual (total) program run time: " << (double)(end_t-start_t)/CLOCKS_PER_SEC << "\n";
+  cout << "Iters: " << simulation.getIter();
   cout << "\n\n-------------------------------------\n\n";
 
+  //----------------------------------------
+
   /// Print data
-
-  //  cout << "sdist=" << simulation.getSpeedDistribution() << ";\n"; //**
-  //  cout << "MatrixPlot[sdist,ImageSize->Large]\n";
-
   if (animate) {
     cout << simulation.printWatchList() << endl;
     cout << simulation.printWalls() << endl;
@@ -162,8 +166,8 @@ int main(int argc, char** argv) {
   if (dispVelDist) {
     cout << "velDist=" << simulation.getVelocityDistribution() << ";\n";
     cout << "Print[\"Velocity Distribution\"]\nListLinePlot[velDist,PlotStyle->Black,ImageSize->Large,PlotRange->All]\n";
-    cout << "aVelDist=" << simulation.getAuxVelocityDistribution() << ";\n";
-    cout << "Print[\"Auxilary Velocity Distribution\"]\nListLinePlot[aVelDist,PlotStyle->Black,ImageSize->Large,PlotRange->All]\n";
+    //cout << "aVelDist=" << simulation.getAuxVelocityDistribution() << ";\n";
+    //cout << "Print[\"Auxilary Velocity Distribution\"]\nListLinePlot[aVelDist,PlotStyle->Black,ImageSize->Large,PlotRange->All]\n";
   }
   if (totalDist) {
     stringstream stream;
@@ -171,6 +175,14 @@ int main(int argc, char** argv) {
     stream << simulation.getCollapsedDistribution(0);
     stream >> str;
     cout << "dist=" << mmPreproc(str) << ";\n";
+  }
+  if (clustering) {
+    stringstream stream;
+    string str;
+    stream << simulation.getClusteringRec();
+    stream >> str;
+    cout << "clust=" << mmPreproc(str) << ";\n";
+    cout << "Print[\"Clustering\"]\nListLinePlot[clust,PlotStyle->Black,ImageSize->Large,PlotRange->All]\n";
   }
   if (everything) {
     stringstream stream;

@@ -27,13 +27,13 @@ class Simulator {
   ~Simulator(); 
 
   // Initialization
-  void createSquare(int, double=0.025, double=1, double=1);
+  void createSquare(int, int=0, double=0.025, double=1, double=1);
   void createHopper(int, double=0.025, double=0.14, double=1., double=3., double=0.);
   void createPipe(int, double=0.02, double=1., int=0);
   void createControlPipe(int N, int A, double radius=0.02, double=1., double=default_run_force, double rA=-1, double width=5., double height=2., double runT=default_run, double tumT=default_tumble, double var=0., vect<> bias=Zero);
   void createSphereFluid(int N, int A, double radius=0.02, double=1., double=default_run_force, double=-1, double=10., double=2.);
   void createJamPipe(int N, int A, double radius=0.02, double=1., double=default_run_force, double rA=-1, double width=5., double height=2., double percent=0.5, double runT=default_run, double tumT=default_tumble, double var=0.);
-  void createIdealGas(int, double=0.02, double=0.1);
+  void createIdealGas(int, double=0.02, double=0.1, double=1., double=1.);
   void createEntropyBox(int, double=0.02);
   void createBacteriaBox(int, double=0.02, double=1., double=1., double=1.);
 
@@ -68,6 +68,7 @@ class Simulator {
   double getMarkDiff(); // Gets the difference in time between the first and last marks
   int getSize() { return particles.size(); }
   int getWallSize() { return walls.size(); }
+  vector<double> getClusteringRec() { return clusteringRec; }
   vector<vector<double> > getProfile() { return profiles; }
   vector<vect<> > getAveProfile();
 
@@ -79,6 +80,7 @@ class Simulator {
   int getASize() { return asize; }
   vector<double> getDensityXProfile();
   vector<double> getDensityYProfile();
+  double clustering();
   double aveVelocity();
   double aveVelocitySqr();
   double aveKE();
@@ -192,6 +194,7 @@ class Simulator {
   inline double maxVelocity(); // Finds the maximum velocity of any particle
   inline double maxAcceleration(); // Finds the maximum acceleration of any particle
   inline vect<> getDisplacement(vect<>, vect<>);
+  inline vect<> getDisplacement(Particle*, Particle*);
   inline double getFitness(int, int);
 
   inline void interactions();
@@ -252,6 +255,7 @@ class Simulator {
   /// Statistics
   vector<statfunc> statistics;
   vector<vector<vect<> > > statRec; // the vect is for {t, f(t)}
+  vector<double> clusteringRec;
   void resetStatistics();
   bool recAllIters;
   
@@ -263,6 +267,7 @@ class Simulator {
   int vbins;
 
   /// Total distribution P[position][velocity]
+  bool recordDist;
   Tensor distribution;
   double maxVx, minVx, maxVy, minVy; // Maximum/Minimum velocities to bin for full distribution
   vect<> binVelocity(int, int);

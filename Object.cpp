@@ -237,7 +237,7 @@ void PSphere::update(double epsilon) {
     double r = drand48();
     // Calculate a probability of tumbling
     double prob = 1./(fconst*recentForceAve+invZeroPointProb);
-    if (r<prob/randDelay) runDirection = randV();
+    if (r<prob*randDelay) runDirection = randV();
   }
   delay += epsilon;
   applyForce(runForce*runDirection);

@@ -1,6 +1,6 @@
 #include "Simulator.h"
 
-Simulator::Simulator() : lastDisp(0), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), recFields(false), replenish(0), wasteSource(0), indicator(false) {
+Simulator::Simulator() : lastDisp(0), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), recFields(false), replenish(0), wasteSource(0), indicator(false), recordDist(false) {
   // Flow
   hasDrag = true;
   flowFunc = 0;
@@ -31,7 +31,7 @@ Simulator::Simulator() : lastDisp(0), dispTime(1./15.), dispFactor(1), time(0), 
   velocityDistribution = vector<double>(vbins,0);
   auxVelocityDistribution = vector<double>(vbins,0);
   // Total distribution
-  distribution = Tensor(bins, bins, vbins, vbins);
+  //distribution = Tensor(bins, bins, vbins, vbins);
   useVelocityDiff = false;
 };
 
@@ -52,7 +52,7 @@ Simulator::~Simulator() {
   }
 }
 
-void Simulator::createSquare(int N, double radius, double width, double height) {
+void Simulator::createSquare(int NP, int NA, double radius, double width, double height) {
   discard();
   gravity = Zero;
   xLBound = WRAP;
@@ -71,9 +71,12 @@ void Simulator::createSquare(int N, double radius, double width, double height) 
   setSectorDims(sx, sy);
 
   // Place the particles
-  vector<vect<> > pos = findPackedSolution(N, radius, 0, right, 0, top);
+  vector<vect<> > pos = findPackedSolution(NP+NA, radius, 0, right, 0, top);
   // Add the particles in at the appropriate positions
-  for (int i=0; i<N; i++) addWatchedParticle(new PSphere(pos.at(i), radius));
+  int i=0;
+  for (; i<NP; i++) addWatchedParticle(new Particle(pos.at(i), radius));
+  for (; i<NP+NA; i++) addWatchedParticle(new RTSphere(pos.at(i), radius));
+  //for (; i<NP+NA; i++) addWatchedParticle(new PSphere(pos.at(i), radius));
 
   // Use some drag
   hasDrag = true;
@@ -199,6 +202,7 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, double 
   // Set up fluid flow
   setFlowV(V);
   flowFunc = [&] (vect<> pos) { return vect<>(flowV*(1-sqr(pos.y-0.5*(top-bottom))/sqr(0.5*(top-bottom))),0); };
+  //flowFunc = [&] (vect<> pos) { return vect<>(flowV*(pos.y-bottom)/(top-bottom), 0); };
   hasDrag = true;
   for (auto P : particles) P->setVelocity(flowFunc(P->getPosition()));
 
@@ -298,19 +302,28 @@ void Simulator::createJamPipe(int N, int A, double radius, double V, double F, d
                 });
 }
 
-void Simulator::createIdealGas(int N, double radius, double v) {
+void Simulator::createIdealGas(int N, double radius, double v, double width, double height) {
   discard();
   gravity = Zero;
   charRadius = radius;
-  left = 0; right = 1;
-  bottom = 0; top = 1;
+  left = 0; 
+  right = width;
+  bottom = 0; 
+  top = height;
 
+  // Add four walls
   addWall(new Wall(vect<>(0,0), vect<>(right,0))); // bottom
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // top
   addWall(new Wall(vect<>(0,0), vect<>(0,top))); // left
   addWall(new Wall(vect<>(right,0), vect<>(right,top))); // right
 
   addParticles(N, radius, 0, 0, right, 0, top, PASSIVE, v);
+  
+  // Place the particles
+  vector<vect<> > pos = findPackedSolution(N, radius, 0, right, 0, top);
+  // Add the particles in at the appropriate positions
+  for (int i=0; i<N; i++) addWatchedParticle(new Particle(pos.at(i), radius));
+
   double diss = 1.17;
   setParticleCoeff(0);
   setParticleDrag(0);
@@ -507,6 +520,16 @@ vector<double> Simulator::getDensityYProfile() {
   return profile;
 }
 
+double Simulator::clustering() {
+  if (particles.empty()) return -1;
+  double total = 0;
+  for (auto P : particles)
+    for (auto Q : particles)
+      if (P!=Q) total += 1./sqr(1./charRadius*getDisplacement(P,Q));
+  total /= particles.size();
+  return total;
+}
+
 double Simulator::aveVelocity() {
   double velocity = 0;
   int N = 0;
@@ -584,7 +607,7 @@ vector<vect<> > Simulator::getVelocityDistribution() {
   if (velocityDistribution.empty()) return vector<vect<> >();
   vector<vect<> > V;
   int i=0;
-  double factor1 = maxV/vbins, factor2 = recIt*particles.size();
+  double factor1 = maxV/vbins, factor2 = 1./recIt*particles.size();
   for (auto v : velocityDistribution) {
     V.push_back(vect<>(i*factor1, v*factor2));
     i++;
@@ -1164,6 +1187,10 @@ inline vect<> Simulator::getDisplacement(vect<> A, vect<> B) {
   return vect<>(X,Y);
 }
 
+inline vect<> Simulator::getDisplacement(Particle *P, Particle *Q) {
+  return getDisplacement(P->getPosition(), Q->getPosition());
+}
+
 inline double Simulator::getFitness(int x, int y) {
   double res = resource.at(x-1,y-1), wst = waste.at(x-1,y-1);
   return res/(res+1) - wst/(wst+1);
@@ -1322,23 +1349,27 @@ inline void Simulator::record() {
       auxVelocityDistribution.at(Bf)++;
     }    
     // Record total distribution
-    for (auto P : particles) {
-      vect<> V = P->getVelocity();
-      vect<> pos = P->getPosition();
-      if (useVelocityDiff && flowFunc) V -= flowFunc(pos);
-      int Bx = (pos.x-left)/(right-left)*bins;
-      int By = (pos.y-bottom)/(top-bottom)*bins;
-      Bx = bins<=Bx ? bins-1 : Bx; By = bins<=By ? bins-1 : By;
-      Bx = Bx<0 ? 0 : Bx; By = By<0 ? 0 : By;
-      int Vx = (int)((V.x-minVx)/(maxVx-minVx)*vbins);
-      int Vy = (int)((V.y-minVy)/(maxVy-minVy)*vbins);
-      Vx = vbins<=Vx ? vbins-1 : Vx; 
-      Vx = Vx<0 ? 0 : Vx;
-      Vy = vbins<=Vy ? vbins-1 : Vy;
-      Vy = Vy<0 ? 0 : Vy;
-      distribution.at(Bx,By,Vx,Vy)++;
+    if (recordDist) {
+      for (auto P : particles) {
+	vect<> V = P->getVelocity();
+	vect<> pos = P->getPosition();
+	if (useVelocityDiff && flowFunc) V -= flowFunc(pos);
+	int Bx = (pos.x-left)/(right-left)*bins;
+	int By = (pos.y-bottom)/(top-bottom)*bins;
+	Bx = bins<=Bx ? bins-1 : Bx; By = bins<=By ? bins-1 : By;
+	Bx = Bx<0 ? 0 : Bx; By = By<0 ? 0 : By;
+	int Vx = (int)((V.x-minVx)/(maxVx-minVx)*vbins);
+	int Vy = (int)((V.y-minVy)/(maxVy-minVy)*vbins);
+	Vx = vbins<=Vx ? vbins-1 : Vx; 
+	Vx = Vx<0 ? 0 : Vx;
+	Vy = vbins<=Vy ? vbins-1 : Vy;
+	Vy = Vy<0 ? 0 : Vy;
+	distribution.at(Bx,By,Vx,Vy)++;
+      }
     }
   }
+  // Record clustering
+  clusteringRec.push_back(clustering());
 
   // Record fields
   if (recFields) {
@@ -1446,7 +1477,7 @@ inline void Simulator::ppInteract() {
 	    else if ((xLBound==WRAP || xRBound==WRAP) && i==secX+1) sx=1;	    
 	    for (auto Q : sectors[sy*(secX+2)+sx])
 	      if (P!=Q) {
-		vect<> disp = getDisplacement(Q->getPosition(), P->getPosition());
+		vect<> disp = getDisplacement(Q, P);
 		P->interact(Q, disp);
 	      }
 	  }
@@ -1457,7 +1488,7 @@ inline void Simulator::ppInteract() {
     for (auto P : sectors[(secX+2)*(secY+2)])
       for (auto Q : particles)
 	if (P!=Q) {
-	  vect<> disp = getDisplacement(Q->getPosition(), P->getPosition());
+	  vect<> disp = getDisplacement(Q, P);
 	  P->interact(Q);
 	}
   }
@@ -1475,12 +1506,12 @@ inline int Simulator::getSec(vect<> pos) {
 
 void Simulator::setBins(int b) {
   bins = b;
-  distribution = Tensor(bins, bins, vbins, vbins);
+  if (recordDist) distribution = Tensor(bins, bins, vbins, vbins);
 }
 
 void Simulator::setVBins(int p) {
   vbins = p;
-  distribution = Tensor(bins, bins, vbins, vbins);
+  if (recordDist) distribution = Tensor(bins, bins, vbins, vbins);
   velocityDistribution = vector<double>(vbins,0);
   auxVelocityDistribution = vector<double>(vbins,0);
 }
@@ -1516,11 +1547,15 @@ void Simulator::discard() {
 inline vector<vect<> > Simulator::aveProfile() {
   if (profiles.empty()) return vector<vect<> >();
   vector<vect<> > ave = vector<vect<> >(bins, vect<>());
-  for (int i=0; i<bins; i++) ave.at(i).x = (double)i/bins;
+  for (int i=0; i<bins; i++) ave.at(i).x = (double)i/bins; // Set distance
+  double total = 0;
   for (auto p : profiles)
-    for (int i=0; i<bins; i++) ave.at(i).y += p.at(i);
+    for (int i=0; i<bins; i++) {
+      ave.at(i).y += p.at(i);
+      total += p.at(i);
+    }
 
-  double factor = (double)bins/(profiles.size()*(right-left));
+  double factor = 1./(total*(right-left));
   for (auto &d : ave) d.y *= factor;
   return ave;
 }
