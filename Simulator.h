@@ -109,6 +109,7 @@ class Simulator {
   // Mutators
   void setFlowV(double);
   void setUseVelocityDiff(bool d) { useVelocityDiff = d; }
+  void setRecordDist(bool r);
   void setDispRate(double r) { dispTime = 1.0/r; }
   void setRecFields(bool r) { recFields = r; }
   void setReplenish(double r) { replenish = r; }
@@ -180,6 +181,7 @@ class Simulator {
   // Display functions
   string printWalls();
   string printWatchList();
+  string printWatchListVaryingSize();
   string printAnimationCommand();
   string printResource();
   string printWaste();

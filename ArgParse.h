@@ -61,7 +61,8 @@ public:
     pair<string,string> opt = find(token);
     if (!opt.first.empty()) {
       stringstream stream;
-      stream << opt.second;
+      if (opt.second.empty()) stream << "1"; // Default argument
+      else stream << opt.second;
       stream >> var;
     }
   }

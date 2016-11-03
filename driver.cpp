@@ -28,7 +28,6 @@ int main(int argc, char** argv) {
   int bins = -1;         // How many bins we should use when making a density profile
   int vbins = -1;        // How many velocity bins we should use
   int number = -1;       // Override usual automatic particle numbers and use prescribed number
-
   double replenish = 0;  // Replenish rate
 
   // Run Type
@@ -116,6 +115,7 @@ int main(int argc, char** argv) {
   
   if (bins>0) simulation.setBins(bins);
   if (vbins>0) simulation.setVBins(vbins);
+  if (everything) simulation.setRecordDist(true);
   simulation.setMaxV(maxV);
   simulation.setMinVx(minVx);
   simulation.setMaxVx(maxVx);
@@ -124,38 +124,46 @@ int main(int argc, char** argv) {
   simulation.setUseVelocityDiff(useVelDiff);
 
   /// Print condition summary
-  cout << "Dimensions: " << width << " x " << height << "\n";
+  cout << "----------------------- RUN SUMMARY -----------------------\n\n";
+  cout << "Command: ";
+  for (int i=0; i<argc; i++) cout << argv[i] << " ";
+  cout << endl; // Line break
+  cout << "Dimensions: " << width << " x " << height << " (Volume: " << width*height << ")\n";
   cout << "Radius: " << radius << "\n";
-  cout << "Fluid Velocity: " << velocity << "\n";
+  cout << "Characteristic Fluid Velocity: " << velocity << "\n";
   cout << "Phi: " << phi << ", Number: " << number << ", (Actual Phi: " << number*PI*sqr(radius)/(width*height) << ")\n";
   cout << "Percent Active: " << pA*100 << "%, (Actual %: " << 100.*NA/(double)(NA+NP) << ")\n";
   if (NA>0) cout << "Active Force: " << activeF << endl;
   cout << "N Active: " << NA << ", N Passive: " << NP << "\n";
+  cout << endl; // Line break
   cout << "Max V: " << simulation.getMaxV() << ", Min/Max Vx: " << simulation.getMinVx() << ", " << simulation.getMaxVx() << ", Min/Max Vy: " << simulation.getMinVy() << ", " << simulation.getMaxVy() << endl;
   cout << "Bin X: " << simulation.getBinXWidth() << ", Bin Y: " << simulation.getBinYWidth() << ", vBin X: " << simulation.getVBinXWidth() << ", vBin Y: " << simulation.getVBinYWidth() << endl;
   cout << "vBin X Zero: " << simulation.getVBinXZero() << ", vBin Y Zero: " << simulation.getVBinYZero() << endl;
   cout << "Sectors: " << simulation.getSecX() << ", " << simulation.getSecY() << endl;
-  cout << "Command: ";
-  for (int i=0; i<argc; i++) cout << argv[i] << " ";
-  cout << "\n\n...........................................\n\n";
-
-  // Run the actual program
-  if (bacteria) simulation.bacteriaRun(time);
-  else simulation.run(time);
+  cout << "\n...........................................................\n\n";
+  
+  /// Run the actual program
+  try {
+    if (bacteria) simulation.bacteriaRun(time);
+    else simulation.run(time);
+  }
+  catch (...) {
+    cout << "AN ERROR HAS OCCURED. PROGRAM WILL TERMINATE.\n";
+    exit(1);
+  }
   auto end_t = clock(); // End timing
 
-  // Print the run information
+  /// Print the run information
   cout << "Sim Time: " << time << ", Run time: " << simulation.getRunTime() << ", Ratio: " << time/simulation.getRunTime() << endl;
-  cout << "Start Time: " << start << "\n";
+  cout << "Start Time: " << start << ", Record Time: " << max(0., time-start) << "\n";
   cout << "Actual (total) program run time: " << (double)(end_t-start_t)/CLOCKS_PER_SEC << "\n";
-  cout << "Iters: " << simulation.getIter();
-  cout << "\n\n-------------------------------------\n\n";
-
-  //----------------------------------------
-
+  cout << "Iterations: " << simulation.getIter();
+  cout << "\n\n----------------------- END SUMMARY -----------------------\n\n";
+  
   /// Print data
   if (animate) {
-    cout << simulation.printWatchList() << endl;
+    if (bacteria) cout << simulation.printWatchListVaryingSize() << endl;
+    else cout << simulation.printWatchList() << endl;
     cout << simulation.printWalls() << endl;
     cout << simulation.printAnimationCommand() << endl;
   }  

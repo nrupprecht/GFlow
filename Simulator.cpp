@@ -440,12 +440,6 @@ void Simulator::run(double runLength) {
 void Simulator::bacteriaRun(double runLength) {
   //Reset all neccessary variables for the start of a run
   resetVariables();
-  // Create waste, resource, and auxilary fields
-  resource.setDims(secX-2,secY-2); waste.setDims(secX-2,secY-2); buffer.setDims(secX-2,secY-2);
-  // Set field wrapping
-  resource.setWrapX(xLBound==xRBound && xRBound==WRAP); resource.setWrapY(yTBound==yBBound && yBBound==WRAP);
-  waste.setWrapX(xLBound==xRBound && xRBound==WRAP); waste.setWrapY(yTBound==yBBound && yBBound==WRAP);
-  buffer.setWrapX(xLBound==xRBound==WRAP); buffer.setWrapY(yTBound==yBBound==WRAP);
   // Initialize the values of the waste and resource fields
   initializeFields();
   // Run the simulation
@@ -703,6 +697,12 @@ void Simulator::setFlowV(double fv) {
   maxV = fabs(fv)>0 ? 2.*fabs(fv) : 1.;
 }
 
+void Simulator::setRecordDist(bool r) {
+  recordDist = r;
+  Shape S(bins, bins, vbins, vbins);
+  if (r && distribution.getShape()!=S) distribution = Tensor(S);
+}
+
 void Simulator::setDimensions(double l, double r, double b, double t) {
   if (left>=right || bottom>=top) throw BadDimChoice();
   left = l; right = r; bottom = b; top = t;
@@ -828,6 +828,7 @@ string Simulator::printWatchList() {
       stream << "{";
       for (auto P : watchlist) {
 	if (!P->isActive()) stream << watchPos.at(i).at(j) << ",";
+	cout << j << " " << watchlist.size() << " " << watchPos.at(i).size() << endl;
 	j++;
       }
       stream >> tstr;
@@ -864,6 +865,22 @@ string Simulator::printWatchList() {
     str.pop_back(); // Get rid of the last ','
     str += "};\n";
   }
+  return str;
+}
+
+string Simulator::printWatchListVaryingSize() {
+  if (recIt==0 || psize==0) return "{}";
+  // Print out watch list record
+  stringstream stream;
+  string str;
+  // Record positions of passive particles
+  stream << "pos={";
+  for (int i=0; i<watchPos.size(); i++) {
+    stream << watchPos.at(i);
+    if (i!=watchPos.size()-1) stream << ",";
+  }
+  stream << "};";
+  stream >> str;
   return str;
 }
 
@@ -999,6 +1016,12 @@ inline void Simulator::resetVariables() {
 }
 
 inline void Simulator::initializeFields() {
+  // Create waste, resource, and auxilary fields
+  resource.setDims(secX-2,secY-2); waste.setDims(secX-2,secY-2); buffer.setDims(secX-2,secY-2);
+  // Set field wrapping
+  resource.setWrapX(xLBound==xRBound && xRBound==WRAP); resource.setWrapY(yTBound==yBBound && yBBound==WRAP);
+  waste.setWrapX(xLBound==xRBound && xRBound==WRAP); waste.setWrapY(yTBound==yBBound && yBBound==WRAP);
+  buffer.setWrapX(xLBound==xRBound==WRAP); buffer.setWrapY(yTBound==yBBound==WRAP);
   // Set physical dimensions
   waste.setBounds(left, right, bottom, top);
   resource.setBounds(left,right, bottom, top);
