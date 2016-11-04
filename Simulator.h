@@ -24,7 +24,7 @@ typedef std::function<WPair(double)> WFunc;
 class Simulator {
  public:
   Simulator();
-  ~Simulator(); 
+  ~Simulator();
 
   // Initialization
   void createSquare(int, int=0, double=0.025, double=1, double=1);

@@ -18,6 +18,18 @@ Checker::Checker(const Tensor& f)
 
 Checker::~Checker() {};
 
+bool Checker::readFromFile(string fileName) {
+  std::ifstream fin(fileName);
+  if (fin.fail()) return false;
+  try { fin >> field; }
+  catch (...) { return false; }
+  Shape S = field.getShape();
+  dFdT = Tensor(S);
+  profile = Tensor(S.at(0), S.at(1));
+  setProfile();
+  return true;
+}
+
 void Checker::setField(const Tensor& f) {
   field = f;
   dFdT.resize(f.getShape());
@@ -46,7 +58,6 @@ void Checker::run(int iters) {
     NTplusEqUnsafe(field, dFdT, epsilon);
     clamp();
     renormalize();
-
     if (it%recDelay==0) record();
   }
 }
@@ -56,7 +67,6 @@ void Checker::derivative() {
   Shape shape = field.getShape();
   int X = shape.dims[0], Y = shape.dims[1];
   int VX = shape.dims[2], VY = shape.dims[3];
-  
   for (int x=0; x<X; x++) 
     for (int y=0; y<Y; y++) {
       // Compute force here since it doesn't depend on velocity (for now)
@@ -67,11 +77,11 @@ void Checker::derivative() {
 	  // Reset dFdT
 	  dFdT.at(x,y,vx,vy) = 0;
 	  // Motion
-	  dFdT.at(x,y,vx,vy) -= vel*gradR(x,y,vx,vy);
+	  //dFdT.at(x,y,vx,vy) -= vel*gradR(x,y,vx,vy);
 	  // External forces (walls)
 	  //dFdT.at(x,y,vx,vy) -= extForce(x,y)*gradV(x,y,vx,vy);
 	  // Drag force
-	  dFdT.at(x,y,vx,vy) -= gamma*(fluidV(x,y)-vel)*gradV(x,y,vx,vy);
+	  //dFdT.at(x,y,vx,vy) -= gamma*(fluidV(x,y)-vel)*gradV(x,y,vx,vy);
 	  // Interparticle forces
 	  dFdT.at(x,y,vx,vy) -= intForce*gradV(x,y,vx,vy);
 	}
@@ -87,16 +97,28 @@ void Checker::setInitialCondition() {
 	for (int vy=0; vy<field.getDim(3); vy++) {
 	  //field.at(x,y,vx,vy) = exp(-0.1*sqr(vx-vxzero)-0.1*sqr(vy-vyzero));
 
-	  
 	  double Vx = (vx-vxzero)*dvx, Vy = (vy-vyzero)*dvy;
 	  double C1 = 0.025, C2 = 1., C3 = 1.;
+
 	  field.at(x,y,vx,vy) = 1.;
 	  //field.at(x,y,vx,vy) *= exp(-C1*sqr(0.5*(xbins+1)-x));
 	  field.at(x,y,vx,vy) *= exp(-C1*sqr(0.5*(ybins-1)-y));
 	  field.at(x,y,vx,vy) *= exp(-C2*sqr(Vx));
-	  field.at(x,y,vx,vy) *= exp(-C3*sqr(10-Vy));
-	  
+	  field.at(x,y,vx,vy) *= exp(-C3*sqr(Vy));
 	}
+  setProfile();
+}
+
+Tensor Checker::getDProfileDT() {
+  if (field.getRank()==0) return field; // Empty tensor
+  Tensor prof(field.getDim(1));
+  for (int y=0; y<field.getDim(1); y++)
+    for (int x=0; x<field.getDim(0); x++)
+      for (int vy=0; vy<field.getDim(3); vy++)
+	for (int vx=0; vx<field.getDim(2); vx++) {
+	  prof.at(y) += dFdT.at(x,y,vx,vy);
+	}
+  return prof;
 }
 
 Tensor Checker::getCollapsedDistribution(int index) {
@@ -112,7 +134,7 @@ Tensor Checker::getCollapsedDistribution(int index) {
     return dist;
   }
 
-  if (index==1) { // Average over x
+  if (index==1) { // Average over y
     Tensor dist(field.getDim(0), field.getDim(2), field.getDim(3));
     for (int y=0; y<field.getDim(1); y++)
       for (int x=0; x<field.getDim(0); x++)
@@ -127,6 +149,7 @@ Tensor Checker::getCollapsedDistribution(int index) {
 
 Tensor Checker::getProfile() {
   if (field.getRank()==0) return field; // Empty tensor
+  setProfile();
   Tensor prof(field.getDim(1));
   for (int y=0; y<field.getDim(1); y++)
     for (int x=0; x<field.getDim(0); x++)
@@ -216,8 +239,6 @@ vect<> Checker::extForce(int x, int y) {
   // Values we reuse every time
   static const int cutoff = sigma/dy;
   static const int top = field.getDim(1)-1;
-  
-  wallForceConst = 10; //**
 
   double topF = wallForceConst*(top-y-cutoff);
   topF = topF>0 ? 0 : topF;
@@ -227,9 +248,19 @@ vect<> Checker::extForce(int x, int y) {
 }
 
 vect<> Checker::integrateF(int x, int y, int vx, int vy) {
-  int Rx = sigma/dx, Ry = sigma/dy;
+  //int Rx = sigma/dx, Ry = sigma/dy;
   int width = field.getDim(0), height = field.getDim(1);
-  int vwidth = field.getDim(2), vheight = field.getDim(3);
+  //int vwidth = field.getDim(2), vheight = field.getDim(3);
+
+  vect<> value = 0;
+  for (int i=0; i<width; i++)
+    for (int j=0; j<height; j++) {
+      vect<> R = getDisplacement(vect<>(x*dx, y*dy), vect<>(i*dx, j*dy));
+      value += force(R, Zero, Zero)*profile.at(i,j);
+    }
+  return value;
+      
+  /*
   double sigSqr = sqr(sigma);
   // Wrap in x direction
   int sx = x-Rx; sx = sx<0 ? sx+width : sx;
@@ -241,16 +272,19 @@ vect<> Checker::integrateF(int x, int y, int vx, int vy) {
   // Integrate
   for (int i=sx; (i%width)!=ex; i++) 
     for (int j=sy; j!=ey+1; j++) {
-      vect<> R = getDisplacement(vect<>(x*dx,y*dy), vect<>(i*dx, j*dy));
-      value += force(R, Zero, Zero)*profile.at(sx,sy);
+      vect<> R = getDisplacement(vect<>(x*dx, y*dy), vect<>(i*dx, j*dy));
+      value += force(R, Zero, Zero)*profile.at(i,j);
     }
   return value;
+  */
 }
 
 vect<> Checker::force(vect<> R, vect<> V1, vect<> V2) {
-  vect<> norm = R.norm();
-  double r = R.norm()-sigma;
-  return discForceConst*r*norm;
+  double r = R.norm();
+  if (r>2*sigma) return Zero;
+  double x = 2*sigma-r;
+  R.normalize();
+  return discForceConst*x*R;
 }
 
 void Checker::setProfile() {

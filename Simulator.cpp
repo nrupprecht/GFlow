@@ -35,6 +35,8 @@ Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), 
   useVelocityDiff = false;
 };
 
+
+
 Simulator::~Simulator() {
   for (auto P : particles) 
     if (P) {
@@ -828,7 +830,6 @@ string Simulator::printWatchList() {
       stream << "{";
       for (auto P : watchlist) {
 	if (!P->isActive()) stream << watchPos.at(i).at(j) << ",";
-	cout << j << " " << watchlist.size() << " " << watchPos.at(i).size() << endl;
 	j++;
       }
       stream >> tstr;

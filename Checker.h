@@ -1,6 +1,7 @@
 #ifndef CHECKER_H
 #define CHECKER_H
 
+#include <fstream>
 #include "Tensor.h"
 
 class Checker {
@@ -9,6 +10,8 @@ class Checker {
   Checker(int, int, double);
   Checker(const Tensor&);
   ~Checker();
+
+  bool readFromFile(string fileName);
 
   void setField(const Tensor&);
   void initialize(int, int, double, double, double, double, double, double);
@@ -22,6 +25,7 @@ class Checker {
 
   Tensor getField() { return field; }
   Tensor getDFDT() { return dFdT; }
+  Tensor getDProfileDT();
   Tensor getCollapsedDistribution(int=0); // Average out one of the spatial indices
   Tensor getProfile();      // Get the radial distribution profile
   Tensor getSpaceProfile(); // Get the entire space density profile

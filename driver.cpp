@@ -7,7 +7,9 @@
 #include "Simulator.h"
 
 int main(int argc, char** argv) {
+  // Start the clock
   auto start_t = clock();
+
   // Parameters
   double width = 4.;     // Length of the pipe
   double height = 2.;    // 2*Radius of the pipe
@@ -34,6 +36,7 @@ int main(int argc, char** argv) {
   bool bacteria = false; // Bacteria box
 
   // Display parameters
+  bool mmpreproc = true;
   bool animate = false;
   bool dispKE = false;
   bool aveKE = false;
@@ -71,6 +74,7 @@ int main(int argc, char** argv) {
   parser.get("number", number);
   parser.get("replenish", replenish);
   parser.get("bacteria", bacteria);
+  parser.get("mmpreproc", mmpreproc);
   parser.get("animate", animate);
   parser.get("dispKE", dispKE);
   parser.get("aveKE", aveKE);
@@ -127,8 +131,8 @@ int main(int argc, char** argv) {
   cout << "----------------------- RUN SUMMARY -----------------------\n\n";
   cout << "Command: ";
   for (int i=0; i<argc; i++) cout << argv[i] << " ";
-  cout << endl; // Line break
-  cout << "Dimensions: " << width << " x " << height << " (Volume: " << width*height << ")\n";
+  cout << endl << endl; // Line break
+  cout << "Dimensions: " << width << " x " << height << " (Volume: " << Vol << ")\n";
   cout << "Radius: " << radius << "\n";
   cout << "Characteristic Fluid Velocity: " << velocity << "\n";
   cout << "Phi: " << phi << ", Number: " << number << ", (Actual Phi: " << number*PI*sqr(radius)/(width*height) << ")\n";
@@ -143,14 +147,16 @@ int main(int argc, char** argv) {
   cout << "\n...........................................................\n\n";
   
   /// Run the actual program
-  try {
+  //try {
     if (bacteria) simulation.bacteriaRun(time);
     else simulation.run(time);
-  }
+    //  }
+    /*
   catch (...) {
     cout << "AN ERROR HAS OCCURED. PROGRAM WILL TERMINATE.\n";
-    exit(1);
+    throw;
   }
+    */
   auto end_t = clock(); // End timing
 
   /// Print the run information
@@ -201,14 +207,16 @@ int main(int argc, char** argv) {
     string str;
     stream << simulation.getCollapsedDistribution(0);
     stream >> str;
-    cout << "dist=" << mmPreproc(str) << ";\n";
+    if (mmpreproc) cout << "dist=" << mmPreproc(str) << ";\n";
+    else cout << "dist=" << str << ";\n";
   }
   if (clustering) {
     stringstream stream;
     string str;
     stream << simulation.getClusteringRec();
     stream >> str;
-    cout << "clust=" << mmPreproc(str) << ";\n";
+    if (mmpreproc) cout << "clust=" << mmPreproc(str) << ";\n";
+    else cout << "clust=" << str << ";\n";
     cout << "Print[\"Clustering\"]\nListLinePlot[clust,PlotStyle->Black,ImageSize->Large,PlotRange->All]\n";
   }
   if (everything) {
@@ -216,7 +224,8 @@ int main(int argc, char** argv) {
     string str;
     stream << simulation.getDistribution();
     stream >> str;
-    cout << "fullDist=" << mmPreproc(str) << ";\n";
+    if (mmpreproc) cout << "fullDist=" << mmPreproc(str) << ";\n";
+    else cout << "fullDist=" << str << ";\n";
     stream.clear(); str.clear();
   }
   return 0;

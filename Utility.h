@@ -124,20 +124,20 @@ vect(const vect<T>& V) : x(V.x), y(V.y) {};
     x = V.x; y = V.y;
     return *this;
   }
-
-    vect<T>& operator=(const T v) {
-      x = v; y = v;
-      return *this;
-    }
     
-    bool operator==(const vect<T>& V) const {
-      return x==V.x && y==V.y;
-    }
+  vect<T>& operator=(const T v) {
+    x = v; y = v;
+    return *this;
+  }
+    
+  bool operator==(const vect<T>& V) const {
+    return x==V.x && y==V.y;
+  }
   
   bool operator!=(const vect<T>& V) const {
     return x!=V.x || y!=V.y;
   }
-
+  
   friend std::ostream& operator<<(std::ostream& os, const vect& v) {
     stringstream stream;
     string str;
