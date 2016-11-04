@@ -1115,9 +1115,9 @@ inline void Simulator::bacteriaUpdate() {
 	wst += epsilon*secretionRate*number;
 	res += epsilon*eatRate*res*number; // eatRate = resource secretion
 	res = res<0 ? 0 : res;
-	// Calculate fitness
+        // Calculate fitness
 	double fitness = alphaR*res/(res+csatR)-alphaW*wst/(wst+csatW) - betaR*secretionRate;
-	// Die if neccessary
+        // Die if neccessary
 	if (fitness<0) {
 	  for (auto p=sect.begin(); p!=sect.end(); ++p) {
 	    particles.remove(*p);
@@ -1157,11 +1157,12 @@ inline void Simulator::bacteriaUpdate() {
 }
 
 inline void Simulator::updateFields() {
-  // Diffusion of resource field
+  // Diffusion and decay of resource field
   delSqr(resource, buffer); 
   for (int y=0; y<resource.getDY(); y++)
     for (int x=0; x<resource.getDX(); x++) {
       resource.at(x,y) += epsilon*(resourceDiffusion*buffer.at(x,y) + replenish);
+      resource.at(x,y) -= epsilon*lamR; // decay or resource
       resource.at(x,y) = resource.at(x,y)<0 ? 0 : resource.at(x,y);
     }
   
@@ -1170,6 +1171,7 @@ inline void Simulator::updateFields() {
   for (int y=0;y<resource.getDY(); y++)
     for(int x=0; x<resource.getDX(); x++) {
       waste.at(x,y) += epsilon*(wasteDiffusion*buffer.at(x,y) + wasteSource);
+      waste.at(x,y) -= epsilon*lamW; // decay of waste
       waste.at(x,y) = waste.at(x,y)<0 ? 0 : waste.at(x,y);
     }
 }
