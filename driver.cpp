@@ -101,11 +101,16 @@ int main(int argc, char** argv) {
   //----------------------------------------
 
   Simulator simulation;
+  if (dispKE || dispFlow) {
   simulation.addStatistic(statKE);
   simulation.addStatistic(statPassiveFlow);
   simulation.addStatistic(statActiveFlow);
   simulation.addStatistic(statFlowRatio);
+  }
   simulation.setStartRecording(start);
+  if (dispProfile || dispAveProfile) simulation.setCaptureProfile(true);
+  if (animate) simulation.setCapturePositions(true);
+  if (dispVelDist) simulation.setCaptureVelocity(true);
 
   // Set up the simulation
   if (bacteria) {

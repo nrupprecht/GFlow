@@ -1,6 +1,6 @@
 #include "Simulator.h"
 
-Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), recFields(false), replenish(0), wasteSource(0), indicator(false), recordDist(false), alphaR(1.0), alphaW(1.0), betaR(1.0), csatR(1.0), csatW(1.0), lamR(0.0), lamW(0.0)   {
+Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), recFields(false), replenish(0), wasteSource(0), indicator(false), recordDist(false), alphaR(1.0), alphaW(1.0), betaR(1.0), csatR(1.0), csatW(1.0), lamR(0.0), lamW(0.0), capturePositions(false), captureProfile(false), captureVelocity(false) {
   // Flow
   hasDrag = true;
   flowFunc = 0;
@@ -204,7 +204,7 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, double 
   // Set up fluid flow
   setFlowV(V);
   flowFunc = [&] (vect<> pos) { return vect<>(flowV*(1-sqr(pos.y-0.5*(top-bottom))/sqr(0.5*(top-bottom))),0); };
-  //flowFunc = [&] (vect<> pos) { return vect<>(flowV*(pos.y-bottom)/(top-bottom), 0); };
+  //flowFunc = [&] (vect<> pos) { return vect<>(flowV*(exp(-sqr(pos.y-top/2))-exp(-sqr(top/2))), 0); };
   hasDrag = true;
   for (auto P : particles) P->setVelocity(flowFunc(P->getPosition()));
 
@@ -1342,15 +1342,17 @@ inline void Simulator::update(Particle* &P) {
 
 inline void Simulator::record() {
   // Record positions
-  watchPos.push_back(vector<vect<> >());
-  for (auto P : watchlist)
-    watchPos.at(recIt).push_back(P->getPosition());
-
-  // Record moving wall positions
-  if (!movingWalls.empty()) {
-    wallPos.push_back(vector<WPair>());
-    for (auto W : movingWalls)
-      wallPos.at(recIt).push_back(W.first->getWPair());
+  if (capturePositions) {
+    // Record particle positions
+    watchPos.push_back(vector<vect<> >());
+    for (auto P : watchlist)
+      watchPos.at(recIt).push_back(P->getPosition());
+    // Record moving wall positions
+    if (!movingWalls.empty()) {
+      wallPos.push_back(vector<WPair>());
+      for (auto W : movingWalls)
+	wallPos.at(recIt).push_back(W.first->getWPair());
+    }
   }
 
   // Record statistics
@@ -1358,39 +1360,41 @@ inline void Simulator::record() {
   statRec.at(i).push_back(vect<>(time, statistics.at(i)(particles)));
   
   // Record density profile
-  profiles.push_back(getDensityYProfile());
+  if (captureProfile) profiles.push_back(getDensityYProfile());
 
   // Record velocity distribution
-  if (!particles.empty()) {
-    for (auto P : particles) {
-      double vel = sqrt(sqr(P->getVelocity()));
-      double fvel = flowFunc==0 ? 0 : sqrt(sqr(flowFunc(P->getPosition())));
-      int B = (int)(vel/maxV*vbins);
-      int Bf = fvel>0 ? (int)(vel/fvel/maxF*vbins) : vbins-1;
-      B = B>=vbins ? vbins-1 : B;
-      B = B<0 ? 0 : B;
-      Bf = Bf>=vbins ? vbins-1 : Bf;
-      Bf = Bf<0 ? 0 : Bf;
-      velocityDistribution.at(B)++;
-      auxVelocityDistribution.at(Bf)++;
-    }    
-    // Record total distribution
-    if (recordDist) {
+  if (captureVelocity) {
+    if (!particles.empty()) {
       for (auto P : particles) {
-	vect<> V = P->getVelocity();
-	vect<> pos = P->getPosition();
-	if (useVelocityDiff && flowFunc) V -= flowFunc(pos);
-	int Bx = (pos.x-left)/(right-left)*bins;
-	int By = (pos.y-bottom)/(top-bottom)*bins;
-	Bx = bins<=Bx ? bins-1 : Bx; By = bins<=By ? bins-1 : By;
-	Bx = Bx<0 ? 0 : Bx; By = By<0 ? 0 : By;
-	int Vx = (int)((V.x-minVx)/(maxVx-minVx)*vbins);
-	int Vy = (int)((V.y-minVy)/(maxVy-minVy)*vbins);
-	Vx = vbins<=Vx ? vbins-1 : Vx; 
-	Vx = Vx<0 ? 0 : Vx;
-	Vy = vbins<=Vy ? vbins-1 : Vy;
-	Vy = Vy<0 ? 0 : Vy;
-	distribution.at(Bx,By,Vx,Vy)++;
+	double vel = sqrt(sqr(P->getVelocity()));
+	double fvel = flowFunc==0 ? 0 : sqrt(sqr(flowFunc(P->getPosition())));
+	int B = (int)(vel/maxV*vbins);
+	int Bf = fvel>0 ? (int)(vel/fvel/maxF*vbins) : vbins-1;
+	B = B>=vbins ? vbins-1 : B;
+	B = B<0 ? 0 : B;
+	Bf = Bf>=vbins ? vbins-1 : Bf;
+	Bf = Bf<0 ? 0 : Bf;
+	velocityDistribution.at(B)++;
+	auxVelocityDistribution.at(Bf)++;
+      }    
+      // Record total distribution
+      if (recordDist) {
+	for (auto P : particles) {
+	  vect<> V = P->getVelocity();
+	  vect<> pos = P->getPosition();
+	  if (useVelocityDiff && flowFunc) V -= flowFunc(pos);
+	  int Bx = (pos.x-left)/(right-left)*bins;
+	  int By = (pos.y-bottom)/(top-bottom)*bins;
+	  Bx = bins<=Bx ? bins-1 : Bx; By = bins<=By ? bins-1 : By;
+	  Bx = Bx<0 ? 0 : Bx; By = By<0 ? 0 : By;
+	  int Vx = (int)((V.x-minVx)/(maxVx-minVx)*vbins);
+	  int Vy = (int)((V.y-minVy)/(maxVy-minVy)*vbins);
+	  Vx = vbins<=Vx ? vbins-1 : Vx; 
+	  Vx = Vx<0 ? 0 : Vx;
+	  Vy = vbins<=Vy ? vbins-1 : Vy;
+	  Vy = Vy<0 ? 0 : Vy;
+	  distribution.at(Bx,By,Vx,Vy)++;
+	}
       }
     }
   }
@@ -1540,6 +1544,14 @@ void Simulator::setVBins(int p) {
   if (recordDist) distribution = Tensor(bins, bins, vbins, vbins);
   velocityDistribution = vector<double>(vbins,0);
   auxVelocityDistribution = vector<double>(vbins,0);
+}
+
+void Simulator::setCaptureVelocity(bool cv) {
+  captureVelocity = cv;
+  if (cv) {
+    if (velocityDistribution.size()!=vbins) velocityDistribution = vector<double>(vbins,0);
+    if (velocityDistribution.size()!=vbins) auxVelocityDistribution = vector<double>(vbins,0);
+  }
 }
 
 void Simulator::discard() {

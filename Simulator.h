@@ -133,6 +133,9 @@ class Simulator {
   void setMarkWatch(bool w) { markWatch = w; }
   void setStartRecording(double t) { startRecording = t; }
   void setStopRecording(double t) { stopRecording = t; }
+  void setCapturePositions(bool) { capturePositions = true; }
+  void setCaptureProfile(bool cp) { captureProfile = cp; } 
+  void setCaptureVelocity(bool);
   void setStartTime(double t) { startTime = t; }
   void setDelayTime(double t) { delayTime = t; }
   void setMaxIters(int it) { maxIters = it; }
@@ -325,6 +328,12 @@ class Simulator {
   inline vector<vect<> > aveProfile(); // For computing the average profile
 
   bool indicator; // True when the actual simulation is running
+
+  /// What data to save
+  bool capturePositions; // Whether we should record the positions of particles and walls
+  bool captureProfile;   // Whether we should record profile data
+  bool captureVelocity;  // Whether we should record velocity distribution data
+
 };
 
 #endif
