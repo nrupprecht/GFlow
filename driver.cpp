@@ -32,6 +32,21 @@ int main(int argc, char** argv) {
   int number = -1;       // Override usual automatic particle numbers and use prescribed number
   double replenish = 0;  // Replenish rate
 
+// bacteria parameters: (default values. pass arguments through command line)
+  double d1 = 50.0;
+  double d2 = 50.0;
+  double a1 = 1.0;
+  double a2 = 1.0;
+  double b1 = 0.0;
+  double k1 = 1.0;
+  double k2 = 1.0;
+  double L1 = 0.0;
+  double L2 = 0.0;
+  double s1 = -1.0; // to be eating
+  double s2 = 1.0;
+  
+
+
   // Run Type
   bool bacteria = false; // Bacteria box
 
@@ -86,6 +101,18 @@ int main(int argc, char** argv) {
   parser.get("useVelDiff", useVelDiff);
   parser.get("clustering", clustering);
   parser.get("everything", everything);
+ // bacteria parameters from command line
+  parser.get("rDiff",d1);
+  parser.get("wDiff",d2);
+  parser.get("benefit",a1);
+  parser.get("harm",a2);
+  parser.get("cost",b1);
+  parser.get("rSat",k1);
+  parser.get("wSat",k2);
+  parser.get("rDec",L1);
+  parser.get("wDec",L2);
+  parser.get("rSec",s1);
+  parser.get("wSec",s2);
   //----------------------------------------
 
   // Dependent variables
@@ -132,6 +159,18 @@ int main(int argc, char** argv) {
   simulation.setMaxVy(maxVy);
   simulation.setUseVelocityDiff(useVelDiff);
 
+//  simulation.setResourceDiffusion(d1);
+//  simulation.setWasteDiffusion(d2);
+  simulation.setResourceBenefit(a1);
+  simulation.setWasteHarm(a2);
+  simulation.setSecretionCost(b1);
+  simulation.setResourceSaturation(k1);
+  simulation.setWasteSaturation(k2);
+  simulation.setResourceDecay(L1);
+  simulation.setWasteDecay(L2);
+  simulation.setEatRate(s1);
+  simulation.setSecretionRate(s2);
+
   /// Print condition summary
   cout << "----------------------- RUN SUMMARY -----------------------\n\n";
   cout << "Command: ";
@@ -173,10 +212,17 @@ int main(int argc, char** argv) {
   
   /// Print data
   if (animate) {
-    if (bacteria) cout << simulation.printWatchListVaryingSize() << endl;
-    else cout << simulation.printWatchList() << endl;
-    cout << simulation.printWalls() << endl;
-    cout << simulation.printAnimationCommand() << endl;
+    if (bacteria) { 
+        simulation.printBacteriaToFile(); // print particle positions at each time
+        simulation.printResourceToFile();
+        simulation.printWasteToFile();
+ 	cout << simulation.printWalls() << endl; // for now - later print geometry in different format
+    }
+    else {
+	cout << simulation.printWatchList() << endl;
+    	cout << simulation.printWalls() << endl;
+    	cout << simulation.printAnimationCommand() << endl;
+    }
   }  
   if (dispKE) {
     cout << "aveKE=" << simulation.getStatistic(0) << ";\n";

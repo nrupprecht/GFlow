@@ -885,6 +885,22 @@ string Simulator::printWatchListVaryingSize() {
   return str;
 }
 
+void Simulator::printBacteriaToFile() {
+  if (recIt==0 || psize==0) return;
+  // Print out watch list record
+  std::ofstream fout;
+  stringstream filename;
+  // Record positions of passive particles
+ for (int i=0; i<watchPos.size(); i++) {
+    filename.str("");
+    filename << "time_" << i << ".dat";
+    fout.open(filename.str());
+    fout << watchPos.at(i) << "\n";
+    fout.close();
+    fout.clear();
+  } // for each time step, write data to file
+}
+
 string Simulator::printAnimationCommand() {
   if (recIt==0) return "{}";
   stringstream stream;
@@ -959,6 +975,21 @@ string Simulator::printResourceRec() {
   return str;
 }
 
+void Simulator::printResourceToFile() {
+  cout << "\n \n ***in print resource to file*** \n \n";
+  if (resourceStr.empty()) { cout << "string is empty \n"; return;}
+  std::ofstream fout;
+  fout.open("resource.dat");
+  string str = "{";
+  resourceStr.pop_back();
+  str += resourceStr;
+  resourceStr += ',';
+  str += "}";
+  fout << str;
+  fout.close();
+cout << "\n \n ***done with print resource to file*** \n \n";
+}
+
 string Simulator::printWasteRec() {
   if (wasteStr.empty()) return "{}";
   string str = "{";
@@ -969,6 +1000,18 @@ string Simulator::printWasteRec() {
   return str;
 }
 
+void Simulator::printWasteToFile() {
+  if (wasteStr.empty()) return;
+  std::ofstream fout;
+  fout.open("waste.dat");
+  string str = "{";
+  wasteStr.pop_back();
+  str += wasteStr;
+  wasteStr += ',';
+  str += "}";
+  fout << str;
+  fout.close();
+}
 string Simulator::printFitnessRec() {
   if (fitnessStr.empty()) return "{}";
   string str = "{";

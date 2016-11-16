@@ -1,0 +1,28 @@
+#!/bin/csh
+#
+# print date and time
+date
+#
+#
+
+# Increase memory required and specify number of cores we need
+##$ -l mem_free=11G
+#$ -q debug
+#$ -pe smp 8
+
+module load intel
+
+./driver -bacteria=1 -animate=1 -start=0 -time=2 \
+-rDiff=50.0 -wDiff=50.0 -benefit=1.0 -harm=1.0 -cost=0.0 \
+-rSat=1.0 -wSat=1.0 -rSec=-1.0 -wSec=1.0 > summary.dat
+
+mkdir Run_Data
+
+mv *.dat Run_Data
+
+# print date and time again
+date
+
+## End Job Script ##
+
+
