@@ -204,6 +204,11 @@ class Simulator {
   string printAveOmegaSqr();
   string printNetAngularP();
   string printNetTorque();
+  
+  // print to file function:
+  void printBacteriaToFile(); //(string filename); // give filename as argument?
+  void printResourceToFile();
+  void printWasteToFile();
 
   // Error Classes
   class BadDimChoice {};
