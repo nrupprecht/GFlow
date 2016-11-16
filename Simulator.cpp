@@ -19,6 +19,8 @@ Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), 
   ssecInteract = false;
   secX = 10; secY = 10;
   sectors = new list<Particle*>[(secX+2)*(secY+2)+1];
+  //sectorization.setSSecInteract(false);
+  //sectorization.setDims(secX, secY);
   // Binning & Velocity analysis
   bins = 100;
   vbins = 30;
@@ -34,8 +36,6 @@ Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), 
   //distribution = Tensor(bins, bins, vbins, vbins);
   useVelocityDiff = false;
 };
-
-
 
 Simulator::~Simulator() {
   for (auto P : particles) 
@@ -70,7 +70,8 @@ void Simulator::createSquare(int NP, int NA, double radius, double width, double
 
   // Use the maximum number of sectors
   int sx = (int)(right/(2*radius)), sy = (int)(top/(2*radius));
-  setSectorDims(sx, sy);
+  //sectorization.setDims(sx, sy); //**
+  setSectorDims(sx, sy); 
 
   // Place the particles
   vector<vect<> > pos = findPackedSolution(NP+NA, radius, 0, right, 0, top);
@@ -757,8 +758,8 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
   // Enlarge particles and thermally agitate
   int steps = 2000;
   // Make dr s.t. the final radius is a bit larger then R
-  double dr = (R+0.15*R)/(double)steps, radius = 0.05*R; 
-  double mag = 5, dm = mag/(double)steps;
+  double dr = 1.1*R/(double)steps, radius = 0.05*R; 
+  double mag = 5., dm = mag/(double)steps;
   for (int i=0; i<steps; i++) {
     // Particle - particle interactions
     for (auto P : parts)
@@ -767,7 +768,7 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
 	  vect<> disp = getDisplacement(Q->getPosition(), P->getPosition());
 	  P->interact(Q, disp);
 	}
-
+    
     // Thermal agitation
     mag -= dm;
     for (auto P: parts) P->applyForce(mag*randV());
@@ -788,7 +789,6 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
   // Return list of positions
   vector<vect<> > pos;
   for (auto P : parts) pos.push_back(P->getPosition());
-  //particles.clear();
   return pos;
 }
 
@@ -1087,7 +1087,8 @@ inline void Simulator::logisticUpdates() {
 inline void Simulator::objectUpdates() {
   // Update simulation
   for (auto &P : particles) update(P); // Update particles
-  if (sectorize) updateSectors(); // Update sectors
+  //sectorization.update(); //** Implement
+  if (sectorize) updateSectors(); // Update sectors //** Now in sectorization
   // Update temp walls
   if (!tempWalls.empty()) {
     vector<list<pair<Wall*,double> >::iterator> removal;
@@ -1224,7 +1225,7 @@ inline double Simulator::getFitness(int x, int y) {
 
 inline void Simulator::interactions() {
   // Calculate particle-particle forces
-  if (sectorize) ppInteract();
+  if (sectorize) ppInteract(); //sectorization.interactions(particles);
   else // Naive solution
     for (auto P : particles) 
       for (auto Q : particles)

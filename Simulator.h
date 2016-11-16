@@ -6,10 +6,10 @@
 
 #include "StatFunc.h"
 #include "Field.h"
-#include <functional>
-
+#include "Sectorization.h"
 #include "Tensor.h"
 
+#include <functional>
 #include <list>
 using std::list;
 
@@ -319,6 +319,7 @@ class Simulator {
   inline void ppInteract(); 
   inline int getSec(vect<>);
   list<Particle*>* sectors; // Sectors (buffer of empty sectors surrounds, extra sector for out of bounds particles [x = 0, y = secY+3])
+  Sectorization sectorization; // The sectorization for the particles
   int secX, secY; // Width and height of sector grid
   bool sectorize; // Whether to use sector based interactions
   bool ssecInteract; // Whether objects in the special sector should interact with other objects
