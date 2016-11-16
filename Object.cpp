@@ -142,7 +142,7 @@ void Particle::flowForce(std::function<vect<>(vect<>)> func) {
   flowForce(F);
 }
 
-Bacteria::Bacteria(vect<> pos, double rad, double expTime) : Particle(pos, 0), timer(0), repDelay(default_reproduction_delay) {
+Bacteria::Bacteria(vect<> pos, double rad, double sec, double expTime) : Particle(pos, 0), timer(0), repDelay(default_reproduction_delay) {
   // Since the radius is currently 0, we have to set these radius dependent quantities by hand here.
   invII = 1.0*invMass/(0.5*sqr(rad));
   drag = sphere_drag*rad;
@@ -150,6 +150,7 @@ Bacteria::Bacteria(vect<> pos, double rad, double expTime) : Particle(pos, 0), t
   maxRadius = rad;
   dR = expTime>0 ? maxRadius/expTime : rad;
   expansionTime = expTime;
+  secretionRate = sec;
 }
 
 void Bacteria::update(double epsilon) {

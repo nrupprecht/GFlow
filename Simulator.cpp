@@ -383,7 +383,7 @@ void Simulator::createBacteriaBox(int N, double radius, double width, double hei
   // Find packed solution
   vector<vect<> > pos = findPackedSolution(N, radius, 0, right, 0, top);
   // Add the particles in at the appropriate positions
-  for (int i=0; i<N; i++) addWatchedParticle(new Bacteria(pos.at(i), radius));
+  for (int i=0; i<N; i++) addWatchedParticle(new Bacteria(pos.at(i), radius,eatRate));
 
   xLBound = WRAP;
   xRBound = WRAP;
@@ -1144,7 +1144,7 @@ inline void Simulator::objectUpdates() {
       W.first->setPosition(W.second(time));
   }
 }
-
+/*
 inline void Simulator::bacteriaUpdate() {
   // Assume that all particles are bacteria
   vector<Particle*> births; // Record bacteria to add and take away
@@ -1197,6 +1197,57 @@ inline void Simulator::bacteriaUpdate() {
       }
     }
   for (auto P : births) addWatchedParticle(P);
+}
+*/
+
+inline void Simulator::bacteriaUpdate() {
+  // Assume that all particles are bacteria
+  vector<Particle*> births; // Record bacteria to add and take away
+  for (auto p : particles) {
+      	vect<> pos = p->getPosition();
+	// Update waste and resource fields
+	double &res = resource.at(pos), &wst = waste.at(pos); // pending at(pos) function
+        rSec = p->getEatRate();
+	wst += epsilon*secretionRate*number;
+	res += epsilon*rSec*res*number; // eatRate = resource secretion
+	res = res<0 ? 0 : res;
+ 
+// Calculate fitness
+	double fitness = alphaR*res/(res+csatR)-alphaW*wst/(wst+csatW) - betaR*rSec;
+        // Die if neccessary
+	if (fitness<0) {
+	    particles.remove(*p);
+	    watchlist.remove(*p);
+	    int sid = getSec(pos);
+            sector[sid].remove(*p); // remove particle from sector
+            delete *p;
+	    *p=0;
+	  }
+	// Reproduce if able
+	else
+	    Bacteria* b = dynamic_cast<Bacteria*>(p);
+	    if (b->canReproduce()) {
+	      double rd = b->getRepDelay();
+	      double attempt = drand48();	  
+	      if (attempt<fitness*rd) {
+		int tries = 50; // Try to find a good spot for the baby
+		vect<> pos = b->getPosition();
+		double rad = b->getMaxRadius();
+		for (int i=0; i<tries; i++) {
+		  vect<> s = 2.1*rad*randV() + pos;
+		  if (!wouldOverlap(s, rad)) {
+		    Bacteria *B = new Bacteria(s, rad, eatRate, 0); // No expansion time
+		    B->setVelocity(b->getVelocity());
+		    b->resetTimer(); // Just in case
+		    births.push_back(B);
+		    break;
+		  }
+		}
+	      }
+	   }
+    
+  for (auto P : births) addWatchedParticle(P);      
+  } // for each particle in system  
 }
 
 inline void Simulator::updateFields() {
@@ -1485,7 +1536,7 @@ void Simulator::addParticles(int N, double R, double var, double lft, double rgh
 	break;
       }
       case BACTERIA: {
-	P = new Bacteria(pos, rad);
+	P = new Bacteria(pos, rad, eatRate);
 	break;
       }
       }

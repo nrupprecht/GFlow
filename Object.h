@@ -126,7 +126,7 @@ class Particle {
 
 class Bacteria : public Particle {
  public:
-  Bacteria(vect<> pos, double rad, double expTime=default_expansion_time);
+  Bacteria(vect<> pos, double rad, double sec, double expTime=default_expansion_time);
 
   virtual void update(double);
   bool canReproduce();
@@ -134,12 +134,19 @@ class Bacteria : public Particle {
   double getMaxRadius() { return maxRadius; }
   void resetTimer() { timer=0; }
 
+  //accessors:
+  double getSecretionRate() { return secretionRate; }
+  
+  // mutators:
+  void setSecretionRate(double s) { secretionRate = s; }
  private:
   // For expansion
   double dR, maxRadius; 
   double expansionTime;
   double timer;
   double repDelay; // Reproduction ability check delay
+  double secretionRate;
+
 };
 
 /// Run and Tumble Sphere
