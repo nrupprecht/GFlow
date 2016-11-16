@@ -44,7 +44,8 @@ int main(int argc, char** argv) {
   double L2 = 0.0;
   double s1 = -1.0; // to be eating
   double s2 = 1.0;
-  
+  double mu = 0.0; // mutation rate
+  double ds = 0.0; // mutation amount 
 
 
   // Run Type
@@ -113,6 +114,8 @@ int main(int argc, char** argv) {
   parser.get("wDec",L2);
   parser.get("rSec",s1);
   parser.get("wSec",s2);
+  parser.get("mutProb",mu);
+  parser.get("dSec",ds);
   //----------------------------------------
 
   // Dependent variables
@@ -170,6 +173,8 @@ int main(int argc, char** argv) {
   simulation.setWasteDecay(L2);
   simulation.setEatRate(s1);
   simulation.setSecretionRate(s2);
+  simulation.setMutationRate(mu);
+  simulation.setMutationAmount(ds);
 
   /// Print condition summary
   cout << "----------------------- RUN SUMMARY -----------------------\n\n";

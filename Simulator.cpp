@@ -1,6 +1,6 @@
 #include "Simulator.h"
 
-Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), recFields(false), replenish(0), wasteSource(0), indicator(false), recordDist(false), alphaR(1.0), alphaW(1.0), betaR(1.0), csatR(1.0), csatW(1.0), lamR(0.0), lamW(0.0), capturePositions(false), captureProfile(false), captureVelocity(false) {
+Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), mutationRate(0.0), mutationAmount(0.0), recFields(false), replenish(0), wasteSource(0), indicator(false), recordDist(false), alphaR(1.0), alphaW(1.0), betaR(1.0), csatR(1.0), csatW(1.0), lamR(0.0), lamW(0.0), capturePositions(false), captureProfile(false), captureVelocity(false) {
   // Flow
   hasDrag = true;
   flowFunc = 0;
@@ -1203,11 +1203,21 @@ inline void Simulator::bacteriaUpdate() {
 inline void Simulator::bacteriaUpdate() {
   // Assume that all particles are bacteria
   vector<Particle*> births; // Record bacteria to add and take away
-  for (auto p : particles) {
+cout << particles.size() << endl;  
+for (auto p : particles) {
       	vect<> pos = p->getPosition();
 	// Update waste and resource fields
 	double &res = resource.at(pos), &wst = waste.at(pos); // pending at(pos) function
-        Bacteria* b = dynamic_cast<Bacteria*>(p);
+        Bacteria* b;
+	try {
+		b = dynamic_cast<Bacteria*>(p);
+        }
+	catch(...) {
+		cout << p << endl;
+		throw;
+	}
+	if (b==0) continue;
+//cout << b << endl;
         double rSec = b->getSecretionRate();
 	wst += epsilon*secretionRate;
 	res += epsilon*rSec; // eatRate = resource secretion
@@ -1223,13 +1233,16 @@ inline void Simulator::bacteriaUpdate() {
             sectors[sid].remove(p); // remove particle from sector
             delete p;
 	    p=0;
+cout << "die \n";
 	  }
 	// Reproduce if able
 	else
 	    Bacteria* b = dynamic_cast<Bacteria*>(p);
 	    if (b->canReproduce()) {
 	      double rd = b->getRepDelay();
-	      double attempt = drand48();	  
+	      double attempt = drand48();
+              double mattempt = drand48();
+              rSec = mattempt<mutationRate ? fabs(rSec-mutationAmount) : rSec;	  
 	      if (attempt<fitness*rd) {
 		int tries = 50; // Try to find a good spot for the baby
 		vect<> pos = b->getPosition();
@@ -1237,7 +1250,7 @@ inline void Simulator::bacteriaUpdate() {
 		for (int i=0; i<tries; i++) {
 		  vect<> s = 2.1*rad*randV() + pos;
 		  if (!wouldOverlap(s, rad)) {
-		    Bacteria *B = new Bacteria(s, rad, eatRate, 0); // No expansion time
+		    Bacteria *B = new Bacteria(s, rad, rSec, 0); // No expansion time
 		    B->setVelocity(b->getVelocity());
 		    b->resetTimer(); // Just in case
 		    births.push_back(B);

@@ -83,6 +83,8 @@ class Simulator {
   double getEatRate() { return eatRate; }
   double getResourceDiffusion() { return resourceDiffusion; }
   double getWasteDiffusion() { return wasteDiffusion; }
+  double getMutationRate() { return mutationRate; }
+  double getMutationAmount() { return mutationAmount; }
 
   // Statistic functions
   void addStatistic(statfunc); // Adds a statistic to track
@@ -162,6 +164,8 @@ class Simulator {
   void setSecretionCost(double b) { betaR = b; }
   void setResourceDecay(double l) { lamR = l; }
   void setWasteDecay(double l) { lamW = l; }
+  void setMutationRate(double mu) { mutationRate = mu; }
+  void setMutationAmount(double ds) { mutationAmount = ds; }
   /// Global set functions
   void setParticleDissipation(double);
   void setWallDissipation(double);
@@ -260,6 +264,7 @@ class Simulator {
   double alphaR, alphaW, betaR;	// benefit/harm constants
   double csatR, csatW; 		// saturation constants
   double lamR, lamW; 	        // decay constants for fields
+  double mutationRate, mutationAmount; //probability and amount of mutation in 'eatRate'
 
   /// Times etc.
   double time;       // The simulated time

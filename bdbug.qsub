@@ -14,7 +14,7 @@ module load intel
 
 ./driver -bacteria=1 -animate=1 -start=0 -time=2 \
 -rDiff=50.0 -wDiff=50.0 -benefit=1.0 -harm=1.0 -cost=0.0 \
--rSat=1.0 -wSat=1.0 -rSec=-1.0 -wSec=1.0 > summary.dat
+-rSat=1.0 -wSat=1.0 -rSec=-1.0 -wSec=1.0 -mutProb=0.01 -dSec=0.5 > summary.dat
 
 mkdir Run_Data
 
