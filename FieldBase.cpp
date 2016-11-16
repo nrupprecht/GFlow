@@ -162,7 +162,7 @@ void FieldBase<T>::setAll(const T& value) {
 template<typename T>
 T& FieldBase<T>::at(vect<> pos) {
   double X = (pos.x-left)*invDist.x, Y = (pos.y-bottom)*invDist.y;
-  double x = (int)X, y = (int)Y;
+  int x = (int)X, y = (int)Y;
   return array[y*dX+x];
 }
 
