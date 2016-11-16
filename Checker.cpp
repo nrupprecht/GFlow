@@ -57,7 +57,7 @@ void Checker::run(int iters) {
     derivative();
     NTplusEqUnsafe(field, dFdT, epsilon);
     clamp();
-    renormalize();
+    renormalize(); 
     if (it%recDelay==0) record();
   }
 }
@@ -77,11 +77,11 @@ void Checker::derivative() {
 	  // Reset dFdT
 	  dFdT.at(x,y,vx,vy) = 0;
 	  // Motion
-	  //dFdT.at(x,y,vx,vy) -= vel*gradR(x,y,vx,vy);
+	  dFdT.at(x,y,vx,vy) -= vel*gradR(x,y,vx,vy);
 	  // External forces (walls)
-	  //dFdT.at(x,y,vx,vy) -= extForce(x,y)*gradV(x,y,vx,vy);
+	  dFdT.at(x,y,vx,vy) -= (extForce(x,y)*gradV(x,y,vx,vy));
 	  // Drag force
-	  //dFdT.at(x,y,vx,vy) -= gamma*(fluidV(x,y)-vel)*gradV(x,y,vx,vy);
+	  dFdT.at(x,y,vx,vy) -= gamma*(fluidV(x,y)-vel)*gradV(x,y,vx,vy);
 	  // Interparticle forces
 	  dFdT.at(x,y,vx,vy) -= intForce*gradV(x,y,vx,vy);
 	}
@@ -248,10 +248,7 @@ vect<> Checker::extForce(int x, int y) {
 }
 
 vect<> Checker::integrateF(int x, int y, int vx, int vy) {
-  //int Rx = sigma/dx, Ry = sigma/dy;
   int width = field.getDim(0), height = field.getDim(1);
-  //int vwidth = field.getDim(2), vheight = field.getDim(3);
-
   vect<> value = 0;
   for (int i=0; i<width; i++)
     for (int j=0; j<height; j++) {
@@ -259,8 +256,10 @@ vect<> Checker::integrateF(int x, int y, int vx, int vy) {
       value += force(R, Zero, Zero)*profile.at(i,j);
     }
   return value;
-      
+  
   /*
+  int Rx = sigma/dx, Ry = sigma/dy;
+  int vwidth = field.getDim(2), vheight = field.getDim(3);
   double sigSqr = sqr(sigma);
   // Wrap in x direction
   int sx = x-Rx; sx = sx<0 ? sx+width : sx;

@@ -12,6 +12,7 @@ template<typename T> class FieldBase {
   FieldBase& operator=(FieldBase<T>&);
 
   // Accessors
+  T& at(vect<> pos);   // Access the grid point containing a position
   T& at(int x, int y); // Access grid points
   T at(int x, int y) const;
   T& operator()(int x, int y); // Access grid points
