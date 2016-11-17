@@ -324,7 +324,7 @@ std::istream& operator>>(std::istream& in, Tensor& T) {
   return in;
 }
 
-void Tensor::initialize(Shape s, bool del, bool zero, int tot) {
+void Tensor::initialize(Shape s, bool del, bool zero) {
   shape = s;
   // Find total
   total = s.getTotal();
