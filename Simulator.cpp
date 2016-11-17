@@ -38,12 +38,12 @@ Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), 
 
 
 Simulator::~Simulator() {
-  for (auto P : particles) 
+  for (auto &P : particles) 
     if (P) {
       delete P;
       P = 0;
     }
-  for (auto W : walls)
+  for (auto &W : walls)
     if (W) {
       delete W;
       W = 0;
@@ -76,9 +76,9 @@ void Simulator::createSquare(int NP, int NA, double radius, double width, double
   vector<vect<> > pos = findPackedSolution(NP+NA, radius, 0, right, 0, top);
   // Add the particles in at the appropriate positions
   int i=0;
-  for (; i<NP; i++) addWatchedParticle(new Particle(pos.at(i), radius));
-  for (; i<NP+NA; i++) addWatchedParticle(new RTSphere(pos.at(i), radius));
-  //for (; i<NP+NA; i++) addWatchedParticle(new PSphere(pos.at(i), radius));
+  for (; i<NP; i++) addParticle(new Particle(pos.at(i), radius));
+  for (; i<NP+NA; i++) addParticle(new RTSphere(pos.at(i), radius));
+  //for (; i<NP+NA; i++) addParticle(new PSphere(pos.at(i), radius));
 
   // Use some drag
   hasDrag = true;
@@ -194,9 +194,9 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, double 
   vector<vect<> > pos = findPackedSolution(N+A, radius, 0, right, 0, top);
   int i;
   // Add the particles in at the appropriate positions
-  //for (i=0; i<A; i++) addWatchedParticle(new RTSphere(pos.at(i), rA, F, runT, tumT, bias));
-  for (i=0; i<A; i++) addWatchedParticle(new PSphere(pos.at(i), rA, F));
-  for (; i<N+A; i++) addWatchedParticle(new Particle(pos.at(i), radius));
+  //for (i=0; i<A; i++) addParticle(new RTSphere(pos.at(i), rA, F, runT, tumT, bias));
+  for (i=0; i<A; i++) addParticle(new PSphere(pos.at(i), rA, F));
+  for (; i<N+A; i++) addParticle(new Particle(pos.at(i), radius));
   
   // Set Boundary wrapping
   xLBound = WRAP; xRBound = WRAP; yTBound = WRAP; yBBound = WRAP;
@@ -248,8 +248,8 @@ void Simulator::createSphereFluid(int N, int A, double radius, double V, double 
   vector<vect<> > pos = findPackedSolution(N+A, radius, 0, right, 0, top);
   int i;
   // Add the particles in at the appropriate positions
-  for (i=0; i<A; i++) addWatchedParticle(new RTSphere(pos.at(i), rA));
-  for (; i<N+A; i++) addWatchedParticle(new Particle(pos.at(i), radius));
+  for (i=0; i<A; i++) addParticle(new RTSphere(pos.at(i), rA));
+  for (; i<N+A; i++) addParticle(new Particle(pos.at(i), radius));
 
   xLBound = WRAP;
   xRBound = WRAP;
@@ -324,7 +324,7 @@ void Simulator::createIdealGas(int N, double radius, double v, double width, dou
   // Place the particles
   vector<vect<> > pos = findPackedSolution(N, radius, 0, right, 0, top);
   // Add the particles in at the appropriate positions
-  for (int i=0; i<N; i++) addWatchedParticle(new Particle(pos.at(i), radius));
+  for (int i=0; i<N; i++) addParticle(new Particle(pos.at(i), radius));
 
   double diss = 1.17;
   setParticleCoeff(0);
@@ -383,7 +383,7 @@ void Simulator::createBacteriaBox(int N, double radius, double width, double hei
   // Find packed solution
   vector<vect<> > pos = findPackedSolution(N, radius, 0, right, 0, top);
   // Add the particles in at the appropriate positions
-  for (int i=0; i<N; i++) addWatchedParticle(new Bacteria(pos.at(i), radius,eatRate));
+  for (int i=0; i<N; i++) addParticle(new Bacteria(pos.at(i), radius,eatRate));
 
   xLBound = WRAP;
   xRBound = WRAP;
@@ -594,7 +594,7 @@ void Simulator::setSectorDims(int sx, int sy) {
   sectors = new list<Particle*>[(secX+2)*(secY+2)+1];
   // Add particles to the new sectors
   for (auto P : particles) {
-    int sec = getSec(P->getPosition());
+    int sec = getSec(P);
     sectors[sec].push_back(P);
   }
 }
@@ -727,14 +727,9 @@ void Simulator::addMovingWall(Wall* wall, WFunc f) {
 void Simulator::addParticle(Particle* particle) {
   if (particle->isActive()) asize++;
   else psize++;
-  int sec = getSec(particle->getPosition());
+  int sec = getSec(particle);
   sectors[sec].push_back(particle);
   particles.push_back(particle);
-}
-
-void Simulator::addWatchedParticle(Particle* p) {
-  addParticle(p);
-  watchlist.push_back(p);
 }
 
 vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, double right, double bottom, double top) {
@@ -840,7 +835,7 @@ string Simulator::printWatchList() {
     for (int i=0; i<watchPos.size(); i++) {
       int j=0;
       stream << "{";
-      for (auto P : watchlist) {
+      for (auto P : particles) {
 	if (!P->isActive()) stream << watchPos.at(i).at(j) << ",";
 	j++;
       }
@@ -863,7 +858,7 @@ string Simulator::printWatchList() {
     for (int i=0; i<watchPos.size(); i++) {
       stream << "{";
       int j=0;
-      for (auto P : watchlist) {
+      for (auto P : particles) {
 	if (P->isActive()) stream << watchPos.at(i).at(j) << ",";
 	j++;
       }
@@ -917,7 +912,7 @@ string Simulator::printAnimationCommand() {
   if (recIt==0) return "{}";
   stringstream stream;
   string str1, str2;
-  if (!watchlist.empty()) charRadius = (*watchlist.begin())->getRadius();
+  if (!particles.empty()) charRadius = (*particles.begin())->getRadius();
   stream << "R=" << charRadius << ";";
   stream >> str1;
   stream.clear();
@@ -999,7 +994,7 @@ void Simulator::printResourceToFile() {
   str += "}";
   fout << str;
   fout.close();
-cout << "\n \n ***done with print resource to file*** \n \n";
+  cout << "\n \n ***done with print resource to file*** \n \n";
 }
 
 string Simulator::printWasteRec() {
@@ -1176,7 +1171,6 @@ inline void Simulator::bacteriaUpdate() {
 	if (fitness<0) {
 	  for (auto p=sect.begin(); p!=sect.end(); ++p) {
 	    particles.remove(*p);
-	    watchlist.remove(*p);
 	    delete *p;
 	    *p=0;
 	  }
@@ -1208,72 +1202,65 @@ inline void Simulator::bacteriaUpdate() {
 	  }
       }
     }
-  for (auto P : births) addWatchedParticle(P);
+  for (auto P : births) addParticle(P);
 }
 */
 
 inline void Simulator::bacteriaUpdate() {
   // Assume that all particles are bacteria
   vector<Particle*> births; // Record bacteria to add and take away
-cout << particles.size() << endl;  
-for (auto p : particles) {
-      	vect<> pos = p->getPosition();
-	// Update waste and resource fields
-	double &res = resource.at(pos), &wst = waste.at(pos); // pending at(pos) function
-        Bacteria* b;
-	try {
-		b = dynamic_cast<Bacteria*>(p);
-        }
-	catch(...) {
-		cout << p << endl;
-		throw;
-	}
-	if (b==0) continue;
-//cout << b << endl;
-        double rSec = b->getSecretionRate();
-	wst += epsilon*secretionRate;
-	res += epsilon*rSec; // eatRate = resource secretion
-	res = res<0 ? 0 : res;
- 
-// Calculate fitness
-	double fitness = alphaR*res/(res+csatR)-alphaW*wst/(wst+csatW) - betaR*rSec;
-        // Die if neccessary
-	if (fitness<0) {
-	    particles.remove(p);
-	    watchlist.remove(p);
-	    int sid = getSec(pos);
-            sectors[sid].remove(p); // remove particle from sector
-            delete p;
-	    p=0;
-cout << "die \n";
-	  }
-	// Reproduce if able
-	else
-	    Bacteria* b = dynamic_cast<Bacteria*>(p);
-	    if (b->canReproduce()) {
-	      double rd = b->getRepDelay();
-	      double attempt = drand48();
-              double mattempt = drand48();
-              rSec = mattempt<mutationRate ? fabs(rSec-mutationAmount) : rSec;	  
-	      if (attempt<fitness*rd) {
-		int tries = 50; // Try to find a good spot for the baby
-		vect<> pos = b->getPosition();
-		double rad = b->getMaxRadius();
-		for (int i=0; i<tries; i++) {
-		  vect<> s = 2.1*rad*randV() + pos;
-		  if (!wouldOverlap(s, rad)) {
-		    Bacteria *B = new Bacteria(s, rad, rSec, 0); // No expansion time
-		    B->setVelocity(b->getVelocity());
-		    b->resetTimer(); // Just in case
-		    births.push_back(B);
-		    break;
-		  }
-		}
-	      }
-	   }
+  list<Particle*> deaths; // The particles that should be removed
+  for (auto p : particles) {
+    // Dynamic convert to Bacteria
+    Bacteria* b = dynamic_cast<Bacteria*>(p);
+    if (b==0) continue;
+    // Update waste and resource fields
+    vect<> pos = p->getPosition();
+    double &res = resource.at(pos), &wst = waste.at(pos);
+    double rSec = b->getSecretionRate();
+    wst += epsilon*secretionRate;
+    res += epsilon*rSec; // eatRate = resource secretion
+    res = res<0 ? 0 : res;
     
-  for (auto P : births) addWatchedParticle(P);      
+    // Calculate fitness
+    double fitness = alphaR*res/(res+csatR)-alphaW*wst/(wst+csatW) - betaR*rSec;
+    // Die if neccessary
+    if (fitness<0) {
+      deaths.push_back(p);
+      continue;
+    }
+    // Reproduce if able
+    else if (b->canReproduce()) {
+      double rd = b->getRepDelay();
+      double attempt = drand48();
+      double mattempt = drand48();
+      rSec = mattempt<mutationRate ? fabs(rSec-mutationAmount) : rSec;	  
+      if (attempt<fitness*rd) {
+	int tries = 50; // Try to find a good spot for the baby
+	vect<> pos = b->getPosition();
+	double rad = b->getMaxRadius();
+	for (int i=0; i<tries; i++) {
+	  vect<> s = 2.1*rad*randV() + pos;
+	  if (!wouldOverlap(s, rad)) {
+	    Bacteria *B = new Bacteria(s, rad, rSec, 0); // No expansion time
+	    B->setVelocity(b->getVelocity());
+	    b->resetTimer(); // Just in case
+	    births.push_back(B);
+	    break;
+	  }
+	}
+      }
+    }
   } // for each particle in system  
+  
+  for (auto P : deaths) {
+    int sid = getSec(P);
+    particles.remove(P);
+    sectors[sid].remove(P);
+    delete P;
+  }
+  
+  for (auto P : births) addParticle(P);      
 }
 
 inline void Simulator::updateFields() {
@@ -1465,7 +1452,7 @@ inline void Simulator::record() {
   if (capturePositions) {
     // Record particle positions
     watchPos.push_back(vector<vect<> >());
-    for (auto P : watchlist)
+    for (auto P : particles)
       watchPos.at(recIt).push_back(P->getPosition());
     // Record moving wall positions
     if (!movingWalls.empty()) {
@@ -1566,7 +1553,7 @@ void Simulator::addParticles(int N, double R, double var, double lft, double rgh
 	break;
       }
       }
-      if (watched) addWatchedParticle(P);
+      if (watched) addParticle(P);
       else addParticle(P);
       if (vmax > 0) P->setVelocity(vmax*randV());
       count++;
@@ -1601,7 +1588,7 @@ inline void Simulator::updateSectors() {
   for (int i=0; i<(secX+2)*(secY+2)+1; i++) {
     vector<list<Particle*>::iterator> remove;
     for (auto p=sectors[i].begin(); p!=sectors[i].end(); ++p) {
-      int sec = getSec((*p)->getPosition());
+      int sec = getSec((*p));
       if (sec != i) { // In the wrong sector
 	remove.push_back(p);
 	sectors[sec].push_back(*p);
@@ -1654,6 +1641,10 @@ inline int Simulator::getSec(vect<> pos) {
   return (X+1)+(secX+2)*(Y+1);
 }
 
+inline int Simulator::getSec(Particle *P) {
+  return getSec(P->getPosition());
+}
+
 void Simulator::setBins(int b) {
   bins = b;
   if (recordDist) distribution = Tensor(bins, bins, vbins, vbins);
@@ -1683,7 +1674,6 @@ void Simulator::discard() {
       P = 0;
     }
   particles.clear();
-  watchlist.clear();
   watchPos.clear();
   for (auto W : walls) 
     if (W) {

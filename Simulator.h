@@ -182,7 +182,6 @@ class Simulator {
   void addParticles(int N, double R, double var, double left, double right, double bottom, double top, PType type=PASSIVE, double vmax=-1, bool watched=true, vect<> bias=Zero);
   void addNWParticles(int N, double R, double var, double left, double right, double bottom, double top, PType type=PASSIVE, double vmax=-1);
   void addRTSpheres(int N, double R, double var, double left, double right, double bottom, double top, vect<> bias);
-  void addWatchedParticle(Particle* p);
   vector<vect<> > findPackedSolution(int N, double R, double left, double right, double bottom, double top); // Finds where we can put particles for high packing
 
   // Display functions
@@ -328,6 +327,7 @@ class Simulator {
   inline void updateSectors();
   inline void ppInteract(); 
   inline int getSec(vect<>);
+  inline int getSec(Particle*);
   list<Particle*>* sectors; // Sectors (buffer of empty sectors surrounds, extra sector for out of bounds particles [x = 0, y = secY+3])
   Sectorization sectorization; // The sectorization for the particles
   int secX, secY; // Width and height of sector grid
