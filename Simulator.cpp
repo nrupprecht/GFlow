@@ -738,7 +738,16 @@ void Simulator::addWatchedParticle(Particle* p) {
 }
 
 vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, double right, double bottom, double top) {
-  vector<Particle*> parts;
+  list<Particle*> parts;
+  // Set up packingSectors
+  /*
+  Sectorization packingSectors;
+  packingSectors.setParticleList(&parts);
+  packingSectors.setBounds(left, right, bottom, top);
+  int sx = (int)((right-left)/(2.3*R)), sy = (int)((top-bottom)/(2.3*R));
+  packingSectors.setDims(sx, sy);
+  */
+  // Set up walls
   vector<Wall*> bounds;
   bounds.push_back(new Wall(vect<>(left,bottom), vect<>(left,top)));
   bounds.push_back(new Wall(vect<>(left,top), vect<>(right,top)));
@@ -751,7 +760,9 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
   for (int i=0; i<N; i++) {
     vect<> pos = vect<>(b+x*drand48(), b+y*drand48());
     //addParticle(new Particle(pos, 0.05*R));
-    parts.push_back(new Particle(pos, 0.05*R));
+    Particle *P = new Particle(pos, 0.05*R);
+    parts.push_back(P);
+    // packingSectors.addParticleToSectors(P); //**
   }
 
   // Enlarge particles and thermally agitate
@@ -761,13 +772,14 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
   double mag = 5, dm = mag/(double)steps;
   for (int i=0; i<steps; i++) {
     // Particle - particle interactions
+    // packingSectors.interactions(); //**
     for (auto P : parts)
       for (auto Q : parts)
         if (P!=Q) {
 	  vect<> disp = getDisplacement(Q->getPosition(), P->getPosition());
 	  P->interact(Q, disp);
 	}
-
+    
     // Thermal agitation
     mag -= dm;
     for (auto P: parts) P->applyForce(mag*randV());

@@ -6,20 +6,23 @@
 
 class Sectorization {
  public:
-  Sectorization() {};
+  Sectorization();
+  ~Sectorization();
 
   void interactions(); // Compute interactions
   void update(); // Update sectors
 
   // Accessors
-  inline vect<> getDisplacement(vect<>, vect<>);
-  inline vect<> getDisplacement(Particle*, Particle*);
-  inline int getSec(vect<>);
+  vect<> getDisplacement(vect<>, vect<>);
+  vect<> getDisplacement(Particle*, Particle*);
+  int getSec(vect<>);
 
   // Mutators
-  void setParticlesList(list<Particle*>* P) { particles = P; }
+  void addParticleToSectors(Particle *);
+  void setParticleList(list<Particle*>* P) { particles = P; }
   void setSSecInteract(bool s) { ssecInteract = s; }
   void setDims(int, int);
+  void setBounds(double, double, double, double);
 
  private:
   bool wrapX, wrapY;               // Wrapping

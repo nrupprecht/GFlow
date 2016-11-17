@@ -1,6 +1,14 @@
 #include "Sectorization.h"
 
-inline void Sectorization::update() {
+Sectorization::Sectorization() : secX(1), secY(1), wrapX(false), wrapY(false), ssecInteract(false), left(0), right(1), bottom(0), top(1), particles(0), sectors(0) {};
+
+Sectorization::~Sectorization() {
+  delete [] sectors;
+  sectors = 0;
+  particles = 0;
+}
+
+void Sectorization::update() {
   for (int i=0; i<(secX+2)*(secY+2)+1; i++) {
     vector<list<Particle*>::iterator> remove;
     for (auto p=sectors[i].begin(); p!=sectors[i].end(); ++p) {
@@ -15,7 +23,7 @@ inline void Sectorization::update() {
   }
 }
 
-inline void Sectorization::interactions() {
+void Sectorization::interactions() {
   for (int y=1; y<secY+1; y++)
     for (int x=1; x<secX+1; x++)
       for (auto P : sectors[y*(secX+2)+x]) { // For each particle in the sector
@@ -47,7 +55,7 @@ inline void Sectorization::interactions() {
   }
 }
 
-inline vect<> Sectorization::getDisplacement(vect<> A, vect<> B) {
+vect<> Sectorization::getDisplacement(vect<> A, vect<> B) {
   // Get the correct (minimal) displacement vector pointing from B to A
   double X = A.x-B.x;
   double Y = A.y-B.y;
@@ -62,11 +70,11 @@ inline vect<> Sectorization::getDisplacement(vect<> A, vect<> B) {
   return vect<>(X,Y);
 }
 
-inline vect<> Sectorization::getDisplacement(Particle *P, Particle *Q) {
+vect<> Sectorization::getDisplacement(Particle *P, Particle *Q) {
   return getDisplacement(P->getPosition(), Q->getPosition());
 }
 
-inline int Sectorization::getSec(vect<> pos) {
+int Sectorization::getSec(vect<> pos) {
   int X = static_cast<int>((pos.x-left)/(right-left)*secX);
   int Y = static_cast<int>((pos.y-bottom)/(top-bottom)*secY);
 
@@ -76,7 +84,12 @@ inline int Sectorization::getSec(vect<> pos) {
   return (X+1)+(secX+2)*(Y+1);
 }
 
-inline void Sectorization::setDims(int sx, int sy) {
+void Sectorization::addParticleToSectors(Particle* P) {
+  int sec = getSec(P->getPosition());
+  sectors[sec].push_back(P);
+}
+
+void Sectorization::setDims(int sx, int sy) {
   sx = sx<1 ? 1 : sx;
   sy = sy<1 ? 1 : sy;
   // Create new sectors
@@ -88,4 +101,8 @@ inline void Sectorization::setDims(int sx, int sy) {
     int sec = getSec(P->getPosition());
     sectors[sec].push_back(P);
   }
+}
+
+void Sectorization::setBounds(double l, double r, double b, double t) {
+  left = l; right = r; bottom = b; top = t;
 }
