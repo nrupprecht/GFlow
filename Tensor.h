@@ -9,15 +9,6 @@
 #include "Utility.h"
 #include "Shape.h"
 
-/// Index class
-struct Index {
-  Index(int I) : num(true), index(I) {};
-  Index(char c) : num(false), index(c) {};
-  
-  bool num;
-  int index;
-};
-
 /// Tensor class
 class Tensor {
  public:
@@ -145,7 +136,7 @@ class Tensor {
 
  private:
   /// Helper functions
-  void initialize(Shape s, bool del=true, bool zero=true, int tot=-1);
+  void initialize(Shape s, bool del=true, bool zero=true);
   template<typename ...T> void at_address(int&, int) const {};
   template<typename ...T> void at_address(int& add, int step, int first, T ... last) const {
     if (step>=shape.rank || first>=shape.dims[step]) throw TensorOutOfBounds();

@@ -7,58 +7,7 @@
 #ifndef GFIELD_H
 #define GFIELD_H
 
-#include "Utility.h"
-#include "Shape.h"
-
-// Variable size integer array
-class Index {
- public:
-  Index() {
-    entries = 0;
-    total = 0;
-  }
-
-  Index(int first);
-  
-  template<typename ...T> Index(int first, T... last) {
-    vector<int> vec;
-    total = sizeof...(last) + 1;
-    entries = new int[total];
-    if (total==0) {
-      entries = 0;
-      return;
-    }
-    getEntries(0, first, last...);
-  }
-
-  friend ostream& operator<<(ostream& out, Index index) {
-    out << '{';
-    for (int i=0; i<index.total; i++) {
-      out << index.entries[i];
-      if (i!=index.total-1) out << ',';
-    }
-    out << '}';
-    return out;
-  }
-
-  int size() const { return total; }
-
-  int& at(int i) { return entries[i]; } // Doesn't check (for speed)
-  int at(int i) const { return entries[i]; }// Doesn't check (for speed)
-
- private:
-  // The getEntries helper function
-  template<typename ...T> void getEntries(int step, int first, T... last) const {
-    entries[step] = first;
-    getEntries(step+1, last...);
-  }
-  void getEntries(int step, int first) const {
-    entries[step] = first;
-  }
-  
-  int *entries;
-  int total;
-};
+#include "GFUtility.h"
 
 /// General Field, arbitrary number of dimensions. Borrows a lot from my Tensor class
 class GField {
@@ -66,10 +15,16 @@ class GField {
   GField();
   GField(Shape s);
   template<typename ...T> GField(int first, T... last) {
+    spacing = array = lowerBounds = upperBounds = 0;
+    stride = 0; wrapping = 0;
     Shape s(first, last...);
-    initialize(s);
+    initialize(s, true);
   }
   ~GField();
+
+  void initialize(Shape, bool=false);
+
+  GField& operator=(const GField&);
 
   template<typename ...T> void setLowerBounds(double first, T ...s) {
     vector<double> lower;
@@ -101,34 +56,24 @@ class GField {
     return array[address];
   }
 
-  double& at(Index index) {
-    int address = 0;
-    at_address(address, 0, index);
-    return array[address];
-  }
-
-  double at(Index index) const {
-    int address = 0;
-    at_address(address,0, index);
-    return array[address];
-  }
+  double& at(Index index);
+  double at(Index index) const;
+  double& at(vector<int>);
+  double at(vector<int>) const;
   
-  template<typename ...T> double derivative(Index I, int first, T ...s) const {
-    // STUB
-    return 0;
-  }
+  double derivative(Index, Index) const;
+
+  gVector getPosition(vector<int>) const;
+  gVector getPosition(Index) const;
+  double getPosition(int, int) const; // Get the real position along a single component
 
   // Integrate out a variable
-  // Don't do checking - faster that way
+  // Don't do checking - faster that way --- CURRENTLY DEFUNCT
   template<typename ...T> double integrate(int index, int first, T ...s) const {
     int add = 0;
-    Index firstEntry(s...);
-
-    cout << "Index: " << firstEntry << endl;
-
+    Index firstEntry(first, s...);
     firstEntry.at(index) = 0;
-    at_address(add, 0, firstEntry);
-    
+    at_address(add, firstEntry);
     // Integrate
     int step = stride[index];
     double total = 0;
@@ -137,11 +82,28 @@ class GField {
     return total;
   }
 
+  double integrate(int index, Index pos);
+
   GField& operator+=(const GField&);
+
+  friend void plusEqNS(GField&, const GField&, double=1.); // Not safe (no checking) version
+
+  /// Accessors
+  Shape getShape() { return shape; }
+
+  /// Mutators
+  void setWrapping(int, bool);
+  void setBounds(int, double, double);
+  void set(gFunction);
+
+  /// Data printing
+  friend std::ostream& operator<<(std::ostream& out, const GField&);
 
   /// Error classes
   class GFieldOutOfBounds {};
+  class GFieldIndexOutOfBounds {};
   class GFieldMismatch {};
+  class GFieldDimensionMismatch {};
 
  private:
   /// Helper functions
@@ -151,19 +113,23 @@ class GField {
     add += stride[step]*first;
     at_address(add, step+1, last...);
   }
-  void at_address(int& add, int step, Index index) const { // Doesn't check (for speed)
-    add += stride[step]*index.at(step);
-    if (step<index.size()) at_address(add, step+1, index);
-  }
+  void at_address(int&, Index) const;
+  void at_address(int&, vector<int>) const;
 
-  void initialize(Shape);
+  static inline void writeHelper(vector<int>, std::ostream&, const GField&);
+  static inline void setHelper(Index index, int step, gFunction function, GField& G);
+
+  int mod(Index&) const;
+
+  void clean(int=-1);
 
   Shape shape;     // The shape of the field
-  double *spacing; // The grid spacings in each dimension
-  int *stride;     // The stride for each dimension
   int total;       // Total number of elements in the field
+  double *spacing; // The grid spacings in each dimension
   double *array;   // Entries of the field
   double *lowerBounds, *upperBounds;
+  int *stride;     // The stride for each dimension
+  bool *wrapping;  // Whether each dimension wraps
 };
 
 #endif

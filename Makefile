@@ -21,7 +21,7 @@ JamShape: JamShape.o $(files)
 driver: driver.o $(files)
 	$(CC) $(OPT) $^ -o $@ $(LDLIBS)
 
-theory: theory.o $(files) Checker.o
+theory: theory.o $(files) Checker.o NDSolver.o GField.o
 	$(CC) $(OPT) $^ -o $@ $(LDLIBS)
 
 bacteria: bacteria.o $(files)

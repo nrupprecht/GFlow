@@ -3,6 +3,9 @@
 
 #include "NDSolver.h"
 
+double gaussian (gVector vec2d) { return exp(-sqr(3*vec2d.at(0))-sqr(3*vec2d.at(1))); }
+double xgaussian (gVector vec2d) { return exp(-sqr(3*vec2d.at(0))); }
+
 int main(int argc, char** argv) {
   // Parameters 
   int iters = 100;
@@ -11,6 +14,8 @@ int main(int argc, char** argv) {
   int recDelay = 10;
   double radius = 0.05;
   string filename= "";
+
+  double time = 0.05;
   
   //----------------------------------------
   // Parse command line arguments
@@ -22,14 +27,24 @@ int main(int argc, char** argv) {
   parser.get("recDelay", recDelay);
   parser.get("radius", radius);
   parser.get("filename", filename);
+
+  parser.get("time", time);
   //----------------------------------------
 
   if (bins%2==0) bins++;
   if (vbins%2==0) vbins++; // Make sure we have an odd number of vbins
 
-
   NDSolver ndsolver;
-  ndsolver.run(1.);
+  ndsolver.setGridSpacingX(0.05);
+  ndsolver.setGridSpacingVX(0.05);
+  ndsolver.setEpsilon(0.05);
+  ndsolver.setField(gaussian);
+  //ndsolver.setField(xgaussian);
+  ndsolver.run(time);
+  cout << "field=" << mmPreproc(ndsolver.printField()) << ";\n";
+  cout << "dfield=" << mmPreproc(ndsolver.printDField()) << ";\n";
+  cout << "it=" << ndsolver.getIters() << ";\ntime=" << ndsolver.getTime() << ";\n";
+  cout << "ListPlot3D[field,PlotRange->All]\nListPlot3D[dfield,PlotRange->All]";
   return 0;
 
   Checker checker(bins, vbins, radius);

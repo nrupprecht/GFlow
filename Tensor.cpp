@@ -248,10 +248,12 @@ inline void Tensor::writeHelper(vector<int> indices, std::ostream& out, const Te
   out << '{';
   int step = indices.size();
   if (step==T.shape.rank-1) { // Base case
-    if (T.shape.dims==0) {
+    /*
+    if (T.shape.dims==0) { //** <--- This just checks the address
       out << "}";
       return;
     }
+    */
     for (int i=0; i<T.shape.dims[step]; i++) {
       indices.push_back(i); // Add i
       out << T.at(indices);
@@ -260,10 +262,12 @@ inline void Tensor::writeHelper(vector<int> indices, std::ostream& out, const Te
     }
   }
   else {
-    if (T.shape.dims==0) {
+    /*
+    if (T.shape.dims==0) { //** <--- Same as above
       out << "}";
       return;
     }
+    */
     for (int i=0; i<T.shape.dims[step]; i++) {
       indices.push_back(i); // Add i
       writeHelper(indices, out, T);

@@ -235,7 +235,7 @@ inline vect<> randV() {
   return vect<>(sinf(2*PI*a), cosf(2*PI*a));
 }
 
-template<typename T> inline std::ostream& operator<<(std::ostream& out, vector<T> lst) {
+template<typename T> inline std::ostream& operator<<(std::ostream& out, const vector<T>& lst) {
   stringstream stream;
   string str;
   stream << "{";
@@ -247,6 +247,17 @@ template<typename T> inline std::ostream& operator<<(std::ostream& out, vector<T
   stream >> str;
   out << mmPreproc(str);
   return out;
+}
+
+template<typename T> inline string bare_representation(const vector<T>& lst) {
+  stringstream stream;
+  string str;
+  for (int i=0; i<lst.size(); i++) {
+    stream << lst.at(i);
+    if (i!=lst.size()-1) stream << ",";
+  }
+  stream >> str;
+  return mmPreproc(str);
 }
 
 /// Helper averaging function

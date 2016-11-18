@@ -9,7 +9,7 @@
 
 struct Shape {
   Shape() : rank(0), total(0), dims(0) {};
-  
+  Shape(const Shape& s) : dims(0) { *this = s; }
   template<typename ... T> Shape(int first, T ...s) {
     vector<int> vect;
     unpack(vect, first, s...);
@@ -27,7 +27,6 @@ struct Shape {
       total = 0;
     }
   }
-
   Shape(int first, Shape second) {
     rank = second.rank+1;
     total = first*second.total;
@@ -35,9 +34,10 @@ struct Shape {
     dims[0] = first;
     for (int i=1; i<rank; i++) dims[i] = second.at(i-1);
   }
-
-  Shape(const Shape& s) : dims(0) { *this = s; }
-
+  ~Shape() { 
+    if(dims) delete [] dims; 
+  }
+  
   Shape& operator=(const Shape& s) {
     // Copy data, not pointers
     rank = s.rank;
@@ -48,10 +48,6 @@ struct Shape {
     return *this;
   }
     
-  ~Shape() { 
-    if(dims) delete [] dims; 
-  }
-
   friend Shape operator+(const Shape& A, const Shape& B) {
     int rank = A.rank+B.rank;
     Shape S;
@@ -68,7 +64,7 @@ struct Shape {
     // Return
     return S;
   }
-
+  
   friend ostream& operator<<(ostream& out, const Shape& s) {
     if (s.rank==0) {
       out << "{}";
@@ -97,6 +93,12 @@ struct Shape {
 
   int getTotal() const { return total; }
 
+  void set(int i, int val) {
+    total /= dims[i];
+    dims[i] = val;
+    total *= dims[i];
+  }
+
   int at(int i) const {
     if (i<0 || i>=rank) throw ShapeOutOfBounds();
     return dims[i];
@@ -107,11 +109,13 @@ struct Shape {
     for (int i=0; i<rank; i++) vec.push_back(dims[i]);
     return vec;
   }
+
+  int getRank() const { return rank; }
   
   // Error classes
   class ShapeOutOfBounds {};
 
-  int rank;
+  int rank; //** Should make these private
   int* dims;
 
 private:
