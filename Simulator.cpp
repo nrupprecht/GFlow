@@ -182,7 +182,7 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, double 
   if (rA==-1) rA = radius;
   
   // Set sample points
-  setBins(1.1547*(top-bottom)/(2*radius));
+  //setBins(1.1547*(top-bottom)/(2*radius));
 
   addWall(new Wall(vect<>(0,bottom), vect<>(right,bottom))); // Bottom wall
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // Top wall
@@ -228,7 +228,7 @@ void Simulator::createSphereFluid(int N, int A, double radius, double V, double 
   if (rA==-1) rA = radius;
   
   // Set sample points
-  setBins(1.1547*(top-bottom)/(2*radius));
+  //setBins(1.1547*(top-bottom)/(2*radius));
 
   addWall(new Wall(vect<>(0,bottom), vect<>(right,bottom))); // Bottom wall
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // Top wall
@@ -372,7 +372,7 @@ void Simulator::createBacteriaBox(int N, double radius, double width, double hei
   top = height; right = width;
 
   // Set sample points
-  setBins(1.1547*(top-bottom)/(2*radius));
+  //setBins(1.1547*(top-bottom)/(2*radius));
 
   addWall(new Wall(vect<>(0,bottom), vect<>(right,bottom))); // Bottom wall
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // Top wall

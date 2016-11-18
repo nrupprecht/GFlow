@@ -38,7 +38,7 @@ class NDSolver {
     return 0;
   }
   double func_fext(double x) {
-    return 0;
+    return x;
   }
 
   /// Simulation
