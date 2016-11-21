@@ -902,7 +902,10 @@ void Simulator::printBacteriaToFile() {
     filename.str("");
     filename << "time_" << i << ".dat";
     fout.open(filename.str());
-    fout << watchPos.at(i) << "\n";
+    for(int j=0; j<watchPos.at(i).size(); j++) {
+        //std::vector<double> pos = watchPos.at(i).at(j);
+	fout << watchPos.at(i).at(j).x << "\t" << watchPos.at(i).at(j).y << "\n";
+    } // for each particle at time i
     fout.close();
     fout.clear();
   } // for each time step, write data to file
