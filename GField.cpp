@@ -15,9 +15,6 @@ GField& GField::operator=(const GField& F) {
   shape = F.shape;
   total = F.total;
   int rank = shape.getRank();
-
-  cout << F.array[0] << endl; //**
-
   create(F.spacing, spacing, rank);
   create(F.stride, stride, rank);
   create(F.array, array, total);
@@ -36,34 +33,24 @@ void GField::at_address(int& add, vector<int> index) const { // Doesn't check (f
 
 void GField::initialize(Shape s, bool all) {
   int lastRank = shape.getRank(), lastTotal = shape.getTotal();
-  int rank = shape.getRank();
+  int rank = s.getRank();
   if (rank==0 || s.getTotal()==0) return;
   total = s.getTotal();
   shape = s;
-
-  cout << shape << endl;
-
-  // Set stride array
-  if (shape.getRank()!=lastRank || all) {
-    if (stride) delete [] stride;
-    stride = new int[rank];
-    int count = 1;
-    for (int i=0; i<rank; i++) {
-      count *= shape.dims[i];
-      stride[i] = total/count;
-    }
+  // Set stride array (recalculate on change of Shape)
+  if (stride) delete [] stride;
+  stride = new int[rank];
+  int count = 1;
+  for (int i=0; i<rank; i++) {
+    count *= shape.dims[i];
+    stride[i] = total/count;
   }
   // Set up array (recalculate on change of Shape)
   if (total!=lastTotal || all) {
-
-    cout << array << endl;
-
-    if (array) delete [] array; //**
+    if (array) delete [] array;
     array = new double[total];
-    for (int i=0; i<total; i++) array[i] = 0.;
-
-    cout << array << endl << endl; //**
   }
+  for (int i=0; i<total; i++) array[i] = 0.; // Always reset values
   // Set up bounds (recalculate when given)
   if (shape.getRank()!=lastRank || all) {
     if (lowerBounds) delete [] lowerBounds;
@@ -80,34 +67,36 @@ void GField::initialize(Shape s, bool all) {
     for (int i=0; i<rank; i++) wrapping[i] = false;
   }
   // Set up spacing (recalculate on change of Shape or bounds)
-  if (shape.getRank()!=lastRank || all) {
-    if (spacing) delete [] spacing;
-    spacing = new double[rank];
-    for (int i=0; i<rank; i++) spacing[i] = (upperBounds[i]-lowerBounds[i])/shape.at(i);
-  }
+  if (spacing) delete [] spacing;
+  spacing = new double[rank];
+  for (int i=0; i<rank; i++) spacing[i] = (upperBounds[i]-lowerBounds[i])/shape.at(i);
 }
 
 double& GField::at(Index index) {
   int address = 0;
   at_address(address, index);
+  if (total<=address) throw GFieldOutOfBounds();
   return array[address];
 }
 
 double GField::at(Index index) const {
   int address = 0;
   at_address(address, index);
+  if (total<=address) throw GFieldOutOfBounds();
   return array[address];
 }
 
 double& GField::at(vector<int> index) {
   int address = 0;
   at_address(address, index);
+  if (total<=address) throw GFieldOutOfBounds();
   return array[address];
 }
 
 double GField::at(vector<int> index) const {
   int address = 0;
   at_address(address, index);
+  if (total<=address) throw GFieldOutOfBounds();
   return array[address];
 }
 
@@ -129,9 +118,11 @@ double GField::derivative(Index I, Index pos) const {
   else if (ind1!=0) der = (at(I)-at(lw))*invh;
   else der = (at(up)-at(I))*invh;
 
+  /*
   if (fabs(der)>0.5) {
     cout << wrapping[0] << " " << wrapping[1] << endl;
   }
+  */
 
   return der;
 }
@@ -195,6 +186,10 @@ void GField::set(gFunction function) {
   Index index;
   index.resize(shape.rank);
   GField::setHelper(index, 0, function, *this);
+}
+
+void GField::parabolaZero(int index, int N) {
+  
 }
 
 std::ostream& operator<<(std::ostream& out, const GField& G) {
@@ -266,12 +261,12 @@ int GField::mod(Index& index) const {
   return oob;
 }
 
-void GField::clean(int compTotal) {
+void GField::clean() {
   if (spacing) delete [] spacing;
   spacing = 0;
   if (stride) delete [] stride;
   stride = 0;
-  if (array && total!=compTotal) delete [] array;
+  if (array) delete [] array;
   array = 0;
   if (lowerBounds) delete [] lowerBounds;
   lowerBounds = 0;

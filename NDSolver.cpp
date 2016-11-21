@@ -41,12 +41,19 @@ void NDSolver::run(double t) {
   Index dx(1,0), dvx(0,1); // Derivative indices
   for (iters=0; iters<totalIters; iters++) {
     //  D(0,0,1)[field][x,vx,t] == vx*D(1,0,0)[field][x,vx,t]-(gamma*(vf[x]-vx) + fext[x] + Fc*Integrate[D(1,0,0)[field][x,i,t], i])*D(0,1,0)[field][x,vx,t]
+    double maxDF = 0;
     for (int vx=0; vx<gridSize_VX; vx++) {
       for (int x=0; x<gridSize_X; x++) {
 	Index pos(x, vx);
-	//delta_field.at(x,vx) = field.derivative(dx, pos) - (const_gamma*(func_vf(x) - vx) + func_fext(x) + const_Fc*field.integrate(1, pos))*field.derivative(dvx, pos);
+	double X = valueX(x), VX = valueVX(vx);
+	//delta_field.at(x,vx) = valueVX(vx)*field.derivative(dx, pos) - (const_gamma*(func_vf(x) - valueVX(vx)) + func_fext(x) + const_Fc*field.integrate(1, pos))*field.derivative(dvx, pos);
+	double dF = VX*field.derivative(dx, pos) - (const_gamma*(func_vf(X) - VX) + func_fext(X))*field.derivative(dvx, pos);
+	delta_field.at(x,vx) = dF;
+	
+	// Record maximum derivative
+	maxDF = fabs(dF)>maxDF ? maxDF = fabs(dF) : maxDF;
 
-	delta_field.at(x,vx) = valueVX(vx)*field.derivative(dx, pos);
+	// delta_field.at(x,vx) = valueVX(vx)*field.derivative(dx, pos); // Motion only
       }
     }
     plusEqNS(field, delta_field, epsilon);

@@ -95,6 +95,7 @@ class GField {
   void setWrapping(int, bool);
   void setBounds(int, double, double);
   void set(gFunction);
+  void parabolaZero(int, int);
 
   /// Data printing
   friend std::ostream& operator<<(std::ostream& out, const GField&);
@@ -121,7 +122,7 @@ class GField {
 
   int mod(Index&) const;
 
-  void clean(int=-1);
+  void clean();
 
   Shape shape;     // The shape of the field
   int total;       // Total number of elements in the field
