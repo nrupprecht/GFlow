@@ -1,61 +1,75 @@
 #include "NDSolver.h"
 
-NDSolver::NDSolver() {
+NDSolver::NDSolver(int dims) : gridSpacing(0), gridSize(0), dim_up(0), dim_lw(0) {
+  // Set number of non-temporal dimensions
+  sdims = dims;
+
+  // Set times
+  epsilon = 0.01;
+  time = 0;
+
+  /// Dimensions
+  dim_lw = new double[sdims];
+  dim_up = new double[sdims];
+  for (int i=0; i<sdims; i++) {
+    dim_lw[i] = -1;
+    dim_up[i] = 1;
+  }
+  
+  /// Initialize Parameters
+  gridSpacing = new double[sdims];
+  for (int i=0;i<sdims; i++) gridSpacing[i] = 0.01;
+
+  gridSize = new int[sdims];
+  for (int i=0; i<sdims; i++) gridSize[i] = (dim_up[i]-dim_lw[i])/gridSpacing[i];
+
+  // Set fields
+  field = GField(gridSize, sdims);
+  delta_field = GField(gridSize, sdims);
+
+  for (int i=0; i<sdims; i++) {
+    field.setBounds(i, dim_lw[i], dim_up[i]);
+    delta_field.setBounds(i,dim_lw[i], dim_up[i]);
+    field.setWrapping(i, false);
+    delta_field.setWrapping(i, false);
+  }
+
   /// Initialize Constants
   const_gamma = 0;
   const_Fc = 0;
-
-  /// Dimensions
-  dim_X_0 = -1; dim_X_1 = 1;
-  dim_VX_0 = -1; dim_VX_1 = 1;
-
-  /// Initialize Parameters
-  gridSpacing_X = 0.01;
-  gridSpacing_VX = 0.01;
-  epsilon = 0.01;
-
-  gridSize_X = (dim_X_1-dim_X_0)/gridSpacing_X;
-  gridSize_VX = (dim_VX_1-dim_VX_0)/gridSpacing_VX;
-
-  // Set fields
-  field = GField(gridSize_X, gridSize_VX);
-  field.setBounds(0, dim_X_0, dim_X_1);
-  field.setBounds(1, dim_VX_0, dim_VX_1);
-  field.setWrapping(0, true);
-  field.setWrapping(1, false);
-
-  delta_field = GField(gridSize_X, gridSize_VX);
-  delta_field.setBounds(0, dim_X_0, dim_X_1);
-  delta_field.setBounds(1, dim_VX_0, dim_VX_1);
-  delta_field.setWrapping(0, true);
-  delta_field.setWrapping(1, false);
-
-  time = 0;
 }
 
-NDSolver::~NDSolver() {}
+NDSolver::~NDSolver() {
+  if (gridSpacing) delete [] gridSpacing;
+  if (gridSize) delete [] gridSize;
+  if (dim_up) delete [] dim_up;
+  if (dim_lw) delete [] dim_lw;
+}
 
 void NDSolver::run(double t) {
   time = 0;
   int totalIters = t/epsilon;
   Index dx(1,0), dvx(0,1); // Derivative indices
-  for (iters=0; iters<totalIters; iters++) {
+  for (iters=0; iters<totalIters; iters++, time+=epsilon) {
     //  D(0,0,1)[field][x,vx,t] == vx*D(1,0,0)[field][x,vx,t]-(gamma*(vf[x]-vx) + fext[x] + Fc*Integrate[D(1,0,0)[field][x,i,t], i])*D(0,1,0)[field][x,vx,t]
     double maxDF = 0;
-    for (int vx=0; vx<gridSize_VX; vx++) {
-      for (int x=0; x<gridSize_X; x++) {
-	Index pos(x, vx);
-	double X = valueX(x), VX = valueVX(vx);
-	//delta_field.at(x,vx) = valueVX(vx)*field.derivative(dx, pos) - (const_gamma*(func_vf(x) - valueVX(vx)) + func_fext(x) + const_Fc*field.integrate(1, pos))*field.derivative(dvx, pos);
-	double dF = VX*field.derivative(dx, pos) - (const_gamma*(func_vf(X) - VX) + func_fext(X))*field.derivative(dvx, pos);
-	delta_field.at(x,vx) = dF;
-	
-	// Record maximum derivative
-	maxDF = fabs(dF)>maxDF ? maxDF = fabs(dF) : maxDF;
-
-	// delta_field.at(x,vx) = valueVX(vx)*field.derivative(dx, pos); // Motion only
+    for (int vx=0; vx<gridSize[2]; vx++) {
+      for (int vy = 0; vy<gridSize[3]; vy++) {
+	for (int x=0; x<gridSize[0]; x++) {
+	  for (int y=0; y<gridSize[1]; y++) {
+	    Index pos(x, y, vx, vy);
+	    double X = valueS(0, x), Y = valueS(1, y), VX = valueS(2, vx), VY = valueS(3, vy);
+	    //delta_field.at(x,vx) = valueVX(vx)*field.derivative(dx, pos) - (const_gamma*(func_vf(x) - valueVX(vx)) + func_fext(x) + const_Fc*field.integrate(1, pos))*field.derivative(dvx, pos);
+	    double dF = VX*field.derivative(dx, pos) - (const_gamma*(func_vf(X) - VX) + func_fext(X))*field.derivative(dvx, pos);
+	    delta_field.at(x,vx) = dF;
+	    
+	    // Record maximum derivative
+	    maxDF = fabs(dF)>maxDF ? maxDF = fabs(dF) : maxDF;
+	  }
+	}
       }
     }
+    // Done setting delta_field
     plusEqNS(field, delta_field, epsilon);
   }
 }
@@ -64,20 +78,15 @@ void NDSolver::setField(gFunction func) {
   field.set(func);
 }
 
-void NDSolver::setGridSpacingX(double x) {
-  Shape shape = field.getShape();
-  gridSpacing_X = x;
-  gridSize_X = (dim_X_1-dim_X_0)/gridSpacing_X;
-  shape.set(0, gridSize_X);
-  field.initialize(shape);
-  delta_field.initialize(shape);
+void NDSolver::setWrapping(int dim, bool w) {
+  field.setWrapping(dim, w);
 }
 
-void NDSolver::setGridSpacingVX(double vx) {
+void NDSolver::setGridSpacing(int index, double spacing) {
+  if (spacing>=sdims) throw 1;
   Shape shape = field.getShape();
-  gridSpacing_VX = vx;
-  gridSize_VX = (dim_VX_1-dim_VX_0)/gridSpacing_VX;
-  shape.set(1, gridSize_VX);
+  gridSpacing[index] = spacing;
+  shape.set(index, spacing);
   field.initialize(shape);
   delta_field.initialize(shape);
 }
@@ -98,14 +107,18 @@ string NDSolver::printDField() {
   return str;
 }
 
-double NDSolver::valueX(int x) {
-  return field.getPosition(0,x);
-}
-
-double NDSolver::valueVX(int vx) {
-  return field.getPosition(1,vx);
+double NDSolver::valueS(int index, int coord) {
+  field.getPosition(index, coord);
 }
 
 double NDSolver::valueT(int t) {
   return epsilon*t;
+}
+
+double NDSolver::func_vf(double x) {
+  return 0;
+}
+
+double NDSolver::func_fext(double x) {
+  return x;
 }

@@ -1,48 +1,34 @@
-#include "Checker.h"
 #include "ArgParse.h"
 
 #include "NDSolver.h"
 
 double gaussian (gVector vec2d) { return exp(-sqr(3*vec2d.at(0))-sqr(3*vec2d.at(1))); }
+double mgaussian(gVector vec2d) { return exp(-sqr(3*vec2d.at(0))-sqr(3*vec2d.at(1)-1)); }
 double xgaussian (gVector vec2d) { return exp(-sqr(3*vec2d.at(0))); }
 
 int main(int argc, char** argv) {
-  // Parameters 
-  int iters = 100;
-  int bins = 31;
-  int vbins = 21;
-  int recDelay = 10;
-  double radius = 0.05;
-  string filename= "";
-
   double time = 1;
-  double epsilon = 0.0025;
-  double gridSpacing = 0.025;
+  double epsilon = 0.01;
+  double gridSpacing = 0.05;
   
   //----------------------------------------
   // Parse command line arguments
   //----------------------------------------
   ArgParse parser(argc, argv);
-  parser.get("iters", iters);
-  parser.get("bins", bins);
-  parser.get("vbins", vbins);
-  parser.get("recDelay", recDelay);
-  parser.get("radius", radius);
-  parser.get("filename", filename);
-
   parser.get("time", time);
   parser.get("epsilon", epsilon);
   parser.get("spacing", gridSpacing);
   //----------------------------------------
-
-  if (bins%2==0) bins++;
-  if (vbins%2==0) vbins++; // Make sure we have an odd number of vbins
-
-  NDSolver ndsolver;
-  ndsolver.setGridSpacingX(gridSpacing);
-  ndsolver.setGridSpacingVX(gridSpacing);
+  
+  NDSolver ndsolver(4);
+  ndsolver.setGridSpacing(0, gridSpacing); // X
+  ndsolver.setGridSpacing(1, gridSpacing); // Y
+  ndsolver.setGridSpacing(2, gridSpacing); // VX
+  ndsolver.setGridSpacing(3, gridSpacing); // VY
+  ndsolver.setWrapping(0, true);
+  ndsolver.setWrapping(1, true);
   ndsolver.setEpsilon(epsilon);
-  ndsolver.setField(gaussian);
+  ndsolver.setField(mgaussian);
 
   ndsolver.run(time);
   cout << "field=" << mmPreproc(ndsolver.printField()) << ";\n";

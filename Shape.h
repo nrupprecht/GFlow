@@ -34,6 +34,15 @@ struct Shape {
     dims[0] = first;
     for (int i=1; i<rank; i++) dims[i] = second.at(i-1);
   }
+  Shape(int *sizes, int rank) {
+    this->rank = rank;
+    dims = new int[rank];
+    total = 1;
+    for (int i=0; i<rank; i++) {
+      dims[i] = sizes[i];
+      total *= sizes[i];
+    }
+  }
   ~Shape() { 
     if(dims) delete [] dims; 
   }
@@ -94,6 +103,7 @@ struct Shape {
   int getTotal() const { return total; }
 
   void set(int i, int val) {
+    if (i<0 || rank<=i) throw ShapeOutOfBounds();
     total /= dims[i];
     dims[i] = val;
     total *= dims[i];

@@ -308,7 +308,7 @@ class Simulator {
 
   /// Total distribution P[position][velocity]
   bool recordDist;
-  Tensor distribution;
+  Tensor distribution; //**
   double maxVx, minVx, maxVy, minVy; // Maximum/Minimum velocities to bin for full distribution
   vect<> binVelocity(int, int);
   bool useVelocityDiff;

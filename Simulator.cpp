@@ -628,7 +628,7 @@ Tensor Simulator::getDistribution() {
   int num = particles.size();
   double total = num*recIt;
   Tensor dist = distribution;
-  timesEq(dist, 1./total);
+  timesEq(dist, 1./total); 
   return dist;
 }
 
@@ -636,7 +636,7 @@ Tensor Simulator::getCollapsedDistribution(int index) {
   if (recIt==0) return Tensor();
   double invTotal = 1./(particles.size()*recIt);
   if (index==0) { // Average over x
-    Tensor dist(bins, vbins, vbins);
+    Tensor dist(bins, vbins, vbins); 
     for (int y=0; y<bins; y++)
       for (int x=0; x<bins; x++)
 	for (int vy=0; vy<vbins; vy++)

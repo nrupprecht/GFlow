@@ -1,8 +1,17 @@
 #include "GField.h"
 
-GField::GField() : spacing(0), stride(0), array(0), lowerBounds(0), upperBounds(0), wrapping(0) {};
+GField::GField() {
+  zeroPointers();
+}
 
-GField::GField(Shape s) : spacing(0), stride(0), array(0), lowerBounds(0), upperBounds(0), wrapping(0) { 
+GField::GField(Shape s) {
+  zeroPointers();
+  initialize(s, true);
+}
+
+GField::GField(int* sizes, int dims) {
+  zeroPointers();
+  Shape s(sizes, dims);
   initialize(s, true);
 }
 
@@ -48,8 +57,9 @@ void GField::initialize(Shape s, bool all) {
   // Set up array (recalculate on change of Shape)
   if (total!=lastTotal || all) {
     if (array) delete [] array;
-    array = new double[total];
+    array = 0;
   }
+  if (array==nullptr) array = new double[total];
   for (int i=0; i<total; i++) array[i] = 0.; // Always reset values
   // Set up bounds (recalculate when given)
   if (shape.getRank()!=lastRank || all) {
@@ -118,12 +128,6 @@ double GField::derivative(Index I, Index pos) const {
   else if (ind1!=0) der = (at(I)-at(lw))*invh;
   else der = (at(up)-at(I))*invh;
 
-  /*
-  if (fabs(der)>0.5) {
-    cout << wrapping[0] << " " << wrapping[1] << endl;
-  }
-  */
-
   return der;
 }
 
@@ -148,6 +152,14 @@ double GField::getPosition(int index, int grid) const {
   return grid*spacing[index]+lowerBounds[index];
 }
 
+double GField::integrate() {
+  double total = 0.;
+  for (int i=0; i<shape.getTotal(); i++) total += array[i];
+  double dV = 1;
+  for (int i=0; i<shape.getRank(); i++) dV *= spacing[i];
+  return total*dV;
+}
+
 double GField::integrate(int index, Index pos) {
   int add = 0;
   pos.at(index) = 0; // Start at the beginning
@@ -156,7 +168,7 @@ double GField::integrate(int index, Index pos) {
   int step = stride[index];
   double total = 0.;
   for (int i=0; i<shape.at(index); i++, add+=step) total += array[add];  
-  total /= spacing[index];
+  total *= spacing[index];
   return total;
 }
 
@@ -225,6 +237,10 @@ inline void GField::writeHelper(vector<int> indices, std::ostream& out, const GF
   }
 }
 
+std::istream& operator>>(std::ostream& in, GField& G) {
+  
+}
+
 inline void GField::setHelper(Index index, int step, gFunction function, GField& G) {
   if (step==G.shape.rank-1) { // Base case
     index.at(step)=0;
@@ -263,15 +279,19 @@ int GField::mod(Index& index) const {
 
 void GField::clean() {
   if (spacing) delete [] spacing;
-  spacing = 0;
   if (stride) delete [] stride;
-  stride = 0;
   if (array) delete [] array;
-  array = 0;
   if (lowerBounds) delete [] lowerBounds;
-  lowerBounds = 0;
   if (upperBounds) delete [] upperBounds;
-  upperBounds = 0;
   if (wrapping) delete [] wrapping;
-  wrapping = 0;
+  zeroPointers();
+}
+
+void GField::zeroPointers() {
+  spacing = nullptr;
+  stride = nullptr;
+  array = nullptr;
+  lowerBounds = nullptr;
+  upperBounds = nullptr;
+  wrapping = nullptr;
 }

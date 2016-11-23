@@ -15,11 +15,11 @@ class GField {
   GField();
   GField(Shape s);
   template<typename ...T> GField(int first, T... last) {
-    spacing = array = lowerBounds = upperBounds = 0;
-    stride = 0; wrapping = 0;
+    zeroPointers();
     Shape s(first, last...);
     initialize(s, true);
   }
+  GField(int*, int);
   ~GField();
 
   void initialize(Shape, bool=false);
@@ -63,29 +63,20 @@ class GField {
   
   double derivative(Index, Index) const;
 
+  // Get the "real" position of a bin
   gVector getPosition(vector<int>) const;
   gVector getPosition(Index) const;
   double getPosition(int, int) const; // Get the real position along a single component
 
-  // Integrate out a variable
-  // Don't do checking - faster that way --- CURRENTLY DEFUNCT
-  template<typename ...T> double integrate(int index, int first, T ...s) const {
-    int add = 0;
-    Index firstEntry(first, s...);
-    firstEntry.at(index) = 0;
-    at_address(add, firstEntry);
-    // Integrate
-    int step = stride[index];
-    double total = 0;
-    for (int i=0; i<shape.at(index); i++, add+=step) total += array[add];
-    total /= spacing[index];
-    return total;
-  }
+  // Integrate over the entire space
+  double integrate();
 
+  // Integrate out a single variable
   double integrate(int index, Index pos);
 
+  // Mathematical operations
   GField& operator+=(const GField&);
-
+  GField& operator*=(double);
   friend void plusEqNS(GField&, const GField&, double=1.); // Not safe (no checking) version
 
   /// Accessors
@@ -99,6 +90,7 @@ class GField {
 
   /// Data printing
   friend std::ostream& operator<<(std::ostream& out, const GField&);
+  friend std::istream& operator>>(std::istream& in, const GField);
 
   /// Error classes
   class GFieldOutOfBounds {};
@@ -116,13 +108,14 @@ class GField {
   }
   void at_address(int&, Index) const;
   void at_address(int&, vector<int>) const;
-
+  
   static inline void writeHelper(vector<int>, std::ostream&, const GField&);
   static inline void setHelper(Index index, int step, gFunction function, GField& G);
 
   int mod(Index&) const;
 
   void clean();
+  void zeroPointers();
 
   Shape shape;     // The shape of the field
   int total;       // Total number of elements in the field
