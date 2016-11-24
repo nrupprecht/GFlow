@@ -12,8 +12,8 @@ NDSolver::NDSolver(int dims) : gridSpacing(0), gridSize(0), dim_up(0), dim_lw(0)
   dim_lw = new double[sdims];
   dim_up = new double[sdims];
   for (int i=0; i<sdims; i++) {
-    dim_lw[i] = -1;
-    dim_up[i] = 1;
+    dim_lw[i] = 0;
+    dim_up[i] = 0;
   }
   
   /// Initialize Parameters
@@ -24,8 +24,8 @@ NDSolver::NDSolver(int dims) : gridSpacing(0), gridSize(0), dim_up(0), dim_lw(0)
   for (int i=0; i<sdims; i++) gridSize[i] = (dim_up[i]-dim_lw[i])/gridSpacing[i];
 
   // Set fields
-  field = GField(gridSize, sdims);
-  delta_field = GField(gridSize, sdims);
+  field = GField(sdims);
+  delta_field = GField(sdims);
 
   for (int i=0; i<sdims; i++) {
     field.setBounds(i, dim_lw[i], dim_up[i]);
@@ -47,6 +47,11 @@ NDSolver::~NDSolver() {
 }
 
 void NDSolver::run(double t) {
+  clock_t start = clock();
+  // Set up fields
+  field.remake();
+  delta_field.remake();
+  // Initialize variables
   time = 0;
   int totalIters = t/epsilon;
   Index dx(1,0), dvx(0,1); // Derivative indices
@@ -72,6 +77,9 @@ void NDSolver::run(double t) {
     // Done setting delta_field
     plusEqNS(field, delta_field, epsilon);
   }
+  // End clock, calculate run time
+  clock_t end = clock();
+  runTime = (double)(end-start)/CLOCKS_PER_SEC;
 }
 
 void NDSolver::setField(gFunction func) {
@@ -82,13 +90,27 @@ void NDSolver::setWrapping(int dim, bool w) {
   field.setWrapping(dim, w);
 }
 
-void NDSolver::setGridSpacing(int index, double spacing) {
+void NDSolver::setGridSpacing(int index, double spacing, bool remake) {
   if (spacing>=sdims) throw 1;
   Shape shape = field.getShape();
   gridSpacing[index] = spacing;
-  shape.set(index, spacing);
-  field.initialize(shape);
-  delta_field.initialize(shape);
+
+  field.setGridSpacing(index, spacing, remake);
+  delta_field.setGridSpacing(index, spacing, remake);
+
+  //shape.set(index, spacing);
+  //field.initialize(shape);
+  //delta_field.initialize(shape);
+}
+
+void NDSolver::setBounds(int index, double lb, double ub, bool remake) {
+  field.setBounds(index, lb, ub, remake);
+  delta_field.setBounds(index, lb, ub, remake);
+}
+
+void NDSolver::remake() {
+  field.remake();
+  delta_field.remake();
 }
 
 string NDSolver::printField() {

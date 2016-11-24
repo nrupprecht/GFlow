@@ -12,13 +12,17 @@ class NDSolver {
 
   /// Accessors
   double getTime() { return time; }
+  double getRunTime() { return runTime; }
   int getIters() { return iters; }
-
+  int getPoints() { return field.getPoints(); }
+  
   /// Mutators
   void setField(gFunction);
   void setWrapping(int, bool);
-  void setGridSpacing(int, double);
+  void setGridSpacing(int, double, bool);
+  void setBounds(int, double, double, bool);
   void setEpsilon(double e) { epsilon = e; }
+  void remake();
   
   /// Data printing
   string printField();
@@ -37,7 +41,8 @@ class NDSolver {
   double func_fext(double x);
 
   /// Simulation
-  double time;
+  double time;    // Simulation time
+  double runTime; // Real running time
   int iters;
 
   /// Parameters

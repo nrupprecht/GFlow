@@ -47,7 +47,6 @@ int main(int argc, char** argv) {
   double mu = 0.0; // mutation rate
   double ds = 0.0; // mutation amount 
 
-
   // Run Type
   bool bacteria = false; // Bacteria box
 
