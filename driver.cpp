@@ -147,9 +147,6 @@ int main(int argc, char** argv) {
     simulation.createBacteriaBox(number, radius, width, height, velocity);
   }
   else simulation.createControlPipe(NP, NA, radius, velocity, activeF, rA, width, height);
-  //simulation.createJamPipe(NP, NA, radius, velocity, activeF, rA, width, height, percent);
-  //simulation.createIdealGas(NP+NA, radius, velocity, width, height);
-  //simulation.createSquare(NP, NA, radius, width, height);
   
   if (bins>0) simulation.setBins(bins);
   if (vbins>0) simulation.setVBins(vbins);
@@ -161,8 +158,8 @@ int main(int argc, char** argv) {
   simulation.setMaxVy(maxVy);
   simulation.setUseVelocityDiff(useVelDiff);
 
-//  simulation.setResourceDiffusion(d1);
-//  simulation.setWasteDiffusion(d2);
+  // simulation.setResourceDiffusion(d1);
+  // simulation.setWasteDiffusion(d2);
   simulation.setResourceBenefit(a1);
   simulation.setWasteHarm(a2);
   simulation.setSecretionCost(b1);
@@ -195,16 +192,8 @@ int main(int argc, char** argv) {
   cout << "\n...........................................................\n\n";
   
   /// Run the actual program
-  //try {
-    if (bacteria) simulation.bacteriaRun(time);
-    else simulation.run(time);
-    //  }
-    /*
-  catch (...) {
-    cout << "AN ERROR HAS OCCURED. PROGRAM WILL TERMINATE.\n";
-    throw;
-  }
-    */
+  if (bacteria) simulation.bacteriaRun(time);
+  else simulation.run(time);
   auto end_t = clock(); // End timing
 
   /// Print the run information

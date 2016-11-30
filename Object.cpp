@@ -170,70 +170,30 @@ RTSphere::RTSphere(vect<> pos, double rad) : Particle(pos, rad) {
   initialize();
 };
 
-RTSphere::RTSphere(vect<> pos, double rad, double runF, double runT, double tumbleT, vect<> bias) : Particle(pos, rad) {
-  initialize();
-  runForce = runF;
-  runTime = runT;
-  tumbleTime = tumbleT;
+RTSphere::RTSphere(vect<> pos, double rad, double baseTau, double tauConst, double maxV) : Particle(pos, rad) {
+  initialize(); // This sets parameters to default values, we now reset those values to the desired values
+  this->baseTau = baseTau;
+  this->tauConst = tauConst;
+  maxVSqr = maxV>0 ? sqr(maxV) : -1; // If maxV < 0, there is no maxV
 };
 
-RTSphere::RTSphere(vect<> pos, double rad, vect<> bias) : Particle(pos, rad) {
-  initialize();
-  this->bias = bias;
+void RTSphere::see(Simulator* world) {
+  fvel = world->getFVelocity(position);
 }
 
 void RTSphere::initialize() {
   runForce = default_run_force;
-  runTime = default_run;
-  tumbleTime = default_tumble;
-  timer = drand48()*(runTime+tumbleTime);
-  running = timer<runTime;
+  maxVSqr = sqr(default_active_maxV);
+  baseTau = default_base_tau;
+  tauConst = default_tau_const;
+  randDelay = 0.1;
+  delay = drand48()*randDelay;
   runDirection = randV();
-  bias = 0;
+  // This is an active particle
   active = true;
 }
 
 void RTSphere::update(double epsilon) {
-  if (running) {
-    if (timer<runTime) {
-      applyForce(runForce*runDirection);
-    }
-    else {
-      timer = 0;
-      running = false;
-    }
-  }
-  else {
-    if (timer<tumbleTime); // Do nothing
-    else {
-      timer = 0;
-      running = true;
-      runDirection = randV() + bias;
-    }
-  }
-  timer += epsilon;
-  Particle::update(epsilon);
-}
-
-// ********** ABP ********** //
-
-ABP::ABP(vect<> pos, double rad) : Particle(pos, rad), bForce(default_abp_force) { active=true; }
-
-ABP::ABP(vect<> pos, double rad, double force) : Particle(pos, rad), bForce(force) { active=true;}
-
-void ABP::update(double epsilon) {
-  vect<> dir = randV();
-  applyForce(bForce/epsilon*dir);
-  Particle::update(epsilon);
-}
-
-// ********** PSPHERE ********** //
-
-PSphere::PSphere(vect<> pos, double rad) : Particle(pos, rad), runForce(default_run_force), runDirection(randV()), delay(fmod(drand48(), randDelay)), baseTau(default_base_tau), randDelay(0.1), tauConst(default_tau_const), maxVSqr(sqr(default_active_maxV)) { active=true; }
-
-PSphere::PSphere(vect<> pos, double rad, double force) : Particle(pos, rad), runForce(force), runDirection(randV()), delay(fmod(drand48(), randDelay)), baseTau(default_base_tau), randDelay(0.1), tauConst(default_tau_const), maxVSqr(sqr(default_active_maxV)) { active=true; }
-
-void PSphere::update(double epsilon) {
   if (delay>randDelay) {
     delay = 0;
     double r = drand48();
@@ -242,14 +202,23 @@ void PSphere::update(double epsilon) {
     if (r<prob) runDirection = randV();
   }
   delay += epsilon;
-  if (maxVSqr<0 || sqr(velocity-fvel)<maxVSqr) 
+  // If there is no max velocity, or we are under the maximum velocity, or if running would decrease our velocity ==> Run
+  if (maxVSqr<0 || sqr(velocity-fvel)<maxVSqr || runDirection*(velocity-fvel)<0) 
     applyForce(runForce*runDirection);
   Particle::update(epsilon);
 }
 
-void PSphere::see(Simulator* world) {
-  fvel = world->getFVelocity(position);
-}
+// ********** ABP ********** //
+
+ABP::ABP(vect<> pos, double rad) : RTSphere(pos, rad) {};
+
+ABP::ABP(vect<> pos, double rad, double force) : RTSphere(pos, rad) {};
+
+// ********** PSPHERE ********** //
+
+PSphere::PSphere(vect<> pos, double rad) : RTSphere(pos, rad) {};
+
+PSphere::PSphere(vect<> pos, double rad, double force) : RTSphere(pos, rad) {};
 
 inline double PSphere::probability() {
   // High recent ave force -> Tumble less -> large tau
@@ -261,7 +230,7 @@ inline double PSphere::probability() {
 // ********** SHEARSPHERE ********** //
 void ShearSphere::see(Simulator* world) {
   currentShear = world->getShear(position);
-  PSphere::see(world);
+  RTSphere::see(world);
 }
 
 inline double ShearSphere::probability() {

@@ -164,74 +164,66 @@ class Bacteria : public Particle {
 class RTSphere : public Particle {
  public:
   RTSphere(vect<> pos, double rad);
-  RTSphere(vect<> pos, double rad, double runF, double=default_run, double=default_tumble, vect<> bias=Zero);
-  RTSphere(vect<> pos, double rad, vect<> bias);
+  RTSphere(vect<> pos, double rad, double runF, double=default_run, double=default_tumble);
 
   virtual void update(double);
 
- private:
-
-  void initialize();
-
-  double runTime;
-  double runForce;
-  vect<> runDirection;
-  vect<> bias; // Run direction bias
-  double tumbleTime;
-  double timer;
-  bool running;
-};
-
-class ABP : public Particle { // Active Brownian Particle
- public:
-  ABP(vect<>, double);
-  ABP(vect<>, double, double);
-
-  virtual void update(double);
-
- private:
-  double bForce;
-};
-
-class PSphere : public Particle {
- public:
-  PSphere(vect<>, double);
-  PSphere(vect<>, double, double);
-
-  virtual void update(double);
-
-  virtual void setBaseTau(double t) { baseTau = t; }
+  // Mutators
+  void setBaseTau(double t) { baseTau = t; }
   void setMaxV(double v) { maxVSqr = v>0 ? sqr(v) : -1; }
 
   virtual void see(Simulator*);
 
  protected:
+  // Initialize the particle
+  void initialize();
+  // Calculate the probability of reorientation
+  inline virtual double probability() { return baseTau; }
+
+  // Run and tumble parameters
   double runForce;
   double maxVSqr;  // Maximum velocity (relative to fluid) that we will try to run at
   vect<> runDirection;
-
-  // Calculate the probability of reorientation
-  inline virtual double probability();
-
-  double randDelay; // How long to wait between possibly changing directions
+  
   double baseTau;   // Base tau value
   double tauConst;  // A constant for calculating tau
+  double randDelay; // How long to wait between possibly changing directions (saves computation)
   double delay;     // How long the delay has been so far
 };
 
-/// An active sphere that seeks higher shear
-class ShearSphere : public PSphere {
+class ABP : public RTSphere { // Active Brownian Particle
  public:
- ShearSphere(vect<> pos, double rad) : PSphere(pos, rad), lastShear(Zero), currentShear(Zero) {};
- ShearSphere(vect<> pos, double rad, double force) : PSphere(pos, rad, force), lastShear(Zero), currentShear(Zero) {};
+  ABP(vect<>, double);
+  ABP(vect<>, double, double);
+  
+ private:
+  // Calculate the probability of reorientation
+  inline virtual double probability() { return 1.; } // Constantly reorient
+};
+
+class PSphere : public RTSphere {
+ public:
+  PSphere(vect<>, double);
+  PSphere(vect<>, double, double);
+
+ protected:
+  // Calculate the probability of reorientation
+  inline virtual double probability();
+};
+
+/// An active sphere that seeks higher shear
+class ShearSphere : public RTSphere {
+ public:
+ ShearSphere(vect<> pos, double rad) : RTSphere(pos, rad), lastShear(Zero), currentShear(Zero) {};
+ ShearSphere(vect<> pos, double rad, double force) : RTSphere(pos, rad, force), lastShear(Zero), currentShear(Zero) {};
 
   virtual void see(Simulator*);
 
  private:
+  // Calculate the probability of reorientation
   inline virtual double probability();
 
-  vect<> lastShear;    // Last shear
-  vect<> currentShear; // What the shear is where the particle is now
+  vect<> lastShear, currentShear; // For taking a derivative of shear
 };
 
 class Stationary {

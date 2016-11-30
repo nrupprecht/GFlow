@@ -30,7 +30,7 @@ class Simulator {
   void createSquare(int, int=0, double=0.025, double=1, double=1);
   void createHopper(int, double=0.025, double=0.14, double=1., double=3., double=0.);
   void createPipe(int, double=0.02, double=1., int=0);
-  void createControlPipe(int N, int A, double radius=0.02, double=1., double=default_run_force, double rA=-1, double width=5., double height=2., double runT=default_run, double tumT=default_tumble, double var=0., vect<> bias=Zero);
+  void createControlPipe(int N, int A, double radius=0.02, double=1., double=default_run_force, double rA=-1, double width=5., double height=2., double var=0.);
   void createSphereFluid(int N, int A, double radius=0.02, double=1., double=default_run_force, double=-1, double=10., double=2.);
   void createJamPipe(int N, int A, double radius=0.02, double=1., double=default_run_force, double rA=-1, double width=5., double height=2., double percent=0.5, double runT=default_run, double tumT=default_tumble, double var=0.);
   void createIdealGas(int, double=0.02, double=0.1, double=1., double=1.);
@@ -182,8 +182,7 @@ class Simulator {
   void addTempWall(Wall*, double);
   void addMovingWall(Wall*, WFunc);
   void addParticle(Particle*);
-  void addParticles(int N, double R, double var, double left, double right, double bottom, double top, PType type=PASSIVE, double vmax=-1, bool watched=true, vect<> bias=Zero);
-  void addNWParticles(int N, double R, double var, double left, double right, double bottom, double top, PType type=PASSIVE, double vmax=-1);
+  void addParticles(int N, double R, double var, double left, double right, double bottom, double top, PType type=PASSIVE, double vmax=-1);
   void addRTSpheres(int N, double R, double var, double left, double right, double bottom, double top, vect<> bias);
   vector<vect<> > findPackedSolution(int N, double R, double left, double right, double bottom, double top); // Finds where we can put particles for high packing
 

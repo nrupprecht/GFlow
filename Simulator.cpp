@@ -173,48 +173,42 @@ void Simulator::createPipe(int N, double radius, double V, int NObst) {
   min_epsilon = 1e-8;
 }
 
-void Simulator::createControlPipe(int N, int A, double radius, double V, double F, double rA, double width, double height, double runT, double tumT, double var, vect<> bias) {
+void Simulator::createControlPipe(int N, int A, double radius, double V, double F, double rA, double width, double height, double var) {
+  // Discard old setup, set basic parameters
   discard();
   gravity = Zero;
   charRadius = radius;
   left = 0; bottom = 0;
   top = height; right = width;
   if (rA==-1) rA = radius;
-  
-  // Set sample points
-  //setBins(1.1547*(top-bottom)/(2*radius));
-
+  // Put in walls
   addWall(new Wall(vect<>(0,bottom), vect<>(right,bottom))); // Bottom wall
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // Top wall
-
   // Use the maximum number of sectors
   double R = max(radius, rA);
   int sx = (int)(width/(2*(R+var))), sy = (int)(top/(2*(R+var)));
   setSectorDims(sx, sy);
+  // Add the particles in at the appropriate positions
   vector<vect<> > pos = findPackedSolution(N+A, radius, 0, right, 0, top);
   int i;
-  // Add the particles in at the appropriate positions
-  //for (i=0; i<A; i++) addParticle(new RTSphere(pos.at(i), rA, F, runT, tumT, bias));
-  for (i=0; i<A; i++) addParticle(new ShearSphere(pos.at(i), rA, F));
+  //for (i=0; i<A; i++) addParticle(new RTSphere(pos.at(i), rA));
+  for (i=0; i<A; i++) addParticle(new ABP(pos.at(i), rA, F));
   for (; i<N+A; i++) addParticle(new Particle(pos.at(i), radius));
-  
   // Set Boundary wrapping
   xLBound = WRAP; xRBound = WRAP; yTBound = WRAP; yBBound = WRAP;
-
   // Set up fluid flow
   setFlowV(V);
   flowFunc = [&] (vect<> pos) { return vect<>(flowV*(1-sqr(pos.y-0.5*(top-bottom))/sqr(0.5*(top-bottom))),0); };
-  //flowFunc = [&] (vect<> pos) { return vect<>(flowV*(exp(-sqr(pos.y-top/2))-exp(-sqr(top/2))), 0); };
   hasDrag = true;
+  // Set particles to have to velocity of the fluid at the point they are at
   for (auto P : particles) P->setVelocity(flowFunc(P->getPosition()));
-
   // Set physical parameters
-  setParticleCoeff(0); // --> No torques, shear forces
+  setParticleCoeff(0); // --> No torques, interparticle shear forces
   setParticleDissipation(sphere_dissipation);
   setParticleDrag(sphere_drag);
   setWallDissipation(wall_dissipation);
   setWallCoeff(wall_coeff);
-  
+  // Set time constants
   default_epsilon = 1e-4;
   min_epsilon = 1e-8;
 }
@@ -273,7 +267,7 @@ void Simulator::createSphereFluid(int N, int A, double radius, double V, double 
 
 void Simulator::createJamPipe(int N, int A, double radius, double V, double F, double rA, double width, double height, double perc, double runT, double tumT, double var) {
   this->percent = perc;
-  createControlPipe(N, A, radius, V, F, rA, width, height, runT, tumT, var);
+  createControlPipe(N, A, radius, V, F, rA, width, height, var);
   
   addMovingWall(new Wall(vect<>(0.5*width,0), vect<>(0.5*width,0)),
 		[&] (double time) {
@@ -1546,7 +1540,7 @@ inline bool Simulator::inBounds(Particle* P) {
   return true;
 }
 
-void Simulator::addParticles(int N, double R, double var, double lft, double rght, double bttm, double tp, PType type, double vmax, bool watched, vect<> bias) {
+void Simulator::addParticles(int N, double R, double var, double lft, double rght, double bttm, double tp, PType type, double vmax) {
   bool C = true;
   int maxFail = 250;
   int count = 0, failed = 0;
@@ -1564,7 +1558,7 @@ void Simulator::addParticles(int N, double R, double var, double lft, double rgh
 	break;
       }
       case RTSPHERE: {
-	P = new RTSphere(pos, rad, bias);
+	P = new RTSphere(pos, rad);
 	break;
       }
       case BACTERIA: {
@@ -1572,8 +1566,7 @@ void Simulator::addParticles(int N, double R, double var, double lft, double rgh
 	break;
       }
       }
-      if (watched) addParticle(P);
-      else addParticle(P);
+      addParticle(P);
       if (vmax > 0) P->setVelocity(vmax*randV());
       count++;
       failed = 0;
@@ -1585,12 +1578,8 @@ void Simulator::addParticles(int N, double R, double var, double lft, double rgh
   }
 }
 
-void Simulator::addNWParticles(int N, double R, double var, double lft, double rght, double bttm, double tp, PType type, double vmax) {
-  addParticles(N, R, var, lft, rght, bttm, tp, type, vmax, false);
-}
-
 void Simulator::addRTSpheres(int N, double R, double var, double lft, double rght, double bttm, double tp, vect<> bias) {
-  addParticles(N, R, var, lft, rght, bttm, tp, RTSPHERE, -1, true, bias);
+  addParticles(N, R, var, lft, rght, bttm, tp, RTSPHERE, -1);
 }
 
 void Simulator::resetStatistics() {
