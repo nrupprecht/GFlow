@@ -84,6 +84,7 @@ class GField {
 
   /// Accessors
   Shape getShape() const { return shape; }
+  int getRank() const { return rank; }
   int getSize(int) const;
   int getPoints() const;
 

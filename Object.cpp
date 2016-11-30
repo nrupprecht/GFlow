@@ -1,6 +1,7 @@
 #include "Object.h"
+#include "Simulator.h"
 
-Particle::Particle(vect<> pos, double rad, double repulse, double dissipate, double coeff) : position(pos), radius(rad), repulsion(repulse), dissipation(dissipate), coeff(coeff) {
+Particle::Particle(vect<> pos, double rad, double repulse, double dissipate, double coeff) : position(pos), radius(rad), repulsion(repulse), dissipation(dissipate), coeff(coeff), fvel(Zero) {
   initialize();
 }
 
@@ -228,21 +229,51 @@ void ABP::update(double epsilon) {
 
 // ********** PSPHERE ********** //
 
-PSphere::PSphere(vect<> pos, double rad) : Particle(pos, rad), runForce(default_run_force), runDirection(randV()), delay(fmod(drand48(), randDelay)), invZeroPointProb(2.), randDelay(0.1), fconst(10.) { active=true; }
+PSphere::PSphere(vect<> pos, double rad) : Particle(pos, rad), runForce(default_run_force), runDirection(randV()), delay(fmod(drand48(), randDelay)), baseTau(default_base_tau), randDelay(0.1), tauConst(default_tau_const), maxVSqr(sqr(default_active_maxV)) { active=true; }
 
-PSphere::PSphere(vect<> pos, double rad, double force) : Particle(pos, rad), runForce(force), runDirection(randV()), delay(fmod(drand48(), randDelay)), invZeroPointProb(2.), randDelay(0.1), fconst(10.) { active=true; }
+PSphere::PSphere(vect<> pos, double rad, double force) : Particle(pos, rad), runForce(force), runDirection(randV()), delay(fmod(drand48(), randDelay)), baseTau(default_base_tau), randDelay(0.1), tauConst(default_tau_const), maxVSqr(sqr(default_active_maxV)) { active=true; }
 
 void PSphere::update(double epsilon) {
   if (delay>randDelay) {
     delay = 0;
     double r = drand48();
     // Calculate a probability of tumbling
-    double prob = 1./(fconst*recentForceAve+invZeroPointProb);
-    if (r<prob*randDelay) runDirection = randV();
+    double prob = probability();
+    if (r<prob) runDirection = randV();
   }
   delay += epsilon;
-  applyForce(runForce*runDirection);
+  if (maxVSqr<0 || sqr(velocity-fvel)<maxVSqr) 
+    applyForce(runForce*runDirection);
   Particle::update(epsilon);
+}
+
+void PSphere::see(Simulator* world) {
+  fvel = world->getFVelocity(position);
+}
+
+inline double PSphere::probability() {
+  // High recent ave force -> Tumble less -> large tau
+  double tau = tauConst*recentForceAve+baseTau;
+  
+  return 1.-exp(-randDelay/tau);
+}
+
+// ********** SHEARSPHERE ********** //
+void ShearSphere::see(Simulator* world) {
+  currentShear = world->getShear(position);
+  PSphere::see(world);
+}
+
+inline double ShearSphere::probability() {
+  // Calculate 
+  double DS = (1./randDelay)*(sqr(currentShear)-sqr(lastShear)); // D (Shear^2) / Dt
+  // Reset last shear
+  lastShear = currentShear;
+  // Positive DS -> Shear increasing, tumble less -> large tau
+  // Negative DS -> Shear decreasing, tumble more -> small tau
+  double tau = exp(tauConst*DS)*baseTau;
+  // Return the probability that a tumble occured
+  return 1.-exp(-randDelay/tau);
 }
 
 // ********** WALLS  ********** //

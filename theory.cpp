@@ -2,7 +2,16 @@
 
 #include "NDSolver.h"
 
-double gaussian (gVector vec2d) { return exp(-sqr(3*vec2d.at(0))-sqr(3*vec2d.at(1))); }
+double gaussian(gVector vec) {
+
+  return 1.; //**
+
+  double total = 1;
+  for (int i=0; i<vec.size(); i++)
+    total *= exp(-sqr(3*vec.at(i)));
+  return total;
+}
+
 double mgaussian(gVector vec2d) { return exp(-sqr(3*vec2d.at(0))-sqr(3*vec2d.at(1)-1)); }
 double xgaussian (gVector vec2d) { return exp(-sqr(3*vec2d.at(0))); }
 
@@ -13,7 +22,7 @@ int main(int argc, char** argv) {
   // Parameters
   double time = 1;
   double epsilon = 0.01;
-  double gridSpacing = 0.05;
+  double gridSpacing = 0.25;
   
   //----------------------------------------
   // Parse command line arguments
@@ -37,13 +46,12 @@ int main(int argc, char** argv) {
   // Set VY
   ndsolver.setBounds(3, -1, 1, false);
   ndsolver.setGridSpacing(3, gridSpacing, false); // VY
-  // Remake fields
-  ndsolver.remake();
-  
   ndsolver.setWrapping(0, true);
   ndsolver.setWrapping(1, true);
   ndsolver.setEpsilon(epsilon);
-  ndsolver.setField(mgaussian);
+  // Remake fields, set initial condition
+  ndsolver.remake();  
+  ndsolver.setField(gaussian);
 
   cout << "----------------------- RUN SUMMARY -----------------------\n\n";
   cout << "Command: ";
@@ -51,20 +59,19 @@ int main(int argc, char** argv) {
 
 
   cout << "\n...........................................................\n\n";
-
   ndsolver.run(time);
   auto end_t = clock(); // End timing
 
   /// Print the run information
   cout << "Sim Time: " << time << ", Run time: " << ndsolver.getRunTime() << ", Ratio:\
  " << time/ndsolver.getRunTime() << endl;
-  cout << "Actual (total) program run time: " << (double)(end_t-start_t)/CLOCKS_PER_SEC \
-       << "\n";
+  cout << "Actual (total) program run time: " << (double)(end_t-start_t)/CLOCKS_PER_SEC << "\n";
   cout << "Iterations: " << ndsolver.getIters();
   cout << "\n\n----------------------- END SUMMARY -----------------------\n\n";
 
-  cout << "field=" << mmPreproc(ndsolver.printField()) << ";\n";
-  cout << "dfield=" << mmPreproc(ndsolver.printDField()) << ";\n";
+  // cout << "field=" << mmPreproc(ndsolver.printField()) << ";\n";
+  // cout << "dfield=" << mmPreproc(ndsolver.printDField()) << ";\n";
+  cout << "profile=" << mmPreproc(ndsolver.printProfile()) << ";\n";
   cout << "it=" << ndsolver.getIters() << ";\ntime=" << ndsolver.getTime() << ";\n";
   cout << "ListPlot3D[field,PlotRange->All]\nListPlot3D[dfield,PlotRange->All]";
   return 0;

@@ -27,6 +27,7 @@ class NDSolver {
   /// Data printing
   string printField();
   string printDField();
+  string printProfile(); // Special
 
  private:
   /// Value functions - convert iterator to actual value

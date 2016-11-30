@@ -57,6 +57,16 @@ inline double sign(double x) {
   else return 0;
 }
 
+/// Sigmoid
+inline double sigmoid(double x) {
+  return 1./(1.+exp(-x));
+}
+
+/// Inverse sigmoid 
+inline double invSigmoid(double x) {
+  return log(x/(1.-x));
+}
+
 /// Safe array delete function
 template<typename T> inline void safe_delete(T* P) { 
   if (P) { 

@@ -18,8 +18,11 @@ const double wall_coeff = sqrt(0.5);
 const double wall_gamma = 5;
 const double default_run = 0.2;
 const double default_tumble = 0.1;
-const double default_run_force = 5.0;
+const double default_run_force = 1.0;
 const double default_abp_force = 0.5;
+const double default_active_maxV = 0.25;
+const double default_tau_const = 5.;
+const double default_base_tau = 1.;
 
 const double default_expansion_time = 0.5;
 const double default_reproduction_delay = 0.1;
@@ -29,7 +32,9 @@ typedef pair<vect<>, vect<> > WPair;
 /// Clamp function
 inline double clamp(double x) { return x>0 ? x : 0; }
 
-class Wall; // Forward declaration
+/// Forward declarations
+class Wall; 
+class Simulator;
 
 class Particle {
  public:
@@ -91,6 +96,9 @@ class Particle {
 
   void fix(bool f=true) { fixed = f; }
 
+  // Sight -- Allow the particle to gather information from the "world"
+  virtual void see(Simulator*) {}
+
   // Exception classes
   class BadMassError {};
   class BadInertiaError {};
@@ -113,6 +121,9 @@ class Particle {
   double normForces;
   double recentForceAve;
   double timeWindow;
+
+  // The fluid velocity where you are
+  vect<> fvel;
 
   // Characteristic variables
   double radius;      // Disc radius
@@ -189,14 +200,38 @@ class PSphere : public Particle {
 
   virtual void update(double);
 
- private:
+  virtual void setBaseTau(double t) { baseTau = t; }
+  void setMaxV(double v) { maxVSqr = v>0 ? sqr(v) : -1; }
+
+  virtual void see(Simulator*);
+
+ protected:
   double runForce;
+  double maxVSqr;  // Maximum velocity (relative to fluid) that we will try to run at
   vect<> runDirection;
 
+  // Calculate the probability of reorientation
+  inline virtual double probability();
+
   double randDelay; // How long to wait between possibly changing directions
-  double invZeroPointProb; // The inverse of the probability that we tumble under no influences
-  double fconst;    // Multiplier of recentForceAve
+  double baseTau;   // Base tau value
+  double tauConst;  // A constant for calculating tau
   double delay;     // How long the delay has been so far
+};
+
+/// An active sphere that seeks higher shear
+class ShearSphere : public PSphere {
+ public:
+ ShearSphere(vect<> pos, double rad) : PSphere(pos, rad), lastShear(Zero), currentShear(Zero) {};
+ ShearSphere(vect<> pos, double rad, double force) : PSphere(pos, rad, force), lastShear(Zero), currentShear(Zero) {};
+
+  virtual void see(Simulator*);
+
+ private:
+  inline virtual double probability();
+
+  vect<> lastShear;    // Last shear
+  vect<> currentShear; // What the shear is where the particle is now
 };
 
 class Stationary {

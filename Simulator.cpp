@@ -195,7 +195,7 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, double 
   int i;
   // Add the particles in at the appropriate positions
   //for (i=0; i<A; i++) addParticle(new RTSphere(pos.at(i), rA, F, runT, tumT, bias));
-  for (i=0; i<A; i++) addParticle(new PSphere(pos.at(i), rA, F));
+  for (i=0; i<A; i++) addParticle(new ShearSphere(pos.at(i), rA, F));
   for (; i<N+A; i++) addParticle(new Particle(pos.at(i), radius));
   
   // Set Boundary wrapping
@@ -416,6 +416,20 @@ bool Simulator::wouldOverlap(vect<> pos, double R) {
     }
   }
   return false;
+}
+
+vect<> Simulator::getShear(vect<> pos) {
+  if (flowFunc==0 || hasDrag==false) return Zero;
+  double h = 0.001;
+  vect<> dy(0,h);
+  // Assume (for now) flow is F(r) = v * `x`
+  double s = (flowFunc(pos+dy).x-flowFunc(pos-dy).x)/(2*h);
+  return vect<>(0, s);
+}
+
+vect<> Simulator::getFVelocity(vect<> pos) {
+  if (flowFunc==0 || hasDrag==false) return Zero;
+  return flowFunc(pos);
 }
 
 void Simulator::run(double runLength) {
@@ -1153,6 +1167,8 @@ inline void Simulator::objectUpdates() {
     for (auto W : movingWalls)
       W.first->setPosition(W.second(time));
   }
+  // Let all the particles see the world (most won't have to)
+  for (auto P : particles) P->see(this);
 }
 /*
 inline void Simulator::bacteriaUpdate() {

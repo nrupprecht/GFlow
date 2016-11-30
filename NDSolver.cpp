@@ -15,18 +15,15 @@ NDSolver::NDSolver(int dims) : gridSpacing(0), gridSize(0), dim_up(0), dim_lw(0)
     dim_lw[i] = 0;
     dim_up[i] = 0;
   }
-  
-  /// Initialize Parameters
+  // Grid Spacing
   gridSpacing = new double[sdims];
   for (int i=0;i<sdims; i++) gridSpacing[i] = 0.01;
-
+  // Grid Size
   gridSize = new int[sdims];
   for (int i=0; i<sdims; i++) gridSize[i] = (dim_up[i]-dim_lw[i])/gridSpacing[i];
-
-  // Set fields
+  // Set up fields
   field = GField(sdims);
   delta_field = GField(sdims);
-
   for (int i=0; i<sdims; i++) {
     field.setBounds(i, dim_lw[i], dim_up[i]);
     delta_field.setBounds(i,dim_lw[i], dim_up[i]);
@@ -48,9 +45,6 @@ NDSolver::~NDSolver() {
 
 void NDSolver::run(double t) {
   clock_t start = clock();
-  // Set up fields
-  field.remake();
-  delta_field.remake();
   // Initialize variables
   time = 0;
   int totalIters = t/epsilon;
@@ -127,6 +121,43 @@ string NDSolver::printDField() {
   stream << delta_field;
   stream >> str;
   return str;
+}
+
+string NDSolver::printProfile() {
+  if (field.getRank()==2) {
+    Shape shape = field.getShape();
+    int sizeX = shape.at(0), sizeVX = shape.at(1);
+    stringstream stream;
+    stream << "{";
+    for (int x=0; x<sizeX; x++) {
+      double total = 0;
+      double X = field.getPosition(0, x);
+      for (int vx=0; vx<sizeVX; vx++)
+	total += field.at(x, vx);
+      stream << "{" << X << "," << total << "},";
+    }
+  }
+  else if (field.getRank()==4) {
+    Shape shape = field.getShape();
+    int sizeX = shape.at(0), sizeY = shape.at(1), sizeVX = shape.at(2), sizeVY = shape.at(3);
+    stringstream stream;
+    stream << "{";
+    for (int x=0; x<sizeX; x++)
+      for (int y=0; y<sizeY; y++) {
+	double X = field.getPosition(0, x), Y = field.getPosition(1, y);
+	double total = 0;
+	for (int vx=0; vx<sizeVX; vx++)
+	  for (int vy=0; vy<sizeVY; vy++)
+	    total += field.at(x, y, vx, vy);
+	stream << "{" << X << "," << Y << "," << total << "},";
+      }
+    string str;
+    stream >> str;
+    str.pop_back(); // Get rid of the last ','
+    str += "}";
+    return str;
+  }
+  else return "{}";
 }
 
 double NDSolver::valueS(int index, int coord) {

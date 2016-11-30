@@ -43,6 +43,8 @@ class Simulator {
 
   // Accessors
   bool wouldOverlap(vect<> pos, double R);
+  vect<> getShear(vect<>);
+  vect<> getFVelocity(vect<>);
   double getMinEpsilon() { return minepsilon; }
   double getDisplayTime() { return dispTime; }
   double getBinXWidth() { return (right-left)/bins; }
@@ -71,7 +73,8 @@ class Simulator {
   vector<double> getClusteringRec() { return clusteringRec; }
   vector<vector<double> > getProfile() { return profiles; }
   vector<vect<> > getAveProfile();
-  //// More bacteria accessors
+
+  /// More bacteria accessors
   double getResourceBenefit() { return alphaR; }
   double getWasteHarm() { return alphaW; }
   double getSecretionCost() { return betaR; }
@@ -215,7 +218,7 @@ class Simulator {
 
   // Error Classes
   class BadDimChoice {};
-
+  
  private:
   /// Helper functions
   inline void resetVariables();  // Reset all neccessary variables for the start of a run
