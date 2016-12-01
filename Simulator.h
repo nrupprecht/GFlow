@@ -30,7 +30,8 @@ class Simulator {
   void createSquare(int, int=0, double=0.025, double=1, double=1);
   void createHopper(int, double=0.025, double=0.14, double=1., double=3., double=0.);
   void createPipe(int, double=0.02, double=1., int=0);
-  void createControlPipe(int N, int A, double radius=0.02, double=1., double=default_run_force, double rA=-1, double width=5., double height=2., double var=0.);
+  void createControlPipe(int N, int A, double=0.02, double=1., double=default_run_force, double rA=-1, double=4., double=2., double var=0.);
+  void createSedimentationBox(int N, double=0.02, double=2., double=2., double=default_run_force);
   void createSphereFluid(int N, int A, double radius=0.02, double=1., double=default_run_force, double=-1, double=10., double=2.);
   void createJamPipe(int N, int A, double radius=0.02, double=1., double=default_run_force, double rA=-1, double width=5., double height=2., double percent=0.5, double runT=default_run, double tumT=default_tumble, double var=0.);
   void createIdealGas(int, double=0.02, double=0.1, double=1., double=1.);
@@ -170,6 +171,7 @@ class Simulator {
   void setMutationRate(double mu) { mutationRate = mu; }
   void setMutationAmount(double ds) { mutationAmount = ds; }
   /// Global set functions
+  void setParticleInteraction(bool);
   void setParticleDissipation(double);
   void setWallDissipation(double);
   void setParticleCoeff(double);
@@ -324,6 +326,7 @@ class Simulator {
   double startTime;  // When to start looking for time marks
   double delayTime;  // How long between marks counts as a jam
   bool delayTriggeredExit; // If a long enough delay between marks causes the simulation to stop running
+  bool recordClustering; // Whether we should record clustering data
 
   /// Sectorization
   inline void updateSectors();

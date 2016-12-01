@@ -7,16 +7,17 @@ Particle::Particle(vect<> pos, double rad, double repulse, double dissipate, dou
 
 void Particle::initialize() {
   fixed = false;
+  interacting = true;
   velocity = Zero;
   acceleration = Zero;
   omega = 0;
   alpha = 0;
   theta = 0;
-  double mass = sphere_mass;
+  double mass = default_sphere_mass;
   invMass = 1.0/mass;
   invII = 1.0/(0.5*mass*sqr(radius));
   active = false;
-  drag = sphere_drag*radius;
+  drag = default_sphere_drag*radius;
   normalF = shearF = force = Zero;
   torque = 0;
   normForces = 0;
@@ -43,7 +44,7 @@ void Particle::interact(Particle* P) {
 }
 
 void Particle::interact(Particle* P, vect<> displacement) {
-  if (fixed) return;
+  if (fixed || !interacting) return;
   double distSqr = sqr(displacement);
   double cutoff = radius + P->getRadius();
   double cutoffsqr = sqr(cutoff);
@@ -146,7 +147,7 @@ void Particle::flowForce(std::function<vect<>(vect<>)> func) {
 Bacteria::Bacteria(vect<> pos, double rad, double sec, double expTime) : Particle(pos, 0), timer(0), repDelay(default_reproduction_delay) {
   // Since the radius is currently 0, we have to set these radius dependent quantities by hand here.
   invII = 1.0*invMass/(0.5*sqr(rad));
-  drag = sphere_drag*rad;
+  drag = default_sphere_drag*rad;
 
   maxRadius = rad;
   dR = expTime>0 ? maxRadius/expTime : rad;
@@ -181,18 +182,6 @@ void RTSphere::see(Simulator* world) {
   fvel = world->getFVelocity(position);
 }
 
-void RTSphere::initialize() {
-  runForce = default_run_force;
-  maxVSqr = sqr(default_active_maxV);
-  baseTau = default_base_tau;
-  tauConst = default_tau_const;
-  randDelay = 0.1;
-  delay = drand48()*randDelay;
-  runDirection = randV();
-  // This is an active particle
-  active = true;
-}
-
 void RTSphere::update(double epsilon) {
   if (delay>randDelay) {
     delay = 0;
@@ -208,11 +197,52 @@ void RTSphere::update(double epsilon) {
   Particle::update(epsilon);
 }
 
+void RTSphere::setBaseTau(double t) { 
+  baseTau = t; 
+}
+
+void RTSphere::setTauConst(double t) {
+  tauConst = t;
+}
+
+void RTSphere::setMaxV(double v) { 
+  maxVSqr = v>0 ? sqr(v) : -1; 
+}
+
+void RTSphere::setDelay(double d) {
+  delay = d;
+}
+
+double RTSphere::getTheta() {
+  return atan2(runDirection.y, runDirection.x);
+}
+
+void RTSphere::initialize() {
+  runForce = default_run_force;
+  maxVSqr = sqr(default_active_maxV);
+  baseTau = default_base_tau;
+  tauConst = default_tau_const;
+  randDelay = 0.1;
+  delay = drand48()*randDelay;
+  runDirection = randV();
+  // This is an active particle
+  active = true;
+}
+
+inline double RTSphere::probability() {
+  return baseTau;
+}
+
 // ********** ABP ********** //
 
 ABP::ABP(vect<> pos, double rad) : RTSphere(pos, rad) {};
 
 ABP::ABP(vect<> pos, double rad, double force) : RTSphere(pos, rad) {};
+
+inline double ABP::probability() { 
+  // Constantly reorient
+  return 1.; 
+} 
 
 // ********** PSPHERE ********** //
 
@@ -247,13 +277,13 @@ inline double ShearSphere::probability() {
 
 // ********** WALLS  ********** //
 
-Wall::Wall(vect<> origin, vect<> end) : origin(origin), wall(end-origin), coeff(wall_coeff), repulsion(wall_repulsion), dissipation(wall_dissipation), gamma(wall_gamma) {
+Wall::Wall(vect<> origin, vect<> end) : origin(origin), wall(end-origin), coeff(default_wall_coeff), repulsion(default_wall_repulsion), dissipation(default_wall_dissipation), gamma(default_wall_gamma) {
   normal = wall;
   normal.normalize();
   length = wall.norm();
 }
 
-Wall::Wall(vect<> origin, vect<> wall, bool) : origin(origin), wall(wall), coeff(wall_coeff), repulsion(wall_repulsion), dissipation(wall_dissipation), gamma(wall_gamma) {
+Wall::Wall(vect<> origin, vect<> wall, bool) : origin(origin), wall(wall), coeff(default_wall_coeff), repulsion(default_wall_repulsion), dissipation(default_wall_dissipation), gamma(default_wall_gamma) {
   normal = wall;
   normal.normalize();
   length = wall.norm();

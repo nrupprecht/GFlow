@@ -7,20 +7,20 @@
 #include "Utility.h"
 
 /// Default parameters
-const double sphere_mass = 1.;
-const double sphere_repulsion = 10000.0;
-const double sphere_dissipation = 7500.0;
-const double sphere_coeff = sqrt(0.5);
-const double sphere_drag = 1.0;
-const double wall_repulsion = 10000.0;
-const double wall_dissipation = 5000.0;
-const double wall_coeff = sqrt(0.5);
-const double wall_gamma = 5;
+const double default_sphere_mass = 1.;
+const double default_sphere_repulsion = 10000.0;
+const double default_sphere_dissipation = 7500.0;
+const double default_sphere_coeff = sqrt(0.5);
+const double default_sphere_drag = 1.0;
+const double default_wall_repulsion = 10000.0;
+const double default_wall_dissipation = 5000.0;
+const double default_wall_coeff = sqrt(0.5);
+const double default_wall_gamma = 5;
 const double default_run = 0.2;
 const double default_tumble = 0.1;
 const double default_run_force = 1.0;
-const double default_abp_force = 0.5;
-const double default_active_maxV = 0.25;
+const double default_abp_force = 1.0;
+const double default_active_maxV = 0.5;
 const double default_tau_const = 5.;
 const double default_base_tau = 1.;
 
@@ -38,7 +38,7 @@ class Simulator;
 
 class Particle {
  public:
-  Particle(vect<> pos, double rad, double repulse=sphere_repulsion, double dissipate=sphere_dissipation, double coeff=sphere_coeff);
+  Particle(vect<> pos, double rad, double repulse=default_sphere_repulsion, double dissipate=default_sphere_dissipation, double coeff=default_sphere_coeff);
 
   void initialize();
   
@@ -72,6 +72,7 @@ class Particle {
   void setMass(double);
   void setII(double);
   void setRadius(double r) { radius = r; }
+  void setInteraction(bool i) { interacting=i; }
 
   /// Control functions
   virtual void interact(Particle*); // Interact with another particle
@@ -109,6 +110,7 @@ class Particle {
   vect<> acceleration;
   double theta, omega, alpha; // Angular variables
   bool fixed; // Whether the particle can move or not
+  bool interacting; // Whether this particle interacts with others or not
   bool active; // Whether this is an active particle or not
 
   // Forces and torques
@@ -167,19 +169,22 @@ class RTSphere : public Particle {
   RTSphere(vect<> pos, double rad, double runF, double=default_run, double=default_tumble);
 
   virtual void update(double);
+  virtual void see(Simulator*);
 
   // Mutators
-  void setBaseTau(double t) { baseTau = t; }
-  void setMaxV(double v) { maxVSqr = v>0 ? sqr(v) : -1; }
+  void setBaseTau(double);
+  void setTauConst(double);
+  void setMaxV(double);
+  void setDelay(double);
 
-  virtual void see(Simulator*);
+  // Accessors
+  double getTheta();
 
  protected:
   // Initialize the particle
   void initialize();
   // Calculate the probability of reorientation
-  inline virtual double probability() { return baseTau; }
-
+  inline virtual double probability();
   // Run and tumble parameters
   double runForce;
   double maxVSqr;  // Maximum velocity (relative to fluid) that we will try to run at
@@ -198,7 +203,7 @@ class ABP : public RTSphere { // Active Brownian Particle
   
  private:
   // Calculate the probability of reorientation
-  inline virtual double probability() { return 1.; } // Constantly reorient
+  inline virtual double probability();
 };
 
 class PSphere : public RTSphere {
@@ -228,7 +233,7 @@ class ShearSphere : public RTSphere {
 
 class Stationary {
  public:
- Stationary() : coeff(wall_coeff), repulsion(wall_repulsion), dissipation(wall_dissipation) {};
+ Stationary() : coeff(default_wall_coeff), repulsion(default_wall_repulsion), dissipation(default_wall_dissipation) {};
   virtual void interact(Particle*)=0;
  protected:
   double coeff; // Coefficient of friction

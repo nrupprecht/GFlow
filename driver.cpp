@@ -30,9 +30,9 @@ int main(int argc, char** argv) {
   int bins = -1;         // How many bins we should use when making a density profile
   int vbins = -1;        // How many velocity bins we should use
   int number = -1;       // Override usual automatic particle numbers and use prescribed number
-  double replenish = 0;  // Replenish rate
 
 // bacteria parameters: (default values. pass arguments through command line)
+  double replenish = 0;  // Replenish rate
   double d1 = 50.0;
   double d2 = 50.0;
   double a1 = 1.0;
@@ -48,7 +48,8 @@ int main(int argc, char** argv) {
   double ds = 0.0; // mutation amount 
 
   // Run Type
-  bool bacteria = false; // Bacteria box
+  bool bacteria = false;      // Bacteria box
+  bool sedimentation = false; // Sedimentation box
 
   // Display parameters
   bool mmpreproc = true;
@@ -89,6 +90,7 @@ int main(int argc, char** argv) {
   parser.get("number", number);
   parser.get("replenish", replenish);
   parser.get("bacteria", bacteria);
+  parser.get("sedimentation", sedimentation);
   parser.get("mmpreproc", mmpreproc);
   parser.get("animate", animate);
   parser.get("dispKE", dispKE);
@@ -101,20 +103,20 @@ int main(int argc, char** argv) {
   parser.get("useVelDiff", useVelDiff);
   parser.get("clustering", clustering);
   parser.get("everything", everything);
- // bacteria parameters from command line
-  parser.get("rDiff",d1);
-  parser.get("wDiff",d2);
-  parser.get("benefit",a1);
-  parser.get("harm",a2);
-  parser.get("cost",b1);
-  parser.get("rSat",k1);
-  parser.get("wSat",k2);
-  parser.get("rDec",L1);
-  parser.get("wDec",L2);
-  parser.get("rSec",s1);
-  parser.get("wSec",s2);
-  parser.get("mutProb",mu);
-  parser.get("dSec",ds);
+  // Bacteria parameters from command line
+  parser.get("rDiff", d1);
+  parser.get("wDiff", d2);
+  parser.get("benefit", a1);
+  parser.get("harm", a2);
+  parser.get("cost", b1);
+  parser.get("rSat", k1);
+  parser.get("wSat", k2);
+  parser.get("rDec", L1);
+  parser.get("wDec", L2);
+  parser.get("rSec", s1);
+  parser.get("wSec", s2);
+  parser.get("mutProb", mu);
+  parser.get("dSec", ds);
   //----------------------------------------
 
   // Dependent variables
@@ -131,10 +133,10 @@ int main(int argc, char** argv) {
 
   Simulator simulation;
   if (dispKE || dispFlow) {
-  simulation.addStatistic(statKE);
-  simulation.addStatistic(statPassiveFlow);
-  simulation.addStatistic(statActiveFlow);
-  simulation.addStatistic(statFlowRatio);
+    simulation.addStatistic(statKE);
+    simulation.addStatistic(statPassiveFlow);
+    simulation.addStatistic(statActiveFlow);
+    simulation.addStatistic(statFlowRatio);
   }
   simulation.setStartRecording(start);
   if (dispProfile || dispAveProfile) simulation.setCaptureProfile(true);
@@ -146,6 +148,7 @@ int main(int argc, char** argv) {
     simulation.setReplenish(replenish);
     simulation.createBacteriaBox(number, radius, width, height, velocity);
   }
+  else if (sedimentation) simulation.createSedimentationBox(NP+NA, radius, width, height, activeF);
   else simulation.createControlPipe(NP, NA, radius, velocity, activeF, rA, width, height);
   
   if (bins>0) simulation.setBins(bins);
