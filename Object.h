@@ -16,13 +16,11 @@ const double default_wall_repulsion = 10000.0;
 const double default_wall_dissipation = 5000.0;
 const double default_wall_coeff = sqrt(0.5);
 const double default_wall_gamma = 5;
-const double default_run = 0.2;
-const double default_tumble = 0.1;
-const double default_run_force = 1.0;
-const double default_abp_force = 1.0;
+const double default_run_force = 1.;
 const double default_active_maxV = 0.5;
 const double default_tau_const = 5.;
 const double default_base_tau = 1.;
+const double default_brownian_diffusion = 5.;
 
 const double default_expansion_time = 0.5;
 const double default_reproduction_delay = 0.1;
@@ -139,7 +137,7 @@ class Particle {
 
 class Bacteria : public Particle {
  public:
-  Bacteria(vect<> pos, double rad, double sec, double expTime=default_expansion_time);
+  Bacteria(vect<>, double, double, double=default_expansion_time);
 
   virtual void update(double);
   bool canReproduce();
@@ -165,8 +163,7 @@ class Bacteria : public Particle {
 /// Run and Tumble Sphere
 class RTSphere : public Particle {
  public:
-  RTSphere(vect<> pos, double rad);
-  RTSphere(vect<> pos, double rad, double runF, double=default_run, double=default_tumble);
+  RTSphere(vect<>, double, double=default_run_force, double=default_base_tau, double=default_tau_const, double=default_active_maxV);
 
   virtual void update(double);
   virtual void see(Simulator*);
@@ -185,6 +182,8 @@ class RTSphere : public Particle {
   void initialize();
   // Calculate the probability of reorientation
   inline virtual double probability();
+  // Change direction in some way
+  inline virtual void changeDirection();
   // Run and tumble parameters
   double runForce;
   double maxVSqr;  // Maximum velocity (relative to fluid) that we will try to run at
@@ -194,16 +193,6 @@ class RTSphere : public Particle {
   double tauConst;  // A constant for calculating tau
   double randDelay; // How long to wait between possibly changing directions (saves computation)
   double delay;     // How long the delay has been so far
-};
-
-class ABP : public RTSphere { // Active Brownian Particle
- public:
-  ABP(vect<>, double);
-  ABP(vect<>, double, double);
-  
- private:
-  // Calculate the probability of reorientation
-  inline virtual double probability();
 };
 
 class PSphere : public RTSphere {
@@ -216,7 +205,21 @@ class PSphere : public RTSphere {
   inline virtual double probability();
 };
 
-/// An active sphere that seeks higher shear
+/// Active Brownian Particle, run direction follows a diffusion
+class ABP : public RTSphere { 
+ public:
+  ABP(vect<> p, double r);
+  ABP(vect<> p, double r, double f);
+
+ protected:
+  // Calculate the probability of reorientation
+  inline virtual double probability();
+  inline virtual void changeDirection();
+
+  double diffusivity;
+};
+
+/// An active sphere that seeks regions of higher shear
 class ShearSphere : public RTSphere {
  public:
  ShearSphere(vect<> pos, double rad) : RTSphere(pos, rad), lastShear(Zero), currentShear(Zero) {};
@@ -231,16 +234,7 @@ class ShearSphere : public RTSphere {
   vect<> lastShear, currentShear; // For taking a derivative of shear
 };
 
-class Stationary {
- public:
- Stationary() : coeff(default_wall_coeff), repulsion(default_wall_repulsion), dissipation(default_wall_dissipation) {};
-  virtual void interact(Particle*)=0;
- protected:
-  double coeff; // Coefficient of friction
-  double repulsion;
-  double dissipation;
-};
-
+/// ********** Wall **********
 class Wall {
  public:
   Wall(vect<> origin, vect<> wall);

@@ -9,19 +9,20 @@
 #ifndef Predictive1_Utility_h
 #define Predictive1_Utility_h
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <vector>
-#include <list>
-#include <math.h>
-#include <iostream>
-#include <ostream>
-#include <string>
-#include <sstream>
+#include <chrono>
 #include <ctime>
 #include <functional>
-#include <random>
+#include <iostream>
+#include <list>
+#include <math.h>
 #include <omp.h>
+#include <ostream>
+#include <random>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sstream>
+#include <string>
+#include <vector>
 
 using std::vector;
 using std::pair;
@@ -38,11 +39,21 @@ using std::ostream;
 const double PI = 3.14159265;
 
 static std::mt19937 generator;
-static std::normal_distribution<double> distribution(0., 0.25);
+static std::normal_distribution<double> normal_dist(0., 1.);
 
 /// Random number function
 inline double getRand() { 
   return drand48(); 
+}
+
+inline void seedNormalDistribution() {
+  unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+  generator = std::mt19937(seed);
+}
+
+/// Random number, normal distribution
+inline double randNormal() {
+  return normal_dist(generator);
 }
 
 /// Precision clamp

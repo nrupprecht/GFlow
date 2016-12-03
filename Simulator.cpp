@@ -1,6 +1,6 @@
 #include "Simulator.h"
 
-Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), mutationRate(0.0), mutationAmount(0.0), recFields(false), replenish(0), wasteSource(0), indicator(false), recordDist(false), recordClustering(false), alphaR(1.0), alphaW(1.0), betaR(1.0), csatR(1.0), csatW(1.0), lamR(0.0), lamW(0.0), capturePositions(false), captureProfile(false), captureVelocity(false) {
+Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), mutationRate(0.0), mutationAmount(0.0), recFields(false), replenish(0), wasteSource(0), indicator(false), recordDist(false), recordClustering(false), alphaR(1.0), alphaW(1.0), betaR(1.0), csatR(1.0), csatW(1.0), lamR(0.0), lamW(0.0), capturePositions(false), captureProfile(false), captureVelocity(false), activeType(BROWNIAN) {
   // Flow
   hasDrag = true;
   flowFunc = 0;
@@ -74,8 +74,7 @@ void Simulator::createSquare(int NP, int NA, double radius, double width, double
   // Add the particles in at the appropriate positions
   int i=0;
   for (; i<NP; i++) addParticle(new Particle(pos.at(i), radius));
-  for (; i<NP+NA; i++) addParticle(new RTSphere(pos.at(i), radius));
-  //for (; i<NP+NA; i++) addParticle(new PSphere(pos.at(i), radius));
+  for (; i<NP+NA; i++) addActive(pos.at(i), radius, default_run_force);
 
   // Use some drag
   hasDrag = true;
@@ -188,8 +187,7 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, double 
   // Add the particles in at the appropriate positions
   vector<vect<> > pos = findPackedSolution(N+A, radius, 0, right, 0, top);
   int i;
-  //for (i=0; i<A; i++) addParticle(new RTSphere(pos.at(i), rA));
-  for (i=0; i<A; i++) addParticle(new ABP(pos.at(i), rA, F));
+  for (i=0; i<A; i++) addActive(pos.at(i), rA, F);
   for (; i<N+A; i++) addParticle(new Particle(pos.at(i), radius));
   // Set Boundary wrapping
   xLBound = WRAP; xRBound = WRAP; yTBound = WRAP; yBBound = WRAP;
@@ -227,7 +225,7 @@ void Simulator::createSedimentationBox(int N, double radius, double width, doubl
   setSectorDims(sx, sy);
   // Add the particles in at the appropriate positions
   vector<vect<> > pos = findPackedSolution(N, radius, 0, right, 0, top);
-  for (int i=0; i<N; i++) addParticle(new ABP(pos.at(i), radius, F));
+  for (int i=0; i<N; i++) addActive(pos.at(i), radius, F);
   // Set Boundary wrapping
   xLBound = WRAP; xRBound = WRAP; yTBound = WRAP; yBBound = WRAP;
   // No fluid flow
@@ -262,7 +260,6 @@ void Simulator::createSphereFluid(int N, int A, double radius, double V, double 
                   return WPair(vect<>(fmod(flowV*time,right),0),
                                vect<>(fmod(flowV*time,right),top));
                 });
-
   // Use the maximum number of sectors
   double R = max(radius, rA);
   int sx = (int)(width/(2*R)), sy = (int)(top/(2*R));
@@ -272,7 +269,7 @@ void Simulator::createSphereFluid(int N, int A, double radius, double V, double 
   // Add the particles in at the appropriate positions
   for (i=0; i<A; i++) addParticle(new RTSphere(pos.at(i), rA));
   for (; i<N+A; i++) addParticle(new Particle(pos.at(i), radius));
-
+  // Set wrapping
   xLBound = WRAP;
   xRBound = WRAP;
   yTBound = NONE;
@@ -293,7 +290,7 @@ void Simulator::createSphereFluid(int N, int A, double radius, double V, double 
   min_epsilon = 1e-8;
 }
 
-void Simulator::createJamPipe(int N, int A, double radius, double V, double F, double rA, double width, double height, double perc, double runT, double tumT, double var) {
+void Simulator::createJamPipe(int N, int A, double radius, double V, double F, double rA, double width, double height, double perc, double var) {
   this->percent = perc;
   createControlPipe(N, A, radius, V, F, rA, width, height, var);
   // Add moving walls
@@ -392,9 +389,6 @@ void Simulator::createBacteriaBox(int N, double radius, double width, double hei
   charRadius = radius;
   left = 0; bottom = 0;
   top = height; right = width;
-
-  // Set sample points
-  //setBins(1.1547*(top-bottom)/(2*radius));
 
   addWall(new Wall(vect<>(0,bottom), vect<>(right,bottom))); // Bottom wall
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // Top wall
@@ -1614,6 +1608,24 @@ void Simulator::addParticles(int N, double R, double var, double lft, double rgh
 
 void Simulator::addRTSpheres(int N, double R, double var, double lft, double rght, double bttm, double tp, vect<> bias) {
   addParticles(N, R, var, lft, rght, bttm, tp, RTSPHERE, -1);
+}
+
+void Simulator::addActive(vect<> pos, double radius, double force) {
+  switch (activeType) {
+  case SSPHERE: {
+    addParticle(new ShearSphere(pos, radius, force));
+    break;
+  }
+  case RTSPHERE: {
+    addParticle(new RTSphere(pos, radius, force));
+    break;
+  }
+  default:
+  case BROWNIAN: {
+    addParticle(new ABP(pos, radius, force));
+    break;
+  }
+  }
 }
 
 void Simulator::resetStatistics() {

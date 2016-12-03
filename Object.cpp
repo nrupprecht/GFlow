@@ -167,12 +167,9 @@ bool Bacteria::canReproduce() {
   return timer>repDelay;
 }
 
-RTSphere::RTSphere(vect<> pos, double rad) : Particle(pos, rad) {
-  initialize();
-};
-
-RTSphere::RTSphere(vect<> pos, double rad, double baseTau, double tauConst, double maxV) : Particle(pos, rad) {
+RTSphere::RTSphere(vect<> pos, double rad, double runForce, double baseTau, double tauConst, double maxV) : Particle(pos, rad) {
   initialize(); // This sets parameters to default values, we now reset those values to the desired values
+  this->runForce = runForce;
   this->baseTau = baseTau;
   this->tauConst = tauConst;
   maxVSqr = maxV>0 ? sqr(maxV) : -1; // If maxV < 0, there is no maxV
@@ -188,7 +185,7 @@ void RTSphere::update(double epsilon) {
     double r = drand48();
     // Calculate a probability of tumbling
     double prob = probability();
-    if (r<prob) runDirection = randV();
+    if (r<prob) changeDirection(); 
   }
   delay += epsilon;
   // If there is no max velocity, or we are under the maximum velocity, or if running would decrease our velocity ==> Run
@@ -222,7 +219,7 @@ void RTSphere::initialize() {
   maxVSqr = sqr(default_active_maxV);
   baseTau = default_base_tau;
   tauConst = default_tau_const;
-  randDelay = 0.1;
+  randDelay = 0.025;
   delay = drand48()*randDelay;
   runDirection = randV();
   // This is an active particle
@@ -233,16 +230,27 @@ inline double RTSphere::probability() {
   return baseTau;
 }
 
+inline void RTSphere::changeDirection() {
+  runDirection = randV();
+}
+
 // ********** ABP ********** //
 
-ABP::ABP(vect<> pos, double rad) : RTSphere(pos, rad) {};
+ABP::ABP(vect<> pos, double rad) : RTSphere(pos, rad), diffusivity(default_brownian_diffusion) {};
 
-ABP::ABP(vect<> pos, double rad, double force) : RTSphere(pos, rad) {};
+ABP::ABP(vect<> pos, double rad, double force) : RTSphere(pos, rad, force), diffusivity(default_brownian_diffusion) {};
 
 inline double ABP::probability() { 
   // Constantly reorient
   return 1.; 
 } 
+
+inline void ABP::changeDirection() {
+  double theta = atan2(runDirection.y, runDirection.x);
+  double dTh = sqrt(randDelay)*randNormal();
+  theta += diffusivity*dTh;
+  runDirection = vect<>(cos(theta), sin(theta));
+}
 
 // ********** PSPHERE ********** //
 

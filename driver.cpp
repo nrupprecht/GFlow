@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
   double time = 600.;    // How long the entire simulation should last
   double start = 30;     // At what time we start recording data
   double pA = 0.;        // What percent of the particles are active
-  double activeF = 1.5;  // Active force (default is 5)
+  double activeF = default_run_force;  // Active force (default is 5)
   double maxV = 1.5;     // Max velocity to bin
   double minVx = -0.1;
   double maxVx = 0.6;
@@ -30,6 +30,7 @@ int main(int argc, char** argv) {
   int bins = -1;         // How many bins we should use when making a density profile
   int vbins = -1;        // How many velocity bins we should use
   int number = -1;       // Override usual automatic particle numbers and use prescribed number
+  string atype = "";     // What type of active particle to use
 
 // bacteria parameters: (default values. pass arguments through command line)
   double replenish = 0;  // Replenish rate
@@ -88,6 +89,7 @@ int main(int argc, char** argv) {
   parser.get("minVy", minVy);
   parser.get("percent", percent);
   parser.get("number", number);
+  parser.get("atype", atype);
   parser.get("replenish", replenish);
   parser.get("bacteria", bacteria);
   parser.get("sedimentation", sedimentation);
@@ -129,6 +131,7 @@ int main(int argc, char** argv) {
   // Seed random number generators
   srand48( std::time(0) );
   srand( std::time(0) );
+  seedNormalDistribution();
   //----------------------------------------
 
   Simulator simulation;
@@ -142,7 +145,9 @@ int main(int argc, char** argv) {
   if (dispProfile || dispAveProfile) simulation.setCaptureProfile(true);
   if (animate) simulation.setCapturePositions(true);
   if (dispVelDist) simulation.setCaptureVelocity(true);
-
+  // Set active particle type
+  PType type = getType(atype);
+  if (type!=ERROR) simulation.setActiveType(type);
   // Set up the simulation
   if (bacteria) {
     simulation.setReplenish(replenish);
@@ -185,7 +190,9 @@ int main(int argc, char** argv) {
   cout << "Characteristic Fluid Velocity: " << velocity << "\n";
   cout << "Phi: " << phi << ", Number: " << number << ", (Actual Phi: " << number*PI*sqr(radius)/(width*height) << ")\n";
   cout << "Percent Active: " << pA*100 << "%, (Actual %: " << 100.*NA/(double)(NA+NP) << ")\n";
-  if (NA>0) cout << "Active Force: " << activeF << endl;
+  if (NA>0) {
+    cout << "Active Force: " << activeF << ", Active Type: " << getString(simulation.getActiveType()) << "\n";
+  }
   cout << "N Active: " << NA << ", N Passive: " << NP << "\n";
   cout << endl; // Line break
   cout << "Max V: " << simulation.getMaxV() << ", Min/Max Vx: " << simulation.getMinVx() << ", " << simulation.getMaxVx() << ", Min/Max Vy: " << simulation.getMinVy() << ", " << simulation.getMaxVy() << endl;
