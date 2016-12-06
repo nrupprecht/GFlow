@@ -1,5 +1,5 @@
 /// driver.cpp - The program that creates and runs simulations
-/// For a bacteria simulation, use the option -bacteria=1
+/// For a bacteria simulation, use the option " -bacteria " or " -bacteria=1 "
 ///
 ///
 /// Author: Nathaniel Rupprecht
@@ -31,6 +31,7 @@ int main(int argc, char** argv) {
   int vbins = -1;        // How many velocity bins we should use
   int number = -1;       // Override usual automatic particle numbers and use prescribed number
   string atype = "";     // What type of active particle to use
+  bool interact = true;  // Whether particles should interact or not
 
 // bacteria parameters: (default values. pass arguments through command line)
   double replenish = 0;  // Replenish rate
@@ -90,6 +91,7 @@ int main(int argc, char** argv) {
   parser.get("percent", percent);
   parser.get("number", number);
   parser.get("atype", atype);
+  parser.get("interact", interact);
   parser.get("replenish", replenish);
   parser.get("bacteria", bacteria);
   parser.get("sedimentation", sedimentation);
@@ -155,6 +157,7 @@ int main(int argc, char** argv) {
   }
   else if (sedimentation) simulation.createSedimentationBox(NP+NA, radius, width, height, activeF);
   else simulation.createControlPipe(NP, NA, radius, velocity, activeF, rA, width, height);
+  simulation.setParticleInteraction(interact);
   
   if (bins>0) simulation.setBins(bins);
   if (vbins>0) simulation.setVBins(vbins);
@@ -205,26 +208,28 @@ int main(int argc, char** argv) {
   if (bacteria) simulation.bacteriaRun(time);
   else simulation.run(time);
   auto end_t = clock(); // End timing
+  double realTime = (double)(end_t-start_t)/CLOCKS_PER_SEC;
 
   /// Print the run information
   cout << "Sim Time: " << time << ", Run time: " << simulation.getRunTime() << ", Ratio: " << time/simulation.getRunTime() << endl;
+  cout << "Setup Time: " << realTime - simulation.getRunTime() << "\n";
   cout << "Start Time: " << start << ", Record Time: " << max(0., time-start) << "\n";
-  cout << "Actual (total) program run time: " << (double)(end_t-start_t)/CLOCKS_PER_SEC << "\n";
+  cout << "Actual (total) program run time: " << realTime << "\n";
   cout << "Iterations: " << simulation.getIter();
   cout << "\n\n----------------------- END SUMMARY -----------------------\n\n";
   
   /// Print data
   if (animate) {
     if (bacteria) { 
-        simulation.printBacteriaToFile(); // print particle positions at each time
-        simulation.printResourceToFile();
-        simulation.printWasteToFile();
- 	cout << simulation.printWalls() << endl; // for now - later print geometry in different format
+      simulation.printBacteriaToFile(); // print particle positions at each time
+      simulation.printResourceToFile();
+      simulation.printWasteToFile();
+      cout << simulation.printWalls() << endl; // for now - later print geometry in different format
     }
     else {
-	cout << simulation.printWatchList() << endl;
-    	cout << simulation.printWalls() << endl;
-    	cout << simulation.printAnimationCommand() << endl;
+      cout << simulation.printWatchList() << endl;
+      cout << simulation.printWalls() << endl;
+      cout << simulation.printAnimationCommand() << endl;
     }
   }  
   if (dispKE) {

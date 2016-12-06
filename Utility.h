@@ -257,6 +257,10 @@ inline vect<> randV() {
 }
 
 template<typename T> inline std::ostream& operator<<(std::ostream& out, const vector<T>& lst) {
+  if (lst.empty()) {
+    out << "{}";
+    return out;
+  }
   stringstream stream;
   string str;
   stream << "{";

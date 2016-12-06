@@ -46,7 +46,7 @@ class Simulator {
   void createHopper(int, double=0.025, double=0.14, double=1., double=3., double=0.);
   void createPipe(int, double=0.02, double=1., int=0);
   void createControlPipe(int, int, double=0.02, double=1., double=default_run_force, double rA=-1, double=4., double=2., double=0.);
-  void createSedimentationBox(int, double=0.02, double=2., double=2., double=default_run_force);
+  void createSedimentationBox(int, double=0.02, double=2., double=2., double=default_run_force, bool=false);
   void createSphereFluid(int, int, double=0.02, double=1., double=default_run_force, double=-1, double=10., double=2.);
   void createJamPipe(int, int, double=0.02, double=1., double=default_run_force, double=-1, double=5., double=2., double=0.5, double=0.);
   void createIdealGas(int, double=0.02, double=0.1, double=1., double=1.);
@@ -360,13 +360,15 @@ class Simulator {
   
   int bins;                         // Binning for space
   vector<vector<double> > profiles; // For density y-profile //**
-  inline vector<vect<> > aveProfile(); // For computing the average profile
+  vector<double> aveProfile;
+  inline void updateProfile();
 
   bool indicator; // True when the actual simulation is running
 
   /// What data to save
   bool capturePositions; // Whether we should record the positions of particles and walls
   bool captureProfile;   // Whether we should record profile data
+  bool captureLongProfile; // Whether we should capture profile vs time data
   bool captureVelocity;  // Whether we should record velocity distribution data
 };
 

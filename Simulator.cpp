@@ -1,6 +1,6 @@
 #include "Simulator.h"
 
-Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), mutationRate(0.0), mutationAmount(0.0), recFields(false), replenish(0), wasteSource(0), indicator(false), recordDist(false), recordClustering(false), alphaR(1.0), alphaW(1.0), betaR(1.0), csatR(1.0), csatW(1.0), lamR(0.0), lamW(0.0), capturePositions(false), captureProfile(false), captureVelocity(false), activeType(BROWNIAN) {
+Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), mutationRate(0.0), mutationAmount(0.0), recFields(false), replenish(0), wasteSource(0), indicator(false), recordDist(false), recordClustering(false), alphaR(1.0), alphaW(1.0), betaR(1.0), csatR(1.0), csatW(1.0), lamR(0.0), lamW(0.0), capturePositions(false), captureProfile(false), captureLongProfile(false), captureVelocity(false), activeType(BROWNIAN) {
   // Flow
   hasDrag = true;
   flowFunc = 0;
@@ -208,7 +208,7 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, double 
   min_epsilon = 1e-8;
 }
 
-void Simulator::createSedimentationBox(int N, double radius, double width, double height, double F) {
+void Simulator::createSedimentationBox(int N, double radius, double width, double height, double F, bool interact) {
   // Discard old setup, set basic parameters
   discard();
   gravity = vect<>(0,-0.1);
@@ -232,7 +232,7 @@ void Simulator::createSedimentationBox(int N, double radius, double width, doubl
   hasDrag = false;
   flowFunc = 0;
   // Set physical parameters
-  setParticleInteraction(false);
+  if (!interact) setParticleInteraction(false); // --> Turn off all particle interactions
   setParticleCoeff(0); // --> No torques, interparticle shear forces
   setParticleDissipation(default_sphere_dissipation);
   setParticleDrag(default_sphere_drag);
@@ -451,6 +451,7 @@ vect<> Simulator::getFVelocity(vect<> pos) {
 void Simulator::run(double runLength) {
   //Reset all neccessary variables for the start of a run
   resetVariables();
+  aveProfile = vector<double>(bins,0);
   // Run the simulation
   clock_t start = clock();
   // Initial record of data
@@ -511,7 +512,13 @@ double Simulator::getMarkDiff() {
 }
 
 vector<vect<> > Simulator::getAveProfile() {
-  return aveProfile();
+  vector<double> prof = aveProfile;
+  double total = 0, delta = (top-bottom)/bins;
+  for (auto p : prof) total += p;
+  double norm = 1./(delta*total);
+  vector<vect<> > profile;
+  for (int i=0; i<prof.size(); i++) profile.push_back(vect<>((i+0.5)*delta, prof.at(i)*norm));
+  return profile;
 }
 
 void Simulator::addStatistic(statfunc func) {
@@ -1507,8 +1514,9 @@ inline void Simulator::record() {
   statRec.at(i).push_back(vect<>(time, statistics.at(i)(particles)));
   
   // Record density profile
-  if (captureProfile) profiles.push_back(getDensityYProfile());
-
+  if (captureProfile) updateProfile();
+  if (captureLongProfile) profiles.push_back(getDensityYProfile());
+  
   // Record velocity distribution
   if (captureVelocity) {
     if (!particles.empty()) {
@@ -1746,18 +1754,8 @@ void Simulator::discard() {
   for (auto V : statRec) V.clear();
 }
 
-inline vector<vect<> > Simulator::aveProfile() {
-  if (profiles.empty()) return vector<vect<> >();
-  vector<vect<> > ave = vector<vect<> >(bins, vect<>());
-  for (int i=0; i<bins; i++) ave.at(i).x = (double)i/bins; // Set distance
-  double total = 0;
-  for (auto p : profiles)
-    for (int i=0; i<bins; i++) {
-      ave.at(i).y += p.at(i);
-      total += p.at(i);
-    }
-
-  double factor = (double)bins/(total*(right-left));
-  for (auto &d : ave) d.y *= factor;
-  return ave;
+inline void Simulator::updateProfile() {
+  vector<double> prof = getDensityYProfile();
+  for (int i=0; i<prof.size(); i++)
+    aveProfile.at(i) += prof.at(i);
 }
