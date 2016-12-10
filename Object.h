@@ -135,17 +135,17 @@ class Bacteria : public Particle {
   void resetTimer() { timer=0; }
 
   //accessors:
-  double getSecretionRate() { return secretionRate; }
+  double getResSecRate() { return resSecRate; }
   
   // mutators:
-  void setSecretionRate(double s) { secretionRate = s; }
+  void setResSecRate(double s) { resSecRate = s; }
  private:
   // For expansion
   double dR, maxRadius; 
   double expansionTime;
   double timer;
   double repDelay; // Reproduction ability check delay
-  double secretionRate;
+  double resSecRate;
 
 };
 

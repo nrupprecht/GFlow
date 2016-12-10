@@ -150,7 +150,7 @@ Bacteria::Bacteria(vect<> pos, double rad, double sec, double expTime) : Particl
   maxRadius = rad;
   dR = expTime>0 ? maxRadius/expTime : rad;
   expansionTime = expTime;
-  secretionRate = sec;
+  resSecRate = sec;
 }
 
 void Bacteria::update(double epsilon) {
