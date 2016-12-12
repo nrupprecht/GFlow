@@ -13,13 +13,14 @@
 class GField {
  public:
   GField();
+  GField(int); // A field with a certain rank, no shape yet
   GField(Shape s);
   template<typename ...T> GField(int first, T... last) {
-    spacing = array = lowerBounds = upperBounds = 0;
-    stride = 0; wrapping = 0;
+    zeroPointers();
     Shape s(first, last...);
     initialize(s, true);
   }
+  GField(int*, int);
   ~GField();
 
   void initialize(Shape, bool=false);
@@ -56,49 +57,48 @@ class GField {
     return array[address];
   }
 
+  // Access
   double& at(Index index);
   double at(Index index) const;
   double& at(vector<int>);
   double at(vector<int>) const;
   
+  // Derivative
   double derivative(Index, Index) const;
 
+  // Get the "real" position of a bin
   gVector getPosition(vector<int>) const;
   gVector getPosition(Index) const;
+  gVector getPosition(int) const;
   double getPosition(int, int) const; // Get the real position along a single component
+  // Get which index an array position corresponds to 
+  Index getIndex(int) const;
+  
 
-  // Integrate out a variable
-  // Don't do checking - faster that way --- CURRENTLY DEFUNCT
-  template<typename ...T> double integrate(int index, int first, T ...s) const {
-    int add = 0;
-    Index firstEntry(first, s...);
-    firstEntry.at(index) = 0;
-    at_address(add, firstEntry);
-    // Integrate
-    int step = stride[index];
-    double total = 0;
-    for (int i=0; i<shape.at(index); i++, add+=step) total += array[add];
-    total /= spacing[index];
-    return total;
-  }
-
-  double integrate(int index, Index pos);
-
+  // Mathematical operations
   GField& operator+=(const GField&);
-
+  GField& operator*=(double);
   friend void plusEqNS(GField&, const GField&, double=1.); // Not safe (no checking) version
+  double integrate();   // Integrate over the entire space
+  double integrate(int index, Index pos);   // Integrate out a single variable
 
   /// Accessors
-  Shape getShape() { return shape; }
+  Shape getShape() const { return shape; }
+  int getRank() const { return rank; }
+  int getSize(int) const;
+  int getPoints() const;
 
   /// Mutators
   void setWrapping(int, bool);
-  void setBounds(int, double, double);
+  void setBounds(int, double, double, bool=true);
+  void setGridSpacing(int, double, bool=true);
   void set(gFunction);
   void parabolaZero(int, int);
+  void remake();
 
   /// Data printing
   friend std::ostream& operator<<(std::ostream& out, const GField&);
+  friend std::istream& operator>>(std::istream& in, const GField);
 
   /// Error classes
   class GFieldOutOfBounds {};
@@ -110,22 +110,33 @@ class GField {
   /// Helper functions
   template<typename ...T> void at_address(int&, int) const {};
   template<typename ...T> void at_address(int& add, int step, int first, T ... last) const {
-    if (step>=shape.rank || first>=shape.dims[step]) throw GFieldOutOfBounds();
+    if (step>=shape.getRank() || first>=shape.at(step)) throw GFieldOutOfBounds();
     add += stride[step]*first;
     at_address(add, step+1, last...);
   }
-  void at_address(int&, Index) const;
-  void at_address(int&, vector<int>) const;
-
+  inline void at_address(int&, Index) const;
+  inline void at_address(int&, vector<int>) const;
+  
   static inline void writeHelper(vector<int>, std::ostream&, const GField&);
   static inline void setHelper(Index index, int step, gFunction function, GField& G);
 
-  int mod(Index&) const;
+  inline void init(int, bool=false);
 
-  void clean();
+  inline int mod(Index&) const; // Keep an index in bounds
 
+  inline void clean();
+  inline void createShape();
+  inline void zeroPointers();
+
+  // Calculate arrays
+  inline void calculateSpacing();
+  inline void calculateStride();
+
+  /// Data
   Shape shape;     // The shape of the field
+  int rank;        // Rank of the field (in case we have an empty shape to start)
   int total;       // Total number of elements in the field
+  bool needsRemake; // Whether the array needs remaking
   double *spacing; // The grid spacings in each dimension
   double *array;   // Entries of the field
   double *lowerBounds, *upperBounds;

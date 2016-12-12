@@ -11,6 +11,7 @@ template<typename T> inline void copy(T *source, T *destination, int num) {
 
 /// Array create and copy function
 template<typename T> inline void create(T *source, T*& destination, int num) {
+  if (num==0 || source==nullptr) return;
   destination = new T[num];
   copy(source, destination, num);
 }
@@ -22,7 +23,7 @@ template<typename Type> class glStorage {
     total = 0;
     entries = 0;
   }
-  glStorage(Type first) {
+  glStorage(const Type first) {
     total = 1;
     entries = new Type(first);
   }
@@ -34,6 +35,11 @@ template<typename Type> class glStorage {
   glStorage(glStorage<Type>&& store) {
     entries = store.entries;
     total = store.total;
+  }
+  glStorage(const vector<Type>& vec) {
+    total = vec.size();
+    entries = new Type[total];
+    for (int i=0; i<total; i++) entries[i] = vec.at(i);
   }
   template<typename ...T> glStorage(int first, T... last) {
     vector<int> vec;

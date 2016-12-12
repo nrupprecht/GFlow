@@ -30,7 +30,7 @@ class Tensor {
 
   // "at" function
   double& at(uint i) {
-    if (shape.dims[0]<=i || i<0) throw TensorDimsMismatch();
+    if (shape.at(0)<=i || i<0) throw TensorDimsMismatch();
     return array[i*stride[0]];
   }
   template<typename ...T> double& at(uint first, T ...s) {
@@ -40,7 +40,7 @@ class Tensor {
   }
 
   double at(uint i) const { 
-    if (shape.dims[0]<=i || i<0) throw TensorDimsMismatch();
+    if (shape.at(0)<=i || i<0) throw TensorDimsMismatch();
     return array[i*stride[0]]; 
   }
   template<typename ...T> double at(uint first, T ...s) const {
@@ -50,16 +50,16 @@ class Tensor {
   }
 
   double& at(vector<int> indices) {
-    if (indices.size()>shape.rank) throw TensorRankMismatch();
+    if (indices.size()>shape.getRank()) throw TensorRankMismatch();
     int add = 0;
-    for (int i=0; i<shape.rank; i++)
+    for (int i=0; i<shape.getRank(); i++)
       add += stride[i]*indices.at(i);
     return array[add];
   }
   double at(vector<int> indices) const {
-    if (indices.size()>shape.rank) throw TensorRankMismatch();
+    if (indices.size()>shape.getRank()) throw TensorRankMismatch();
     int add = 0;
-    for (int i=0; i<shape.rank; i++)
+    for (int i=0; i<shape.getRank(); i++)
       add += stride[i]*indices.at(i);
     return array[add];
   }
@@ -68,11 +68,11 @@ class Tensor {
 
   /// Special (matrix type) accessors
   int getRows() const {
-    int rank = shape.rank;
-    if (rank<2) return shape.dims[rank-1]; // For a pure vector
-    return shape.dims[rank-2];
+    int rank = shape.getRank();
+    if (rank<2) return shape.at(rank-1); // For a pure vector
+    return shape.at(rank-2);
   }
-  int getCols() const { return shape.dims[shape.rank-1]; }
+  int getCols() const { return shape.at(shape.getRank()-1); }
 
   /// Dangerous
   double* getArray() { return array; }
@@ -94,7 +94,7 @@ class Tensor {
   /// Accessors
   int size() const { return total; }     // Does the same thing as getTotal()
   int getTotal() const { return total; } // Does the same thing as size()
-  int getRank() { return shape.rank; }
+  int getRank() { return shape.getRank(); }
   int getDim(int i);
   Shape getShape() const { return shape; }
   double getSum(); // Get the sum of all elements in the tensor
@@ -139,7 +139,7 @@ class Tensor {
   void initialize(Shape s, bool del=true, bool zero=true);
   template<typename ...T> void at_address(int&, int) const {};
   template<typename ...T> void at_address(int& add, int step, int first, T ... last) const {
-    if (step>=shape.rank || first>=shape.dims[step]) throw TensorOutOfBounds();
+    if (step>=shape.getRank() || first>=shape.at(step)) throw TensorOutOfBounds();
     add += stride[step]*first;
     at_address(add, step+1, last...);
   }

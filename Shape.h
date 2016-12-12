@@ -14,6 +14,10 @@ struct Shape {
     vector<int> vect;
     unpack(vect, first, s...);
     rank = vect.size();
+    // Check for (illegal) zeros
+    for (int i=0; i<rank; i++)
+      if (vect.at(i)==0) throw ShapeZeroDim();
+    // Everything fine, assign sizes
     if (rank > 0) {
       dims = new int[rank];
       total = 1;
@@ -28,11 +32,40 @@ struct Shape {
     }
   }
   Shape(int first, Shape second) {
+    // Check for (illegal) zeroes
+    if (first==0) throw ShapeZeroDim();
+    // Everything fine, assign sizes
     rank = second.rank+1;
     total = first*second.total;
     dims = new int[rank];
     dims[0] = first;
     for (int i=1; i<rank; i++) dims[i] = second.at(i-1);
+  }
+  Shape(int *sizes, int rank) {
+    // Check for (illegal) zeros
+    for (int i=0; i<rank; i++) 
+      if (sizes[i]==0) throw ShapeZeroDim();
+    // Everything fine, assign sizes
+    this->rank = rank;
+    dims = new int[rank];
+    total = 1;
+    for (int i=0; i<rank; i++) {
+      dims[i] = sizes[i];
+      total *= sizes[i];
+    }
+  }
+  Shape(vector<int> sizes) {
+    // Check for (illegal) zeros
+    for (int i=0; i<sizes.size(); i++)
+      if (sizes.at(i)==0) throw ShapeZeroDim();
+    // Everything fine, assign sizes
+    this->rank = sizes.size();
+    dims = new int[rank];
+    total = 1;
+    for (int i=0; i<rank; i++) {
+      dims[i] = sizes.at(i);
+      total *= sizes.at(i);
+    }
   }
   ~Shape() { 
     if(dims) delete [] dims; 
@@ -48,6 +81,7 @@ struct Shape {
     return *this;
   }
     
+  // Concatenate Shapes (NOT adding)
   friend Shape operator+(const Shape& A, const Shape& B) {
     int rank = A.rank+B.rank;
     Shape S;
@@ -66,9 +100,7 @@ struct Shape {
   }
   
   friend ostream& operator<<(ostream& out, const Shape& s) {
-    if (s.rank==0) {
-      out << "{}";
-    }
+    if (s.rank==0) out << "{}";
     else {
       out << "{";
       for (int i=0; i<s.rank; i++) {
@@ -94,6 +126,7 @@ struct Shape {
   int getTotal() const { return total; }
 
   void set(int i, int val) {
+    if (i<0 || rank<=i) throw ShapeOutOfBounds();
     total /= dims[i];
     dims[i] = val;
     total *= dims[i];
@@ -114,9 +147,7 @@ struct Shape {
   
   // Error classes
   class ShapeOutOfBounds {};
-
-  int rank; //** Should make these private
-  int* dims;
+  class ShapeZeroDim {};
 
 private:
   // Helper functions
@@ -126,6 +157,8 @@ private:
     unpack(vect, last...);
   }
   
+  int rank; //** Should make these private
+  int* dims;
   int total;
 };
 

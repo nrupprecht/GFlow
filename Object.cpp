@@ -1,21 +1,23 @@
 #include "Object.h"
+#include "Simulator.h"
 
-Particle::Particle(vect<> pos, double rad, double repulse, double dissipate, double coeff) : position(pos), radius(rad), repulsion(repulse), dissipation(dissipate), coeff(coeff) {
+Particle::Particle(vect<> pos, double rad, double repulse, double dissipate, double coeff) : position(pos), radius(rad), repulsion(repulse), dissipation(dissipate), coeff(coeff), fvel(Zero) {
   initialize();
 }
 
 void Particle::initialize() {
   fixed = false;
+  interacting = true;
   velocity = Zero;
   acceleration = Zero;
   omega = 0;
   alpha = 0;
   theta = 0;
-  double mass = sphere_mass;
+  double mass = default_sphere_mass;
   invMass = 1.0/mass;
   invII = 1.0/(0.5*mass*sqr(radius));
   active = false;
-  drag = sphere_drag*radius;
+  drag = default_sphere_drag*radius;
   normalF = shearF = force = Zero;
   torque = 0;
   normForces = 0;
@@ -42,7 +44,7 @@ void Particle::interact(Particle* P) {
 }
 
 void Particle::interact(Particle* P, vect<> displacement) {
-  if (fixed) return;
+  if (fixed || !interacting) return;
   double distSqr = sqr(displacement);
   double cutoff = radius + P->getRadius();
   double cutoffsqr = sqr(cutoff);
@@ -145,7 +147,7 @@ void Particle::flowForce(std::function<vect<>(vect<>)> func) {
 Bacteria::Bacteria(vect<> pos, double rad, double sec, double expTime) : Particle(pos, 0), timer(0), repDelay(default_reproduction_delay) {
   // Since the radius is currently 0, we have to set these radius dependent quantities by hand here.
   invII = 1.0*invMass/(0.5*sqr(rad));
-  drag = sphere_drag*rad;
+  drag = default_sphere_drag*rad;
 
   maxRadius = rad;
   dR = expTime>0 ? maxRadius/expTime : rad;
@@ -165,95 +167,131 @@ bool Bacteria::canReproduce() {
   return timer>repDelay;
 }
 
-RTSphere::RTSphere(vect<> pos, double rad) : Particle(pos, rad) {
-  initialize();
+RTSphere::RTSphere(vect<> pos, double rad, double runForce, double baseTau, double tauConst, double maxV) : Particle(pos, rad) {
+  initialize(); // This sets parameters to default values, we now reset those values to the desired values
+  this->runForce = runForce;
+  this->baseTau = baseTau;
+  this->tauConst = tauConst;
+  maxVSqr = maxV>0 ? sqr(maxV) : -1; // If maxV < 0, there is no maxV
 };
 
-RTSphere::RTSphere(vect<> pos, double rad, double runF, double runT, double tumbleT, vect<> bias) : Particle(pos, rad) {
-  initialize();
-  runForce = runF;
-  runTime = runT;
-  tumbleTime = tumbleT;
-};
-
-RTSphere::RTSphere(vect<> pos, double rad, vect<> bias) : Particle(pos, rad) {
-  initialize();
-  this->bias = bias;
-}
-
-void RTSphere::initialize() {
-  runForce = default_run_force;
-  runTime = default_run;
-  tumbleTime = default_tumble;
-  timer = drand48()*(runTime+tumbleTime);
-  running = timer<runTime;
-  runDirection = randV();
-  bias = 0;
-  active = true;
+void RTSphere::see(Simulator* world) {
+  fvel = world->getFVelocity(position);
 }
 
 void RTSphere::update(double epsilon) {
-  if (running) {
-    if (timer<runTime) {
-      applyForce(runForce*runDirection);
-    }
-    else {
-      timer = 0;
-      running = false;
-    }
-  }
-  else {
-    if (timer<tumbleTime); // Do nothing
-    else {
-      timer = 0;
-      running = true;
-      runDirection = randV() + bias;
-    }
-  }
-  timer += epsilon;
-  Particle::update(epsilon);
-}
-
-// ********** ABP ********** //
-
-ABP::ABP(vect<> pos, double rad) : Particle(pos, rad), bForce(default_abp_force) { active=true; }
-
-ABP::ABP(vect<> pos, double rad, double force) : Particle(pos, rad), bForce(force) { active=true;}
-
-void ABP::update(double epsilon) {
-  vect<> dir = randV();
-  applyForce(bForce/epsilon*dir);
-  Particle::update(epsilon);
-}
-
-// ********** PSPHERE ********** //
-
-PSphere::PSphere(vect<> pos, double rad) : Particle(pos, rad), runForce(default_run_force), runDirection(randV()), delay(fmod(drand48(), randDelay)), invZeroPointProb(2.), randDelay(0.1), fconst(10.) { active=true; }
-
-PSphere::PSphere(vect<> pos, double rad, double force) : Particle(pos, rad), runForce(force), runDirection(randV()), delay(fmod(drand48(), randDelay)), invZeroPointProb(2.), randDelay(0.1), fconst(10.) { active=true; }
-
-void PSphere::update(double epsilon) {
   if (delay>randDelay) {
     delay = 0;
     double r = drand48();
     // Calculate a probability of tumbling
-    double prob = 1./(fconst*recentForceAve+invZeroPointProb);
-    if (r<prob*randDelay) runDirection = randV();
+    double prob = probability();
+    if (r<prob) changeDirection(); 
   }
   delay += epsilon;
-  applyForce(runForce*runDirection);
+  // If there is no max velocity, or we are under the maximum velocity, or if running would decrease our velocity ==> Run
+  if (maxVSqr<0 || sqr(velocity-fvel)<maxVSqr || runDirection*(velocity-fvel)<0) 
+    applyForce(runForce*runDirection);
   Particle::update(epsilon);
+}
+
+void RTSphere::setBaseTau(double t) { 
+  baseTau = t; 
+}
+
+void RTSphere::setTauConst(double t) {
+  tauConst = t;
+}
+
+void RTSphere::setMaxV(double v) { 
+  maxVSqr = v>0 ? sqr(v) : -1; 
+}
+
+void RTSphere::setDelay(double d) {
+  delay = d;
+}
+
+double RTSphere::getTheta() {
+  return atan2(runDirection.y, runDirection.x);
+}
+
+void RTSphere::initialize() {
+  runForce = default_run_force;
+  maxVSqr = sqr(default_active_maxV);
+  baseTau = default_base_tau;
+  tauConst = default_tau_const;
+  randDelay = 0.025;
+  delay = drand48()*randDelay;
+  runDirection = randV();
+  // This is an active particle
+  active = true;
+}
+
+inline double RTSphere::probability() {
+  return baseTau;
+}
+
+inline void RTSphere::changeDirection() {
+  runDirection = randV();
+}
+
+// ********** ABP ********** //
+
+ABP::ABP(vect<> pos, double rad) : RTSphere(pos, rad), diffusivity(default_brownian_diffusion) {};
+
+ABP::ABP(vect<> pos, double rad, double force) : RTSphere(pos, rad, force), diffusivity(default_brownian_diffusion) {};
+
+inline double ABP::probability() { 
+  // Constantly reorient
+  return 1.; 
+} 
+
+inline void ABP::changeDirection() {
+  double theta = atan2(runDirection.y, runDirection.x);
+  double dTh = sqrt(randDelay)*randNormal();
+  theta += diffusivity*dTh;
+  runDirection = vect<>(cos(theta), sin(theta));
+}
+
+// ********** PSPHERE ********** //
+
+PSphere::PSphere(vect<> pos, double rad) : RTSphere(pos, rad) {};
+
+PSphere::PSphere(vect<> pos, double rad, double force) : RTSphere(pos, rad) {};
+
+inline double PSphere::probability() {
+  // High recent ave force -> Tumble less -> large tau
+  double tau = tauConst*recentForceAve+baseTau;
+  
+  return 1.-exp(-randDelay/tau);
+}
+
+// ********** SHEARSPHERE ********** //
+void ShearSphere::see(Simulator* world) {
+  currentShear = world->getShear(position);
+  RTSphere::see(world);
+}
+
+inline double ShearSphere::probability() {
+  // Calculate 
+  double DS = (1./randDelay)*(sqr(currentShear)-sqr(lastShear)); // D (Shear^2) / Dt
+  // Reset last shear
+  lastShear = currentShear;
+  // Positive DS -> Shear increasing, tumble less -> large tau
+  // Negative DS -> Shear decreasing, tumble more -> small tau
+  double tau = exp(tauConst*DS)*baseTau;
+  // Return the probability that a tumble occured
+  return 1.-exp(-randDelay/tau);
 }
 
 // ********** WALLS  ********** //
 
-Wall::Wall(vect<> origin, vect<> end) : origin(origin), wall(end-origin), coeff(wall_coeff), repulsion(wall_repulsion), dissipation(wall_dissipation), gamma(wall_gamma) {
+Wall::Wall(vect<> origin, vect<> end) : origin(origin), wall(end-origin), coeff(default_wall_coeff), repulsion(default_wall_repulsion), dissipation(default_wall_dissipation), gamma(default_wall_gamma) {
   normal = wall;
   normal.normalize();
   length = wall.norm();
 }
 
-Wall::Wall(vect<> origin, vect<> wall, bool) : origin(origin), wall(wall), coeff(wall_coeff), repulsion(wall_repulsion), dissipation(wall_dissipation), gamma(wall_gamma) {
+Wall::Wall(vect<> origin, vect<> wall, bool) : origin(origin), wall(wall), coeff(default_wall_coeff), repulsion(default_wall_repulsion), dissipation(default_wall_dissipation), gamma(default_wall_gamma) {
   normal = wall;
   normal.normalize();
   length = wall.norm();

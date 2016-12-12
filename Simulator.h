@@ -14,7 +14,22 @@
 using std::list;
 
 enum BType { WRAP, RANDOM, NONE };
-enum PType { PASSIVE, RTSPHERE, BACTERIA };
+enum PType { PASSIVE, RTSPHERE, SSPHERE, BROWNIAN, BACTERIA, ERROR }; // ERROR is not a type
+
+// Function that converts string to PType
+inline PType getType(string s) {
+  if (s=="ABP") return BROWNIAN;
+  else if (s=="RTSphere") return RTSPHERE;
+  else if (s=="ShearSphere") return SSPHERE;
+  else return ERROR;
+}
+
+inline string getString(PType t) {
+  if (t==BROWNIAN) return "ABP";
+  else if (t==RTSPHERE) return "RTSphere";
+  else if (t==SSPHERE) return "ShearSphere";
+  else return "Error";
+}
 
 // A function that takes a double (time) and returns a wall position
 typedef pair<vect<>, vect<> > WPair;
@@ -30,9 +45,10 @@ class Simulator {
   void createSquare(int, int=0, double=0.025, double=1, double=1);
   void createHopper(int, double=0.025, double=0.14, double=1., double=3., double=0.);
   void createPipe(int, double=0.02, double=1., int=0);
-  void createControlPipe(int N, int A, double radius=0.02, double=1., double=default_run_force, double rA=-1, double width=5., double height=2., double runT=default_run, double tumT=default_tumble, double var=0., vect<> bias=Zero);
-  void createSphereFluid(int N, int A, double radius=0.02, double=1., double=default_run_force, double=-1, double=10., double=2.);
-  void createJamPipe(int N, int A, double radius=0.02, double=1., double=default_run_force, double rA=-1, double width=5., double height=2., double percent=0.5, double runT=default_run, double tumT=default_tumble, double var=0.);
+  void createControlPipe(int, int, double=0.02, double=1., double=default_run_force, double rA=-1, double=4., double=2., double=0.);
+  void createSedimentationBox(int, double=0.02, double=2., double=2., double=default_run_force, bool=false);
+  void createSphereFluid(int, int, double=0.02, double=1., double=default_run_force, double=-1, double=10., double=2.);
+  void createJamPipe(int, int, double=0.02, double=1., double=default_run_force, double=-1, double=5., double=2., double=0.5, double=0.);
   void createIdealGas(int, double=0.02, double=0.1, double=1., double=1.);
   void createEntropyBox(int, double=0.02);
   void createBacteriaBox(int, double=0.02, double=1., double=1., double=1.);
@@ -43,6 +59,8 @@ class Simulator {
 
   // Accessors
   bool wouldOverlap(vect<> pos, double R);
+  vect<> getShear(vect<>);
+  vect<> getFVelocity(vect<>);
   double getMinEpsilon() { return minepsilon; }
   double getDisplayTime() { return dispTime; }
   double getBinXWidth() { return (right-left)/bins; }
@@ -68,10 +86,12 @@ class Simulator {
   double getMarkDiff(); // Gets the difference in time between the first and last marks
   int getSize() { return particles.size(); }
   int getWallSize() { return walls.size(); }
+  PType getActiveType() { return activeType; }
   vector<double> getClusteringRec() { return clusteringRec; }
   vector<vector<double> > getProfile() { return profiles; }
   vector<vect<> > getAveProfile();
-  //// More bacteria accessors
+
+  /// More bacteria accessors
   double getResourceBenefit() { return alphaR; }
   double getWasteHarm() { return alphaW; }
   double getSecretionCost() { return betaR; }
@@ -130,6 +150,7 @@ class Simulator {
   void setYTBound(BType b) { yTBound = b; }
   void setYBBound(BType b) { yBBound = b; }
   void setYTop(double y) { yTop = y; }
+  void setActiveType(PType t) { activeType = t; }
   void setGravity(vect<> g) { gravity = g; }
   void setTemperature(double T) { temperature=T; }
   void setMarkWatch(bool w) { markWatch = w; }
@@ -167,6 +188,7 @@ class Simulator {
   void setMutationRate(double mu) { mutationRate = mu; }
   void setMutationAmount(double ds) { mutationAmount = ds; }
   /// Global set functions
+  void setParticleInteraction(bool);
   void setParticleDissipation(double);
   void setWallDissipation(double);
   void setParticleCoeff(double);
@@ -179,9 +201,9 @@ class Simulator {
   void addTempWall(Wall*, double);
   void addMovingWall(Wall*, WFunc);
   void addParticle(Particle*);
-  void addParticles(int N, double R, double var, double left, double right, double bottom, double top, PType type=PASSIVE, double vmax=-1, bool watched=true, vect<> bias=Zero);
-  void addNWParticles(int N, double R, double var, double left, double right, double bottom, double top, PType type=PASSIVE, double vmax=-1);
+  void addParticles(int N, double R, double var, double left, double right, double bottom, double top, PType type=PASSIVE, double vmax=-1);
   void addRTSpheres(int N, double R, double var, double left, double right, double bottom, double top, vect<> bias);
+  void addActive(vect<>, double, double);
   vector<vect<> > findPackedSolution(int N, double R, double left, double right, double bottom, double top); // Finds where we can put particles for high packing
 
   // Display functions
@@ -215,7 +237,7 @@ class Simulator {
 
   // Error Classes
   class BadDimChoice {};
-
+  
  private:
   /// Helper functions
   inline void resetVariables();  // Reset all neccessary variables for the start of a run
@@ -251,6 +273,7 @@ class Simulator {
   double temperature; // Temperature of the system
   double charRadius; // A characteristic radius, for animating the spheres
   double percent;    // How much of a jamPipe should be obstructed
+  PType activeType;   // What type of active particle we should use
 
   /// Bacteria
   double resourceDiffusion, wasteDiffusion;
@@ -308,7 +331,7 @@ class Simulator {
 
   /// Total distribution P[position][velocity]
   bool recordDist;
-  Tensor distribution;
+  Tensor distribution; 
   double maxVx, minVx, maxVy, minVy; // Maximum/Minimum velocities to bin for full distribution
   vect<> binVelocity(int, int);
   bool useVelocityDiff;
@@ -322,6 +345,7 @@ class Simulator {
   double startTime;  // When to start looking for time marks
   double delayTime;  // How long between marks counts as a jam
   bool delayTriggeredExit; // If a long enough delay between marks causes the simulation to stop running
+  bool recordClustering; // Whether we should record clustering data
 
   /// Sectorization
   inline void updateSectors();
@@ -336,15 +360,16 @@ class Simulator {
   
   int bins;                         // Binning for space
   vector<vector<double> > profiles; // For density y-profile //**
-  inline vector<vect<> > aveProfile(); // For computing the average profile
+  vector<double> aveProfile;
+  inline void updateProfile();
 
   bool indicator; // True when the actual simulation is running
 
   /// What data to save
   bool capturePositions; // Whether we should record the positions of particles and walls
   bool captureProfile;   // Whether we should record profile data
+  bool captureLongProfile; // Whether we should capture profile vs time data
   bool captureVelocity;  // Whether we should record velocity distribution data
-
 };
 
 #endif
