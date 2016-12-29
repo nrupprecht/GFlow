@@ -234,6 +234,21 @@ class ShearSphere : public RTSphere {
   vect<> lastShear, currentShear; // For taking a derivative of shear
 };
 
+class SmartSphere : public RTSphere {
+ public:
+  SmartSphere(vect<> pos, double rad);
+  SmartSphere(vect<> pos, double rad, double force);
+
+  virtual void see(Simulator*);
+
+ private:
+  // Calculate the probability of reorientation
+  inline virtual double probability();
+  inline virtual void changeDirection();
+
+  vect<> lastShear, currentShear; // For taking a derivative of shear
+};
+
 /// ********** Wall **********
 class Wall {
  public:

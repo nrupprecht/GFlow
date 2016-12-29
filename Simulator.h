@@ -14,13 +14,15 @@
 using std::list;
 
 enum BType { WRAP, RANDOM, NONE };
-enum PType { PASSIVE, RTSPHERE, SSPHERE, BROWNIAN, BACTERIA, ERROR }; // ERROR is not a type
+enum PType { PASSIVE, RTSPHERE, SSPHERE, BROWNIAN, BACTERIA, SMARTSPHERE, ERROR }; // ERROR is not a type
 
 // Function that converts string to PType
 inline PType getType(string s) {
   if (s=="ABP") return BROWNIAN;
   else if (s=="RTSphere") return RTSPHERE;
   else if (s=="ShearSphere") return SSPHERE;
+  else if (s=="SmartSphere") return SMARTSPHERE;
+  else if (s=="Passive") return PASSIVE;
   else return ERROR;
 }
 
@@ -28,6 +30,8 @@ inline string getString(PType t) {
   if (t==BROWNIAN) return "ABP";
   else if (t==RTSPHERE) return "RTSphere";
   else if (t==SSPHERE) return "ShearSphere";
+  else if (t==SMARTSPHERE) return "SmartSphere";
+  else if (t==PASSIVE) return "Passive";
   else return "Error";
 }
 
@@ -108,8 +112,11 @@ class Simulator {
 
   // Statistic functions
   void addStatistic(statfunc); // Adds a statistic to track
+  void addAverage(statfunc); // Add a statistic to find the average of
   int numStatistics() { return statistics.size(); } // Returns the number of statistics we are tracking
+  int numAverages() { return averages.size(); }
   vector<vect<> > getStatistic(int i); // Returns a statistic record
+  double getAverage(int i);
   int getPSize() { return psize; }
   int getASize() { return asize; }
   vector<double> getDensityXProfile();
@@ -317,8 +324,10 @@ class Simulator {
   
   /// Statistics
   vector<statfunc> statistics;
+  vector<statfunc> averages;
   vector<vector<vect<> > > statRec; // the vect is for {t, f(t)}
-  vector<double> clusteringRec;
+  vector<double> averageRec; // Record values
+  vector<double> clusteringRec; // Record clustering
   void resetStatistics();
   bool recAllIters;
   
