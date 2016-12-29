@@ -940,22 +940,26 @@ string Simulator::printWatchListVaryingSize() {
 }
 
 void Simulator::printBacteriaToFile() {
-  if (recIt==0 || psize==0) return;
-  // Print out watch list record
+ // if (recIt==0 || psize==0) return;
+  
   std::ofstream fout;
   stringstream filename;
-  // Record positions of passive particles
- for (int i=0; i<watchPos.size(); i++) {
-    filename.str("");
-    filename << "time_" << i << ".dat";
-    fout.open(filename.str());
-    for(int j=0; j<watchPos.at(i).size(); j++) {
-        //std::vector<double> pos = watchPos.at(i).at(j);
-	fout << watchPos.at(i).at(j).x << "\t" << watchPos.at(i).at(j).y << "\n";
-    } // for each particle at time i
-    fout.close();
-    fout.clear();
-  } // for each time step, write data to file
+  filename.str("");
+  filename << "bact_" << recIt << ".dat";
+  fout.open(filename.str());
+  
+  fout << "NumBacteria: " << particles.size() << "\n \n";
+   // Record positions of passive particles
+  for (auto P : particles) {
+    Bacteria* b = dynamic_cast<Bacteria*>(P);
+    double rSec = b->getResSecRate();
+    vect<> pos = P->getPosition();
+    double res = resource.at(pos), wst = waste.at(pos);
+    double fitness = alphaR*res/(res+csatR)-alphaW*wst/(wst+csatW) - betaR*rSec;
+    fout << pos.x << " " << pos.y << " " << rSec << " " << fitness << "\n";
+  } // for bacteria particle, write data to file
+  fout.close();
+  fout.clear();
 }
 
 string Simulator::printAnimationCommand() {
@@ -1033,18 +1037,25 @@ string Simulator::printResourceRec() {
 }
 
 void Simulator::printResourceToFile() {
-  cout << "\n \n ***in print resource to file*** \n \n";
-  if (resourceStr.empty()) { cout << "string is empty \n"; return;}
   std::ofstream fout;
-  fout.open("resource.dat");
-  string str = "{";
-  resourceStr.pop_back();
-  str += resourceStr;
-  resourceStr += ',';
-  str += "}";
-  fout << str;
+  stringstream filename;
+  filename.str("");
+  filename << "res_" << recIt << ".dat";
+  fout.open(filename.str());
+  
+  int numDY = resource.getDY();
+  int numDX = resource.getDX();
+  fout << "numDX: \t" << numDX << "\t numDY: \t" << numDY << "\n \n"; 
+
+  for (int y=0; y<numDY; y++) {
+      fout << "\n";
+    for (int x=0; x<numDX; x++) {
+      fout << resource.at(x,y) << " ";
+    }
+  }
+
   fout.close();
-  cout << "\n \n ***done with print resource to file*** \n \n";
+  fout.clear();
 }
 
 string Simulator::printWasteRec() {
@@ -1058,17 +1069,29 @@ string Simulator::printWasteRec() {
 }
 
 void Simulator::printWasteToFile() {
-  if (wasteStr.empty()) return;
   std::ofstream fout;
-  fout.open("waste.dat");
-  string str = "{";
-  wasteStr.pop_back();
-  str += wasteStr;
-  wasteStr += ',';
-  str += "}";
-  fout << str;
+  stringstream filename;
+  filename.str("");
+  filename << "wst_" << recIt << ".dat";
+  fout.open(filename.str());
+  
+  int numDY = waste.getDY();
+  int numDX = waste.getDX();
+  fout << "numDX: \t" << numDX << "\t numDY: \t" << numDY << "\n \n"; 
+
+  for (int y=0; y<numDY; y++) {
+      fout << "\n";
+    for (int x=0; x<numDX; x++) {
+      fout << waste.at(x,y) << " ";
+    }
+  }
+
   fout.close();
+  fout.clear();
 }
+
+
+
 string Simulator::printFitnessRec() {
   if (fitnessStr.empty()) return "{}";
   string str = "{";
@@ -1138,7 +1161,7 @@ inline void Simulator::initializeFields() {
 
   //** THIS CAN BE CHANGED
   waste = 0.;
-  resource = 5.;
+  resource = 0.;
 }
 
 inline void Simulator::calculateForces() {
@@ -1274,7 +1297,7 @@ inline void Simulator::bacteriaUpdate() {
     // Update waste and resource fields
     vect<> pos = p->getPosition();
     double &res = resource.at(pos), &wst = waste.at(pos);
-    double rSec = b->getSecretionRate();
+    double rSec = b->getResSecRate();
     wst += epsilon*secretionRate;
     res += epsilon*rSec; // eatRate = resource secretion
     res = res<0 ? 0 : res;
@@ -1291,7 +1314,9 @@ inline void Simulator::bacteriaUpdate() {
       double rd = b->getRepDelay();
       double attempt = drand48();
       double mattempt = drand48();
-      rSec = mattempt<mutationRate ? fabs(rSec-mutationAmount) : rSec;	  
+      double mutEps = 2.0*drand48() - 1.0;
+      rSec = mattempt<mutationRate ? fabs(rSec-mutEps*mutationAmount) : rSec;	  
+      b->setResSecRate(rSec); // mutate secretion rate
       if (attempt<fitness*rd) {
 	int tries = 50; // Try to find a good spot for the baby
 	vect<> pos = b->getPosition();
@@ -1326,16 +1351,16 @@ inline void Simulator::updateFields() {
   for (int y=0; y<resource.getDY(); y++)
     for (int x=0; x<resource.getDX(); x++) {
       resource.at(x,y) += epsilon*(resourceDiffusion*buffer.at(x,y) + replenish);
-      resource.at(x,y) -= epsilon*lamR; // decay or resource
+      resource.at(x,y) -= epsilon*lamR*resource.at(x,y); // decay or resource
       resource.at(x,y) = resource.at(x,y)<0 ? 0 : resource.at(x,y);
     }
   
   // Diffusion of waste field
   delSqr(waste, buffer);
-  for (int y=0;y<resource.getDY(); y++)
-    for(int x=0; x<resource.getDX(); x++) {
+  for (int y=0;y<waste.getDY(); y++)
+    for(int x=0; x<waste.getDX(); x++) {
       waste.at(x,y) += epsilon*(wasteDiffusion*buffer.at(x,y) + wasteSource);
-      waste.at(x,y) -= epsilon*lamW; // decay of waste
+      waste.at(x,y) -= epsilon*lamW*waste.at(x,y);  // decay of waste
       waste.at(x,y) = waste.at(x,y)<0 ? 0 : waste.at(x,y);
     }
 }
@@ -1573,9 +1598,14 @@ inline void Simulator::record() {
 
   // Record fields
   if (recFields) {
-    resourceStr += (printResource()+',');
-    wasteStr += (printWaste()+',');
-    fitnessStr += (printFitness()+',');
+      printBacteriaToFile();
+      printResourceToFile();
+      printWasteToFile();
+/*
+//    resourceStr += (printResource()+',');
+//    wasteStr += (printWaste()+',');
+//    fitnessStr += (printFitness()+',');
+*/
   }
 
   // Update time
