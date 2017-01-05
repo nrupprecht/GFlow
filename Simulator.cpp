@@ -526,9 +526,19 @@ void Simulator::addStatistic(statfunc func) {
   statRec.push_back(vector<vect<>>());
 }
 
+void Simulator::addAverage(statfunc func) {
+  averages.push_back(func);
+  averageRec.push_back(0);
+}
+
 vector<vect<> > Simulator::getStatistic(int i) {
   if (i<statistics.size()) return statRec.at(i);
   return vector<vect<> >();
+}
+
+double Simulator::getAverage(int i) {
+  if (i<averages.size()) return averageRec.at(i)/(double)recIt;
+  return -1;
 }
 
 vector<double> Simulator::getDensityXProfile() {
@@ -1560,8 +1570,12 @@ inline void Simulator::record() {
 
   // Record statistics
   for (int i=0; i<statistics.size(); i++)
-  statRec.at(i).push_back(vect<>(time, statistics.at(i)(particles)));
-  
+    statRec.at(i).push_back(vect<>(time, statistics.at(i)(particles)));
+
+  // Record averages
+  for (int i=0; i<averages.size(); i++)
+    averageRec.at(i) += averages.at(i)(particles);
+
   // Record density profile
   if (captureProfile) updateProfile();
   if (captureLongProfile) profiles.push_back(getDensityYProfile());
@@ -1682,6 +1696,10 @@ void Simulator::addActive(vect<> pos, double radius, double force) {
     addParticle(new RTSphere(pos, radius, force));
     break;
   }
+  case SMARTSPHERE: {
+    addParticle(new SmartSphere(pos, radius, force));
+    break;
+  }
   default:
   case BROWNIAN: {
     addParticle(new ABP(pos, radius, force));
@@ -1692,6 +1710,7 @@ void Simulator::addActive(vect<> pos, double radius, double force) {
 
 void Simulator::resetStatistics() {
   for (auto &vec : statRec) vec.clear();
+  for (auto &ent : averageRec) ent = 0;
 }
 
 vect<> Simulator::binVelocity(int vx, int vy) {
@@ -1805,7 +1824,7 @@ void Simulator::discard() {
   tempWalls.clear();
   // Clear time marks and statistics
   timeMarks.clear();
-  for (auto V : statRec) V.clear();
+  resetStatistics();
 }
 
 inline void Simulator::updateProfile() {

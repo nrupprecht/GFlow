@@ -57,8 +57,9 @@ int main(int argc, char** argv) {
   bool mmpreproc = true;
   bool animate = false;
   bool dispKE = false;
-  bool aveKE = false;
+  bool dispAveKE = false;
   bool dispFlow = false;
+  bool dispAveFlow = false;
   bool dispProfile = false;
   bool dispAveProfile = false;
   bool dispVelDist = false;
@@ -97,9 +98,10 @@ int main(int argc, char** argv) {
   parser.get("sedimentation", sedimentation);
   parser.get("mmpreproc", mmpreproc);
   parser.get("animate", animate);
-  parser.get("dispKE", dispKE);
-  parser.get("aveKE", aveKE);
+  parser.get("KE", dispKE);
+  parser.get("aveKE", dispAveKE);
   parser.get("flow", dispFlow);
+  parser.get("aveFlow", dispAveFlow);
   parser.get("profileMap", dispProfile);
   parser.get("profile", dispAveProfile);
   parser.get("velDist", dispVelDist);
@@ -139,14 +141,23 @@ int main(int argc, char** argv) {
   Simulator simulation;
   if (dispKE || dispFlow) {
     simulation.addStatistic(statKE);
+    simulation.addStatistic(statPassiveKE); //** <==
     simulation.addStatistic(statPassiveFlow);
     simulation.addStatistic(statActiveFlow);
     simulation.addStatistic(statFlowRatio);
+  }
+  if (dispAveFlow || dispAveKE) {
+    simulation.addAverage(statKE);
+    simulation.addAverage(statPassiveKE); //** <==
+    simulation.addAverage(statPassiveFlow);
+    simulation.addAverage(statActiveFlow);
+    simulation.addAverage(statFlowRatio);
   }
   simulation.setStartRecording(start);
   if (dispProfile || dispAveProfile) simulation.setCaptureProfile(true);
   if (animate) simulation.setCapturePositions(true);
   if (dispVelDist) simulation.setCaptureVelocity(true);
+  if (temperature>0) simulation.setTemperature(temperature);
   // Set active particle type
   PType type = getType(atype);
   if (type!=ERROR) simulation.setActiveType(type);
@@ -205,8 +216,14 @@ int main(int argc, char** argv) {
   cout << "\n...........................................................\n\n";
   
   /// Run the actual program
-  if (bacteria) simulation.bacteriaRun(time);
-  else simulation.run(time);
+  try {
+    if (bacteria) simulation.bacteriaRun(time);
+    else simulation.run(time);
+  }
+  catch (...) {
+    cout << "An error has occured. Exiting.\n";
+    throw;
+  }
   auto end_t = clock(); // End timing
   double realTime = (double)(end_t-start_t)/CLOCKS_PER_SEC;
 
@@ -233,19 +250,27 @@ int main(int argc, char** argv) {
     }
   }  
   if (dispKE) {
-    cout << "aveKE=" << simulation.getStatistic(0) << ";\n";
-    cout << "Print[\"Average kinetic energy\"]\nListLinePlot[aveKE,PlotRange->All,PlotStyle->Black]\n";
+    cout << "KE=" << simulation.getStatistic(0) << ";\n";
+    cout << "Print[\"Average kinetic energy\"]\nListLinePlot[KE,PlotRange->All,PlotStyle->Black]\n";
+    cout << "passKE=" << simulation.getStatistic(1) << ";\n";
+    cout << "Print[\"Average passive particle kinetic energy\"]\nListLinePlot[passKE,PlotRange->All,PlotStyle->Black]\n";
   }
-  if (aveKE) {
-    cout << "KE=" << average(simulation.getStatistic(0)) << ";\n";
+  if (dispAveKE) {
+    cout << "aveKE=" << simulation.getAverage(0) << ";\n";
+    cout << "avePassKE=" << simulation.getAverage(1) << ";\n";
   }
   if (dispFlow) {
-    cout << "passflow=" << simulation.getStatistic(1) << ";\n";
+    cout << "passflow=" << simulation.getStatistic(2) << ";\n";
     cout << "Print[\"Passive Flow\"]\nListLinePlot[passflow,PlotRange->All,PlotStyle->Black]\n";
-    cout << "actflow=" << simulation.getStatistic(2) << ";\n";
+    cout << "actflow=" << simulation.getStatistic(3) << ";\n";
     cout << "Print[\"Active Flow\"]\nListLinePlot[actflow,PlotRange->All,PlotStyle->Black]\n";
-    cout << "xi=" << simulation.getStatistic(3) << ";\n";
+    cout << "xi=" << simulation.getStatistic(4) << ";\n";
     cout << "Print[\"Xi\"]\nListLinePlot[xi,PlotRange->All,PlotStyle->Black]\n";
+  }
+  if (dispAveFlow) {
+    cout << "avePassFlow=" << simulation.getAverage(2) << ";\n";
+    cout << "aveActFlow=" << simulation.getAverage(3) << ";\n";
+    cout << "aveXi=" << simulation.getAverage(4) << ";\n";
   }
   if (dispProfile) {
     cout << "prof=" << simulation.getProfile() << ";\n";

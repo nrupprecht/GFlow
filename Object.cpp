@@ -167,6 +167,7 @@ bool Bacteria::canReproduce() {
   return timer>repDelay;
 }
 
+// ********** RTSPHERE ********** //
 RTSphere::RTSphere(vect<> pos, double rad, double runForce, double baseTau, double tauConst, double maxV) : Particle(pos, rad) {
   initialize(); // This sets parameters to default values, we now reset those values to the desired values
   this->runForce = runForce;
@@ -278,9 +279,43 @@ inline double ShearSphere::probability() {
   lastShear = currentShear;
   // Positive DS -> Shear increasing, tumble less -> large tau
   // Negative DS -> Shear decreasing, tumble more -> small tau
-  double tau = exp(tauConst*DS)*baseTau;
+  double tau = exp(tauConst*DS)*baseTau; //** Should be positive
   // Return the probability that a tumble occured
   return 1.-exp(-randDelay/tau);
+}
+
+// ********** SMARTSPHERE ********** //
+SmartSphere:: SmartSphere(vect<> pos, double rad) : RTSphere(pos, rad), lastShear(Zero), currentShear(Zero) {
+  maxVSqr = 10;
+  baseTau = 3*default_base_tau;
+}
+
+SmartSphere::SmartSphere(vect<> pos, double rad, double force) : RTSphere(pos, rad, force), lastShear(Zero), currentShear(Zero) {
+  maxVSqr = 10;
+  baseTau = 3*default_base_tau;
+}
+
+void SmartSphere::see(Simulator* world) {
+  currentShear = world->getShear(position);
+  RTSphere::see(world);
+}
+
+inline double SmartSphere::probability() {
+  // Calculate
+  double DS = (1./randDelay)*(sqr(currentShear)-sqr(lastShear)); // D (Shear^2) / Dt
+  // Reset last shear
+  lastShear = currentShear;
+  // Positive DS -> Shear increasing, tumble less -> large tau
+  // Negative DS -> Shear decreasing, tumble more -> small tau
+  double tau = exp(tauConst*DS)*baseTau; //** Should be positive
+  // Return the probability that a tumble occured
+  return 1.-exp(-randDelay/tau);
+}
+
+inline void SmartSphere::changeDirection() {
+  runDirection = randV();
+  // Stretch run velocity along x direction
+  runDirection.x *= 3*fabs(position.y); //**
 }
 
 // ********** WALLS  ********** //
