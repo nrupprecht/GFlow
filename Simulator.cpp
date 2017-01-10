@@ -1,13 +1,14 @@
 #include "Simulator.h"
 
-Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), minepsilon(default_epsilon), gravity(vect<>(0, -3)), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), mutationRate(0.0), mutationAmount(0.0), recFields(false), replenish(0), wasteSource(0), indicator(false), recordDist(false), recordClustering(false), alphaR(1.0), alphaW(1.0), betaR(1.0), csatR(1.0), csatW(1.0), lamR(0.0), lamW(0.0), capturePositions(false), captureProfile(false), captureLongProfile(false), captureVelocity(false), activeType(BROWNIAN) {
+Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), gravity(Zero), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), mutationRate(0.0), mutationAmount(0.0), recFields(false), replenish(0), wasteSource(0), indicator(false), recordDist(false), recordClustering(false), alphaR(1.0), alphaW(1.0), betaR(1.0), csatR(1.0), csatW(1.0), lamR(0.0), lamW(0.0), capturePositions(false), captureProfile(false), captureLongProfile(false), captureVelocity(false), activeType(BROWNIAN), asize(0), psize(0) {
   // Flow
-  hasDrag = true;
+  hasDrag = false;
   flowFunc = 0;
   // Time steps
-  default_epsilon = 1e-4;
+  default_epsilon = 1e-5;
   epsilon = default_epsilon;
-  min_epsilon = 1e-7;
+  minepsilon = default_epsilon; // Smallest dt ever used
+  min_epsilon = 1e-7; // Smallest dt we can consider using
   adjust_epsilon = false;
   // Boundary conditions
   xLBound = WRAP;
@@ -15,10 +16,12 @@ Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), 
   yTBound = WRAP;
   yBBound = WRAP;
   // Sectorization
+  charRadius = -1;
   sectorize = true;
   ssecInteract = false;
   secX = 10; secY = 10;
   sectors = new list<Particle*>[(secX+2)*(secY+2)+1];
+  sectorization.setParticleList(&particles); //**--
   // Binning & Velocity analysis
   bins = 100;
   vbins = 30;
@@ -58,7 +61,6 @@ void Simulator::createSquare(int NP, int NA, double radius, double width, double
   xRBound = WRAP;
   yTBound = WRAP;
   yBBound = WRAP;
-
   charRadius = radius;
   left = 0;
   bottom = 0;
@@ -66,8 +68,8 @@ void Simulator::createSquare(int NP, int NA, double radius, double width, double
   top = height;
 
   // Use the maximum number of sectors
-  int sx = (int)(right/(2*radius)), sy = (int)(top/(2*radius));
-  setSectorDims(sx, sy);
+  //int sx = (int)(right/(2*radius)), sy = (int)(top/(2*radius));
+  //setSectorDims(sx, sy);
 
   // Place the particles
   vector<vect<> > pos = findPackedSolution(NP+NA, radius, 0, right, 0, top);
@@ -116,6 +118,8 @@ void Simulator::createHopper(int N, double radius, double gap, double width, dou
   xRBound = WRAP;
   yTBound = NONE;
   yBBound = RANDOM;
+  sectorization.setWrapX(true);
+  sectorization.setWrapY(true);
   // Set physical parameters
   setParticleCoeff(0); // --> No torques, shear forces
   setParticleDissipation(default_sphere_dissipation);
@@ -123,8 +127,8 @@ void Simulator::createHopper(int N, double radius, double gap, double width, dou
   setWallDissipation(default_wall_dissipation);
   setWallCoeff(default_wall_coeff);
   
-  int sx = (int)(width/(2*(radius+var))), sy = (int)(top/(2*(radius+var)));
-  setSectorDims(sx, sy);
+  //int sx = (int)(width/(2*(radius+var))), sy = (int)(top/(2*(radius+var)));
+  //setSectorDims(sx, sy);
 
   // Set where particles will be reinserted
   yTop = troughHeight + 1.3*particles.size()*PI*sqr(radius)/width; // Estimate where the top will be
@@ -152,6 +156,8 @@ void Simulator::createPipe(int N, double radius, double V, int NObst) {
   xRBound = WRAP;
   yTBound = NONE;
   yBBound = NONE;
+  //sectorization.setWrapX(true);
+  //sectorization.setWrapY(false);
 
   setFlowV(V);
   flowFunc = [&] (vect<> pos) { return vect<>(flowV*(1-sqr(pos.y-0.5*(top-bottom)))/sqr(0.5),0); };
@@ -191,6 +197,8 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, double 
   for (; i<N+A; i++) addParticle(new Particle(pos.at(i), radius));
   // Set Boundary wrapping
   xLBound = WRAP; xRBound = WRAP; yTBound = WRAP; yBBound = WRAP;
+  //sectorization.setWrapX(true);
+  //sectorization.setWrapY(true);
   // Set up fluid flow
   setFlowV(V);
   flowFunc = [&] (vect<> pos) { return vect<>(flowV*(1-sqr(pos.y-0.5*(top-bottom))/sqr(0.5*(top-bottom))),0); };
@@ -228,6 +236,8 @@ void Simulator::createSedimentationBox(int N, double radius, double width, doubl
   for (int i=0; i<N; i++) addActive(pos.at(i), radius, F);
   // Set Boundary wrapping
   xLBound = WRAP; xRBound = WRAP; yTBound = WRAP; yBBound = WRAP;
+  //sectorization.setWrapX(true);
+  //sectorization.setWrapY(true);
   // No fluid flow
   hasDrag = false;
   flowFunc = 0;
@@ -270,10 +280,9 @@ void Simulator::createSphereFluid(int N, int A, double radius, double V, double 
   for (i=0; i<A; i++) addParticle(new RTSphere(pos.at(i), rA));
   for (; i<N+A; i++) addParticle(new Particle(pos.at(i), radius));
   // Set wrapping
-  xLBound = WRAP;
-  xRBound = WRAP;
-  yTBound = NONE;
-  yBBound = NONE;
+  xLBound = WRAP; xRBound = WRAP; yTBound = NONE; yBBound = NONE;
+  //sectorization.setWrapX(true);
+  //sectorization.setWrapY(true);
 
   setFlowV(V);
   flowFunc = [&] (vect<> pos) { return Zero; };
@@ -331,6 +340,11 @@ void Simulator::createIdealGas(int N, double radius, double v, double width, dou
   right = width;
   bottom = 0; 
   top = height;
+  // Set bounds
+  xLBound = WRAP; xRBound = WRAP; yTBound = WRAP; yBBound = WRAP;
+
+  //sectorization.setWrapX(true);
+  //sectorization.setWrapY(true);
 
   // Add four walls
   addWall(new Wall(vect<>(0,0), vect<>(right,0))); // bottom
@@ -366,6 +380,10 @@ void Simulator::createEntropyBox(int N, double radius) {
   charRadius = radius;
   left = 0; right = 1;
   bottom = 0; top = 1;
+  // Set bounds
+  xLBound = WRAP; xRBound = WRAP; yTBound = WRAP; yBBound = WRAP;
+  //sectorization.setWrapX(true);
+  //sectorization.setWrapY(true);
 
   addWall(new Wall(vect<>(0,0), vect<>(right,0))); // bottom
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // top
@@ -389,6 +407,10 @@ void Simulator::createBacteriaBox(int N, double radius, double width, double hei
   charRadius = radius;
   left = 0; bottom = 0;
   top = height; right = width;
+  // Set bounds
+  xLBound = WRAP; xRBound = WRAP; yTBound = WRAP; yBBound = WRAP;
+  //sectorization.setWrapX(true);
+  //sectorization.setWrapY(true);
 
   addWall(new Wall(vect<>(0,bottom), vect<>(right,bottom))); // Bottom wall
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // Top wall
@@ -400,11 +422,6 @@ void Simulator::createBacteriaBox(int N, double radius, double width, double hei
   vector<vect<> > pos = findPackedSolution(N, radius, 0, right, 0, top);
   // Add the particles in at the appropriate positions
   for (int i=0; i<N; i++) addParticle(new Bacteria(pos.at(i), radius,eatRate));
-
-  xLBound = WRAP;
-  xRBound = WRAP;
-  yTBound = NONE;
-  yBBound = NONE;
 
   setFlowV(V);
   flowFunc = [&] (vect<> pos) { return vect<>(flowV*(1-sqr(pos.y-0.5*(top-bottom))/sqr(0.5*(top-bottom))),0); };
@@ -451,7 +468,8 @@ vect<> Simulator::getFVelocity(vect<> pos) {
 void Simulator::run(double runLength) {
   //Reset all neccessary variables for the start of a run
   resetVariables();
-  aveProfile = vector<double>(bins,0);
+  setUpSectorization();
+  aveProfile = vector<double>(bins,0); //** --> Should check if this is neccessary before doing it
   // Run the simulation
   clock_t start = clock();
   // Initial record of data
@@ -644,6 +662,8 @@ void Simulator::setSectorDims(int sx, int sy) {
     int sec = getSec(P);
     sectors[sec].push_back(P);
   }
+
+  sectorization.setDims(sx, sy); //**--
 }
 
 vector<vect<> > Simulator::getVelocityDistribution() {
@@ -781,14 +801,15 @@ void Simulator::addParticle(Particle* particle) {
 
 vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, double right, double bottom, double top) {
   list<Particle*> parts;
+
   // Set up packingSectors
-  /*
   Sectorization packingSectors;
   packingSectors.setParticleList(&parts);
   packingSectors.setBounds(left, right, bottom, top);
+  packingSectors.setWrapX(true); packingSectors.setWrapY(true);
   int sx = (int)((right-left)/(2.3*R)), sy = (int)((top-bottom)/(2.3*R));
   packingSectors.setDims(sx, sy);
-  */
+
   // Set up walls
   vector<Wall*> bounds;
   bounds.push_back(new Wall(vect<>(left,bottom), vect<>(left,top)));
@@ -804,27 +825,23 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
     //addParticle(new Particle(pos, 0.05*R));
     Particle *P = new Particle(pos, 0.05*R);
     parts.push_back(P);
-    // packingSectors.addParticleToSectors(P); //**
   }
+  packingSectors.sectorize(); // Set up the actual sectors
 
   // Enlarge particles and thermally agitate
-  int steps = 2000;
+  int steps = 5000;
   // Make dr s.t. the final radius is a bit larger then R
   double dr = (R+0.15*R)/(double)steps, radius = 0.05*R; 
   double mag = 5, dm = mag/(double)steps;
   for (int i=0; i<steps; i++) {
     // Particle - particle interactions
-    // packingSectors.interactions(); //**
-    for (auto P : parts)
-      for (auto Q : parts)
-        if (P!=Q) {
-	  vect<> disp = getDisplacement(Q->getPosition(), P->getPosition());
-	  P->interact(Q, disp);
-	}
+    packingSectors.interactions(); //**
     
     // Thermal agitation
-    mag -= dm;
-    for (auto P: parts) P->applyForce(mag*randV());
+    /*
+      mag -= dm;
+      for (auto P: parts) P->applyForce(mag*randV());
+    */
     // Boundary walls
     for (auto W : bounds)
       for (auto P : parts)
@@ -836,7 +853,9 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
     // Adjust radius
     radius += dr;
     for (auto &P : parts) P->setRadius(radius);
+    // Update Particle
     for (auto &P : parts) update(P);
+    packingSectors.update();
   }
 
   // Return list of positions
@@ -887,14 +906,14 @@ string Simulator::printWatchList() {
 	j++;
       }
       stream >> tstr;
-      tstr.pop_back();
+      if (!tstr.empty()) tstr.pop_back();
       tstr += "},";
       str += tstr;
       // Clear
       stream.clear();
       tstr.clear();
     }
-    str.pop_back(); // Get rid of the last ','
+    if (!str.empty()) str.pop_back(); // Get rid of the last ','
     str += "};\n";
   }
   // Record positions of active particles
@@ -910,14 +929,14 @@ string Simulator::printWatchList() {
 	j++;
       }
       stream >> tstr;
-      tstr.pop_back();
+      if (!tstr.empty()) tstr.pop_back();
       tstr += "},";
       str += tstr;
       // Clear
       stream.clear();
       tstr.clear();
     }
-    str.pop_back(); // Get rid of the last ','
+    if (!str.empty()) str.pop_back(); // Get rid of the last ','
     str += "};\n";
   }
   return str;
@@ -1128,6 +1147,23 @@ void Simulator::setParticleDrag(double d) {
 
 void Simulator::setParticleFix(bool f) {
   for (auto P : particles) P->fix(f);
+}
+
+inline void Simulator::setUpSectorization() {
+  if (charRadius<0) {
+    for (auto P : particles) 
+      if (P->getRadius()>charRadius) charRadius = P->getRadius();
+    charRadius *= 1.1; // Slightly bigger then largest particle radius
+  }
+  int sx = (int)(right/(2*charRadius)), sy = (int)(top/(2*charRadius));
+  setSectorDims(sx, sy);
+  sectorization.setBounds(left, right, bottom, top); // Set dimensions
+  if (xLBound==WRAP || xRBound==WRAP) sectorization.setWrapX(true);
+  else sectorization.setWrapX(false);
+  if (yBBound==WRAP || yTBound==WRAP) sectorization.setWrapY(true);
+  else sectorization.setWrapY(false);
+
+  sectorization.sectorize();
 }
 
 inline void Simulator::resetVariables() {
@@ -1413,7 +1449,8 @@ inline double Simulator::getFitness(int x, int y) {
 
 inline void Simulator::interactions() {
   // Calculate particle-particle forces
-  if (sectorize) ppInteract();
+  // if (sectorize) ppInteract(); //**
+  if (sectorize) sectorization.interactions(); //**--
   else // Naive solution
     for (auto P : particles) 
       for (auto Q : particles)
@@ -1696,6 +1733,8 @@ vect<> Simulator::binVelocity(int vx, int vy) {
 }
 
 inline void Simulator::updateSectors() {
+  sectorization.update();
+
   for (int i=0; i<(secX+2)*(secY+2)+1; i++) {
     vector<list<Particle*>::iterator> remove;
     for (auto p=sectors[i].begin(); p!=sectors[i].end(); ++p) {

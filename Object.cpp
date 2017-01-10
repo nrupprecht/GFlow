@@ -64,9 +64,7 @@ void Particle::interact(Particle* P, vect<> displacement) {
     double Vs = dV*shear + radius*omega + P->getTangentialV(); // Shear velocity
     // Calculate the normal force
     double Fn = -repulsion*overlap-dissipation*clamp(-Vn); // Damped harmonic oscillator
-    // double K = 0.05, N = (2.-4.*K-sqr(K))/6.;
-    // double Fn = -repulsion/N*(sqr(overlap-K)/(overlap+2)-0.5*sqr(K)) - dissipation*clamp(-Vn); // Sticky force
-    
+
     // Calculate the Shear force
     double Fs = -(coeff*P->getCoeff())*Fn*sign(Vs);
 
@@ -85,7 +83,6 @@ void Particle::interact(vect<> pos, double force) {
     double dist = sqrt(distSqr);
     vect<> normal = (1.0/dist) * displacement;
     //vect<> shear = vect<>(normal.y, -normal.x);
-    
     // Pressure force
     normForces += fabs(force);
     applyNormalForce(force*normal);
@@ -279,7 +276,7 @@ inline double ShearSphere::probability() {
   lastShear = currentShear;
   // Positive DS -> Shear increasing, tumble less -> large tau
   // Negative DS -> Shear decreasing, tumble more -> small tau
-  double tau = exp(tauConst*DS)*baseTau; //** Should be positive
+  double tau = exp(tauConst*DS)*baseTau;
   // Return the probability that a tumble occured
   return 1.-exp(-randDelay/tau);
 }
@@ -314,8 +311,9 @@ inline double SmartSphere::probability() {
 
 inline void SmartSphere::changeDirection() {
   runDirection = randV();
-  // Stretch run velocity along x direction
-  runDirection.x *= 3*fabs(position.y); //**
+  // Go more "backwards" as you get near the edges
+  runDirection.x += (0.5-fabs(position.y)); //**
+  normalize(runDirection);
 }
 
 // ********** WALLS  ********** //

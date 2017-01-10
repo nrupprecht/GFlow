@@ -9,8 +9,9 @@ class Sectorization {
   Sectorization();
   ~Sectorization();
 
+  void sectorize();    // Put the particles into sectors
   void interactions(); // Compute interactions
-  void update(); // Update sectors
+  void update();       // Update sectors
 
   // Accessors
   vect<> getDisplacement(vect<>, vect<>);
@@ -23,6 +24,8 @@ class Sectorization {
   void setSSecInteract(bool s) { ssecInteract = s; }
   void setDims(int, int);
   void setBounds(double, double, double, double);
+  void setWrapX(bool w) { wrapX = w; }
+  void setWrapY(bool w) { wrapY = w; }
 
  private:
   bool wrapX, wrapY;               // Wrapping

@@ -1,11 +1,19 @@
 #include "Sectorization.h"
 
-Sectorization::Sectorization() : secX(1), secY(1), wrapX(false), wrapY(false), ssecInteract(false), left(0), right(1), bottom(0), top(1), particles(0), sectors(0) {};
+Sectorization::Sectorization() : secX(3), secY(3), wrapX(false), wrapY(false), ssecInteract(false), left(0), right(1), bottom(0), top(1), particles(0), sectors(0) {};
 
 Sectorization::~Sectorization() {
   delete [] sectors;
   sectors = 0;
   particles = 0;
+}
+
+void Sectorization::sectorize() {
+  for (int i=0; i<(secX+2)*(secY+2)+1; i++) sectors[i].clear(); // Reset sectors
+  // Build new sectors
+  if (particles)
+    for (auto P : *particles) 
+      addParticleToSectors(P);
 }
 
 void Sectorization::update() {
@@ -24,8 +32,9 @@ void Sectorization::update() {
 }
 
 void Sectorization::interactions() {
+  if (particles==0 || particles->empty()) return; // Nothing to do
   for (int y=1; y<secY+1; y++)
-    for (int x=1; x<secX+1; x++)
+    for (int x=1; x<secX+1; x++) {
       for (auto P : sectors[y*(secX+2)+x]) { // For each particle in the sector
         // Check surrounding sectors
         for (int j=y-1; j<=y+1; j++) {
@@ -38,12 +47,13 @@ void Sectorization::interactions() {
             else if (wrapX && i==secX+1) sx=1;
             for (auto Q : sectors[sy*(secX+2)+sx])
               if (P!=Q) {
-                vect<> disp = getDisplacement(Q, P);
+		vect<> disp = getDisplacement(Q, P);
                 P->interact(Q, disp);
               }
           }
         }
       }
+    }
   // Have to try to interact everything in the special sector with everything else
   if (ssecInteract) {
     for (auto P : sectors[(secX+2)*(secY+2)])
@@ -77,10 +87,9 @@ vect<> Sectorization::getDisplacement(Particle *P, Particle *Q) {
 int Sectorization::getSec(vect<> pos) {
   int X = static_cast<int>((pos.x-left)/(right-left)*secX);
   int Y = static_cast<int>((pos.y-bottom)/(top-bottom)*secY);
-
   // If out of bounds, put in the special sector
   if (X<0 || Y<0 || X>secX || Y>secY) return (secX+2)*(secY+2);
-
+  // Return sector number
   return (X+1)+(secX+2)*(Y+1);
 }
 

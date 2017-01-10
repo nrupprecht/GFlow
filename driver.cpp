@@ -208,10 +208,12 @@ int main(int argc, char** argv) {
     cout << "Active Force: " << activeF << ", Active Type: " << getString(simulation.getActiveType()) << "\n";
   }
   cout << "N Active: " << NA << ", N Passive: " << NP << "\n";
-  cout << endl; // Line break
-  cout << "Max V: " << simulation.getMaxV() << ", Min/Max Vx: " << simulation.getMinVx() << ", " << simulation.getMaxVx() << ", Min/Max Vy: " << simulation.getMinVy() << ", " << simulation.getMaxVy() << endl;
-  cout << "Bin X: " << simulation.getBinXWidth() << ", Bin Y: " << simulation.getBinYWidth() << ", vBin X: " << simulation.getVBinXWidth() << ", vBin Y: " << simulation.getVBinYWidth() << endl;
-  cout << "vBin X Zero: " << simulation.getVBinXZero() << ", vBin Y Zero: " << simulation.getVBinYZero() << endl;
+  if (dispVelDist || totalDist) {
+    cout << endl; // Line break
+    cout << "Max V: " << simulation.getMaxV() << ", Min/Max Vx: " << simulation.getMinVx() << ", " << simulation.getMaxVx() << ", Min/Max Vy: " << simulation.getMinVy() << ", " << simulation.getMaxVy() << endl;
+    cout << "Bin X: " << simulation.getBinXWidth() << ", Bin Y: " << simulation.getBinYWidth() << ", vBin X: " << simulation.getVBinXWidth() << ", vBin Y: " << simulation.getVBinYWidth() << endl;
+    cout << "vBin X Zero: " << simulation.getVBinXZero() << ", vBin Y Zero: " << simulation.getVBinYZero() << endl;
+  }
   cout << "Sectors: " << simulation.getSecX() << ", " << simulation.getSecY() << endl;
   cout << "\n...........................................................\n\n";
   

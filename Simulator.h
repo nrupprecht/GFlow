@@ -247,6 +247,7 @@ class Simulator {
   
  private:
   /// Helper functions
+  inline void setUpSectorization();
   inline void resetVariables();  // Reset all neccessary variables for the start of a run
   inline void initializeFields(); // Initialize the values of the waste and resource fields
   inline void calculateForces(); // Gravity, flow, particle-particle, and particle-wall forces
@@ -278,7 +279,7 @@ class Simulator {
   bool hasDrag;   // Whether we should apply a drag force to particles
   double flowV;   // Velocity of the flow (if any)
   double temperature; // Temperature of the system
-  double charRadius; // A characteristic radius, for animating the spheres
+  double charRadius; // A characteristic radius, for animating the spheres and creating the main sectorization
   double percent;    // How much of a jamPipe should be obstructed
   PType activeType;   // What type of active particle we should use
 
