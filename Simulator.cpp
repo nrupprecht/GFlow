@@ -1388,7 +1388,19 @@ inline void Simulator::updateFields() {
     for (int x=0; x<resource.getDX(); x++) {
       resource.at(x,y) += epsilon*(resourceDiffusion*buffer.at(x,y) + replenish);
       resource.at(x,y) -= epsilon*lamR*resource.at(x,y); // decay or resource
-      resource.at(x,y) = resource.at(x,y)<0 ? 0 : resource.at(x,y);
+  // advection:
+  vect<> velocity;
+  vect<> pos = {x, y};
+  if (flowFunc) velocity = flowFunc(pos);
+  double velX = velocity.x;
+  double velY = velocity.y;
+  vect<> gradfield;
+  gradfield = resource.grad(x,y);
+  double gfx = gradfield.x;
+  double gfy = gradfield.y;
+  resource.at(x,y) += epsilon*(velX*gfx + velY*gfy);
+ 
+     resource.at(x,y) = resource.at(x,y)<0 ? 0 : resource.at(x,y);
     }
   
   // Diffusion of waste field
@@ -1397,6 +1409,18 @@ inline void Simulator::updateFields() {
     for(int x=0; x<waste.getDX(); x++) {
       waste.at(x,y) += epsilon*(wasteDiffusion*buffer.at(x,y) + wasteSource);
       waste.at(x,y) -= epsilon*lamW*waste.at(x,y);  // decay of waste
+  // advection:
+  vect<> velocity;
+  vect<> pos = {x, y};
+  if (flowFunc) velocity = flowFunc(pos);
+  double velX = velocity.x;
+  double velY = velocity.y;
+  vect<> gradfield;
+  gradfield = waste.grad(x,y);
+  double gfx = gradfield.x;
+  double gfy = gradfield.y;
+  waste.at(x,y) += epsilon*(velX*gfx + velY*gfy);
+ 
       waste.at(x,y) = waste.at(x,y)<0 ? 0 : waste.at(x,y);
     }
 }
