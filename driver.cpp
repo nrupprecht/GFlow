@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
   bool interact = true;  // Whether particles should interact or not
 
 // bacteria parameters: (default values. pass arguments through command line)
-  double replenish = 0;  // Replenish rate
+  double replenish = 0.0;  // Replenish rate
   double d1 = 50.0;
   double d2 = 50.0;
   double a1 = 1.0;
@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
   bool useVelDiff = false;
   bool clustering = false;
   bool everything = false;
-
+  bool rcFlds = false;
   //----------------------------------------
   // Parse command line arguments
   //----------------------------------------
@@ -122,7 +122,9 @@ int main(int argc, char** argv) {
   parser.get("rSec", s1);
   parser.get("wSec", s2);
   parser.get("mutProb", mu);
+  parser.get("recFields", rcFlds);
   parser.get("dSec", ds);
+  
   //----------------------------------------
 
   // Dependent variables
@@ -193,6 +195,7 @@ int main(int argc, char** argv) {
   simulation.setSecretionRate(s2);
   simulation.setMutationRate(mu);
   simulation.setMutationAmount(ds);
+  simulation.setRecFields(rcFlds);
 
   /// Print condition summary
   cout << "----------------------- RUN SUMMARY -----------------------\n\n";

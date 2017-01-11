@@ -23,7 +23,7 @@ const double default_base_tau = 1.;
 const double default_brownian_diffusion = 5.;
 
 const double default_expansion_time = 0.5;
-const double default_reproduction_delay = 0.1;
+const double default_reproduction_delay = 1000.1;
 
 typedef pair<vect<>, vect<> > WPair;
 

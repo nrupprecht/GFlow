@@ -1346,6 +1346,7 @@ inline void Simulator::bacteriaUpdate() {
 }
 
 inline void Simulator::updateFields() {
+/*
   // Diffusion and decay of resource field
   delSqr(resource, buffer); 
   for (int y=0; y<resource.getDY(); y++)
@@ -1366,6 +1367,7 @@ inline void Simulator::updateFields() {
  
      resource.at(x,y) = resource.at(x,y)<0 ? 0 : resource.at(x,y);
     }
+  */
   
   // Diffusion of waste field
   delSqr(waste, buffer);
@@ -1387,6 +1389,7 @@ inline void Simulator::updateFields() {
  
       waste.at(x,y) = waste.at(x,y)<0 ? 0 : waste.at(x,y);
     }
+
 }
 
 inline double Simulator::maxVelocity() {
@@ -1625,16 +1628,17 @@ inline void Simulator::record() {
       printBacteriaToFile();
       printResourceToFile();
       printWasteToFile();
-/*
+
 //    resourceStr += (printResource()+',');
 //    wasteStr += (printWaste()+',');
 //    fitnessStr += (printFitness()+',');
-*/
+
   }
 
   // Update time
   lastDisp = time;
   recIt++;
+
 }
 
 inline bool Simulator::inBounds(Particle* P) {
