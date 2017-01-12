@@ -12,8 +12,7 @@ void Sectorization::sectorize() {
   for (int i=0; i<(secX+2)*(secY+2)+1; i++) sectors[i].clear(); // Reset sectors
   // Build new sectors
   if (particles)
-    for (auto P : *particles) 
-      addParticleToSectors(P);
+    for (auto P : *particles) add(P);
 }
 
 void Sectorization::update() {
@@ -93,9 +92,22 @@ int Sectorization::getSec(vect<> pos) {
   return (X+1)+(secX+2)*(Y+1);
 }
 
-void Sectorization::addParticleToSectors(Particle* P) {
+void Sectorization::addParticle(Particle* P) {
   int sec = getSec(P->getPosition());
-  sectors[sec].push_back(P);
+  sectors[sec].push_back(P); // Add particle to appropriate sector
+  particles->push_back(P);    // Add particle to particle list
+}
+
+void Sectorization::remove(Particle *P) {
+  int sec = getSec(P->getPosition());
+  sectors[sec].remove(P);
+  particles->remove(P);
+}
+
+void Sectorization::discard() {
+  // Clear all sectors
+  if (sectors)
+    for (int i=0; i<(secX+2)*(secY+2); i++) sectors[i].clear();
 }
 
 void Sectorization::setDims(int sx, int sy) {
@@ -114,4 +126,9 @@ void Sectorization::setDims(int sx, int sy) {
 
 void Sectorization::setBounds(double l, double r, double b, double t) {
   left = l; right = r; bottom = b; top = t;
+}
+
+inline void Sectorization::add(Particle *P) {
+  int sec = getSec(P->getPosition());
+  sectors[sec].push_back(P); // Add particle to appropriate sector
 }

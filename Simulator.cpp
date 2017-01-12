@@ -20,8 +20,7 @@ Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), 
   sectorize = true;
   ssecInteract = false;
   secX = 10; secY = 10;
-  sectors = new list<Particle*>[(secX+2)*(secY+2)+1];
-  sectorization.setParticleList(&particles); //**--
+  sectorization.setParticleList(&particles); // Set the sectorization particle list
   // Binning & Velocity analysis
   bins = 100;
   vbins = 30;
@@ -48,10 +47,6 @@ Simulator::~Simulator() {
       delete W;
       W = 0;
     }
-  if (sectors) {
-    delete [] sectors;
-    sectors = 0;
-  }
 }
 
 void Simulator::createSquare(int NP, int NA, double radius, double width, double height) {
@@ -560,12 +555,12 @@ double Simulator::getAverage(int i) {
 }
 
 vector<double> Simulator::getDensityXProfile() {
-  vector<double> profile;
-  for(int x=1; x<=secX; x++) {
-    int total = 0;
-    for (int y=1; y<=secY; y++)
-      total += sectors[x+(secX+2)*y].size();
-    profile.push_back(total);
+  vector<double> profile(bins,0);
+  double invdx = bins/(right-left);
+  for (auto P : particles) {
+    double x = P->getPosition().x-left;
+    int index = (int)(x*invdx);
+    if ((0<=index || index<bins) && index<profile.size()) profile.at(index)++;
   }
   return profile;
 }
@@ -654,16 +649,8 @@ void Simulator::setSectorDims(int sx, int sy) {
   sx = sx<1 ? 1 : sx;
   sy = sy<1 ? 1 : sy;
   // Create new sectors
-  secX = sx; secY = sy;
-  if (sectors) delete [] sectors;
-  sectors = new list<Particle*>[(secX+2)*(secY+2)+1];
-  // Add particles to the new sectors
-  for (auto P : particles) {
-    int sec = getSec(P);
-    sectors[sec].push_back(P);
-  }
-
-  sectorization.setDims(sx, sy); //**--
+  secX = sx; secY = sy; //** BACTERIA CODE STILL USES THESE. OTHERWISE OBSOLETE.
+  sectorization.setDims(sx, sy);
 }
 
 vector<vect<> > Simulator::getVelocityDistribution() {
@@ -702,23 +689,15 @@ Tensor Simulator::getDistribution() {
 Tensor Simulator::getCollapsedDistribution(int index) {
   if (recIt==0) return Tensor();
   double invTotal = 1./(particles.size()*recIt);
-  if (index==0) { // Average over x
+  if (index==0 || index==1) { // Average over x
     Tensor dist(bins, vbins, vbins); 
     for (int y=0; y<bins; y++)
       for (int x=0; x<bins; x++)
 	for (int vy=0; vy<vbins; vy++)
-	  for (int vx=0; vx<vbins; vx++)
-	    dist.at(y,vx,vy) += distribution.at(x,y,vx,vy);
-    timesEq(dist, invTotal);
-    return dist;
-  }
-  if (index==1) { // Average over y
-    Tensor dist(bins, vbins, vbins);
-    for(int y=0; y<bins; y++)
-      for (int x=0; x<bins; x++)
-	for (int vy=0; vy<vbins; vy++)
-	  for (int vx=0; vx<vbins; vx++)
-            dist.at(x,vx,vy) += distribution.at(x,y,vx,vy);
+	  for (int vx=0; vx<vbins; vx++) {
+	    if (index==0) dist.at(y,vx,vy) += distribution.at(x,y,vx,vy);
+	    else dist.at(x,vx,vy) += distribution.at(x,y,vx,vy);
+	  }
     timesEq(dist, invTotal);
     return dist;
   }
@@ -727,6 +706,19 @@ Tensor Simulator::getCollapsedDistribution(int index) {
     timesEq(dist, invTotal);
     return dist;
   }
+}
+
+Tensor Simulator::getCollapsedProjectedDistribution(int index, int proj) {
+  Tensor dist = getCollapsedDistribution(index); 
+  Tensor projected(bins, vbins);
+  for (int s=0; s<bins; s++)
+    for (int vx=0; vx<vbins; vx++)
+      for (int vy=0; vy<vbins; vy++) {
+	if (proj==0) projected.at(s, vy) += dist.at(s,vx,vy);
+	else projected.at(s, vx) += dist.at(s,vx,vy);
+      }
+
+  return projected;
 }
 
 Tensor Simulator::getSpeedDistribution() {
@@ -794,9 +786,8 @@ void Simulator::addMovingWall(Wall* wall, WFunc f) {
 void Simulator::addParticle(Particle* particle) {
   if (particle->isActive()) asize++;
   else psize++;
-  int sec = getSec(particle);
-  sectors[sec].push_back(particle);
-  particles.push_back(particle);
+  sectorization.addParticle(particle);
+  //particles.push_back(particle);
 }
 
 vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, double right, double bottom, double top) {
@@ -822,7 +813,6 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
   double b = bottom + 0.05*R, y = top - 0.05*R - b;
   for (int i=0; i<N; i++) {
     vect<> pos = vect<>(b+x*drand48(), b+y*drand48());
-    //addParticle(new Particle(pos, 0.05*R));
     Particle *P = new Particle(pos, 0.05*R);
     parts.push_back(P);
   }
@@ -1250,7 +1240,7 @@ inline void Simulator::logisticUpdates() {
 inline void Simulator::objectUpdates() {
   // Update simulation
   for (auto &P : particles) update(P); // Update particles
-  if (sectorize) updateSectors(); // Update sectors
+  if (sectorize) sectorization.update(); // Update sectors
   // Update temp walls
   if (!tempWalls.empty()) {
     vector<list<pair<Wall*,double> >::iterator> removal;
@@ -1329,7 +1319,7 @@ inline void Simulator::bacteriaUpdate() {
   for (auto p : particles) {
     // Dynamic convert to Bacteria
     Bacteria* b = dynamic_cast<Bacteria*>(p);
-    if (b==0) continue;
+    if (b==0) continue; // Dynamic cast returns 0 if *b is not a bacteria
     // Update waste and resource fields
     vect<> pos = p->getPosition();
     double &res = resource.at(pos), &wst = waste.at(pos);
@@ -1371,14 +1361,12 @@ inline void Simulator::bacteriaUpdate() {
     }
   } // for each particle in system  
   
-  for (auto P : deaths) {
-    int sid = getSec(P);
-    particles.remove(P);
-    sectors[sid].remove(P);
+  for (auto &P : deaths) {
+    sectorization.remove(P);
     delete P;
   }
   
-  for (auto P : births) addParticle(P);      
+  for (auto &P : births) addParticle(P);      
 }
 
 inline void Simulator::updateFields() {
@@ -1473,8 +1461,7 @@ inline double Simulator::getFitness(int x, int y) {
 
 inline void Simulator::interactions() {
   // Calculate particle-particle forces
-  // if (sectorize) ppInteract(); //**
-  if (sectorize) sectorization.interactions(); //**--
+  if (sectorize) sectorization.interactions();
   else // Naive solution
     for (auto P : particles) 
       for (auto Q : particles)
@@ -1619,56 +1606,55 @@ inline void Simulator::record() {
   
   // Record velocity distribution
   if (captureVelocity) {
-    if (!particles.empty()) {
-      for (auto P : particles) {
-	double vel = sqrt(sqr(P->getVelocity()));
-	double fvel = flowFunc==0 ? 0 : sqrt(sqr(flowFunc(P->getPosition())));
-	int B = (int)(vel/maxV*vbins);
-	int Bf = fvel>0 ? (int)(vel/fvel/maxF*vbins) : vbins-1;
-	B = B>=vbins ? vbins-1 : B;
-	B = B<0 ? 0 : B;
-	Bf = Bf>=vbins ? vbins-1 : Bf;
-	Bf = Bf<0 ? 0 : Bf;
-	velocityDistribution.at(B)++;
-	auxVelocityDistribution.at(Bf)++;
-      }    
-      // Record total distribution
-      if (recordDist) {
-	for (auto P : particles) {
-	  vect<> V = P->getVelocity();
-	  vect<> pos = P->getPosition();
-	  if (useVelocityDiff && flowFunc) V -= flowFunc(pos);
-	  int Bx = (pos.x-left)/(right-left)*bins;
-	  int By = (pos.y-bottom)/(top-bottom)*bins;
-	  Bx = bins<=Bx ? bins-1 : Bx; By = bins<=By ? bins-1 : By;
-	  Bx = Bx<0 ? 0 : Bx; By = By<0 ? 0 : By;
-	  int Vx = (int)((V.x-minVx)/(maxVx-minVx)*vbins);
-	  int Vy = (int)((V.y-minVy)/(maxVy-minVy)*vbins);
-	  Vx = vbins<=Vx ? vbins-1 : Vx; 
-	  Vx = Vx<0 ? 0 : Vx;
-	  Vy = vbins<=Vy ? vbins-1 : Vy;
-	  Vy = Vy<0 ? 0 : Vy;
-	  distribution.at(Bx,By,Vx,Vy)++;
-	}
-      }
+    for (auto P : particles) {
+      double vel = sqrt(sqr(P->getVelocity()));
+      double fvel = flowFunc==0 ? 0 : sqrt(sqr(flowFunc(P->getPosition())));
+      int B = (int)(vel/maxV*vbins);
+      int Bf = fvel>0 ? (int)(vel/fvel/maxF*vbins) : vbins-1;
+      B = B>=vbins ? vbins-1 : B;
+      B = B<0 ? 0 : B;
+      Bf = Bf>=vbins ? vbins-1 : Bf;
+      Bf = Bf<0 ? 0 : Bf;
+      velocityDistribution.at(B)++;
+      auxVelocityDistribution.at(Bf)++;
     }
   }
+  // Record total distribution
+  if (recordDist) {
+    for (auto P : particles) {
+      vect<> V = P->getVelocity();
+      vect<> pos = P->getPosition();
+      if (useVelocityDiff && flowFunc) V -= flowFunc(pos);
+      int Bx = (pos.x-left)/(right-left)*bins;
+      int By = (pos.y-bottom)/(top-bottom)*bins;
+      Bx = bins<=Bx ? bins-1 : Bx; By = bins<=By ? bins-1 : By;
+      Bx = Bx<0 ? 0 : Bx; By = By<0 ? 0 : By;
+      int Vx = (int)((V.x-minVx)/(maxVx-minVx)*vbins);
+      int Vy = (int)((V.y-minVy)/(maxVy-minVy)*vbins);
+      Vx = vbins<=Vx ? vbins-1 : Vx; 
+      Vx = Vx<0 ? 0 : Vx;
+      Vy = vbins<=Vy ? vbins-1 : Vy;
+      Vy = Vy<0 ? 0 : Vy;
+      distribution.at(Bx,By,Vx,Vy)++;
+    }
+  }
+  
   // Record clustering
   if (recordClustering)
     clusteringRec.push_back(clustering());
-
+  
   // Record fields
   if (recFields) {
-      printBacteriaToFile();
-      printResourceToFile();
-      printWasteToFile();
-/*
-//    resourceStr += (printResource()+',');
-//    wasteStr += (printWaste()+',');
-//    fitnessStr += (printFitness()+',');
-*/
+    printBacteriaToFile();
+    printResourceToFile();
+    printWasteToFile();
+    /*
+    resourceStr += (printResource()+',');
+    wasteStr += (printWaste()+',');
+    fitnessStr += (printFitness()+',');
+    */
   }
-
+  
   // Update time
   lastDisp = time;
   recIt++;
@@ -1756,55 +1742,6 @@ vect<> Simulator::binVelocity(int vx, int vy) {
   return vect<>(VX, VY);
 }
 
-inline void Simulator::updateSectors() {
-  sectorization.update();
-
-  for (int i=0; i<(secX+2)*(secY+2)+1; i++) {
-    vector<list<Particle*>::iterator> remove;
-    for (auto p=sectors[i].begin(); p!=sectors[i].end(); ++p) {
-      int sec = getSec((*p));
-      if (sec != i) { // In the wrong sector
-	remove.push_back(p);
-	sectors[sec].push_back(*p);
-      }
-    }
-    // Remove particles that moved
-    for (auto P : remove) sectors[i].erase(P);
-  }
-}
-
-inline void Simulator::ppInteract() {
-  for (int y=1; y<secY+1; y++)
-    for (int x=1; x<secX+1; x++)
-      for (auto P : sectors[y*(secX+2)+x]) { // For each particle in the sector
-	// Check surrounding sectors
-	for (int j=y-1; j<=y+1; j++) {
-	  int sy = j;
-	  if ((yBBound==WRAP || yTBound==WRAP) && j==0) sy=secY;
-	  else if ((yBBound==WRAP ||yTBound==WRAP) && j==secY+1) sy=1;
-	  for (int i=x-1; i<=x+1; i++) {
-	    int sx = i;
-	    if ((xLBound==WRAP || xRBound==WRAP) && i==0) sx=secX;
-	    else if ((xLBound==WRAP || xRBound==WRAP) && i==secX+1) sx=1;	    
-	    for (auto Q : sectors[sy*(secX+2)+sx])
-	      if (P!=Q) {
-		vect<> disp = getDisplacement(Q, P);
-		P->interact(Q, disp);
-	      }
-	  }
-	}
-      }
-  // Have to try to interact everything in the special sector with everything else
-  if (ssecInteract) {
-    for (auto P : sectors[(secX+2)*(secY+2)])
-      for (auto Q : particles)
-	if (P!=Q) {
-	  vect<> disp = getDisplacement(Q, P);
-	  P->interact(Q);
-	}
-  }
-}
-
 inline int Simulator::getSec(vect<> pos) {
   int X = static_cast<int>((pos.x-left)/(right-left)*secX);
   int Y = static_cast<int>((pos.y-bottom)/(top-bottom)*secY);  
@@ -1841,7 +1778,7 @@ void Simulator::setCaptureVelocity(bool cv) {
 
 void Simulator::discard() {
   psize = asize = 0;
-  for (int i=0; i<(secX+2)*(secY+2); i++) sectors[i].clear();
+  sectorization.discard();
   for (auto P : particles) 
     if (P) {
       delete P;

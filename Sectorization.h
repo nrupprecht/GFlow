@@ -19,7 +19,9 @@ class Sectorization {
   int getSec(vect<>);
 
   // Mutators
-  void addParticleToSectors(Particle *);
+  void addParticle(Particle*);
+  void remove(Particle*);
+  void discard();
   void setParticleList(list<Particle*>* P) { particles = P; }
   void setSSecInteract(bool s) { ssecInteract = s; }
   void setDims(int, int);
@@ -28,6 +30,9 @@ class Sectorization {
   void setWrapY(bool w) { wrapY = w; }
 
  private:
+  // Private Helper functions
+  inline void add(Particle*); // Add a particle just to sectors, not to the particles list
+
   bool wrapX, wrapY;               // Wrapping
   bool ssecInteract;               // Whether particles should interact with the special sector
   int secX, secY;                  // Number of sectors

@@ -133,6 +133,7 @@ class Simulator {
   vector<vect<> > getAuxVelocityDistribution();
   Tensor getDistribution();
   Tensor getCollapsedDistribution(int=0); // Average out one of the spatial indices
+  Tensor getCollapsedProjectedDistribution(int=0, int=0); // Average out a spatial index and project in a direction. Proj=0 --> Project out x component (get y component)
   Tensor getSpeedDistribution();
 
   // Mutators
@@ -318,8 +319,7 @@ class Simulator {
   list<Particle*> particles; // vector is about 3% faster
   int psize, asize; // Record the number of passive and active particles
 
-  /// Watchlist
-  list<Particle*> watchlist;
+  /// Animation
   vector<vector<vect<> > > watchPos; // [ recIt ] [ vect<>(positions) ]
   vector<vector<WPair> > wallPos; // [ recIt ] [ Wall # ] [ WPair ] For moving walls
   
@@ -358,11 +358,8 @@ class Simulator {
   bool recordClustering; // Whether we should record clustering data
 
   /// Sectorization
-  inline void updateSectors();
-  inline void ppInteract(); 
   inline int getSec(vect<>);
   inline int getSec(Particle*);
-  list<Particle*>* sectors; // Sectors (buffer of empty sectors surrounds, extra sector for out of bounds particles [x = 0, y = secY+3])
   Sectorization sectorization; // The sectorization for the particles
   int secX, secY; // Width and height of sector grid
   bool sectorize; // Whether to use sector based interactions

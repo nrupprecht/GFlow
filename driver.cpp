@@ -64,6 +64,7 @@ int main(int argc, char** argv) {
   bool dispAveProfile = false;
   bool dispVelDist = false;
   bool totalDist = false;
+  bool projDist = false;
   bool useVelDiff = false;
   bool clustering = false;
   bool everything = false;
@@ -105,10 +106,12 @@ int main(int argc, char** argv) {
   parser.get("profileMap", dispProfile);
   parser.get("profile", dispAveProfile);
   parser.get("velDist", dispVelDist);
+  parser.get("projDist", projDist);
   parser.get("totalDist", totalDist);
   parser.get("useVelDiff", useVelDiff);
   parser.get("clustering", clustering);
   parser.get("everything", everything);
+
   // Bacteria parameters from command line
   parser.get("rDiff", d1);
   parser.get("wDiff", d2);
@@ -153,6 +156,7 @@ int main(int argc, char** argv) {
     simulation.addAverage(statActiveFlow);
     simulation.addAverage(statFlowRatio);
   }
+  if (totalDist || projDist) simulation.setRecordDist(true);
   simulation.setStartRecording(start);
   if (dispProfile || dispAveProfile) simulation.setCaptureProfile(true);
   if (animate) simulation.setCapturePositions(true);
@@ -208,11 +212,12 @@ int main(int argc, char** argv) {
     cout << "Active Force: " << activeF << ", Active Type: " << getString(simulation.getActiveType()) << "\n";
   }
   cout << "N Active: " << NA << ", N Passive: " << NP << "\n";
-  if (dispVelDist || totalDist) {
+  if (dispVelDist || totalDist || projDist) {
     cout << endl; // Line break
     cout << "Max V: " << simulation.getMaxV() << ", Min/Max Vx: " << simulation.getMinVx() << ", " << simulation.getMaxVx() << ", Min/Max Vy: " << simulation.getMinVy() << ", " << simulation.getMaxVy() << endl;
     cout << "Bin X: " << simulation.getBinXWidth() << ", Bin Y: " << simulation.getBinYWidth() << ", vBin X: " << simulation.getVBinXWidth() << ", vBin Y: " << simulation.getVBinYWidth() << endl;
     cout << "vBin X Zero: " << simulation.getVBinXZero() << ", vBin Y Zero: " << simulation.getVBinYZero() << endl;
+    cout << "Using relative velocity: " << (useVelDiff ? "True" : "False") << endl;
   }
   cout << "Sectors: " << simulation.getSecX() << ", " << simulation.getSecY() << endl;
   cout << "\n...........................................................\n\n";
@@ -285,8 +290,16 @@ int main(int argc, char** argv) {
   if (dispVelDist) {
     cout << "velDist=" << simulation.getVelocityDistribution() << ";\n";
     cout << "Print[\"Velocity Distribution\"]\nListLinePlot[velDist,PlotStyle->Black,ImageSize->Large,PlotRange->All]\n";
-    //cout << "aVelDist=" << simulation.getAuxVelocityDistribution() << ";\n";
-    //cout << "Print[\"Auxilary Velocity Distribution\"]\nListLinePlot[aVelDist,PlotStyle->Black,ImageSize->Large,PlotRange->All]\n";
+    cout << "aVelDist=" << simulation.getAuxVelocityDistribution() << ";\n";
+    cout << "Print[\"Auxilary Velocity Distribution\"]\nListLinePlot[aVelDist,PlotStyle->Black,ImageSize->Large,PlotRange->All]\n";
+  }
+  if (projDist) {
+    stringstream stream;
+    string str;
+    stream << simulation.getCollapsedProjectedDistribution();
+    stream >> str;
+    if (mmpreproc) cout << "projDist=" << mmPreproc(str) << ";\n";
+    else cout << "projDist=" << str << ";\n";
   }
   if (totalDist) {
     stringstream stream;
