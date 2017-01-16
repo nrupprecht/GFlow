@@ -95,7 +95,9 @@ int Sectorization::getSec(vect<> pos) {
 void Sectorization::addParticle(Particle* P) {
   int sec = getSec(P->getPosition());
   sectors[sec].push_back(P); // Add particle to appropriate sector
-  particles->push_back(P);    // Add particle to particle list
+  // Add to list if it is not already there
+  if (std::find(particles->begin(), particles->end(), P)==particles->end())
+    particles->push_back(P);    // Add particle to particle list
 }
 
 void Sectorization::remove(Particle *P) {
@@ -128,7 +130,8 @@ void Sectorization::setBounds(double l, double r, double b, double t) {
   left = l; right = r; bottom = b; top = t;
 }
 
+// Add particle to appropriate sector
 inline void Sectorization::add(Particle *P) {
   int sec = getSec(P->getPosition());
-  sectors[sec].push_back(P); // Add particle to appropriate sector
+  sectors[sec].push_back(P);
 }

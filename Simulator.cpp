@@ -62,10 +62,6 @@ void Simulator::createSquare(int NP, int NA, double radius, double width, double
   right = width;
   top = height;
 
-  // Use the maximum number of sectors
-  //int sx = (int)(right/(2*radius)), sy = (int)(top/(2*radius));
-  //setSectorDims(sx, sy);
-
   // Place the particles
   vector<vect<> > pos = findPackedSolution(NP+NA, radius, 0, right, 0, top);
   // Add the particles in at the appropriate positions
@@ -109,21 +105,13 @@ void Simulator::createHopper(int N, double radius, double gap, double width, dou
   act = act<0 ? 0 : act;
   addParticles(act*N, radius, var, mx, right-mx, troughHeight+mx, upper-mx, RTSPHERE); // Active particles
   addParticles((1-act)*N, radius, var, mx, right-mx, troughHeight+mx, upper-mx); // Passive particles
-  xLBound = WRAP;
-  xRBound = WRAP;
-  yTBound = NONE;
-  yBBound = RANDOM;
-  sectorization.setWrapX(true);
-  sectorization.setWrapY(true);
+  xLBound = WRAP;  xRBound = WRAP;  yTBound = NONE;  yBBound = RANDOM;
   // Set physical parameters
   setParticleCoeff(0); // --> No torques, shear forces
   setParticleDissipation(default_sphere_dissipation);
   setParticleDrag(default_sphere_drag);
   setWallDissipation(default_wall_dissipation);
   setWallCoeff(default_wall_coeff);
-  
-  //int sx = (int)(width/(2*(radius+var))), sy = (int)(top/(2*(radius+var)));
-  //setSectorDims(sx, sy);
 
   // Set where particles will be reinserted
   yTop = troughHeight + 1.3*particles.size()*PI*sqr(radius)/width; // Estimate where the top will be
@@ -147,12 +135,7 @@ void Simulator::createPipe(int N, double radius, double V, int NObst) {
   setParticleFix(true);
   // Add mobile particles
   addParticles(N, radius, 0, 0, right, 0, top);
-  xLBound = WRAP;
-  xRBound = WRAP;
-  yTBound = NONE;
-  yBBound = NONE;
-  //sectorization.setWrapX(true);
-  //sectorization.setWrapY(false);
+  xLBound = WRAP;  xRBound = WRAP;  yTBound = NONE;  yBBound = NONE;
 
   setFlowV(V);
   flowFunc = [&] (vect<> pos) { return vect<>(flowV*(1-sqr(pos.y-0.5*(top-bottom)))/sqr(0.5),0); };
@@ -174,17 +157,13 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, double 
   // Discard old setup, set basic parameters
   discard();
   gravity = Zero;
-  charRadius = radius;
+  charRadius = max(radius, rA);
   left = 0; bottom = 0;
   top = height; right = width;
   if (rA==-1) rA = radius;
   // Put in walls
   addWall(new Wall(vect<>(0,bottom), vect<>(right,bottom))); // Bottom wall
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // Top wall
-  // Use the maximum number of sectors
-  double R = max(radius, rA);
-  int sx = (int)(width/(2*(R+var))), sy = (int)(top/(2*(R+var)));
-  setSectorDims(sx, sy);
   // Add the particles in at the appropriate positions
   vector<vect<> > pos = findPackedSolution(N+A, radius, 0, right, 0, top);
   int i;
@@ -192,8 +171,6 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, double 
   for (; i<N+A; i++) addParticle(new Particle(pos.at(i), radius));
   // Set Boundary wrapping
   xLBound = WRAP; xRBound = WRAP; yTBound = WRAP; yBBound = WRAP;
-  //sectorization.setWrapX(true);
-  //sectorization.setWrapY(true);
   // Set up fluid flow
   setFlowV(V);
   flowFunc = [&] (vect<> pos) { return vect<>(flowV*(1-sqr(pos.y-0.5*(top-bottom))/sqr(0.5*(top-bottom))),0); };
@@ -223,16 +200,11 @@ void Simulator::createSedimentationBox(int N, double radius, double width, doubl
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // Top wall
   addWall(new Wall(vect<>(0,top), vect<>(0,bottom))); // Left wall
   addWall(new Wall(vect<>(right,top), vect<>(right,bottom))); // Right wall
-  // Use the maximum number of sectors
-  int sx = (int)(width/(2*radius)), sy = (int)(top/(2*radius));
-  setSectorDims(sx, sy);
   // Add the particles in at the appropriate positions
   vector<vect<> > pos = findPackedSolution(N, radius, 0, right, 0, top);
   for (int i=0; i<N; i++) addActive(pos.at(i), radius, F);
   // Set Boundary wrapping
   xLBound = WRAP; xRBound = WRAP; yTBound = WRAP; yBBound = WRAP;
-  //sectorization.setWrapX(true);
-  //sectorization.setWrapY(true);
   // No fluid flow
   hasDrag = false;
   flowFunc = 0;
@@ -258,27 +230,12 @@ void Simulator::createSphereFluid(int N, int A, double radius, double V, double 
   
   addWall(new Wall(vect<>(0,bottom), vect<>(right,bottom))); // Bottom wall
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // Top wall
-  // Moving wall drives 'fluid'
-  setFlowV(V);
-  addMovingWall(new Wall(vect<>(0,0), vect<>(0,top)),
-                [&] (double time) {
-                  return WPair(vect<>(fmod(flowV*time,right),0),
-                               vect<>(fmod(flowV*time,right),top));
-                });
-  // Use the maximum number of sectors
-  double R = max(radius, rA);
-  int sx = (int)(width/(2*R)), sy = (int)(top/(2*R));
-  setSectorDims(sx, sy);
-  vector<vect<> > pos = findPackedSolution(N+A, radius, 0, right, 0, top);
-  int i;
   // Add the particles in at the appropriate positions
   for (i=0; i<A; i++) addParticle(new RTSphere(pos.at(i), rA));
   for (; i<N+A; i++) addParticle(new Particle(pos.at(i), radius));
   // Set wrapping
   xLBound = WRAP; xRBound = WRAP; yTBound = NONE; yBBound = NONE;
-  //sectorization.setWrapX(true);
-  //sectorization.setWrapY(true);
-
+  // Flow
   setFlowV(V);
   flowFunc = [&] (vect<> pos) { return Zero; };
   hasDrag = false;
@@ -337,18 +294,11 @@ void Simulator::createIdealGas(int N, double radius, double v, double width, dou
   top = height;
   // Set bounds
   xLBound = WRAP; xRBound = WRAP; yTBound = WRAP; yBBound = WRAP;
-
-  //sectorization.setWrapX(true);
-  //sectorization.setWrapY(true);
-
   // Add four walls
   addWall(new Wall(vect<>(0,0), vect<>(right,0))); // bottom
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // top
   addWall(new Wall(vect<>(0,0), vect<>(0,top))); // left
   addWall(new Wall(vect<>(right,0), vect<>(right,top))); // right
-
-  addParticles(N, radius, 0, 0, right, 0, top, PASSIVE, v);
-  
   // Place the particles
   vector<vect<> > pos = findPackedSolution(N, radius, 0, right, 0, top);
   // Add the particles in at the appropriate positions
@@ -377,16 +327,14 @@ void Simulator::createEntropyBox(int N, double radius) {
   bottom = 0; top = 1;
   // Set bounds
   xLBound = WRAP; xRBound = WRAP; yTBound = WRAP; yBBound = WRAP;
-  //sectorization.setWrapX(true);
-  //sectorization.setWrapY(true);
-
+  // Add Walls
   addWall(new Wall(vect<>(0,0), vect<>(right,0))); // bottom
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // top
   addWall(new Wall(vect<>(0,0), vect<>(0,top))); // left
   addWall(new Wall(vect<>(right,0), vect<>(right,top))); // right
   addWall(new Wall(vect<>(0.5,0), vect<>(0.5,0.5*(1.0-gap)))); // bottom partition
   addWall(new Wall(vect<>(0.5,1), vect<>(0.5,0.5*(1.0+gap)))); // bottom partition
-
+  // AddParticles
   addParticles(N/2, radius, 0, radius, 0.5-radius, radius, top-radius, PASSIVE, 1);
   addParticles(N/2, radius, 0, 0.5+radius, 1-radius, radius, top-radius, PASSIVE, 0.1);
   setParticleDissipation(0);
@@ -404,15 +352,9 @@ void Simulator::createBacteriaBox(int N, double radius, double width, double hei
   top = height; right = width;
   // Set bounds
   xLBound = WRAP; xRBound = WRAP; yTBound = WRAP; yBBound = WRAP;
-  //sectorization.setWrapX(true);
-  //sectorization.setWrapY(true);
-
+  // Add walls
   addWall(new Wall(vect<>(0,bottom), vect<>(right,bottom))); // Bottom wall
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // Top wall
-
-  // Use the maximum number of sectors
-  int sx = (int)(width/(2*radius)), sy = (int)(top/(2*radius));
-  setSectorDims(sx, sy);
   // Find packed solution
   vector<vect<> > pos = findPackedSolution(N, radius, 0, right, 0, top);
   // Add the particles in at the appropriate positions
@@ -786,8 +728,7 @@ void Simulator::addMovingWall(Wall* wall, WFunc f) {
 void Simulator::addParticle(Particle* particle) {
   if (particle->isActive()) asize++;
   else psize++;
-  sectorization.addParticle(particle);
-  //particles.push_back(particle);
+  particles.push_back(particle);
 }
 
 vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, double right, double bottom, double top) {
@@ -1140,12 +1081,12 @@ void Simulator::setParticleFix(bool f) {
 }
 
 inline void Simulator::setUpSectorization() {
-  if (charRadius<0) {
+  if (charRadius<0) { // Find the maximum radius
     for (auto P : particles) 
       if (P->getRadius()>charRadius) charRadius = P->getRadius();
-    charRadius *= 1.1; // Slightly bigger then largest particle radius
   }
-  int sx = (int)(right/(2*charRadius)), sy = (int)(top/(2*charRadius));
+  double mult = 2.; // Must be at least 2
+  int sx = (int)((right-left)/(mult*charRadius)), sy = (int)((top-bottom)/(mult*charRadius));
   setSectorDims(sx, sy);
   sectorization.setBounds(left, right, bottom, top); // Set dimensions
   if (xLBound==WRAP || xRBound==WRAP) sectorization.setWrapX(true);

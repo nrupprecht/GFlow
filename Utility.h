@@ -23,6 +23,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 using std::vector;
 using std::pair;
