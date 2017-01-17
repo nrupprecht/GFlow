@@ -52,6 +52,7 @@ int main(int argc, char** argv) {
   // Run Type
   bool bacteria = false;      // Bacteria box
   bool sedimentation = false; // Sedimentation box
+  bool sphereFluid = false;  // Sphere fluid
 
   // Display parameters
   bool mmpreproc = true;
@@ -97,6 +98,7 @@ int main(int argc, char** argv) {
   parser.get("replenish", replenish);
   parser.get("bacteria", bacteria);
   parser.get("sedimentation", sedimentation);
+  parser.get("sphereFluid", sphereFluid);
   parser.get("mmpreproc", mmpreproc);
   parser.get("animate", animate);
   parser.get("KE", dispKE);
@@ -171,6 +173,7 @@ int main(int argc, char** argv) {
     simulation.createBacteriaBox(number, radius, width, height, velocity);
   }
   else if (sedimentation) simulation.createSedimentationBox(NP+NA, radius, width, height, activeF);
+  else if (sphereFluid) simulation.createSphereFluid(NP, NA, radius, activeF, rA, width, height);
   else simulation.createControlPipe(NP, NA, radius, velocity, activeF, rA, width, height);
   simulation.setParticleInteraction(interact);
   
@@ -219,7 +222,6 @@ int main(int argc, char** argv) {
     cout << "vBin X Zero: " << simulation.getVBinXZero() << ", vBin Y Zero: " << simulation.getVBinYZero() << endl;
     cout << "Using relative velocity: " << (useVelDiff ? "True" : "False") << endl;
   }
-  cout << "Sectors: " << simulation.getSecX() << ", " << simulation.getSecY() << endl;
   cout << "\n...........................................................\n\n";
   
   /// Run the actual program

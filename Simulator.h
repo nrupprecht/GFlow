@@ -51,7 +51,7 @@ class Simulator {
   void createPipe(int, double=0.02, double=1., int=0);
   void createControlPipe(int, int, double=0.02, double=1., double=default_run_force, double rA=-1, double=4., double=2., double=0.);
   void createSedimentationBox(int, double=0.02, double=2., double=2., double=default_run_force, bool=false);
-  void createSphereFluid(int, int, double=0.02, double=1., double=default_run_force, double=-1, double=10., double=2.);
+  void createSphereFluid(int, int, double=0.02, double=default_run_force, double=-1, double=10., double=2.);
   void createJamPipe(int, int, double=0.02, double=1., double=default_run_force, double=-1, double=5., double=2., double=0.5, double=0.);
   void createIdealGas(int, double=0.02, double=0.1, double=1., double=1.);
   void createEntropyBox(int, double=0.02);

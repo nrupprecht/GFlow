@@ -1,6 +1,6 @@
 #include "Sectorization.h"
 
-Sectorization::Sectorization() : secX(3), secY(3), wrapX(false), wrapY(false), ssecInteract(false), left(0), right(1), bottom(0), top(1), particles(0), sectors(0) {};
+Sectorization::Sectorization() : secX(3), secY(3), wrapX(false), wrapY(false), ssecInteract(false), left(0), right(1), bottom(0), top(1), particles(0), sectors(0), sfunctions(0), wallSectors(0) {};
 
 Sectorization::~Sectorization() {
   delete [] sectors;
@@ -9,10 +9,12 @@ Sectorization::~Sectorization() {
 }
 
 void Sectorization::sectorize() {
-  for (int i=0; i<(secX+2)*(secY+2)+1; i++) sectors[i].clear(); // Reset sectors
+  discard();
   // Build new sectors
   if (particles)
     for (auto P : *particles) add(P);
+  // Reset sector functions
+  for (auto P : sectorFunctionRecord) add(P);
 }
 
 void Sectorization::update() {
@@ -64,6 +66,15 @@ void Sectorization::interactions() {
   }
 }
 
+void Sectorization::wallInteractions() {}; //** STUB
+
+void Sectorization::sectorFunctionApplication() {
+  if (sfunctions!=0 && sectors!=0) // If there is a sector function list
+    for (int i=0; i<(secX+2)*(secY+2); i++) // No special sector
+      for (auto F : sfunctions[i]) 
+	F(sectors[i]);
+}
+
 vect<> Sectorization::getDisplacement(vect<> A, vect<> B) {
   // Get the correct (minimal) displacement vector pointing from B to A
   double X = A.x-B.x;
@@ -108,8 +119,13 @@ void Sectorization::remove(Particle *P) {
 
 void Sectorization::discard() {
   // Clear all sectors
-  if (sectors)
-    for (int i=0; i<(secX+2)*(secY+2); i++) sectors[i].clear();
+  if (sectors) for (int i=0; i<(secX+2)*(secY+2)+1; i++) sectors[i].clear();
+}
+
+void Sectorization::addSectorFunction(sectorFunction sf, double l, double r, double b, double t) {
+  Bounds B(l, r, b, t);
+  sectorFunctionRecord.push_back(pair<Bounds, sectorFunction>(B, sf));
+  add(sf, B);
 }
 
 void Sectorization::setDims(int sx, int sy) {
@@ -117,13 +133,16 @@ void Sectorization::setDims(int sx, int sy) {
   sy = sy<1 ? 1 : sy;
   // Create new sectors
   secX = sx; secY = sy;
+  // Redo particles
   if (sectors) delete [] sectors;
   sectors = new list<Particle*>[(secX+2)*(secY+2)+1];
-  // Add particles to the new sectors
-  for (auto P : *particles) {
-    int sec = getSec(P->getPosition());
-    sectors[sec].push_back(P);
-  }
+  for (auto P : *particles) add(P);
+  // Redo sector functions
+  if (sfunctions) delete [] sfunctions;
+  sfunctions = new list<sectorFunction>[(secX+2)*(secY+2)]; // None for special sector  
+  for (auto P : sectorFunctionRecord) add(P);
+  // Redo wall sectors
+  // if (wallSectors) delete wallSectors; //** LATER
 }
 
 void Sectorization::setBounds(double l, double r, double b, double t) {
@@ -134,4 +153,30 @@ void Sectorization::setBounds(double l, double r, double b, double t) {
 inline void Sectorization::add(Particle *P) {
   int sec = getSec(P->getPosition());
   sectors[sec].push_back(P);
+}
+
+inline void Sectorization::add(sectorFunction sf, double l, double r, double b, double t) {
+  if (sfunctions==0 || sf==0) return;
+  double width = (right-left)/secX, height = (top-bottom)/secY;
+  for (int x=1; x<secX+1; x++)
+    for (int y=1; y<secY+1; y++) {
+      if (overlaps(l, r, b, t, (x-1)*width, x*width, (y-1)*height, y*height)) {
+	sfunctions[y*(secX+1)+x].push_back(sf);
+      }
+    }
+}
+
+inline void Sectorization::add(sectorFunction sf, Bounds B) {
+  add(sf, B.left, B.right, B.bottom, B.top);
+}
+
+inline void Sectorization::add(pair<Bounds, sectorFunction> P) {
+  Bounds B = P.first;
+  add(P.second, B.left, B.right, B.bottom, B.top);
+}
+
+inline bool Sectorization::overlaps(double l1, double r1, double b1, double t1, double l2, double r2, double b2, double t2) {
+  bool xcheck = (l1<l2 && l2<r1) || (l1<r2 && r2<r1);
+  bool ycheck = (b1<b2 && b2<t1) || (b1<t2 && t2<t1);
+  return xcheck && ycheck;
 }

@@ -220,7 +220,7 @@ void Simulator::createSedimentationBox(int N, double radius, double width, doubl
   min_epsilon = 1e-8;
 }
 
-void Simulator::createSphereFluid(int N, int A, double radius, double V, double F, double rA, double width, double height) {
+void Simulator::createSphereFluid(int N, int A, double radius, double F, double rA, double width, double height) {
   discard();
   gravity = Zero;
   charRadius = radius;
@@ -231,15 +231,18 @@ void Simulator::createSphereFluid(int N, int A, double radius, double V, double 
   addWall(new Wall(vect<>(0,bottom), vect<>(right,bottom))); // Bottom wall
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // Top wall
   // Add the particles in at the appropriate positions
+  vector<vect<> > pos = findPackedSolution(N, radius, left, right, bottom, top);
+  int i;
   for (i=0; i<A; i++) addParticle(new RTSphere(pos.at(i), rA));
   for (; i<N+A; i++) addParticle(new Particle(pos.at(i), radius));
   // Set wrapping
   xLBound = WRAP; xRBound = WRAP; yTBound = NONE; yBBound = NONE;
+  // Set up pressure
+  sectorization.addSectorFunction(pressureRight, 0, 0.1, 0, height);
   // Flow
-  setFlowV(V);
-  flowFunc = [&] (vect<> pos) { return Zero; };
+  setFlowV(0);
+  flowFunc = 0;
   hasDrag = false;
-
   // Set physical parameters
   setParticleCoeff(0); // --> No torques, shear forces
   setParticleDissipation(default_sphere_dissipation);
@@ -411,7 +414,7 @@ void Simulator::run(double runLength) {
   clock_t start = clock();
   // Initial record of data
   if (time>=startRecording && time<stopRecording || recAllIters) record();
-  indicator = true;
+  indicator = true; // We are now running
   while(time<runLength && running) { // Terminate based on internal condition
     // Gravity, flow, particle-particle, and particle-wall forces
     calculateForces();
@@ -420,7 +423,7 @@ void Simulator::run(double runLength) {
     // Update particles, sectors, and temp walls
     objectUpdates();
   }
-  indicator = false;
+  indicator = false; // We are done running
   clock_t end = clock();
   runTime = (double)(end-start)/CLOCKS_PER_SEC;
 }
@@ -750,29 +753,29 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
   bounds.push_back(new Wall(vect<>(right,bottom), vect<>(left,bottom)));
   
   // Add particles in with small radii
-  double l = left + 0.05*R, x = right - 0.05*R - l;
-  double b = bottom + 0.05*R, y = top - 0.05*R - b;
+  double initialRadius = 0.05*R, finalRadius = 1.25*R;
+  double l = left + initialRadius, x = right - initialRadius - l;
+  double b = bottom + initialRadius, y = top - initialRadius - b;
   for (int i=0; i<N; i++) {
     vect<> pos = vect<>(b+x*drand48(), b+y*drand48());
-    Particle *P = new Particle(pos, 0.05*R);
+    Particle *P = new Particle(pos, initialRadius);
     parts.push_back(P);
   }
   packingSectors.sectorize(); // Set up the actual sectors
 
   // Enlarge particles and thermally agitate
-  int steps = 5000;
+  int steps = 2500;
   // Make dr s.t. the final radius is a bit larger then R
-  double dr = (R+0.15*R)/(double)steps, radius = 0.05*R; 
+  double dr = (finalRadius-initialRadius)/steps, radius = initialRadius; 
   double mag = 5, dm = mag/(double)steps;
-  for (int i=0; i<steps; i++) {
+  int i;
+  // Radius expanding, expansion step
+  for (i=0; i<steps; i++) {
     // Particle - particle interactions
-    packingSectors.interactions(); //**
-    
+    packingSectors.interactions();
     // Thermal agitation
-    /*
-      mag -= dm;
-      for (auto P: parts) P->applyForce(mag*randV());
-    */
+    /* mag -= dm;
+    for (auto P: parts) P->applyForce(mag*randV()); */    
     // Boundary walls
     for (auto W : bounds)
       for (auto P : parts)
@@ -784,7 +787,22 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
     // Adjust radius
     radius += dr;
     for (auto &P : parts) P->setRadius(radius);
-    // Update Particle
+    // Update Particles and sectorization
+    for (auto &P : parts) update(P);
+    packingSectors.update();
+  }
+  // Radius fixed, relaxation step
+  for (int i=0; i<steps; i++) {
+    packingSectors.interactions();
+    // Boundary walls
+    for (auto W : bounds)
+      for (auto P : parts)
+        W->interact(P);
+    // Other walls (so we don't put particles inside of walls)
+    for (auto W : walls)
+      for (auto P : parts)
+        W->interact(P);
+    // Update Particles and sectorization
     for (auto &P : parts) update(P);
     packingSectors.update();
   }
@@ -1093,7 +1111,7 @@ inline void Simulator::setUpSectorization() {
   else sectorization.setWrapX(false);
   if (yBBound==WRAP || yTBound==WRAP) sectorization.setWrapY(true);
   else sectorization.setWrapY(false);
-
+  // Tell sectorization to create the sectors
   sectorization.sectorize();
 }
 
@@ -1142,6 +1160,8 @@ inline void Simulator::calculateForces() {
   }
   // Calculate particle-particle and particle-wall forces
   interactions();
+  // Other forces and such
+  sectorization.sectorFunctionApplication();
   // Temperature causes brownian motion
   if (temperature>0) {
     for (auto P : particles) P->applyForce(temperature*randV());
@@ -1414,6 +1434,7 @@ inline void Simulator::interactions() {
   for (auto W : walls)
     for (auto P : particles)
       W->interact(P);
+  //sectorization.wallInteractions(); //** WILL ONE DAY TAKE OVER FROM SIMULATOR
   for (auto W : tempWalls) 
     for (auto P : particles)
       W.first->interact(P);
