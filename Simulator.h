@@ -51,7 +51,7 @@ class Simulator {
   void createPipe(int, double=0.02, double=1., int=0);
   void createControlPipe(int, int, double=0.02, double=1., double=default_run_force, double rA=-1, double=4., double=2., double=0.);
   void createSedimentationBox(int, double=0.02, double=2., double=2., double=default_run_force, bool=false);
-  void createSphereFluid(int, int, double=0.02, double=1., double=default_run_force, double=-1, double=10., double=2.);
+  void createSphereFluid(int, int, double=0.02, double=default_run_force, double=-1, double=10., double=2.);
   void createJamPipe(int, int, double=0.02, double=1., double=default_run_force, double=-1, double=5., double=2., double=0.5, double=0.);
   void createIdealGas(int, double=0.02, double=0.1, double=1., double=1.);
   void createEntropyBox(int, double=0.02);
@@ -133,6 +133,7 @@ class Simulator {
   vector<vect<> > getAuxVelocityDistribution();
   Tensor getDistribution();
   Tensor getCollapsedDistribution(int=0); // Average out one of the spatial indices
+  Tensor getCollapsedProjectedDistribution(int=0, int=0); // Average out a spatial index and project in a direction. Proj=0 --> Project out x component (get y component)
   Tensor getSpeedDistribution();
 
   // Mutators
@@ -199,7 +200,9 @@ class Simulator {
   void setParticleDissipation(double);
   void setWallDissipation(double);
   void setParticleCoeff(double);
+  void setParticleShear(bool);
   void setWallCoeff(double);
+  void setWallShear(bool);
   void setParticleDrag(double);
   void setParticleFix(bool);
 
@@ -216,7 +219,6 @@ class Simulator {
   // Display functions
   string printWalls();
   string printWatchList();
-  string printWatchListVaryingSize();
   string printAnimationCommand();
   string printResource();
   string printWaste();
@@ -247,6 +249,7 @@ class Simulator {
   
  private:
   /// Helper functions
+  inline void setUpSectorization();
   inline void resetVariables();  // Reset all neccessary variables for the start of a run
   inline void initializeFields(); // Initialize the values of the waste and resource fields
   inline void calculateForces(); // Gravity, flow, particle-particle, and particle-wall forces
@@ -254,13 +257,22 @@ class Simulator {
   inline void objectUpdates();   // Update particles, sectors, and temp walls
   inline void bacteriaUpdate(); 
   inline void updateFields();   // Diffusion for fields
+
+  /// For gradual addition of particles into the system
+  bool doGradualAddition; // True if we gradually add particles
+  inline void gradualAddition();
+  Bounds addSpace;   // In what region we add new particles
+  int maxParticles;  // How many particles we want to have in total
+  double addDelay;   // How long we wait between adding another particle
+  double addTime;    // How long it's been since we added a particle
+  double initialV;   // The magnitude of the initial velocity the particles start with
+
   /// Utility functions  
   inline double maxVelocity(); // Finds the maximum velocity of any particle
   inline double maxAcceleration(); // Finds the maximum acceleration of any particle
   inline vect<> getDisplacement(vect<>, vect<>);
   inline vect<> getDisplacement(Particle*, Particle*);
   inline double getFitness(int, int);
-
   inline void interactions();
   inline void update(Particle* &);
   inline void record();
@@ -274,11 +286,13 @@ class Simulator {
   BType xLBound, xRBound, yTBound, yBBound;
   double yTop;    // Where to put the particles back into the simulation (for random insertion)
   vect<> gravity; // Acceleration due to gravity
-  std::function<vect<>(vect<>)> flowFunc;
+  std::function<vect<>(vect<>)> flowFunc; // A function describing fluid flow
   bool hasDrag;   // Whether we should apply a drag force to particles
   double flowV;   // Velocity of the flow (if any)
+  vect<> pForce;  // A force we use to simulate pressure
+  vector<sectorFunction> sFunctionList; // List of sector functions (e.g. pressure simulating functions)
   double temperature; // Temperature of the system
-  double charRadius; // A characteristic radius, for animating the spheres
+  double charRadius; // A characteristic radius, for animating the spheres and creating the main sectorization
   double percent;    // How much of a jamPipe should be obstructed
   PType activeType;   // What type of active particle we should use
 
@@ -297,7 +311,7 @@ class Simulator {
 
   /// Times etc.
   double time;       // The simulated time
-  double epsilon;
+  double epsilon, sqrtEpsilon; // Epsilon and its square root
   double default_epsilon, min_epsilon;
   double minepsilon; // The smallest epsilon that was ever used
   bool adjust_epsilon;
@@ -317,9 +331,9 @@ class Simulator {
   list<Particle*> particles; // vector is about 3% faster
   int psize, asize; // Record the number of passive and active particles
 
-  /// Watchlist
-  list<Particle*> watchlist;
-  vector<vector<vect<> > > watchPos; // [ recIt ] [ vect<>(positions) ]
+  /// Animation
+  vector<list<vect<> > > passiveWatchPos; // [ recIt ] [ positions ]
+  vector<list<vect<> > > activeWatchPos;  // [ recIt ] [ positions ]
   vector<vector<WPair> > wallPos; // [ recIt ] [ Wall # ] [ WPair ] For moving walls
   
   /// Statistics
@@ -357,11 +371,8 @@ class Simulator {
   bool recordClustering; // Whether we should record clustering data
 
   /// Sectorization
-  inline void updateSectors();
-  inline void ppInteract(); 
   inline int getSec(vect<>);
   inline int getSec(Particle*);
-  list<Particle*>* sectors; // Sectors (buffer of empty sectors surrounds, extra sector for out of bounds particles [x = 0, y = secY+3])
   Sectorization sectorization; // The sectorization for the particles
   int secX, secY; // Width and height of sector grid
   bool sectorize; // Whether to use sector based interactions
