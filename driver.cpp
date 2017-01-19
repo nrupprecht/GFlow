@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
   double k2 = 1.0;
   double L1 = 0.0;
   double L2 = 0.0;
-  double s1 = -1.0; // to be eating
+  double s1 = 1.0; 
   double s2 = 1.0;
   double mu = 0.0; // mutation rate
   double ds = 0.0; // mutation amount 
@@ -171,6 +171,7 @@ int main(int argc, char** argv) {
   if (type!=ERROR) simulation.setActiveType(type);
   // Set up the simulation
   if (bacteria) {
+    simulation.setEatRate(s1);
     simulation.setReplenish(replenish);
     simulation.createBacteriaBox(number, radius, width, height, velocity);
   }
@@ -198,7 +199,7 @@ int main(int argc, char** argv) {
   simulation.setWasteSaturation(k2);
   simulation.setResourceDecay(L1);
   simulation.setWasteDecay(L2);
-  simulation.setEatRate(s1);
+ // simulation.setEatRate(s1); // moved to line above create box
   simulation.setSecretionRate(s2);
   simulation.setMutationRate(mu);
   simulation.setMutationAmount(ds);
