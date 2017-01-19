@@ -1,7 +1,7 @@
 #include "Object.h"
 #include "Simulator.h"
 
-Particle::Particle(vect<> pos, double rad, double repulse, double dissipate, double coeff) : position(pos), radius(rad), repulsion(repulse), dissipation(dissipate), coeff(coeff), fvel(Zero) {
+Particle::Particle(vect<> pos, double rad, double repulse, double dissipate, double coeff) : position(pos), radius(rad), repulsion(repulse), dissipation(dissipate), coeff(coeff), fvel(Zero), particleShear(true), wallShear(true) {
   initialize();
 }
 
@@ -66,12 +66,16 @@ void Particle::interact(Particle* P, vect<> displacement) {
     double Fn = -repulsion*overlap-dissipation*clamp(-Vn); // Damped harmonic oscillator
 
     // Calculate the Shear force
-    double Fs = -(coeff*P->getCoeff())*Fn*sign(Vs);
+    double Fs = 0;
+    if (particleShear && P->particleShear) 
+      Fs = -(coeff*P->getCoeff())*Fn*sign(Vs);
 
-    normForces += fabs(Fn); //** Should also take into account shear force (?)
     applyNormalForce(Fn*normal);
     applyShearForce(Fs*shear);
     applyTorque(-Fs*radius);
+
+    // For finding average normal forces
+    normForces += fabs(Fn); //** Should also take into account shear force (?)
   }
 }
 
@@ -362,7 +366,9 @@ void Wall::interact(Particle* P) {
 
     // Damped harmonic oscillator
     double Fn = -repulsion*overlap-dissipation*(-Vn);
-    double Fs = min(fabs((coeff*P->getCoeff())*Fn),fabs(Vs)*gamma)*sign(Vs);
+    double Fs = 0;
+    if (P->getWallShear())
+      Fs = min(fabs((coeff*P->getCoeff())*Fn),fabs(Vs)*gamma)*sign(Vs);
 
     pressureF += Fn;
     P->applyNormalForce(-Fn*normal);

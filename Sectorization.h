@@ -6,20 +6,6 @@
 
 typedef std::function<void(list<Particle*>)> sectorFunction;
 
-inline void pressureRight(list<Particle*> plist) {
-  double force = 1.;
-  for (auto &P : plist) P->applyForce(vect<>(force, 0));
-}
-
-struct Bounds {
-  Bounds(double l, double r, double b, double t) : left(l), right(r), bottom(b), top(t) {};
-  double left, right, bottom, top;
-  friend std::ostream& operator<<(std::ostream& out, Bounds B) {
-    out << "{" << B.left << "," << B.right << "," << B.bottom << "," << B.top << "}";
-    return out;
-  }
-};
-
 class Sectorization {
  public:
   Sectorization();
@@ -37,10 +23,12 @@ class Sectorization {
   int getSec(vect<>);
 
   // Mutators
-  void addParticle(Particle*);
+  void addParticle(Particle*); // Add particle to particle list and sector
+  void add(Particle*); // Add a particle just to sectors, not to the particles list
   void remove(Particle*);
   void discard();
   void addSectorFunction(sectorFunction, double, double, double, double);
+  void addSectorFunction(sectorFunction, Bounds);
   void setParticleList(list<Particle*>* P) { particles = P; }
   void setSSecInteract(bool s) { ssecInteract = s; }
   void setDims(int, int);
@@ -50,7 +38,6 @@ class Sectorization {
 
  private:
   // Private Helper functions
-  inline void add(Particle*); // Add a particle just to sectors, not to the particles list
   inline void add(sectorFunction, double, double, double, double);
   inline void add(sectorFunction, Bounds);
   inline void add(pair<Bounds, sectorFunction>);

@@ -200,7 +200,9 @@ class Simulator {
   void setParticleDissipation(double);
   void setWallDissipation(double);
   void setParticleCoeff(double);
+  void setParticleShear(bool);
   void setWallCoeff(double);
+  void setWallShear(bool);
   void setParticleDrag(double);
   void setParticleFix(bool);
 
@@ -217,7 +219,6 @@ class Simulator {
   // Display functions
   string printWalls();
   string printWatchList();
-  string printWatchListVaryingSize();
   string printAnimationCommand();
   string printResource();
   string printWaste();
@@ -256,13 +257,22 @@ class Simulator {
   inline void objectUpdates();   // Update particles, sectors, and temp walls
   inline void bacteriaUpdate(); 
   inline void updateFields();   // Diffusion for fields
+
+  /// For gradual addition of particles into the system
+  bool doGradualAddition; // True if we gradually add particles
+  inline void gradualAddition();
+  Bounds addSpace;   // In what region we add new particles
+  int maxParticles;  // How many particles we want to have in total
+  double addDelay;   // How long we wait between adding another particle
+  double addTime;    // How long it's been since we added a particle
+  double initialV;   // The magnitude of the initial velocity the particles start with
+
   /// Utility functions  
   inline double maxVelocity(); // Finds the maximum velocity of any particle
   inline double maxAcceleration(); // Finds the maximum acceleration of any particle
   inline vect<> getDisplacement(vect<>, vect<>);
   inline vect<> getDisplacement(Particle*, Particle*);
   inline double getFitness(int, int);
-
   inline void interactions();
   inline void update(Particle* &);
   inline void record();
@@ -276,9 +286,11 @@ class Simulator {
   BType xLBound, xRBound, yTBound, yBBound;
   double yTop;    // Where to put the particles back into the simulation (for random insertion)
   vect<> gravity; // Acceleration due to gravity
-  std::function<vect<>(vect<>)> flowFunc;
+  std::function<vect<>(vect<>)> flowFunc; // A function describing fluid flow
   bool hasDrag;   // Whether we should apply a drag force to particles
   double flowV;   // Velocity of the flow (if any)
+  vect<> pForce;  // A force we use to simulate pressure
+  vector<sectorFunction> sFunctionList; // List of sector functions (e.g. pressure simulating functions)
   double temperature; // Temperature of the system
   double charRadius; // A characteristic radius, for animating the spheres and creating the main sectorization
   double percent;    // How much of a jamPipe should be obstructed
@@ -299,7 +311,7 @@ class Simulator {
 
   /// Times etc.
   double time;       // The simulated time
-  double epsilon;
+  double epsilon, sqrtEpsilon; // Epsilon and its square root
   double default_epsilon, min_epsilon;
   double minepsilon; // The smallest epsilon that was ever used
   bool adjust_epsilon;
@@ -320,7 +332,8 @@ class Simulator {
   int psize, asize; // Record the number of passive and active particles
 
   /// Animation
-  vector<vector<vect<> > > watchPos; // [ recIt ] [ vect<>(positions) ]
+  vector<list<vect<> > > passiveWatchPos; // [ recIt ] [ positions ]
+  vector<list<vect<> > > activeWatchPos;  // [ recIt ] [ positions ]
   vector<vector<WPair> > wallPos; // [ recIt ] [ Wall # ] [ WPair ] For moving walls
   
   /// Statistics

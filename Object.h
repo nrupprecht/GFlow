@@ -60,12 +60,16 @@ class Particle {
   vect<> getNormalForce() { return normalF; }
   vect<> getShearForce() { return shearF; }
   bool isActive() { return active; }
+  bool getParticleShear() { return particleShear; }
+  bool getWallShear() { return wallShear; }
   
   // Mutators
   void setOmega(double om) { omega = om; }
   void setVelocity(vect<> V) { velocity = V; }
   void setDissipation(double d) { dissipation = d; }
   void setCoeff(double c) { coeff = c; }
+  void setParticleShear(bool s) { particleShear = s; }
+  void setWallShear(bool s) { wallShear = s; }
   void setDrag(double d) { drag = d; }
   void setMass(double);
   void setII(double);
@@ -110,6 +114,9 @@ class Particle {
   bool fixed; // Whether the particle can move or not
   bool interacting; // Whether this particle interacts with others or not
   bool active; // Whether this is an active particle or not
+
+  bool particleShear; // True if it experiences interparticle friction
+  bool wallShear;     // True if it experiences friction with walls
 
   // Forces and torques
   vect<> force;

@@ -298,6 +298,18 @@ inline double average(vector<vect<>> lst) {
 typedef pair<vect<float>, bool> vtype;
 typedef pair<int,int> ipair;
 
+/// The bounds structure
+struct Bounds {
+  Bounds() : left(0), right(0), bottom(0), top(0) {};
+  Bounds(double l, double r, double b, double t) : left(l), right(r), bottom(b), top(t) \
+  {};
+  double left, right, bottom, top;
+  friend std::ostream& operator<<(std::ostream& out, Bounds B) {
+    out << "{" << B.left << "," << B.right << "," << B.bottom << "," << B.top << "}";
+    return out;
+  }
+};
+
 /// The Agent structure
 struct Agent {
   Agent(vect<> pos)

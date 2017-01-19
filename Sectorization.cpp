@@ -12,7 +12,7 @@ void Sectorization::sectorize() {
   discard();
   // Build new sectors
   if (particles)
-    for (auto P : *particles) add(P);
+    for (auto P : *particles) add(P); // Add to the correct sector
   // Reset sector functions
   for (auto P : sectorFunctionRecord) add(P);
 }
@@ -104,11 +104,11 @@ int Sectorization::getSec(vect<> pos) {
 }
 
 void Sectorization::addParticle(Particle* P) {
-  int sec = getSec(P->getPosition());
-  sectors[sec].push_back(P); // Add particle to appropriate sector
   // Add to list if it is not already there
-  if (std::find(particles->begin(), particles->end(), P)==particles->end())
-    particles->push_back(P);    // Add particle to particle list
+  if (std::find(particles->begin(), particles->end(), P)==particles->end()) 
+    particles->push_back(P);
+  // Add to the appropriate sector
+  add(P);
 }
 
 void Sectorization::remove(Particle *P) {
@@ -124,6 +124,11 @@ void Sectorization::discard() {
 
 void Sectorization::addSectorFunction(sectorFunction sf, double l, double r, double b, double t) {
   Bounds B(l, r, b, t);
+  sectorFunctionRecord.push_back(pair<Bounds, sectorFunction>(B, sf));
+  add(sf, B);
+}
+
+void Sectorization::addSectorFunction(sectorFunction sf, Bounds B) {
   sectorFunctionRecord.push_back(pair<Bounds, sectorFunction>(B, sf));
   add(sf, B);
 }
@@ -158,10 +163,10 @@ inline void Sectorization::add(Particle *P) {
 inline void Sectorization::add(sectorFunction sf, double l, double r, double b, double t) {
   if (sfunctions==0 || sf==0) return;
   double width = (right-left)/secX, height = (top-bottom)/secY;
-  for (int x=1; x<secX+1; x++)
-    for (int y=1; y<secY+1; y++) {
+  for (int y=1; y<secY+1; y++) {
+    for (int x=1; x<secX+1; x++)
       if (overlaps(l, r, b, t, (x-1)*width, x*width, (y-1)*height, y*height)) {
-	sfunctions[y*(secX+1)+x].push_back(sf);
+	sfunctions[y*(secX+2)+x].push_back(sf);
       }
     }
 }
