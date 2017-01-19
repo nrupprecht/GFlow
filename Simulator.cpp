@@ -443,6 +443,8 @@ void Simulator::run(double runLength) {
 void Simulator::bacteriaRun(double runLength) {
   //Reset all neccessary variables for the start of a run
   resetVariables();
+  setUpSectorization();
+  aveProfile = vector<double>(bins,0); //** --> Should check if this is neccessary before doing it
   // Initialize the values of the waste and resource fields
   initializeFields();
   // Run the simulation

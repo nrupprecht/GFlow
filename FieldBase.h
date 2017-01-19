@@ -44,6 +44,7 @@ template<typename T> class FieldBase {
   void setEdges(double x);
   void setEdge(int edge, double x, bool lock=true);
   void setAll(const T& value);
+  void initialize(T (*func) (vect<>));
 
   // Locking
   void resetLocks();

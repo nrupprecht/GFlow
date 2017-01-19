@@ -160,6 +160,15 @@ void FieldBase<T>::setAll(const T& value) {
 }
 
 template<typename T>
+void FieldBase<T>::initialize(T (*func) (vect<>)) {
+  for (int y=0; y<dY; y++)
+    for (int x=0; x<dX; x++) {
+      vect<> pos(invDist.x*x+left, invDist.y*y+bottom);
+      array[y*dX+x] = func(pos);
+    }      
+}
+
+template<typename T>
 T& FieldBase<T>::at(vect<> pos) {
   double X = (pos.x-left)*invDist.x, Y = (pos.y-bottom)*invDist.y;
   int x = (int)X, y = (int)Y;
