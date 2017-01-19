@@ -1650,7 +1650,6 @@ inline void Simulator::record() {
   
   // Record fields
   if (recFields) {
-<<<<<<< HEAD
       printBacteriaToFile();
       printResourceToFile();
       printWasteToFile();
@@ -1659,17 +1658,7 @@ inline void Simulator::record() {
 //    wasteStr += (printWaste()+',');
 //    fitnessStr += (printFitness()+',');
 
-=======
-    printBacteriaToFile();
-    printResourceToFile();
-    printWasteToFile();
-    /*
-    resourceStr += (printResource()+',');
-    wasteStr += (printWaste()+',');
-    fitnessStr += (printFitness()+',');
-    */
->>>>>>> 799fbae0424c8dbe31484ca7453548d4e7ac589d
-  }
+ }
   
   // Update time
   lastDisp = time;
