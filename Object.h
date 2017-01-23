@@ -7,16 +7,17 @@
 #include "Utility.h"
 
 /// Default parameters
-const double default_sphere_mass = 1.;
-const double default_sphere_repulsion = 10000.0;
-const double default_sphere_dissipation = 7500;
+// We used to have a default sphere mass of 1 regardless of the sphere size. Really, having a default sphere *density* makes more sense. Most simulations were done with r=0.05, so rho=127.324 ==> M = rho * pi * r^2 = 1 for spheres w/ radius 0.05, so this is the value you could use for maximum backwards compatibility.
+const double default_sphere_density = 1; //127; 
+const double default_sphere_repulsion = 10; //10000.0;
+const double default_sphere_dissipation = 0; //1; //7500;
 const double default_sphere_coeff = sqrt(0.5);
 const double default_sphere_drag = 1.0;
-const double default_wall_repulsion = 10000.0;
-const double default_wall_dissipation = 5000.0;
+const double default_wall_repulsion = 1; //10000.0;
+const double default_wall_dissipation = 1; //5000.0;
 const double default_wall_coeff = sqrt(0.5);
 const double default_wall_gamma = 5;
-const double default_run_force = 1.;
+const double default_run_force = 0.01;
 const double default_active_maxV = 0.5;
 const double default_tau_const = 5.;
 const double default_base_tau = 1.;

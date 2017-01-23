@@ -13,16 +13,16 @@ void Particle::initialize() {
   omega = 0;
   alpha = 0;
   theta = 0;
-  double mass = default_sphere_mass;
+  double mass = PI*default_sphere_density*sqr(radius);
   invMass = 1.0/mass;
   invII = 1.0/(0.5*mass*sqr(radius));
   active = false;
   drag = default_sphere_drag*radius;
   normalF = shearF = force = Zero;
   torque = 0;
-  normForces = 0;
-  recentForceAve = 0;
-  timeWindow = 3.; // 3 Seconds
+  //normForces = 0;
+  //recentForceAve = 0;
+  //timeWindow = 3.; // 3 Seconds -> For calculating recent normal forces
 }
 
 void Particle::setMass(double m) {
@@ -75,7 +75,7 @@ void Particle::interact(Particle* P, vect<> displacement) {
     applyTorque(-Fs*radius);
 
     // For finding average normal forces
-    normForces += fabs(Fn); //** Should also take into account shear force (?)
+    //normForces += fabs(Fn); //** Should also take into account shear force (?)
   }
 }
 
@@ -88,7 +88,7 @@ void Particle::interact(vect<> pos, double force) {
     vect<> normal = (1.0/dist) * displacement;
     //vect<> shear = vect<>(normal.y, -normal.x);
     // Pressure force
-    normForces += fabs(force);
+    //normForces += fabs(force);
     applyNormalForce(force*normal);
   }
 }
@@ -119,10 +119,10 @@ void Particle::update(double epsilon) {
   normalF = shearF = force = Zero;
 
   // Update rolling pressure average
-  double ef = epsilon/timeWindow; // Factor
-  recentForceAve *= 1-ef;
-  recentForceAve += ef*normForces;
-  normForces = 0;
+  //double ef = epsilon/timeWindow; // Factor
+  //recentForceAve *= 1-ef;
+  //recentForceAve += ef*normForces;
+  //normForces = 0;
 }
 
 void Particle::flowForce(vect<> F) {
@@ -255,10 +255,11 @@ inline void ABP::changeDirection() {
 }
 
 // ********** PSPHERE ********** //
+// Currently Defunct, have to add recent force averaging back in.
 
-PSphere::PSphere(vect<> pos, double rad) : RTSphere(pos, rad) {};
+PSphere::PSphere(vect<> pos, double rad) : RTSphere(pos, rad) { throw 1; };
 
-PSphere::PSphere(vect<> pos, double rad, double force) : RTSphere(pos, rad) {};
+PSphere::PSphere(vect<> pos, double rad, double force) : RTSphere(pos, rad) { throw 1; };
 
 inline double PSphere::probability() {
   // High recent ave force -> Tumble less -> large tau

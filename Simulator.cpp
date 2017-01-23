@@ -1,6 +1,6 @@
 #include "Simulator.h"
 
-Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), gravity(Zero), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), mutationRate(0.0), mutationAmount(0.0), recFields(false), replenish(0), wasteSource(0), indicator(false), recordDist(false), recordClustering(false), alphaR(1.0), alphaW(1.0), betaR(1.0), csatR(1.0), csatW(1.0), lamR(0.0), lamW(0.0), capturePositions(false), captureProfile(false), captureLongProfile(false), captureVelocity(false), activeType(BROWNIAN), asize(0), psize(0), maxParticles(0), addDelay(0.1), addTime(0), doGradualAddition (false), initialV(0.1) {
+Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), gravity(Zero), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), viscosity(1.308e-3), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), mutationRate(0.0), mutationAmount(0.0), recFields(false), replenish(0), wasteSource(0), recordDist(false), recordClustering(false), alphaR(1.0), alphaW(1.0), betaR(1.0), csatR(1.0), csatW(1.0), lamR(0.0), lamW(0.0), capturePositions(false), captureProfile(false), captureVelProfile(false), captureLongProfile(false), captureVelocity(false), activeType(BROWNIAN), asize(0), psize(0), maxParticles(0), addDelay(0.1), addTime(0), doGradualAddition (false), initialV(0.1) {
   // Flow
   hasDrag = false;
   flowFunc = 0;
@@ -19,7 +19,6 @@ Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), 
   // Sectorization
   charRadius = -1;
   sectorize = true;
-  ssecInteract = false;
   secX = 1; secY = 1; // It will be reset before anything happens
   sectorization.setParticleList(&particles); // Set the sectorization particle list
   // Binning & Velocity analysis
@@ -226,29 +225,33 @@ void Simulator::createSedimentationBox(int N, double radius, double width, doubl
 void Simulator::createSphereFluid(int N, int A, double radius, double F, double rA, double width, double height) {
   discard();
   gravity = Zero;
-  charRadius = radius;
-  left = 0; bottom = 0;
-  top = height; right = width;
   if (rA==-1) rA = radius;
+  charRadius = max(radius, rA);
+  noFlow(); // Flow
+  left = 0; bottom = 0; top = height; right = width;
   // Set wrapping
   xLBound = WRAP; xRBound = WRAP; yTBound = WRAP; yBBound = WRAP;
   // Add walls
   addWall(new Wall(vect<>(0,bottom), vect<>(right,bottom))); // Bottom wall
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // Top wall
   // Set up particle addition
+  double center = left + 0.5*(right-left);
+  addSpace = Bounds(center-6*charRadius, center+6*charRadius, bottom, top);
+  /*
   doGradualAddition = true;
   maxParticles = N+A;
   initialV = 0.5;
-  double center = left + 0.5*(right-left);
-  addSpace = Bounds(center-3*charRadius, center+3*charRadius, bottom, top);
+  */
+  vector<vect<> > pos = findPackedSolution(N+A, radius, left, right, bottom, top);
+  int i=0;
+  for (; i<N; i++) addParticle(new Particle(pos.at(i), radius));
+  for (; i<N+A; i++) addActive(pos.at(i), radius, default_run_force);
   // Set up pressure
-  pForce = vect<>(0.5,0); // Rightwards drag velocity
-  sFunctionList.push_back( [&] (list<Particle*> plist) { for (auto &P : plist) P->applyForce(2*P->getRadius()*(pForce - P->getVelocity())); } ); // A "Drag" force
+  pForce = vect<>(1.,0); // Rightwards drag velocity
+  sFunctionList.push_back( [&] (list<Particle*> plist) { for (auto &P : plist) P->applyForce(50*P->getRadius()*(pForce - P->getVelocity()).x*pForce); } ); // A "Drag" force
   sectorization.addSectorFunction(sFunctionList.at(0), addSpace);
-  // Flow
-  setFlowV(0);
-  flowFunc = 0;
-  hasDrag = false;
+  // Give them a starting velocity
+  for (auto P : particles) P->setVelocity(pForce);
   // Set physical parameters
   double diss = 20; // For no friction, use ~9.954
   setParticleCoeff(sqrt(0.5));
@@ -258,7 +261,7 @@ void Simulator::createSphereFluid(int N, int A, double radius, double F, double 
   setWallDissipation(diss); //default_wall_dissipation);
   setWallCoeff(1.);
   // Temperature
-  temperature = 100;
+  temperature = 1;
   // Epsilons
   default_epsilon = 1e-4;
   min_epsilon = 1e-8;
@@ -419,12 +422,14 @@ void Simulator::run(double runLength) {
   //Reset all neccessary variables for the start of a run
   resetVariables();
   setUpSectorization();
-  aveProfile = vector<double>(bins,0); //** --> Should check if this is neccessary before doing it
+  //** --> Should check if this is neccessary before setting up data structures
+  aveProfile = vector<double>(bins,0); 
+  velProfile = vector<double>(bins,0);
+  flowXProfile = vector<double>(bins,0);
   // Run the simulation
   clock_t start = clock();
   // Initial record of data
   if (time>=startRecording && time<stopRecording || recAllIters) record();
-  indicator = true; // We are now running
   while(time<runLength && running) { // Terminate based on internal condition
     // Gravity, flow, particle-particle, and particle-wall forces
     calculateForces();
@@ -435,7 +440,6 @@ void Simulator::run(double runLength) {
     // Record data [ Had a note saying "do this before calling "update" on the particles" but I'm not sure why
     if (time>startRecording && time<stopRecording && time-lastDisp>dispTime || recAllIters) record();
   }
-  indicator = false; // We are done running
   clock_t end = clock();
   runTime = (double)(end-start)/CLOCKS_PER_SEC;
 }
@@ -444,7 +448,10 @@ void Simulator::bacteriaRun(double runLength) {
   //Reset all neccessary variables for the start of a run
   resetVariables();
   setUpSectorization();
-  aveProfile = vector<double>(bins,0); //** --> Should check if this is neccessary before doing it
+  //** --> Should check if this is neccessary before setting up data structures
+  aveProfile = vector<double>(bins,0);
+  velProfile = vector<double>(bins,0);
+  flowXProfile = vector<double>(bins,0);
   // Initialize the values of the waste and resource fields
   initializeFields();
   // Run the simulation
@@ -495,6 +502,25 @@ vector<vect<> > Simulator::getAveProfile() {
   return profile;
 }
 
+vector<vect<> > Simulator::getVelProfile() {
+  vector<double> prof = velProfile;
+  double total = 0, delta = (top-bottom)/bins;
+  for (auto p : prof) total += p;
+  double norm = 1./(delta*total);
+  vector<vect<> > profile;
+  for (int i=0; i<prof.size(); i++) profile.push_back(vect<>((i+0.5)*delta, prof.at(i)*norm));
+  return profile;
+}
+
+vector<vect<> > Simulator::getFlowXProfile() {
+  vector<double> prof = flowXProfile;
+  double delta = (right-left)/bins;
+  double norm = 1./prof.size();
+  vector<vect<> > profile;
+  for (int i=0; i<prof.size(); i++) profile.push_back(vect<>((i+0.5)*delta, prof.at(i)*norm));
+  return profile;
+}
+
 void Simulator::addStatistic(statfunc func) {
   statistics.push_back(func);
   statRec.push_back(vector<vect<>>());
@@ -535,6 +561,47 @@ vector<double> Simulator::getDensityYProfile() {
     if ((0<=index || index<bins) && index<profile.size()) profile.at(index)++;
   }
   return profile;
+}
+
+vector<double> Simulator::getVelocityXProfile() {
+  vector<double> velocities(bins,0);
+  vector<double> numbers(bins,0);
+
+  double invdy = bins/(right-left);
+  for (auto P : particles) {
+    double y = P->getPosition().x-left;
+    int index = (int)(y*invdy);
+    if ((0<=index || index<bins) && index<velocities.size()) {
+      velocities.at(index) += P->getVelocity()*vect<>(1,0);
+      numbers.at(index)++;
+    }
+  }
+  for (int i=0; i<bins; i++) {
+    int N = numbers.at(i);
+    velocities.at(i) /= (N>0 ? N : 1);
+  }
+  return velocities; // Return average velocity
+}
+
+vector<double> Simulator::getVelocityYProfile() {
+  vector<double> velocities(bins,0);
+  vector<double> numbers(bins,0);
+
+  double invdy = bins/(top-bottom);
+  for (auto P : particles) {
+    double y = P->getPosition().y-bottom;
+    int index = (int)(y*invdy);
+    if ((0<=index || index<bins) && index<velocities.size()) {
+      velocities.at(index) += P->getVelocity()*vect<>(1,0);
+      numbers.at(index)++;
+    }
+  }
+  for (int i=0; i<bins; i++) {
+    int N = numbers.at(i);
+    N = N>0 ? N : 1;
+    velocities.at(i) /= N;
+  }
+  return velocities;
 }
 
 double Simulator::clustering() {
@@ -775,15 +842,16 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
   for (int i=0; i<N; i++) {
     vect<> pos = vect<>(b+x*drand48(), b+y*drand48());
     Particle *P = new Particle(pos, initialRadius);
+    P->setMass(PI*default_sphere_density*sqr(R));
     parts.push_back(P);
   }
   packingSectors.sectorize(); // Set up the actual sectors
 
   // Enlarge particles and thermally agitate
-  int steps = 2500;
+  int steps = 5000;
   // Make dr s.t. the final radius is a bit larger then R
   double dr = (finalRadius-initialRadius)/steps, radius = initialRadius; 
-  double mag = 5, dm = mag/(double)steps;
+  //double mag = 5, dm = mag/(double)steps;
   int i;
   // Radius expanding, expansion step
   for (i=0; i<steps; i++) {
@@ -1168,9 +1236,15 @@ inline void Simulator::calculateForces() {
   // Apply sector functions
   sectorization.sectorFunctionApplication();
   // Temperature causes brownian motion
-  if (temperature>0)
-    for (auto P : particles)
-      P->applyForce(temperature*sqrtEpsilon*randNormal()*randV());
+  // --> DT = Kb T / (6 Pi eta R) -> Translational diffusion coefficient
+  // --> DR = Kb T / (8 Pi eta R^3) -> Rotational diffusion coefficient
+  if (temperature>0) 
+    for (auto P : particles) {
+      double DT = temperature/(6*viscosity*PI*P->getRadius()); // Assumes viscosity (eta) = 1, Kb = 1;
+      double coeffD = sqrt(2*DT)*sqrtEpsilon;
+      vect<> TForce = coeffD*(randNormal()*randV()); // Addative gaussian white noise
+      P->applyForce(TForce);
+    }
 }
 
 inline void Simulator::logisticUpdates() {
@@ -1609,6 +1683,10 @@ inline void Simulator::record() {
 
   // Record density profile
   if (captureProfile) updateProfile();
+  if (captureVelProfile) {
+    updateVelProfile();
+    updateFlowXProfile();
+  }
   if (captureLongProfile) profiles.push_back(getDensityYProfile());
   
   // Record velocity distribution
@@ -1750,20 +1828,6 @@ vect<> Simulator::binVelocity(int vx, int vy) {
   return vect<>(VX, VY);
 }
 
-inline int Simulator::getSec(vect<> pos) {
-  int X = static_cast<int>((pos.x-left)/(right-left)*secX);
-  int Y = static_cast<int>((pos.y-bottom)/(top-bottom)*secY);  
-  
-  // If out of bounds, put in the special sector
-  if (X<0 || Y<0 || X>secX || Y>secY) return (secX+2)*(secY+2);
-  
-  return (X+1)+(secX+2)*(Y+1);
-}
-
-inline int Simulator::getSec(Particle *P) {
-  return getSec(P->getPosition());
-}
-
 void Simulator::setBins(int b) {
   bins = b;
   if (recordDist) distribution = Tensor(bins, bins, vbins, vbins);
@@ -1816,4 +1880,16 @@ inline void Simulator::updateProfile() {
   vector<double> prof = getDensityYProfile();
   for (int i=0; i<prof.size(); i++)
     aveProfile.at(i) += prof.at(i);
+}
+
+inline void Simulator::updateVelProfile() {
+  vector<double> prof = getVelocityYProfile();
+  for (int i=0; i<prof.size(); i++)
+    velProfile.at(i) += prof.at(i);
+}
+
+inline void Simulator::updateFlowXProfile() {
+  vector<double> prof = getVelocityXProfile();
+  for (int i=0; i<prof.size(); i++)
+    flowXProfile.at(i) += prof.at(i);
 }

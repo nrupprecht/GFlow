@@ -63,6 +63,8 @@ int main(int argc, char** argv) {
   bool dispAveFlow = false;
   bool dispProfile = false;
   bool dispAveProfile = false;
+  bool dispVelProfile = false;
+  bool dispFlowXProfile = false;
   bool dispVelDist = false;
   bool totalDist = false;
   bool projDist = false;
@@ -107,6 +109,8 @@ int main(int argc, char** argv) {
   parser.get("aveFlow", dispAveFlow);
   parser.get("profileMap", dispProfile);
   parser.get("profile", dispAveProfile);
+  parser.get("velProfile", dispVelProfile);
+  parser.get("flowXProfile", dispFlowXProfile);
   parser.get("velDist", dispVelDist);
   parser.get("projDist", projDist);
   parser.get("totalDist", totalDist);
@@ -163,6 +167,7 @@ int main(int argc, char** argv) {
   if (totalDist || projDist) simulation.setRecordDist(true);
   simulation.setStartRecording(start);
   if (dispProfile || dispAveProfile) simulation.setCaptureProfile(true);
+  if (dispVelProfile || dispFlowXProfile) simulation.setCaptureVelProfile(true);
   if (animate) simulation.setCapturePositions(true);
   if (dispVelDist) simulation.setCaptureVelocity(true);
   if (temperature>0) simulation.setTemperature(temperature);
@@ -264,8 +269,10 @@ int main(int argc, char** argv) {
   if (dispKE) {
     cout << "KE=" << simulation.getStatistic(0) << ";\n";
     cout << "Print[\"Average kinetic energy\"]\nListLinePlot[KE,PlotRange->All,PlotStyle->Black]\n";
-    cout << "passKE=" << simulation.getStatistic(1) << ";\n";
-    cout << "Print[\"Average passive particle kinetic energy\"]\nListLinePlot[passKE,PlotRange->All,PlotStyle->Black]\n";
+    if (simulation.getASize()>0) {
+      cout << "passKE=" << simulation.getStatistic(1) << ";\n";
+      cout << "Print[\"Average passive particle kinetic energy\"]\nListLinePlot[passKE,PlotRange->All,PlotStyle->Black]\n";
+    }
   }
   if (dispAveKE) {
     cout << "aveKE=" << simulation.getAverage(0) << ";\n";
@@ -291,6 +298,14 @@ int main(int argc, char** argv) {
   if (dispAveProfile) {
     cout << "aveProf=" << simulation.getAveProfile() << ";\n";
     cout << "Print[\"Average Profile\"]\nListLinePlot[aveProf,PlotStyle->Black,ImageSize->Large]\n";
+  }
+  if (dispVelProfile) {
+    cout << "velProf=" << simulation.getVelProfile() << ";\n";
+    cout << "Print[\"(x) Velocity Profile\"]\nListLinePlot[velProf,PlotStyle->Black,ImageSize->Large]\n";
+  }
+  if (dispFlowXProfile) {
+    cout << "flowXProf=" << simulation.getFlowXProfile() << ";\n";
+    cout << "Print[\"(x) Velocity flow (as a function of x)\"]\nListLinePlot[flowXProf,PlotStyle->Black,ImageSize->Large]\n";
   }
   if (dispVelDist) {
     cout << "velDist=" << simulation.getVelocityDistribution() << ";\n";
