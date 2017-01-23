@@ -1298,61 +1298,6 @@ inline void Simulator::objectUpdates() {
   if (doGradualAddition) gradualAddition();
 }
 
-/*
-inline void Simulator::bacteriaUpdate() {
-  // Assume that all particles are bacteria
-  vector<Particle*> births; // Record bacteria to add and take away
-  for (int y=1; y<secY-1; y++) 
-    for (int x=1; x<secX-1; x++) {
-      list<Particle*>& sect = sectors[(secX+2)*y + x+1];
-      int number = sect.size();
-      if (number>0) {
-	// Update waste and resource fields
-	double &res = resource.at(x-1,y-1), &wst = waste.at(x-1,y-1);
-	wst += epsilon*secretionRate*number;
-	res += epsilon*eatRate*res*number; // eatRate = resource secretion
-	res = res<0 ? 0 : res;
-        // Calculate fitness
-	double fitness = alphaR*res/(res+csatR)-alphaW*wst/(wst+csatW) - betaR*secretionRate;
-        // Die if neccessary
-	if (fitness<0) {
-	  for (auto p=sect.begin(); p!=sect.end(); ++p) {
-	    particles.remove(*p);
-	    delete *p;
-	    *p=0;
-	  }
-	  sect.clear();
-	}
-	// Reproduce if able
-	else
-	  for (auto P : sectors[(secX+2)*y + x+1]) {
-	    Bacteria* b = dynamic_cast<Bacteria*>(P);
-	    if (b->canReproduce()) {
-	      double rd = b->getRepDelay();
-	      double attempt = drand48();	  
-	      if (attempt<fitness*rd) {
-		int tries = 50; // Try to find a good spot for the baby
-		vect<> pos = b->getPosition();
-		double rad = b->getMaxRadius();
-		for (int i=0; i<tries; i++) {
-		  vect<> s = 2.1*rad*randV() + pos;
-		  if (!wouldOverlap(s, rad)) {
-		    Bacteria *B = new Bacteria(s, rad, 0); // No expansion time
-		    B->setVelocity(b->getVelocity());
-		    b->resetTimer(); // Just in case
-		    births.push_back(B);
-		    break;
-		  }
-		}
-	      }
-	    }
-	  }
-      }
-    }
-  for (auto P : births) addParticle(P);
-}
-*/
-
 inline void Simulator::bacteriaUpdate() {
   // Assume that all particles are bacteria
   vector<Particle*> births; // Record bacteria to add and take away
@@ -1413,11 +1358,12 @@ inline void Simulator::bacteriaUpdate() {
 inline void Simulator::updateFields() {
 
   // Diffusion and decay of resource field
-  delSqr(resource, buffer); 
+ // delSqr(resource, buffer); 
+  /*
   for (int y=0; y<resource.getDY(); y++)
     for (int x=0; x<resource.getDX(); x++) {
       resource.at(x,y) += epsilon*(resourceDiffusion*buffer.at(x,y) + replenish);
-  /* 
+   
    resource.at(x,y) -= epsilon*lamR*resource.at(x,y); // decay or resource
   // advection:
   vect<> velocity = {0.0,0.0};
@@ -1431,16 +1377,16 @@ inline void Simulator::updateFields() {
   double gfy = gradfield.y;
   resource.at(x,y) += epsilon*(velX*gfx + velY*gfy);
 */
-     resource.at(x,y) = resource.at(x,y)<0 ? 0 : resource.at(x,y);
-    }
+    // resource.at(x,y) = resource.at(x,y)<0 ? 0 : resource.at(x,y);
+ //   }
   
   
   // Diffusion of waste field
-  delSqr(waste, buffer);
-  for (int y=0;y<waste.getDY(); y++)
+ // delSqr(waste, buffer);
+/*  for (int y=0;y<waste.getDY(); y++)
     for(int x=0; x<waste.getDX(); x++) {
       waste.at(x,y) += epsilon*(wasteDiffusion*buffer.at(x,y) + wasteSource);
-/*  
+  
     waste.at(x,y) -= epsilon*lamW*waste.at(x,y);  // decay of waste
   // advection:
   vect<> velocity = {0.0,0.0};
@@ -1468,8 +1414,8 @@ inline void Simulator::updateFields() {
       double gfy = gradfield.y;
       waste.at(x,y) += epsilon*(velX*gfx + velY*gfy);
   */    
-      waste.at(x,y) = waste.at(x,y)<0 ? 0 : waste.at(x,y);
-    }
+//      waste.at(x,y) = waste.at(x,y)<0 ? 0 : waste.at(x,y);
+   // }
 
 }
 
