@@ -51,7 +51,7 @@ class Simulator {
   void createPipe(int, double=0.02, double=1., int=0);
   void createControlPipe(int, int, double=0.02, double=1., double=default_run_force, double rA=-1, double=4., double=2., double=0.);
   void createSedimentationBox(int, double=0.02, double=2., double=2., double=default_run_force, bool=false);
-  void createSphereFluid(int, int, double=0.02, double=default_run_force, double=-1, double=10., double=2.);
+  void createSphereFluid(int, int, double=0.02, double=default_run_force, double=-1, double=10., double=2., double=0., bool=false);
   void createJamPipe(int, int, double=0.02, double=1., double=default_run_force, double=-1, double=5., double=2., double=0.5, double=0.);
   void createIdealGas(int, double=0.02, double=0.1, double=1., double=1.);
   void createEntropyBox(int, double=0.02);
@@ -263,7 +263,10 @@ class Simulator {
   inline void objectUpdates();   // Update particles, sectors, and walls
   inline void interactions();    // Handle particle and wall interactions
   inline void bacteriaUpdate();  // Handle bacteria
-  inline void updateFields();   // Diffusion for fields
+  inline void updateFields();    // Diffusion for fields
+
+  /// Bacteria functions
+  inline double getFitness(int, int);
 
   /// For gradual addition of particles into the system
   bool doGradualAddition; // True if we gradually add particles
@@ -279,7 +282,6 @@ class Simulator {
   inline double maxAcceleration(); // Finds the maximum acceleration of any particle
   inline vect<> getDisplacement(vect<>, vect<>);
   inline vect<> getDisplacement(Particle*, Particle*);
-  inline double getFitness(int, int);
 
   inline void update(Particle* &);
   inline void record();

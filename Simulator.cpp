@@ -222,7 +222,7 @@ void Simulator::createSedimentationBox(int N, double radius, double width, doubl
   min_epsilon = 1e-8;
 }
 
-void Simulator::createSphereFluid(int N, int A, double radius, double F, double rA, double width, double height) {
+void Simulator::createSphereFluid(int N, int A, double radius, double F, double rA, double width, double height, double velocity, bool couetteFlow) {
   discard();
   gravity = Zero;
   if (rA==-1) rA = radius;
@@ -232,8 +232,12 @@ void Simulator::createSphereFluid(int N, int A, double radius, double F, double 
   // Set wrapping
   xLBound = WRAP; xRBound = WRAP; yTBound = WRAP; yBBound = WRAP;
   // Add walls
-  addWall(new Wall(vect<>(0,bottom), vect<>(right,bottom))); // Bottom wall
-  addWall(new Wall(vect<>(0,top), vect<>(right,top))); // Top wall
+  Wall *w = new Wall(vect<>(0,top), vect<>(right,top)); // Top wall
+  if (couetteFlow) w->setVelocity(velocity);
+  addWall(w); 
+  w = new Wall(vect<>(0,bottom), vect<>(right,bottom)); // Bottom wall
+  if (couetteFlow) w->setVelocity(-velocity);
+  addWall(w); 
   // Set up particle addition
   double center = left + 0.5*(right-left);
   addSpace = Bounds(center-6*charRadius, center+6*charRadius, bottom, top);
@@ -247,11 +251,13 @@ void Simulator::createSphereFluid(int N, int A, double radius, double F, double 
   for (; i<N; i++) addParticle(new Particle(pos.at(i), radius));
   for (; i<N+A; i++) addActive(pos.at(i), radius, default_run_force);
   // Set up pressure
-  pForce = vect<>(1.,0); // Rightwards drag velocity
-  sFunctionList.push_back( [&] (list<Particle*> plist) { for (auto &P : plist) P->applyForce(50*P->getRadius()*(pForce - P->getVelocity()).x*pForce); } ); // A "Drag" force
-  sectorization.addSectorFunction(sFunctionList.at(0), addSpace);
-  // Give them a starting velocity
-  for (auto P : particles) P->setVelocity(pForce);
+  if (!couetteFlow) { // Only when not using pure couette flow
+    pForce = vect<>(1.,0); // Rightwards drag velocity
+    sFunctionList.push_back( [&] (list<Particle*> plist) { for (auto &P : plist) P->applyForce(50*P->getRadius()*(pForce - P->getVelocity()).x*pForce); } ); // A "Drag" force
+    sectorization.addSectorFunction(sFunctionList.at(0), addSpace);
+    // Give them a starting velocity
+    for (auto P : particles) P->setVelocity(pForce);
+  }
   // Set physical parameters
   double diss = 20; // For no friction, use ~9.954
   setParticleCoeff(sqrt(0.5));
@@ -842,6 +848,7 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
   for (int i=0; i<N; i++) {
     vect<> pos = vect<>(b+x*drand48(), b+y*drand48());
     Particle *P = new Particle(pos, initialRadius);
+    P->setWallShear(false);
     P->setMass(PI*default_sphere_density*sqr(R));
     parts.push_back(P);
   }

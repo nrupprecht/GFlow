@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
   double width = 4.;     // Length of the pipe
   double height = 2.;    // 2*Radius of the pipe
   double radius = 0.05;  // Disc radius
-  double velocity = 0.5; // Fluid velocity (at center)
+  double velocity = 0.5; // Fluid velocity (at center or for Couette flow)
   double temperature = 0; // Temperature
   double phi = 0.5;      // Packing density
   double time = 600.;    // How long the entire simulation should last
@@ -53,6 +53,7 @@ int main(int argc, char** argv) {
   bool bacteria = false;      // Bacteria box
   bool sedimentation = false; // Sedimentation box
   bool sphereFluid = false;  // Sphere fluid
+  bool couetteFlow = false;
 
   // Display parameters
   bool mmpreproc = true;
@@ -101,6 +102,7 @@ int main(int argc, char** argv) {
   parser.get("bacteria", bacteria);
   parser.get("sedimentation", sedimentation);
   parser.get("sphereFluid", sphereFluid);
+  parser.get("couetteFlow", couetteFlow);
   parser.get("mmpreproc", mmpreproc);
   parser.get("animate", animate);
   parser.get("KE", dispKE);
@@ -181,7 +183,7 @@ int main(int argc, char** argv) {
     simulation.createBacteriaBox(number, radius, width, height, velocity);
   }
   else if (sedimentation) simulation.createSedimentationBox(NP+NA, radius, width, height, activeF);
-  else if (sphereFluid) simulation.createSphereFluid(NP, NA, radius, activeF, rA, width, height);
+  else if (sphereFluid) simulation.createSphereFluid(NP, NA, radius, activeF, rA, width, height, velocity, couetteFlow);
   else simulation.createControlPipe(NP, NA, radius, velocity, activeF, rA, width, height);
   simulation.setParticleInteraction(interact);
   

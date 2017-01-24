@@ -8,15 +8,15 @@
 
 /// Default parameters
 // We used to have a default sphere mass of 1 regardless of the sphere size. Really, having a default sphere *density* makes more sense. Most simulations were done with r=0.05, so rho=127.324 ==> M = rho * pi * r^2 = 1 for spheres w/ radius 0.05, so this is the value you could use for maximum backwards compatibility.
-const double default_sphere_density = 1; //127; 
-const double default_sphere_repulsion = 10; //10000.0;
-const double default_sphere_dissipation = 0; //1; //7500;
+const double default_sphere_density = 1.; // 127.
+const double default_sphere_repulsion = 10; // 10000.
+const double default_sphere_dissipation = 7.5; //7500.;
 const double default_sphere_coeff = sqrt(0.5);
-const double default_sphere_drag = 1.0;
-const double default_wall_repulsion = 1; //10000.0;
-const double default_wall_dissipation = 1; //5000.0;
+const double default_sphere_drag = 0.01;
+const double default_wall_repulsion = 10.; // 10000.;
+const double default_wall_dissipation = 7.5; // 5000.;
 const double default_wall_coeff = sqrt(0.5);
-const double default_wall_gamma = 5;
+const double default_wall_gamma = 5.;
 const double default_run_force = 0.01;
 const double default_active_maxV = 0.5;
 const double default_tau_const = 5.;
@@ -267,13 +267,15 @@ class Wall {
   vect<> getEnd() { return origin+wall; }
   WPair getWPair() { return WPair(origin, origin+wall); }
   double getPressure() { return pressureF/length; }
-
+  double getVelocity() { return velocity; }
+  
   /// Mutators
   void setRepulsion(double r) { repulsion = r; }
   void setDissipation(double d) { dissipation = d; }
   void setCoeff(double c) { coeff = c; }
   void setPosition(vect<>, vect<>);
   void setPosition(WPair w) { setPosition(w.first, w.second); }
+  void setVelocity(double v) { velocity = v; }
 
   virtual void interact(Particle*);
 
@@ -285,9 +287,10 @@ class Wall {
 
   vect<> normal; // Normalized <wall>
   double length; // Length of the wall
-  double repulsion;
-  double dissipation;
+  double repulsion;   // Repulsion constant
+  double dissipation; // Dissipation constant
   double gamma;
+  double velocity; // To mimic sliding wall (like a treadmill)
 
   double pressureF; // Record the pressure currently exerted on the wall
 };

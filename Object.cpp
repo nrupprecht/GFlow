@@ -323,13 +323,13 @@ inline void SmartSphere::changeDirection() {
 
 // ********** WALLS  ********** //
 
-Wall::Wall(vect<> origin, vect<> end) : origin(origin), wall(end-origin), coeff(default_wall_coeff), repulsion(default_wall_repulsion), dissipation(default_wall_dissipation), gamma(default_wall_gamma) {
+Wall::Wall(vect<> origin, vect<> end) : origin(origin), wall(end-origin), coeff(default_wall_coeff), repulsion(default_wall_repulsion), dissipation(default_wall_dissipation), gamma(default_wall_gamma), velocity(0) {
   normal = wall;
   normal.normalize();
   length = wall.norm();
 }
 
-Wall::Wall(vect<> origin, vect<> wall, bool) : origin(origin), wall(wall), coeff(default_wall_coeff), repulsion(default_wall_repulsion), dissipation(default_wall_dissipation), gamma(default_wall_gamma) {
+Wall::Wall(vect<> origin, vect<> wall, bool) : origin(origin), wall(wall), coeff(default_wall_coeff), repulsion(default_wall_repulsion), dissipation(default_wall_dissipation), gamma(default_wall_gamma), velocity(0) {
   normal = wall;
   normal.normalize();
   length = wall.norm();
@@ -359,11 +359,11 @@ void Wall::interact(Particle* P) {
   /// We now have the correct displacement vector and distSqr value
   if (distSqr<=radSqr) {
     double dist = sqrt(distSqr);
-    vect<> normal = (1.0/dist) * displacement;
-    vect<> shear = vect<>(normal.y, -normal.x);
+    vect<> norm = (1.0/dist) * displacement;
+    vect<> shear = vect<>(norm.y, -norm.x);
     double overlap = 1.0 - dist/radius;
-    double Vn = P->getVelocity()*normal;
-    double Vs = P->getVelocity()*shear + P->getTangentialV();
+    double Vn = P->getVelocity()*norm;
+    double Vs = P->getVelocity()*shear + P->getTangentialV() + velocity*(shear*normal); //** Is it (+) velocity ?
 
     // Damped harmonic oscillator
     double Fn = -repulsion*overlap-dissipation*(-Vn);
@@ -372,7 +372,7 @@ void Wall::interact(Particle* P) {
       Fs = min(fabs((coeff*P->getCoeff())*Fn),fabs(Vs)*gamma)*sign(Vs);
 
     pressureF += Fn;
-    P->applyNormalForce(-Fn*normal);
+    P->applyNormalForce(-Fn*norm);
     P->applyShearForce(-Fs*shear);
     P->applyTorque(-Fs*P->getRadius());
   }
