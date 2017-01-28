@@ -15,7 +15,7 @@ int main(int argc, char** argv) {
   double height = 2.;    // 2*Radius of the pipe
   double radius = 0.05;  // Disc radius
   double velocity = 0.5; // Fluid velocity (at center or for Couette flow)
-  double temperature = 0; // Temperature
+  double temperature = -1; // Temperature
   double phi = 0.5;      // Packing density
   double time = 600.;    // How long the entire simulation should last
   double start = 30;     // At what time we start recording data
@@ -172,7 +172,6 @@ int main(int argc, char** argv) {
   if (dispVelProfile || dispFlowXProfile) simulation.setCaptureVelProfile(true);
   if (animate) simulation.setCapturePositions(true);
   if (dispVelDist) simulation.setCaptureVelocity(true);
-  if (temperature>0) simulation.setTemperature(temperature);
   // Set active particle type
   PType type = getType(atype);
   if (type!=ERROR) simulation.setActiveType(type);
@@ -196,6 +195,8 @@ int main(int argc, char** argv) {
   simulation.setMinVy(minVy);
   simulation.setMaxVy(maxVy);
   simulation.setUseVelocityDiff(useVelDiff);
+
+  if (temperature>=0) simulation.setTemperature(temperature);
 
   // simulation.setResourceDiffusion(d1);
   // simulation.setWasteDiffusion(d2);

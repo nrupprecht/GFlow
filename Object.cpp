@@ -363,7 +363,7 @@ void Wall::interact(Particle* P) {
     vect<> shear = vect<>(norm.y, -norm.x);
     double overlap = 1.0 - dist/radius;
     double Vn = P->getVelocity()*norm;
-    double Vs = P->getVelocity()*shear + P->getTangentialV() + velocity*(shear*normal); //** Is it (+) velocity ?
+    double Vs = P->getVelocity()*shear + P->getTangentialV() - velocity*(shear*normal);
 
     // Damped harmonic oscillator
     double Fn = -repulsion*overlap-dissipation*(-Vn);

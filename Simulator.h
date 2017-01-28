@@ -344,7 +344,8 @@ class Simulator {
   vector<list<vect<> > > passiveWatchPos; // [ recIt ] [ positions ]
   vector<list<vect<> > > activeWatchPos;  // [ recIt ] [ positions ]
   vector<vector<WPair> > wallPos; // [ recIt ] [ Wall # ] [ WPair ] For moving walls
-  
+  double animationScale; // For ImageSize->{width*animationScale, height*animationScale}
+
   /// Statistics
   vector<statfunc> statistics;
   vector<statfunc> averages;
