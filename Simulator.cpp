@@ -36,6 +36,11 @@ Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), 
   }
   // Total distribution
   useVelocityDiff = false;
+  // Animation (set up for Active and Passive particles by default)
+  watchPosCollection = vector<vector<list<vect<>>>>(2); 
+  charRadiusCollection = vector<double>(2);
+  colorCollection.push_back("Black");
+  colorCollection.push_back("Green");
 };
 
 Simulator::~Simulator() {
@@ -59,6 +64,7 @@ void Simulator::createSquare(int NP, int NA, double radius, double width, double
   yTBound = WRAP;
   yBBound = WRAP;
   charRadius = radius;
+  charRadiusCollection.at(0) = charRadiusCollection.at(1) = radius;
   left = 0;
   bottom = 0;
   right = width;
@@ -89,6 +95,7 @@ void Simulator::createHopper(int N, double radius, double gap, double width, dou
   discard();
   // Set up a hopper
   charRadius = radius;
+  charRadiusCollection.at(0) = charRadiusCollection.at(1) = radius;
   left = 0; bottom = 0;
   right = width; top = height;
 
@@ -127,6 +134,7 @@ void Simulator::createPipe(int N, double radius, double V, int NObst) {
   discard();
   gravity = Zero;
   charRadius = radius;
+  charRadiusCollection.at(0) = charRadiusCollection.at(1) = radius;
   left = 0; bottom = 0;
   top = 2; right = 5;
 
@@ -160,9 +168,11 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, double 
   discard();
   gravity = Zero;
   charRadius = max(radius, rA);
+  charRadiusCollection.at(0) = radius;
   left = 0; bottom = 0;
   top = height; right = width;
   if (rA==-1) rA = radius;
+  charRadiusCollection.at(1) = rA;
   // Put in walls
   addWall(new Wall(vect<>(0,bottom), vect<>(right,bottom))); // Bottom wall
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // Top wall
@@ -195,6 +205,7 @@ void Simulator::createSedimentationBox(int N, double radius, double width, doubl
   discard();
   gravity = vect<>(0,-0.1);
   charRadius = radius;
+  charRadiusCollection.at(0) = charRadiusCollection.at(1) = radius;
   left = 0; bottom = 0;
   top = height; right = width;
   // Put in walls
@@ -227,6 +238,8 @@ void Simulator::createSphereFluid(int N, int A, double radius, double F, double 
   gravity = Zero;
   if (rA==-1) rA = radius;
   charRadius = max(radius, rA);
+  charRadiusCollection.at(0) = radius;
+  charRadiusCollection.at(1) = rA;
   noFlow(); // Flow
   left = 0; bottom = 0; top = height; right = width;
   // Set wrapping
@@ -305,6 +318,7 @@ void Simulator::createIdealGas(int N, double radius, double v, double width, dou
   discard();
   gravity = Zero;
   charRadius = radius;
+  charRadiusCollection.at(0) = charRadiusCollection.at(1) = radius;
   left = 0; 
   right = width;
   bottom = 0; 
@@ -340,6 +354,7 @@ void Simulator::createEntropyBox(int N, double radius) {
   gravity = Zero;
   double gap = 0.1;
   charRadius = radius;
+  charRadiusCollection.at(0) = charRadiusCollection.at(1) = radius;
   left = 0; right = 1;
   bottom = 0; top = 1;
   // Set bounds
@@ -365,6 +380,7 @@ void Simulator::createBacteriaBox(int N, double radius, double width, double hei
   discard();
   gravity = Zero;
   charRadius = radius;
+  charRadiusCollection.at(0) = charRadiusCollection.at(1) = radius;
   left = 0; bottom = 0;
   top = height; right = width;
   // Set bounds
@@ -925,53 +941,6 @@ string Simulator::printWalls() {
   return str;
 }
 
-string Simulator::printWatchList() {
-  if (recIt==0) return "{}";
-  // Print out watch list record
-  stringstream stream;
-  string str, tstr;
-  // Record positions of passive particles
-  if (psize>0) {
-    stream << "pos={";
-    for (auto PW : passiveWatchPos) {
-      if (PW.empty()) stream << "{},";
-      else {
-	stream << "{";
-	for (auto P : PW) stream << P << ",";     
-	stream >> tstr;
-	tstr.pop_back();
-	tstr += "},";
-	str += tstr;
-      }
-      // Clear
-      stream.clear(); tstr.clear();
-    }
-    if (!str.empty()) str.pop_back(); // Get rid of the last ','
-    str += "};\n";
-  }
-  // Record positions of active particles
-  if (asize>0) {
-    stream.clear(); tstr.clear();
-    stream << "apos={";
-    for (auto AW : activeWatchPos) {
-      if (AW.empty()) stream << "{},";
-      else {
-	stream << "{";
-	for (auto P : AW) stream << P << ",";
-	stream >> tstr;
-	tstr.pop_back();
-	tstr += "},";
-	str += tstr;
-      }
-      // Clear
-      stream.clear(); tstr.clear();
-    }
-    if (!str.empty()) str.pop_back(); // Get rid of the last ','
-    str += "};\n";
-  }
-  return str;
-}
-
 void Simulator::printBacteriaToFile() {
  // if (recIt==0 || psize==0) return;
   
@@ -995,6 +964,61 @@ void Simulator::printBacteriaToFile() {
   fout.clear();
 }
 
+string Simulator::printAnimationCommand() {
+  if (recIt==0) return "{}";
+  stringstream stream;
+  string str, strh;
+  // Print walls
+  str += printWalls();
+  // Print animation radii
+  for (int i=0; i<charRadiusCollection.size(); i++) {
+    stream << "R" << i << "=" << charRadiusCollection.at(i) << ";";
+    stream >> strh;
+    str += (strh + "\n");
+    strh.clear(); stream.clear();
+  }
+  // Print array lengths
+  stream << "len=" << recIt << ";";
+  stream >> strh;
+  str += (strh + "\n");
+  strh.clear(); stream.clear();
+  // Print position arrays
+  for (int i=0; i<watchPosCollection.size(); i++) {
+    stream << "pos" << i << "=" << watchPosCollection.at(i) << ";";
+    stream >> strh;
+    str += (strh + "\n" + printTable(i));
+    strh.clear(); stream.clear();
+  }
+  // Print animation scale
+  stream << "scale=" << animationScale << ";";
+  stream >> strh;
+  str += (strh + "\n");
+  strh.clear(); stream.clear();
+  // Print Frame creation command
+  str += "frames=Table[Show[";
+  if (walls.empty()) str += "{}";
+  else str += "walls";
+  for (int i=0; i<watchPosCollection.size();  i++) {
+    stream << ",G" << i << "[[i]]";
+    stream >> strh;
+    str += strh;
+    strh.clear(); stream.clear();
+  }
+  if (!wallPos.empty()) str += ",Graphics[Table[{Thick,Red,Line[movingWalls[[j]][[i]]]},{i,1,Length[movingWalls[[j]]]}]]";
+  // Finish Table
+  stream << ",PlotRange->{{" << left << "," << right << "},{" << bottom << "," << top <<"}}";
+  // Print animation scale
+  stream << ",ImageSize->{scale*" << right-left << ",scale*" << top-bottom << "}";
+  stream >> strh;
+  str += (strh + "],{i,1,len}];\n");
+  strh.clear(); stream.clear();
+  // Add animation command
+  stream << "vid=ListAnimate[frames,AnimationRate->" << max(1.0, ceil(1.0/dispTime)*dispFactor) << "]";
+  stream >> strh;
+  return str+strh;
+}
+
+/*
 string Simulator::printAnimationCommand() {
   if (recIt==0) return "{}";
   stringstream stream;
@@ -1045,6 +1069,7 @@ string Simulator::printAnimationCommand() {
   stream >> str2;
   return str1+str2;
 }
+*/
 
 string Simulator::printResource() {
   return resource.print();
@@ -1620,12 +1645,12 @@ inline void Simulator::update(Particle* &P) {
 inline void Simulator::record() {
   // Record positions
   if (capturePositions) {
+    for (auto &wl : watchPosCollection) wl.push_back(list<vect<> >());
     // Record particle positions
-    passiveWatchPos.push_back(list<vect<> >());
-    activeWatchPos.push_back(list<vect<> >());
     for (auto P : particles) {
-      if (P->isActive()) activeWatchPos.at(recIt).push_back(P->getPosition());
-      else passiveWatchPos.at(recIt).push_back(P->getPosition());
+      // Divide into the collection by passive / active
+      if (P->isActive()) watchPosCollection.at(1).at(recIt).push_back(P->getPosition());
+      else watchPosCollection.at(0).at(recIt).push_back(P->getPosition());
     }
     // Record moving wall positions
     if (!movingWalls.empty()) {
@@ -1784,6 +1809,15 @@ void Simulator::resetStatistics() {
   for (auto &ent : averageRec) ent = 0;
 }
 
+inline string Simulator::printTable(int i) {
+  stringstream stream;
+  string str;
+  // Print graphics table for list <i>
+  stream << "G" << i << "=Table[Graphics[Table[{" << colorCollection.at(i) << ",Circle[pos" << i << "[[i]][[j]],R" << i << "]},{j,1,Length[pos" << i << "[[i]]]}]],{i,1,len}];";
+  stream >> str;
+  return (str + "\n");
+}
+
 vect<> Simulator::binVelocity(int vx, int vy) {
   double VX = (maxVx-minVx)/vbins*vx + minVx;
   double VY = (maxVy-minVy)/vbins*vy + minVy;
@@ -1819,19 +1853,12 @@ void Simulator::discard() {
       P = 0;
     }
   particles.clear();
-  passiveWatchPos.clear();
-  activeWatchPos.clear();  
+  for (auto &w : watchPosCollection) w.clear();
   for (auto W : walls) 
-    if (W) {
-      delete W;
-      W = 0;
-    }
+    if (W) delete W;
   walls.clear();
   for (auto W : tempWalls) 
-    if (W.first) {
-      delete W.first;
-      W.first = 0;
-    }
+    if (W.first) delete W.first;
   tempWalls.clear();
   // Clear time marks and statistics
   timeMarks.clear();

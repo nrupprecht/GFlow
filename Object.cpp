@@ -43,6 +43,12 @@ void Particle::interact(Particle* P) {
   interact(P, displacement);
 }
 
+void Particle::interactSym(Particle* P) {
+  if (fixed) return; //** this would be a problem
+  vect<> displacement = P->getPosition() - position;
+  interactSym(P, displacement);
+}
+
 void Particle::interact(Particle* P, vect<> displacement) {
   if (fixed || !interacting) return;
   double distSqr = sqr(displacement);
@@ -52,7 +58,7 @@ void Particle::interact(Particle* P, vect<> displacement) {
               ^ normal
               |
               |
-              |------> shear      
+              *------> shear      
   */
   if (distSqr < cutoffsqr) { // Interaction
     double dist = sqrt(distSqr);
@@ -76,6 +82,46 @@ void Particle::interact(Particle* P, vect<> displacement) {
 
     // For finding average normal forces
     //normForces += fabs(Fn); //** Should also take into account shear force (?)
+  }
+}
+
+void Particle::interactSym(Particle* P, vect<> displacement) {
+  if (fixed || !interacting) return;
+  double distSqr = sqr(displacement);
+  double cutoff = radius + P->getRadius();
+  double cutoffsqr = sqr(cutoff);
+  /*
+              ^ normal
+              |
+              |
+              *------> shear
+  */
+  if (distSqr < cutoffsqr) { // Interaction
+    double dist = sqrt(distSqr);
+    vect<> normal = (1.0/dist) * displacement;
+    vect<> shear = vect<>(normal.y, -normal.x);
+    double overlap = 1.0 - dist/cutoff;
+    vect<> dV = P->getVelocity() - velocity;
+    double Vn = dV*normal; // Normal velocity
+    double Vs = dV*shear + radius*omega + P->getTangentialV(); // Shear velocity
+    // Calculate the normal force
+    double Fn = -repulsion*overlap-dissipation*clamp(-Vn); // Damped harmonic oscillator
+    // Calculate the Shear force
+    double Fs = 0;
+    if (particleShear && P->particleShear)
+      Fs = -(coeff*P->getCoeff())*Fn*sign(Vs);
+    // Apply normal force to both
+    applyNormalForce(Fn*normal);
+    P->applyNormalForce(-Fn*normal);
+    // Apply shear force to both
+    applyShearForce(Fs*shear);
+    P->applyShearForce(-Fs*shear);
+    // Apply torque to both
+    applyTorque(-Fs*radius);
+    P->applyTorque(-Fs*P->getRadius()); // The force and radial direction both invert
+    // For finding average normal forces
+    //normForces += fabs(Fn); //** Should also take into account shear force (?)
+    //P->normForces += fabs(Fn);
   }
 }
 

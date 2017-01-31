@@ -37,22 +37,36 @@ void Sectorization::interactions() {
   for (int y=1; y<secY+1; y++)
     for (int x=1; x<secX+1; x++) {
       for (auto P : sectors[y*(secX+2)+x]) { // For each particle in the sector
-        // Check surrounding sectors
-        for (int j=y-1; j<=y+1; j++) {
-          int sy = j;
-          if (wrapY && j==0) sy=secY;
-          else if (wrapY && j==secY+1) sy=1;
-          for (int i=x-1; i<=x+1; i++) {
-            int sx = i;
-            if (wrapX && i==0) sx=secX;
-            else if (wrapX && i==secX+1) sx=1;
-            for (auto Q : sectors[sy*(secX+2)+sx])
-              if (P!=Q) {
-		vect<> disp = getDisplacement(Q, P);
-                P->interact(Q, disp);
-              }
-          }
-        }
+        // Check the required surrounding sectors ( * ) around you ( <*> )
+	// +---------+
+	// | *  x  x |
+	// | * <*> x |
+	// | *  *  x |
+	// +---------+
+	// Bottom left sector
+	int sx = x-1, sy=y-1;
+        if (wrapX && sx<1) sx+=secX; else if (wrapX && sx>secX) sx-=secX;
+        if (wrapY && sy<1) sy+=secY; else if (wrapY && sy>secY) sy-=secY;
+        for (auto Q : sectors[sy*(secX+2)+sx]) P->interactSym(Q, getDisplacement(Q, P));
+	// Bottom sector
+	sx = x; sy=y-1;
+        if (wrapX && sx<1) sx+=secX; else if (wrapX && sx>secX) sx-=secX;
+        if (wrapY && sy<1) sy+=secY; else if (wrapY && sy>secY) sy-=secY;
+        for (auto Q : sectors[sy*(secX+2)+sx]) P->interactSym(Q, getDisplacement(Q, P));
+	// Left sector
+	sx = x-1; sy=y;
+        if (wrapX && sx<1) sx+=secX; else if (wrapX && sx>secX) sx-=secX;
+        if (wrapY && sy<1) sy+=secY; else if (wrapY && sy>secY) sy-=secY;
+        for (auto Q : sectors[sy*(secX+2)+sx]) P->interactSym(Q, getDisplacement(Q, P));
+	// Central sector
+	sx = x; sy=y;
+        for (auto Q : sectors[sy*(secX+2)+sx]) 
+	  if (P!=Q) P->interact(Q, getDisplacement(Q, P));
+	// Top left sector
+	sx = x-1; sy=y+1;
+	if (wrapX && sx<1) sx+=secX; else if (wrapX && sx>secX) sx-=secX;
+	if (wrapY && sy<1) sy+=secY; else if (wrapY && sy>secY) sy-=secY;
+	for (auto Q : sectors[sy*(secX+2)+sx]) P->interactSym(Q, getDisplacement(Q, P));
       }
     }
   // Have to try to interact everything in the special sector with everything else

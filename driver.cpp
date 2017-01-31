@@ -146,9 +146,9 @@ int main(int argc, char** argv) {
   int NA = number*pA, NP = number-NA;
 
   // Seed random number generators
-  srand48( std::time(0) );
-  srand( std::time(0) );
-  seedNormalDistribution();
+  srand48( std::time(0) );  //**
+  srand( std::time(0) );    //**
+  seedNormalDistribution(); //**
   //----------------------------------------
 
   Simulator simulation;
@@ -264,11 +264,7 @@ int main(int argc, char** argv) {
       simulation.printWasteToFile();
       cout << simulation.printWalls() << endl; // for now - later print geometry in different format
     }
-    else {
-      cout << simulation.printWatchList() << endl;
-      cout << simulation.printWalls() << endl;
-      cout << simulation.printAnimationCommand() << endl;
-    }
+    else cout << simulation.printAnimationCommand() << endl;
   }  
   if (dispKE) {
     cout << "KE=" << simulation.getStatistic(0) << ";\n";

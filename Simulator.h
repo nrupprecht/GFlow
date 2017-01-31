@@ -224,7 +224,6 @@ class Simulator {
 
   // Display functions
   string printWalls();
-  string printWatchList();
   string printAnimationCommand();
   string printResource();
   string printWaste();
@@ -341,8 +340,10 @@ class Simulator {
   int psize, asize; // Record the number of passive and active particles
 
   /// Animation
-  vector<list<vect<> > > passiveWatchPos; // [ recIt ] [ positions ]
-  vector<list<vect<> > > activeWatchPos;  // [ recIt ] [ positions ]
+  vector<vector<list<vect<>>>> watchPosCollection; // [ type ] [ recIt ] [ positions ]
+  vector<double> charRadiusCollection; // Characteristic radii for particle animation
+  vector<string> colorCollection; // What color to use in the animation
+  inline string printTable(int);
   vector<vector<WPair> > wallPos; // [ recIt ] [ Wall # ] [ WPair ] For moving walls
   double animationScale; // For ImageSize->{width*animationScale, height*animationScale}
 
