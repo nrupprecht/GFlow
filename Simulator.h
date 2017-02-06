@@ -52,7 +52,7 @@ class Simulator {
   void createControlPipe(int, int, double=0.02, double=1., double=default_run_force, double rA=-1, double=4., double=2., double=0.);
   void createSedimentationBox(int, double=0.02, double=2., double=2., double=default_run_force, bool=false);
   void createSphereFluid(int, int, double=0.02, double=default_run_force, double=-1, double=10., double=2., double=0., bool=false);
-  void createJamPipe(int, int, double=0.02, double=1., double=default_run_force, double=-1, double=5., double=2., double=0.5, double=0.);
+  void createBuoyancyBox(double=0.02, double=0.2, double=5., double=2., double=4., double=0., double=0., double=0.02);
   void createIdealGas(int, double=0.02, double=0.1, double=1., double=1.);
   void createEntropyBox(int, double=0.02);
   void createBacteriaBox(int, double=0.02, double=1., double=1., double=1.);
@@ -78,12 +78,13 @@ class Simulator {
   double getMinVx() { return minVx; }
   double getMaxVy() { return maxVy; }
   double getMinVy() { return minVy; }
+  int getNumber() { return particles.size(); }
   int getIter() { return iter; }
   double getRunTime() { return runTime; }
   double getTime() { return time; }
   bool getDelayTriggeredExit() { return delayTriggeredExit; }
-  int getSecX() { return secX; }
-  int getSecY() { return secY; }
+  int getSecX() { return sectorization.getSecX(); }
+  int getSecY() { return sectorization.getSecY(); }
   double getMark(int); // Accesses the value of a mark
   int getMarkSize() { return timeMarks.size(); } // Returns the number of time marks
   double getMarkSlope(); // Gets the ave rate at which marks occur (while marks are occuring)
@@ -298,9 +299,14 @@ class Simulator {
   bool hasDrag;   // Whether we should apply a drag force to particles
   double flowV;   // Velocity of the flow (if any)
   vect<> pForce;  // A force we use to simulate pressure
-  double temperature; // Temperature of the system
-  double viscosity;   // Viscocity, eta, used in brownian diffusion of particles. Water has a viscosity of 1.308e-4 at 10 degrees celcius
-  double percent;    // How much of a jamPipe should be obstructed
+  double temperature;   // Temperature of the system
+  double viscosity;     // Viscocity, eta, used in brownian diffusion of particles. Water has a viscosity of 1.308e-4 at 10 degrees celcius
+  double percent;       // How much of a jamPipe should be obstructed
+
+  /// Buoyancy box
+  double wallFrequency; // Frequency of wall vibrations
+  double wallAmplitude; // Amplitude of wall vibrations
+  std::function<WPair(double)> wallVibration;
 
   /// Bacteria
   double resourceDiffusion, wasteDiffusion;
@@ -346,6 +352,10 @@ class Simulator {
   inline string printTable(int);
   vector<vector<WPair> > wallPos; // [ recIt ] [ Wall # ] [ WPair ] For moving walls
   double animationScale; // For ImageSize->{width*animationScale, height*animationScale}
+  // Animation sorting
+  bool active_passive; // Sort by active / passive
+  bool large_small;    // Sort by large / small
+  double radiusDivide; // The cutoff for large vs. small
 
   /// Statistics
   vector<statfunc> statistics;

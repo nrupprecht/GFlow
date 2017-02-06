@@ -27,8 +27,15 @@ void Particle::initialize() {
 
 void Particle::setMass(double m) {
   if (m<=0) throw BadMassError();
-  // Should we reset the inertia too?
   invMass = 1.0/m;
+  invII = 1.0/(0.5*m*sqr(radius));
+}
+
+void Particle::setDensity(double d) {
+  if (d<=0) throw BadMassError();
+  double mass = PI*d*sqr(radius);
+  invMass = 1./mass;
+  invII = 1.0/(0.5*mass*sqr(radius));
 }
 
 void Particle::setII(double II) {
@@ -37,20 +44,19 @@ void Particle::setII(double II) {
   invII = 1.0/II;
 }
 
-void Particle::interact(Particle* P) {
-  if (fixed) return;
+bool Particle::interact(Particle* P) {
+  if (fixed) return false;
   vect<> displacement = P->getPosition() - position;
-  interact(P, displacement);
+  return interact(P, displacement);
 }
 
-void Particle::interactSym(Particle* P) {
-  if (fixed) return; //** this would be a problem
+bool Particle::interactSym(Particle* P) {
   vect<> displacement = P->getPosition() - position;
-  interactSym(P, displacement);
+  return interactSym(P, displacement);
 }
 
-void Particle::interact(Particle* P, vect<> displacement) {
-  if (fixed || !interacting) return;
+bool Particle::interact(Particle* P, vect<> displacement) {
+  if (fixed || !interacting) return false;
   double distSqr = sqr(displacement);
   double cutoff = radius + P->getRadius();
   double cutoffsqr = sqr(cutoff);
@@ -64,7 +70,7 @@ void Particle::interact(Particle* P, vect<> displacement) {
     double dist = sqrt(distSqr);
     vect<> normal = (1.0/dist) * displacement;
     vect<> shear = vect<>(normal.y, -normal.x);
-    double overlap = 1.0 - dist/cutoff;
+    double overlap = cutoff - dist;
     vect<> dV = P->getVelocity() - velocity;
     double Vn = dV*normal; // Normal velocity
     double Vs = dV*shear + radius*omega + P->getTangentialV(); // Shear velocity
@@ -82,11 +88,13 @@ void Particle::interact(Particle* P, vect<> displacement) {
 
     // For finding average normal forces
     //normForces += fabs(Fn); //** Should also take into account shear force (?)
+    return true;
   }
+  return false;
 }
 
-void Particle::interactSym(Particle* P, vect<> displacement) {
-  if (fixed || !interacting) return;
+bool Particle::interactSym(Particle* P, vect<> displacement) {
+  if (fixed || !interacting) return false;
   double distSqr = sqr(displacement);
   double cutoff = radius + P->getRadius();
   double cutoffsqr = sqr(cutoff);
@@ -100,7 +108,7 @@ void Particle::interactSym(Particle* P, vect<> displacement) {
     double dist = sqrt(distSqr);
     vect<> normal = (1.0/dist) * displacement;
     vect<> shear = vect<>(normal.y, -normal.x);
-    double overlap = 1.0 - dist/cutoff;
+    double overlap = cutoff - dist;
     vect<> dV = P->getVelocity() - velocity;
     double Vn = dV*normal; // Normal velocity
     double Vs = dV*shear + radius*omega + P->getTangentialV(); // Shear velocity
@@ -122,11 +130,13 @@ void Particle::interactSym(Particle* P, vect<> displacement) {
     // For finding average normal forces
     //normForces += fabs(Fn); //** Should also take into account shear force (?)
     //P->normForces += fabs(Fn);
+    return true;
   }
+  return false;
 }
 
-void Particle::interact(vect<> pos, double force) {
-  if (fixed) return;
+bool Particle::interact(vect<> pos, double force) {
+  if (fixed) return false;
   vect<> displacement = position - pos; // Points towards particle
   double distSqr = sqr(displacement);
   if (distSqr < sqr(radius)) { // Interaction (same potiential as particle-particle)
@@ -136,7 +146,9 @@ void Particle::interact(vect<> pos, double force) {
     // Pressure force
     //normForces += fabs(force);
     applyNormalForce(force*normal);
+    return true;
   }
+  return false;
 }
 
 void Particle::update(double epsilon) {
@@ -368,6 +380,8 @@ inline void SmartSphere::changeDirection() {
 }
 
 // ********** WALLS  ********** //
+
+Wall::Wall() : origin(Zero), wall(Zero), repulsion(default_wall_repulsion), dissipation(default_wall_dissipation), gamma(default_wall_gamma), velocity(0), normal(Zero), length(0) {};
 
 Wall::Wall(vect<> origin, vect<> end) : origin(origin), wall(end-origin), coeff(default_wall_coeff), repulsion(default_wall_repulsion), dissipation(default_wall_dissipation), gamma(default_wall_gamma), velocity(0) {
   normal = wall;

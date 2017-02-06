@@ -8,13 +8,13 @@
 
 /// Default parameters
 // We used to have a default sphere mass of 1 regardless of the sphere size. Really, having a default sphere *density* makes more sense. Most simulations were done with r=0.05, so rho=127.324 ==> M = rho * pi * r^2 = 1 for spheres w/ radius 0.05, so this is the value you could use for maximum backwards compatibility.
-const double default_sphere_density = 1.; // 127.
-const double default_sphere_repulsion = 10; // 10000.
-const double default_sphere_dissipation = 7.5; //7500.;
+const double default_sphere_density = 1.;
+const double default_sphere_repulsion = 100;
+const double default_sphere_dissipation = 7.5;
 const double default_sphere_coeff = sqrt(0.5);
 const double default_sphere_drag = 0.01;
-const double default_wall_repulsion = 10.; // 10000.;
-const double default_wall_dissipation = 7.5; // 5000.;
+const double default_wall_repulsion = 100.;
+const double default_wall_dissipation = 7.5;
 const double default_wall_coeff = sqrt(0.5);
 const double default_wall_gamma = 5.;
 const double default_run_force = 0.01;
@@ -73,18 +73,19 @@ class Particle {
   void setWallShear(bool s) { wallShear = s; }
   void setDrag(double d) { drag = d; }
   void setMass(double);
+  void setDensity(double);
   void setII(double);
   void setRadius(double r) { radius = r; }
   void setInteraction(bool i) { interacting=i; }
 
   /// Control functions
-  virtual void interact(Particle*); // Interact with another particle
-  virtual void interactSym(Particle*);
-  virtual void interact(Particle*, vect<>);
-  virtual void interactSym(Particle*, vect<>);
-  virtual void interact(vect<> pos, double force);
+  virtual bool interact(Particle*); // Interact with another particle, return true if they do interact
+  virtual bool interactSym(Particle*);
+  virtual bool interact(Particle*, vect<>);
+  virtual bool interactSym(Particle*, vect<>);
+  virtual bool interact(vect<> pos, double force);
   virtual void update(double);
-
+  
   void flowForce(vect<> F);
   void flowForce(vect<> (*func)(vect<>));
   void flowForce(std::function<vect<>(vect<>)>);
@@ -262,6 +263,7 @@ class SmartSphere : public RTSphere {
 /// ********** Wall **********
 class Wall {
  public:
+  Wall();
   Wall(vect<> origin, vect<> wall);
   Wall(vect<> origin, vect<> end, bool);
 
