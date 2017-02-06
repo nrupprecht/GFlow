@@ -1,11 +1,11 @@
 #include "Simulator.h"
 
-Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), gravity(Zero), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), mutationRate(0.0), mutationAmount(0.0), recFields(false), replenish(0), wasteSource(0), indicator(false), recordDist(false), recordClustering(false), alphaR(1.0), alphaW(1.0), betaR(1.0), csatR(1.0), csatW(1.0), lamR(0.0), lamW(0.0), capturePositions(false), captureProfile(false), captureLongProfile(false), captureVelocity(false), activeType(BROWNIAN), asize(0), psize(0), maxParticles(0), addDelay(0.1), addTime(0), doGradualAddition (false), initialV(0.1) {
+Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), gravity(Zero), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), viscosity(1.308e-3), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), mutationRate(0.0), mutationAmount(0.0), recFields(false), replenish(0), wasteSource(0), recordDist(false), recordClustering(false), alphaR(1.0), alphaW(1.0), betaR(1.0), csatR(1.0), csatW(1.0), lamR(0.0), lamW(0.0), animationScale(100), capturePositions(false), captureProfile(false), captureVelProfile(false), captureLongProfile(false), captureVelocity(false), activeType(BROWNIAN), asize(0), psize(0), maxParticles(0), addDelay(0.1), addTime(0), doGradualAddition (false), initialV(0.1), active_passive(true), large_small(false), radiusDivide(0.1) {
   // Flow
   hasDrag = false;
   flowFunc = 0;
   // Time steps
-  default_epsilon = 1e-5;
+  default_epsilon = 1e-4;
   epsilon = default_epsilon;
   sqrtEpsilon = sqrt(default_epsilon);
   minepsilon = default_epsilon; // Smallest dt ever used
@@ -19,7 +19,6 @@ Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), 
   // Sectorization
   charRadius = -1;
   sectorize = true;
-  ssecInteract = false;
   secX = 1; secY = 1; // It will be reset before anything happens
   sectorization.setParticleList(&particles); // Set the sectorization particle list
   // Binning & Velocity analysis
@@ -37,6 +36,11 @@ Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), 
   }
   // Total distribution
   useVelocityDiff = false;
+  // Animation (set up for Active and Passive particles by default)
+  watchPosCollection = vector<vector<list<vect<>>>>(2); 
+  charRadiusCollection = vector<double>(2);
+  colorCollection.push_back("Black");
+  colorCollection.push_back("Green");
 };
 
 Simulator::~Simulator() {
@@ -60,6 +64,7 @@ void Simulator::createSquare(int NP, int NA, double radius, double width, double
   yTBound = WRAP;
   yBBound = WRAP;
   charRadius = radius;
+  charRadiusCollection.at(0) = charRadiusCollection.at(1) = radius;
   left = 0;
   bottom = 0;
   right = width;
@@ -90,6 +95,7 @@ void Simulator::createHopper(int N, double radius, double gap, double width, dou
   discard();
   // Set up a hopper
   charRadius = radius;
+  charRadiusCollection.at(0) = charRadiusCollection.at(1) = radius;
   left = 0; bottom = 0;
   right = width; top = height;
 
@@ -128,6 +134,7 @@ void Simulator::createPipe(int N, double radius, double V, int NObst) {
   discard();
   gravity = Zero;
   charRadius = radius;
+  charRadiusCollection.at(0) = charRadiusCollection.at(1) = radius;
   left = 0; bottom = 0;
   top = 2; right = 5;
 
@@ -161,9 +168,12 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, double 
   discard();
   gravity = Zero;
   charRadius = max(radius, rA);
+  charRadiusCollection.at(0) = radius;
+  if (rA==-1) rA = radius;
+  charRadiusCollection.at(1) = rA;
   left = 0; bottom = 0;
   top = height; right = width;
-  if (rA==-1) rA = radius;
+  sectorization.setInteractionFunctionChoice(0);
   // Put in walls
   addWall(new Wall(vect<>(0,bottom), vect<>(right,bottom))); // Bottom wall
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // Top wall
@@ -196,6 +206,7 @@ void Simulator::createSedimentationBox(int N, double radius, double width, doubl
   discard();
   gravity = vect<>(0,-0.1);
   charRadius = radius;
+  charRadiusCollection.at(0) = charRadiusCollection.at(1) = radius;
   left = 0; bottom = 0;
   top = height; right = width;
   // Put in walls
@@ -223,32 +234,39 @@ void Simulator::createSedimentationBox(int N, double radius, double width, doubl
   min_epsilon = 1e-8;
 }
 
-void Simulator::createSphereFluid(int N, int A, double radius, double F, double rA, double width, double height) {
+void Simulator::createSphereFluid(int N, int A, double radius, double F, double rA, double width, double height, double velocity, bool couetteFlow) {
   discard();
   gravity = Zero;
-  charRadius = radius;
-  left = 0; bottom = 0;
-  top = height; right = width;
   if (rA==-1) rA = radius;
+  charRadius = max(radius, rA); // Assuming they are similar in size, if they aren't, use a interaction processing 2.
+  charRadiusCollection.at(0) = radius;
+  charRadiusCollection.at(1) = rA;
+  noFlow(); // Flow
+  left = 0; bottom = 0; top = height; right = width;
   // Set wrapping
   xLBound = WRAP; xRBound = WRAP; yTBound = WRAP; yBBound = WRAP;
   // Add walls
-  addWall(new Wall(vect<>(0,bottom), vect<>(right,bottom))); // Bottom wall
-  addWall(new Wall(vect<>(0,top), vect<>(right,top))); // Top wall
+  Wall *w = new Wall(vect<>(0,top), vect<>(right,top)); // Top wall
+  if (couetteFlow) w->setVelocity(velocity);
+  addWall(w); 
+  w = new Wall(vect<>(0,bottom), vect<>(right,bottom)); // Bottom wall
+  if (couetteFlow) w->setVelocity(-velocity);
+  addWall(w); 
   // Set up particle addition
-  doGradualAddition = true;
-  maxParticles = N+A;
-  initialV = 0.5;
   double center = left + 0.5*(right-left);
-  addSpace = Bounds(center-3*charRadius, center+3*charRadius, bottom, top);
+  Bounds pressureSpace(center-6*charRadius, center+6*charRadius, bottom, top);
+  vector<vect<> > pos = findPackedSolution(N+A, radius, left, right, bottom, top);
+  int i=0;
+  for (; i<N; i++) addParticle(new Particle(pos.at(i), radius));
+  for (; i<N+A; i++) addActive(pos.at(i), radius, default_run_force);
   // Set up pressure
-  pForce = vect<>(0.5,0); // Rightwards drag velocity
-  sFunctionList.push_back( [&] (list<Particle*> plist) { for (auto &P : plist) P->applyForce(2*P->getRadius()*(pForce - P->getVelocity())); } ); // A "Drag" force
-  sectorization.addSectorFunction(sFunctionList.at(0), addSpace);
-  // Flow
-  setFlowV(0);
-  flowFunc = 0;
-  hasDrag = false;
+  if (!couetteFlow) { // Only when not using pure couette flow
+    pForce = vect<>(1.,0); // Rightwards drag velocity
+    sFunctionList.push_back( [&] (list<Particle*> plist) { for (auto &P : plist) P->applyForce(50*P->getRadius()*(pForce - P->getVelocity()).x*pForce); } ); // A "Drag" force
+    sectorization.addSectorFunction(sFunctionList.at(0), pressureSpace);
+    // Give them a starting velocity
+    for (auto P : particles) P->setVelocity(pForce);
+  }
   // Set physical parameters
   double diss = 20; // For no friction, use ~9.954
   setParticleCoeff(sqrt(0.5));
@@ -258,49 +276,64 @@ void Simulator::createSphereFluid(int N, int A, double radius, double F, double 
   setWallDissipation(diss); //default_wall_dissipation);
   setWallCoeff(1.);
   // Temperature
-  temperature = 100;
+  temperature = 1;
   // Epsilons
   default_epsilon = 1e-4;
   min_epsilon = 1e-8;
 }
 
-void Simulator::createJamPipe(int N, int A, double radius, double V, double F, double rA, double width, double height, double perc, double var) {
-  this->percent = perc;
-  createControlPipe(N, A, radius, V, F, rA, width, height, var);
-  // Add moving walls
-  addMovingWall(new Wall(vect<>(0.5*width,0), vect<>(0.5*width,0)),
-		[&] (double time) {
-                  return time<1 ?
-			      WPair(
-				    vect<>(0.5*(right-left),(1.-0.5*percent*time)*(top-bottom)),
-				    vect<>(0.5*(right-left),(top-bottom))
-				    ) 
-			      : 
-		    WPair(
-			  vect<>(0.5*(right-left),(1.-0.5*percent)*(top-bottom)),
-			  vect<>(0.5*(right-left),(top-bottom))
-			  );
-                });
-
-  addMovingWall(new Wall(vect<>(0.5*width,0), vect<>(0.5*width,0)),
-		[&] (double time) {
-                  return time<1 ?
-			      WPair(
-				    vect<>(0.5*(right-left), 0.5*percent*time*(top-bottom)),
-				    vect<>(0.5*(right-left),0)
-				    )
-			      : 
-		    WPair(
-			  vect<>(0.5*(right-left),0.5*percent*(top-bottom)),
-			  vect<>(0.5*(right-left),0)
-			  );
-                });
+void Simulator::createBuoyancyBox(double radius, double bR, double density, double width, double height, double dispersion, double frequency, double amplitude) {
+  discard();
+  gravity = vect<>(0,-1.);
+  charRadius = radius;
+  charRadiusCollection.at(0) = radius; charRadiusCollection.at(1) = bR;
+  left = 0; right = width; bottom = 0; top = height;
+  // Set Bounds
+  xLBound = WRAP; xRBound = WRAP; yTBound = WRAP; yBBound = WRAP;
+  // Add Floor
+  addWall(new Wall(vect<>(0,0), vect<>(right, 0)));
+  /*
+  wallFrequency = frequency;
+  wallAmplitude = amplitude;
+  wallVibration = [&] (double time) { return WPair(vect<>(left, wallAmplitude*(1+sin(2*PI*wallFrequency*time))), vect<>(right, wallAmplitude*(1+sin(2*PI*wallFrequency*time))));};
+  addMovingWall(new Wall, wallVibration);
+  */
+  // Fill half way with "grains"
+  double maxPack = PI/(2*sqrt(3)); // Hexagonal packing
+  double Vfill = width*(height-2.2*bR-2.2*amplitude), Vgrain = PI*sqr(radius);
+  int N = 0.8*maxPack * Vfill / Vgrain;
+  // Place the particles
+  vector<vect<> > pos = findPackedSolution(N, radius, 0, right, 2.2*amplitude, top-2.2*bR);
+  // Add the particles in at the appropriate positions
+  for (int i=0; i<N; i++) addParticle(new Particle(pos.at(i), (1-getRand()*dispersion)*radius));
+  // Add the big object
+  Particle *P = new Particle(vect<>(width/2, height-1.1*bR), bR);
+  P->setDensity(density);
+  addParticle(P);
+  // For animation
+  active_passive = false;
+  large_small = true;
+  radiusDivide = (bR - radius)/2 + radius;
+  sectorization.setInteractionFunctionChoice(2); // Asymmetric, variable size interaction processing (choice 2)
+  // Set physical parameters
+  double dissipation = 20;
+  double friction = 0;
+  setParticleCoeff(friction);
+  setParticleShear(true);
+  setParticleDissipation(dissipation);
+  setParticleDrag(0);
+  setWallDissipation(dissipation);
+  setWallCoeff(friction);
+  // Epsilons
+  min_epsilon = 1e-4;
+  default_epsilon = 1e-4;
 }
 
 void Simulator::createIdealGas(int N, double radius, double v, double width, double height) {
   discard();
   gravity = Zero;
   charRadius = radius;
+  charRadiusCollection.at(0) = charRadiusCollection.at(1) = radius;
   left = 0; 
   right = width;
   bottom = 0; 
@@ -336,6 +369,7 @@ void Simulator::createEntropyBox(int N, double radius) {
   gravity = Zero;
   double gap = 0.1;
   charRadius = radius;
+  charRadiusCollection.at(0) = charRadiusCollection.at(1) = radius;
   left = 0; right = 1;
   bottom = 0; top = 1;
   // Set bounds
@@ -361,6 +395,7 @@ void Simulator::createBacteriaBox(int N, double radius, double width, double hei
   discard();
   gravity = Zero;
   charRadius = radius;
+  charRadiusCollection.at(0) = charRadiusCollection.at(1) = radius;
   left = 0; bottom = 0;
   top = height; right = width;
   // Set bounds
@@ -419,12 +454,14 @@ void Simulator::run(double runLength) {
   //Reset all neccessary variables for the start of a run
   resetVariables();
   setUpSectorization();
-  aveProfile = vector<double>(bins,0); //** --> Should check if this is neccessary before doing it
+  //** --> Should check if this is neccessary before setting up data structures
+  aveProfile = vector<double>(bins,0); 
+  velProfile = vector<double>(bins,0);
+  flowXProfile = vector<double>(bins,0);
   // Run the simulation
   clock_t start = clock();
   // Initial record of data
   if (time>=startRecording && time<stopRecording || recAllIters) record();
-  indicator = true; // We are now running
   while(time<runLength && running) { // Terminate based on internal condition
     // Gravity, flow, particle-particle, and particle-wall forces
     calculateForces();
@@ -435,7 +472,6 @@ void Simulator::run(double runLength) {
     // Record data [ Had a note saying "do this before calling "update" on the particles" but I'm not sure why
     if (time>startRecording && time<stopRecording && time-lastDisp>dispTime || recAllIters) record();
   }
-  indicator = false; // We are done running
   clock_t end = clock();
   runTime = (double)(end-start)/CLOCKS_PER_SEC;
 }
@@ -444,7 +480,10 @@ void Simulator::bacteriaRun(double runLength) {
   //Reset all neccessary variables for the start of a run
   resetVariables();
   setUpSectorization();
-  aveProfile = vector<double>(bins,0); //** --> Should check if this is neccessary before doing it
+  //** --> Should check if this is neccessary before setting up data structures
+  aveProfile = vector<double>(bins,0);
+  velProfile = vector<double>(bins,0);
+  flowXProfile = vector<double>(bins,0);
   // Initialize the values of the waste and resource fields
   initializeFields();
   // Run the simulation
@@ -495,6 +534,25 @@ vector<vect<> > Simulator::getAveProfile() {
   return profile;
 }
 
+vector<vect<> > Simulator::getVelProfile() {
+  vector<double> prof = velProfile;
+  double total = 0, delta = (top-bottom)/bins;
+  for (auto p : prof) total += p;
+  double norm = 1./recIt;
+  vector<vect<> > profile;
+  for (int i=0; i<prof.size(); i++) profile.push_back(vect<>((i+0.5)*delta, prof.at(i)*norm));
+  return profile;
+}
+
+vector<vect<> > Simulator::getFlowXProfile() {
+  vector<double> prof = flowXProfile;
+  double delta = (right-left)/bins;
+  double norm = 1./recIt;
+  vector<vect<> > profile;
+  for (int i=0; i<prof.size(); i++) profile.push_back(vect<>((i+0.5)*delta, prof.at(i)*norm));
+  return profile;
+}
+
 void Simulator::addStatistic(statfunc func) {
   statistics.push_back(func);
   statRec.push_back(vector<vect<>>());
@@ -535,6 +593,47 @@ vector<double> Simulator::getDensityYProfile() {
     if ((0<=index || index<bins) && index<profile.size()) profile.at(index)++;
   }
   return profile;
+}
+
+vector<double> Simulator::getVelocityXProfile() {
+  vector<double> velocities(bins,0);
+  vector<double> numbers(bins,0);
+
+  double invdy = bins/(right-left);
+  for (auto P : particles) {
+    double y = P->getPosition().x-left;
+    int index = (int)(y*invdy);
+    if ((0<=index || index<bins) && index<velocities.size()) {
+      velocities.at(index) += P->getVelocity()*vect<>(1,0);
+      numbers.at(index)++;
+    }
+  }
+  for (int i=0; i<bins; i++) {
+    int N = numbers.at(i);
+    velocities.at(i) /= (N>0 ? N : 1);
+  }
+  return velocities; // Return average velocity
+}
+
+vector<double> Simulator::getVelocityYProfile() {
+  vector<double> velocities(bins,0);
+  vector<double> numbers(bins,0);
+
+  double invdy = bins/(top-bottom);
+  for (auto P : particles) {
+    double y = P->getPosition().y-bottom;
+    int index = (int)(y*invdy);
+    if ((0<=index || index<bins) && index<velocities.size()) {
+      velocities.at(index) += P->getVelocity()*vect<>(1,0);
+      numbers.at(index)++;
+    }
+  }
+  for (int i=0; i<bins; i++) {
+    int N = numbers.at(i);
+    N = N>0 ? N : 1;
+    velocities.at(i) /= N;
+  }
+  return velocities;
 }
 
 double Simulator::clustering() {
@@ -741,6 +840,7 @@ void Simulator::addTempWall(Wall* wall, double duration) {
 }
 
 void Simulator::addMovingWall(Wall* wall, WFunc f) {
+  wall->setPosition(f(0)); // Set initial position
   movingWalls.push_back(pair<Wall*,WFunc>(wall, f));
 }
 
@@ -769,21 +869,23 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
   bounds.push_back(new Wall(vect<>(right,bottom), vect<>(left,bottom)));
   
   // Add particles in with small radii
-  double initialRadius = 0.05*R, finalRadius = 1.25*R;
+  double initialRadius = 0.05*R, finalRadius = 1.*R;
   double l = left + initialRadius, x = right - initialRadius - l;
   double b = bottom + initialRadius, y = top - initialRadius - b;
   for (int i=0; i<N; i++) {
     vect<> pos = vect<>(b+x*drand48(), b+y*drand48());
     Particle *P = new Particle(pos, initialRadius);
+    P->setWallShear(false);
+    P->setMass(PI*default_sphere_density*sqr(R));
     parts.push_back(P);
   }
   packingSectors.sectorize(); // Set up the actual sectors
 
   // Enlarge particles and thermally agitate
-  int steps = 2500;
+  int steps = 5000;
   // Make dr s.t. the final radius is a bit larger then R
   double dr = (finalRadius-initialRadius)/steps, radius = initialRadius; 
-  double mag = 5, dm = mag/(double)steps;
+  //double mag = 5, dm = mag/(double)steps;
   int i;
   // Radius expanding, expansion step
   for (i=0; i<steps; i++) {
@@ -831,17 +933,19 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
 }
 
 string Simulator::printWalls() {
-  if (walls.empty()) return "{}";
+  if (walls.empty() && wallPos.empty()) return "{}";
   stringstream stream;
   string str;
-  stream << "walls=Show[";
-  for (int i=0; i<walls.size(); i++) {
-    stream << "Graphics[{Thick,Red,Line[{" << walls.at(i)->getPosition() << "," << walls.at(i)->getEnd() << "}]}]";
-    if (i!=walls.size()-1) stream << ",";
+  // Print normal walls
+  if (!walls.empty()) {
+    stream << "walls=Show[";
+    for (int i=0; i<walls.size(); i++) {
+      stream << "Graphics[{Thick,Red,Line[{" << walls.at(i)->getPosition() << "," << walls.at(i)->getEnd() << "}]}]";
+      if (i!=walls.size()-1) stream << ",";
+    }
+    stream << ",PlotRange->{{0," << right << "},{0," << top << "}}];";
+    stream >> str;
   }
-  stream << ",PlotRange->{{0," << right << "},{0," << top << "}}];";
-  stream >> str;
-  
   // Print position records of moving walls (if applicable)  
   if (!wallPos.empty()) {
     stream.clear();
@@ -850,54 +954,6 @@ string Simulator::printWalls() {
     string str2;
     stream >> str2;
     str += str2;
-  }
-
-  return str;
-}
-
-string Simulator::printWatchList() {
-  if (recIt==0) return "{}";
-  // Print out watch list record
-  stringstream stream;
-  string str, tstr;
-  // Record positions of passive particles
-  if (psize>0) {
-    stream << "pos={";
-    for (auto PW : passiveWatchPos) {
-      if (PW.empty()) stream << "{},";
-      else {
-	stream << "{";
-	for (auto P : PW) stream << P << ",";     
-	stream >> tstr;
-	tstr.pop_back();
-	tstr += "},";
-	str += tstr;
-      }
-      // Clear
-      stream.clear(); tstr.clear();
-    }
-    if (!str.empty()) str.pop_back(); // Get rid of the last ','
-    str += "};\n";
-  }
-  // Record positions of active particles
-  if (asize>0) {
-    stream.clear(); tstr.clear();
-    stream << "apos={";
-    for (auto AW : activeWatchPos) {
-      if (AW.empty()) stream << "{},";
-      else {
-	stream << "{";
-	for (auto P : AW) stream << P << ",";
-	stream >> tstr;
-	tstr.pop_back();
-	tstr += "},";
-	str += tstr;
-      }
-      // Clear
-      stream.clear(); tstr.clear();
-    }
-    if (!str.empty()) str.pop_back(); // Get rid of the last ','
-    str += "};\n";
   }
   return str;
 }
@@ -928,38 +984,55 @@ void Simulator::printBacteriaToFile() {
 string Simulator::printAnimationCommand() {
   if (recIt==0) return "{}";
   stringstream stream;
-  string str1, str2;
-  if (!particles.empty()) charRadius = (*particles.begin())->getRadius();
-  stream << "R=" << charRadius << ";";
-  stream >> str1;
-  stream.clear();
-  // Start table
+  string str, strh;
+  // Print walls
+  str += printWalls();
+  // Print animation radii
+  for (int i=0; i<charRadiusCollection.size(); i++) {
+    stream << "R" << i << "=" << charRadiusCollection.at(i) << ";";
+    stream >> strh;
+    str += (strh + "\n");
+    strh.clear(); stream.clear();
+  }
+  // Print array lengths
   stream << "len=" << recIt << ";";
-  stream >> str2;
-  stream.clear();
-  str1 += ('\n'+str2+'\n');
-  str2.clear();
-  str1 += "frames=Table[Show[";
-  // Print walls animation command
-  if (!walls.empty()) str1 += "walls";
-  else str1 += "{}";
-  // Print passive particle animation command
-  if (psize>0) str1 += ",Graphics[Table[Circle[pos[[j]][[i]], R], {i, 1, Length[pos[[j]]]}]]";
-  // Print active particle animation command
-  if (asize>0) str1 += ",Graphics[Table[{Green, Circle[apos[[j]][[i]], R]}, {i, 1, Length[apos[[j]]]}]]";
-  // Print moving wall animation command
-  if (!wallPos.empty()) str1 += ",Graphics[Table[{Thick,Red,Line[movingWalls[[j]][[i]]]},{i,1,Length[movingWalls[[j]]]}]]";
+  stream >> strh;
+  str += (strh + "\n");
+  strh.clear(); stream.clear();
+  // Print position arrays
+  for (int i=0; i<watchPosCollection.size(); i++) {
+    stream << "pos" << i << "=" << watchPosCollection.at(i) << ";";
+    stream >> strh;
+    str += (strh + "\n" + printTable(i));
+    strh.clear(); stream.clear();
+  }
+  // Print animation scale
+  stream << "scale=" << animationScale << ";";
+  stream >> strh;
+  str += (strh + "\n");
+  strh.clear(); stream.clear();
+  // Print Frame creation command
+  str += "frames=Table[Show[";
+  if (walls.empty()) str += "{}";
+  else str += "walls";
+  for (int i=0; i<watchPosCollection.size();  i++) {
+    stream << ",G" << i << "[[i]]";
+    stream >> strh;
+    str += strh;
+    strh.clear(); stream.clear();
+  }
+  if (!wallPos.empty()) str += ",Graphics[Table[{Thick,Red,Line[movingWalls[[i]][[j]]]},{j,1,Length[movingWalls[[i]]]}]]";
   // Finish Table
-  stream << ",PlotRange->{{" << left << "," << right << "},{" << bottom << "," << top << "}}";
-  stream >> str2;
-  stream.clear();
-  str1 += str2;
-  str2.clear();
-  str1 += "],{j,1,len}];\n";
+  stream << ",PlotRange->{{" << left << "," << right << "},{" << bottom << "," << top <<"}}";
+  // Print animation scale
+  stream << ",ImageSize->{scale*" << right-left << ",scale*" << top-bottom << "}";
+  stream >> strh;
+  str += (strh + "],{i,1,len}];\n");
+  strh.clear(); stream.clear();
   // Add animation command
   stream << "vid=ListAnimate[frames,AnimationRate->" << max(1.0, ceil(1.0/dispTime)*dispFactor) << "]";
-  stream >> str2;
-  return str1+str2;
+  stream >> strh;
+  return str+strh;
 }
 
 string Simulator::printResource() {
@@ -1171,9 +1244,15 @@ inline void Simulator::calculateForces() {
   // Apply sector functions
   sectorization.sectorFunctionApplication();
   // Temperature causes brownian motion
-  if (temperature>0)
-    for (auto P : particles)
-      P->applyForce(temperature*sqrtEpsilon*randNormal()*randV());
+  // --> DT = Kb T / (6 Pi eta R) -> Translational diffusion coefficient
+  // --> DR = Kb T / (8 Pi eta R^3) -> Rotational diffusion coefficient
+  if (temperature>0) 
+    for (auto P : particles) {
+      double DT = temperature/(6*viscosity*PI*P->getRadius()); // Assumes viscosity (eta) = 1, Kb = 1;
+      double coeffD = sqrt(2*DT)*sqrtEpsilon;
+      vect<> TForce = coeffD*(randNormal()*randV()); // Addative gaussian white noise
+      P->applyForce(TForce);
+    }
 }
 
 inline void Simulator::logisticUpdates() {
@@ -1519,12 +1598,21 @@ inline void Simulator::update(Particle* &P) {
 inline void Simulator::record() {
   // Record positions
   if (capturePositions) {
+    for (auto &wl : watchPosCollection) wl.push_back(list<vect<> >());
     // Record particle positions
-    passiveWatchPos.push_back(list<vect<> >());
-    activeWatchPos.push_back(list<vect<> >());
     for (auto P : particles) {
-      if (P->isActive()) activeWatchPos.at(recIt).push_back(P->getPosition());
-      else passiveWatchPos.at(recIt).push_back(P->getPosition());
+      // Divide into the collection by passive / active
+      if (active_passive) {
+	if (P->isActive()) watchPosCollection.at(1).at(recIt).push_back(P->getPosition());
+	else watchPosCollection.at(0).at(recIt).push_back(P->getPosition());
+      }
+      // Divide into the collection by large / small
+      else if (large_small) {
+	if (P->getRadius()<=radiusDivide) watchPosCollection.at(0).at(recIt).push_back(P->getPosition());
+	else watchPosCollection.at(1).at(recIt).push_back(P->getPosition());
+      }
+      else // Default, everything goes into collection 0
+	watchPosCollection.at(0).at(recIt).push_back(P->getPosition());
     }
     // Record moving wall positions
     if (!movingWalls.empty()) {
@@ -1544,6 +1632,10 @@ inline void Simulator::record() {
 
   // Record density profile
   if (captureProfile) updateProfile();
+  if (captureVelProfile) {
+    updateVelProfile();
+    updateFlowXProfile();
+  }
   if (captureLongProfile) profiles.push_back(getDensityYProfile());
   
   // Record velocity distribution
@@ -1679,24 +1771,19 @@ void Simulator::resetStatistics() {
   for (auto &ent : averageRec) ent = 0;
 }
 
+inline string Simulator::printTable(int i) {
+  stringstream stream;
+  string str;
+  // Print graphics table for list <i>
+  stream << "G" << i << "=Table[Graphics[Table[{" << colorCollection.at(i) << ",Circle[pos" << i << "[[i]][[j]],R" << i << "]},{j,1,Length[pos" << i << "[[i]]]}]],{i,1,len}];";
+  stream >> str;
+  return (str + "\n");
+}
+
 vect<> Simulator::binVelocity(int vx, int vy) {
   double VX = (maxVx-minVx)/vbins*vx + minVx;
   double VY = (maxVy-minVy)/vbins*vy + minVy;
   return vect<>(VX, VY);
-}
-
-inline int Simulator::getSec(vect<> pos) {
-  int X = static_cast<int>((pos.x-left)/(right-left)*secX);
-  int Y = static_cast<int>((pos.y-bottom)/(top-bottom)*secY);  
-  
-  // If out of bounds, put in the special sector
-  if (X<0 || Y<0 || X>secX || Y>secY) return (secX+2)*(secY+2);
-  
-  return (X+1)+(secX+2)*(Y+1);
-}
-
-inline int Simulator::getSec(Particle *P) {
-  return getSec(P->getPosition());
 }
 
 void Simulator::setBins(int b) {
@@ -1728,19 +1815,12 @@ void Simulator::discard() {
       P = 0;
     }
   particles.clear();
-  passiveWatchPos.clear();
-  activeWatchPos.clear();  
+  for (auto &w : watchPosCollection) w.clear();
   for (auto W : walls) 
-    if (W) {
-      delete W;
-      W = 0;
-    }
+    if (W) delete W;
   walls.clear();
   for (auto W : tempWalls) 
-    if (W.first) {
-      delete W.first;
-      W.first = 0;
-    }
+    if (W.first) delete W.first;
   tempWalls.clear();
   // Clear time marks and statistics
   timeMarks.clear();
@@ -1751,4 +1831,16 @@ inline void Simulator::updateProfile() {
   vector<double> prof = getDensityYProfile();
   for (int i=0; i<prof.size(); i++)
     aveProfile.at(i) += prof.at(i);
+}
+
+inline void Simulator::updateVelProfile() {
+  vector<double> prof = getVelocityYProfile();
+  for (int i=0; i<prof.size(); i++)
+    velProfile.at(i) += prof.at(i);
+}
+
+inline void Simulator::updateFlowXProfile() {
+  vector<double> prof = getVelocityXProfile();
+  for (int i=0; i<prof.size(); i++)
+    flowXProfile.at(i) += prof.at(i);
 }

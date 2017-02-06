@@ -13,9 +13,17 @@ int main(int argc, char** argv) {
   // Parameters
   double width = 4.;     // Length of the pipe
   double height = 2.;    // 2*Radius of the pipe
+  double epsilon = 1e-4; // Default epsilon
   double radius = 0.05;  // Disc radius
-  double velocity = 0.5; // Fluid velocity (at center)
-  double temperature = 0; // Temperature
+  double dispersion = 0; // Disc radius dispersion
+  double bR = 0.2;       // Radius of buoyant particle
+  double density = 5;    // Density of buoyant particle
+  double velocity = 0.5; // Fluid velocity (at center or for Couette flow)
+  double temperature = -1; // Temperature
+  double dissipation = -1; // Dissipation
+  double friction = -1;    // Friction
+  double frequency = 10; // Shake frequency
+  double amplitude = 0.02; // Shake Amplitude
   double phi = 0.5;      // Packing density
   double time = 600.;    // How long the entire simulation should last
   double start = 30;     // At what time we start recording data
@@ -52,7 +60,9 @@ int main(int argc, char** argv) {
   // Run Type
   bool bacteria = false;      // Bacteria box
   bool sedimentation = false; // Sedimentation box
-  bool sphereFluid = false;  // Sphere fluid
+  bool sphereFluid = false;   // Sphere fluid
+  bool couetteFlow = false;   // Use pure Couette conditions for the sphere fluid
+  bool buoyancy = false;      // Create buoyancy box
 
   // Display parameters
   bool mmpreproc = true;
@@ -63,6 +73,8 @@ int main(int argc, char** argv) {
   bool dispAveFlow = false;
   bool dispProfile = false;
   bool dispAveProfile = false;
+  bool dispVelProfile = false;
+  bool dispFlowXProfile = false;
   bool dispVelDist = false;
   bool totalDist = false;
   bool projDist = false;
@@ -76,9 +88,17 @@ int main(int argc, char** argv) {
   ArgParse parser(argc, argv);
   parser.get("width", width);
   parser.get("height", height);
+  parser.get("epsilon", epsilon);
   parser.get("radius", radius);
+  parser.get("dispersion", dispersion);
+  parser.get("bR", bR);
+  parser.get("density", density);
   parser.get("velocity", velocity);
   parser.get("temperature", temperature);
+  parser.get("dissipation", dissipation);
+  parser.get("friction", friction);
+  parser.get("frequency", frequency);
+  parser.get("amplitude", amplitude);
   parser.get("phi", phi);
   parser.get("time", time);
   parser.get("start", start);
@@ -99,6 +119,8 @@ int main(int argc, char** argv) {
   parser.get("bacteria", bacteria);
   parser.get("sedimentation", sedimentation);
   parser.get("sphereFluid", sphereFluid);
+  parser.get("couetteFlow", couetteFlow);
+  parser.get("buoyancy", buoyancy);
   parser.get("mmpreproc", mmpreproc);
   parser.get("animate", animate);
   parser.get("KE", dispKE);
@@ -107,6 +129,8 @@ int main(int argc, char** argv) {
   parser.get("aveFlow", dispAveFlow);
   parser.get("profileMap", dispProfile);
   parser.get("profile", dispAveProfile);
+  parser.get("velProfile", dispVelProfile);
+  parser.get("flowXProfile", dispFlowXProfile);
   parser.get("velDist", dispVelDist);
   parser.get("projDist", projDist);
   parser.get("totalDist", totalDist);
@@ -134,7 +158,6 @@ int main(int argc, char** argv) {
 
   // Dependent variables
   double Vol = width*height;
-  double rA = radius;
   int num = Vol/(PI*sqr(radius))*phi;
   if (number<0) number = num;
   int NA = number*pA, NP = number-NA;
@@ -163,9 +186,9 @@ int main(int argc, char** argv) {
   if (totalDist || projDist) simulation.setRecordDist(true);
   simulation.setStartRecording(start);
   if (dispProfile || dispAveProfile) simulation.setCaptureProfile(true);
+  if (dispVelProfile || dispFlowXProfile) simulation.setCaptureVelProfile(true);
   if (animate) simulation.setCapturePositions(true);
   if (dispVelDist) simulation.setCaptureVelocity(true);
-  if (temperature>0) simulation.setTemperature(temperature);
   // Set active particle type
   PType type = getType(atype);
   if (type!=ERROR) simulation.setActiveType(type);
@@ -176,8 +199,9 @@ int main(int argc, char** argv) {
     simulation.createBacteriaBox(number, radius, width, height, velocity);
   }
   else if (sedimentation) simulation.createSedimentationBox(NP+NA, radius, width, height, activeF);
-  else if (sphereFluid) simulation.createSphereFluid(NP, NA, radius, activeF, rA, width, height);
-  else simulation.createControlPipe(NP, NA, radius, velocity, activeF, rA, width, height);
+  else if (sphereFluid) simulation.createSphereFluid(NP, NA, radius, activeF, radius, width, height, velocity, couetteFlow);
+  else if (buoyancy) simulation.createBuoyancyBox(radius, bR, density, width, height, dispersion, frequency, amplitude);
+  else simulation.createControlPipe(NP, NA, radius, velocity, activeF, radius, width, height);
   simulation.setParticleInteraction(interact);
   
   if (bins>0) simulation.setBins(bins);
@@ -189,6 +213,16 @@ int main(int argc, char** argv) {
   simulation.setMinVy(minVy);
   simulation.setMaxVy(maxVy);
   simulation.setUseVelocityDiff(useVelDiff);
+
+  if (temperature>=0) simulation.setTemperature(temperature);
+  if (dissipation>=0) {
+    simulation.setParticleDissipation(dissipation);
+    simulation.setWallDissipation(dissipation);
+  }
+  if (friction>=0) {
+    simulation.setParticleCoeff(friction);
+    simulation.setWallCoeff(friction);
+  }
 
   // simulation.setResourceDiffusion(d1);
   // simulation.setWasteDiffusion(d2);
@@ -211,14 +245,14 @@ int main(int argc, char** argv) {
   for (int i=0; i<argc; i++) cout << argv[i] << " ";
   cout << endl << endl; // Line break
   cout << "Dimensions: " << width << " x " << height << " (Volume: " << Vol << ")\n";
-  cout << "Radius: " << radius << "\n";
+  cout << "Radius: " << radius << ", Dispersion: " << dispersion << "\n";
   cout << "Characteristic Fluid Velocity: " << velocity << "\n";
-  cout << "Phi: " << phi << ", Number: " << number << ", (Actual Phi: " << number*PI*sqr(radius)/(width*height) << ")\n";
+  cout << "Phi: " << phi << ", Number: " << simulation.getNumber() << ", (Actual Phi: " << simulation.getNumber()*PI*sqr(radius)/(width*height) << ")\n";
   cout << "Percent Active: " << pA*100 << "%, (Actual %: " << 100.*NA/(double)(NA+NP) << ")\n";
   if (NA>0) {
     cout << "Active Force: " << activeF << ", Active Type: " << getString(simulation.getActiveType()) << "\n";
   }
-  cout << "N Active: " << NA << ", N Passive: " << NP << "\n";
+  cout << "N Active: " << simulation.getASize() << ", N Passive: " << simulation.getPSize() << "\n";
   if (dispVelDist || totalDist || projDist) {
     cout << endl; // Line break
     cout << "Max V: " << simulation.getMaxV() << ", Min/Max Vx: " << simulation.getMinVx() << ", " << simulation.getMaxVx() << ", Min/Max Vy: " << simulation.getMinVy() << ", " << simulation.getMaxVy() << endl;
@@ -226,10 +260,12 @@ int main(int argc, char** argv) {
     cout << "vBin X Zero: " << simulation.getVBinXZero() << ", vBin Y Zero: " << simulation.getVBinYZero() << endl;
     cout << "Using relative velocity: " << (useVelDiff ? "True" : "False") << endl;
   }
+
   cout << "\n...........................................................\n\n";
   
   /// Run the actual program
   try {
+    simulation.setDefaultEpsilon(epsilon);
     if (bacteria) simulation.bacteriaRun(time);
     else simulation.run(time);
   }
@@ -245,7 +281,8 @@ int main(int argc, char** argv) {
   cout << "Setup Time: " << realTime - simulation.getRunTime() << "\n";
   cout << "Start Time: " << start << ", Record Time: " << max(0., time-start) << "\n";
   cout << "Actual (total) program run time: " << realTime << "\n";
-  cout << "Iterations: " << simulation.getIter();
+  cout << "Iterations: " << simulation.getIter() << endl;
+  cout << "Sectors: X: " << simulation.getSecX() << ", Y: " << simulation.getSecY();
   cout << "\n\n----------------------- END SUMMARY -----------------------\n\n";
   
   /// Print data
@@ -256,17 +293,15 @@ int main(int argc, char** argv) {
       simulation.printWasteToFile();
       cout << simulation.printWalls() << endl; // for now - later print geometry in different format
     }
-    else {
-      cout << simulation.printWatchList() << endl;
-      cout << simulation.printWalls() << endl;
-      cout << simulation.printAnimationCommand() << endl;
-    }
+    else cout << simulation.printAnimationCommand() << endl;
   }  
   if (dispKE) {
     cout << "KE=" << simulation.getStatistic(0) << ";\n";
     cout << "Print[\"Average kinetic energy\"]\nListLinePlot[KE,PlotRange->All,PlotStyle->Black]\n";
-    cout << "passKE=" << simulation.getStatistic(1) << ";\n";
-    cout << "Print[\"Average passive particle kinetic energy\"]\nListLinePlot[passKE,PlotRange->All,PlotStyle->Black]\n";
+    if (simulation.getASize()>0) {
+      cout << "passKE=" << simulation.getStatistic(1) << ";\n";
+      cout << "Print[\"Average passive particle kinetic energy\"]\nListLinePlot[passKE,PlotRange->All,PlotStyle->Black]\n";
+    }
   }
   if (dispAveKE) {
     cout << "aveKE=" << simulation.getAverage(0) << ";\n";
@@ -292,6 +327,14 @@ int main(int argc, char** argv) {
   if (dispAveProfile) {
     cout << "aveProf=" << simulation.getAveProfile() << ";\n";
     cout << "Print[\"Average Profile\"]\nListLinePlot[aveProf,PlotStyle->Black,ImageSize->Large]\n";
+  }
+  if (dispVelProfile) {
+    cout << "velProf=" << simulation.getVelProfile() << ";\n";
+    cout << "Print[\"(x) Velocity Profile\"]\nListLinePlot[velProf,PlotStyle->Black,ImageSize->Large]\n";
+  }
+  if (dispFlowXProfile) {
+    cout << "flowXProf=" << simulation.getFlowXProfile() << ";\n";
+    cout << "Print[\"(x) Velocity flow (as a function of x)\"]\nListLinePlot[flowXProf,PlotStyle->Black,ImageSize->Large]\n";
   }
   if (dispVelDist) {
     cout << "velDist=" << simulation.getVelocityDistribution() << ";\n";

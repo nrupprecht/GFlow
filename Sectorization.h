@@ -21,6 +21,9 @@ class Sectorization {
   vect<> getDisplacement(vect<>, vect<>);
   vect<> getDisplacement(Particle*, Particle*);
   int getSec(vect<>);
+  int getSecX() { return secX; }
+  int getSecY() { return secY; }
+  int getInteractionFunctionChoice() { return interactionFunctionChoice; }
 
   // Mutators
   void addParticle(Particle*); // Add particle to particle list and sector
@@ -35,6 +38,7 @@ class Sectorization {
   void setBounds(double, double, double, double);
   void setWrapX(bool w) { wrapX = w; }
   void setWrapY(bool w) { wrapY = w; }
+  void setInteractionFunctionChoice(int c) { interactionFunctionChoice = c; }
 
  private:
   // Private Helper functions
@@ -43,6 +47,13 @@ class Sectorization {
   inline void add(pair<Bounds, sectorFunction>);
   inline bool overlaps(double, double, double, double, double, double, double, double);
 
+  // Interaction functions
+  inline void symmetricInteractions();
+  inline void asymmetricInteractions();
+  inline void asymmetricVariableSizeInteractions();
+  int interactionFunctionChoice;
+
+  /// System parameters
   bool wrapX, wrapY;               // Wrapping
   bool ssecInteract;               // Whether particles should interact with the special sector
   int secX, secY;                  // Number of sectors
@@ -55,7 +66,6 @@ class Sectorization {
   list<pair<Bounds, sectorFunction> > sectorFunctionRecord;
   list<sectorFunction>* sfunctions; // Each sector has a list of function pointers
   list<Wall*> *wallSectors;         // A pointer to walls that particles in the sector might interact with --> UNIMPLEMENTED
-
 };
 
 #endif

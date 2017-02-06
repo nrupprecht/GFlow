@@ -275,6 +275,26 @@ template<typename T> inline std::ostream& operator<<(std::ostream& out, const ve
   return out;
 }
 
+template<typename T> inline std::ostream& operator<<(std::ostream& out, const std::list<T>&lst) {
+  if (lst.empty()) {
+    out << "{}";
+    return out;
+  }
+  stringstream stream;
+  string str;
+  stream << "{";
+  int i=0;
+  for (auto l : lst) {
+    stream << l;
+    if (i!=lst.size()-1) stream << ",";
+    i++;
+  }
+  stream << "}";
+  stream >> str;
+  out << mmPreproc(str);
+  return out;
+}
+
 template<typename T> inline string bare_representation(const vector<T>& lst) {
   stringstream stream;
   string str;

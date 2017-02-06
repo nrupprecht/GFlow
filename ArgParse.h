@@ -43,6 +43,7 @@ public:
 	}
 	tlist.push_back(pair<string,string>(tok,val));
       }
+      else throw IllegalToken();
     }
   }
 
@@ -66,6 +67,9 @@ public:
       stream >> var;
     }
   }
+
+  /// Exception classes
+  class IllegalToken {};
 
 private:
   int argc;

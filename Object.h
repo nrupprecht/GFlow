@@ -7,16 +7,17 @@
 #include "Utility.h"
 
 /// Default parameters
-const double default_sphere_mass = 1.;
-const double default_sphere_repulsion = 10000.0;
-const double default_sphere_dissipation = 7500;
+// We used to have a default sphere mass of 1 regardless of the sphere size. Really, having a default sphere *density* makes more sense. Most simulations were done with r=0.05, so rho=127.324 ==> M = rho * pi * r^2 = 1 for spheres w/ radius 0.05, so this is the value you could use for maximum backwards compatibility.
+const double default_sphere_density = 1.;
+const double default_sphere_repulsion = 100;
+const double default_sphere_dissipation = 7.5;
 const double default_sphere_coeff = sqrt(0.5);
-const double default_sphere_drag = 1.0;
-const double default_wall_repulsion = 10000.0;
-const double default_wall_dissipation = 5000.0;
+const double default_sphere_drag = 0.01;
+const double default_wall_repulsion = 100.;
+const double default_wall_dissipation = 7.5;
 const double default_wall_coeff = sqrt(0.5);
-const double default_wall_gamma = 5;
-const double default_run_force = 1.;
+const double default_wall_gamma = 5.;
+const double default_run_force = 0.01;
 const double default_active_maxV = 0.5;
 const double default_tau_const = 5.;
 const double default_base_tau = 1.;
@@ -72,16 +73,19 @@ class Particle {
   void setWallShear(bool s) { wallShear = s; }
   void setDrag(double d) { drag = d; }
   void setMass(double);
+  void setDensity(double);
   void setII(double);
   void setRadius(double r) { radius = r; }
   void setInteraction(bool i) { interacting=i; }
 
   /// Control functions
-  virtual void interact(Particle*); // Interact with another particle
-  virtual void interact(Particle*, vect<>);
-  virtual void interact(vect<> pos, double force);
+  virtual bool interact(Particle*); // Interact with another particle, return true if they do interact
+  virtual bool interactSym(Particle*);
+  virtual bool interact(Particle*, vect<>);
+  virtual bool interactSym(Particle*, vect<>);
+  virtual bool interact(vect<> pos, double force);
   virtual void update(double);
-
+  
   void flowForce(vect<> F);
   void flowForce(vect<> (*func)(vect<>));
   void flowForce(std::function<vect<>(vect<>)>);
@@ -260,6 +264,7 @@ class SmartSphere : public RTSphere {
 /// ********** Wall **********
 class Wall {
  public:
+  Wall();
   Wall(vect<> origin, vect<> wall);
   Wall(vect<> origin, vect<> end, bool);
 
@@ -267,13 +272,15 @@ class Wall {
   vect<> getEnd() { return origin+wall; }
   WPair getWPair() { return WPair(origin, origin+wall); }
   double getPressure() { return pressureF/length; }
-
+  double getVelocity() { return velocity; }
+  
   /// Mutators
   void setRepulsion(double r) { repulsion = r; }
   void setDissipation(double d) { dissipation = d; }
   void setCoeff(double c) { coeff = c; }
   void setPosition(vect<>, vect<>);
   void setPosition(WPair w) { setPosition(w.first, w.second); }
+  void setVelocity(double v) { velocity = v; }
 
   virtual void interact(Particle*);
 
@@ -285,9 +292,10 @@ class Wall {
 
   vect<> normal; // Normalized <wall>
   double length; // Length of the wall
-  double repulsion;
-  double dissipation;
+  double repulsion;   // Repulsion constant
+  double dissipation; // Dissipation constant
   double gamma;
+  double velocity; // To mimic sliding wall (like a treadmill)
 
   double pressureF; // Record the pressure currently exerted on the wall
 };

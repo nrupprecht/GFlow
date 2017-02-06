@@ -51,8 +51,8 @@ class Simulator {
   void createPipe(int, double=0.02, double=1., int=0);
   void createControlPipe(int, int, double=0.02, double=1., double=default_run_force, double rA=-1, double=4., double=2., double=0.);
   void createSedimentationBox(int, double=0.02, double=2., double=2., double=default_run_force, bool=false);
-  void createSphereFluid(int, int, double=0.02, double=default_run_force, double=-1, double=10., double=2.);
-  void createJamPipe(int, int, double=0.02, double=1., double=default_run_force, double=-1, double=5., double=2., double=0.5, double=0.);
+  void createSphereFluid(int, int, double=0.02, double=default_run_force, double=-1, double=10., double=2., double=0., bool=false);
+  void createBuoyancyBox(double=0.02, double=0.2, double=5., double=2., double=4., double=0., double=0., double=0.02);
   void createIdealGas(int, double=0.02, double=0.1, double=1., double=1.);
   void createEntropyBox(int, double=0.02);
   void createBacteriaBox(int, double=0.02, double=1., double=1., double=1.);
@@ -78,12 +78,13 @@ class Simulator {
   double getMinVx() { return minVx; }
   double getMaxVy() { return maxVy; }
   double getMinVy() { return minVy; }
+  int getNumber() { return particles.size(); }
   int getIter() { return iter; }
   double getRunTime() { return runTime; }
   double getTime() { return time; }
   bool getDelayTriggeredExit() { return delayTriggeredExit; }
-  int getSecX() { return secX; }
-  int getSecY() { return secY; }
+  int getSecX() { return sectorization.getSecX(); }
+  int getSecY() { return sectorization.getSecY(); }
   double getMark(int); // Accesses the value of a mark
   int getMarkSize() { return timeMarks.size(); } // Returns the number of time marks
   double getMarkSlope(); // Gets the ave rate at which marks occur (while marks are occuring)
@@ -94,6 +95,8 @@ class Simulator {
   vector<double> getClusteringRec() { return clusteringRec; }
   vector<vector<double> > getProfile() { return profiles; }
   vector<vect<> > getAveProfile();
+  vector<vect<> > getVelProfile();
+  vector<vect<> > getFlowXProfile(); // Gets the flow rate as a function of *x*
 
   /// More bacteria accessors
   double getResourceBenefit() { return alphaR; }
@@ -121,6 +124,8 @@ class Simulator {
   int getASize() { return asize; }
   vector<double> getDensityXProfile();
   vector<double> getDensityYProfile();
+  vector<double> getVelocityXProfile();
+  vector<double> getVelocityYProfile();
   double clustering();
   double aveVelocity();
   double aveVelocitySqr();
@@ -137,6 +142,7 @@ class Simulator {
   Tensor getSpeedDistribution();
 
   // Mutators
+  void noFlow() { setFlowV(0); flowFunc=0; hasDrag=false; }
   void setFlowV(double);
   void setUseVelocityDiff(bool d) { useVelocityDiff = d; }
   void setRecordDist(bool r);
@@ -166,6 +172,7 @@ class Simulator {
   void setStopRecording(double t) { stopRecording = t; }
   void setCapturePositions(bool) { capturePositions = true; }
   void setCaptureProfile(bool cp) { captureProfile = cp; } 
+  void setCaptureVelProfile(bool cp) { captureVelProfile = cp; }
   void setCaptureVelocity(bool);
   void setStartTime(double t) { startTime = t; }
   void setDelayTime(double t) { delayTime = t; }
@@ -218,7 +225,6 @@ class Simulator {
 
   // Display functions
   string printWalls();
-  string printWatchList();
   string printAnimationCommand();
   string printResource();
   string printWaste();
@@ -254,9 +260,13 @@ class Simulator {
   inline void initializeFields(); // Initialize the values of the waste and resource fields
   inline void calculateForces(); // Gravity, flow, particle-particle, and particle-wall forces
   inline void logisticUpdates(); // Time, iteration, and data recording
-  inline void objectUpdates();   // Update particles, sectors, and temp walls
-  inline void bacteriaUpdate(); 
-  inline void updateFields();   // Diffusion for fields
+  inline void objectUpdates();   // Update particles, sectors, and walls
+  inline void interactions();    // Handle particle and wall interactions
+  inline void bacteriaUpdate();  // Handle bacteria
+  inline void updateFields();    // Diffusion for fields
+
+  /// Bacteria functions
+  inline double getFitness(int, int);
 
   /// For gradual addition of particles into the system
   bool doGradualAddition; // True if we gradually add particles
@@ -272,8 +282,7 @@ class Simulator {
   inline double maxAcceleration(); // Finds the maximum acceleration of any particle
   inline vect<> getDisplacement(vect<>, vect<>);
   inline vect<> getDisplacement(Particle*, Particle*);
-  inline double getFitness(int, int);
-  inline void interactions();
+
   inline void update(Particle* &);
   inline void record();
   inline bool inBounds(Particle*);
@@ -290,11 +299,14 @@ class Simulator {
   bool hasDrag;   // Whether we should apply a drag force to particles
   double flowV;   // Velocity of the flow (if any)
   vect<> pForce;  // A force we use to simulate pressure
-  vector<sectorFunction> sFunctionList; // List of sector functions (e.g. pressure simulating functions)
-  double temperature; // Temperature of the system
-  double charRadius; // A characteristic radius, for animating the spheres and creating the main sectorization
-  double percent;    // How much of a jamPipe should be obstructed
-  PType activeType;   // What type of active particle we should use
+  double temperature;   // Temperature of the system
+  double viscosity;     // Viscocity, eta, used in brownian diffusion of particles. Water has a viscosity of 1.308e-4 at 10 degrees celcius
+  double percent;       // How much of a jamPipe should be obstructed
+
+  /// Buoyancy box
+  double wallFrequency; // Frequency of wall vibrations
+  double wallAmplitude; // Amplitude of wall vibrations
+  std::function<WPair(double)> wallVibration;
 
   /// Bacteria
   double resourceDiffusion, wasteDiffusion;
@@ -311,10 +323,10 @@ class Simulator {
 
   /// Times etc.
   double time;       // The simulated time
-  double epsilon, sqrtEpsilon; // Epsilon and its square root
-  double default_epsilon, min_epsilon;
+  double epsilon, sqrtEpsilon; // Epsilon (time step) and its square root
+  double default_epsilon, min_epsilon; // Epsilon adjustment
   double minepsilon; // The smallest epsilon that was ever used
-  bool adjust_epsilon;
+  bool adjust_epsilon; // Whether we should adjust epsilon or not
   double dispTime;   // Time between recordings (1/dispRate)
   double dispFactor; // Speed up or slow down animation (e.g. 2 -> 2x speed)
   double lastDisp;   // Last time data was recorded
@@ -325,17 +337,26 @@ class Simulator {
   bool running;      // Is the simulation running
 
   /// Objects
-  vector<Wall*> walls;
-  list<pair<Wall*,double> > tempWalls;
-  vector<pair<Wall*,WFunc> > movingWalls;
-  list<Particle*> particles; // vector is about 3% faster
+  vector<Wall*> walls; // All permanant, stationary walls
+  list<pair<Wall*,double> > tempWalls; // All temporary, stationary walls
+  vector<pair<Wall*,WFunc> > movingWalls; // All permanant, moving walls
+  list<Particle*> particles; // A list containing pointers to all the particles
+  PType activeType;   // What type of active particle we should use
+  double charRadius; // A characteristic radius, for animating the spheres and creating the main sectorization
   int psize, asize; // Record the number of passive and active particles
 
   /// Animation
-  vector<list<vect<> > > passiveWatchPos; // [ recIt ] [ positions ]
-  vector<list<vect<> > > activeWatchPos;  // [ recIt ] [ positions ]
+  vector<vector<list<vect<>>>> watchPosCollection; // [ type ] [ recIt ] [ positions ]
+  vector<double> charRadiusCollection; // Characteristic radii for particle animation
+  vector<string> colorCollection; // What color to use in the animation
+  inline string printTable(int);
   vector<vector<WPair> > wallPos; // [ recIt ] [ Wall # ] [ WPair ] For moving walls
-  
+  double animationScale; // For ImageSize->{width*animationScale, height*animationScale}
+  // Animation sorting
+  bool active_passive; // Sort by active / passive
+  bool large_small;    // Sort by large / small
+  double radiusDivide; // The cutoff for large vs. small
+
   /// Statistics
   vector<statfunc> statistics;
   vector<statfunc> averages;
@@ -354,7 +375,7 @@ class Simulator {
 
   /// Total distribution P[position][velocity]
   bool recordDist;
-  Tensor distribution; 
+  Tensor distribution; // The total distribution of positions and velocities (averaged over time)
   double maxVx, minVx, maxVy, minVy; // Maximum/Minimum velocities to bin for full distribution
   vect<> binVelocity(int, int);
   bool useVelocityDiff;
@@ -369,25 +390,25 @@ class Simulator {
   double delayTime;  // How long between marks counts as a jam
   bool delayTriggeredExit; // If a long enough delay between marks causes the simulation to stop running
   bool recordClustering; // Whether we should record clustering data
-
-  /// Sectorization
-  inline int getSec(vect<>);
-  inline int getSec(Particle*);
-  Sectorization sectorization; // The sectorization for the particles
-  int secX, secY; // Width and height of sector grid
-  bool sectorize; // Whether to use sector based interactions
-  bool ssecInteract; // Whether objects in the special sector should interact with other objects
-  
   int bins;                         // Binning for space
   vector<vector<double> > profiles; // For density y-profile //**
   vector<double> aveProfile;
-  inline void updateProfile();
+  vector<double> velProfile;
+  vector<double> flowXProfile;
+  inline void updateProfile();     // Update density profile (radial slice)
+  inline void updateVelProfile();  // Update velocity profile (radial slice)
+  inline void updateFlowXProfile();
 
-  bool indicator; // True when the actual simulation is running
+  /// Sectorization
+  Sectorization sectorization; // The sectorization for the particles
+  int secX, secY; // Width and height of sector grid
+  bool sectorize; // Whether to use sector based interactions
+  vector<sectorFunction> sFunctionList; // List of sector functions (e.g. pressure simulating functions)
 
   /// What data to save
   bool capturePositions; // Whether we should record the positions of particles and walls
-  bool captureProfile;   // Whether we should record profile data
+  bool captureProfile;     // Whether we should record profile data
+  bool captureVelProfile;  // Whether we should record velocity profile data
   bool captureLongProfile; // Whether we should capture profile vs time data
   bool captureVelocity;  // Whether we should record velocity distribution data
 };
