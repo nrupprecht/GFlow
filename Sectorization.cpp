@@ -144,13 +144,10 @@ inline void Sectorization::asymmetricVariableSizeInteractions() {
 	    for (auto Q : sectors[sy*(secX+2)+sx]) {
 	      if (P!=Q) {
 		// If Q will act on P, use asymmetric interaction. If it will not (it is to small), then use symmetric interaction.
-		//**
 		double R = 2*Q->getRadius();
-		if (abs(i)<=ceil(R/secWidth && abs(j)<=ceil(R/secHeight)))
+		if (abs(i)<=ceil(R/secWidth) && abs(j)<=ceil(R/secHeight))
 		  P->interact(Q, getDisplacement(Q,P));
 		else P->interactSym(Q, getDisplacement(Q,P));
-
-		// P->interactSym(Q, getDisplacement(Q,P));
 	      }
 	    }
 	  }
