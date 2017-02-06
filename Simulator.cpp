@@ -1150,6 +1150,9 @@ inline void Simulator::initializeFields() {
   buffer.setWrapX(wx); buffer.setWrapY(wy);
 
   //** THIS CAN BE CHANGED
+
+  // **** Changing the initialization of the fields for testing puposes ****
+
   waste = 0.;
   resource = 0.;
 }
@@ -1284,12 +1287,12 @@ inline void Simulator::bacteriaUpdate() {
 inline void Simulator::updateFields() {
 
   // Diffusion and decay of resource field
- // delSqr(resource, buffer); 
-  /*
+  delSqr(resource, buffer); 
+  
   for (int y=0; y<resource.getDY(); y++)
     for (int x=0; x<resource.getDX(); x++) {
       resource.at(x,y) += epsilon*(resourceDiffusion*buffer.at(x,y) + replenish);
-   
+   /*
    resource.at(x,y) -= epsilon*lamR*resource.at(x,y); // decay or resource
   // advection:
   vect<> velocity = {0.0,0.0};
@@ -1302,17 +1305,17 @@ inline void Simulator::updateFields() {
   double gfx = gradfield.x;
   double gfy = gradfield.y;
   resource.at(x,y) += epsilon*(velX*gfx + velY*gfy);
-*/
-    // resource.at(x,y) = resource.at(x,y)<0 ? 0 : resource.at(x,y);
- //   }
+*/ // testing diffusion only for now...
+  resource.at(x,y) = resource.at(x,y)<0 ? 0 : resource.at(x,y);
+    }
   
   
   // Diffusion of waste field
- // delSqr(waste, buffer);
-/*  for (int y=0;y<waste.getDY(); y++)
+  delSqr(waste, buffer);
+  for (int y=0;y<waste.getDY(); y++)
     for(int x=0; x<waste.getDX(); x++) {
       waste.at(x,y) += epsilon*(wasteDiffusion*buffer.at(x,y) + wasteSource);
-  
+/*  
     waste.at(x,y) -= epsilon*lamW*waste.at(x,y);  // decay of waste
   // advection:
   vect<> velocity = {0.0,0.0};
@@ -1325,23 +1328,9 @@ inline void Simulator::updateFields() {
   double gfx = gradfield.x;
   double gfy = gradfield.y;
   waste.at(x,y) += epsilon*(velX*gfx + velY*gfy);
-*/
-/*
-      waste.at(x,y) -= epsilon*lamW*waste.at(x,y);  // decay of waste
-      // advection:
-      vect<> velocity;
-      vect<> pos(x, y);
-      if (flowFunc) velocity = flowFunc(pos);
-      double velX = velocity.x;
-      double velY = velocity.y;
-      vect<> gradfield;
-      gradfield = waste.grad(x,y);
-      double gfx = gradfield.x;
-      double gfy = gradfield.y;
-      waste.at(x,y) += epsilon*(velX*gfx + velY*gfy);
-  */    
-//      waste.at(x,y) = waste.at(x,y)<0 ? 0 : waste.at(x,y);
-   // }
+*/    
+      waste.at(x,y) = waste.at(x,y)<0 ? 0 : waste.at(x,y);
+    }
 
 }
 
