@@ -114,13 +114,35 @@ template<typename T> inline T absmin(T a, T b, T c) {
 /// Helper squaring function
 template<typename T> inline T sqr(T x) { return x*x; }
 
-// Get rid of all the "e-"s for mathematica
-inline string mmPreproc(string s) {
+// Get rid of all the "e-"s for mathematica, truncate doubles after <precision> decimal places
+inline string mmPreproc(string s, int precision=2) {
   int size = s.size();
   string out;
   out.reserve(size);
   for (int i=0; i<size; i++) {
-    if (s.at(i)=='e' && i+2<size && (s.at(i+1)=='-' || s.at(i+1)=='+') && isdigit(s.at(i+2))) out += "*10^";
+    // Get numbers
+    if (precision>=0 && isdigit(s.at(i))) {
+      string number;
+      number.push_back(s.at(i));
+      i++;
+      int count = 0, decimal = 0; // decimal == 1 when we detect a '.'
+      for (; i<size && (isdigit(s.at(i)) || s.at(i)=='.'); i++) {
+	if (s.at(i)=='.') { decimal = 1; number.push_back('.');	}
+	else if (decimal==0) number.push_back(s.at(i));
+	else if (count<precision) { number.push_back(s.at(i)); count++;	}
+      }
+      // Done getting the number
+      out += number;
+      if (i==size) return out; // We are done
+      i--;
+    }
+    // Get nan, replace with 10^10
+    else if (s.at(i)=='n' && i+2<size && s.at(i+1)=='a' && s.at(i+2)=='n') {
+      out += "10^10";
+      i+=2;
+    }
+    // Get scientific notation
+    else if (s.at(i)=='e' && i+2<size && (s.at(i+1)=='-' || s.at(i+1)=='+') && isdigit(s.at(i+2))) out += "*10^";
     else out.push_back(s.at(i));
   }
   return out;

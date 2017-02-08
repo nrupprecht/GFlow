@@ -67,6 +67,7 @@ int main(int argc, char** argv) {
   // Display parameters
   bool mmpreproc = true;
   bool animate = false;
+  bool bulk = false;
   bool dispKE = false;
   bool dispAveKE = false;
   bool dispFlow = false;
@@ -123,6 +124,7 @@ int main(int argc, char** argv) {
   parser.get("buoyancy", buoyancy);
   parser.get("mmpreproc", mmpreproc);
   parser.get("animate", animate);
+  parser.get("bulk", bulk);
   parser.get("KE", dispKE);
   parser.get("aveKE", dispAveKE);
   parser.get("flow", dispFlow);
@@ -188,6 +190,7 @@ int main(int argc, char** argv) {
   if (dispProfile || dispAveProfile) simulation.setCaptureProfile(true);
   if (dispVelProfile || dispFlowXProfile) simulation.setCaptureVelProfile(true);
   if (animate) simulation.setCapturePositions(true);
+  if (bulk) simulation.setRecordBulk(true);
   if (dispVelDist) simulation.setCaptureVelocity(true);
   // Set active particle type
   PType type = getType(atype);
@@ -281,7 +284,7 @@ int main(int argc, char** argv) {
   cout << "Setup Time: " << realTime - simulation.getRunTime() << "\n";
   cout << "Start Time: " << start << ", Record Time: " << max(0., time-start) << "\n";
   cout << "Actual (total) program run time: " << realTime << "\n";
-  cout << "Iterations: " << simulation.getIter() << endl;
+  cout << "Iterations: " << simulation.getIter() << ", Default Epsilon: " << simulation.getDefaultEpsilon() << endl;
   cout << "Sectors: X: " << simulation.getSecX() << ", Y: " << simulation.getSecY();
   cout << "\n\n----------------------- END SUMMARY -----------------------\n\n";
   
@@ -295,6 +298,9 @@ int main(int argc, char** argv) {
     }
     else cout << simulation.printAnimationCommand() << endl;
   }  
+  if (bulk) {
+    cout << simulation.printBulkAnimationCommand() << endl;
+  }
   if (dispKE) {
     cout << "KE=" << simulation.getStatistic(0) << ";\n";
     cout << "Print[\"Average kinetic energy\"]\nListLinePlot[KE,PlotRange->All,PlotStyle->Black]\n";

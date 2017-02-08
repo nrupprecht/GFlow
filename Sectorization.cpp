@@ -1,10 +1,14 @@
 #include "Sectorization.h"
 
-Sectorization::Sectorization() : secX(3), secY(3), wrapX(false), wrapY(false), ssecInteract(false), left(0), right(1), bottom(0), top(1), particles(0), sectors(0), sfunctions(0), wallSectors(0), interactionFunctionChoice(0) {};
+Sectorization::Sectorization() : secX(3), secY(3), wrapX(false), wrapY(false), ssecInteract(false), left(0), right(1), bottom(0), top(1), particles(0), sectors(0), sfunctions(0), wallSectors(0), interactionFunctionChoice(0), edgeDetect(0) {};
 
 Sectorization::~Sectorization() {
-  delete [] sectors;
+  if (sectors) delete [] sectors;
+  if (edgeDetect) delete [] edgeDetect;
+  if (sfunctions) delete [] sfunctions;
   sectors = 0;
+  edgeDetect = 0;
+  sfunctions = 0;
   particles = 0;
 }
 
@@ -144,6 +148,14 @@ inline void Sectorization::asymmetricVariableSizeInteractions() {
 	    for (auto Q : sectors[sy*(secX+2)+sx]) {
 	      if (P!=Q) {
 		// If Q will act on P, use asymmetric interaction. If it will not (it is to small), then use symmetric interaction.
+
+		if (Q==0) {
+		  cout << "Error" << endl;
+		  cout << secX << " " << secY << " " << sy*(secX+2)+sx << endl; //**
+		  cout << sectors[sy*(secX+2)+sx].size() << endl;
+		  continue;
+		}
+
 		double R = 2*Q->getRadius();
 		if (abs(i)<=ceil(R/secWidth) && abs(j)<=ceil(R/secHeight))
 		  P->interact(Q, getDisplacement(Q,P));
@@ -198,6 +210,15 @@ int Sectorization::getSec(vect<> pos) {
   return (X+1)+(secX+2)*(Y+1);
 }
 
+vect<> Sectorization::getVect(int x, int y) {
+  return vect<>(left+x*(right-left)/secX, bottom+y*(top-bottom)/secY);
+}
+
+bool Sectorization::isEmpty(int x, int y) {
+  if (x<0 || secX<=x || y<0 || secY<=y) return true;
+  return sectors[(secX+2)*y+x].empty();
+}
+
 void Sectorization::addParticle(Particle* P) {
   // Add to list if it is not already there
   if (std::find(particles->begin(), particles->end(), P)==particles->end()) 
@@ -241,12 +262,39 @@ void Sectorization::setDims(int sx, int sy) {
   if (sfunctions) delete [] sfunctions;
   sfunctions = new list<sectorFunction>[(secX+2)*(secY+2)]; // None for special sector  
   for (auto P : sectorFunctionRecord) add(P);
+  // Redo edge detect
+  if (edgeDetect) delete [] edgeDetect;
+  edgeDetect = new bool[secX*secY];
+  for (int i=0; i<secX*secY; i++) edgeDetect[i] = false;
   // Redo wall sectors
   // if (wallSectors) delete wallSectors; //** LATER
 }
 
 void Sectorization::setBounds(double l, double r, double b, double t) {
   left = l; right = r; bottom = b; top = t;
+}
+
+vector<VPair> Sectorization::bulkAnimation() {
+  vector<VPair> lines;
+  // Find which sectors are at the edge of a bulk
+  for (int y=1; y<secY+1; y++)
+    for (int x=1; x<secX+1; x++) {
+      bool empty = isEmpty(x,y);
+      if (empty && isEmpty(x,y+1)!=empty || isEmpty(x+1,y) != empty || isEmpty(x,y-1) || isEmpty(x-1,y)) {
+	edgeDetect[(y-1)*secX+x-1] = true;
+      }
+      else 
+        edgeDetect[(y-1)*secX+x-1] = false;
+    }
+  // Create lines
+  for (int y=1; y<secY+1; y++)
+    for (int x= 1; x<secX+1; x++) {
+      if (edgeDetect[secX*y+x]) { // This is an edge, link with edges above or right
+	if (edgeDetect[secX*(y+1)+x]) lines.push_back(VPair(getVect(x,y+1), getVect(x,y)));
+	if (edgeDetect[secX*y+x+1]) lines.push_back(VPair(getVect(x+1,y), getVect(x,y)));     
+      }
+    }
+  return lines;
 }
 
 // Add particle to appropriate sector

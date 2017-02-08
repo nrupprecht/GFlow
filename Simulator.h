@@ -65,6 +65,7 @@ class Simulator {
   bool wouldOverlap(vect<> pos, double R);
   vect<> getShear(vect<>);
   vect<> getFVelocity(vect<>);
+  double getDefaultEpsilon() { return default_epsilon; }
   double getMinEpsilon() { return minepsilon; }
   double getDisplayTime() { return dispTime; }
   double getBinXWidth() { return (right-left)/bins; }
@@ -146,6 +147,7 @@ class Simulator {
   void setFlowV(double);
   void setUseVelocityDiff(bool d) { useVelocityDiff = d; }
   void setRecordDist(bool r);
+  void setRecordBulk(bool r) { recordBulk = r; }
   void setDispRate(double r) { dispTime = 1.0/r; }
   void setRecFields(bool r) { recFields = r; }
   void setReplenish(double r) { replenish = r; }
@@ -226,6 +228,7 @@ class Simulator {
   // Display functions
   string printWalls();
   string printAnimationCommand();
+  string printBulkAnimationCommand();
   string printResource();
   string printWaste();
   string printFitness();
@@ -347,6 +350,8 @@ class Simulator {
 
   /// Animation
   vector<vector<list<vect<>>>> watchPosCollection; // [ type ] [ recIt ] [ positions ]
+  vector<vector<VPair>> bulkCollection; // [ recIt ] [ lines ]
+  bool recordBulk;
   vector<double> charRadiusCollection; // Characteristic radii for particle animation
   vector<string> colorCollection; // What color to use in the animation
   inline string printTable(int);

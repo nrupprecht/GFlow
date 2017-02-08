@@ -1,6 +1,6 @@
 #include "Simulator.h"
 
-Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), gravity(Zero), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), viscosity(1.308e-3), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), mutationRate(0.0), mutationAmount(0.0), recFields(false), replenish(0), wasteSource(0), recordDist(false), recordClustering(false), alphaR(1.0), alphaW(1.0), betaR(1.0), csatR(1.0), csatW(1.0), lamR(0.0), lamW(0.0), animationScale(100), capturePositions(false), captureProfile(false), captureVelProfile(false), captureLongProfile(false), captureVelocity(false), activeType(BROWNIAN), asize(0), psize(0), maxParticles(0), addDelay(0.1), addTime(0), doGradualAddition (false), initialV(0.1), active_passive(true), large_small(false), radiusDivide(0.1) {
+Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), gravity(Zero), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), viscosity(1.308e-3), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), mutationRate(0.0), mutationAmount(0.0), recFields(false), replenish(0), wasteSource(0), recordDist(false), recordClustering(false), alphaR(1.0), alphaW(1.0), betaR(1.0), csatR(1.0), csatW(1.0), lamR(0.0), lamW(0.0), animationScale(100), capturePositions(false), captureProfile(false), captureVelProfile(false), captureLongProfile(false), captureVelocity(false), recordBulk(false), activeType(BROWNIAN), asize(0), psize(0), maxParticles(0), addDelay(0.1), addTime(0), doGradualAddition (false), initialV(0.1), active_passive(true), large_small(false), radiusDivide(0.1) {
   // Flow
   hasDrag = false;
   flowFunc = 0;
@@ -1035,6 +1035,14 @@ string Simulator::printAnimationCommand() {
   return str+strh;
 }
 
+string Simulator::printBulkAnimationCommand() {
+  stringstream stream;
+  string str;
+  stream << "bulk=" << bulkCollection << ";\n";
+  stream >> str;
+  return str;
+}
+
 string Simulator::printResource() {
   return resource.print();
 }
@@ -1631,6 +1639,11 @@ inline void Simulator::record() {
       for (auto W : movingWalls)
 	wallPos.at(recIt).push_back(W.first->getWPair());
     }
+  }
+
+  // Record bulk
+  if (recordBulk) {
+    bulkCollection.push_back(sectorization.bulkAnimation());
   }
 
   // Record statistics
