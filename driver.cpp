@@ -65,6 +65,7 @@ int main(int argc, char** argv) {
   bool buoyancy = false;      // Create buoyancy box
 
   // Display parameters
+  int animationSortChoice = 0;
   bool mmpreproc = true;
   bool animate = false;
   bool bulk = false;
@@ -122,6 +123,7 @@ int main(int argc, char** argv) {
   parser.get("sphereFluid", sphereFluid);
   parser.get("couetteFlow", couetteFlow);
   parser.get("buoyancy", buoyancy);
+  parser.get("animationSortChoice", animationSortChoice);
   parser.get("mmpreproc", mmpreproc);
   parser.get("animate", animate);
   parser.get("bulk", bulk);
@@ -207,6 +209,7 @@ int main(int argc, char** argv) {
   else simulation.createControlPipe(NP, NA, radius, velocity, activeF, radius, width, height);
   simulation.setParticleInteraction(interact);
   
+  simulation.setAnimationSortChoice(animationSortChoice);
   if (bins>0) simulation.setBins(bins);
   if (vbins>0) simulation.setVBins(vbins);
   if (everything) simulation.setRecordDist(true);

@@ -148,14 +148,6 @@ inline void Sectorization::asymmetricVariableSizeInteractions() {
 	    for (auto Q : sectors[sy*(secX+2)+sx]) {
 	      if (P!=Q) {
 		// If Q will act on P, use asymmetric interaction. If it will not (it is to small), then use symmetric interaction.
-
-		if (Q==0) {
-		  cout << "Error" << endl;
-		  cout << secX << " " << secY << " " << sy*(secX+2)+sx << endl; //**
-		  cout << sectors[sy*(secX+2)+sx].size() << endl;
-		  continue;
-		}
-
 		double R = 2*Q->getRadius();
 		if (abs(i)<=ceil(R/secWidth) && abs(j)<=ceil(R/secHeight))
 		  P->interact(Q, getDisplacement(Q,P));
@@ -216,7 +208,12 @@ vect<> Sectorization::getVect(int x, int y) {
 
 bool Sectorization::isEmpty(int x, int y) {
   if (x<0 || secX<=x || y<0 || secY<=y) return true;
-  return sectors[(secX+2)*y+x].empty();
+  return sectors[(secX+2)*y+(x+1)].empty();
+}
+
+bool Sectorization::isEdge(int x, int y) {
+  if (x<0 || secX<=x || y<0 || secY<=y) return false;
+  return edgeDetect[y*secX+x];
 }
 
 void Sectorization::addParticle(Particle* P) {
@@ -277,21 +274,24 @@ void Sectorization::setBounds(double l, double r, double b, double t) {
 vector<VPair> Sectorization::bulkAnimation() {
   vector<VPair> lines;
   // Find which sectors are at the edge of a bulk
-  for (int y=1; y<secY+1; y++)
-    for (int x=1; x<secX+1; x++) {
-      bool empty = isEmpty(x,y);
-      if (empty && isEmpty(x,y+1)!=empty || isEmpty(x+1,y) != empty || isEmpty(x,y-1) || isEmpty(x-1,y)) {
+  // Don't look at first or last (actual) sectors, i.e. do 2...<sec
+  for (int y=2; y<secY; y++)
+    for (int x=2; x<secX; x++) {
+      // Highlight empty sectors that border sectors (lrdu) that are not empty
+      if (isEmpty(x,y) && (!isEmpty(x,y+1) || !isEmpty(x+1,y) || !isEmpty(x,y-1) || !isEmpty(x-1,y)))
 	edgeDetect[(y-1)*secX+x-1] = true;
-      }
       else 
-        edgeDetect[(y-1)*secX+x-1] = false;
+	edgeDetect[(y-1)*secX+x-1] = false;
     }
   // Create lines
   for (int y=1; y<secY+1; y++)
     for (int x= 1; x<secX+1; x++) {
       if (edgeDetect[secX*y+x]) { // This is an edge, link with edges above or right
-	if (edgeDetect[secX*(y+1)+x]) lines.push_back(VPair(getVect(x,y+1), getVect(x,y)));
-	if (edgeDetect[secX*y+x+1]) lines.push_back(VPair(getVect(x+1,y), getVect(x,y)));     
+	vect<> V = getVect(x,y);
+	if (isEdge(x-1,y+1)) lines.push_back(VPair(getVect(x-1,y+1), V)); // Top Left
+	if (isEdge(x,y+1))   lines.push_back(VPair(getVect(x,y+1), V));   // Top
+	if (isEdge(x+1,y+1)) lines.push_back(VPair(getVect(x+1,y+1), V)); // Top Right
+	if (isEdge(x+1,y))   lines.push_back(VPair(getVect(x+1,y), V));   // Right
       }
     }
   return lines;

@@ -1,6 +1,6 @@
 #include "Simulator.h"
 
-Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), gravity(Zero), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), viscosity(1.308e-3), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), mutationRate(0.0), mutationAmount(0.0), recFields(false), replenish(0), wasteSource(0), recordDist(false), recordClustering(false), alphaR(1.0), alphaW(1.0), betaR(1.0), csatR(1.0), csatW(1.0), lamR(0.0), lamW(0.0), animationScale(100), capturePositions(false), captureProfile(false), captureVelProfile(false), captureLongProfile(false), captureVelocity(false), recordBulk(false), activeType(BROWNIAN), asize(0), psize(0), maxParticles(0), addDelay(0.1), addTime(0), doGradualAddition (false), initialV(0.1), active_passive(true), large_small(false), radiusDivide(0.1) {
+Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), gravity(Zero), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), viscosity(1.308e-3), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), mutationRate(0.0), mutationAmount(0.0), recFields(false), replenish(0), wasteSource(0), recordDist(false), recordClustering(false), alphaR(1.0), alphaW(1.0), betaR(1.0), csatR(1.0), csatW(1.0), lamR(0.0), lamW(0.0), animationScale(100), capturePositions(false), captureProfile(false), captureVelProfile(false), captureLongProfile(false), captureVelocity(false), recordBulk(false), activeType(BROWNIAN), asize(0), psize(0), maxParticles(0), addDelay(0.1), addTime(0), doGradualAddition (false), initialV(0.1), animationSortChoice(0), radiusDivide(0.1) {
   // Flow
   hasDrag = false;
   flowFunc = 0;
@@ -310,9 +310,8 @@ void Simulator::createBuoyancyBox(double radius, double bR, double density, doub
   Particle *P = new Particle(vect<>(width/2, height-1.1*bR), bR);
   P->setDensity(density);
   addParticle(P);
-  // For animation
-  active_passive = false;
-  large_small = true;
+  // For animation  
+  animationSortChoice = 1; // Large/small
   radiusDivide = (bR - radius)/2 + radius;
   sectorization.setInteractionFunctionChoice(2); // Asymmetric, variable size interaction processing (choice 2)
   // Set physical parameters
@@ -1037,10 +1036,15 @@ string Simulator::printAnimationCommand() {
 
 string Simulator::printBulkAnimationCommand() {
   stringstream stream;
-  string str;
-  stream << "bulk=" << bulkCollection << ";\n";
+  string str, strh;
+  stream << "bulk=" << bulkCollection << ";";
   stream >> str;
-  return str;
+  stream.clear();
+  str += "\n";
+  stream << "bulkLst=Table[Show[Graphics[Line[bulk[[i]]]],PlotRange->{{" << left << ","<< right << "},{" << bottom << "," << top << "}},ImageSize->{scale*" << right-left << ",scale*" << top-bottom << "}],{i,1,Length[bulk]}];";
+  stream >> strh;
+  strh += "\nListAnimate[bulkLst]";
+  return str+strh;
 }
 
 string Simulator::printResource() {
@@ -1610,17 +1614,26 @@ inline void Simulator::record() {
     // Record particle positions
     for (auto P : particles) {
       // Divide into the collection by passive / active
-      if (active_passive) {
-	if (P->isActive()) watchPosCollection.at(1).at(recIt).push_back(P->getPosition());
-	else watchPosCollection.at(0).at(recIt).push_back(P->getPosition());
+      int listN = 0; // Which list the particle belongs to
+      switch (animationSortChoice) {
+      case 0: {
+	listN = (P->isActive()) ? 1 : 0;
+	break;
       }
       // Divide into the collection by large / small
-      else if (large_small) {
-	if (P->getRadius()<=radiusDivide) watchPosCollection.at(0).at(recIt).push_back(P->getPosition());
-	else watchPosCollection.at(1).at(recIt).push_back(P->getPosition());
+      case 1: {
+	listN = (radiusDivide < P->getRadius()) ? 1 : 0;
+	break;
       }
-      else // Default, everything goes into collection 0
-	watchPosCollection.at(0).at(recIt).push_back(P->getPosition());
+      // Only show large objects
+      case 2: {
+	listN = (radiusDivide < P->getRadius()) ? 1 : -1;
+	break;
+      }
+      default: break;
+      }
+      // Put into the right list. If listN<0, do not put it into a list
+      if (0<=listN) watchPosCollection.at(listN).at(recIt).push_back(P->getPosition());
     }
     // Record moving wall positions
     if (!movingWalls.empty()) {

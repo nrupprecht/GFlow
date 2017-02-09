@@ -27,6 +27,7 @@ class Sectorization {
   vect<> getVect(int, int); // Get the position of the center of a sector
   int getInteractionFunctionChoice() { return interactionFunctionChoice; }
   bool isEmpty(int, int);
+  bool isEdge(int, int);
 
   // Mutators
   void addParticle(Particle*); // Add particle to particle list and sector

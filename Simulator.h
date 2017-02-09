@@ -144,6 +144,7 @@ class Simulator {
 
   // Mutators
   void noFlow() { setFlowV(0); flowFunc=0; hasDrag=false; }
+  void setAnimationSortChoice(int c) { animationSortChoice = c; }
   void setFlowV(double);
   void setUseVelocityDiff(bool d) { useVelocityDiff = d; }
   void setRecordDist(bool r);
@@ -357,9 +358,8 @@ class Simulator {
   inline string printTable(int);
   vector<vector<WPair> > wallPos; // [ recIt ] [ Wall # ] [ WPair ] For moving walls
   double animationScale; // For ImageSize->{width*animationScale, height*animationScale}
-  // Animation sorting
-  bool active_passive; // Sort by active / passive
-  bool large_small;    // Sort by large / small
+  // Animation sorting (what type of animation to use)
+  int animationSortChoice; // 0 - Active/Passive, 2 - Large/Small, 2 - Large only, DEFAULT - Everything together
   double radiusDivide; // The cutoff for large vs. small
 
   /// Statistics
