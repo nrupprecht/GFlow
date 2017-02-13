@@ -158,7 +158,7 @@ class Bacteria : public Particle {
 
   //accessors:
   double getResSecRate() { return resSecRate; }
-  double getRepDelay() { return repDelay; }
+  //double getRepDelay() { return repDelay; }
   // mutators:
   void setRepDelay(double d) {repDelay = d; }
   void setResSecRate(double s) { resSecRate = s; }
