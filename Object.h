@@ -152,13 +152,13 @@ class Bacteria : public Particle {
 
   virtual void update(double);
   bool canReproduce();
-  double getRepDelay() { return repDelay; }
   double getMaxRadius() { return maxRadius; }
   void resetTimer() { timer=0; }
 
-  //accessors:
+  // Accessors:
   double getResSecRate() { return resSecRate; }
   //double getRepDelay() { return repDelay; }
+
   // mutators:
   void setRepDelay(double d) {repDelay = d; }
   void setResSecRate(double s) { resSecRate = s; }

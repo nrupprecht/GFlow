@@ -65,6 +65,7 @@ class Simulator {
   bool wouldOverlap(vect<> pos, double R);
   vect<> getShear(vect<>);
   vect<> getFVelocity(vect<>);
+  double getDefaultEpsilon() { return default_epsilon; }
   double getMinEpsilon() { return minepsilon; }
   double getDisplayTime() { return dispTime; }
   double getBinXWidth() { return (right-left)/bins; }
@@ -143,9 +144,11 @@ class Simulator {
 
   // Mutators
   void noFlow() { setFlowV(0); flowFunc=0; hasDrag=false; }
+  void setAnimationSortChoice(int c) { animationSortChoice = c; }
   void setFlowV(double);
   void setUseVelocityDiff(bool d) { useVelocityDiff = d; }
   void setRecordDist(bool r);
+  void setRecordBulk(bool r) { recordBulk = r; }
   void setDispRate(double r) { dispTime = 1.0/r; }
   void setRecFields(bool r) { recFields = r; }
   void setReplenish(double r) { replenish = r; }
@@ -226,6 +229,7 @@ class Simulator {
   // Display functions
   string printWalls();
   string printAnimationCommand();
+  string printBulkAnimationCommand();
   string printResource();
   string printWaste();
   string printFitness();
@@ -347,14 +351,15 @@ class Simulator {
 
   /// Animation
   vector<vector<list<vect<>>>> watchPosCollection; // [ type ] [ recIt ] [ positions ]
+  vector<vector<VPair>> bulkCollection; // [ recIt ] [ lines ]
+  bool recordBulk;
   vector<double> charRadiusCollection; // Characteristic radii for particle animation
   vector<string> colorCollection; // What color to use in the animation
   inline string printTable(int);
   vector<vector<WPair> > wallPos; // [ recIt ] [ Wall # ] [ WPair ] For moving walls
   double animationScale; // For ImageSize->{width*animationScale, height*animationScale}
-  // Animation sorting
-  bool active_passive; // Sort by active / passive
-  bool large_small;    // Sort by large / small
+  // Animation sorting (what type of animation to use)
+  int animationSortChoice; // 0 - Active/Passive, 2 - Large/Small, 2 - Large only, DEFAULT - Everything together
   double radiusDivide; // The cutoff for large vs. small
 
   /// Statistics

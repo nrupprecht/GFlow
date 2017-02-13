@@ -5,6 +5,7 @@
 #include "Object.h"
 
 typedef std::function<void(list<Particle*>)> sectorFunction;
+typedef pair<vect<>, vect<>> VPair;
 
 class Sectorization {
  public:
@@ -23,7 +24,10 @@ class Sectorization {
   int getSec(vect<>);
   int getSecX() { return secX; }
   int getSecY() { return secY; }
+  vect<> getVect(int, int); // Get the position of the center of a sector
   int getInteractionFunctionChoice() { return interactionFunctionChoice; }
+  bool isEmpty(int, int);
+  bool isEdge(int, int);
 
   // Mutators
   void addParticle(Particle*); // Add particle to particle list and sector
@@ -39,6 +43,9 @@ class Sectorization {
   void setWrapX(bool w) { wrapX = w; }
   void setWrapY(bool w) { wrapY = w; }
   void setInteractionFunctionChoice(int c) { interactionFunctionChoice = c; }
+
+  // Special Animation
+  vector<VPair> bulkAnimation();
 
  private:
   // Private Helper functions
@@ -61,7 +68,10 @@ class Sectorization {
   
   list<Particle*>* particles;      // A pointer to a list of particles
   list<Particle*>* sectors;        // The actual sectors
-  
+
+  // For special animation
+  bool *edgeDetect;
+
   // Sector based functions
   list<pair<Bounds, sectorFunction> > sectorFunctionRecord;
   list<sectorFunction>* sfunctions; // Each sector has a list of function pointers
