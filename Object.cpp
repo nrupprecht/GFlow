@@ -76,7 +76,6 @@ bool Particle::interact(Particle* P, vect<> displacement) {
     double Vs = dV*shear + radius*omega + P->getTangentialV(); // Shear velocity
     // Calculate the normal force
     double Fn = -repulsion*overlap-dissipation*clamp(-Vn); // Damped harmonic oscillator
-
     // Calculate the Shear force
     double Fs = 0;
     if (particleShear && P->particleShear) 
@@ -155,27 +154,21 @@ void Particle::update(double epsilon) {
   if (fixed) return;
   // Calculate net force/acceleration, record last acceleration
   vect<> netF = normalF + shearF + force;
-
   //vect<> acceleration_t = acceleration;
   acceleration = invMass*netF;
-
   // Update velocity and position (velocity verlet) --- V. Verlet seems to conserve energy worse then this
   position += epsilon*(velocity + 0.5*epsilon*acceleration);
-
   // velocity += 0.5*epsilon*(acceleration+acceleration_t);
   velocity += epsilon*acceleration;
-
   // Update angular variables (velocity verlet)
   double alpha_t = alpha;
   alpha = invII*torque;
   theta += epsilon*(omega + 0.5*epsilon*alpha);
   // omega += 0.5*epsilon*(alpha+alpha_t);
   omega += epsilon*alpha;
-
   // Reset forces and torques
   torque = 0;
   normalF = shearF = force = Zero;
-
   // Update rolling pressure average
   //double ef = epsilon/timeWindow; // Factor
   //recentForceAve *= 1-ef;
@@ -205,6 +198,8 @@ void Particle::flowForce(std::function<vect<>(vect<>)> func) {
 
 Bacteria::Bacteria(vect<> pos, double rad, double sec, double expTime) : Particle(pos, 0), timer(0), repDelay(default_reproduction_delay) {
   // Since the radius is currently 0, we have to set these radius dependent quantities by hand here.
+  double mass = PI*default_sphere_density*sqr(rad);
+  invMass = 1.0/mass;
   invII = 1.0*invMass/(0.5*sqr(rad));
   drag = default_sphere_drag*rad;
 
@@ -217,7 +212,7 @@ Bacteria::Bacteria(vect<> pos, double rad, double sec, double expTime) : Particl
 void Bacteria::update(double epsilon) {
   if (radius<maxRadius) radius += dR*epsilon; // Initial expansion
   else radius = maxRadius;
-  if (timer>repDelay) timer = 0;
+  if (timer>repDelay) timer = 0; //** May want this to be reset from outside the bacteria
   timer += epsilon;
   Particle::update(epsilon);
 }

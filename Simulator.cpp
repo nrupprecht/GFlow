@@ -173,7 +173,6 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, double 
   charRadiusCollection.at(1) = rA;
   left = 0; bottom = 0;
   top = height; right = width;
-  sectorization.setInteractionFunctionChoice(0);
   // Put in walls
   addWall(new Wall(vect<>(0,bottom), vect<>(right,bottom))); // Bottom wall
   addWall(new Wall(vect<>(0,top), vect<>(right,top))); // Top wall
@@ -190,6 +189,9 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, double 
   hasDrag = true;
   // Set particles to have to velocity of the fluid at the point they are at
   for (auto P : particles) P->setVelocity(flowFunc(P->getPosition()));
+  // For animation
+  animationSortChoice = 0; // Active / Passive
+  sectorization.setInteractionFunctionChoice(0); // Symmetric, same sized
   // Set physical parameters
   setParticleCoeff(0); // --> No torques, interparticle shear forces
   setParticleDissipation(default_sphere_dissipation);
@@ -286,7 +288,7 @@ void Simulator::createBuoyancyBox(double radius, double bR, double density, doub
   discard();
   gravity = vect<>(0,-1.);
   charRadius = radius;
-  charRadiusCollection.at(0) = radius; charRadiusCollection.at(1) = bR;
+  charRadiusCollection.at(0) = radius*(1.-dispersion); charRadiusCollection.at(1) = bR;
   left = 0; right = width; bottom = 0; top = height;
   // Set Bounds
   xLBound = WRAP; xRBound = WRAP; yTBound = WRAP; yBBound = WRAP;
@@ -311,7 +313,7 @@ void Simulator::createBuoyancyBox(double radius, double bR, double density, doub
   P->setDensity(density);
   addParticle(P);
   // For animation  
-  animationSortChoice = 1; // Large/small
+  animationSortChoice = 1; // Large / small
   radiusDivide = (bR - radius)/2 + radius;
   sectorization.setInteractionFunctionChoice(2); // Asymmetric, variable size interaction processing (choice 2)
   // Set physical parameters
@@ -397,7 +399,7 @@ void Simulator::createBacteriaBox(int N, double radius, double width, double hei
   charRadiusCollection.at(0) = charRadiusCollection.at(1) = radius;
   left = 0; bottom = 0;
   top = height; right = width;
-  // Set bounds
+  // Set boundary wrapping
   xLBound = WRAP; xRBound = WRAP; yTBound = WRAP; yBBound = WRAP;
   // Add walls
   addWall(new Wall(vect<>(0,bottom), vect<>(right,bottom))); // Bottom wall
@@ -406,19 +408,21 @@ void Simulator::createBacteriaBox(int N, double radius, double width, double hei
   vector<vect<> > pos = findPackedSolution(N, radius, 0, right, 0, top);
   // Add the particles in at the appropriate positions
   for (int i=0; i<N; i++) addParticle(new Bacteria(pos.at(i), radius,eatRate));
-
   setFlowV(V);
   flowFunc = [&] (vect<> pos) { return vect<>(flowV*(1-sqr(pos.y-0.5*(top-bottom))/sqr(0.5*(top-bottom))),0); };
   hasDrag = true;
+  // Set particles to have to velocity of the fluid at the point they are at
   for (auto P : particles) P->setVelocity(flowFunc(P->getPosition()));
-
+  // For animation
+  animationSortChoice = 0; // Active / Passive
+  sectorization.setInteractionFunctionChoice(0); // Symmetric, same sized
   // Set physical parameters
   setParticleCoeff(0); // --> No torques, shear forces
   setParticleDissipation(0); // --> No dissipation for now
   setParticleDrag(default_sphere_drag);
   setWallDissipation(default_wall_dissipation);
   setWallCoeff(default_wall_coeff);
-
+  // Set time constants
   default_epsilon = 1e-4;
   min_epsilon = 1e-8;
 }
@@ -1037,13 +1041,18 @@ string Simulator::printAnimationCommand() {
 string Simulator::printBulkAnimationCommand() {
   stringstream stream;
   string str, strh;
-  stream << "bulk=" << bulkCollection << ";";
+  stream << "scale=" << animationScale << ";";
   stream >> str;
-  stream.clear();
   str += "\n";
-  stream << "bulkLst=Table[Show[Graphics[Line[bulk[[i]]]],PlotRange->{{" << left << ","<< right << "},{" << bottom << "," << top << "}},ImageSize->{scale*" << right-left << ",scale*" << top-bottom << "}],{i,1,Length[bulk]}];";
+  stream.clear();
+  stream << "bulk=" << bulkCollection << ";";
   stream >> strh;
-  strh += "\nListAnimate[bulkLst]";
+  stream.clear();
+  str += (strh + "\n");
+  strh.clear();
+  stream << "bulkFrames=Table[Show[Graphics[Line[bulk[[i]]]],PlotRange->{{" << left << ","<< right << "},{" << bottom << "," << top << "}},ImageSize->{scale*" << right-left << ",scale*" << top-bottom << "}],{i,1,Length[bulk]}];";
+  stream >> strh;
+  strh += "\nListAnimate[bulkFrames]";
   return str+strh;
 }
 
@@ -1371,8 +1380,8 @@ inline void Simulator::bacteriaUpdate() {
     sectorization.remove(P);
     delete P;
   }
-  
-  for (auto &P : births) addParticle(P);      
+  // Add new particles to the sectorization
+  for (auto &P : births) sectorization.addParticle(P);
 }
 
 inline void Simulator::updateFields() {
@@ -1383,21 +1392,21 @@ inline void Simulator::updateFields() {
   for (int y=0; y<resource.getDY(); y++)
     for (int x=0; x<resource.getDX(); x++) {
       resource.at(x,y) += epsilon*(resourceDiffusion*buffer.at(x,y) + replenish);
-   /*
-   resource.at(x,y) -= epsilon*lamR*resource.at(x,y); // decay or resource
-  // advection:
-  vect<> velocity = {0.0,0.0};
-  vect<> pos = {x, y};
-  if (flowFunc) velocity = flowFunc(pos);
-  double velX = velocity.x;
-  double velY = velocity.y;
-  vect<> gradfield;
-  gradfield = resource.grad(x,y);
-  double gfx = gradfield.x;
-  double gfy = gradfield.y;
-  resource.at(x,y) += epsilon*(velX*gfx + velY*gfy);
-*/ // testing diffusion only for now...
-  resource.at(x,y) = resource.at(x,y)<0 ? 0 : resource.at(x,y);
+      /*
+	resource.at(x,y) -= epsilon*lamR*resource.at(x,y); // decay or resource
+	// advection:
+	vect<> velocity = {0.0,0.0};
+	vect<> pos = {x, y};
+	if (flowFunc) velocity = flowFunc(pos);
+	double velX = velocity.x;
+	double velY = velocity.y;
+	vect<> gradfield;
+	gradfield = resource.grad(x,y);
+	double gfx = gradfield.x;
+	double gfy = gradfield.y;
+	resource.at(x,y) += epsilon*(velX*gfx + velY*gfy);
+      */ // testing diffusion only for now...
+      resource.at(x,y) = resource.at(x,y)<0 ? 0 : resource.at(x,y);
     }
   
   
@@ -1406,23 +1415,22 @@ inline void Simulator::updateFields() {
   for (int y=0;y<waste.getDY(); y++)
     for(int x=0; x<waste.getDX(); x++) {
       waste.at(x,y) += epsilon*(wasteDiffusion*buffer.at(x,y) + wasteSource);
-/*  
-    waste.at(x,y) -= epsilon*lamW*waste.at(x,y);  // decay of waste
-  // advection:
-  vect<> velocity = {0.0,0.0};
-  vect<> pos = {x, y};
-  if (flowFunc) velocity = flowFunc(pos);
-  double velX = velocity.x;
-  double velY = velocity.y;
-  vect<> gradfield;
-  gradfield = waste.grad(x,y);
-  double gfx = gradfield.x;
-  double gfy = gradfield.y;
-  waste.at(x,y) += epsilon*(velX*gfx + velY*gfy);
-*/    
+      /*  
+	  waste.at(x,y) -= epsilon*lamW*waste.at(x,y);  // decay of waste
+	  // advection:
+	  vect<> velocity = {0.0,0.0};
+	  vect<> pos = {x, y};
+	  if (flowFunc) velocity = flowFunc(pos);
+	  double velX = velocity.x;
+	  double velY = velocity.y;
+	  vect<> gradfield;
+	  gradfield = waste.grad(x,y);
+	  double gfx = gradfield.x;
+	  double gfy = gradfield.y;
+	  waste.at(x,y) += epsilon*(velX*gfx + velY*gfy);
+      */    
       waste.at(x,y) = waste.at(x,y)<0 ? 0 : waste.at(x,y);
     }
-
 }
 
 inline void Simulator::gradualAddition() {
