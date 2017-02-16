@@ -52,7 +52,7 @@ class Simulator {
   void createControlPipe(int, int, double=0.02, double=1., double=default_run_force, double rA=-1, double=4., double=2., double=0.);
   void createSedimentationBox(int, double=0.02, double=2., double=2., double=default_run_force, bool=false);
   void createSphereFluid(int, int, double=0.02, double=default_run_force, double=-1, double=10., double=2., double=0., bool=false);
-  void createBuoyancyBox(double=0.02, double=0.2, double=5., double=2., double=4., double=0., double=0., double=0.02);
+  void createBuoyancyBox(double=0.02, double=0.2, double=5., double=2., double=4., double=0., double=0., double=0., double=0.);
   void createIdealGas(int, double=0.02, double=0.1, double=1., double=1.);
   void createEntropyBox(int, double=0.02);
   void createBacteriaBox(int, double=0.02, double=1., double=1., double=1.);
@@ -149,6 +149,7 @@ class Simulator {
   void setUseVelocityDiff(bool d) { useVelocityDiff = d; }
   void setRecordDist(bool r);
   void setRecordBulk(bool r) { recordBulk = r; }
+  void setRecordPressure(bool r) { recordPressure = r; }
   void setDispRate(double r) { dispTime = 1.0/r; }
   void setRecFields(bool r) { recFields = r; }
   void setReplenish(double r) { replenish = r; }
@@ -224,12 +225,13 @@ class Simulator {
   void addParticles(int N, double R, double var, double left, double right, double bottom, double top, PType type=PASSIVE, double vmax=-1);
   void addRTSpheres(int N, double R, double var, double left, double right, double bottom, double top, vect<> bias);
   void addActive(vect<>, double, double);
-  vector<vect<> > findPackedSolution(int N, double R, double left, double right, double bottom, double top); // Finds where we can put particles for high packing
+  vector<vect<> > findPackedSolution(int, double, double, double, double, double, int=5000, int=5000, vect<> = Zero); // Finds where we can put particles for high packing
 
   // Display functions
   string printWalls();
   string printAnimationCommand();
   string printBulkAnimationCommand();
+  string printPressureAnimationCommand();
   string printResource();
   string printWaste();
   string printFitness();
@@ -265,6 +267,7 @@ class Simulator {
   inline void calculateForces(); // Gravity, flow, particle-particle, and particle-wall forces
   inline void logisticUpdates(); // Time, iteration, and data recording
   inline void objectUpdates();   // Update particles, sectors, and walls
+  inline void doResets();        // Reset normal force tracking
   inline void interactions();    // Handle particle and wall interactions
   inline void bacteriaUpdate();  // Handle bacteria
   inline void updateFields();    // Diffusion for fields
@@ -353,6 +356,8 @@ class Simulator {
   vector<vector<list<vect<>>>> watchPosCollection; // [ type ] [ recIt ] [ positions ]
   vector<vector<VPair>> bulkCollection; // [ recIt ] [ lines ]
   bool recordBulk;
+  vector<vector<Trio>> pressureCollection; // [ recIt ] [ (x,y,P) ]
+  bool recordPressure;
   vector<double> charRadiusCollection; // Characteristic radii for particle animation
   vector<string> colorCollection; // What color to use in the animation
   inline string printTable(int);

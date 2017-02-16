@@ -375,8 +375,8 @@ template<typename T>
 T FieldBase<T>::D2Y(int x, int y) const{
   if (wrapY) return sqr(invDist.y)*(at(x,y+1)-2*at(x,y)+at(x,y-1));
   else {
-    if (y==0) return 2*D2X(x,1)-D2X(x,2); // Linearly interpolate
-    else if (y==dY-1) return 2*D2X(x,dY-2)-D2X(x,dY-3); // Linearly interpolate
+    if (y==0) return 2*D2Y(x,1)-D2Y(x,2); // Linearly interpolate
+    else if (y==dY-1) return 2*D2Y(x,dY-2)-D2Y(x,dY-3); // Linearly interpolate
     else return sqr(invDist.y)*(at(x,y+1)-2*at(x,y)+at(x,y-1));
   }
 }

@@ -278,10 +278,8 @@ vector<VPair> Sectorization::bulkAnimation() {
   for (int y=2; y<secY; y++)
     for (int x=2; x<secX; x++) {
       // Highlight empty sectors that border sectors (lrdu) that are not empty
-      if (isEmpty(x,y) && (!isEmpty(x,y+1) || !isEmpty(x+1,y) || !isEmpty(x,y-1) || !isEmpty(x-1,y)))
-	edgeDetect[(y-1)*secX+x-1] = true;
-      else 
-	edgeDetect[(y-1)*secX+x-1] = false;
+      if (isEmpty(x,y) && (!isEmpty(x,y+1) || !isEmpty(x+1,y) || !isEmpty(x,y-1) || !isEmpty(x-1,y))) edgeDetect[(y-1)*secX+x-1] = true;
+      else edgeDetect[(y-1)*secX+x-1] = false;
     }
   // Create lines
   for (int y=1; y<secY+1; y++)
@@ -295,6 +293,18 @@ vector<VPair> Sectorization::bulkAnimation() {
       }
     }
   return lines;
+}
+
+vector<Trio> Sectorization::pressureAnimation() {
+  vector<Trio> forces;
+  for (int y=1; y<=secY; y++)
+    for (int x=1; x<=secX; x++) {
+      double p = 0;
+      for (auto P : sectors[y*(secX+2)+x]) p += P->getPressure();
+      vect<> v = getVect(x,y);
+      forces.push_back(Trio(v.x, v.y, p));
+    }
+  return forces;
 }
 
 // Add particle to appropriate sector

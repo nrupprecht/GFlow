@@ -1,6 +1,6 @@
 #include "Simulator.h"
 
-Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), gravity(Zero), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), viscosity(1.308e-3), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), mutationRate(0.0), mutationAmount(0.0), recFields(false), replenish(0), wasteSource(0), recordDist(false), recordClustering(false), alphaR(1.0), alphaW(1.0), betaR(1.0), csatR(1.0), csatW(1.0), lamR(0.0), lamW(0.0), animationScale(100), capturePositions(false), captureProfile(false), captureVelProfile(false), captureLongProfile(false), captureVelocity(false), recordBulk(false), activeType(BROWNIAN), asize(0), psize(0), maxParticles(0), addDelay(0.1), addTime(0), doGradualAddition (false), initialV(0.1), animationSortChoice(0), radiusDivide(0.1) {
+Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), gravity(Zero), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), viscosity(1.308e-3), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), mutationRate(0.0), mutationAmount(0.0), recFields(false), replenish(0), wasteSource(0), recordDist(false), recordClustering(false), alphaR(1.0), alphaW(1.0), betaR(1.0), csatR(1.0), csatW(1.0), lamR(0.0), lamW(0.0), animationScale(100), capturePositions(false), captureProfile(false), captureVelProfile(false), captureLongProfile(false), captureVelocity(false), recordBulk(false), recordPressure(false), activeType(BROWNIAN), asize(0), psize(0), maxParticles(0), addDelay(0.1), addTime(0), doGradualAddition (false), initialV(0.1), animationSortChoice(0), radiusDivide(0.1) {
   // Flow
   hasDrag = false;
   flowFunc = 0;
@@ -284,34 +284,37 @@ void Simulator::createSphereFluid(int N, int A, double radius, double F, double 
   min_epsilon = 1e-8;
 }
 
-void Simulator::createBuoyancyBox(double radius, double bR, double density, double width, double height, double dispersion, double frequency, double amplitude) {
+void Simulator::createBuoyancyBox(double radius, double bR, double density, double width, double depth, double dropHeight, double dispersion, double frequency, double amplitude) {
   discard();
+  dropHeight = dropHeight<0 ? 0 : dropHeight;
   gravity = vect<>(0,-1.);
   charRadius = radius;
   charRadiusCollection.at(0) = radius*(1.-dispersion); charRadiusCollection.at(1) = bR;
-  left = 0; right = width; bottom = 0; top = height;
+  left = 0; right = width; bottom = 0; top = depth+dropHeight+2*bR;
   // Set Bounds
   xLBound = WRAP; xRBound = WRAP; yTBound = WRAP; yBBound = WRAP;
   // Add Floor
-  addWall(new Wall(vect<>(0,0), vect<>(right, 0)));
-  /*
-  wallFrequency = frequency;
-  wallAmplitude = amplitude;
-  wallVibration = [&] (double time) { return WPair(vect<>(left, wallAmplitude*(1+sin(2*PI*wallFrequency*time))), vect<>(right, wallAmplitude*(1+sin(2*PI*wallFrequency*time))));};
-  addMovingWall(new Wall, wallVibration);
-  */
+  if (frequency==0 || amplitude==0) addWall(new Wall(vect<>(left,0), vect<>(right,0)));
+  else {
+    wallFrequency = frequency;
+    wallAmplitude = amplitude;
+    wallVibration = [&] (double time) { return WPair(vect<>(left, wallAmplitude*(1+sin(2*PI*wallFrequency*time))), vect<>(right, wallAmplitude*(1+sin(2*PI*wallFrequency*time))));};
+    addMovingWall(new Wall, wallVibration);
+  }
   // Fill half way with "grains"
   double maxPack = PI/(2*sqrt(3)); // Hexagonal packing
-  double Vfill = width*(height-2.2*bR-2.2*amplitude), Vgrain = PI*sqr(radius);
-  int N = 0.8*maxPack * Vfill / Vgrain;
+  double Vfill = width*depth, Vgrain = PI*sqr(radius);
+  int N = 0.95*maxPack * Vfill / Vgrain;
   // Place the particles
-  vector<vect<> > pos = findPackedSolution(N, radius, 0, right, 2.2*amplitude, top-2.2*bR);
+  vector<vect<> > pos = findPackedSolution(N, radius, 0, right, amplitude, top-2.*bR, 5000, 10000, gravity);
   // Add the particles in at the appropriate positions
   for (int i=0; i<N; i++) addParticle(new Particle(pos.at(i), (1-getRand()*dispersion)*radius));
   // Add the big object
-  Particle *P = new Particle(vect<>(width/2, height-1.1*bR), bR);
+  /*
+  Particle *P = new Particle(vect<>(width/2, depth+dropHeight+bR), bR);
   P->setDensity(density);
   addParticle(P);
+  */
   // For animation  
   animationSortChoice = 1; // Large / small
   radiusDivide = (bR - radius)/2 + radius;
@@ -472,8 +475,10 @@ void Simulator::run(double runLength) {
     logisticUpdates(); 
     // Update particles, sectors, and temp walls
     objectUpdates();
-    // Record data [ Had a note saying "do this before calling "update" on the particles" but I'm not sure why
+    // Record data [ Had a note saying "do this before calling "update" on the particles" but I'm not sure why --> Probably because certain variables are reset upon an update ]
     if (time>startRecording && time<stopRecording && time-lastDisp>dispTime || recAllIters) record();
+    // Reset anything we have to reset
+    doResets();
   }
   clock_t end = clock();
   runTime = (double)(end-start)/CLOCKS_PER_SEC;
@@ -853,7 +858,7 @@ void Simulator::addParticle(Particle* particle) {
   particles.push_back(particle);
 }
 
-vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, double right, double bottom, double top) {
+vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, double right, double bottom, double top, int expandSteps, int relaxSteps, vect<> force) {
   list<Particle*> parts;
 
   // Set up packingSectors
@@ -884,19 +889,17 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
   }
   packingSectors.sectorize(); // Set up the actual sectors
 
-  // Enlarge particles and thermally agitate
-  int steps = 5000;
+  // Enlarge particles
   // Make dr s.t. the final radius is a bit larger then R
-  double dr = (finalRadius-initialRadius)/steps, radius = initialRadius; 
-  //double mag = 5, dm = mag/(double)steps;
+  double dr = (finalRadius-initialRadius)/expandSteps, radius = initialRadius; 
   int i;
   // Radius expanding, expansion step
-  for (i=0; i<steps; i++) {
+  for (i=0; i<expandSteps; i++) {
+    // Apply the force and/or drag
+    if (force!=Zero) for (auto P : parts) P->applyForce(P->getMass()*gravity-P->getVelocity());
+    else for (auto P : parts) P->applyForce(-P->getVelocity()); // Just apply drag
     // Particle - particle interactions
     packingSectors.interactions();
-    // Thermal agitation
-    /* mag -= dm;
-    for (auto P: parts) P->applyForce(mag*randV()); */    
     // Boundary walls
     for (auto W : bounds)
       for (auto P : parts)
@@ -913,7 +916,10 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
     packingSectors.update();
   }
   // Radius fixed, relaxation step
-  for (int i=0; i<steps; i++) {
+  for (int i=0; i<relaxSteps; i++) {
+    // Apply the force
+    if (force!=Zero) for (auto P : parts) P->applyForce(P->getMass()*gravity);
+    // Particle - particle interactions
     packingSectors.interactions();
     // Boundary walls
     for (auto W : bounds)
@@ -927,11 +933,9 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
     for (auto &P : parts) update(P);
     packingSectors.update();
   }
-
   // Return list of positions
   vector<vect<> > pos;
   for (auto P : parts) pos.push_back(P->getPosition());
-  //particles.clear();
   return pos;
 }
 
@@ -1053,6 +1057,24 @@ string Simulator::printBulkAnimationCommand() {
   stream << "bulkFrames=Table[Show[Graphics[Line[bulk[[i]]]],PlotRange->{{" << left << ","<< right << "},{" << bottom << "," << top << "}},ImageSize->{scale*" << right-left << ",scale*" << top-bottom << "}],{i,1,Length[bulk]}];";
   stream >> strh;
   strh += "\nListAnimate[bulkFrames]";
+  return str+strh;
+}
+
+string Simulator::printPressureAnimationCommand() {
+  stringstream stream;
+  string str, strh;
+  stream << "scale=" << animationScale << ";";
+  stream >> str;
+  str += "\n";
+  stream.clear();
+  stream << "press=" << pressureCollection << ";";
+  stream >> strh;
+  stream.clear();
+  str += (strh + "\n");
+  strh.clear();
+  stream << "pressFrames=Table[ListDensityPlot[press[[i]]," << "PlotRange->{{" << left << ","<< right << "},{" << bottom << "," << top << "}},ImageSize->{scale*" << right-left << ",scale*" << top-bottom << "},InterpolationOrder->0],{i,1,Length[press]}];";
+  stream >> strh;
+  strh += "\nListAnimate[pressFrames]";
   return str+strh;
 }
 
@@ -1325,6 +1347,10 @@ inline void Simulator::objectUpdates() {
   for (auto P : particles) P->see(this);
   // Add particles (if neccessary)
   if (doGradualAddition) gradualAddition();
+}
+
+inline void Simulator::doResets() {
+  for (auto P : particles) P->resetNormForces();
 }
 
 inline void Simulator::bacteriaUpdate() {
@@ -1652,9 +1678,10 @@ inline void Simulator::record() {
   }
 
   // Record bulk
-  if (recordBulk) {
-    bulkCollection.push_back(sectorization.bulkAnimation());
-  }
+  if (recordBulk) bulkCollection.push_back(sectorization.bulkAnimation());
+  
+  // Record pressure
+  if (recordPressure && epsilon>0) pressureCollection.push_back(sectorization.pressureAnimation());
 
   // Record statistics
   for (int i=0; i<statistics.size(); i++)

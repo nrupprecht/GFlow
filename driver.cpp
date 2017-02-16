@@ -6,6 +6,23 @@
 
 #include "Simulator.h"
 
+string printAsTime(double seconds) {
+  stringstream stream;
+  string str;
+  int hours = floor(seconds/3600.);
+  seconds -= 3600*hours;
+  int minutes = floor(seconds/60.);
+  seconds -= 60*minutes;
+  if (hours<10) stream << "0" << hours << ":";
+  else stream << hours << ":";
+  if (minutes<10) stream << "0" << minutes << ":";
+  else stream << minutes << ":";
+  if (seconds<10) stream << "0" << seconds;
+  else stream << seconds;
+  stream >> str;
+  return str;
+}
+
 int main(int argc, char** argv) {
   // Start the clock
   auto start_t = clock();
@@ -13,20 +30,21 @@ int main(int argc, char** argv) {
   // Parameters
   double width = 4.;     // Length of the pipe
   double height = 2.;    // 2*Radius of the pipe
+  double drop = 0.;      // How far above the surface we should drop things
   double epsilon = 1e-4; // Default epsilon
   double radius = 0.05;  // Disc radius
   double dispersion = 0; // Disc radius dispersion
-  double bR = 0.2;       // Radius of buoyant particle
+  double bR = 0.5;        // Radius of buoyant particle
   double density = 5;    // Density of buoyant particle
   double velocity = 0.5; // Fluid velocity (at center or for Couette flow)
   double temperature = -1; // Temperature
   double dissipation = -1; // Dissipation
   double friction = -1;    // Friction
-  double frequency = 10; // Shake frequency
-  double amplitude = 0.02; // Shake Amplitude
+  double frequency = 0.; // Shake frequency
+  double amplitude = 0.; // Shake Amplitude
   double phi = 0.5;      // Packing density
-  double time = 600.;    // How long the entire simulation should last
-  double start = 30;     // At what time we start recording data
+  double time = 10.;     // How long the entire simulation should last
+  double start = 0;      // At what time we start recording data
   double pA = 0.;        // What percent of the particles are active
   double activeF = default_run_force;  // Active force (default is 5)
   double maxV = 1.5;     // Max velocity to bin
@@ -65,10 +83,11 @@ int main(int argc, char** argv) {
   bool buoyancy = false;      // Create buoyancy box
 
   // Display parameters
-  int animationSortChoice = 0;
+  int animationSortChoice = -1;
   bool mmpreproc = true;
   bool animate = false;
   bool bulk = false;
+  bool pressure = false;
   bool dispKE = false;
   bool dispAveKE = false;
   bool dispFlow = false;
@@ -83,6 +102,7 @@ int main(int argc, char** argv) {
   bool useVelDiff = false;
   bool clustering = false;
   bool everything = false;
+  bool trackHeight = false;
   bool rcFlds = false;
   //----------------------------------------
   // Parse command line arguments
@@ -90,6 +110,7 @@ int main(int argc, char** argv) {
   ArgParse parser(argc, argv);
   parser.get("width", width);
   parser.get("height", height);
+  parser.get("drop", drop);
   parser.get("epsilon", epsilon);
   parser.get("radius", radius);
   parser.get("dispersion", dispersion);
@@ -127,6 +148,7 @@ int main(int argc, char** argv) {
   parser.get("mmpreproc", mmpreproc);
   parser.get("animate", animate);
   parser.get("bulk", bulk);
+  parser.get("pressure", pressure);
   parser.get("KE", dispKE);
   parser.get("aveKE", dispAveKE);
   parser.get("flow", dispFlow);
@@ -141,6 +163,7 @@ int main(int argc, char** argv) {
   parser.get("useVelDiff", useVelDiff);
   parser.get("clustering", clustering);
   parser.get("everything", everything);
+  parser.get("trackHeight", trackHeight);
 
   // Bacteria parameters from command line
   parser.get("rDiff", d1);
@@ -173,26 +196,24 @@ int main(int argc, char** argv) {
   //----------------------------------------
 
   Simulator simulation;
-  if (dispKE || dispFlow) {
+  int statLBP = 0;
+  if (dispKE || dispFlow || dispAveFlow || dispAveKE) {
     simulation.addStatistic(statKE);
     simulation.addStatistic(statPassiveKE); //** <==
     simulation.addStatistic(statPassiveFlow);
     simulation.addStatistic(statActiveFlow);
     simulation.addStatistic(statFlowRatio);
+    statLBP = 5;
   }
-  if (dispAveFlow || dispAveKE) {
-    simulation.addAverage(statKE);
-    simulation.addAverage(statPassiveKE); //** <==
-    simulation.addAverage(statPassiveFlow);
-    simulation.addAverage(statActiveFlow);
-    simulation.addAverage(statFlowRatio);
-  }
+  if (trackHeight) simulation.addStatistic(statLargeBallPosition);
+  
   if (totalDist || projDist) simulation.setRecordDist(true);
   simulation.setStartRecording(start);
   if (dispProfile || dispAveProfile) simulation.setCaptureProfile(true);
   if (dispVelProfile || dispFlowXProfile) simulation.setCaptureVelProfile(true);
   if (animate) simulation.setCapturePositions(true);
   if (bulk) simulation.setRecordBulk(true);
+  if (pressure) simulation.setRecordPressure(true);
   if (dispVelDist) simulation.setCaptureVelocity(true);
   // Set active particle type
   PType type = getType(atype);
@@ -205,11 +226,11 @@ int main(int argc, char** argv) {
   }
   else if (sedimentation) simulation.createSedimentationBox(NP+NA, radius, width, height, activeF);
   else if (sphereFluid) simulation.createSphereFluid(NP, NA, radius, activeF, radius, width, height, velocity, couetteFlow);
-  else if (buoyancy) simulation.createBuoyancyBox(radius, bR, density, width, height, dispersion, frequency, amplitude);
+  else if (buoyancy) simulation.createBuoyancyBox(radius, bR, density, width, height, drop, dispersion, frequency, amplitude);
   else simulation.createControlPipe(NP, NA, radius, velocity, activeF, radius, width, height);
   simulation.setParticleInteraction(interact);
   
-  simulation.setAnimationSortChoice(animationSortChoice);
+  if (animationSortChoice>=0) simulation.setAnimationSortChoice(animationSortChoice);
   if (bins>0) simulation.setBins(bins);
   if (vbins>0) simulation.setVBins(vbins);
   if (everything) simulation.setRecordDist(true);
@@ -283,8 +304,9 @@ int main(int argc, char** argv) {
   double realTime = (double)(end_t-start_t)/CLOCKS_PER_SEC;
 
   /// Print the run information
-  cout << "Sim Time: " << time << ", Run time: " << simulation.getRunTime() << ", Ratio: " << time/simulation.getRunTime() << endl;
-  cout << "Setup Time: " << realTime - simulation.getRunTime() << "\n";
+  double runTime = simulation.getRunTime();
+  cout << "Sim Time: " << time << ", Run time: " << runTime << " s (" << printAsTime(runTime) << "), Ratio: " << time/runTime << ", (" << runTime/time << ")" <<endl;
+  cout << "Setup Time: " << realTime - runTime << "\n";
   cout << "Start Time: " << start << ", Record Time: " << max(0., time-start) << "\n";
   cout << "Actual (total) program run time: " << realTime << "\n";
   cout << "Iterations: " << simulation.getIter() << ", Default Epsilon: " << simulation.getDefaultEpsilon() << endl;
@@ -301,9 +323,8 @@ int main(int argc, char** argv) {
     }
     else cout << simulation.printAnimationCommand() << endl;
   }  
-  if (bulk) {
-    cout << simulation.printBulkAnimationCommand() << endl;
-  }
+  if (bulk) cout << simulation.printBulkAnimationCommand() << endl;
+  if (pressure) cout << simulation.printPressureAnimationCommand() << endl;
   if (dispKE) {
     cout << "KE=" << simulation.getStatistic(0) << ";\n";
     cout << "Print[\"Average kinetic energy\"]\nListLinePlot[KE,PlotRange->All,PlotStyle->Black]\n";
@@ -323,6 +344,10 @@ int main(int argc, char** argv) {
     cout << "Print[\"Active Flow\"]\nListLinePlot[actflow,PlotRange->All,PlotStyle->Black]\n";
     cout << "xi=" << simulation.getStatistic(4) << ";\n";
     cout << "Print[\"Xi\"]\nListLinePlot[xi,PlotRange->All,PlotStyle->Black]\n";
+  }
+  if (trackHeight) {
+    cout << "bheight=" << simulation.getStatistic(statLBP) << ";\n";
+    cout << "Print[\"Large Ball Height\"]\nListLinePlot[bheight,PlotRange->All,PlotStyle->Black]\n";
   }
   if (dispAveFlow) {
     cout << "avePassFlow=" << simulation.getAverage(2) << ";\n";

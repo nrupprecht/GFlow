@@ -57,6 +57,7 @@ class Particle {
   double getDissipation() { return dissipation; }
   double getCoeff() { return coeff; }
   double getKE() { return 0.5*(sqr(velocity)/invMass + sqr(omega)/invII); }
+  double getPressure() { return normForces/(2*PI*radius); }
   vect<> getForce() { return force; }
   vect<> getNormalForce() { return normalF; }
   vect<> getShearForce() { return shearF; }
@@ -77,6 +78,7 @@ class Particle {
   void setII(double);
   void setRadius(double r) { radius = r; }
   void setInteraction(bool i) { interacting=i; }
+  void resetNormForces() { normForces = 0; }
 
   /// Control functions
   virtual bool interact(Particle*); // Interact with another particle, return true if they do interact

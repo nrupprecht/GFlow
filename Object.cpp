@@ -85,8 +85,8 @@ bool Particle::interact(Particle* P, vect<> displacement) {
     applyShearForce(Fs*shear);
     applyTorque(-Fs*radius);
 
-    // For finding average normal forces
-    //normForces += fabs(Fn); //** Should also take into account shear force (?)
+    // For finding average normal forces and pressures
+    normForces += fabs(Fn);
     return true;
   }
   return false;
@@ -126,9 +126,9 @@ bool Particle::interactSym(Particle* P, vect<> displacement) {
     // Apply torque to both
     applyTorque(-Fs*radius);
     P->applyTorque(-Fs*P->getRadius()); // The force and radial direction both invert
-    // For finding average normal forces
-    //normForces += fabs(Fn); //** Should also take into account shear force (?)
-    //P->normForces += fabs(Fn);
+    // For finding average normal forces and pressure
+    normForces += fabs(Fn); 
+    P->normForces += fabs(Fn);
     return true;
   }
   return false;
@@ -143,7 +143,7 @@ bool Particle::interact(vect<> pos, double force) {
     vect<> normal = (1.0/dist) * displacement;
     //vect<> shear = vect<>(normal.y, -normal.x);
     // Pressure force
-    //normForces += fabs(force);
+    normForces += fabs(force);
     applyNormalForce(force*normal);
     return true;
   }

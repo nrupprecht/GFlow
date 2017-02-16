@@ -346,7 +346,7 @@ struct Bounds {
   Bounds(double l, double r, double b, double t) : left(l), right(r), bottom(b), top(t) \
   {};
   double left, right, bottom, top;
-  friend std::ostream& operator<<(std::ostream& out, Bounds B) {
+  friend std::ostream& operator<<(std::ostream& out, const Bounds& B) {
     out << "{" << B.left << "," << B.right << "," << B.bottom << "," << B.top << "}";
     return out;
   }
@@ -367,6 +367,18 @@ struct Agent {
   void reset() { position = initPos; }
   
   float __pad;
+};
+
+struct Trio {
+  Trio() : x(0), y(0), z(0) {};
+  Trio(double x, double y, double z) : x(x), y(y), z(z) {};
+
+  friend std::ostream& operator<<(std::ostream& out, const Trio &T) {
+    out << "{" << T.x << "," << T.y << "," << T.z << "}";
+    return out;
+  }
+
+  double x,y,z;
 };
 
 #endif

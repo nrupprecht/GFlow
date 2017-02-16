@@ -46,6 +46,7 @@ class Sectorization {
 
   // Special Animation
   vector<VPair> bulkAnimation();
+  vector<Trio> pressureAnimation();
 
  private:
   // Private Helper functions
