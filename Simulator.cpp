@@ -306,15 +306,13 @@ void Simulator::createBuoyancyBox(double radius, double bR, double density, doub
   double Vfill = width*depth, Vgrain = PI*sqr(radius);
   int N = 0.95*maxPack * Vfill / Vgrain;
   // Place the particles
-  vector<vect<> > pos = findPackedSolution(N, radius, 0, right, amplitude, top-2.*bR, 5000, 10000, gravity);
+  vector<vect<> > pos = findPackedSolution(N, radius, 0, right, amplitude, top-2.*bR, 0.5, 2.5, gravity);
   // Add the particles in at the appropriate positions
   for (int i=0; i<N; i++) addParticle(new Particle(pos.at(i), (1-getRand()*dispersion)*radius));
   // Add the big object
-  /*
   Particle *P = new Particle(vect<>(width/2, depth+dropHeight+bR), bR);
   P->setDensity(density);
   addParticle(P);
-  */
   // For animation  
   animationSortChoice = 1; // Large / small
   radiusDivide = (bR - radius)/2 + radius;
@@ -511,6 +509,8 @@ void Simulator::bacteriaRun(double runLength) {
     updateFields();
     // Record data
     if (time>startRecording && time<stopRecording && time-lastDisp>dispTime || recAllIters) record();
+    // Reset anything we have to reset
+    doResets();
     // If everyone dies, stop the simulation
     if (particles.empty()) running = false;
   }
@@ -858,7 +858,7 @@ void Simulator::addParticle(Particle* particle) {
   particles.push_back(particle);
 }
 
-vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, double right, double bottom, double top, int expandSteps, int relaxSteps, vect<> force) {
+vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, double right, double bottom, double top, double expandTime, double relaxTime, vect<> force) {
   list<Particle*> parts;
 
   // Set up packingSectors
@@ -884,6 +884,7 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
     vect<> pos = vect<>(b+x*drand48(), b+y*drand48());
     Particle *P = new Particle(pos, initialRadius);
     P->setWallShear(false);
+    P->setDissipation(5*default_sphere_dissipation);
     P->setMass(PI*default_sphere_density*sqr(R));
     parts.push_back(P);
   }
@@ -891,10 +892,10 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
 
   // Enlarge particles
   // Make dr s.t. the final radius is a bit larger then R
+  int expandSteps = expandTime/epsilon;
   double dr = (finalRadius-initialRadius)/expandSteps, radius = initialRadius; 
-  int i;
   // Radius expanding, expansion step
-  for (i=0; i<expandSteps; i++) {
+  for (int i=0; i<expandSteps; i++) {
     // Apply the force and/or drag
     if (force!=Zero) for (auto P : parts) P->applyForce(P->getMass()*gravity-P->getVelocity());
     else for (auto P : parts) P->applyForce(-P->getVelocity()); // Just apply drag
@@ -916,6 +917,9 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
     packingSectors.update();
   }
   // Radius fixed, relaxation step
+  int relaxSteps = relaxTime/epsilon;
+  double stopTime = 0.1; // Freeze every <stopTime> seconds
+  int stopDelay = stopTime/epsilon;
   for (int i=0; i<relaxSteps; i++) {
     // Apply the force
     if (force!=Zero) for (auto P : parts) P->applyForce(P->getMass()*gravity);
@@ -930,8 +934,11 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
       for (auto P : parts)
         W->interact(P);
     // Update Particles and sectorization
-    for (auto &P : parts) update(P);
+    for (auto &P : parts) update(P);      
     packingSectors.update();
+    // Rob momentum
+    if (i%stopDelay==0 && i>0.5*relaxSteps) //**--
+      for (auto &P : parts) P->freeze();
   }
   // Return list of positions
   vector<vect<> > pos;
@@ -1072,7 +1079,27 @@ string Simulator::printPressureAnimationCommand() {
   stream.clear();
   str += (strh + "\n");
   strh.clear();
-  stream << "pressFrames=Table[ListDensityPlot[press[[i]]," << "PlotRange->{{" << left << ","<< right << "},{" << bottom << "," << top << "}},ImageSize->{scale*" << right-left << ",scale*" << top-bottom << "},InterpolationOrder->0],{i,1,Length[press]}];";
+  double width = right-left, height = top-bottom;
+  stream << "pressFrames=Table[ListDensityPlot[press[[i]]," << "PlotRange->{{" << left << ","<< right << "},{" << bottom << "," << top << "}},ImageSize->{scale*" << width << ",scale*" << height << "},InterpolationOrder->0,AspectRatio->" << height/width << "],{i,1,Length[press]}];";
+  stream >> strh;
+  strh += "\nListAnimate[pressFrames]";
+  return str+strh;
+}
+
+string Simulator::printDPDTAnimationCommand() {
+  stringstream stream;
+  string str, strh;
+  stream << "scale=" << animationScale << ";";
+  stream >> str;
+  str += "\n";
+  stream.clear();
+  stream << "dpdt=" << dpdtCollection << ";";
+  stream >> strh;
+  stream.clear();
+  str += (strh + "\n");
+  strh.clear();
+  double width = right-left, height = top-bottom;
+  stream << "pressFrames=Table[ListDensityPlot[dpdt[[i]]," << "PlotRange->{{" << left << ","<< right << "},{" << bottom << "," << top << "}},ImageSize->{scale*" << width << ",scale*" << height << "},InterpolationOrder->0,AspectRatio->" << height/width << "],{i,1,Length[dpdt]}];";
   stream >> strh;
   strh += "\nListAnimate[pressFrames]";
   return str+strh;
@@ -1232,6 +1259,8 @@ inline void Simulator::setUpSectorization() {
   else sectorization.setWrapY(false);
   // Tell sectorization to create the sectors
   sectorization.sectorize();
+  // Tell sectorization to record data
+  sectorization.setRecordPressure(recordPressure);
 }
 
 inline void Simulator::resetVariables() {
@@ -1681,7 +1710,10 @@ inline void Simulator::record() {
   if (recordBulk) bulkCollection.push_back(sectorization.bulkAnimation());
   
   // Record pressure
-  if (recordPressure && epsilon>0) pressureCollection.push_back(sectorization.pressureAnimation());
+  if (recordPressure && time>0) {
+    pressureCollection.push_back(sectorization.getPressure());
+    if (0<recIt) dpdtCollection.push_back(sectorization.getDPDT()); // The first time, we have no previous data point with which to calculate the derivative
+  }
 
   // Record statistics
   for (int i=0; i<statistics.size(); i++)

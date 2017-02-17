@@ -6,23 +6,6 @@
 
 #include "Simulator.h"
 
-string printAsTime(double seconds) {
-  stringstream stream;
-  string str;
-  int hours = floor(seconds/3600.);
-  seconds -= 3600*hours;
-  int minutes = floor(seconds/60.);
-  seconds -= 60*minutes;
-  if (hours<10) stream << "0" << hours << ":";
-  else stream << hours << ":";
-  if (minutes<10) stream << "0" << minutes << ":";
-  else stream << minutes << ":";
-  if (seconds<10) stream << "0" << seconds;
-  else stream << seconds;
-  stream >> str;
-  return str;
-}
-
 int main(int argc, char** argv) {
   // Start the clock
   auto start_t = clock();
@@ -83,11 +66,13 @@ int main(int argc, char** argv) {
   bool buoyancy = false;      // Create buoyancy box
 
   // Display parameters
+  double dispRate = -1;
   int animationSortChoice = -1;
   bool mmpreproc = true;
   bool animate = false;
   bool bulk = false;
   bool pressure = false;
+  bool dpdt = false;
   bool dispKE = false;
   bool dispAveKE = false;
   bool dispFlow = false;
@@ -104,6 +89,7 @@ int main(int argc, char** argv) {
   bool everything = false;
   bool trackHeight = false;
   bool rcFlds = false;
+
   //----------------------------------------
   // Parse command line arguments
   //----------------------------------------
@@ -144,11 +130,13 @@ int main(int argc, char** argv) {
   parser.get("sphereFluid", sphereFluid);
   parser.get("couetteFlow", couetteFlow);
   parser.get("buoyancy", buoyancy);
+  parser.get("dispRate", dispRate);
   parser.get("animationSortChoice", animationSortChoice);
   parser.get("mmpreproc", mmpreproc);
   parser.get("animate", animate);
   parser.get("bulk", bulk);
   parser.get("pressure", pressure);
+  parser.get("dpdt", dpdt);
   parser.get("KE", dispKE);
   parser.get("aveKE", dispAveKE);
   parser.get("flow", dispFlow);
@@ -213,7 +201,7 @@ int main(int argc, char** argv) {
   if (dispVelProfile || dispFlowXProfile) simulation.setCaptureVelProfile(true);
   if (animate) simulation.setCapturePositions(true);
   if (bulk) simulation.setRecordBulk(true);
-  if (pressure) simulation.setRecordPressure(true);
+  if (pressure || dpdt) simulation.setRecordPressure(true);
   if (dispVelDist) simulation.setCaptureVelocity(true);
   // Set active particle type
   PType type = getType(atype);
@@ -230,6 +218,7 @@ int main(int argc, char** argv) {
   else simulation.createControlPipe(NP, NA, radius, velocity, activeF, radius, width, height);
   simulation.setParticleInteraction(interact);
   
+  if (dispRate>=0) simulation.setDispRate(dispRate);
   if (animationSortChoice>=0) simulation.setAnimationSortChoice(animationSortChoice);
   if (bins>0) simulation.setBins(bins);
   if (vbins>0) simulation.setVBins(vbins);
@@ -271,7 +260,7 @@ int main(int argc, char** argv) {
   cout << "Command: ";
   for (int i=0; i<argc; i++) cout << argv[i] << " ";
   cout << endl << endl; // Line break
-  cout << "Dimensions: " << width << " x " << height << " (Volume: " << Vol << ")\n";
+  cout << "Dimensions: " << simulation.getWidth() << " x " << simulation.getHeight() << " (Volume: " << Vol << ")\n";
   cout << "Radius: " << radius << ", Dispersion: " << dispersion << "\n";
   cout << "Characteristic Fluid Velocity: " << velocity << "\n";
   cout << "Phi: " << phi << ", Number: " << simulation.getNumber() << ", (Actual Phi: " << simulation.getNumber()*PI*sqr(radius)/(width*height) << ")\n";
@@ -305,10 +294,10 @@ int main(int argc, char** argv) {
 
   /// Print the run information
   double runTime = simulation.getRunTime();
-  cout << "Sim Time: " << time << ", Run time: " << runTime << " s (" << printAsTime(runTime) << "), Ratio: " << time/runTime << ", (" << runTime/time << ")" <<endl;
   cout << "Setup Time: " << realTime - runTime << "\n";
   cout << "Start Time: " << start << ", Record Time: " << max(0., time-start) << "\n";
-  cout << "Actual (total) program run time: " << realTime << "\n";
+  cout << "Sim Time: " << time << ", Run time: " << runTime << " s (" << printAsTime(runTime) << "), Ratio: " << time/runTime << ", (" << runTime/time << ")" <<endl;
+  cout << "Actual (total) program run time: " << realTime << ", (" << printAsTime(realTime) << ")\n";
   cout << "Iterations: " << simulation.getIter() << ", Default Epsilon: " << simulation.getDefaultEpsilon() << endl;
   cout << "Sectors: X: " << simulation.getSecX() << ", Y: " << simulation.getSecY();
   cout << "\n\n----------------------- END SUMMARY -----------------------\n\n";
@@ -321,76 +310,69 @@ int main(int argc, char** argv) {
       simulation.printWasteToFile();
       cout << simulation.printWalls() << endl; // for now - later print geometry in different format
     }
-    else cout << simulation.printAnimationCommand() << endl;
+    else cout << mmPreproc(simulation.printAnimationCommand(),2) << endl;
   }  
-  if (bulk) cout << simulation.printBulkAnimationCommand() << endl;
-  if (pressure) cout << simulation.printPressureAnimationCommand() << endl;
+  if (bulk) cout << mmPreproc(simulation.printBulkAnimationCommand()) << endl;
+  if (pressure) cout << mmPreproc(simulation.printPressureAnimationCommand()) << endl;
+  if (dpdt) cout << mmPreproc(simulation.printDPDTAnimationCommand()) << endl;
   if (dispKE) {
-    cout << "KE=" << simulation.getStatistic(0) << ";\n";
+    cout << "KE=" << mmPreproc(simulation.getStatistic(0)) << ";\n";
     cout << "Print[\"Average kinetic energy\"]\nListLinePlot[KE,PlotRange->All,PlotStyle->Black]\n";
     if (simulation.getASize()>0) {
-      cout << "passKE=" << simulation.getStatistic(1) << ";\n";
+      cout << "passKE=" << mmPreproc(simulation.getStatistic(1)) << ";\n";
       cout << "Print[\"Average passive particle kinetic energy\"]\nListLinePlot[passKE,PlotRange->All,PlotStyle->Black]\n";
     }
   }
   if (dispAveKE) {
-    cout << "aveKE=" << simulation.getAverage(0) << ";\n";
-    cout << "avePassKE=" << simulation.getAverage(1) << ";\n";
+    cout << "aveKE=" << mmPreproc(simulation.getAverage(0)) << ";\n";
+    cout << "avePassKE=" << mmPreproc(simulation.getAverage(1)) << ";\n";
   }
   if (dispFlow) {
-    cout << "passflow=" << simulation.getStatistic(2) << ";\n";
+    cout << "passflow=" << mmPreproc(simulation.getStatistic(2)) << ";\n";
     cout << "Print[\"Passive Flow\"]\nListLinePlot[passflow,PlotRange->All,PlotStyle->Black]\n";
-    cout << "actflow=" << simulation.getStatistic(3) << ";\n";
+    cout << "actflow=" << mmPreproc(simulation.getStatistic(3)) << ";\n";
     cout << "Print[\"Active Flow\"]\nListLinePlot[actflow,PlotRange->All,PlotStyle->Black]\n";
-    cout << "xi=" << simulation.getStatistic(4) << ";\n";
+    cout << "xi=" << mmPreproc(simulation.getStatistic(4)) << ";\n";
     cout << "Print[\"Xi\"]\nListLinePlot[xi,PlotRange->All,PlotStyle->Black]\n";
   }
   if (trackHeight) {
-    cout << "bheight=" << simulation.getStatistic(statLBP) << ";\n";
+    cout << "bheight=" << mmPreproc(simulation.getStatistic(statLBP)) << ";\n";
     cout << "Print[\"Large Ball Height\"]\nListLinePlot[bheight,PlotRange->All,PlotStyle->Black]\n";
   }
   if (dispAveFlow) {
-    cout << "avePassFlow=" << simulation.getAverage(2) << ";\n";
-    cout << "aveActFlow=" << simulation.getAverage(3) << ";\n";
-    cout << "aveXi=" << simulation.getAverage(4) << ";\n";
+    cout << "avePassFlow=" << mmPreproc(simulation.getAverage(2)) << ";\n";
+    cout << "aveActFlow=" << mmPreproc(simulation.getAverage(3)) << ";\n";
+    cout << "aveXi=" << mmPreproc(simulation.getAverage(4)) << ";\n";
   }
   if (dispProfile) {
-    cout << "prof=" << simulation.getProfile() << ";\n";
+    cout << "prof=" << mmPreproc(simulation.getProfile()) << ";\n";
     cout << "Print[\"Profile\"]\nMatrixPlot[prof,ImageSize->Large]\n"; 
   }
   if (dispAveProfile) {
-    cout << "aveProf=" << simulation.getAveProfile() << ";\n";
+    cout << "aveProf=" << mmPreproc(simulation.getAveProfile()) << ";\n";
     cout << "Print[\"Average Profile\"]\nListLinePlot[aveProf,PlotStyle->Black,ImageSize->Large]\n";
   }
   if (dispVelProfile) {
-    cout << "velProf=" << simulation.getVelProfile() << ";\n";
+    cout << "velProf=" << mmPreproc(simulation.getVelProfile()) << ";\n";
     cout << "Print[\"(x) Velocity Profile\"]\nListLinePlot[velProf,PlotStyle->Black,ImageSize->Large]\n";
   }
   if (dispFlowXProfile) {
-    cout << "flowXProf=" << simulation.getFlowXProfile() << ";\n";
+    cout << "flowXProf=" << mmPreproc(simulation.getFlowXProfile()) << ";\n";
     cout << "Print[\"(x) Velocity flow (as a function of x)\"]\nListLinePlot[flowXProf,PlotStyle->Black,ImageSize->Large]\n";
   }
   if (dispVelDist) {
-    cout << "velDist=" << simulation.getVelocityDistribution() << ";\n";
+    cout << "velDist=" << mmPreproc(simulation.getVelocityDistribution()) << ";\n";
     cout << "Print[\"Velocity Distribution\"]\nListLinePlot[velDist,PlotStyle->Black,ImageSize->Large,PlotRange->All]\n";
-    cout << "aVelDist=" << simulation.getAuxVelocityDistribution() << ";\n";
+    cout << "aVelDist=" << mmPreproc(simulation.getAuxVelocityDistribution()) << ";\n";
     cout << "Print[\"Auxilary Velocity Distribution\"]\nListLinePlot[aVelDist,PlotStyle->Black,ImageSize->Large,PlotRange->All]\n";
   }
   if (projDist) {
-    stringstream stream;
-    string str;
-    stream << simulation.getCollapsedProjectedDistribution();
-    stream >> str;
-    if (mmpreproc) cout << "projDist=" << mmPreproc(str) << ";\n";
-    else cout << "projDist=" << str << ";\n";
+    if (mmpreproc) cout << "projDist=" << mmPreproc(simulation.getCollapsedProjectedDistribution()) << ";\n";
+    else cout << "projDist=" << simulation.getCollapsedProjectedDistribution() << ";\n";
   }
   if (totalDist) {
-    stringstream stream;
-    string str;
-    stream << simulation.getCollapsedDistribution(0);
-    stream >> str;
-    if (mmpreproc) cout << "dist=" << mmPreproc(str) << ";\n";
-    else cout << "dist=" << str << ";\n";
+    if (mmpreproc) cout << "dist=" << mmPreproc(simulation.getCollapsedDistribution(0)) << ";\n";
+    else cout << "dist=" << simulation.getCollapsedDistribution(0) << ";\n";
   }
   if (clustering) {
     stringstream stream;

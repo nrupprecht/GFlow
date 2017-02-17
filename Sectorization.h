@@ -43,10 +43,12 @@ class Sectorization {
   void setWrapX(bool w) { wrapX = w; }
   void setWrapY(bool w) { wrapY = w; }
   void setInteractionFunctionChoice(int c) { interactionFunctionChoice = c; }
+  void setRecordPressure(bool r) { recordPressure = r; }
 
   // Special Animation
   vector<VPair> bulkAnimation();
-  vector<Trio> pressureAnimation();
+  vector<Trio> getPressure();
+  vector<Trio> getDPDT();
 
  private:
   // Private Helper functions
@@ -54,6 +56,8 @@ class Sectorization {
   inline void add(sectorFunction, Bounds);
   inline void add(pair<Bounds, sectorFunction>);
   inline bool overlaps(double, double, double, double, double, double, double, double);
+  
+  inline void updatePressure();
 
   // Interaction functions
   inline void symmetricInteractions();
@@ -71,12 +75,14 @@ class Sectorization {
   list<Particle*>* sectors;        // The actual sectors
 
   // For special animation
-  bool *edgeDetect;
+  bool *edgeDetect; // For detecting edges between regions with particles and regions without
+  double *pressure1, *pressure0; // Record the pressure as a function of position now and the last time we recorded it
+  bool recordPressure;
 
   // Sector based functions
   list<pair<Bounds, sectorFunction> > sectorFunctionRecord;
   list<sectorFunction>* sfunctions; // Each sector has a list of function pointers
-  list<Wall*> *wallSectors;         // A pointer to walls that particles in the sector might interact with --> UNIMPLEMENTED
+  // list<Wall*> *wallSectors;         // A pointer to walls that particles in the sector might interact with --> UNIMPLEMENTED
 };
 
 #endif

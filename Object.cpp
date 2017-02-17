@@ -20,7 +20,8 @@ void Particle::initialize() {
   drag = default_sphere_drag*radius;
   normalF = shearF = force = Zero;
   torque = 0;
-  //normForces = 0;
+  
+  normForces = 0;
   //recentForceAve = 0;
   //timeWindow = 3.; // 3 Seconds -> For calculating recent normal forces
 }

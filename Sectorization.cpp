@@ -1,13 +1,17 @@
 #include "Sectorization.h"
 
-Sectorization::Sectorization() : secX(3), secY(3), wrapX(false), wrapY(false), ssecInteract(false), left(0), right(1), bottom(0), top(1), particles(0), sectors(0), sfunctions(0), wallSectors(0), interactionFunctionChoice(0), edgeDetect(0) {};
+Sectorization::Sectorization() : secX(3), secY(3), wrapX(false), wrapY(false), ssecInteract(false), left(0), right(1), bottom(0), top(1), particles(0), sectors(0), sfunctions(0), /*wallSectors(0),*/ interactionFunctionChoice(0), edgeDetect(0), pressure0(0), pressure1(0), recordPressure(false) {};
 
 Sectorization::~Sectorization() {
   if (sectors) delete [] sectors;
   if (edgeDetect) delete [] edgeDetect;
+  if (pressure0) delete [] pressure0;
+  if (pressure1) delete [] pressure1;
   if (sfunctions) delete [] sfunctions;
   sectors = 0;
   edgeDetect = 0;
+  pressure0 = 0;
+  pressure1 = 0;
   sfunctions = 0;
   particles = 0;
 }
@@ -22,6 +26,7 @@ void Sectorization::sectorize() {
 }
 
 void Sectorization::update() {
+  // Update sectors
   for (int i=0; i<(secX+2)*(secY+2)+1; i++) {
     vector<list<Particle*>::iterator> remove;
     for (auto p=sectors[i].begin(); p!=sectors[i].end(); ++p) {
@@ -34,6 +39,8 @@ void Sectorization::update() {
     // Remove particles that moved
     for (auto P : remove) sectors[i].erase(P);
   }
+  // Update pressure
+  if (recordPressure) updatePressure();
 }
 
 void Sectorization::interactions() {
@@ -64,8 +71,22 @@ inline void Sectorization::symmetricInteractions() {
 	// +---------+
 	// Bottom left sector
 	int sx = x-1, sy=y-1;
-        if (wrapX && sx<1) sx+=secX; else if (wrapX && sx>secX) sx-=secX;
-        if (wrapY && sy<1) sy+=secY; else if (wrapY && sy>secY) sy-=secY;
+        if (sx<1) {
+	  if (wrapX) sx+=secX; 
+	  else continue;
+	}
+	else if (sx>secX) {
+	  if (wrapX) sx-=secX;
+	  else continue;
+	}
+        if (sy<1) {
+	  if (wrapY) sy+=secY;
+	  else continue;
+	}
+	else if (sy>secY) {
+	  if (wrapY) sy-=secY;
+	  else continue;
+	}
         for (auto Q : sectors[sy*(secX+2)+sx]) P->interactSym(Q, getDisplacement(Q, P));
 	// Left sector
 	sy=y; // sx is the same
@@ -263,6 +284,15 @@ void Sectorization::setDims(int sx, int sy) {
   if (edgeDetect) delete [] edgeDetect;
   edgeDetect = new bool[secX*secY];
   for (int i=0; i<secX*secY; i++) edgeDetect[i] = false;
+  // Redo pressure and dPdT
+  if (pressure0) delete [] pressure0;
+  if (pressure1) delete [] pressure1;
+  pressure0 = new double[secX*secY];
+  pressure1 = new double[secX*secY];
+  for (int i=0; i<secX*secY; i++) {
+    pressure0[i] = 0;
+    pressure1[i] = 0;
+  }
   // Redo wall sectors
   // if (wallSectors) delete wallSectors; //** LATER
 }
@@ -295,16 +325,54 @@ vector<VPair> Sectorization::bulkAnimation() {
   return lines;
 }
 
-vector<Trio> Sectorization::pressureAnimation() {
+inline void Sectorization::updatePressure() {
+  return; //**
+  for (int y=1; y<=secY; y++)
+    for (int x=1; x<=secX; x++) {
+      vect<> v = getVect(x,y);
+      if (sectors[y*(secX+2)+x].empty()) {
+	pressure0[y*secX+x] = pressure1[y*secX+x]; // Update old pressure array
+	pressure1[y*secX+x] = 0; // Update current pressure array
+      }
+      else {
+        double p = 0;
+        for (auto P : sectors[y*(secX+2)+x]) p += P->getPressure();
+        p *= (1./sectors[y*(secX+2)+x].size());
+        // Update arrays
+        pressure0[y*secX+x] = pressure1[y*secX+x]; // Update old pressure array
+        pressure1[y*secX+x] = p; // Update current pressure array
+      }
+    }
+}
+
+vector<Trio> Sectorization::getPressure() {
   vector<Trio> forces;
   for (int y=1; y<=secY; y++)
     for (int x=1; x<=secX; x++) {
-      double p = 0;
-      for (auto P : sectors[y*(secX+2)+x]) p += P->getPressure();
       vect<> v = getVect(x,y);
-      forces.push_back(Trio(v.x, v.y, p));
+      if (sectors[y*(secX+2)+x].empty()) forces.push_back(Trio(v.x, v.y, 0));
+      else {
+	double p = 0;
+	for (auto P : sectors[y*(secX+2)+x]) p += P->getPressure();
+	p *= (1./sectors[y*(secX+2)+x].size());
+	forces.push_back(Trio(v.x, v.y, p));
+	// Record
+	pressure0[y*secX+x] = pressure1[y*secX+x]; // Update old pressure array
+	pressure1[y*secX+x] = p; // Update current pressure array
+      }
     }
   return forces;
+}
+
+vector<Trio> Sectorization::getDPDT() {
+  vector<Trio> dpdt;
+  double dT = 1./15.; //** This could be a member variable of Sectorization
+  for (int y=1; y<=secY; y++)
+    for (int x=1; x<=secX; x++) {
+      vect<> v = getVect(x,y);
+      dpdt.push_back(Trio(v.x, v.y, (pressure1[y*secX+x]-pressure0[y*secX+x])/dT));
+    }
+  return dpdt;
 }
 
 // Add particle to appropriate sector

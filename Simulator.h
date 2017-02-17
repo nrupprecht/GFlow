@@ -74,6 +74,8 @@ class Simulator {
   double getVBinYWidth() { return (maxVy-minVy)/vbins; }
   int getVBinXZero() { return (int)(-vbins*minVx/(maxVx-minVx)); }
   int getVBinYZero() { return (int)(-vbins*minVy/(maxVy-minVy)); }
+  double getWidth() { return right - left; }
+  double getHeight() { return top - bottom; }
   double getMaxV() { return maxV; }
   double getMaxVx() { return maxVx; }
   double getMinVx() { return minVx; }
@@ -225,13 +227,14 @@ class Simulator {
   void addParticles(int N, double R, double var, double left, double right, double bottom, double top, PType type=PASSIVE, double vmax=-1);
   void addRTSpheres(int N, double R, double var, double left, double right, double bottom, double top, vect<> bias);
   void addActive(vect<>, double, double);
-  vector<vect<> > findPackedSolution(int, double, double, double, double, double, int=5000, int=5000, vect<> = Zero); // Finds where we can put particles for high packing
+  vector<vect<> > findPackedSolution(int, double, double, double, double, double, double=0.5, double=0.5, vect<> = Zero); // Finds where we can put particles for high packing
 
   // Display functions
   string printWalls();
   string printAnimationCommand();
   string printBulkAnimationCommand();
   string printPressureAnimationCommand();
+  string printDPDTAnimationCommand();
   string printResource();
   string printWaste();
   string printFitness();
@@ -357,7 +360,8 @@ class Simulator {
   vector<vector<VPair>> bulkCollection; // [ recIt ] [ lines ]
   bool recordBulk;
   vector<vector<Trio>> pressureCollection; // [ recIt ] [ (x,y,P) ]
-  bool recordPressure;
+  vector<vector<Trio>> dpdtCollection;
+  bool recordPressure; // To record pressure of dpdt this must be true
   vector<double> charRadiusCollection; // Characteristic radii for particle animation
   vector<string> colorCollection; // What color to use in the animation
   inline string printTable(int);

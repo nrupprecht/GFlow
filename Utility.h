@@ -114,8 +114,26 @@ template<typename T> inline T absmin(T a, T b, T c) {
 /// Helper squaring function
 template<typename T> inline T sqr(T x) { return x*x; }
 
+// Print as (hrs):(mins):(sec)
+inline string printAsTime(double seconds) {
+  stringstream stream;
+  string str;
+  int hours = floor(seconds/3600.);
+  seconds -= 3600*hours;
+  int minutes = floor(seconds/60.);
+  seconds -= 60*minutes;
+  if (hours<10) stream << "0" << hours << ":";
+  else stream << hours << ":";
+  if (minutes<10) stream << "0" << minutes << ":";
+  else stream << minutes << ":";
+  if (seconds<10) stream << "0" << seconds;
+  else stream << seconds;
+  stream >> str;
+  return str;
+}
+
 // Get rid of all the "e-"s for mathematica, truncate doubles after <precision> decimal places
-inline string mmPreproc(string s, int precision=2) {
+inline string mmPreproc(string s, int precision=-1) {
   int size = s.size();
   string out;
   out.reserve(size);
@@ -146,6 +164,14 @@ inline string mmPreproc(string s, int precision=2) {
     else out.push_back(s.at(i));
   }
   return out;
+}
+
+template<typename T> inline string mmPreproc(T s, int precision=-1) {
+  stringstream stream;
+  string str;
+  stream << s;
+  stream >> str;
+  return mmPreproc(str, precision);
 }
 
 /// A simple 2-D vector struct
@@ -187,7 +213,7 @@ vect(const vect<T>& V) : x(V.x), y(V.y) {};
     string str;
     stream << "{" << v.x << "," << v.y << "}";
     stream >> str;
-    os << mmPreproc(str);
+    os << str;
     return os;
   }
     
@@ -293,7 +319,7 @@ template<typename T> inline std::ostream& operator<<(std::ostream& out, const ve
   }
   stream << "}";
   stream >> str;
-  out << mmPreproc(str);
+  out << str;
   return out;
 }
 
@@ -313,7 +339,7 @@ template<typename T> inline std::ostream& operator<<(std::ostream& out, const st
   }
   stream << "}";
   stream >> str;
-  out << mmPreproc(str);
+  out << str;
   return out;
 }
 
