@@ -1,6 +1,6 @@
 CC = icpc
 FLAGS = -std=c++14 -g -O3
-targets = driver
+targets = driver test
 oldTargets = Jamming JamShape time
 MKLROOT = /afs/crc.nd.edu/x86_64_linux/intel/15.0/mkl
 LDLIBS = -lrt -Wl,--start-group $(MKLROOT)/lib/intel64/libmkl_intel_lp64.a $(MKLROOT)/lib/intel64/libmkl_sequential.a $(MKLROOT)/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm
@@ -11,6 +11,9 @@ all: $(targets)
 
 # Executables
 driver: driver.o $(files)
+	$(CC) $(OPT) $^ -o $@ $(LDLIBS)
+
+test: test.o TestSec.o $(files)
 	$(CC) $(OPT) $^ -o $@ $(LDLIBS)
 
 # Currently unused Executables
