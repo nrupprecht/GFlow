@@ -69,6 +69,9 @@ inline double sign(double x) {
   else return 0;
 }
 
+/// Clamp function
+inline double clamp(double x) { return x>0 ? x : 0; }
+
 /// Sigmoid
 inline double sigmoid(double x) {
   return 1./(1.+exp(-x));

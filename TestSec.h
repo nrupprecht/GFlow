@@ -9,33 +9,6 @@ const double default_particle_friction    = 0.5;
 const double default_particle_dissipation = 1.0;
 const double default_particle_density     = 1.0;
 
-const int default_max_per_sector = 10;
-
-// Holds the particle ids of the (up to two) particles in the sector
-/*
-template<int max=default_max_per_sector> struct sec_struct {
-  // Constructors
-  sec_struct() {
-    for (int i=0; i<max; ++i) p_id[i] = -1;
-  }
-  // Add particle
-  void insert_particle(int pid) {
-    for (int i=0; i<default_max_per_sector; ++i)
-      if (p_id[i]==-1) {
-	p_id[i] = p_id;
-	return;
-      }
-    throw OvercrowdingError(default_max_per_sector+1);
-  }
-  // Mutator
-  void reset() {
-    for (int i=0; i<max; ++i) p_id[i] = -1;
-  }
-  // We do not keep track of how many entries sec_struc has, that is up to the sector object
-  int p_id[max]; // Only two particles can fit in a sector
-};
-*/
-
 struct sec_struct {
   // Add particle
   void insert_particle(int pid) { p_id.push_back(pid); }
@@ -57,7 +30,7 @@ basic_p_data(vect<> p, double r) : position(p), radius(r) {};
 
 struct augmented_p_data {
   // Constructors
-augmented_p_data(vect<> v=Zero, double w=0.) : velocity(v), omega(w), repulsion(default_particle_repulsion), friction(default_particle_friction), dissipation(default_particle_dissipation), invMass(1.), invII(1.), normal_force(Zero), shear_force(Zero), torque(0.) {};
+augmented_p_data(vect<> v=Zero, double w=0.) : velocity(v), omega(w), repulsion(default_particle_repulsion), friction(default_particle_friction), dissipation(default_particle_dissipation), invMass(1.), invII(1.), force(Zero), torque(0.) {};
   // Properties
   double repulsion;
   double friction;    // Particle friction
@@ -70,8 +43,7 @@ augmented_p_data(vect<> v=Zero, double w=0.) : velocity(v), omega(w), repulsion(
   double omega;
 
   // Force/torque variable
-  vect<> normal_force;
-  vect<> shear_force;
+  vect<> force;
   double torque;
 };
 
@@ -102,7 +74,7 @@ class TestSec {
 
  private:
   // Helper funcitons
-  inline pair<int,int> getSec(vect<>);
+  inline int getSec(vect<>);
   inline void insertParticles();
   inline void interactionHelper(int, int, int);
   inline void interactionHelperB(int, int);
@@ -111,15 +83,15 @@ class TestSec {
   inline int wrapY(int);
   
   // Sector Data
-  sec_struct/*<>*/* sectors;   // Stores the p_id's of particles in the sector
+  sec_struct* sectors;   // Stores the p_id's of particles in the sector
   double sdx, sdy;       // Width and height of a sector
   double invsdx, invsdy; // Inverse width and height of a sector
   double left, right, bottom, top;
   double width, height;
   int nsx, nsy;          // Number of x and y sectors
-  vector<basic_p_data> particleList[2];
-  vector<augmented_p_data> particleData[2];
-  int buffer;            // So we can easily rearrange particles
+  vector<basic_p_data> particleList;
+  vector<augmented_p_data> particleData;
+  vector<int> lastSector; // The last sector a particle was in
 
   bool particles_interact; // True if we allow particles to interact with one another
 };
