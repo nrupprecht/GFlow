@@ -40,7 +40,6 @@ int main(int argc, char** argv) {
   int vbins = -1;        // How many velocity bins we should use
   int number = -1;       // Override usual automatic particle numbers and use prescribed number
   string atype = "";     // What type of active particle to use
-  bool interact = true;  // Whether particles should interact or not
 
 // bacteria parameters: (default values. pass arguments through command line)
   double replenish = 0.0;  // Replenish rate
@@ -88,6 +87,7 @@ int main(int argc, char** argv) {
   bool clustering = false;
   bool everything = false;
   bool trackHeight = false;
+  bool snapshot = false; // Take a snapshot at the end
   bool rcFlds = false;
 
   //----------------------------------------
@@ -123,7 +123,6 @@ int main(int argc, char** argv) {
   parser.get("percent", percent);
   parser.get("number", number);
   parser.get("atype", atype);
-  parser.get("interact", interact);
   parser.get("replenish", replenish);
   parser.get("bacteria", bacteria);
   parser.get("sedimentation", sedimentation);
@@ -152,6 +151,7 @@ int main(int argc, char** argv) {
   parser.get("clustering", clustering);
   parser.get("everything", everything);
   parser.get("trackHeight", trackHeight);
+  parser.get("snapshot", snapshot);
 
   // Bacteria parameters from command line
   parser.get("rDiff", d1);
@@ -178,9 +178,9 @@ int main(int argc, char** argv) {
   int NA = number*pA, NP = number-NA;
 
   // Seed random number generators
-  srand48( std::time(0) );
-  srand( std::time(0) );
-  seedNormalDistribution();
+  // srand48( std::time(0) ); //**
+  // srand( std::time(0) ); //**
+  // seedNormalDistribution(); //**
   //----------------------------------------
 
   Simulator simulation;
@@ -199,8 +199,8 @@ int main(int argc, char** argv) {
   simulation.setStartRecording(start);
   if (dispProfile || dispAveProfile) simulation.setCaptureProfile(true);
   if (dispVelProfile || dispFlowXProfile) simulation.setCaptureVelProfile(true);
-  if (animate) simulation.setCapturePositions(true);
-  if (bulk) simulation.setRecordBulk(true);
+  simulation.setCapturePositions(animate);
+  simulation.setRecordBulk(bulk);
   if (pressure || dpdt) simulation.setRecordPressure(true);
   if (dispVelDist) simulation.setCaptureVelocity(true);
   // Set active particle type
@@ -216,7 +216,6 @@ int main(int argc, char** argv) {
   else if (sphereFluid) simulation.createSphereFluid(NP, NA, radius, activeF, radius, width, height, velocity, couetteFlow);
   else if (buoyancy) simulation.createBuoyancyBox(radius, bR, density, width, height, drop, dispersion, frequency, amplitude);
   else simulation.createControlPipe(NP, NA, radius, velocity, activeF, radius, width, height);
-  simulation.setParticleInteraction(interact);
   
   if (dispRate>=0) simulation.setDispRate(dispRate);
   if (animationSortChoice>=0) simulation.setAnimationSortChoice(animationSortChoice);
@@ -260,7 +259,7 @@ int main(int argc, char** argv) {
   cout << "Command: ";
   for (int i=0; i<argc; i++) cout << argv[i] << " ";
   cout << endl << endl; // Line break
-  cout << "Dimensions: " << simulation.getWidth() << " x " << simulation.getHeight() << " (Volume: " << Vol << ")\n";
+  cout << "Dimensions: " << simulation.getWidth() << " x " << simulation.getHeight() << " (Volume: " << simulation.getWidth()*simulation.getHeight() << ")\n";
   cout << "Radius: " << radius << ", Dispersion: " << dispersion << "\n";
   cout << "Characteristic Fluid Velocity: " << velocity << "\n";
   cout << "Phi: " << phi << ", Number: " << simulation.getNumber() << ", (Actual Phi: " << simulation.getNumber()*PI*sqr(radius)/(width*height) << ")\n";
@@ -281,7 +280,7 @@ int main(int argc, char** argv) {
   
   /// Run the actual program
   try {
-    simulation.setDefaultEpsilon(epsilon);
+    simulation.setEpsilon(epsilon);
     if (bacteria) simulation.bacteriaRun(time);
     else simulation.run(time);
   }
@@ -298,7 +297,8 @@ int main(int argc, char** argv) {
   cout << "Start Time: " << start << ", Record Time: " << max(0., time-start) << "\n";
   cout << "Sim Time: " << time << ", Run time: " << runTime << " s (" << printAsTime(runTime) << "), Ratio: " << time/runTime << ", (" << runTime/time << ")" <<endl;
   cout << "Actual (total) program run time: " << realTime << ", (" << printAsTime(realTime) << ")\n";
-  cout << "Iterations: " << simulation.getIter() << ", Default Epsilon: " << simulation.getDefaultEpsilon() << endl;
+  cout << "Time per particle: " << runTime/(simulation.getASize()+simulation.getPSize()) << "\n";
+  cout << "Iterations: " << simulation.getIter() << ", Epsilon: " << simulation.getEpsilon() << endl;
   cout << "Sectors: X: " << simulation.getSecX() << ", Y: " << simulation.getSecY();
   cout << "\n\n----------------------- END SUMMARY -----------------------\n\n";
   
@@ -309,9 +309,14 @@ int main(int argc, char** argv) {
       simulation.printResourceToFile();
       simulation.printWasteToFile();
       cout << simulation.printWalls() << endl; // for now - later print geometry in different format
+      cout << mmPreproc(simulation.printAnimationCommand(),2) << endl; //**
     }
     else cout << mmPreproc(simulation.printAnimationCommand(),2) << endl;
   }  
+if (snapshot) {
+  cout << mmPreproc(simulation.printSnapshot()) << endl;
+  
+ }
   if (bulk) cout << mmPreproc(simulation.printBulkAnimationCommand()) << endl;
   if (pressure) cout << mmPreproc(simulation.printPressureAnimationCommand()) << endl;
   if (dpdt) cout << mmPreproc(simulation.printDPDTAnimationCommand()) << endl;

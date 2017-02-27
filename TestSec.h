@@ -4,19 +4,10 @@
 #include "Utility.h"
 
 /// Default constants
-const double default_particle_repulsion   = 1.0;
+const double default_particle_repulsion   = 100.0;
 const double default_particle_friction    = 0.5;
 const double default_particle_dissipation = 1.0;
 const double default_particle_density     = 1.0;
-
-struct sec_struct {
-  // Add particle
-  void insert_particle(int pid) { p_id.push_back(pid); }
-  // Mutator
-  void reset() { p_id.clear(); }
-  // A list of the particle id's of the particles in the sector
-  list<int> p_id;
-};
 
 struct basic_p_data {
   // Constructors
@@ -83,7 +74,7 @@ class TestSec {
   inline int wrapY(int);
   
   // Sector Data
-  sec_struct* sectors;   // Stores the p_id's of particles in the sector
+  list<int>* sectors;   // Stores the p_id's of particles in the sector
   double sdx, sdy;       // Width and height of a sector
   double invsdx, invsdy; // Inverse width and height of a sector
   double left, right, bottom, top;
@@ -91,7 +82,6 @@ class TestSec {
   int nsx, nsy;          // Number of x and y sectors
   vector<basic_p_data> particleList;
   vector<augmented_p_data> particleData;
-  vector<int> lastSector; // The last sector a particle was in
 
   bool particles_interact; // True if we allow particles to interact with one another
 };

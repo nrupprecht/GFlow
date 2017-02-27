@@ -9,13 +9,12 @@ void TestSec::addParticle(vect<> position, double radius, vect<> velocity) {
   particleList.push_back(basic_p_data(position, radius));
   // Set up augmented data
   augmented_p_data data(velocity);
-  data.invMass = default_particle_density*PI*sqr(radius);
+  data.invMass = 1./(default_particle_density*PI*sqr(radius));
   particleData.push_back(data);
-  // Add to lastSector
+  // Add to sectors
   int sec_num = getSec(position);
-  lastSector.push_back(sec_num);
-  int n = particleList.size();
-  sectors[sec_num].insert_particle(n);
+  int n = particleList.size(); // This is particle n
+  sectors[sec_num].push_back(n);
 }
 
 void TestSec::setSectorDim(double dr) {
@@ -27,8 +26,7 @@ void TestSec::setSectorDim(double dr) {
   invsdy = 1./sdy;
   // Create new sector array
   if (sectors) delete [] sectors;
-  sectors = new sec_struct[nsx*nsy];
-  for (int i=0; i<nsx*nsy; ++i) sectors[i].reset();
+  sectors = new list<int>[nsx*nsy];
   // Reinsert particles
   insertParticles();
   rearrangeParticleList();
@@ -38,7 +36,7 @@ void TestSec::interactions() {
   if (particles_interact)
     for (int y=0; y<nsy; y++)
       for (int x=0; x<nsx; x++)
-	for (auto p : sectors[nsx*y+x].p_id) 
+	for (auto p : sectors[nsx*y+x])
 	  interactionHelper(x, y, p);
 }
 
@@ -47,11 +45,12 @@ void TestSec::updateParticles(double epsilon) {
     auto augmented = particleData[i]; // Reference
     // Update linear variables
     vect<> acceleration = augmented.invMass*augmented.force;
-    vect<> dr = epsilon*(augmented.velocity + 0.5*epsilon*acceleration);    
     augmented.velocity += epsilon*acceleration;
+    vect<> dr = epsilon*(augmented.velocity + 0.5*epsilon*acceleration);    
     // Update angular variables
     double alpha = augmented.invII*augmented.torque;
     augmented.omega += epsilon*alpha;
+    double dth = epsilon*(augmented.omega + 0.5*epsilon*alpha);
     // Reset forces and torques
     augmented.torque = 0;
     augmented.force = Zero;
@@ -64,43 +63,29 @@ void TestSec::updateParticles(double epsilon) {
     else if (top<=position.y) position.y -= height;
     // Update data in lists
     particleList[i].position = position;
-    particleList[i].theta += epsilon*(augmented.omega+0.5*epsilon*alpha);
+    particleList[i].theta += dth;
     particleData[i] = augmented;
   }
 }
 
 void TestSec::updateSectors() {
-  /// Try naive way
-  // Remove and re-insert all the particles
-  
-  //cout << "S ... "; //**
-  insertParticles();
-  //cout << "E\n"; //**
-
-  // Cultured way
   // Update sectors
-  /*
-  cout << "S ... \n"; //**
   vector<pair<int,int> > move_to_new_sector;
   vector<list<int>::iterator> remove;
   for (int i=0; i<nsx*nsy; ++i) {
-    
-    for (auto p=sectors[i].p_id.begin(); p!=sectors[i].p_id.end(); ++p) {
+    for (auto p=sectors[i].begin(); p!=sectors[i].end(); ++p) {
       int sec_num = getSec(particleList[*p].position);
       if (sec_num != i) { // In the wrong sector
-	cout << "R";
         remove.push_back(p);
 	move_to_new_sector.push_back(pair<int,int>(*p, sec_num));
       }
     }
     // Remove particles that moved
-    for (auto p : remove) sectors[i].p_id.erase(p);
+    for (auto p : remove) sectors[i].erase(p);
     remove.clear();
-    // Add particles that moved to the correct sector
-    for (auto p : move_to_new_sector) sectors[p.second].insert_particle(p.first);
   }
-  cout << "... E\n"; //**
-  */
+  // Add particles that moved to the correct sector
+  for (auto p : move_to_new_sector) sectors[p.second].push_back(p.first);
 }
 
 void TestSec::rearrangeParticleList() {
@@ -112,10 +97,9 @@ void TestSec::rearrangeParticleList() {
   int n = 0;
   for (int y=0; y<nsy; y++)
     for (int x=0; x<nsx; x++) {
-      for (auto &p : sectors[nsx*y+x].p_id) {
+      for (auto &p : sectors[nsx*y+x]) {
 	newParticleList[n] = particleList[p];
 	newParticleData[n] = particleData[p];
-	newLastSector[n]   = lastSector[p];
 	p = n;
 	n++;
       }
@@ -123,7 +107,6 @@ void TestSec::rearrangeParticleList() {
   // Update arrays
   particleList = newParticleList;
   particleData = newParticleData;
-  lastSector = newLastSector;
 }
 
 vector<vect<> > TestSec::getPositions() {
@@ -140,14 +123,12 @@ inline int TestSec::getSec(vect<> p) {
 inline void TestSec::insertParticles() {
   // Clear sectors (in case they are not already cleared)
   for (int y=0; y<nsy; ++y)
-    for (int x=0; x<nsx; ++x) {
-      sectors[y*nsx+x].reset();
-    }
+    for (int x=0; x<nsx; ++x)
+      sectors[y*nsx+x].clear();
   // Reinsert all the particles
   for (int i=0; i<particleList.size(); ++i) {
     int sec_num = getSec(particleList[i].position);
-    sectors[sec_num].insert_particle(i);
-    lastSector[i] = sec_num;
+    sectors[sec_num].push_back(i);
   }
 }
 
@@ -157,19 +138,25 @@ inline void TestSec::interactionHelper(int x, int y, int p_idA) {
   for (int y2=-Dy; y2<=Dy; ++y2)
     for (int x2=-Dx; x2<=Dx; ++x2) {
       // Check if the sectors contain particles
-      int xf = wrapX(x+x2), yf = wrapY(y+y2);
-      for (auto p_idB : sectors[nsx*yf+xf].p_id) 
-	if (p_idA!=p_idB) interactionHelperB(p_idA, p_idB);
+      if (x2==0 && y2==0) {
+	for (auto p_idB : sectors[nsx*y+x]) 
+	  if (p_idA!=p_idB) interactionHelperB(p_idA, p_idB);
+      }
+      else {
+	int xf = wrapX(x+x2), yf = wrapY(y+y2);
+	for (auto p_idB : sectors[nsx*yf+xf])
+	  interactionHelperB(p_idA, p_idB);
+      }
     }
 }
 
 inline void TestSec::interactionHelperB(int p_idA, int p_idB) {
   auto p_a = particleList[p_idA], p_b = particleList[p_idB];
-  vect<> displacement = getDisplacement(p_a.position, p_b.position);
+  vect<> displacement = getDisplacement(p_b.position, p_a.position);
   double distSqr = sqr(displacement);
   double cutoff = p_a.radius + p_b.radius;
   double cutoffSqr = sqr(cutoff);
-  if (distSqr<cutoffSqr) { // Interaction
+  if (distSqr<cutoffSqr) { // Interaction    
     double distance = sqrt(distSqr);
     vect<> normal = (1./distance)*displacement;
     vect<> shear_normal = vect<>(normal.y, -normal.x);
@@ -181,14 +168,12 @@ inline void TestSec::interactionHelperB(int p_idA, int p_idB) {
     double repulsion = pd_a.repulsion + pd_b.repulsion;
     double dissipation = pd_a.dissipation + pd_b.dissipation;
     double Fn = -repulsion*overlap - dissipation*clamp(-Vn);
-
     double Fs = 0;
     double friction = particleData[p_idA].friction*particleData[p_idB].friction;
     if (friction>0) {
       double Vs = dV*shear_normal + p_a.radius*pd_a.omega + p_b.radius*pd_b.omega;
       Fs = -friction*Fn*sign(Vs);
     }
-
     particleData[p_idA].force  += (Fn*normal + Fs*shear_normal);
     particleData[p_idA].torque -= Fs*p_a.radius;
   }

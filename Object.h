@@ -28,9 +28,6 @@ const double default_reproduction_delay = 1000.1;
 
 typedef pair<vect<>, vect<> > WPair;
 
-/// Clamp function
-inline double clamp(double x) { return x>0 ? x : 0; }
-
 /// Forward declarations
 class Wall; 
 class Simulator;
@@ -59,25 +56,18 @@ class Particle {
   double getKE() { return 0.5*(sqr(velocity)/invMass + sqr(omega)/invII); }
   double getPressure() { return normForces/(2*PI*radius); }
   vect<> getForce() { return force; }
-  vect<> getNormalForce() { return normalF; }
-  vect<> getShearForce() { return shearF; }
-  bool isActive() { return active; }
-  bool getParticleShear() { return particleShear; }
-  bool getWallShear() { return wallShear; }
+  bool isActive() { return false; }
   
   // Mutators
   void setOmega(double om) { omega = om; }
   void setVelocity(vect<> V) { velocity = V; }
   void setDissipation(double d) { dissipation = d; }
   void setCoeff(double c) { coeff = c; }
-  void setParticleShear(bool s) { particleShear = s; }
-  void setWallShear(bool s) { wallShear = s; }
   void setDrag(double d) { drag = d; }
   void setMass(double);
   void setDensity(double);
   void setII(double);
   void setRadius(double r) { radius = r; }
-  void setInteraction(bool i) { interacting=i; }
   void resetNormForces() { normForces = 0; }
 
   /// Control functions
@@ -92,8 +82,6 @@ class Particle {
   void flowForce(vect<> (*func)(vect<>));
   void flowForce(std::function<vect<>(vect<>)>);
   void applyForce(vect<> F) { force += F; }
-  void applyNormalForce(vect<> force) { normalF += force; }
-  void applyShearForce(vect<> force) { shearF += force; }
   void applyTorque(double t) { torque += t; }
 
   void freeze() {
@@ -103,8 +91,6 @@ class Particle {
     alpha = 0;
   }
 
-  void fix(bool f=true) { fixed = f; }
-
   // Sight -- Allow the particle to gather information from the "world"
   virtual void see(Simulator*) {}
 
@@ -113,30 +99,15 @@ class Particle {
   class BadInertiaError {};
 
  protected:
-  vect<> position;
-  vect<> velocity;
-  vect<> acceleration;
-  double theta, omega, alpha; // Angular variables
-  bool fixed; // Whether the particle can move or not
-  bool interacting; // Whether this particle interacts with others or not
-  bool active; // Whether this is an active particle or not
-
-  bool particleShear; // True if it experiences interparticle friction
-  bool wallShear;     // True if it experiences friction with walls
+  vect<> position, velocity, acceleration; // Linear variables
+  double theta, omega, alpha;              // Angular variables
 
   // Forces and torques
   vect<> force;
-  vect<> normalF;
-  vect<> shearF;
   double torque;
 
   // For calculating "bump frequency"
   double normForces;
-  double recentForceAve;
-  double timeWindow;
-
-  // The fluid velocity where you are
-  vect<> fvel;
 
   // Characteristic variables
   double radius;      // Disc radius
@@ -160,6 +131,7 @@ class Bacteria : public Particle {
   // Accessors:
   double getResSecRate() { return resSecRate; }
   double getRepDelay() { return repDelay; }
+  bool isActive() { return true; }
 
   // mutators:
   void setRepDelay(double d) {repDelay = d; }
@@ -190,6 +162,7 @@ class RTSphere : public Particle {
 
   // Accessors
   double getTheta();
+  bool isActive() { return true; }
 
  protected:
   // Initialize the particle
@@ -202,11 +175,14 @@ class RTSphere : public Particle {
   double runForce;
   double maxVSqr;  // Maximum velocity (relative to fluid) that we will try to run at
   vect<> runDirection;
-  
+
   double baseTau;   // Base tau value
   double tauConst;  // A constant for calculating tau
   double randDelay; // How long to wait between possibly changing directions (saves computation)
   double delay;     // How long the delay has been so far
+
+  // The fluid velocity where you are
+  vect<> fvel;
 };
 
 class PSphere : public RTSphere {
@@ -214,7 +190,12 @@ class PSphere : public RTSphere {
   PSphere(vect<>, double);
   PSphere(vect<>, double, double);
 
+  virtual void update(double);
+
  protected:
+  double recentForceAve;
+  double timeWindow;
+
   // Calculate the probability of reorientation
   inline virtual double probability();
 };

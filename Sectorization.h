@@ -28,6 +28,9 @@ class Sectorization {
   int getInteractionFunctionChoice() { return interactionFunctionChoice; }
   bool isEmpty(int, int);
   bool isEdge(int, int);
+  bool wouldOverlap(vect<>, double);
+  double pressureAt(int, int);
+  double dPdTAt(int, int, double);
 
   // Mutators
   void addParticle(Particle*); // Add particle to particle list and sector
@@ -48,7 +51,7 @@ class Sectorization {
   // Special Animation
   vector<VPair> bulkAnimation();
   vector<Trio> getPressure();
-  vector<Trio> getDPDT();
+  vector<Trio> getDPDT(double);
 
  private:
   // Private Helper functions
@@ -56,7 +59,9 @@ class Sectorization {
   inline void add(sectorFunction, Bounds);
   inline void add(pair<Bounds, sectorFunction>);
   inline bool overlaps(double, double, double, double, double, double, double, double);
-  
+  inline bool boundX(int&);
+  inline bool boundY(int&);
+
   inline void updatePressure();
 
   // Interaction functions
@@ -82,6 +87,7 @@ class Sectorization {
   // Sector based functions
   list<pair<Bounds, sectorFunction> > sectorFunctionRecord;
   list<sectorFunction>* sfunctions; // Each sector has a list of function pointers
+  int numSecFunctions;
   // list<Wall*> *wallSectors;         // A pointer to walls that particles in the sector might interact with --> UNIMPLEMENTED
 };
 

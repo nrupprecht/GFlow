@@ -62,11 +62,9 @@ class Simulator {
   void bacteriaRun(double runLength);
 
   // Accessors
-  bool wouldOverlap(vect<> pos, double R);
   vect<> getShear(vect<>);
   vect<> getFVelocity(vect<>);
-  double getDefaultEpsilon() { return default_epsilon; }
-  double getMinEpsilon() { return minepsilon; }
+  double getEpsilon() { return epsilon; }
   double getDisplayTime() { return dispTime; }
   double getBinXWidth() { return (right-left)/bins; }
   double getBinYWidth() { return (top-bottom)/bins; }
@@ -146,6 +144,7 @@ class Simulator {
 
   // Mutators
   void noFlow() { setFlowV(0); flowFunc=0; hasDrag=false; }
+  void setEpsilon(double e) { epsilon = e; }
   void setAnimationSortChoice(int c) { animationSortChoice = c; }
   void setFlowV(double);
   void setUseVelocityDiff(bool d) { useVelocityDiff = d; }
@@ -162,9 +161,6 @@ class Simulator {
   void setSectorize(bool s) { sectorize = s; }
   void setSectorDims(int sx, int sy);
   void setDimensions(double left, double right, double bottom, double top);
-  void setAdjustEpsilon(bool a) { adjust_epsilon = a; }
-  void setDefaultEpsilon(double e) { default_epsilon = e; }
-  void setMinEpsilon(double m) { min_epsilon = m; }
   void setXLBound(BType b) { xLBound = b; }
   void setXRBound(BType b) { xRBound = b; }
   void setYTBound(BType b) { yTBound = b; }
@@ -209,15 +205,11 @@ class Simulator {
   void setMutationRate(double mu) { mutationRate = mu; }
   void setMutationAmount(double ds) { mutationAmount = ds; }
   /// Global set functions
-  void setParticleInteraction(bool);
   void setParticleDissipation(double);
   void setWallDissipation(double);
   void setParticleCoeff(double);
-  void setParticleShear(bool);
   void setWallCoeff(double);
-  void setWallShear(bool);
   void setParticleDrag(double);
-  void setParticleFix(bool);
 
   // Creation Functions
   void addWall(Wall*);
@@ -232,6 +224,7 @@ class Simulator {
   // Display functions
   string printWalls();
   string printAnimationCommand();
+  string printSnapshot();
   string printBulkAnimationCommand();
   string printPressureAnimationCommand();
   string printDPDTAnimationCommand();
@@ -334,9 +327,6 @@ class Simulator {
   /// Times etc.
   double time;       // The simulated time
   double epsilon, sqrtEpsilon; // Epsilon (time step) and its square root
-  double default_epsilon, min_epsilon; // Epsilon adjustment
-  double minepsilon; // The smallest epsilon that was ever used
-  bool adjust_epsilon; // Whether we should adjust epsilon or not
   double dispTime;   // Time between recordings (1/dispRate)
   double dispFactor; // Speed up or slow down animation (e.g. 2 -> 2x speed)
   double lastDisp;   // Last time data was recorded
@@ -418,6 +408,7 @@ class Simulator {
   int secX, secY; // Width and height of sector grid
   bool sectorize; // Whether to use sector based interactions
   vector<sectorFunction> sFunctionList; // List of sector functions (e.g. pressure simulating functions)
+  bool doInteractions; // Do particle-particle interactions
 
   /// What data to save
   bool capturePositions; // Whether we should record the positions of particles and walls
@@ -425,6 +416,9 @@ class Simulator {
   bool captureVelProfile;  // Whether we should record velocity profile data
   bool captureLongProfile; // Whether we should capture profile vs time data
   bool captureVelocity;  // Whether we should record velocity distribution data
+
+  // Special
+  bool needSee;         // True if some particles need to "see" the simulation
 };
 
 #endif

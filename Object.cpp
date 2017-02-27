@@ -1,13 +1,11 @@
 #include "Object.h"
 #include "Simulator.h"
 
-Particle::Particle(vect<> pos, double rad, double repulse, double dissipate, double coeff) : position(pos), radius(rad), repulsion(repulse), dissipation(dissipate), coeff(coeff), fvel(Zero), particleShear(true), wallShear(true) {
+Particle::Particle(vect<> pos, double rad, double repulse, double dissipate, double coeff) : position(pos), radius(rad), repulsion(repulse), dissipation(dissipate), coeff(coeff) {
   initialize();
 }
 
 void Particle::initialize() {
-  fixed = false;
-  interacting = true;
   velocity = Zero;
   acceleration = Zero;
   omega = 0;
@@ -16,14 +14,11 @@ void Particle::initialize() {
   double mass = PI*default_sphere_density*sqr(radius);
   invMass = 1.0/mass;
   invII = 1.0/(0.5*mass*sqr(radius));
-  active = false;
   drag = default_sphere_drag*radius;
-  normalF = shearF = force = Zero;
+  force = Zero;
   torque = 0;
   
   normForces = 0;
-  //recentForceAve = 0;
-  //timeWindow = 3.; // 3 Seconds -> For calculating recent normal forces
 }
 
 void Particle::setMass(double m) {
@@ -46,7 +41,6 @@ void Particle::setII(double II) {
 }
 
 bool Particle::interact(Particle* P) {
-  if (fixed) return false;
   vect<> displacement = P->getPosition() - position;
   return interact(P, displacement);
 }
@@ -57,7 +51,6 @@ bool Particle::interactSym(Particle* P) {
 }
 
 bool Particle::interact(Particle* P, vect<> displacement) {
-  if (fixed || !interacting) return false;
   double distSqr = sqr(displacement);
   double cutoff = radius + P->getRadius();
   double cutoffsqr = sqr(cutoff);
@@ -79,11 +72,10 @@ bool Particle::interact(Particle* P, vect<> displacement) {
     double Fn = -repulsion*overlap-dissipation*clamp(-Vn); // Damped harmonic oscillator
     // Calculate the Shear force
     double Fs = 0;
-    if (particleShear && P->particleShear) 
+    if (coeff && P->getCoeff())
       Fs = -(coeff*P->getCoeff())*Fn*sign(Vs);
 
-    applyNormalForce(Fn*normal);
-    applyShearForce(Fs*shear);
+    applyForce(Fn*normal+Fs*shear);
     applyTorque(-Fs*radius);
 
     // For finding average normal forces and pressures
@@ -94,7 +86,6 @@ bool Particle::interact(Particle* P, vect<> displacement) {
 }
 
 bool Particle::interactSym(Particle* P, vect<> displacement) {
-  if (fixed || !interacting) return false;
   double distSqr = sqr(displacement);
   double cutoff = radius + P->getRadius();
   double cutoffsqr = sqr(cutoff);
@@ -116,14 +107,12 @@ bool Particle::interactSym(Particle* P, vect<> displacement) {
     double Fn = -repulsion*overlap-dissipation*clamp(-Vn); // Damped harmonic oscillator
     // Calculate the Shear force
     double Fs = 0;
-    if (particleShear && P->particleShear)
+    if (coeff && P->getCoeff())
       Fs = -(coeff*P->getCoeff())*Fn*sign(Vs);
     // Apply normal force to both
-    applyNormalForce(Fn*normal);
-    P->applyNormalForce(-Fn*normal);
-    // Apply shear force to both
-    applyShearForce(Fs*shear);
-    P->applyShearForce(-Fs*shear);
+    vect<> force = Fn*normal+Fs*shear;
+    applyForce(force);
+    P->applyForce(-force);
     // Apply torque to both
     applyTorque(-Fs*radius);
     P->applyTorque(-Fs*P->getRadius()); // The force and radial direction both invert
@@ -136,25 +125,22 @@ bool Particle::interactSym(Particle* P, vect<> displacement) {
 }
 
 bool Particle::interact(vect<> pos, double force) {
-  if (fixed) return false;
   vect<> displacement = position - pos; // Points towards particle
   double distSqr = sqr(displacement);
   if (distSqr < sqr(radius)) { // Interaction (same potiential as particle-particle)
     double dist = sqrt(distSqr);
     vect<> normal = (1.0/dist) * displacement;
-    //vect<> shear = vect<>(normal.y, -normal.x);
     // Pressure force
     normForces += fabs(force);
-    applyNormalForce(force*normal);
+    applyForce(force*normal);
     return true;
   }
   return false;
 }
 
 void Particle::update(double epsilon) {
-  if (fixed) return;
   // Calculate net force/acceleration, record last acceleration
-  vect<> netF = normalF + shearF + force;
+  vect<> netF = force; //normalF + shearF + force;
   //vect<> acceleration_t = acceleration;
   acceleration = invMass*netF;
   // Update velocity and position (velocity verlet) --- V. Verlet seems to conserve energy worse then this
@@ -162,19 +148,14 @@ void Particle::update(double epsilon) {
   // velocity += 0.5*epsilon*(acceleration+acceleration_t);
   velocity += epsilon*acceleration;
   // Update angular variables (velocity verlet)
-  double alpha_t = alpha;
+  //double alpha_t = alpha;
   alpha = invII*torque;
   theta += epsilon*(omega + 0.5*epsilon*alpha);
   // omega += 0.5*epsilon*(alpha+alpha_t);
   omega += epsilon*alpha;
   // Reset forces and torques
   torque = 0;
-  normalF = shearF = force = Zero;
-  // Update rolling pressure average
-  //double ef = epsilon/timeWindow; // Factor
-  //recentForceAve *= 1-ef;
-  //recentForceAve += ef*normForces;
-  //normForces = 0;
+  force = 0; // normalF = shearF = force = Zero;
 }
 
 void Particle::flowForce(vect<> F) {
@@ -278,8 +259,6 @@ void RTSphere::initialize() {
   randDelay = 0.025;
   delay = drand48()*randDelay;
   runDirection = randV();
-  // This is an active particle
-  active = true;
 }
 
 inline double RTSphere::probability() {
@@ -311,9 +290,25 @@ inline void ABP::changeDirection() {
 // ********** PSPHERE ********** //
 // Currently Defunct, have to add recent force averaging back in.
 
-PSphere::PSphere(vect<> pos, double rad) : RTSphere(pos, rad) { throw 1; };
+PSphere::PSphere(vect<> pos, double rad) : RTSphere(pos, rad) { 
+  recentForceAve = 0;
+  timeWindow = 3;
+  throw 1; 
+};
 
-PSphere::PSphere(vect<> pos, double rad, double force) : RTSphere(pos, rad) { throw 1; };
+PSphere::PSphere(vect<> pos, double rad, double force) : RTSphere(pos, rad) { 
+  recentForceAve = 0;
+  timeWindow = 3;
+  throw 1;
+}
+
+void PSphere::update(double epsilon) {
+  // Update rolling pressure average
+  double ef = epsilon/timeWindow; // Factor
+  recentForceAve *= 1-ef;
+  recentForceAve += ef*normForces;
+  RTSphere::update(epsilon);
+}
 
 inline double PSphere::probability() {
   // High recent ave force -> Tumble less -> large tau
@@ -424,12 +419,11 @@ void Wall::interact(Particle* P) {
     // Damped harmonic oscillator
     double Fn = -repulsion*overlap-dissipation*(-Vn);
     double Fs = 0;
-    if (P->getWallShear())
+    if (P->getCoeff())
       Fs = min(fabs((coeff*P->getCoeff())*Fn),fabs(Vs)*gamma)*sign(Vs);
 
     pressureF += Fn;
-    P->applyNormalForce(-Fn*norm);
-    P->applyShearForce(-Fs*shear);
+    P->applyForce(-Fn*norm-Fs*shear);
     P->applyTorque(-Fs*P->getRadius());
   }
 }

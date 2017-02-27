@@ -1,6 +1,6 @@
 #include "Sectorization.h"
 
-Sectorization::Sectorization() : secX(3), secY(3), wrapX(false), wrapY(false), ssecInteract(false), left(0), right(1), bottom(0), top(1), particles(0), sectors(0), sfunctions(0), /*wallSectors(0),*/ interactionFunctionChoice(0), edgeDetect(0), pressure0(0), pressure1(0), recordPressure(false) {};
+Sectorization::Sectorization() : secX(3), secY(3), wrapX(false), wrapY(false), ssecInteract(false), left(0), right(1), bottom(0), top(1), particles(0), sectors(0), sfunctions(0), numSecFunctions(0), /*wallSectors(0),*/ interactionFunctionChoice(0), edgeDetect(0), pressure0(0), pressure1(0), recordPressure(false) {};
 
 Sectorization::~Sectorization() {
   if (sectors) delete [] sectors;
@@ -27,8 +27,8 @@ void Sectorization::sectorize() {
 
 void Sectorization::update() {
   // Update sectors
-  for (int i=0; i<(secX+2)*(secY+2)+1; i++) {
-    vector<list<Particle*>::iterator> remove;
+  vector<list<Particle*>::iterator> remove;
+  for (int i=0; i<secX*secY+1; i++) {
     for (auto p=sectors[i].begin(); p!=sectors[i].end(); ++p) {
       int sec = getSec((*p)->getPosition());
       if (sec != i) { // In the wrong sector
@@ -38,11 +38,12 @@ void Sectorization::update() {
     }
     // Remove particles that moved
     for (auto P : remove) sectors[i].erase(P);
+    remove.clear();
   }
   // Update pressure
   if (recordPressure) updatePressure();
 }
-
+  
 void Sectorization::interactions() {
   switch (interactionFunctionChoice) {
   default:
@@ -60,56 +61,45 @@ void Sectorization::interactions() {
 
 inline void Sectorization::symmetricInteractions() {
   if (particles==0 || particles->empty()) return; // Nothing to do
-  for (int y=1; y<secY+1; y++)
-    for (int x=1; x<secX+1; x++) {
-      for (auto P : sectors[y*(secX+2)+x]) { // For each particle in the sector
+  for (int y=0; y<secY; y++)
+    for (int x=0; x<secX; x++) {
+      for (auto P : sectors[y*secX+x]) { // For each particle in the sector
         // Check the required surrounding sectors ( * ) around you ( <*> )
 	// +---------+
 	// | *  x  x |
 	// | * <*> x |
 	// | *  *  x |
 	// +---------+
+	bool inBounds = true;
 	// Bottom left sector
 	int sx = x-1, sy=y-1;
-        if (sx<1) {
-	  if (wrapX) sx+=secX; 
-	  else continue;
-	}
-	else if (sx>secX) {
-	  if (wrapX) sx-=secX;
-	  else continue;
-	}
-        if (sy<1) {
-	  if (wrapY) sy+=secY;
-	  else continue;
-	}
-	else if (sy>secY) {
-	  if (wrapY) sy-=secY;
-	  else continue;
-	}
-        for (auto Q : sectors[sy*(secX+2)+sx]) P->interactSym(Q, getDisplacement(Q, P));
+	bool inBoundsX = boundX(sx);
+	bool inBoundsY = boundY(sy);
+        if (inBoundsX && inBoundsY) 
+	  for (auto Q : sectors[sy*secX+sx]) P->interactSym(Q, getDisplacement(Q, P));
 	// Left sector
 	sy=y; // sx is the same
-        if (wrapY && sy<1) sy+=secY; else if (wrapY && sy>secY) sy-=secY;
-        for (auto Q : sectors[sy*(secX+2)+sx]) P->interactSym(Q, getDisplacement(Q, P));
+	inBoundsY = boundY(sy);
+	if (inBoundsX && inBoundsY)
+	  for (auto Q : sectors[sy*secX+sx]) P->interactSym(Q, getDisplacement(Q, P));
 	// Top left sector
 	sy=y+1; // sx is the same
-	if (wrapY && sy<1) sy+=secY; else if (wrapY && sy>secY) sy-=secY;
-	for (auto Q : sectors[sy*(secX+2)+sx]) P->interactSym(Q, getDisplacement(Q, P));
+	inBoundsY = boundY(sy);
+	if (inBoundsX && inBoundsY)
+	  for (auto Q : sectors[sy*secX+sx]) P->interactSym(Q, getDisplacement(Q, P));
 	// Bottom sector
 	sx = x;  sy=y-1;
-        if (wrapX && sx<1) sx+=secX; else if (wrapX && sx>secX) sx-=secX;
-        if (wrapY && sy<1) sy+=secY; else if (wrapY && sy>secY) sy-=secY;
-        for (auto Q : sectors[sy*(secX+2)+sx]) P->interactSym(Q, getDisplacement(Q, P));
+	inBoundsX = boundX(sx); inBoundsY = boundY(sy);
+        for (auto Q : sectors[sy*secX+sx]) P->interactSym(Q, getDisplacement(Q, P));
 	// Central sector
 	sy=y; // sx is the same
-        for (auto Q : sectors[sy*(secX+2)+sx]) 
+        for (auto Q : sectors[sy*secX+sx]) 
 	  if (P!=Q) P->interact(Q, getDisplacement(Q, P));
       }
     }
   // Have to try to interact everything in the special sector with everything else
   if (ssecInteract) {
-    for (auto P : sectors[(secX+2)*(secY+2)])
+    for (auto P : sectors[secX*secY])
       for (auto Q : *particles)
         if (P!=Q) {
           vect<> disp = getDisplacement(Q, P);
@@ -120,19 +110,17 @@ inline void Sectorization::symmetricInteractions() {
 
 inline void Sectorization::asymmetricInteractions() {
   if (particles==0 || particles->empty()) return; // Nothing to do
-  for (int y=1; y<secY+1; y++)
-    for (int x=1; x<secX+1; x++) {
-      for (auto P : sectors[y*(secX+2)+x]) { // For each particle in the sector
+  for (int y=0; y<secY; y++)
+    for (int x=0; x<secX; x++) {
+      for (auto P : sectors[y*secX+x]) { // For each particle in the sector
 	// Check surrounding sectors
 	for (int j=y-1; j<=y+1; j++) {
 	  int sy = j;
-	  if (wrapY && j==0) sy=secY;
-	  else if (wrapY && j==secY+1) sy=1;
+	  if (!boundY(sy)) continue;
 	  for (int i=x-1; i<=x+1; i++) {
 	    int sx = i;
-	    if (wrapX && i==0) sx=secX;
-	    else if (wrapX && i==secX+1) sx=1;
-	    for (auto Q : sectors[sy*(secX+2)+sx])
+	    if (!boundX(sx)) continue;
+	    for (auto Q : sectors[sy*secX+sx])
 	      if (P!=Q) P->interact(Q, getDisplacement(Q, P));
 	  }
 	}
@@ -140,7 +128,7 @@ inline void Sectorization::asymmetricInteractions() {
     }
   // Have to try to interact everything in the special sector with everything else
   if (ssecInteract) {
-    for (auto P : sectors[(secX+2)*(secY+2)])
+    for (auto P : sectors[secX*secY])
       for (auto Q : *particles)
         if (P!=Q) {
           vect<> disp = getDisplacement(Q, P);
@@ -152,21 +140,20 @@ inline void Sectorization::asymmetricInteractions() {
 inline void Sectorization::asymmetricVariableSizeInteractions() {
   if (particles==0 || particles->empty()) return; // Nothing to do
   double secWidth = (right-left)/secX, secHeight = (top-bottom)/secY;
-  for (int y=1; y<secY+1; y++)
-    for (int x=1; x<secX+1; x++) {
-      for (auto P : sectors[y*(secX+2)+x]) {
+  for (int y=0; y<secY; y++)
+    for (int x=0; x<secX; x++) {
+      for (auto P : sectors[y*secX+x]) {
 	// Pick sector window so object will definately interact with any object its size or smaller
 	double r = 2*P->getRadius();
 	int dx = ceil(r/secWidth), dy = ceil(r/secHeight);
 	for (int j=-dy; j<=dy; j++) {
 	  int sy = y+j;
-	  if (wrapY && sy<1) sy+=secY; else if (wrapY && sy>secY) sy-=secY;
+	  if (!boundY(sy)) continue; //** Why continue?
 	  for (int i=-dx; i<=dx; i++) {
 	    int sx = x+i;
-	    if (wrapX && sx<1) sx+=secX; else if (wrapX && sx>secX) sx-=secX;
-	    int S = sy*(secX+2)+sx;
-	    if (S<0 || (secX+2)*(secY+2)<=S) continue; // In case there was no wrapping, and a large particle overextended the bounds of the sectorization
-	    for (auto Q : sectors[sy*(secX+2)+sx]) {
+	    if (!boundX(sx)) continue; //** Same here
+	    int S = secX*sy+sx;
+	    for (auto Q : sectors[sy*secX+sx]) {
 	      if (P!=Q) {
 		// If Q will act on P, use asymmetric interaction. If it will not (it is to small), then use symmetric interaction.
 		double R = 2*Q->getRadius();
@@ -181,7 +168,7 @@ inline void Sectorization::asymmetricVariableSizeInteractions() {
     }
   // Have to try to interact everything in the special sector with everything else
   if (ssecInteract)
-    for (auto P : sectors[(secX+2)*(secY+2)])
+    for (auto P : sectors[secX*secY])
       for (auto Q : *particles)
         if (P!=Q) P->interact(Q, getDisplacement(Q, P));
 }
@@ -189,10 +176,11 @@ inline void Sectorization::asymmetricVariableSizeInteractions() {
 void Sectorization::wallInteractions() {}; //** STUB
 
 void Sectorization::sectorFunctionApplication() {
-  if (sfunctions!=0 && sectors!=0) // If there is a sector function list
-    for (int i=0; i<(secX+2)*(secY+2); i++) // No special sector
-      for (auto F : sfunctions[i]) 
-	F(sectors[i]);
+  if (numSecFunctions>0)
+    if (sfunctions!=0 && sectors!=0) // If there is a sector function list
+      for (int i=0; i<secX*secY; i++) // No special sector
+	for (auto F : sfunctions[i]) 
+	  F(sectors[i]);
 }
 
 vect<> Sectorization::getDisplacement(vect<> A, vect<> B) {
@@ -218,9 +206,9 @@ int Sectorization::getSec(vect<> pos) {
   int X = static_cast<int>((pos.x-left)/(right-left)*secX);
   int Y = static_cast<int>((pos.y-bottom)/(top-bottom)*secY);
   // If out of bounds, put in the special sector
-  if (X<0 || Y<0 || X>secX || Y>secY) return (secX+2)*(secY+2);
+  if (X<0 || Y<0 || secX<=X || secY<=Y) return secX*secY;
   // Return sector number
-  return (X+1)+(secX+2)*(Y+1);
+  return secX*Y+X;
 }
 
 vect<> Sectorization::getVect(int x, int y) {
@@ -229,12 +217,46 @@ vect<> Sectorization::getVect(int x, int y) {
 
 bool Sectorization::isEmpty(int x, int y) {
   if (x<0 || secX<=x || y<0 || secY<=y) return true;
-  return sectors[(secX+2)*y+(x+1)].empty();
+  return sectors[secX*y+x].empty();
 }
 
 bool Sectorization::isEdge(int x, int y) {
   if (x<0 || secX<=x || y<0 || secY<=y) return false;
   return edgeDetect[y*secX+x];
+}
+
+bool Sectorization::wouldOverlap(vect<> position, double radius) {
+  double r = 2*radius;
+  double secWidth = (right-left)/secX, secHeight = (top-bottom)/secY;
+  int dx = ceil(r/secWidth), dy = ceil(r/secHeight);
+  int x = (position.x-left)/secWidth, y = (position.y-bottom)/secHeight;
+  for (int j=-dy; j<=dy; j++) {
+    int sy = y+j;
+    boundY(sy);
+    for (int i=-dx; i<=dx; i++) {
+      int sx = x+i;
+      boundX(sx);
+      int S = sy*secX+sx;
+      for (auto Q : sectors[sy*secX+sx]) {
+	double R = Q->getRadius();
+	vect<> displacement = getDisplacement(position, Q->getPosition());
+	if (sqr(displacement)<sqr(R+radius)) return true;
+      }
+    }
+  }
+  return false;
+}
+
+double Sectorization::pressureAt(int x, int y) {
+  // Assumes wrapped boundary conditions
+  y %= secY; x %= secX;
+  return pressure1[y*secX+x];
+}
+
+double Sectorization::dPdTAt(int x, int y, double dt) {
+  // Assumes wrapped boundary conditions
+  y %= secY; x %= secX;
+  return (pressure1[y*secX+x]-pressure0[y*secX+x])/dt;
 }
 
 void Sectorization::addParticle(Particle* P) {
@@ -253,7 +275,7 @@ void Sectorization::remove(Particle *P) {
 
 void Sectorization::discard() {
   // Clear all sectors
-  if (sectors) for (int i=0; i<(secX+2)*(secY+2)+1; i++) sectors[i].clear();
+  if (sectors) for (int i=0; i<=secX*secY; i++) sectors[i].clear();
 }
 
 void Sectorization::addSectorFunction(sectorFunction sf, double l, double r, double b, double t) {
@@ -274,11 +296,11 @@ void Sectorization::setDims(int sx, int sy) {
   secX = sx; secY = sy;
   // Redo particles
   if (sectors) delete [] sectors;
-  sectors = new list<Particle*>[(secX+2)*(secY+2)+1];
+  sectors = new list<Particle*>[secX*secY+1];
   for (auto P : *particles) add(P);
   // Redo sector functions
   if (sfunctions) delete [] sfunctions;
-  sfunctions = new list<sectorFunction>[(secX+2)*(secY+2)]; // None for special sector  
+  sfunctions = new list<sectorFunction>[secX*secY]; // None for special sector  
   for (auto P : sectorFunctionRecord) add(P);
   // Redo edge detect
   if (edgeDetect) delete [] edgeDetect;
@@ -305,15 +327,15 @@ vector<VPair> Sectorization::bulkAnimation() {
   vector<VPair> lines;
   // Find which sectors are at the edge of a bulk
   // Don't look at first or last (actual) sectors, i.e. do 2...<sec
-  for (int y=2; y<secY; y++)
-    for (int x=2; x<secX; x++) {
+  for (int y=1; y<secY-1; y++)
+    for (int x=1; x<secX-1; x++) {
       // Highlight empty sectors that border sectors (lrdu) that are not empty
-      if (isEmpty(x,y) && (!isEmpty(x,y+1) || !isEmpty(x+1,y) || !isEmpty(x,y-1) || !isEmpty(x-1,y))) edgeDetect[(y-1)*secX+x-1] = true;
-      else edgeDetect[(y-1)*secX+x-1] = false;
+      if (isEmpty(x,y) && (!isEmpty(x,y+1) || !isEmpty(x+1,y) || !isEmpty(x,y-1) || !isEmpty(x-1,y))) edgeDetect[y*secX+x] = true;
+      else edgeDetect[y*secX+x] = false;
     }
   // Create lines
-  for (int y=1; y<secY+1; y++)
-    for (int x= 1; x<secX+1; x++) {
+  for (int y=1; y<secY-1; y++)
+    for (int x=1; x<secX-1; x++) {
       if (edgeDetect[secX*y+x]) { // This is an edge, link with edges above or right
 	vect<> V = getVect(x,y);
 	if (isEdge(x-1,y+1)) lines.push_back(VPair(getVect(x-1,y+1), V)); // Top Left
@@ -325,19 +347,42 @@ vector<VPair> Sectorization::bulkAnimation() {
   return lines;
 }
 
+inline bool Sectorization::boundX(int &x) {
+  if (x<0) {
+    if (wrapX) x+=secX;
+    else return false;
+  }
+  if (secX<=x) {
+    if (wrapX) x-=secX;
+    else return false;
+  }
+  return true;
+}
+
+inline bool Sectorization::boundY(int &y) {
+  if (y<0) {
+    if (wrapY) y+=secY;
+    else return false;
+  }
+  if (secY<=y) {
+    if (wrapY) y-=secY;
+    else return false;
+  }
+  return true;
+}
+
 inline void Sectorization::updatePressure() {
-  return; //**
-  for (int y=1; y<=secY; y++)
-    for (int x=1; x<=secX; x++) {
+  for (int y=0; y<secY; y++)
+    for (int x=0; x<secX; x++) {
       vect<> v = getVect(x,y);
-      if (sectors[y*(secX+2)+x].empty()) {
+      if (sectors[y*secX+x].empty()) {
 	pressure0[y*secX+x] = pressure1[y*secX+x]; // Update old pressure array
 	pressure1[y*secX+x] = 0; // Update current pressure array
       }
       else {
         double p = 0;
-        for (auto P : sectors[y*(secX+2)+x]) p += P->getPressure();
-        p *= (1./sectors[y*(secX+2)+x].size());
+        for (auto P : sectors[y*secX+x]) p += P->getPressure();
+        p *= (1./sectors[y*secX+x].size());
         // Update arrays
         pressure0[y*secX+x] = pressure1[y*secX+x]; // Update old pressure array
         pressure1[y*secX+x] = p; // Update current pressure array
@@ -347,30 +392,24 @@ inline void Sectorization::updatePressure() {
 
 vector<Trio> Sectorization::getPressure() {
   vector<Trio> forces;
-  for (int y=1; y<=secY; y++)
-    for (int x=1; x<=secX; x++) {
-      vect<> v = getVect(x,y);
-      if (sectors[y*(secX+2)+x].empty()) forces.push_back(Trio(v.x, v.y, 0));
-      else {
-	double p = 0;
-	for (auto P : sectors[y*(secX+2)+x]) p += P->getPressure();
-	p *= (1./sectors[y*(secX+2)+x].size());
-	forces.push_back(Trio(v.x, v.y, p));
-	// Record
-	pressure0[y*secX+x] = pressure1[y*secX+x]; // Update old pressure array
-	pressure1[y*secX+x] = p; // Update current pressure array
+  for (int y=0; y<secY; y++)
+    for (int x=0; x<secX; x++) {
+      double P = pressureAt(x,y);
+      if (P!=pressureAt(x+1,y) || P!=pressureAt(x,y+1) || P!=pressureAt(x-1,y) || P!=pressureAt(x,y-1)) {
+	vect<> v = getVect(x,y);
+	forces.push_back(Trio(v.x,v.y,P));
       }
     }
   return forces;
 }
 
-vector<Trio> Sectorization::getDPDT() {
+vector<Trio> Sectorization::getDPDT(double dt) {
   vector<Trio> dpdt;
-  double dT = 1./15.; //** This could be a member variable of Sectorization
-  for (int y=1; y<=secY; y++)
-    for (int x=1; x<=secX; x++) {
+  double invDt = dt==0 ? 1 : 1./dt;
+  for (int y=0; y<secY; y++)
+    for (int x=0; x<secX; x++) {
       vect<> v = getVect(x,y);
-      dpdt.push_back(Trio(v.x, v.y, (pressure1[y*secX+x]-pressure0[y*secX+x])/dT));
+      dpdt.push_back(Trio(v.x, v.y, (pressure1[y*secX+x]-pressure0[y*secX+x])*invDt));
     }
   return dpdt;
 }
@@ -384,12 +423,12 @@ inline void Sectorization::add(Particle *P) {
 inline void Sectorization::add(sectorFunction sf, double l, double r, double b, double t) {
   if (sfunctions==0 || sf==0) return;
   double width = (right-left)/secX, height = (top-bottom)/secY;
-  for (int y=1; y<secY+1; y++) {
-    for (int x=1; x<secX+1; x++)
+  for (int y=0; y<secY; y++)
+    for (int x=0; x<secX; x++)
       if (overlaps(l, r, b, t, (x-1)*width, x*width, (y-1)*height, y*height)) {
-	sfunctions[y*(secX+2)+x].push_back(sf);
+	sfunctions[y*secX+x].push_back(sf);
+	numSecFunctions++;
       }
-    }
 }
 
 inline void Sectorization::add(sectorFunction sf, Bounds B) {

@@ -1,16 +1,12 @@
 #include "Simulator.h"
 
-Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), gravity(Zero), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), viscosity(1.308e-3), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), mutationRate(0.0), mutationAmount(0.0), recFields(false), replenish(0), wasteSource(0), recordDist(false), recordClustering(false), alphaR(1.0), alphaW(1.0), betaR(1.0), csatR(1.0), csatW(1.0), lamR(0.0), lamW(0.0), animationScale(100), capturePositions(false), captureProfile(false), captureVelProfile(false), captureLongProfile(false), captureVelocity(false), recordBulk(false), recordPressure(false), activeType(BROWNIAN), asize(0), psize(0), maxParticles(0), addDelay(0.1), addTime(0), doGradualAddition (false), initialV(0.1), animationSortChoice(0), radiusDivide(0.1) {
+Simulator::Simulator() : lastDisp(1), dispTime(1./15.), dispFactor(1), time(0), iter(0), bottom(0), top(1.0), yTop(1.0), left(0), right(1.0), gravity(Zero), markWatch(false), startRecording(0), stopRecording(1e9), startTime(1), delayTime(5), maxIters(-1), recAllIters(false), runTime(0), recIt(0), temperature(0), viscosity(1.308e-3), resourceDiffusion(50.), wasteDiffusion(50.), secretionRate(1.), eatRate(1.), mutationRate(0.0), mutationAmount(0.0), recFields(false), replenish(0), wasteSource(0), recordDist(false), recordClustering(false), alphaR(1.0), alphaW(1.0), betaR(1.0), csatR(1.0), csatW(1.0), lamR(0.0), lamW(0.0), animationScale(100), capturePositions(false), captureProfile(false), captureVelProfile(false), captureLongProfile(false), captureVelocity(false), recordBulk(false), recordPressure(false), activeType(BROWNIAN), asize(0), psize(0), maxParticles(0), addDelay(0.1), addTime(0), doGradualAddition (false), initialV(0.1), animationSortChoice(0), radiusDivide(0.1), needSee(false), doInteractions(true) {
   // Flow
   hasDrag = false;
   flowFunc = 0;
   // Time steps
-  default_epsilon = 1e-4;
-  epsilon = default_epsilon;
-  sqrtEpsilon = sqrt(default_epsilon);
-  minepsilon = default_epsilon; // Smallest dt ever used
-  min_epsilon = 1e-7; // Smallest dt we can consider using
-  adjust_epsilon = false;
+  epsilon = 1e-4;
+  sqrtEpsilon = sqrt(epsilon);
   // Boundary conditions
   xLBound = WRAP;
   xRBound = WRAP;
@@ -86,9 +82,6 @@ void Simulator::createSquare(int NP, int NA, double radius, double width, double
   setParticleDrag(default_sphere_drag);
   setWallDissipation(default_wall_dissipation);
   setWallCoeff(default_wall_coeff);
-
-  default_epsilon = 1e-4;
-  min_epsilon = 1e-8;
 }
 
 void Simulator::createHopper(int N, double radius, double gap, double width, double height, double act) {
@@ -124,10 +117,6 @@ void Simulator::createHopper(int N, double radius, double gap, double width, dou
 
   // Set where particles will be reinserted
   yTop = troughHeight + 1.3*particles.size()*PI*sqr(radius)/width; // Estimate where the top will be
-
-  // Set neccessary times
-  default_epsilon = 1e-4;
-  min_epsilon = 1e-8;
 }
 
 void Simulator::createPipe(int N, double radius, double V, int NObst) {
@@ -140,9 +129,6 @@ void Simulator::createPipe(int N, double radius, double V, int NObst) {
 
   addWall(new Wall(vect<>(0,0), vect<>(right,0)));
   addWall(new Wall(vect<>(0,top), vect<>(right,top)));
-  // Add stationary obstacles
-  addParticles(NObst, 2*radius, 0, 0, right, 0, top);
-  setParticleFix(true);
   // Add mobile particles
   addParticles(N, radius, 0, 0, right, 0, top);
   xLBound = WRAP;  xRBound = WRAP;  yTBound = NONE;  yBBound = NONE;
@@ -158,9 +144,6 @@ void Simulator::createPipe(int N, double radius, double V, int NObst) {
   setParticleDrag(default_sphere_drag);
   setWallDissipation(default_wall_dissipation);
   setWallCoeff(default_wall_coeff);
-
-  default_epsilon = 1e-4;
-  min_epsilon = 1e-8;
 }
 
 void Simulator::createControlPipe(int N, int A, double radius, double V, double F, double rA, double width, double height, double var) {
@@ -198,9 +181,7 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, double 
   setParticleDrag(default_sphere_drag);
   setWallDissipation(default_wall_dissipation);
   setWallCoeff(default_wall_coeff);
-  // Set time constants
-  default_epsilon = 1e-4;
-  min_epsilon = 1e-8;
+
 }
 
 void Simulator::createSedimentationBox(int N, double radius, double width, double height, double F, bool interact) {
@@ -225,15 +206,12 @@ void Simulator::createSedimentationBox(int N, double radius, double width, doubl
   hasDrag = false;
   flowFunc = 0;
   // Set physical parameters
-  if (!interact) setParticleInteraction(false); // --> Turn off all particle interactions
+  if (!interact) doInteractions = false;
   setParticleCoeff(0); // --> No torques, interparticle shear forces
   setParticleDissipation(default_sphere_dissipation);
   setParticleDrag(default_sphere_drag);
   setWallDissipation(default_wall_dissipation);
   setWallCoeff(default_wall_coeff);
-  // Set time constants
-  default_epsilon = 1e-4;
-  min_epsilon = 1e-8;
 }
 
 void Simulator::createSphereFluid(int N, int A, double radius, double F, double rA, double width, double height, double velocity, bool couetteFlow) {
@@ -272,16 +250,12 @@ void Simulator::createSphereFluid(int N, int A, double radius, double F, double 
   // Set physical parameters
   double diss = 20; // For no friction, use ~9.954
   setParticleCoeff(sqrt(0.5));
-  setParticleShear(true);
   setParticleDissipation(diss); //default_sphere_dissipation);
   setParticleDrag(0);
   setWallDissipation(diss); //default_wall_dissipation);
   setWallCoeff(1.);
   // Temperature
   temperature = 1;
-  // Epsilons
-  default_epsilon = 1e-4;
-  min_epsilon = 1e-8;
 }
 
 void Simulator::createBuoyancyBox(double radius, double bR, double density, double width, double depth, double dropHeight, double dispersion, double frequency, double amplitude) {
@@ -310,25 +284,24 @@ void Simulator::createBuoyancyBox(double radius, double bR, double density, doub
   // Add the particles in at the appropriate positions
   for (int i=0; i<N; i++) addParticle(new Particle(pos.at(i), (1-getRand()*dispersion)*radius));
   // Add the big object
+  /*
   Particle *P = new Particle(vect<>(width/2, depth+dropHeight+bR), bR);
   P->setDensity(density);
   addParticle(P);
+  */
   // For animation  
   animationSortChoice = 1; // Large / small
   radiusDivide = (bR - radius)/2 + radius;
-  sectorization.setInteractionFunctionChoice(2); // Asymmetric, variable size interaction processing (choice 2)
+  // sectorization.setInteractionFunctionChoice(2); // Asymmetric, variable size interaction processing (choice 2)
+  sectorization.setInteractionFunctionChoice(0); //**
   // Set physical parameters
   double dissipation = 20;
   double friction = 0;
   setParticleCoeff(friction);
-  setParticleShear(true);
   setParticleDissipation(dissipation);
   setParticleDrag(0);
   setWallDissipation(dissipation);
   setWallCoeff(friction);
-  // Epsilons
-  min_epsilon = 1e-4;
-  default_epsilon = 1e-4;
 }
 
 void Simulator::createIdealGas(int N, double radius, double v, double width, double height) {
@@ -359,11 +332,6 @@ void Simulator::createIdealGas(int N, double radius, double v, double width, dou
   setParticleDissipation(diss);
   setWallDissipation(0);
   setWallCoeff(0);
-
-  min_epsilon = 1e-5;
-  default_epsilon = 1e-5;
-
-  // epsilon 1e-5 -> dissipation 30
 }
 
 void Simulator::createEntropyBox(int N, double radius) {
@@ -423,21 +391,6 @@ void Simulator::createBacteriaBox(int N, double radius, double width, double hei
   setParticleDrag(default_sphere_drag);
   setWallDissipation(default_wall_dissipation);
   setWallCoeff(default_wall_coeff);
-  // Set time constants
-  default_epsilon = 1e-4;
-  min_epsilon = 1e-8;
-}
-
-bool Simulator::wouldOverlap(vect<> pos, double R) {
-  if (pos.x-R<left || right<pos.x+R || pos.y-R<bottom || top<pos.y+R) return true;
-  for (auto P : particles) {
-    if (P) {
-      vect<> displacement = getDisplacement(P->getPosition(), pos);
-      double minSepSqr = sqr(R + P->getRadius());
-      if (displacement*displacement < minSepSqr) return true;
-    }
-  }
-  return false;
 }
 
 vect<> Simulator::getShear(vect<> pos) {
@@ -855,6 +808,10 @@ void Simulator::addMovingWall(Wall* wall, WFunc f) {
 void Simulator::addParticle(Particle* particle) {
   if (particle->isActive()) asize++;
   else psize++;
+  // Check if this particle needs to "see" the simulation
+  // RTSpheres, ShearSpheres (child of RTSphere), and SmartSpheres (child of RTSphere) do this
+  if (dynamic_cast<RTSphere*>(particle)) needSee = true;
+  // Put the particle in the list
   particles.push_back(particle);
 }
 
@@ -883,7 +840,6 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
   for (int i=0; i<N; i++) {
     vect<> pos = vect<>(b+x*drand48(), b+y*drand48());
     Particle *P = new Particle(pos, initialRadius);
-    P->setWallShear(false);
     P->setDissipation(5*default_sphere_dissipation);
     P->setMass(PI*default_sphere_density*sqr(R));
     parts.push_back(P);
@@ -1049,6 +1005,27 @@ string Simulator::printAnimationCommand() {
   return str+strh;
 }
 
+string Simulator::printSnapshot() {
+  stringstream stream;
+  string str, strh;
+  int count = 0;
+  stream << "snap={";
+  for (auto p : particles) {
+    stream << "{" << p->getPosition() << "," << p->getRadius() << "}";
+    if (count!=particles.size()-1) stream << ',';
+    count++;
+  }
+  stream << "};";
+  stream >> str;
+  str += '\n';
+  stream.clear();
+  str += "snapshot=Table[Circle[snap[[i]][[1]],snap[[i]][[2]]],{i,1,Length[snap]}];\n";
+  stream << "Graphics[snapshot,PlotRange->{{" << left << "," << right << "},{" << bottom << "," << top <<"}}]";
+  stream >> strh;
+  str += strh;
+  return str;
+}
+
 string Simulator::printBulkAnimationCommand() {
   stringstream stream;
   string str, strh;
@@ -1099,9 +1076,9 @@ string Simulator::printDPDTAnimationCommand() {
   str += (strh + "\n");
   strh.clear();
   double width = right-left, height = top-bottom;
-  stream << "pressFrames=Table[ListDensityPlot[dpdt[[i]]," << "PlotRange->{{" << left << ","<< right << "},{" << bottom << "," << top << "}},ImageSize->{scale*" << width << ",scale*" << height << "},InterpolationOrder->0,AspectRatio->" << height/width << "],{i,1,Length[dpdt]}];";
+  stream << "dpdtFrames=Table[ListDensityPlot[dpdt[[i]]," << "PlotRange->{{" << left << ","<< right << "},{" << bottom << "," << top << "}},ImageSize->{scale*" << width << ",scale*" << height << "},InterpolationOrder->0,AspectRatio->" << height/width << "],{i,1,Length[dpdt]}];";
   stream >> strh;
-  strh += "\nListAnimate[pressFrames]";
+  strh += "\nListAnimate[dpdtFrames]";
   return str+strh;
 }
 
@@ -1208,10 +1185,6 @@ string Simulator::printFitnessRec() {
   return str;
 }
 
-void Simulator::setParticleInteraction(bool i) {
-  for (auto P : particles) P->setInteraction(i);
-}
-
 void Simulator::setParticleDissipation(double d) {
   for (auto P : particles) P->setDissipation(d);
 }
@@ -1224,24 +1197,12 @@ void Simulator::setParticleCoeff(double c) {
   for (auto P : particles) P->setCoeff(c);
 }
 
-void Simulator::setParticleShear(bool s) {
-  for (auto P : particles) P->setParticleShear(s);
-}
-
 void Simulator::setWallCoeff(double c) {
   for (auto W : walls) W->setCoeff(c);
 }
 
-void Simulator::setWallShear(bool s) {
-  for (auto P : particles) P->setWallShear(s);
-}
-
 void Simulator::setParticleDrag(double d) {
   for (auto P : particles) P->setDrag(d);
-}
-
-void Simulator::setParticleFix(bool f) {
-  for (auto P : particles) P->fix(f);
 }
 
 inline void Simulator::setUpSectorization() {
@@ -1270,9 +1231,6 @@ inline void Simulator::resetVariables() {
   iter = 0;
   delayTriggeredExit = false;
   lastDisp = -1e9;
-  epsilon = default_epsilon;
-  minepsilon = default_epsilon;
-  sqrtEpsilon = sqrt(default_epsilon);
   runTime=0;
   running = true;
   resetStatistics();
@@ -1328,21 +1286,6 @@ inline void Simulator::calculateForces() {
 }
 
 inline void Simulator::logisticUpdates() {
-  // Calculate appropriate epsilon
-  if (adjust_epsilon) {
-    double vmax = fabs(maxVelocity());
-    double amax = maxAcceleration();
-    double M = max(amax, vmax);
-    if (M<=0) epsilon = default_epsilon;
-    else {
-      epsilon = vmax>0 ? min(default_epsilon, default_epsilon/vmax) : default_epsilon;
-      epsilon = amax>0 ? min(epsilon, default_epsilon/amax) : epsilon;
-      epsilon = max(min_epsilon, epsilon);
-    }
-    if (epsilon<minepsilon) minepsilon = epsilon;
-    sqrtEpsilon = sqrt(epsilon);
-  }
-  else epsilon = default_epsilon;
   // Update internal variable
   time += epsilon;
   addTime += epsilon;
@@ -1373,7 +1316,8 @@ inline void Simulator::objectUpdates() {
       W.first->setPosition(W.second(time));
   }
   // Let all the particles see the world (most won't have to)
-  for (auto P : particles) P->see(this);
+  if (needSee)
+    for (auto P : particles) P->see(this);
   // Add particles (if neccessary)
   if (doGradualAddition) gradualAddition();
 }
@@ -1419,7 +1363,7 @@ inline void Simulator::bacteriaUpdate() {
 	double rad = b->getMaxRadius();
 	for (int i=0; i<tries; i++) {
 	  vect<> s = 2.1*rad*randV() + pos;
-	  if (!wouldOverlap(s, rad)) {
+	  if (!sectorization.wouldOverlap(s, rad)) {
 	    Bacteria *B = new Bacteria(s, rad, rSec, 0); // No expansion time
 	    B->setVelocity(b->getVelocity());
 	    b->resetTimer(); // Just in case
@@ -1496,7 +1440,7 @@ inline void Simulator::gradualAddition() {
     double y = drand48()*(addSpace.top-addSpace.bottom-2*charRadius) + addSpace.bottom + charRadius;
     vect<> pos(x,y);
     // Check if the space is free
-    if (!wouldOverlap(pos, charRadius)) {
+    if (!sectorization.wouldOverlap(pos, charRadius)) {
       Particle *P = new Particle(pos, charRadius);
       // Add P to the particle list and to the correct sector
       P->setVelocity(initialV*randV());
@@ -1555,8 +1499,8 @@ inline double Simulator::getFitness(int x, int y) {
 
 inline void Simulator::interactions() {
   // Calculate particle-particle forces
-  if (sectorize) sectorization.interactions();
-  else // Naive solution
+  if (doInteractions && sectorize) sectorization.interactions();
+  else if (doInteractions) // Naive solution
     for (auto P : particles) 
       for (auto Q : particles)
 	if (P!=Q) {
@@ -1592,7 +1536,7 @@ inline void Simulator::update(Particle* &P) {
       pos.x = right-P->getRadius();
       pos.y = (top-2*P->getRadius())*drand48()+P->getRadius();
       int count = 0;
-      while(wouldOverlap(pos, P->getRadius()) && count<10) {
+      while(sectorization.wouldOverlap(pos, P->getRadius()) && count<10) {
 	pos.y = (top-2*P->getRadius())*drand48()+P->getRadius();
 	count++;
       }
@@ -1612,7 +1556,7 @@ inline void Simulator::update(Particle* &P) {
       pos.x = left+P->getRadius();
       pos.y = (top-2*P->getRadius())*drand48()+P->getRadius();
       int count = 0;
-      while(wouldOverlap(pos, P->getRadius()) && count<10) {
+      while(sectorization.wouldOverlap(pos, P->getRadius()) && count<10) {
         pos.y = (top-2*P->getRadius())*drand48()+P->getRadius();
 	count++;
       }
@@ -1625,8 +1569,8 @@ inline void Simulator::update(Particle* &P) {
   switch (yBBound) {
   default:
   case WRAP:
-    timeMarks.push_back(time); // Record time
-    lastMark = time;
+    // timeMarks.push_back(time); // Record time
+    // lastMark = time;
     if (pos.y<bottom) pos.y=top-fmod(bottom-pos.y, top-bottom);
     break;
   case RANDOM:
@@ -1636,7 +1580,7 @@ inline void Simulator::update(Particle* &P) {
       pos.y = yTop+4*P->getRadius()*(drand48()+1);
       pos.x = (right-2*P->getRadius())*drand48()+P->getRadius();
       int count = 0;
-      while(wouldOverlap(pos, P->getRadius()) && count<10) {
+      while(sectorization.wouldOverlap(pos, P->getRadius()) && count<10) {
 	pos.y = yTop+4*P->getRadius()*(drand48()+1);
 	pos.x = (right-2*P->getRadius())*drand48()+P->getRadius();
 	count++;
@@ -1657,7 +1601,7 @@ inline void Simulator::update(Particle* &P) {
       pos.y = bottom;
       pos.x = (right-2*P->getRadius())*drand48()+P->getRadius();
       int count = 0;
-      while(wouldOverlap(pos, P->getRadius()) && count<10) {
+      while(sectorization.wouldOverlap(pos, P->getRadius()) && count<10) {
 	pos.x = (right-2*P->getRadius())*drand48()+P->getRadius();
         count++;
       }
@@ -1712,7 +1656,7 @@ inline void Simulator::record() {
   // Record pressure
   if (recordPressure && time>0) {
     pressureCollection.push_back(sectorization.getPressure());
-    if (0<recIt) dpdtCollection.push_back(sectorization.getDPDT()); // The first time, we have no previous data point with which to calculate the derivative
+    if (0<recIt) dpdtCollection.push_back(sectorization.getDPDT(epsilon)); // The first time, we have no previous data point with which to calculate the derivative
   }
 
   // Record statistics
@@ -1803,7 +1747,7 @@ void Simulator::addParticles(int N, double R, double var, double lft, double rgh
   double diffY = tp - bttm - 2*R;
   while (count<N && C) {
     vect<> pos(lft+diffX*drand48()+R, bttm+diffY*drand48()+R);
-    if (!wouldOverlap(pos, R)) {
+    if (!sectorization.wouldOverlap(pos, R)) {
       double rad = R*(1+var*drand48());
       Particle *P;
       switch (type) {
