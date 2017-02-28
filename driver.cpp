@@ -6,6 +6,8 @@
 
 #include "Simulator.h"
 
+#include "ContiguousList.h"
+
 int main(int argc, char** argv) {
   // Start the clock
   auto start_t = clock();
