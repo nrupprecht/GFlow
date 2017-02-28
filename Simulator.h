@@ -93,6 +93,8 @@ class Simulator {
   int getSize() { return particles.size(); }
   int getWallSize() { return walls.size(); }
   PType getActiveType() { return activeType; }
+  vector<double> getAllRadii();
+  vector<vect<> > getAllPositions();
   vector<double> getClusteringRec() { return clusteringRec; }
   vector<vector<double> > getProfile() { return profiles; }
   vector<vect<> > getAveProfile();
@@ -220,6 +222,10 @@ class Simulator {
   void addRTSpheres(int N, double R, double var, double left, double right, double bottom, double top, vect<> bias);
   void addActive(vect<>, double, double);
   vector<vect<> > findPackedSolution(int, double, double, double, double, double, double=0.5, double=0.5, vect<> = Zero); // Finds where we can put particles for high packing
+
+  // File functions
+  bool loadConfigurationFromFile(string);
+  bool createConfigurationFile(string);
 
   // Display functions
   string printWalls();

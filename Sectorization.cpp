@@ -43,6 +43,18 @@ void Sectorization::update() {
   // Update pressure
   if (recordPressure) updatePressure();
 }
+
+void Sectorization::updateParticles(double epsilon) {
+  for (auto &P : *particles) {
+    P->update(epsilon);
+    vect<> pos = P->getPosition();
+    if (pos.x<left) pos.x += (right-left);
+    else if (right<pos.x) pos.x -= (right-left);
+    if (pos.y<bottom) pos.y += (top-bottom);
+    else if (top<pos.y) pos.y += (top-bottom);
+    P->getPosition() = pos;
+  }
+}
   
 void Sectorization::interactions() {
   switch (interactionFunctionChoice) {
@@ -183,26 +195,26 @@ void Sectorization::sectorFunctionApplication() {
 	  F(sectors[i]);
 }
 
-vect<> Sectorization::getDisplacement(vect<> A, vect<> B) {
+inline vect<> Sectorization::getDisplacement(vect<> A, vect<> B) {
   // Get the correct (minimal) displacement vector pointing from B to A
   double X = A.x-B.x;
   double Y = A.y-B.y;
-  if (wrapX) {
-    double dx = (right-left)-fabs(X);
-    if (dx<fabs(X)) X = X>0 ? -dx : dx;
-  }
-  if (wrapY) {
-    double dy =(top-bottom)-fabs(Y);
-    if (dy<fabs(Y)) Y = Y>0 ? -dy : dy;
-  }
+  //if (wrapX) {
+  double dx = (right-left)-fabs(X);
+  if (dx<fabs(X)) X = X>0 ? -dx : dx;
+  //}
+  //if (wrapY) {
+  double dy =(top-bottom)-fabs(Y);
+  if (dy<fabs(Y)) Y = Y>0 ? -dy : dy;
+  //}
   return vect<>(X,Y);
 }
 
-vect<> Sectorization::getDisplacement(Particle *P, Particle *Q) {
+inline vect<> Sectorization::getDisplacement(Particle *P, Particle *Q) {
   return getDisplacement(P->getPosition(), Q->getPosition());
 }
 
-int Sectorization::getSec(vect<> pos) {
+inline int Sectorization::getSec(vect<> pos) {
   int X = static_cast<int>((pos.x-left)/(right-left)*secX);
   int Y = static_cast<int>((pos.y-bottom)/(top-bottom)*secY);
   // If out of bounds, put in the special sector
@@ -211,7 +223,7 @@ int Sectorization::getSec(vect<> pos) {
   return secX*Y+X;
 }
 
-vect<> Sectorization::getVect(int x, int y) {
+inline vect<> Sectorization::getVect(int x, int y) {
   return vect<>(left+x*(right-left)/secX, bottom+y*(top-bottom)/secY);
 }
 
@@ -321,6 +333,7 @@ void Sectorization::setDims(int sx, int sy) {
 
 void Sectorization::setBounds(double l, double r, double b, double t) {
   left = l; right = r; bottom = b; top = t;
+  sectorize();
 }
 
 vector<VPair> Sectorization::bulkAnimation() {
@@ -348,6 +361,11 @@ vector<VPair> Sectorization::bulkAnimation() {
 }
 
 inline bool Sectorization::boundX(int &x) {
+  if (x<0) x+=secX;
+  else if (secX<=x) x-=secX;
+  return true;
+
+  /*
   if (x<0) {
     if (wrapX) x+=secX;
     else return false;
@@ -357,9 +375,15 @@ inline bool Sectorization::boundX(int &x) {
     else return false;
   }
   return true;
+  */
 }
 
 inline bool Sectorization::boundY(int &y) {
+  if (y<0) y+=secY;
+  else if (secY<=y) y-=secY;
+  return true;
+
+  /*
   if (y<0) {
     if (wrapY) y+=secY;
     else return false;
@@ -369,6 +393,7 @@ inline bool Sectorization::boundY(int &y) {
     else return false;
   }
   return true;
+  */
 }
 
 inline void Sectorization::updatePressure() {

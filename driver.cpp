@@ -9,7 +9,7 @@
 int main(int argc, char** argv) {
   // Start the clock
   auto start_t = clock();
-
+  
   // Parameters
   double width = 4.;     // Length of the pipe
   double height = 2.;    // 2*Radius of the pipe
@@ -90,6 +90,10 @@ int main(int argc, char** argv) {
   bool snapshot = false; // Take a snapshot at the end
   bool rcFlds = false;
 
+  // Load and save
+  string loadFile = "";
+  string saveFile = "";
+
   //----------------------------------------
   // Parse command line arguments
   //----------------------------------------
@@ -152,6 +156,8 @@ int main(int argc, char** argv) {
   parser.get("everything", everything);
   parser.get("trackHeight", trackHeight);
   parser.get("snapshot", snapshot);
+  parser.get("loadFile", loadFile);
+  parser.get("saveFile", saveFile);
 
   // Bacteria parameters from command line
   parser.get("rDiff", d1);
@@ -178,9 +184,9 @@ int main(int argc, char** argv) {
   int NA = number*pA, NP = number-NA;
 
   // Seed random number generators
-  // srand48( std::time(0) ); //**
-  // srand( std::time(0) ); //**
-  // seedNormalDistribution(); //**
+  srand48( std::time(0) );
+  srand( std::time(0) );
+  seedNormalDistribution();
   //----------------------------------------
 
   Simulator simulation;
@@ -281,6 +287,12 @@ int main(int argc, char** argv) {
   /// Run the actual program
   try {
     simulation.setEpsilon(epsilon);
+    if (loadFile!="")
+      if (!simulation.loadConfigurationFromFile(loadFile)) {
+	cout << "COULD NOT LOAD FILE [" << loadFile << "]. EXITING.\n";
+	throw false; // Error in loading file
+      }
+    
     if (bacteria) simulation.bacteriaRun(time);
     else simulation.run(time);
   }
@@ -291,13 +303,20 @@ int main(int argc, char** argv) {
   auto end_t = clock(); // End timing
   double realTime = (double)(end_t-start_t)/CLOCKS_PER_SEC;
 
+  if (saveFile!="")
+    if (!simulation.createConfigurationFile("arrangement.txt")) {
+      cout << "COULD NOT SAVE FILE AS [" << saveFile << "]. MOVING ON.\n";
+    }
+
   /// Print the run information
+  if (loadFile!="") cout << "Simulation configuration loaded from: " << loadFile << endl;
+  if (saveFile!="") cout << "Simulation configuration saved to: " << saveFile << endl;
   double runTime = simulation.getRunTime();
   cout << "Setup Time: " << realTime - runTime << "\n";
   cout << "Start Time: " << start << ", Record Time: " << max(0., time-start) << "\n";
   cout << "Sim Time: " << time << ", Run time: " << runTime << " s (" << printAsTime(runTime) << "), Ratio: " << time/runTime << ", (" << runTime/time << ")" <<endl;
   cout << "Actual (total) program run time: " << realTime << ", (" << printAsTime(realTime) << ")\n";
-  cout << "Time per particle: " << runTime/(simulation.getASize()+simulation.getPSize()) << "\n";
+  cout << "Time per particle per unit sim time: " << runTime/(simulation.getASize()+simulation.getPSize())/time << "\n";
   cout << "Iterations: " << simulation.getIter() << ", Epsilon: " << simulation.getEpsilon() << endl;
   cout << "Sectors: X: " << simulation.getSecX() << ", Y: " << simulation.getSecY();
   cout << "\n\n----------------------- END SUMMARY -----------------------\n\n";

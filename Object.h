@@ -251,8 +251,8 @@ class Wall {
   Wall(vect<> origin, vect<> wall);
   Wall(vect<> origin, vect<> end, bool);
 
-  vect<> getPosition() { return origin; }
-  vect<> getEnd() { return origin+wall; }
+  vect<> getLeft() { return origin; }
+  vect<> getRight() { return origin+wall; }
   WPair getWPair() { return WPair(origin, origin+wall); }
   double getPressure() { return pressureF/length; }
   double getVelocity() { return velocity; }

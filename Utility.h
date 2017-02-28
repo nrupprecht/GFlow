@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <fstream>
 
 using std::vector;
 using std::pair;
@@ -34,6 +35,8 @@ using std::string;
 using std::stringstream;
 using std::time;
 using std::ostream;
+using std::ifstream;
+using std::ofstream;
 
 #include "ArgParse.h"
 
@@ -324,6 +327,63 @@ template<typename T> inline std::ostream& operator<<(std::ostream& out, const ve
   stream >> str;
   out << str;
   return out;
+}
+
+
+inline void istream_get_whitespace(std::istream& in) {
+  char c;
+  if (!in.get(c)) return;
+  while ((c==' ' || c=='\n' || c=='\r') && !in.eof()) {
+    if (!in.get(c)) return;
+  }
+  if (!in.eof()) in.putback(c);
+}
+
+inline std::istream& operator>>(std::istream& in, vector<vect<> > &lst) {
+  // istream.get(c) returns false if EOF
+  lst.clear();
+  char c;
+  double x,y;
+  istream_get_whitespace(in);
+  if (!in.get(c)) return in;
+  if (c=='{') {
+    while(c!='}') {
+      istream_get_whitespace(in);
+      if (!in.get(c)) break; // Get the '{'
+      in >> x;
+      istream_get_whitespace(in);
+      if (!in.get(c)) break; // Get the ','
+      in >> y;
+      istream_get_whitespace(in);
+      lst.push_back(vect<>(x,y));
+      if (!in.get(c)) break; // Get the '}';
+      istream_get_whitespace(in);
+      if (!in.get(c)) break; // Get either ',' or '}'
+      if (c=='}') break; // Ending brace
+    }
+  }
+  else in.putback(c);
+  return in;
+}
+
+inline std::istream& operator>>(std::istream& in, vector<double> &lst) {
+  lst.clear();
+  char c;
+  double x;
+  istream_get_whitespace(in);
+  if (!in.get(c)) return in;
+  if (c=='{') {
+    while(c!='}') {
+      istream_get_whitespace(in);
+      in >> x;
+      istream_get_whitespace(in);
+      lst.push_back(x);
+      if (!in.get(c)) break; // Get either ',' or '}'
+      if (c=='}') break; // Ending brace
+    }
+  }
+  else in.putback(c);
+  return in;
 }
 
 template<typename T> inline std::ostream& operator<<(std::ostream& out, const std::list<T>&lst) {

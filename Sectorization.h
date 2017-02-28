@@ -17,14 +17,11 @@ class Sectorization {
   void wallInteractions(); // Compute wall - particle interactions
   void sectorFunctionApplication(); // Apply sector functions
   void update();       // Update sectors
+  void updateParticles(double);
 
   // Accessors
-  vect<> getDisplacement(vect<>, vect<>);
-  vect<> getDisplacement(Particle*, Particle*);
-  int getSec(vect<>);
   int getSecX() { return secX; }
   int getSecY() { return secY; }
-  vect<> getVect(int, int); // Get the position of the center of a sector
   int getInteractionFunctionChoice() { return interactionFunctionChoice; }
   bool isEmpty(int, int);
   bool isEdge(int, int);
@@ -63,6 +60,11 @@ class Sectorization {
   inline bool boundY(int&);
 
   inline void updatePressure();
+
+  inline vect<> getDisplacement(vect<>, vect<>);
+  inline vect<> getDisplacement(Particle*, Particle*);
+  inline int getSec(vect<>);
+  inline vect<> getVect(int, int); // Get the position of the center of a sector
 
   // Interaction functions
   inline void symmetricInteractions();

@@ -280,18 +280,24 @@ void Simulator::createBuoyancyBox(double radius, double bR, double density, doub
   double Vfill = width*depth, Vgrain = PI*sqr(radius);
   int N = 0.95*maxPack * Vfill / Vgrain;
   // Place the particles
-  vector<vect<> > pos = findPackedSolution(N, radius, 0, right, amplitude, top-2.*bR, 0.5, 2.5, gravity);
+   vector<vect<> > pos = findPackedSolution(N, radius, 0, right, amplitude, top-2.*bR, 0.5, 2.5, gravity);
+
+  //**--
+  //vector<vect<> > pos = findPackedSolution(N, radius, 0, right, amplitude, top-2.*bR, 0.5, 0, gravity);
+  //**
+
   // Add the particles in at the appropriate positions
   for (int i=0; i<N; i++) addParticle(new Particle(pos.at(i), (1-getRand()*dispersion)*radius));
   // Add the big object
-  /*
-  Particle *P = new Particle(vect<>(width/2, depth+dropHeight+bR), bR);
-  P->setDensity(density);
-  addParticle(P);
-  */
+  if (bR>0) {
+    Particle *P = new Particle(vect<>(width/2, depth+dropHeight+bR), bR);
+    P->setDensity(density);
+    addParticle(P);
+  }
   // For animation  
   animationSortChoice = 1; // Large / small
-  radiusDivide = (bR - radius)/2 + radius;
+  if (bR<=0) radiusDivide = 2*radius;
+  else radiusDivide = (bR - radius)/2 + radius;
   // sectorization.setInteractionFunctionChoice(2); // Asymmetric, variable size interaction processing (choice 2)
   sectorization.setInteractionFunctionChoice(0); //**
   // Set physical parameters
@@ -411,10 +417,11 @@ void Simulator::run(double runLength) {
   //Reset all neccessary variables for the start of a run
   resetVariables();
   setUpSectorization();
-  //** --> Should check if this is neccessary before setting up data structures
-  aveProfile = vector<double>(bins,0); 
-  velProfile = vector<double>(bins,0);
-  flowXProfile = vector<double>(bins,0);
+  if (captureProfile) aveProfile = vector<double>(bins,0); 
+  if (captureVelProfile) {
+    velProfile = vector<double>(bins,0);
+    flowXProfile = vector<double>(bins,0);
+  }
   // Run the simulation
   clock_t start = clock();
   // Initial record of data
@@ -439,10 +446,11 @@ void Simulator::bacteriaRun(double runLength) {
   //Reset all neccessary variables for the start of a run
   resetVariables();
   setUpSectorization();
-  //** --> Should check if this is neccessary before setting up data structures
-  aveProfile = vector<double>(bins,0);
-  velProfile = vector<double>(bins,0);
-  flowXProfile = vector<double>(bins,0);
+  if (captureProfile) aveProfile = vector<double>(bins,0);
+  if (captureVelProfile) {
+    velProfile = vector<double>(bins,0);
+    flowXProfile = vector<double>(bins,0);
+  }
   // Initialize the values of the waste and resource fields
   initializeFields();
   // Run the simulation
@@ -483,6 +491,18 @@ double Simulator::getMarkSlope() {
 double Simulator::getMarkDiff() {
   if (timeMarks.size()<2) return 0;
   return timeMarks.at(timeMarks.size()-1)-timeMarks.at(0);
+}
+
+vector<double> Simulator::getAllRadii() {
+  vector<double> radii;
+  for (auto P : particles) radii.push_back(P->getRadius());
+  return radii;
+}
+
+vector<vect<> > Simulator::getAllPositions() {
+  vector<vect<> > positions;
+  for (auto P : particles) positions.push_back(P->getPosition());
+  return positions;
 }
 
 vector<vect<> > Simulator::getAveProfile() {
@@ -789,6 +809,7 @@ void Simulator::setDimensions(double l, double r, double b, double t) {
   if (left>=right || bottom>=top) throw BadDimChoice();
   left = l; right = r; bottom = b; top = t;
   yTop = top;
+  sectorization.setBounds(l, r, b, t);
 }
 
 void Simulator::addWall(Wall* wall) {
@@ -823,7 +844,7 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
   packingSectors.setParticleList(&parts);
   packingSectors.setBounds(left, right, bottom, top);
   packingSectors.setWrapX(true); packingSectors.setWrapY(true);
-  int sx = (int)((right-left)/(2.3*R)), sy = (int)((top-bottom)/(2.3*R));
+  int sx = (int)((right-left)/(2.01*R)), sy = (int)((top-bottom)/(2.01*R));
   packingSectors.setDims(sx, sy);
 
   // Set up walls
@@ -834,7 +855,7 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
   bounds.push_back(new Wall(vect<>(right,bottom), vect<>(left,bottom)));
   
   // Add particles in with small radii
-  double initialRadius = 0.05*R, finalRadius = 1.*R;
+  double initialRadius = 0.2*R, finalRadius = 1.*R;
   double l = left + initialRadius, x = right - initialRadius - l;
   double b = bottom + initialRadius, y = top - initialRadius - b;
   for (int i=0; i<N; i++) {
@@ -889,12 +910,15 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
     for (auto W : walls)
       for (auto P : parts)
         W->interact(P);
-    // Update Particles and sectorization
-    for (auto &P : parts) update(P);      
+    // Apply particle drag, update Particles and sectorization
+    for (auto &P : parts) {
+      P->applyForce(-P->getMass()*P->getVelocity());
+      update(P);
+    }
     packingSectors.update();
     // Rob momentum
-    if (i%stopDelay==0 && i>0.5*relaxSteps) //**--
-      for (auto &P : parts) P->freeze();
+    //if (i%stopDelay==0 && i>0.5*relaxSteps) //**--
+    //for (auto &P : parts) P->freeze();
   }
   // Return list of positions
   vector<vect<> > pos;
@@ -902,15 +926,71 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
   return pos;
 }
 
+// File format:
+// [left] [right] [bottom] [top]\n
+// [list of walls starting positions]\n
+// [list of walls ending positions]\n
+// [list of radii]\n
+// [list of positions]\n
+// EOF
+bool Simulator::loadConfigurationFromFile(string filename) {
+  double left, right, bottom, top;
+  vector<double> radii;
+  vector<vect<> > wallLeft, wallRight, positions;
+  // Get radii and positions
+  ifstream fin(filename);
+  if (fin.fail()) return false;
+  fin >> left >> right >> bottom >> top;
+  fin >> wallLeft;
+  fin >> wallRight;
+  fin >> radii;
+  fin >> positions;
+  fin.close();
+  // Clear current configuration
+  discard();
+  // Set up
+  setDimensions(left, right, bottom, top);
+  int size = positions.size(), rsize = radii.size(), wsize = min(wallLeft.size(), wallRight.size());
+  for (int i=0; i<wsize; ++i)
+    addWall(new Wall(wallLeft[i], wallRight[i]));
+  for (int i=0; i<size; ++i) 
+    addParticle(new Particle(positions.at(i), radii.at(i%rsize)));
+  return true;
+}
+
+bool Simulator::createConfigurationFile(string filename) {
+  vector<double> radii;
+  vector<vect<> > wallLeft, wallRight, positions;
+  // Accumulate data
+  ofstream fout(filename);
+  if (fout.fail()) return false;
+  for (auto W : walls) {
+    wallLeft.push_back(W->getLeft());
+    wallRight.push_back(W->getRight());
+  }
+  for (auto P : particles) {
+    radii.push_back(P->getRadius());
+    positions.push_back(P->getPosition());
+  }
+  // Write data to file
+  fout << left << " " << right << " " << bottom << " " << top << "\n";
+  fout << wallLeft << "\n";
+  fout << wallRight << "\n";
+  fout << radii << "\n";
+  fout << positions << "\n";
+  fout.close();
+  return true;
+}
+
 string Simulator::printWalls() {
-  if (walls.empty() && wallPos.empty()) return "{}";
+  if (walls.empty() && wallPos.empty()) return "";
   stringstream stream;
   string str;
   // Print normal walls
   if (!walls.empty()) {
     stream << "walls=Show[";
     for (int i=0; i<walls.size(); i++) {
-      stream << "Graphics[{Thick,Red,Line[{" << walls.at(i)->getPosition() << "," << walls.at(i)->getEnd() << "}]}]";
+      stream << "Graphics[{Thick,Red,Line[{" << walls.at(i)->getLeft() << "," << walls.at(i)->getRight() << "}]}]";
       if (i!=walls.size()-1) stream << ",";
     }
     stream << ",PlotRange->{{0," << right << "},{0," << top << "}}];";
@@ -1301,7 +1381,8 @@ inline void Simulator::logisticUpdates() {
 
 inline void Simulator::objectUpdates() {
   // Update simulation
-  for (auto &P : particles) update(P); // Update particles
+  //for (auto &P : particles) update(P); // Update particles
+  sectorization.updateParticles(epsilon);
   if (sectorize) sectorization.update(); // Update sectors (do after particle updates)
   // Update temp walls
   if (!tempWalls.empty()) {
@@ -1521,6 +1602,17 @@ inline void Simulator::interactions() {
 }
 
 inline void Simulator::update(Particle* &P) {
+  P->update(epsilon);
+  vect<> pos = P->getPosition();
+  if (pos.x<left)       pos.x += (right-left);
+  else if (right<pos.x) pos.x -= (right-left);
+  if (pos.y<bottom)     pos.y += (top-bottom);
+  else if (top<pos.y)   pos.y -= (top-bottom);
+  P->getPosition() = pos;
+}
+
+/*
+inline void Simulator::update(Particle* &P) {
   // Update particle
   P->update(epsilon);
   // Keep particles in bounds
@@ -1613,6 +1705,7 @@ inline void Simulator::update(Particle* &P) {
   // Update the particle's position
   P->getPosition() = pos;
 }
+*/
 
 inline void Simulator::record() {
   // Record positions
