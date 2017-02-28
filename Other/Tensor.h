@@ -5,8 +5,6 @@
 #ifndef TENSOR_H
 #define TENSOR_H
 
-#include "TensorUtility.h"
-#include "Utility.h"
 #include "Shape.h"
 
 /// Tensor class

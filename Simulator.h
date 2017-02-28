@@ -7,7 +7,7 @@
 #include "StatFunc.h"
 #include "Field.h"
 #include "Sectorization.h"
-#include "Tensor.h"
+#include "Other/Tensor.h"
 
 #include <functional>
 #include <list>

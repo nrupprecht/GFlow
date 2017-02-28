@@ -5,7 +5,7 @@ oldTargets = Jamming JamShape time
 MKLROOT = /afs/crc.nd.edu/x86_64_linux/intel/15.0/mkl
 LDLIBS = -lrt -Wl,--start-group $(MKLROOT)/lib/intel64/libmkl_intel_lp64.a $(MKLROOT)/lib/intel64/libmkl_sequential.a $(MKLROOT)/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm
 
-files = Simulator.o Object.o Field.o Tensor.o Sectorization.o
+files = Simulator.o Object.o Field.o Other/Tensor.o Sectorization.o
 
 all: $(targets)
 

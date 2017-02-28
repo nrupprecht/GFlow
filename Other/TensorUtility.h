@@ -1,7 +1,7 @@
 #ifndef TENSOR_UTILITY_H
 #define TENSOR_UTILITY_H
 
-#include "Utility.h"
+#include "../Utility.h"
 
 /// For use with the CRC
 #include"/afs/crc.nd.edu/x86_64_linux/intel/15.0/mkl/include/mkl.h"

@@ -5,7 +5,7 @@
 #ifndef SHAPE_H
 #define SHAPE_H
 
-#include "Utility.h"
+#include "TensorUtility.h"
 
 struct Shape {
   Shape() : rank(0), total(0), dims(0) {};
