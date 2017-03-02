@@ -287,21 +287,15 @@ int main(int argc, char** argv) {
   cout << "\n...........................................................\n\n";
   
   /// Run the actual program
-  try {
-    simulation.setEpsilon(epsilon);
-    if (loadFile!="")
-      if (!simulation.loadConfigurationFromFile(loadFile)) {
-	cout << "COULD NOT LOAD FILE [" << loadFile << "]. EXITING.\n";
-	throw false; // Error in loading file
-      }
-    
-    if (bacteria) simulation.bacteriaRun(time);
-    else simulation.run(time);
-  }
-  catch (...) {
-    cout << "An error has occured. Exiting.\n";
-    throw;
-  }
+  simulation.setEpsilon(epsilon);
+  if (loadFile!="")
+    if (!simulation.loadConfigurationFromFile(loadFile)) {
+      cout << "COULD NOT LOAD FILE [" << loadFile << "]. EXITING.\n";
+      throw false; // Error in loading file
+    }
+  
+  if (bacteria) simulation.bacteriaRun(time);
+  else simulation.run(time);
   auto end_t = clock(); // End timing
   double realTime = (double)(end_t-start_t)/CLOCKS_PER_SEC;
 
@@ -321,6 +315,9 @@ int main(int argc, char** argv) {
   cout << "Time per particle per unit sim time: " << runTime/(simulation.getASize()+simulation.getPSize())/time << "\n";
   cout << "Iterations: " << simulation.getIter() << ", Epsilon: " << simulation.getEpsilon() << endl;
   cout << "Sectors: X: " << simulation.getSecX() << ", Y: " << simulation.getSecY();
+  cout << "\n\n --- PERFORMANCE STATS --- \n\n";
+  double aveMemDiff = simulation.aveMemDiffOfNeighbors(), maxMemDiff = simulation.maxMemDiffOfParticles();
+  cout << "Average particles per (occupied) sector: " << simulation.avePerSector() << "\nAverage neighbors per particle: " << simulation.aveNeighbors() << "\nAve mem diff of neighbors: " << aveMemDiff << ", Max mem diff: " << maxMemDiff << "\nPercent mem diff: " << aveMemDiff/maxMemDiff*100;
   cout << "\n\n----------------------- END SUMMARY -----------------------\n\n";
   
   /// Print data

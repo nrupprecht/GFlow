@@ -116,6 +116,12 @@ class Simulator {
   double getMutationRate() { return mutationRate; }
   double getMutationAmount() { return mutationAmount; }
 
+  // Performance functions
+  double avePerSector() { return sectorization.avePerSector(); }
+  double aveNeighbors() { return sectorization.aveNeighbors(); }
+  double aveMemDiffOfNeighbors() { return sectorization.aveMemDiffOfNeighbors(); }
+  int maxMemDiffOfParticles() { return sectorization.maxMemDiffOfParticles(); }
+
   // Statistic functions
   void addStatistic(statfunc); // Adds a statistic to track
   void addAverage(statfunc); // Add a statistic to find the average of

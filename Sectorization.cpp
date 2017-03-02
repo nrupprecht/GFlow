@@ -28,7 +28,7 @@ void Sectorization::sectorize() {
 void Sectorization::update() {
   // Update sectors
   vector<list<Particle*>::iterator> remove;
-  for (int i=0; i<secX*secY+1; i++) {
+  for (int i=0; i<=secX*secY; i++) {
     for (auto p=sectors[i].begin(); p!=sectors[i].end(); ++p) {
       int sec = getSec((*p)->getPosition());
       if (sec != i) { // In the wrong sector
@@ -48,10 +48,11 @@ void Sectorization::updateParticles(double epsilon) {
   for (auto &P : *particles) {
     P->update(epsilon);
     vect<> pos = P->getPosition();
-    if (pos.x<left) pos.x += (right-left);
-    else if (right<pos.x) pos.x -= (right-left);
-    if (pos.y<bottom) pos.y += (top-bottom);
-    else if (top<pos.y) pos.y += (top-bottom);
+    vect<> oldpos = pos;
+    if (pos.x<left)       pos.x = right-fmod(left-pos.x, right-left);
+    else if (right<pos.x) pos.x = fmod(pos.x-left, right-left)+left;
+    if (pos.y<bottom)     pos.y = top-fmod(bottom-pos.y, top-bottom);
+    else if (top<pos.y)   pos.y = fmod(pos.y-bottom, top-bottom)+bottom;
     P->getPosition() = pos;
   }
 }
@@ -271,6 +272,70 @@ double Sectorization::dPdTAt(int x, int y, double dt) {
   return (pressure1[y*secX+x]-pressure0[y*secX+x])/dt;
 }
 
+double Sectorization::avePerSector() {
+  int count = 0, occ = 0;
+  for (int y=0; y<secY; y++)
+    for (int x=0; x<secX; x++)
+      if (!sectors[y*secX+x].empty()) {
+        count += sectors[y*secX+x].size();
+        occ++;
+      }
+  return occ>0 ? (double)count/(double)occ : 0;
+}
+
+double Sectorization::aveNeighbors() {
+  int nbs = 0, occ = 0;
+  for (int y=0; y<secY; y++)
+    for (int x=0; x<secX; x++)
+      if (!sectors[y*secX+x].empty()) {
+        occ++;
+        for (int dy=-1; dy<=1; ++dy)
+          for (int dx=-1; dx<=1; ++dx) {
+            int sx = x+dx; boundX(sx);
+            int sy = y+dy; boundY(sy);
+            nbs += sectors[sy*secX+sx].size();
+          }
+        nbs--; // You are not your own neighbor
+      }
+
+  return occ>0 ? (double)nbs/(double)occ : 0;
+}
+
+double Sectorization::aveMemDiffOfNeighbors() {
+  int occ = 0;
+  double diff = 0;
+  for (int y=0; y<secY; y++)
+    for (int x=0; x<secX; x++)
+      for (auto P : sectors[y*secX+x]) {
+        occ++;
+        // Neighboring sectors
+        double ndiff = 0;
+        int nbs = 0;
+        for (int dy=-1; dy<=1; ++dy)
+          for (int dx=-1; dx<=1; ++dx) {
+            int sx = x+dx; boundX(sx);
+            int sy = y+dy; boundY(sy);
+            for (auto Q : sectors[sy*secX+sx])
+              ndiff += fabs(int((P-Q)*int(sizeof(Particle))));
+            nbs += sectors[sy*secX+sx].size();
+          }
+        nbs--;
+        diff += nbs>0 ? ndiff/nbs : 0;
+      }
+
+  return occ>0 ? (double)diff/(double)occ : 0;
+}
+
+int Sectorization::maxMemDiffOfParticles() {
+  if (particles->empty()) return 0;
+  int maxA = int(*particles->begin()-(Particle*)(0)), minA = maxA;
+  for (auto P : *particles) {
+    if (int(P-(Particle*)(0))<minA) minA = int(P-(Particle*)(0));
+    if (maxA<int(P-(Particle*)(0))) maxA = int(P-(Particle*)(0));
+  }
+  return (int)(maxA-minA)*int(sizeof(Particle));
+}
+
 void Sectorization::addParticle(Particle* P) {
   // Add to list if it is not already there
   if (std::find(particles->begin(), particles->end(), P)==particles->end()) 
@@ -441,6 +506,7 @@ vector<Trio> Sectorization::getDPDT(double dt) {
 
 // Add particle to appropriate sector
 inline void Sectorization::add(Particle *P) {
+  if (sectors==0) return;
   int sec = getSec(P->getPosition());
   sectors[sec].push_back(P);
 }

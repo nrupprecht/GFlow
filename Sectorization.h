@@ -29,6 +29,12 @@ class Sectorization {
   double pressureAt(int, int);
   double dPdTAt(int, int, double);
 
+  // Performance related
+  double avePerSector();
+  double aveNeighbors();
+  double aveMemDiffOfNeighbors();
+  int maxMemDiffOfParticles();
+
   // Mutators
   void addParticle(Particle*); // Add particle to particle list and sector
   void add(Particle*); // Add a particle just to sectors, not to the particles list

@@ -264,7 +264,7 @@ void Simulator::createBuoyancyBox(double radius, double bR, double density, doub
   gravity = vect<>(0,-1.);
   charRadius = radius;
   charRadiusCollection.at(0) = radius*(1.-dispersion); charRadiusCollection.at(1) = bR;
-  left = 0; right = width; bottom = 0; top = depth+dropHeight+2*bR;
+  left = 0; right = width; bottom = 0; top = depth+dropHeight+2*bR+1.;
   // Set Bounds
   xLBound = WRAP; xRBound = WRAP; yTBound = WRAP; yBBound = WRAP;
   // Add Floor
@@ -1099,7 +1099,7 @@ string Simulator::printSnapshot() {
   stream >> str;
   str += '\n';
   stream.clear();
-  str += "snapshot=Table[Circle[snap[[i]][[1]],snap[[i]][[2]]],{i,1,Length[snap]}];\n";
+  str += "snapshot=Table[Disk[snap[[i]][[1]],snap[[i]][[2]]],{i,1,Length[snap]}];\n";
   stream << "Graphics[snapshot,PlotRange->{{" << left << "," << right << "},{" << bottom << "," << top <<"}}]";
   stream >> strh;
   str += strh;
@@ -1286,6 +1286,7 @@ void Simulator::setParticleDrag(double d) {
 }
 
 inline void Simulator::setUpSectorization() {
+  sectorization.setBounds(left, right, bottom, top); // Set dimensions
   if (charRadius<0) { // Find the maximum radius
     for (auto P : particles) 
       if (P->getRadius()>charRadius) charRadius = P->getRadius();
@@ -1293,7 +1294,6 @@ inline void Simulator::setUpSectorization() {
   double mult = 2.; // Must be at least 2
   int sx = (int)((right-left)/(mult*charRadius)), sy = (int)((top-bottom)/(mult*charRadius));
   setSectorDims(sx, sy);
-  sectorization.setBounds(left, right, bottom, top); // Set dimensions
   if (xLBound==WRAP || xRBound==WRAP) sectorization.setWrapX(true);
   else sectorization.setWrapX(false);
   if (yBBound==WRAP || yTBound==WRAP) sectorization.setWrapY(true);
@@ -1604,10 +1604,10 @@ inline void Simulator::interactions() {
 inline void Simulator::update(Particle* &P) {
   P->update(epsilon);
   vect<> pos = P->getPosition();
-  if (pos.x<left)       pos.x += (right-left);
-  else if (right<pos.x) pos.x -= (right-left);
-  if (pos.y<bottom)     pos.y += (top-bottom);
-  else if (top<pos.y)   pos.y -= (top-bottom);
+  if (pos.x<left)       pos.x = right-fmod(left-pos.x, right-left);
+  else if (right<pos.x) pos.x = fmod(pos.x-left, right-left)+left;
+  if (pos.y<bottom)     pos.y = top-fmod(bottom-pos.y, top-bottom);
+  else if (top<pos.y)   pos.y = fmod(pos.y-bottom, top-bottom)+bottom;
   P->getPosition() = pos;
 }
 
@@ -1905,7 +1905,7 @@ inline string Simulator::printTable(int i) {
   stringstream stream;
   string str;
   // Print graphics table for list <i>
-  stream << "G" << i << "=Table[Graphics[Table[{" << colorCollection.at(i) << ",Circle[pos" << i << "[[i]][[j]],R" << i << "]},{j,1,Length[pos" << i << "[[i]]]}]],{i,1,len}];";
+  stream << "G" << i << "=Table[Graphics[Table[{" << colorCollection.at(i) << ",Disk[pos" << i << "[[i]][[j]],R" << i << "]},{j,1,Length[pos" << i << "[[i]]]}]],{i,1,len}];";
   stream >> str;
   return (str + "\n");
 }
