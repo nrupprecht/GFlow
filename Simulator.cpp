@@ -258,36 +258,41 @@ void Simulator::createSphereFluid(int N, int A, double radius, double F, double 
   temperature = 1;
 }
 
-void Simulator::createBuoyancyBox(double radius, double bR, double density, double width, double depth, double dropHeight, double dispersion, double frequency, double amplitude) {
+void Simulator::createBuoyancyBox(double radius, double bR, double density, double width, double depth, double dropHeight, double dispersion, double frequency, double amplitude, bool LJ, bool doWalls) {
   discard();
   dropHeight = dropHeight<0 ? 0 : dropHeight;
   gravity = vect<>(0,-1.);
   charRadius = radius;
   charRadiusCollection.at(0) = radius*(1.-dispersion); charRadiusCollection.at(1) = bR;
-  left = 0; right = width; bottom = 0; top = depth+dropHeight+2*bR+1.;
+  left = 0; right = width; bottom = 0; top = depth+dropHeight+2*bR+2.;
   // Set Bounds
-  xLBound = WRAP; xRBound = WRAP; yTBound = WRAP; yBBound = WRAP;
+  if (doWalls) xLBound = xRBound = yTBound = yBBound = NONE;
+  else xLBound = xRBound = yTBound = yBBound = WRAP;
   // Add Floor
-  if (frequency==0 || amplitude==0) addWall(new Wall(vect<>(left,0), vect<>(right,0)));
+  if (frequency==0 || amplitude==0) addWall(new Wall(vect<>(0,0), vect<>(right,0)));
   else {
     wallFrequency = frequency;
     wallAmplitude = amplitude;
     wallVibration = [&] (double time) { return WPair(vect<>(left, wallAmplitude*(1+sin(2*PI*wallFrequency*time))), vect<>(right, wallAmplitude*(1+sin(2*PI*wallFrequency*time))));};
     addMovingWall(new Wall, wallVibration);
   }
+  // Add walls and ceiling
+  addWall(new Wall(vect<>(0,top), vect<>(right,top)));   // Ceiling
+  if (doWalls) {
+    addWall(new Wall(vect<>(0,0), vect<>(0,top)));         // Left wall
+    addWall(new Wall(vect<>(right,0), vect<>(right,top))); // Right wall
+  }
+  
   // Fill half way with "grains"
   double maxPack = PI/(2*sqrt(3)); // Hexagonal packing
   double Vfill = width*depth, Vgrain = PI*sqr(radius);
-  int N = 0.95*maxPack * Vfill / Vgrain;
+  int N = 0.9*maxPack * Vfill / Vgrain;
   // Place the particles
-   vector<vect<> > pos = findPackedSolution(N, radius, 0, right, amplitude, top-2.*bR, 0.5, 2.5, gravity);
-
-  //**--
-  //vector<vect<> > pos = findPackedSolution(N, radius, 0, right, amplitude, top-2.*bR, 0.5, 0, gravity);
-  //**
-
+  vector<vect<> > pos = findPackedSolution(N, radius, 0, right, amplitude, depth, 0.5, 2.5, Zero); //gravity);
+   
   // Add the particles in at the appropriate positions
-  for (int i=0; i<N; i++) addParticle(new Particle(pos.at(i), (1-getRand()*dispersion)*radius));
+   if (LJ) for (int i=0; i<N; i++) addParticle(new LJParticle(pos.at(i), (1-getRand()*dispersion)*radius));
+   else for (int i=0; i<N; i++) addParticle(new Particle(pos.at(i), (1-getRand()*dispersion)*radius));
   // Add the big object
   if (bR>0) {
     Particle *P = new Particle(vect<>(width/2, depth+dropHeight+bR), bR);
@@ -298,8 +303,56 @@ void Simulator::createBuoyancyBox(double radius, double bR, double density, doub
   animationSortChoice = 1; // Large / small
   if (bR<=0) radiusDivide = 2*radius;
   else radiusDivide = (bR - radius)/2 + radius;
-  // sectorization.setInteractionFunctionChoice(2); // Asymmetric, variable size interaction processing (choice 2)
-  sectorization.setInteractionFunctionChoice(0); //**
+  sectorization.setInteractionFunctionChoice(2); // Asymmetric, variable size interaction processing (choice 2)
+  // Set physical parameters
+  double dissipation = 20;
+  double friction = 0;
+  setParticleCoeff(friction);
+  setParticleDissipation(dissipation);
+  setParticleDrag(0);
+  setWallDissipation(dissipation);
+  setWallCoeff(friction);
+}
+
+void Simulator::loadBuoyancy(string filename, double radius, double density, double drop, bool LJ) {
+  if (!loadConfigurationFromFile(filename)) {
+    cout << "Couldn't load file [" << filename << "]\n";
+    throw 1;
+  }
+  double height = highestPosition();
+  charRadiusCollection.at(1) = radius;
+  animationSortChoice = 1; // Large / Small
+  if (radius<=0) radiusDivide = 1.;
+  else radiusDivide = 0.95*radius;
+  // Check if simulation region is high enough
+  if (top<height+drop+2*radius) {
+    setDimensions(left, right, bottom, height+drop+2*radius+1);
+    // Remove old walls
+    for (auto w : walls) delete w;
+    walls.clear();
+    addWall(new Wall(vect<>(left,bottom), vect<>(right,bottom)));
+    addWall(new Wall(vect<>(left,bottom), vect<>(left,top)));
+    addWall(new Wall(vect<>(right,bottom), vect<>(right,top)));
+    addWall(new Wall(vect<>(left,top), vect<>(right,top)));
+  }
+  // Replace particles with LJ particles if asked to 
+  if (LJ) {
+    list<Particle*> LJList;
+    for (auto P : particles) {
+      LJList.push_back(new LJParticle(P->getPosition(), P->getRadius()));
+      delete [] P;
+    }
+    particles.clear();
+    particles.insert(particles.end(), LJList.begin(), LJList.end());
+  }
+  // Add the intruding particle
+  Particle *P = new Particle(vect<>(0.5*(right+left), height+drop+radius), radius);
+  P->setDensity(density);
+  addParticle(P);
+  sectorization.setInteractionFunctionChoice(2); // Asymmetric, variable size
+  xLBound = xRBound = yTBound = yBBound = NONE;
+  // Add gravity
+  gravity = vect<>(0,-1);
   // Set physical parameters
   double dissipation = 20;
   double friction = 0;
@@ -955,6 +1008,13 @@ bool Simulator::loadConfigurationFromFile(string filename) {
     addWall(new Wall(wallLeft[i], wallRight[i]));
   for (int i=0; i<size; ++i) 
     addParticle(new Particle(positions.at(i), radii.at(i%rsize)));
+  // Find average radius size, for printing and sectorization
+  double rad = 0;
+  for (auto r : radii) rad += r;
+  rad /= rsize;
+  charRadiusCollection.at(0) = rad;
+  charRadius = rad;
+  // Return success
   return true;
 }
 
@@ -989,9 +1049,11 @@ string Simulator::printWalls() {
   // Print normal walls
   if (!walls.empty()) {
     stream << "walls=Show[";
-    for (int i=0; i<walls.size(); i++) {
-      stream << "Graphics[{Thick,Red,Line[{" << walls.at(i)->getLeft() << "," << walls.at(i)->getRight() << "}]}]";
+    int i=0;
+    for (auto w : walls) {
+      stream << "Graphics[{Thick,Red,Line[{" << w->getLeft() << "," << w->getRight() << "}]}]";
       if (i!=walls.size()-1) stream << ",";
+      i++;
     }
     stream << ",PlotRange->{{0," << right << "},{0," << top << "}}];";
     stream >> str;
@@ -1082,7 +1144,7 @@ string Simulator::printAnimationCommand() {
   // Add animation command
   stream << "vid=ListAnimate[frames,AnimationRate->" << max(1.0, ceil(1.0/dispTime)*dispFactor) << "]";
   stream >> strh;
-  return str+strh;
+  return str+strh+"\nExport[\"vid.avi\",frames,\"CompressionLevel\"->0]";
 }
 
 string Simulator::printSnapshot() {

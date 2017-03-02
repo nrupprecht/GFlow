@@ -52,7 +52,8 @@ class Simulator {
   void createControlPipe(int, int, double=0.02, double=1., double=default_run_force, double rA=-1, double=4., double=2., double=0.);
   void createSedimentationBox(int, double=0.02, double=2., double=2., double=default_run_force, bool=false);
   void createSphereFluid(int, int, double=0.02, double=default_run_force, double=-1, double=10., double=2., double=0., bool=false);
-  void createBuoyancyBox(double=0.02, double=0.2, double=5., double=2., double=4., double=0., double=0., double=0., double=0.);
+  void createBuoyancyBox(double=0.02, double=0.2, double=5., double=2., double=4., double=0., double=0., double=0., double=0., bool=false, bool=true);
+  void loadBuoyancy(string, double, double, double, bool);
   void createIdealGas(int, double=0.02, double=0.1, double=1., double=1.);
   void createEntropyBox(int, double=0.02);
   void createBacteriaBox(int, double=0.02, double=1., double=1., double=1.);
@@ -168,7 +169,7 @@ class Simulator {
   void setDispFactor(double f) { dispFactor = f; }
   void setSectorize(bool s) { sectorize = s; }
   void setSectorDims(int sx, int sy);
-  void setDimensions(double left, double right, double bottom, double top);
+  void setDimensions(double, double, double, double);
   void setXLBound(BType b) { xLBound = b; }
   void setXRBound(BType b) { xRBound = b; }
   void setYTBound(BType b) { yTBound = b; }
@@ -349,7 +350,7 @@ class Simulator {
   bool running;      // Is the simulation running
 
   /// Objects
-  vector<Wall*> walls; // All permanant, stationary walls
+  list<Wall*> walls; // All permanant, stationary walls
   list<pair<Wall*,double> > tempWalls; // All temporary, stationary walls
   vector<pair<Wall*,WFunc> > movingWalls; // All permanant, moving walls
   list<Particle*> particles; // A list containing pointers to all the particles

@@ -64,12 +64,12 @@ bool Particle::interact(Particle* P, vect<> displacement) {
     double dist = sqrt(distSqr);
     vect<> normal = (1.0/dist) * displacement;
     vect<> shear = vect<>(normal.y, -normal.x);
-    double overlap = cutoff - dist;
+    double strength = forceStrength(dist, cutoff);
     vect<> dV = P->getVelocity() - velocity;
     double Vn = dV*normal; // Normal velocity
     double Vs = dV*shear + radius*omega + P->getTangentialV(); // Shear velocity
     // Calculate the normal force
-    double Fn = -repulsion*overlap-dissipation*clamp(-Vn); // Damped harmonic oscillator
+    double Fn = -repulsion*strength-dissipation*clamp(-Vn); // Damped harmonic oscillator
     // Calculate the Shear force
     double Fs = 0;
     if (coeff && P->getCoeff())
@@ -99,12 +99,12 @@ bool Particle::interactSym(Particle* P, vect<> displacement) {
     double dist = sqrt(distSqr);
     vect<> normal = (1.0/dist) * displacement;
     vect<> shear = vect<>(normal.y, -normal.x);
-    double overlap = cutoff - dist;
+    double strength = forceStrength(dist, cutoff);
     vect<> dV = P->getVelocity() - velocity;
     double Vn = dV*normal; // Normal velocity
     double Vs = dV*shear + radius*omega + P->getTangentialV(); // Shear velocity
     // Calculate the normal force
-    double Fn = -repulsion*overlap-dissipation*clamp(-Vn); // Damped harmonic oscillator
+    double Fn = -strength-dissipation*clamp(-Vn); // Damped harmonic oscillator 
     // Calculate the Shear force
     double Fs = 0;
     if (coeff && P->getCoeff())
@@ -177,6 +177,29 @@ void Particle::flowForce(std::function<vect<>(vect<>)> func) {
   vect<> F = func(position);
   flowForce(F);
 }
+
+// ********** LJPARTICLE ********** //
+
+LJParticle::LJParticle(vect<> pos, double r) : Particle(pos, r), sigma(r/2.5) { repulsion = default_sphere_repulsion; }
+
+inline double LJParticle::forceStrength(double distance, double cutoff) {
+  //--- FOR TESTING
+  double att = 0.05;
+  if ((1.-att)<distance/cutoff) return -0.001*cutoff*repulsion; // Attractive
+  else return repulsion*((1.-att)*cutoff-distance);
+  //--- FOR TESTING
+  /*
+  double invD = 1./distance;
+  double prop = sigma*invD;
+  double d3 = sqr(prop)*prop;
+  double d6 = sqr(prop);
+  double d12 = sqr(d6);
+  // Force is - d/dx (LJ)
+  return 4*repulsion*(12*d12-6*d6)*invD;
+  */
+}
+
+// ********** BACTERIA ********** //
 
 Bacteria::Bacteria(vect<> pos, double rad, double sec, double expTime) : Particle(pos, 0), timer(0), repDelay(default_reproduction_delay) {
   // Since the radius is currently 0, we have to set these radius dependent quantities by hand here.

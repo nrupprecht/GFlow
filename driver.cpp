@@ -65,6 +65,8 @@ int main(int argc, char** argv) {
   bool sphereFluid = false;   // Sphere fluid
   bool couetteFlow = false;   // Use pure Couette conditions for the sphere fluid
   bool buoyancy = false;      // Create buoyancy box
+  bool LJ = false;            // Whether to use LJ Particles in the buoyancy box
+  bool doWalls = true;        // Whether to use side walls in the buoyancy box
 
   // Display parameters
   double dispRate = -1;
@@ -94,6 +96,7 @@ int main(int argc, char** argv) {
 
   // Load and save
   string loadFile = "";
+  string loadBuoyancy = "";
   string saveFile = "";
 
   //----------------------------------------
@@ -135,6 +138,8 @@ int main(int argc, char** argv) {
   parser.get("sphereFluid", sphereFluid);
   parser.get("couetteFlow", couetteFlow);
   parser.get("buoyancy", buoyancy);
+  parser.get("LJ", LJ);
+  parser.get("doWalls", doWalls);
   parser.get("dispRate", dispRate);
   parser.get("animationSortChoice", animationSortChoice);
   parser.get("mmpreproc", mmpreproc);
@@ -159,6 +164,7 @@ int main(int argc, char** argv) {
   parser.get("trackHeight", trackHeight);
   parser.get("snapshot", snapshot);
   parser.get("loadFile", loadFile);
+  parser.get("loadBuoyancy", loadBuoyancy);
   parser.get("saveFile", saveFile);
 
   // Bacteria parameters from command line
@@ -222,7 +228,8 @@ int main(int argc, char** argv) {
   }
   else if (sedimentation) simulation.createSedimentationBox(NP+NA, radius, width, height, activeF);
   else if (sphereFluid) simulation.createSphereFluid(NP, NA, radius, activeF, radius, width, height, velocity, couetteFlow);
-  else if (buoyancy) simulation.createBuoyancyBox(radius, bR, density, width, height, drop, dispersion, frequency, amplitude);
+  else if (buoyancy) simulation.createBuoyancyBox(radius, bR, density, width, height, drop, dispersion, frequency, amplitude, LJ, doWalls);
+  else if (loadBuoyancy!="") simulation.loadBuoyancy(loadBuoyancy, bR, density, drop, LJ);
   else simulation.createControlPipe(NP, NA, radius, velocity, activeF, radius, width, height);
   
   if (dispRate>=0) simulation.setDispRate(dispRate);
@@ -300,7 +307,7 @@ int main(int argc, char** argv) {
   double realTime = (double)(end_t-start_t)/CLOCKS_PER_SEC;
 
   if (saveFile!="")
-    if (!simulation.createConfigurationFile("arrangement.txt")) {
+    if (!simulation.createConfigurationFile(saveFile)) {
       cout << "COULD NOT SAVE FILE AS [" << saveFile << "]. MOVING ON.\n";
     }
 
@@ -312,10 +319,12 @@ int main(int argc, char** argv) {
   cout << "Start Time: " << start << ", Record Time: " << max(0., time-start) << "\n";
   cout << "Sim Time: " << time << ", Run time: " << runTime << " s (" << printAsTime(runTime) << "), Ratio: " << time/runTime << ", (" << runTime/time << ")" <<endl;
   cout << "Actual (total) program run time: " << realTime << ", (" << printAsTime(realTime) << ")\n";
-  cout << "Time per particle per unit sim time: " << runTime/(simulation.getASize()+simulation.getPSize())/time << "\n";
   cout << "Iterations: " << simulation.getIter() << ", Epsilon: " << simulation.getEpsilon() << endl;
   cout << "Sectors: X: " << simulation.getSecX() << ", Y: " << simulation.getSecY();
   cout << "\n\n --- PERFORMANCE STATS --- \n\n";
+  double metric = runTime/(simulation.getASize()+simulation.getPSize())/time;
+  cout << "Time per particle per unit sim time: " << metric << "\n";
+  cout << "Time per particle per unit sim time per iteration: " << metric/simulation.getIter() << "\n";
   double aveMemDiff = simulation.aveMemDiffOfNeighbors(), maxMemDiff = simulation.maxMemDiffOfParticles();
   cout << "Average particles per (occupied) sector: " << simulation.avePerSector() << "\nAverage neighbors per particle: " << simulation.aveNeighbors() << "\nAve mem diff of neighbors: " << aveMemDiff << ", Max mem diff: " << maxMemDiff << "\nPercent mem diff: " << aveMemDiff/maxMemDiff*100;
   cout << "\n\n----------------------- END SUMMARY -----------------------\n\n";

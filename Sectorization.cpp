@@ -200,14 +200,14 @@ inline vect<> Sectorization::getDisplacement(vect<> A, vect<> B) {
   // Get the correct (minimal) displacement vector pointing from B to A
   double X = A.x-B.x;
   double Y = A.y-B.y;
-  //if (wrapX) {
-  double dx = (right-left)-fabs(X);
-  if (dx<fabs(X)) X = X>0 ? -dx : dx;
-  //}
-  //if (wrapY) {
-  double dy =(top-bottom)-fabs(Y);
-  if (dy<fabs(Y)) Y = Y>0 ? -dy : dy;
-  //}
+  if (wrapX) {
+    double dx = (right-left)-fabs(X);
+    if (dx<fabs(X)) X = X>0 ? -dx : dx;
+  }
+  if (wrapY) {
+    double dy =(top-bottom)-fabs(Y);
+    if (dy<fabs(Y)) Y = Y>0 ? -dy : dy;
+  }
   return vect<>(X,Y);
 }
 

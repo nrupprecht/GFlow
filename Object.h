@@ -9,7 +9,8 @@
 /// Default parameters
 // We used to have a default sphere mass of 1 regardless of the sphere size. Really, having a default sphere *density* makes more sense. Most simulations were done with r=0.05, so rho=127.324 ==> M = rho * pi * r^2 = 1 for spheres w/ radius 0.05, so this is the value you could use for maximum backwards compatibility.
 const double default_sphere_density = 1.;
-const double default_sphere_repulsion = 100;
+const double default_sphere_repulsion = 100.;
+const double default_lj_strength = 1;
 const double default_sphere_dissipation = 7.5;
 const double default_sphere_coeff = sqrt(0.5);
 const double default_sphere_drag = 0.01;
@@ -34,29 +35,36 @@ class Simulator;
 
 class Particle {
  public:
+  Particle();
   Particle(vect<> pos, double rad, double repulse=default_sphere_repulsion, double dissipate=default_sphere_dissipation, double coeff=default_sphere_coeff);
 
   void initialize();
   
   // Accessors
   vect<>& getPosition() { return position; }
+  vect<> getPosition() const { return position; }
   vect<>& getVelocity() { return velocity; }
+  vect<> getVelocity() const { return velocity; }
   vect<> getMomentum() { return 1.0/invMass*velocity; }
   vect<>& getAcceleration() { return acceleration; }
-  double getTheta() { return theta; }
-  double getTangentialV() { return omega*radius; }
-  double getOmega() { return omega; }
-  double getAngP() { return omega/invII; }
-  double getTorque() { return torque; }
-  double getMass() { return 1.0/invMass; }
-  double getRadius() { return radius; }
-  double getRepulsion() { return repulsion; }
-  double getDissipation() { return dissipation; }
-  double getCoeff() { return coeff; }
-  double getKE() { return 0.5*(sqr(velocity)/invMass + sqr(omega)/invII); }
-  double getPressure() { return normForces/(2*PI*radius); }
-  vect<> getForce() { return force; }
-  bool isActive() { return false; }
+  vect<> getAcceleration() const { return acceleration; }
+  double getTheta() const { return theta; }
+  double getTangentialV() const { return omega*radius; }
+  double getOmega() const { return omega; }
+  double getAlpha() const { return alpha; }
+  double getAngP() const { return omega/invII; }
+  double getTorque() const { return torque; }
+  double getNormForces() const { return normForces; }
+  double getRadius() const { return radius; }
+  double getMass() const { return 1.0/invMass; }
+  double getDrag() const { return drag; }
+  double getRepulsion() const { return repulsion; }
+  double getDissipation() const { return dissipation; }
+  double getCoeff() const { return coeff; }
+  double getKE() const { return 0.5*(sqr(velocity)/invMass + sqr(omega)/invII); }
+  double getPressure() const { return normForces/(2*PI*radius); }
+  vect<> getForce() const { return force; }
+  bool isActive() const { return false; }
   
   // Mutators
   void setOmega(double om) { omega = om; }
@@ -102,6 +110,10 @@ class Particle {
   vect<> position, velocity, acceleration; // Linear variables
   double theta, omega, alpha;              // Angular variables
 
+  // Helper functions
+  // What should the strength of the normal force be given the distance and the cutoff
+  virtual inline double forceStrength(double distance, double cutoff) { return repulsion*(cutoff-distance); }
+
   // Forces and torques
   vect<> force;
   double torque;
@@ -117,6 +129,21 @@ class Particle {
   double repulsion;   // Coefficient of repulsion
   double dissipation; // Coefficient of dissipation
   double coeff;       // Coefficient of friction
+};
+
+class LJParticle : public Particle {
+ public:
+  LJParticle(vect<>, double);
+  //LJParticle(const Particle &);
+
+ private:
+  // What should the strength of the normal force be given the distance and the cutoff
+  virtual inline double forceStrength(double, double);
+
+  // Radius will refer to the cutoff distance, 2.5 sigma
+  double sigma;
+
+  // LJ Potential: U = 4*repulsion*((sigma/r)^12 - (sigma/r)^6)
 };
 
 class Bacteria : public Particle {
