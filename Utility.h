@@ -347,45 +347,41 @@ inline void istream_get_whitespace(std::istream& in) {
   if (!in.eof()) in.putback(c);
 }
 
-inline std::istream& operator>>(std::istream& in, vector<vect<> > &lst) {
+template<typename T> inline std::istream& operator>>(std::istream &in, vect<T> &v) {
+  v = Zero;
+  char c;
+  double x, y;
+  istream_get_whitespace(in);
+  if (!in.get(c)) return in;
+  if (c=='{') {
+    in >> x;
+    istream_get_whitespace(in);
+    if (!in.get(c)) return in;
+    if (c!=',') return in;
+    in >> y;
+    istream_get_whitespace(in);
+    if (!in.get(c)) return in;
+    if (c!='}') return in;
+    v.x = x; v.y = y;
+  }
+  else in.putback(c);
+  return in;
+}
+
+template<typename T> inline std::istream& operator>>(std::istream& in, vector<T> &lst) {
   // istream.get(c) returns false if EOF
   lst.clear();
   char c;
+  T data;
   double x,y;
   istream_get_whitespace(in);
   if (!in.get(c)) return in;
   if (c=='{') {
     while(c!='}') {
       istream_get_whitespace(in);
-      if (!in.get(c)) break; // Get the '{'
-      in >> x;
+      in >> data;
+      lst.push_back(data);
       istream_get_whitespace(in);
-      if (!in.get(c)) break; // Get the ','
-      in >> y;
-      istream_get_whitespace(in);
-      lst.push_back(vect<>(x,y));
-      if (!in.get(c)) break; // Get the '}';
-      istream_get_whitespace(in);
-      if (!in.get(c)) break; // Get either ',' or '}'
-      if (c=='}') break; // Ending brace
-    }
-  }
-  else in.putback(c);
-  return in;
-}
-
-inline std::istream& operator>>(std::istream& in, vector<double> &lst) {
-  lst.clear();
-  char c;
-  double x;
-  istream_get_whitespace(in);
-  if (!in.get(c)) return in;
-  if (c=='{') {
-    while(c!='}') {
-      istream_get_whitespace(in);
-      in >> x;
-      istream_get_whitespace(in);
-      lst.push_back(x);
       if (!in.get(c)) break; // Get either ',' or '}'
       if (c=='}') break; // Ending brace
     }

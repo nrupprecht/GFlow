@@ -979,6 +979,7 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
 
 // File format:
 // [left] [right] [bottom] [top]\n
+// [gravity]\n
 // [list of walls starting positions]\n
 // [list of walls ending positions]\n
 // [list of radii]\n
@@ -986,14 +987,20 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
 // EOF
 bool Simulator::loadConfigurationFromFile(string filename) {
   double left, right, bottom, top;
+  vect<> g;
   vector<double> radii;
   vector<vect<> > wallLeft, wallRight, positions;
-  // Get radii and positions
+
   ifstream fin(filename);
   if (fin.fail()) return false;
+  // Get simulation bounds
   fin >> left >> right >> bottom >> top;
+  // Get gravity
+  fin >> g;
+  // Get walls
   fin >> wallLeft;
   fin >> wallRight;
+  // Get radii and positions
   fin >> radii;
   fin >> positions;
   fin.close();
@@ -1001,6 +1008,7 @@ bool Simulator::loadConfigurationFromFile(string filename) {
   discard();
   // Set up
   setDimensions(left, right, bottom, top);
+  gravity = g;
   int size = positions.size(), rsize = radii.size(), wsize = min(wallLeft.size(), wallRight.size());
   for (int i=0; i<wsize; ++i)
     addWall(new Wall(wallLeft[i], wallRight[i]));
@@ -1032,6 +1040,7 @@ bool Simulator::createConfigurationFile(string filename) {
   }
   // Write data to file
   fout << left << " " << right << " " << bottom << " " << top << "\n";
+  fout << gravity << "\n";
   fout << wallLeft << "\n";
   fout << wallRight << "\n";
   fout << radii << "\n";
