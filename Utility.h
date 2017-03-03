@@ -180,6 +180,14 @@ template<typename T> inline string mmPreproc(T s, int precision=-1) {
   return mmPreproc(str, precision);
 }
 
+template<typename T> inline string toStr(T x) {
+  stringstream stream;
+  string str;
+  stream << x;
+  stream >> str;
+  return str;
+}
+
 /// A simple 2-D vector struct
 template<typename T=double> struct vect {
 vect(T x, T y) : x(x), y(y) {};

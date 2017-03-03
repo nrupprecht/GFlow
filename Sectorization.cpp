@@ -45,7 +45,7 @@ void Sectorization::update() {
 }
 
 void Sectorization::updateParticles(double epsilon) {
-  for (auto &P : *particles) {
+  for (auto P : *particles) {
     P->update(epsilon);
     vect<> pos = P->getPosition();
     vect<> oldpos = pos;
@@ -161,10 +161,10 @@ inline void Sectorization::asymmetricVariableSizeInteractions() {
 	int dx = ceil(r/secWidth), dy = ceil(r/secHeight);
 	for (int j=-dy; j<=dy; j++) {
 	  int sy = y+j;
-	  if (!boundY(sy)) continue; //** Why continue?
+	  if (!boundY(sy)) continue; // If out of bounds and we aren't wrapping
 	  for (int i=-dx; i<=dx; i++) {
 	    int sx = x+i;
-	    if (!boundX(sx)) continue; //** Same here
+	    if (!boundX(sx)) continue; //
 	    int S = secX*sy+sx;
 	    for (auto Q : sectors[sy*secX+sx]) {
 	      if (P!=Q) {
@@ -186,7 +186,9 @@ inline void Sectorization::asymmetricVariableSizeInteractions() {
         if (P!=Q) P->interact(Q, getDisplacement(Q, P));
 }
 
-void Sectorization::wallInteractions() {}; //** STUB
+void Sectorization::wallInteractions() { 
+  // STUB
+}; 
 
 void Sectorization::sectorFunctionApplication() {
   if (numSecFunctions>0)
@@ -260,6 +262,12 @@ bool Sectorization::wouldOverlap(vect<> position, double radius) {
   return false;
 }
 
+bool Sectorization::wallOverlaps(int sx, int sy, Wall *w) {
+  Bounds bounds = sectorBounds(sx, sy);
+  
+  // STUB
+}
+
 double Sectorization::pressureAt(int x, int y) {
   // Assumes wrapped boundary conditions
   y %= secY; x %= secX;
@@ -270,6 +278,11 @@ double Sectorization::dPdTAt(int x, int y, double dt) {
   // Assumes wrapped boundary conditions
   y %= secY; x %= secX;
   return (pressure1[y*secX+x]-pressure0[y*secX+x])/dt;
+}
+
+Bounds Sectorization::sectorBounds(int sx, int sy) {
+  double secWidth = (right-left)/secX, secHeight = (top-bottom)/secY;
+  return Bounds(sx*secWidth+left, (sx+1)*secWidth+left, sy*secHeight+bottom, (sy+1)*secHeight+bottom);
 }
 
 double Sectorization::avePerSector() {
@@ -393,7 +406,7 @@ void Sectorization::setDims(int sx, int sy) {
     pressure1[i] = 0;
   }
   // Redo wall sectors
-  // if (wallSectors) delete wallSectors; //** LATER
+  // if (wallSectors) delete wallSectors; // LATER
 }
 
 void Sectorization::setBounds(double l, double r, double b, double t) {

@@ -4,6 +4,9 @@
 #ifndef SIMULATOR_H
 #define SIMULATOR_H
 
+#include "omp.h"
+#define OMP_ACTIVE
+
 #include "StatFunc.h"
 #include "Field.h"
 #include "Sectorization.h"
@@ -87,6 +90,7 @@ class Simulator {
   bool getDelayTriggeredExit() { return delayTriggeredExit; }
   int getSecX() { return sectorization.getSecX(); }
   int getSecY() { return sectorization.getSecY(); }
+  int getTotalSectors() { return sectorization.getTotalSectors(); }
   double getMark(int); // Accesses the value of a mark
   int getMarkSize() { return timeMarks.size(); } // Returns the number of time marks
   double getMarkSlope(); // Gets the ave rate at which marks occur (while marks are occuring)

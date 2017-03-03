@@ -22,12 +22,15 @@ class Sectorization {
   // Accessors
   int getSecX() { return secX; }
   int getSecY() { return secY; }
+  int getTotalSectors() { return secX*secY+1; }
   int getInteractionFunctionChoice() { return interactionFunctionChoice; }
   bool isEmpty(int, int);
   bool isEdge(int, int);
   bool wouldOverlap(vect<>, double);
+  bool wallOverlaps(int, int, Wall*); // Sector coordinates, wall (pointer to)
   double pressureAt(int, int);
   double dPdTAt(int, int, double);
+  Bounds sectorBounds(int, int);      // Get the bounds of the sector
 
   // Performance related
   double avePerSector();

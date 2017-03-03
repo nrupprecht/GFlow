@@ -315,6 +315,7 @@ void Simulator::createBuoyancyBox(double radius, double bR, double density, doub
 }
 
 void Simulator::loadBuoyancy(string filename, double radius, double density, double drop, bool LJ) {
+  discard();
   if (!loadConfigurationFromFile(filename)) {
     cout << "Couldn't load file [" << filename << "]\n";
     throw 1;
@@ -969,9 +970,6 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
       update(P);
     }
     packingSectors.update();
-    // Rob momentum
-    //if (i%stopDelay==0 && i>0.5*relaxSteps) //**--
-    //for (auto &P : parts) P->freeze();
   }
   // Return list of positions
   vector<vect<> > pos;
