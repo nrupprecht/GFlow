@@ -7,6 +7,19 @@ Wall::Wall(vect<> l, vect<> r) : left(l), right(r) {
   coeff = default_wall_coeff;
 }
 
+Particle::Particle() : position(Zero), sigma(0) {
+  velocity = force = 0;
+  omega = torque = 0;
+  double mass = 0;
+  invMass = 1.;
+  invII = 1.;
+
+  repulsion = default_sphere_repulsion;
+  dissipation = default_sphere_dissipation;
+  coeff = default_sphere_coeff;
+  drag = 0;
+}
+
 Particle::Particle(vect<> p, double r) : position(p), sigma(r) {
   velocity = force = 0;
   omega = torque = 0;

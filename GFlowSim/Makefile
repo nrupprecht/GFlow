@@ -1,22 +1,21 @@
 CC = icpc
-FLAGS = -std=c++14 -g -O3 
-OPT = -openmp -parallel
-targets = test
+MPICC = mpic++
+OPT = -O3 -g -ip
+CFLAGS = -std=c++14 $(OPT)
 MKLROOT = /afs/crc.nd.edu/x86_64_linux/intel/15.0/mkl
 LDLIBS = -lrt -Wl,--start-group $(MKLROOT)/lib/intel64/libmkl_intel_lp64.a $(MKLROOT)/lib/intel64/libmkl_sequential.a $(MKLROOT)/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm
 
-files = Particle.o GFlowBase.o
-
-all: $(targets)
+targets = driver
+all:	$(targets)
 
 # Executables
-test: test.o $(files)
-	$(CC) $(OPT) $^ -o $@ $(LDLIBS)
+driver : driver.o GFlowBase.o Sectorization.o Particle.o
+	$(MPICC) -o $@ $^ $(LDLIBS)
 
 # Object files
 %.o : %.cpp
-	$(CC) $(OPT) -c $(FLAGS) $^
+	$(MPICC) -c $(CFLAGS) $<
 
-.PHONY: clean
+.PHONY : clean
 clean:
-	rm *.o $(targets)
+	rm -f $(targets) *.o *.stdout

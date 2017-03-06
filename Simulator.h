@@ -4,8 +4,8 @@
 #ifndef SIMULATOR_H
 #define SIMULATOR_H
 
-#include "omp.h"
-#define OMP_ACTIVE
+// #include "omp.h"
+// #define OMP_ACTIVE
 
 #include "StatFunc.h"
 #include "Field.h"
@@ -55,7 +55,7 @@ class Simulator {
   void createControlPipe(int, int, double=0.02, double=1., double=default_run_force, double rA=-1, double=4., double=2., double=0.);
   void createSedimentationBox(int, double=0.02, double=2., double=2., double=default_run_force, bool=false);
   void createSphereFluid(int, int, double=0.02, double=default_run_force, double=-1, double=10., double=2., double=0., bool=false);
-  void createBuoyancyBox(double=0.02, double=0.2, double=5., double=2., double=4., double=0., double=0., double=0., double=0., bool=false, bool=true);
+  void createBuoyancyBox(double=0.02, double=0.5, double=5., double=4., double=16., double=0., double=0., double=0., double=0., double=0., bool=false, bool=true);
   void loadBuoyancy(string, double, double, double, bool);
   void createIdealGas(int, double=0.02, double=0.1, double=1., double=1.);
   void createEntropyBox(int, double=0.02);

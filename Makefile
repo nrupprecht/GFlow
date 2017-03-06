@@ -1,6 +1,6 @@
 CC = icpc
 FLAGS = -std=c++14 -g -O3 
-OPT = -openmp -parallel
+OPT = #-openmp -parallel
 targets = driver
 oldTargets = Jamming JamShape time
 MKLROOT = /afs/crc.nd.edu/x86_64_linux/intel/15.0/mkl

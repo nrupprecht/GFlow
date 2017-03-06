@@ -28,6 +28,7 @@ struct Wall {
 /// Particle data structure -- Size: 128 bytes
 struct Particle {
   // Constructor
+  Particle();
   Particle(vect<>, double);
   Particle(double, double, double);
   // Kinetic variable
@@ -41,13 +42,14 @@ struct Particle {
   double repulsion, dissipation, coeff, drag;
 };
 
-/// Interaction functions
-void hardDiscRepulsion_sym  (Particle &, Particle &);
-void hardDiscRepulsion_asym (Particle &, const Particle &);
-void hardDiscRepulsion_wall (Particle &, const Wall &);
-void LJinteraction_sym      (Particle &, Particle &);
-void LJinteraction_asym     (Particle &, const Particle &);
-void LJinteraction_wall     (Particle &, const Wall &);
+/// Interaction functions --> First two arguments are the particles or walls effected
+//  Next two arguments are references used to extract the magnitude of the normal force and shear force
+void hardDiscRepulsion_sym  (Particle &, Particle &, double&, double&);
+void hardDiscRepulsion_asym (Particle &, const Particle &, double&, double&);
+void hardDiscRepulsion_wall (Particle &, const Wall &, double&, double&);
+void LJinteraction_sym      (Particle &, Particle &, double&, double&);
+void LJinteraction_asym     (Particle &, const Particle &, double&, double&);
+void LJinteraction_wall     (Particle &, const Wall &, double&, double&);
 
 /// Purely abstract base class for characteristics
 class Characteristic {

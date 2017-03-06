@@ -258,7 +258,7 @@ void Simulator::createSphereFluid(int N, int A, double radius, double F, double 
   temperature = 1;
 }
 
-void Simulator::createBuoyancyBox(double radius, double bR, double density, double width, double depth, double dropHeight, double dispersion, double frequency, double amplitude, bool LJ, bool doWalls) {
+void Simulator::createBuoyancyBox(double radius, double bR, double density, double width, double depth, double dropHeight, double dropVelocity, double dispersion, double frequency, double amplitude, bool LJ, bool doWalls) {
   discard();
   dropHeight = dropHeight<0 ? 0 : dropHeight;
   gravity = vect<>(0,-1.);
@@ -297,6 +297,7 @@ void Simulator::createBuoyancyBox(double radius, double bR, double density, doub
   if (bR>0) {
     Particle *P = new Particle(vect<>(width/2, depth+dropHeight+bR), bR);
     P->setDensity(density);
+    P->getVelocity() = dropVelocity;
     addParticle(P);
   }
   // For animation  
@@ -329,7 +330,7 @@ void Simulator::loadBuoyancy(string filename, double radius, double density, dou
   if (top<height+drop+2*radius) {
     setDimensions(left, right, bottom, height+drop+2*radius+1);
     // Remove old walls
-    for (auto w : walls) delete w;
+    for (auto &w : walls) delete w;
     walls.clear();
     addWall(new Wall(vect<>(left,bottom), vect<>(right,bottom)));
     addWall(new Wall(vect<>(left,bottom), vect<>(left,top)));
@@ -971,6 +972,8 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
     }
     packingSectors.update();
   }
+  // Clean up walls
+  for (auto &w : walls) delete w;
   // Return list of positions
   vector<vect<> > pos;
   for (auto P : parts) pos.push_back(P->getPosition());

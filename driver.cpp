@@ -9,6 +9,7 @@
 int main(int argc, char** argv) {
   // Start the clock
   auto start_t = clock();
+  clock_t loadStart, loadEnd;
   
   // Parameters
   double width = 4.;     // Length of the pipe
@@ -227,8 +228,12 @@ int main(int argc, char** argv) {
   }
   else if (sedimentation) simulation.createSedimentationBox(NP+NA, radius, width, height, activeF);
   else if (sphereFluid) simulation.createSphereFluid(NP, NA, radius, activeF, radius, width, height, velocity, couetteFlow);
-  else if (buoyancy) simulation.createBuoyancyBox(radius, bR, density, width, height, drop, dispersion, frequency, amplitude, LJ, doWalls);
-  else if (loadBuoyancy!="") simulation.loadBuoyancy(loadBuoyancy, bR, density, drop, LJ);
+  else if (buoyancy) simulation.createBuoyancyBox(radius, bR, density, width, height, drop, velocity, dispersion, frequency, amplitude, LJ, doWalls);
+  else if (loadBuoyancy!="") {
+    loadStart = clock();
+    simulation.loadBuoyancy(loadBuoyancy, bR, density, drop, LJ);
+    loadEnd = clock();
+  }
   else {
     simulation.createControlPipe(NP, NA, radius, velocity, activeF, radius, width, height);
     controlPipe = true;
@@ -277,7 +282,6 @@ int main(int argc, char** argv) {
   for (int i=0; i<argc; i++) cout << argv[i] << " ";
   cout << endl << endl; // Line break
   cout << "Dimensions: " << simulation.getWidth() << " x " << simulation.getHeight() << " (Volume: " << simulation.getWidth()*simulation.getHeight() << ")\n";
-  cout << "Sectors: X: " << simulation.getSecX() << ", Y: " << simulation.getSecY() << ", Total Sectors: " << simulation.getTotalSectors() << "\n";
   cout << "Radius: " << radius << ", Dispersion: " << dispersion << "\n";
   if (controlPipe) cout << "Characteristic Fluid Velocity: " << velocity << "\n";
   cout << "Phi: " << phi << ", Number: " << simulation.getNumber() << ", (Actual Phi: " << simulation.getNumber()*PI*sqr(radius)/(width*height) << ")\n";
@@ -293,18 +297,28 @@ int main(int argc, char** argv) {
     cout << "vBin X Zero: " << simulation.getVBinXZero() << ", vBin Y Zero: " << simulation.getVBinYZero() << endl;
     cout << "Using relative velocity: " << (useVelDiff ? "True" : "False") << endl;
   }
-  #ifdef OMP_ACTIVE
-  cout << "OMP number of threads: " << omp_get_num_threads();
-  #endif
-  cout << "\n...........................................................\n";
-  
-  /// Run the actual program
-  simulation.setEpsilon(epsilon);
-  if (loadFile!="")
+  /*
+    #ifdef OMP_ACTIVE
+    int threads = omp_get_num_threads();
+    if (threads>1) cout << "OMP number of threads: " << threads;
+    #endif
+  */
+  if (loadFile!="") {
+    loadStart = clock();
     if (!simulation.loadConfigurationFromFile(loadFile)) {
-      cout << "COULD NOT LOAD FILE [" << loadFile << "]. EXITING.\n";
+      cout << "Unable to load file [" << loadFile << "]. EXITING.\n";
       throw false; // Error in loading file
     }
+    loadEnd = clock();
+  }
+
+  if (loadFile!="" || loadBuoyancy!="") {
+    cout << "Load configuration time: " << (double)(loadEnd-loadStart)/CLOCKS_PER_SEC << endl;
+  }
+
+  cout << "\n...........................................................\n";
+  /// Run the actual program
+  simulation.setEpsilon(epsilon);
   
   if (bacteria) simulation.bacteriaRun(time);
   else simulation.run(time);
@@ -320,7 +334,8 @@ int main(int argc, char** argv) {
   if (loadFile!="") cout << "Simulation configuration loaded from: " << loadFile << endl;
   if (saveFile!="") cout << "Simulation configuration saved to: " << saveFile << endl;
   double runTime = simulation.getRunTime();
-  cout << "Setup Time: " << realTime - runTime << "\n";
+  double setTime = realTime - runTime;
+  cout << "Setup Time: " << setTime << " s (" << printAsTime(setTime) << ")" << "\n";
   cout << "Start Time: " << start << ", Record Time: " << max(0., time-start) << "\n";
   cout << "Sim Time: " << time << ", Run time: " << runTime << " s (" << printAsTime(runTime) << "), Ratio: " << (runTime>0 ? toStr(time/runTime) : "N/A ") << ", (" << (runTime>0 ? toStr(runTime/time) : "N/A") << ")" <<endl;
   cout << "Actual (total) program run time: " << realTime << ", (" << printAsTime(realTime) << ")\n";
@@ -330,9 +345,11 @@ int main(int argc, char** argv) {
   if (runTime>0) {
     cout << "Time per particle per unit sim time: " << metric/time << "\n";
     cout << "Time per particle per iteration: " << metric/simulation.getIter() << "\n";
+    cout << "Time per iteration: " << runTime/simulation.getIter() << "\n";
   }
   double aveMemDiff = simulation.aveMemDiffOfNeighbors(), maxMemDiff = simulation.maxMemDiffOfParticles();
-  cout << "Average particles per (occupied) sector: " << simulation.avePerSector() << "\nAverage neighbors per particle: " << simulation.aveNeighbors() << "\nAve mem diff of neighbors: " << aveMemDiff << ", Max mem diff: " << maxMemDiff << "\nPercent mem diff: " << aveMemDiff/maxMemDiff*100;
+  cout << "Average particles per (occupied) sector: " << simulation.avePerSector() << "\nAverage neighbors per particle: " << simulation.aveNeighbors() << "\nAve mem diff of neighbors: " << aveMemDiff << ", Max mem diff: " << maxMemDiff << "\nPercent mem diff: " << aveMemDiff/maxMemDiff*100 << "\n";
+  cout << "Sectors: X: " << simulation.getSecX() << ", Y: " << simulation.getSecY() << ", Total Sectors: " << simulation.getTotalSectors();
   cout << "\n----------------------- END SUMMARY -----------------------\n\n";
   
   /// Print data
