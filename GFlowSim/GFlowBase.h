@@ -51,11 +51,14 @@ class GFlowBase {
   virtual bool createConfigurationFile   (string);
 
   // -----  TO GO TO GFLOW.H  ------
-  void createSquare(int, double);
+  void createSquare(int, double, double=4., double=4., double=0.1);
   void recordPositions();
   auto getPositionRecord() { return positionRecord; }
+  string printAnimationCommand();
+  void setRecPositions(bool b) { recPositions = b; }
  private:
-  vector<vector<vect<> > > positionRecord;
+  vector<vector<pair<vect<>, double> > > positionRecord;
+  bool recPositions;
  public:
   // -------------------------------
 
@@ -102,5 +105,23 @@ class GFlowBase {
   int ndx, ndy;                  // Number of domains we divide into
   MPI_Datatype PARTICLE;         // The particle datatype for MPI
 };
+
+template<typename T> inline void sendMPI(vector<T> data, int proc) {
+  int size = data.size();
+  T *buffer = new T[size];
+  for (int i=0; i<size; ++i) buffer[i] = data[i];
+  MPI::COMM_WORLD.Send( &size, 1, MPI_INT, proc, 0);
+  MPI::COMM_WORLD.Send( buffer, sizeof(T)/sizeof(MPI_CHAR)*size, MPI_CHAR, proc, 0);
+}
+
+template<typename T> inline vector<T> recvMPI(int proc) {
+  int size = -1;
+  MPI::COMM_WORLD.Recv( &size, 1, MPI_INT, proc, 0);
+  T* buffer = new T[size];
+  MPI::COMM_WORLD.Recv( buffer, size, MPI_CHAR, proc, 0);
+  vector<T> data(size);
+  for (int i=0; i<size; ++i) data[i] = buffer[i];
+  return data;
+}
 
 #endif

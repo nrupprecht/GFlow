@@ -319,6 +319,11 @@ inline vect<> randV() {
   return vect<>(sinf(2*PI*a), cosf(2*PI*a));
 }
 
+template<typename S, typename T> inline std::ostream& operator<<(std::ostream& out, const pair<S,T>& p) {
+  out << "{" << p.first << "," << p.second << "}";
+  return out;
+}
+
 template<typename T> inline std::ostream& operator<<(std::ostream& out, const vector<T>& lst) {
   if (lst.empty()) {
     out << "{}";

@@ -18,6 +18,9 @@ int main(int argc, char** argv) {
   double radius = 0.05;
   double time = 1.;
 
+  // Animation Paramaters
+  bool animate = false;
+
   // Initialize MPI
   int rank, numProc;
   MPI::Init(argc, argv);
@@ -33,11 +36,13 @@ int main(int argc, char** argv) {
   parser.get("number", number);
   parser.get("radius", radius);
   parser.get("time", time);
+  parser.get("animate", animate);
   //----------------------------------------
 
   // Set up the simulation
   GFlowBase simulator;  
   simulator.createSquare(number, radius);
+  simulator.setRecPositions(animate);
   simulator.run(time);
 
   /// Print condition summary
@@ -51,7 +56,10 @@ int main(int argc, char** argv) {
     cout << "\n----------------------- END SUMMARY -----------------------\n\n"; 
 
     /// Print recorded data
-    cout << "pos=" << simulator.getPositionRecord() << ";\n";
+    if (animate) {
+      cout << "pos=" << mmPreproc(simulator.getPositionRecord()) << ";\n";
+      cout << simulator.printAnimationCommand() << endl;
+    }
 
   }
   // End MPI

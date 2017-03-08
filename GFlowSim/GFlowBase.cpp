@@ -17,12 +17,17 @@ GFlowBase::GFlowBase() {
 
   doInteractions = true;
 
+  //---
+  recPositions = false;
+  //---
+
   rank = MPI::COMM_WORLD.Get_rank();
   numProc = MPI::COMM_WORLD.Get_size();
 
   // Define the particle data type
   MPI_Type_contiguous( 16, MPI_DOUBLE, &PARTICLE );
   MPI_Type_commit( &PARTICLE );
+
 }
 
 GFlowBase::~GFlowBase() {}
@@ -43,8 +48,9 @@ void GFlowBase::run(double runLength) {
   for (iter=0; iter<maxIter; ++iter) {
     if (doWork) {
       objectUpdates();
-      if (time-lastDisp>dispTime) record();
     }
+    if (time-lastDisp>dispTime) record();
+
     logisticUpdates();
     COMM_WORLD.Barrier();
   }
@@ -91,7 +97,7 @@ bool GFlowBase::createConfigurationFile (string filename) {
 void GFlowBase::setUpSectorization () {
   // Decide how to divide up the space into domains
   //-- FIGURE OUT HOW TO DO THIS BEST LATER
-  ndx = 2; ndy = 4;
+  ndx = 4; ndy = 4;
   
   // Calculate what bounds this processor is in charge of
   if (rank<ndx*ndy) {
@@ -120,9 +126,7 @@ void GFlowBase::logisticUpdates() {
 }
 
 void GFlowBase::record() {
-
-  // recordPositions();
-
+  if (recPositions) recordPositions();
   // Update display 
   lastDisp = time;
   ++recIter;
@@ -145,8 +149,8 @@ Bounds GFlowBase::getBoundsForProc(int rnk) {
 
 // ----- TO GO TO GFLOW.CPP -----
 
-void GFlowBase::createSquare(int N, double radius) {
-  Bounds bounds(0, 1, 0, 1);
+void GFlowBase::createSquare(int N, double radius, double width, double height, double vsgma) {
+  Bounds bounds(0, width, 0, height);
   setBounds(bounds);
   setUpSectorization();
   // Set cutoff and skin depth
@@ -156,9 +160,10 @@ void GFlowBase::createSquare(int N, double radius) {
   list<Particle> allParticles;
   if (rank==0) {
     for (int i=0; i<N; ++i) {
-      vect<> pos(drand48(), drand48());
+      vect<> pos(drand48()*width, drand48()*height);
       double angle = 2*PI*drand48();
       vect<> v(cos(angle), sin(angle));
+      v *= (vsgma*randNormal());
       Particle p(pos, radius);
       p.velocity = v;
       allParticles.push_back(p);
@@ -244,7 +249,31 @@ void GFlowBase::recordPositions() {
   COMM_WORLD.Barrier();
   // Particles are now all stored on processor 0
   
-  vector<vect<> > positions;
-  for (auto p : allParticles) positions.push_back(p.position);
+  vector<pair<vect<>, double> > positions;
+  for (auto p : allParticles) positions.push_back(pair<vect<>, double>(p.position, p.sigma));
   positionRecord.push_back(positions);
+}
+
+string GFlowBase::printAnimationCommand() {
+  stringstream stream;
+  string command, strh;
+  
+  stream << "len=" << recIter << ";";
+  stream >> command;
+  stream.clear();
+
+  //stream << "pos=" << positionRecord << ";";
+  //stream >> strh;
+  //stream.clear();
+  command += (strh+"\nscale=100;\n");
+  
+  command += "disk[tr_]:={Black,Disk[tr[[1]],tr[[2]] ]};\n";
+  command += "frames=Table[ Graphics[ Table[disk[pos[[i]][[j]] ],{j,1,Length[pos[[i]] ]}],PlotRange->";
+
+  stream << "{{" << left << "," << right << "},{" << bottom << "," << top << "}}";
+  stream >> strh;
+  command += (strh+" ], {i,1,len}];\nExport[\"vid.avi\",frames,\"CompressionLevel\"->0];ListAnimate[frames]");
+
+  return command;
+   
 }

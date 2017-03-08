@@ -154,7 +154,7 @@ void Sectorization::addParticle(Particle p) {
 inline void Sectorization::wrap(vect<> &pos) {
   if (pos.x<simBounds.left)       pos.x = simBounds.right-fmod(simBounds.left-pos.x, simBounds.right-simBounds.left);
   else if (simBounds.right<pos.x) pos.x = fmod(pos.x-simBounds.left, simBounds.right-simBounds.left)+simBounds.left;
-  if (pos.y<simBounds.bottom)     pos.y = bounds.top-fmod(simBounds.bottom-pos.y, simBounds.top-bounds.bottom);
+  if (pos.y<simBounds.bottom)     pos.y = simBounds.top-fmod(simBounds.bottom-pos.y, simBounds.top-bounds.bottom);
   else if (simBounds.top<pos.y)   pos.y = fmod(pos.y-simBounds.bottom, simBounds.top-simBounds.bottom)+simBounds.bottom;
 }
 
