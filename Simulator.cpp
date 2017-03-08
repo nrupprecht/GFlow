@@ -181,7 +181,6 @@ void Simulator::createControlPipe(int N, int A, double radius, double V, double 
   setParticleDrag(default_sphere_drag);
   setWallDissipation(default_wall_dissipation);
   setWallCoeff(default_wall_coeff);
-
 }
 
 void Simulator::createSedimentationBox(int N, double radius, double width, double height, double F, bool interact) {
@@ -307,7 +306,7 @@ void Simulator::createBuoyancyBox(double radius, double bR, double density, doub
   sectorization.setInteractionFunctionChoice(2); // Asymmetric, variable size interaction processing (choice 2)
   // Set physical parameters
   double dissipation = 20;
-  double friction = 0;
+  double friction = 1;
   setParticleCoeff(friction);
   setParticleDissipation(dissipation);
   setParticleDrag(0);
@@ -317,10 +316,7 @@ void Simulator::createBuoyancyBox(double radius, double bR, double density, doub
 
 void Simulator::loadBuoyancy(string filename, double radius, double density, double drop, bool LJ) {
   discard();
-  if (!loadConfigurationFromFile(filename)) {
-    cout << "Couldn't load file [" << filename << "]\n";
-    throw 1;
-  }
+  if (!loadConfigurationFromFile(filename)) throw InvalidLoadFile(filename);
   double height = highestPosition();
   charRadiusCollection.at(1) = radius;
   animationSortChoice = 1; // Large / Small
@@ -921,7 +917,7 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
     parts.push_back(P);
   }
   packingSectors.sectorize(); // Set up the actual sectors
-
+  
   // Enlarge particles
   // Make dr s.t. the final radius is a bit larger then R
   int expandSteps = expandTime/epsilon;
@@ -967,13 +963,13 @@ vector<vect<> > Simulator::findPackedSolution(int N, double R, double left, doub
         W->interact(P);
     // Apply particle drag, update Particles and sectorization
     for (auto &P : parts) {
-      P->applyForce(-P->getMass()*P->getVelocity());
+      P->applyForce(-0.5*P->getMass()*P->getVelocity());
       update(P);
     }
     packingSectors.update();
   }
   // Clean up walls
-  for (auto &w : walls) delete w;
+  for (auto &w : bounds) delete w;
   // Return list of positions
   vector<vect<> > pos;
   for (auto P : parts) pos.push_back(P->getPosition());
@@ -1176,6 +1172,19 @@ string Simulator::printSnapshot() {
   stream >> strh;
   str += strh;
   return str;
+}
+
+string Simulator::printPressureSnapshot() {
+  stringstream stream;
+  string str, strh;
+  double width = right-left, height = top-bottom;
+  stream << "snapP=" << sectorization.getPressure();
+  stream >> str;
+  stream.clear();
+  str += ";\n";
+  stream << "ListDensityPlot[snapP," << "PlotRange->{{" << left << "," << right << "},{" << bottom << "," << top << "}},ImageSize->{scale*" << width << ",scale*" << height << "},InterpolationOrder->0,AspectRatio->" << height/width << "]";
+  stream >> strh;
+  return str+strh+"\n";
 }
 
 string Simulator::printBulkAnimationCommand() {
@@ -1998,6 +2007,14 @@ void Simulator::setVBins(int p) {
   if (recordDist) distribution = Tensor(bins, bins, vbins, vbins);
   velocityDistribution = vector<double>(vbins,0);
   auxVelocityDistribution = vector<double>(vbins,0);
+}
+
+void Simulator::removeParticlesAbove(double y) {
+  list<list<Particle*>::iterator> remove;
+  for (auto p=particles.begin(); p!=particles.end(); ++p)
+    if ((*p)->getPosition().y>y) remove.push_back(p);
+  // Remove particles at a height above y
+  for (auto &p : remove) particles.erase(p);
 }
 
 void Simulator::setCaptureVelocity(bool cv) {

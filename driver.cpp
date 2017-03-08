@@ -91,7 +91,9 @@ int main(int argc, char** argv) {
   bool clustering = false;
   bool everything = false;
   bool trackHeight = false;
-  bool snapshot = false; // Take a snapshot at the end
+  bool trackX = false;
+  bool snapshot = false;  // Take a snapshot at the end
+  bool psnapshot = false; // Take a snapshot of the pressure at the end
   bool rcFlds = false;
 
   // Load and save
@@ -162,7 +164,9 @@ int main(int argc, char** argv) {
   parser.get("clustering", clustering);
   parser.get("everything", everything);
   parser.get("trackHeight", trackHeight);
+  parser.get("trackX", trackX);
   parser.get("snapshot", snapshot);
+  parser.get("psnapshot", psnapshot);
   parser.get("loadFile", loadFile);
   parser.get("loadBuoyancy", loadBuoyancy);
   parser.get("saveFile", saveFile);
@@ -198,7 +202,7 @@ int main(int argc, char** argv) {
   //----------------------------------------
 
   Simulator simulation;
-  int statLBP = 0;
+  int statLBP = 0, statLBX = 0;
   if (dispKE || dispFlow || dispAveFlow || dispAveKE) {
     simulation.addStatistic(statKE);
     simulation.addStatistic(statPassiveKE); //** <==
@@ -206,8 +210,13 @@ int main(int argc, char** argv) {
     simulation.addStatistic(statActiveFlow);
     simulation.addStatistic(statFlowRatio);
     statLBP = 5;
+    statLBX = 5;
   }
-  if (trackHeight) simulation.addStatistic(statLargeBallPosition);
+  if (trackHeight) {
+    simulation.addStatistic(statLargeBallPositionY);
+    statLBX = 6;
+  }
+  if (trackX) simulation.addStatistic(statLargeBallPositionX);
   
   if (totalDist || projDist) simulation.setRecordDist(true);
   simulation.setStartRecording(start);
@@ -215,7 +224,7 @@ int main(int argc, char** argv) {
   if (dispVelProfile || dispFlowXProfile) simulation.setCaptureVelProfile(true);
   simulation.setCapturePositions(animate);
   simulation.setRecordBulk(bulk);
-  if (pressure || dpdt) simulation.setRecordPressure(true);
+  if (pressure || dpdt || psnapshot) simulation.setRecordPressure(true);
   if (dispVelDist) simulation.setCaptureVelocity(true);
   // Set active particle type
   PType type = getType(atype);
@@ -231,7 +240,15 @@ int main(int argc, char** argv) {
   else if (buoyancy) simulation.createBuoyancyBox(radius, bR, density, width, height, drop, velocity, dispersion, frequency, amplitude, LJ, doWalls);
   else if (loadBuoyancy!="") {
     loadStart = clock();
-    simulation.loadBuoyancy(loadBuoyancy, bR, density, drop, LJ);
+    try {
+      simulation.loadBuoyancy(loadBuoyancy, bR, density, drop, LJ);
+    }
+    catch (Simulator::InvalidLoadFile lf) {
+      cout << "Couldn't load file [" << lf.filename << "]. Exiting.\n( Command was: ";
+      for (int i=0; i<argc; i++) cout << argv[i] << " ";
+      cout << " )\n";
+      exit(1);
+    }
     loadEnd = clock();
   }
   else {
@@ -319,7 +336,7 @@ int main(int argc, char** argv) {
   cout << "\n...........................................................\n";
   /// Run the actual program
   simulation.setEpsilon(epsilon);
-  
+
   if (bacteria) simulation.bacteriaRun(time);
   else simulation.run(time);
   auto end_t = clock(); // End timing
@@ -363,10 +380,8 @@ int main(int argc, char** argv) {
     }
     else cout << mmPreproc(simulation.printAnimationCommand(),2) << endl;
   }  
-if (snapshot) {
-  cout << mmPreproc(simulation.printSnapshot()) << endl;
-  
- }
+  if (snapshot) cout << mmPreproc(simulation.printSnapshot()) << endl; 
+  if (psnapshot) cout << mmPreproc(simulation.printPressureSnapshot()) << endl;
   if (bulk) cout << mmPreproc(simulation.printBulkAnimationCommand()) << endl;
   if (pressure) cout << mmPreproc(simulation.printPressureAnimationCommand()) << endl;
   if (dpdt) cout << mmPreproc(simulation.printDPDTAnimationCommand()) << endl;
@@ -393,6 +408,10 @@ if (snapshot) {
   if (trackHeight) {
     cout << "bheight=" << mmPreproc(simulation.getStatistic(statLBP)) << ";\n";
     cout << "Print[\"Large Ball Height\"]\nListLinePlot[bheight,PlotRange->All,PlotStyle->Black]\n";
+  }
+  if (trackX) {
+    cout << "bxpos=" << mmPreproc(simulation.getStatistic(statLBX)) << ";\n";
+    cout << "Print[\"Large Ball X\"]\nListLinePlot[bxpos,PlotRange->All,PlotStyle->Black]\n";
   }
   if (dispAveFlow) {
     cout << "avePassFlow=" << mmPreproc(simulation.getAverage(2)) << ";\n";

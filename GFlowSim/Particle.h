@@ -16,7 +16,7 @@ Each type of particle has to have the same basic parameters, kinetic variables (
 
 */
 
-/// Wall structure --- Size: 64 bytes
+/// Wall structure --- Size: 64 bytes ( 8 x 8 bytes )
 struct Wall {
   Wall(vect<>, vect<>);
   vect<> left, right;    // Left and right edge of the wall
@@ -25,15 +25,15 @@ struct Wall {
   double coeff;
 };
 
-/// Particle data structure -- Size: 128 bytes
+/// Particle data structure -- Size: 128 bytes ( 16 x 8 bytes )
 struct Particle {
   // Constructor
   Particle();
   Particle(vect<>, double);
   Particle(double, double, double);
   // Kinetic variable
-  vect<> position, velocity, force;
-  double /*theta,*/ omega, torque;
+  vect<> position, velocity, force; // Linear kinetic variables
+  double /*theta,*/ omega, torque;  // Angular kinetic variables (no need for theta)
   
   int interaction; // Interaction type
 

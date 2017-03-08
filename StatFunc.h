@@ -66,7 +66,7 @@ inline double statFlowRatio(list<Particle*> particles) {
   return aFlow>0 ? pFlow/aFlow : 0;
 }
 
-inline double statLargeBallPosition(list<Particle*> particles) {
+inline double statLargeBallPositionY(list<Particle*> particles) {
   double height = 0, aveR = -1;
   int count = 0;
   //for (auto P : particles) aveR += P->getRadius();
@@ -78,6 +78,19 @@ inline double statLargeBallPosition(list<Particle*> particles) {
     }
   }
   return count>0 ? height/count : 0;
+}
+
+inline double statLargeBallPositionX(list<Particle*> particles) {
+  double X = 0, aveR = -1;
+  int count = 0;
+  // Average X position
+  for (auto P : particles) {
+    if (P->getRadius()>=0.25) { // This seems big enough
+      X += P->getPosition().y;
+      count++;
+    }
+  }
+  return count>0 ? X/count : 0;
 }
 
 #endif

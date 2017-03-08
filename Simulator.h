@@ -204,6 +204,7 @@ class Simulator {
   void setMinVy(double v) { minVy = v; }
   void setVy(double v) { minVy=maxVy=v; }
   void setFlowFunc(std::function<vect<>(vect<>)> f) { flowFunc = f; }
+  void removeParticlesAbove(double);
   void discard();
   //// More bacteria mutators
   void setResourceDiffusion(double d) { resourceDiffusion = d; }
@@ -242,6 +243,7 @@ class Simulator {
   string printWalls();
   string printAnimationCommand();
   string printSnapshot();
+  string printPressureSnapshot();
   string printBulkAnimationCommand();
   string printPressureAnimationCommand();
   string printDPDTAnimationCommand();
@@ -270,7 +272,11 @@ class Simulator {
   void printWasteToFile();
 
   // Error Classes
-  class BadDimChoice {};
+  struct BadDimChoice {};
+  struct InvalidLoadFile {
+    InvalidLoadFile(string s) : filename(s) {};
+    string filename;
+  };
   
  private:
   /// Helper functions

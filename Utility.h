@@ -437,10 +437,15 @@ typedef pair<int,int> ipair;
 struct Bounds {
   Bounds() : left(0), right(0), bottom(0), top(0) {};
   Bounds(double l, double r, double b, double t) : left(l), right(r), bottom(b), top(t) {};
+  // Data
   double left, right, bottom, top;
+  // Member and friend functions
   friend std::ostream& operator<<(std::ostream& out, const Bounds& B) {
     out << "{" << B.left << "," << B.right << "," << B.bottom << "," << B.top << "}";
     return out;
+  }
+  bool contains(const vect<> position) const {
+    return position.x<right && left<position.x && position.y<top && bottom<position.y;
   }
 };
 

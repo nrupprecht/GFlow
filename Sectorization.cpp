@@ -48,7 +48,6 @@ void Sectorization::updateParticles(double epsilon) {
   for (auto P : *particles) {
     P->update(epsilon);
     vect<> pos = P->getPosition();
-    vect<> oldpos = pos;
     if (pos.x<left)       pos.x = right-fmod(left-pos.x, right-left);
     else if (right<pos.x) pos.x = fmod(pos.x-left, right-left)+left;
     if (pos.y<bottom)     pos.y = top-fmod(bottom-pos.y, top-bottom);

@@ -3,28 +3,74 @@
 
 #include "Sectorization.h"
 
+#include <unistd.h> // For sleep
+
 class GFlowBase {
  public:
   GFlowBase();
   ~GFlowBase();
   
-  void run(double);
+  void initialize();  // Distribute particles to the appropriate processor (only rank 0 will do things in this function)
 
+  void run(double);  // Run the simulation for some amount of time
+
+  // Addition
   void addWall(Wall);
   void addParticle(Particle);
   void addParticle(double, double, double);
+
+  // Accessors
+  Bounds getBounds()       { return Bounds(left, right, bottom, top); }
+  bool getWrapX()          { return wrapX; }
+  bool getWrapY()          { return wrapY; }
+  vect<> getGravity()      { return gravity; }
+  double getTemperature()  { return temperature; }
+  double getViscosity()    { return viscosity; }
+  double getTime()         { return time; }
+  double getEpsilon()      { return epsilon; }
+  double getDispTime()     { return dispTime; }
+  double getDispRate()     { return 1./dispTime; }
+  double getRecIter()      { return recIter; }
+  double getIter()         { return iter; }
+  double getRunTime()      { return runTime; }
+  bool getRunning()        { return running; }
+  bool getDoInteractions() { return doInteractions; }
+
+  // Mutators
+  void setBounds(double, double, double, double);
+  void setBounds(Bounds);
+  void setWrapX(bool w)          { wrapX = w; }
+  void setWrapY(bool w)          { wrapY = w; }
+  void setGravity(vect<> g)      { gravity = g; }
+  void setTemperature(double t)  { temperature = t; }
+  void setViscosity(double h)    { viscosity = h; }
+  void setDoInteractions(bool i) { doInteractions = i; }
 
   // File functions
   virtual bool loadConfigurationFromFile (string);
   virtual bool createConfigurationFile   (string);
 
+  // -----  TO GO TO GFLOW.H  ------
+  void createSquare(int, double);
+  void recordPositions();
+  auto getPositionRecord() { return positionRecord; }
+ private:
+  vector<vector<vect<> > > positionRecord;
+ public:
+  // -------------------------------
+
  protected:
-  virtual inline void setUpSectorization(); // Set up the sectorization
-  virtual inline void resetVariables();     // Reset variables for the start of a simulation
-  virtual inline void objectUpdates();      // Do forces, move objects
-  virtual inline void logisticUpdates();    // Update times
-  virtual inline void record();             // Record data
-  virtual inline void resets();             // Reset objects as neccessary
+  /// Principal functions
+  virtual void setUpSectorization(); // Set up the sectorization
+  virtual void resetVariables();     // Reset variables for the start of a simulation
+  virtual void objectUpdates();      // Do forces, move objects
+  virtual void logisticUpdates();    // Update times
+  virtual void record();             // Record data
+  virtual void resets();             // Reset objects as neccessary
+  virtual void gatherData();         // Gather data back to processor 0
+
+  /// Helper functions
+  Bounds getBoundsForProc(int);
 
   /// Data
   double left, right, bottom, top;
@@ -46,7 +92,15 @@ class GFlowBase {
   bool doInteractions;           // True if we let the particles interact with one another
 
   /// Sectorization
-  Sectorization sectorization;
+  Sectorization sectorization;   // The sectorization for this processor
+  bool needsRemake;              // True if we need to remake this processor's sectors
+  bool doWork;                   // True if this processor needs to do work
+  double cutoff, skinDepth;      // The particle interaction cutoff and skin depth
+
+  // MPI
+  int rank, numProc;             // The rank of this processor and the total number of processors
+  int ndx, ndy;                  // Number of domains we divide into
+  MPI_Datatype PARTICLE;         // The particle datatype for MPI
 };
 
 #endif
