@@ -31,6 +31,10 @@ struct Particle {
   Particle();
   Particle(vect<>, double);
   Particle(double, double, double);
+  // Helper functions
+  void setDensity(double);
+  // Error class
+  class BadMassError {};
   // Kinetic variable
   vect<> position, velocity, force; // Linear kinetic variables
   double /*theta,*/ omega, torque;  // Angular kinetic variables (no need for theta)
@@ -44,12 +48,14 @@ struct Particle {
 
 /// Interaction functions --> First two arguments are the particles or walls effected
 //  Next two arguments are references used to extract the magnitude of the normal force and shear force
-void hardDiscRepulsion_sym  (Particle &, Particle &, double&, double&);
-void hardDiscRepulsion_asym (Particle &, const Particle &, double&, double&);
-void hardDiscRepulsion_wall (Particle &, const Wall &, double&, double&);
-void LJinteraction_sym      (Particle &, Particle &, double&, double&);
-void LJinteraction_asym     (Particle &, const Particle &, double&, double&);
-void LJinteraction_wall     (Particle &, const Wall &, double&, double&);
+/*
+extern void hardDiskRepulsion_sym  (Particle &, Particle &, double&, double&);
+extern void hardDiskRepulsion_asym (Particle &, const Particle &, double&, double&);
+extern void hardDiskRepulsion_wall (Particle &, const Wall &, double&, double&);
+extern void LJinteraction_sym      (Particle &, Particle &, double&, double&);
+inline void LJinteraction_asym     (Particle &, const Particle &, double&, double&);
+inline void LJinteraction_wall     (Particle &, const Wall &, double&, double&);
+*/
 
 /// Purely abstract base class for characteristics
 class Characteristic {

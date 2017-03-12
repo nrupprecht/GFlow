@@ -2,8 +2,11 @@
 #define GFLOWBASE_H
 
 #include "Sectorization.h"
+#include <functional>
 
-#include <unistd.h> // For sleep
+typedef pair<vect<>, vect<> > vpair;
+
+inline vect<> ZeroV(double) { return Zero; }
 
 class GFlowBase {
  public:
@@ -16,11 +19,14 @@ class GFlowBase {
 
   // Addition
   void addWall(Wall);
+  void addWall(double, double, double, double);
   void addParticle(Particle);
   void addParticle(double, double, double);
 
   // Accessors
   Bounds getBounds()       { return Bounds(left, right, bottom, top); }
+  double getWidth()        { return right-left; }
+  double getHeight()       { return top-bottom; }
   bool getWrapX()          { return wrapX; }
   bool getWrapY()          { return wrapY; }
   vect<> getGravity()      { return gravity; }
@@ -30,11 +36,14 @@ class GFlowBase {
   double getEpsilon()      { return epsilon; }
   double getDispTime()     { return dispTime; }
   double getDispRate()     { return 1./dispTime; }
-  double getRecIter()      { return recIter; }
-  double getIter()         { return iter; }
+  int getRecIter()         { return recIter; }
+  int getIter()            { return iter; }
   double getRunTime()      { return runTime; }
   bool getRunning()        { return running; }
+  double getTransferTime() { return transferTime; }
   bool getDoInteractions() { return doInteractions; }
+  int getNDX()             { return ndx; }
+  int getNDY()             { return ndy; }
 
   // Mutators
   void setBounds(double, double, double, double);
@@ -51,29 +60,51 @@ class GFlowBase {
   virtual bool createConfigurationFile   (string);
 
   // -----  TO GO TO GFLOW.H  ------
-  void createSquare(int, double, double=4., double=4., double=0.1);
+  void createSquare(int, double, double=4., double=4., double=0.1, double=0.);
+  void createBuoyancyBox(double, double, double, double, double, double, double);
   void recordPositions();
+
+  string printAnimationCommand(bool=false);
+
   auto getPositionRecord() { return positionRecord; }
-  string printAnimationCommand();
+  auto getKERecord() { return keRecord; }
+  vector<vpair> getWallsPositions();
+  double getSetUpTime() { return setUpTime; }
+
   void setRecPositions(bool b) { recPositions = b; }
+  void setRecKE(bool b)        { recKE = b; }
  private:
+  double setUpTime;
+  // Data
   vector<vector<pair<vect<>, double> > > positionRecord;
   bool recPositions;
+  vector<double> keRecord;
+  bool recKE;
+
  public:
   // -------------------------------
 
  protected:
   /// Principal functions
   virtual void setUpSectorization(); // Set up the sectorization
+  virtual void setUpSectorization(Sectorization&, double, double); // Set up a sectorization
   virtual void resetVariables();     // Reset variables for the start of a simulation
   virtual void objectUpdates();      // Do forces, move objects
   virtual void logisticUpdates();    // Update times
   virtual void record();             // Record data
   virtual void resets();             // Reset objects as neccessary
   virtual void gatherData();         // Gather data back to processor 0
+  virtual void discard();            // Discard and reset the simulation state
 
   /// Helper functions
+  void bestProcessorGrid(int&, int&, const int, const Bounds);
   Bounds getBoundsForProc(int);
+  Bounds getBoundsForProc(int, const Bounds&);
+  void distributeParticles(list<Particle>&, Sectorization&);
+
+  list<Particle> createParticles(vector<vect<> >, double, double, std::function<vect<>(double)> = ZeroV, double=default_sphere_coeff, double=default_sphere_dissipation, double=default_sphere_repulsion, int=0);
+  void createAndDistributeParticles(int, const Bounds&, Sectorization&, double, double=0, std::function<vect<>(double)> = ZeroV, double=default_sphere_coeff, double=default_sphere_dissipation, double=default_sphere_repulsion, int=0);
+  vector<vect<> > findPackedSolution(int, double, Bounds, vect<> = Zero, double=0.5, double=0.5);
 
   /// Data
   double left, right, bottom, top;
@@ -88,6 +119,7 @@ class GFlowBase {
   int iter, recIter, maxIter;    // Simulation iteration, how many iterations we have recorded data at, maximum iteration
   double runTime;                // How much (real) time the last simulation took to run
   bool running;                  // True if the simulation is currently runnint
+  double transferTime;           // How much time is spent by MPI transfering data
 
   /// Objects
   vector<Wall> walls;            // A vector of all the walls in the simulation
@@ -96,7 +128,6 @@ class GFlowBase {
 
   /// Sectorization
   Sectorization sectorization;   // The sectorization for this processor
-  bool needsRemake;              // True if we need to remake this processor's sectors
   bool doWork;                   // True if this processor needs to do work
   double cutoff, skinDepth;      // The particle interaction cutoff and skin depth
 
@@ -105,23 +136,5 @@ class GFlowBase {
   int ndx, ndy;                  // Number of domains we divide into
   MPI_Datatype PARTICLE;         // The particle datatype for MPI
 };
-
-template<typename T> inline void sendMPI(vector<T> data, int proc) {
-  int size = data.size();
-  T *buffer = new T[size];
-  for (int i=0; i<size; ++i) buffer[i] = data[i];
-  MPI::COMM_WORLD.Send( &size, 1, MPI_INT, proc, 0);
-  MPI::COMM_WORLD.Send( buffer, sizeof(T)/sizeof(MPI_CHAR)*size, MPI_CHAR, proc, 0);
-}
-
-template<typename T> inline vector<T> recvMPI(int proc) {
-  int size = -1;
-  MPI::COMM_WORLD.Recv( &size, 1, MPI_INT, proc, 0);
-  T* buffer = new T[size];
-  MPI::COMM_WORLD.Recv( buffer, size, MPI_CHAR, proc, 0);
-  vector<T> data(size);
-  for (int i=0; i<size; ++i) data[i] = buffer[i];
-  return data;
-}
 
 #endif

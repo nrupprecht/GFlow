@@ -2,17 +2,39 @@
 
 using MPI::COMM_WORLD;
 
-Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), epsilon(1e-4), wrapX(false), wrapY(false), sectors(0), cutoff(0.1), skinDepth(0.025), numProc(1), rank(0) {
+Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), epsilon(1e-4), wrapX(false), wrapY(false), doInteractions(true), drag(0), sectors(0), cutoff(0.1), skinDepth(0.025), itersSinceBuild(0), buildDelay(20), numProc(1), rank(0) {
   // Get our rank and the number of processors
-  rank = MPI::COMM_WORLD.Get_rank();
+  rank =    MPI::COMM_WORLD.Get_rank();
   numProc = MPI::COMM_WORLD.Get_size();  
   // Define the particle data type
-  MPI_Type_contiguous( 16, MPI_DOUBLE, &PARTICLE );
+  int size = sizeof(Particle)/sizeof(MPI_DOUBLE); // Should be 16
+  MPI_Type_contiguous( size, MPI_DOUBLE, &PARTICLE );
   MPI_Type_commit( &PARTICLE );
 }
 
-void Sectorization::initialize(double cut) {
-  if (cutoff>0) cutoff = cut;
+Sectorization::~Sectorization() {
+  if (sectors) delete [] sectors;
+  sectors = 0;
+}
+
+void Sectorization::initialize() {
+  // First estimate
+  secWidth = secHeight = cutoff+skinDepth;
+  nsx = (bounds.right-bounds.left)/secWidth; 
+  nsy = (bounds.top-bounds.bottom)/secHeight;
+  // Actual width and height
+  secWidth = (bounds.right-bounds.left)/nsx; 
+  secHeight = (bounds.top-bounds.bottom)/nsy; 
+  // Add for edge sectors
+  nsx += 2; nsy += 2;
+  // Remake
+  if (sectors) delete [] sectors;
+  sectors = new list<Particle*>[nsx*nsy+1]; // +1 For special sector
+  for (auto &p : particles) add(&p);
+  
+  // Create the initial neighborlist
+  createNeighborLists();
+  itersSinceBuild = 0;
 }
 
 void Sectorization::setBounds(double l, double r, double b, double t) {
@@ -27,22 +49,61 @@ void Sectorization::setSimBounds(double l, double r, double b, double t) {
   simBounds = Bounds(l, r, b, t);
 }
 
+void Sectorization::discard() {
+  particles.clear();
+  if (sectors) for (int i=0; i<nsx*nsy+1; ++i) sectors[i].clear();
+  neighborList.clear();
+  walls.clear();
+}
+
 void Sectorization::setSimBounds(Bounds b) {
   simBounds = b;
 }
 
-void Sectorization::interactions() {
-  return; //** STUB
-
-  for (int y=1; y<nsy-1; ++y) 
-    for (int x=1 ; x<nsx-1 ; ++x) 
-      for (auto &p : sectors[y*nsx+x]) {
-	// Check for interactions with particles in the surrounding sectors
-	
+void Sectorization::particleInteractions() {
+  if (!doInteractions) return;
+  // Neighbor list
+  double n, s;
+  for (auto &nl : neighborList) {
+    auto p = nl.begin(); // The particle whose list this is
+    auto q = p; ++q;
+    for (; q!=nl.end(); ++q) { // Try to interact with all other particles in the nl
+      vect<> displacement = getDisplacement((*p)->position, (*q)->position);
+      switch((*p)->interaction) {
+      default:
+      case 0:
+	hardDiskRepulsion_sym(**p, **q, displacement, n, s);
+	break;
+      case 1:
+	LJinteraction_sym(**p, **q, displacement, n, s);
+	break;
       }
+    }
+  }
+}
+
+void Sectorization::wallInteractions() {
+  // Doing this fairly naievely
+  for (auto& w : walls)
+    for (auto& p : particles) {
+      double n=0, s=0;
+      vect<> displacement = getDisplacement(p.position, w.left);
+      switch (p.interaction) {
+      default:
+      case 0:
+	hardDiskRepulsion_wall(p, w, displacement, n, s);
+	break;
+      case 1:
+	LJinteraction_wall(p, w, displacement, n, s);
+	break;
+      }
+    }
 }
 
 void Sectorization::update() {
+  // Reset particle's force recordings
+  for (auto &p : particles) p.force = Zero;
+  // Half-kick velocity update, update position
   double dt = 0.5 * epsilon;
   for (auto &p : particles) {
     double mass = 1./p.invMass;
@@ -50,23 +111,28 @@ void Sectorization::update() {
     p.position += epsilon * p.velocity;    
     wrap(p.position);
     // Apply gravity (part of step 3)
-    p.force += gravity*mass;
+    p.force += (gravity*mass - drag*p.velocity);
   }
   // Update sectorization, keep track of particles that need to migrate to other processors, send particles to the correct processor
   updateSectors();
-  // Reset particle's force recordings
-  for (auto &p : particles) p.force = Zero;
-  // Interaction forces
-  interactions();
+  if (buildDelay<=itersSinceBuild) {
+    itersSinceBuild = 0;
+    createNeighborLists();
+  }
+  // Interaction forces (step 3)
+  particleInteractions();
+  wallInteractions();
   // Do behaviors (particle characteristics)
   // ---------- Behaviors ----------
   // Velocity update part two (step four)
   for (auto &p :particles) p.velocity += dt * p.invMass * p.force;
+  // Update counter
+  itersSinceBuild++;
 }
 
 void Sectorization::updateSectors() {
   if (sectors==0) return;
-  // Move particles to the appropriate sectors, if they leave the domain, take note so we can migrate them
+  // Move particles to the appropriate sectors, if they leave the domain, take note so we can migrate them. Only required to update particles in the sectors we manage (i.e. not the edge sectors)
   list<Particle*> moveUp, moveDown, moveLeft, moveRight;
   for (int y=1; y<nsy-1; ++y) 
     for (int x=1; x<nsx-1; ++x ) {
@@ -102,53 +168,18 @@ void Sectorization::updateSectors() {
   COMM_WORLD.Barrier();
 
   // Send particles to other domains as neccessary
-  
-  if (1<numProc) {
-    int data = rank, recv = -1;
-    // Even Send
-    if (rank%2==0) {
-      if (rank+1<numProc) {
-	int destination = rank+1;
-	COMM_WORLD.Send( &data, 1, MPI_INT, destination, 0);
-      }
-    }
-    else {
-      int sender = rank-1;
-      COMM_WORLD.Recv( &recv, 1, MPI_INT, sender, 0);
-    }
-    
-    // Odd send
-    if (rank%2) {
-      int destination = (rank+1)%numProc;
-      COMM_WORLD.Send( &data, 1, MPI_INT, destination, 0);
-    }
-    else {
-      if (rank!=0 || numProc%2==0) {
-	int sender = rank!=0 ? rank-1 : numProc-1;
-	COMM_WORLD.Recv( &recv, 1, MPI_INT, sender, 0);
-      }
-    }
-    // Wrap if numProc is odd
-    if (numProc%2) {
-      if (rank==numProc-1) {
-	int destination = 0;
-	COMM_WORLD.Send( &data, 1, MPI_INT, destination, 0);
-      }
-      else if (rank==0) {
-	int sender = numProc-1;
-	COMM_WORLD.Recv( &recv, 1, MPI_INT, sender, 0);
-      }
-    }
-    // Write a little message
-    cout << "Rank, recieved: " << rank << " " << recv << endl;
-  }
+  //**--------------------------------------------
+  return;
 }
 
 void Sectorization::addParticle(Particle p) {
-  int sec = getSec(p.position);
   particles.push_back(p);
   Particle *P = &(*particles.rbegin());
-  if (sectors) sectors[sec].push_back(P);
+  add(P);
+}
+
+void Sectorization::addWall(Wall w) {
+  walls.push_back(w);
 }
 
 inline void Sectorization::wrap(vect<> &pos) {
@@ -160,14 +191,52 @@ inline void Sectorization::wrap(vect<> &pos) {
 
 inline int Sectorization::getSec(vect<> position) {
   double edge = cutoff + skinDepth;
+  int sx = (position.x-bounds.left)/secWidth, sy = (position.y-bounds.bottom)/secHeight;
 
-  // THIS NEEDS TO CHANGE TO TAKE INTO ACCOUNT PARTICLES IN THE EDGE SECTORS (NOT HANDLED BY THIS DOMAIN, BUT CAN INTERACT WITH OTHER PARTICLES IN THIS DOMAIN)
-
-  int sx = (position.x)*secWidth, sy = (position.y-bounds.bottom)*secHeight;
+  // If inside the domain, we are done
+  if (-1<sx && sx<nsx-2 && -1<sy && sy<nsy-2) return (sy+1)*nsx + (sx+1);
+  
+  // Handle X
+  if (sx==-1) {
+    // Case 1: This domain is the furthest to the right in the simulation bounds and the particle is in the right edge sector, which wraps to the first sector at the beginning of the simulation bounds
+    if (bounds.right==simBounds.right) sx=nsx-1; // To the right of the
+    // Case 2: Otherwise
+    else sx=0;
+  }
+  else { // sx==nsx-2
+    // Case 1: This domain is the furthest to left of the simulation bounds and the particle is in the left edge sector, which wraps to the last sector at the end of the simulation bounds
+    if (bounds.left==simBounds.left) sx=0;
+    // Case 2: Otherwise
+    else sx = nsx-1;
+  }
+  
+  // Handle Y
+  if (sy==-1) {
+    // Case 1: This domain is the furthest to the right in the simulation bounds and theparticle is in the right edge sector, which wraps to the first sector at the beginning of the simulation bounds
+    if (bounds.top==simBounds.top) sy=nsy-1; // To the right of the
+    // Case 2: Otherwise
+    else sy=0;
+  }
+  else { // sy==nsy-2
+    // Case 1: This domain is the furthest to left of the simulation bounds and the particle is in the left edge sector, which wraps to the last sector at the end of the simulation bounds
+    if (bounds.bottom==simBounds.bottom) sy=0;
+    // Case 2: Otherwise
+    else sy = nsy-1;
+  }
+  
   return sy*nsx + sx;
 }
 
+inline void Sectorization::add(Particle *p) {
+  if (sectors) {
+    int sec = getSec(p->position);
+    sectors[sec].push_back(p);
+  }
+}
+
 inline void Sectorization::createNeighborLists() {
+  if (sectors==0) return;
+  if (!doInteractions) return;
   // The square of the neighbor distance
   double distance = sqr(cutoff+skinDepth);
   // Get rid of the old neighbor lists

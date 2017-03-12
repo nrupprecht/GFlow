@@ -45,3 +45,10 @@ Particle::Particle(double x, double y, double r) : position(vect<>(x,y)), sigma(
   coeff =default_sphere_coeff;
   drag = default_sphere_drag*r;
 }
+
+void Particle::setDensity(double density) {
+  if (density<=0) throw BadMassError();
+  double mass = PI*density*sqr(sigma);
+  invMass = 1./mass;
+  invII = 1.0/(0.5*mass*sqr(sigma));
+}
