@@ -2,10 +2,10 @@
 
 using MPI::COMM_WORLD;
 
-Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), epsilon(1e-4), wrapX(false), wrapY(false), doInteractions(true), drag(0), sectors(0), cutoff(0.1), skinDepth(0.025), itersSinceBuild(0), buildDelay(20), numProc(1), rank(0) {
+Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), epsilon(1e-4), sqrtEpsilon(1e-4), transferTime(0), wrapX(false), wrapY(false), doInteractions(true), drag(0), gravity(Zero), temperature(0), viscosity(1.308e-3), sectors(0), doWallNeighbors(true), cutoff(0.1), skinDepth(0.025), itersSinceBuild(0), buildDelay(20), numProc(1), rank(0) {
   // Get our rank and the number of processors
-  rank =    MPI::COMM_WORLD.Get_rank();
-  numProc = MPI::COMM_WORLD.Get_size();  
+  rank =    COMM_WORLD.Get_rank();
+  numProc = COMM_WORLD.Get_size();  
   // Define the particle data type
   int size = sizeof(Particle)/sizeof(MPI_DOUBLE); // Should be 16
   MPI_Type_contiguous( size, MPI_DOUBLE, &PARTICLE );
@@ -34,7 +34,10 @@ void Sectorization::initialize() {
   
   // Create the initial neighborlist
   createNeighborLists();
+  if (doWallNeighbors) createWallNeighborList();
   itersSinceBuild = 0;
+  
+  transferTime=0;
 }
 
 void Sectorization::setBounds(double l, double r, double b, double t) {
@@ -53,6 +56,7 @@ void Sectorization::discard() {
   particles.clear();
   if (sectors) for (int i=0; i<nsx*nsy+1; ++i) sectors[i].clear();
   neighborList.clear();
+  wallNeighbors.clear();
   walls.clear();
 }
 
@@ -83,41 +87,72 @@ void Sectorization::particleInteractions() {
 }
 
 void Sectorization::wallInteractions() {
-  // Doing this fairly naievely
-  for (auto& w : walls)
-    for (auto& p : particles) {
+  if (doWallNeighbors) {
+    for (auto pr : wallNeighbors) {
       double n=0, s=0;
-      vect<> displacement = getDisplacement(p.position, w.left);
-      switch (p.interaction) {
-      default:
-      case 0:
-	hardDiskRepulsion_wall(p, w, displacement, n, s);
-	break;
-      case 1:
-	LJinteraction_wall(p, w, displacement, n, s);
-	break;
+      Particle *p = pr.first;
+      for (auto w : pr.second) {
+	vect<> displacement = getDisplacement(p->position, w->left);
+	switch (p->interaction) {
+	default:
+	case 0:
+	  hardDiskRepulsion_wall(*p, *w, displacement, n, s);
+	  break;
+	case 1:
+	  LJinteraction_wall(*p, *w, displacement, n, s);
+	  break;
+	}
       }
     }
+  }
+  else { 
+    for (auto& w : walls)
+      for (auto& p : particles) {
+	double n=0, s=0;
+	vect<> displacement = getDisplacement(p.position, w.left);
+	switch (p.interaction) {
+	default:
+	case 0:
+	  hardDiskRepulsion_wall(p, w, displacement, n, s);
+	  break;
+	case 1:
+	  LJinteraction_wall(p, w, displacement, n, s);
+	  break;
+	}
+      }
+  }
 }
 
 void Sectorization::update() {
   // Reset particle's force recordings
-  for (auto &p : particles) p.force = Zero;
+  for (auto &p : particles) {
+    p.force = Zero;
+    p.torque = 0;
+  }
   // Half-kick velocity update, update position
   double dt = 0.5 * epsilon;
   for (auto &p : particles) {
     double mass = 1./p.invMass;
     p.velocity += dt * p.invMass * p.force;
+    p.omega    += dt * p.invII * p.torque;
     p.position += epsilon * p.velocity;    
     wrap(p.position);
     // Apply gravity (part of step 3)
     p.force += (gravity*mass - drag*p.velocity);
+    // Apply temperature force (part of step 3)
+    if (temperature>0) {
+      double DT = temperature/(6*viscosity*PI*p.sigma); // Assumes Kb = 1;
+      double coeffD = sqrt(2*DT)*sqrtEpsilon;
+      vect<> TForce = coeffD*(randNormal()*randV()); // Addative gaussian white noise
+      p.force += TForce;
+    }
   }
   // Update sectorization, keep track of particles that need to migrate to other processors, send particles to the correct processor
   updateSectors();
   if (buildDelay<=itersSinceBuild) {
     itersSinceBuild = 0;
     createNeighborLists();
+    if (doWallNeighbors) createWallNeighborList();
   }
   // Interaction forces (step 3)
   particleInteractions();
@@ -125,7 +160,10 @@ void Sectorization::update() {
   // Do behaviors (particle characteristics)
   // ---------- Behaviors ----------
   // Velocity update part two (step four)
-  for (auto &p :particles) p.velocity += dt * p.invMass * p.force;
+  for (auto &p :particles) {
+    p.velocity += dt * p.invMass * p.force;
+    p.omega    += dt * p.invII * p.torque;
+  }
   // Update counter
   itersSinceBuild++;
 }
@@ -156,7 +194,6 @@ void Sectorization::updateSectors() {
 	  }
 	  else; // Doesn't need to change sector
 	}
-	
       } // End loop over sector particles
       // Remove particles from sector as neccessary
       for (auto &p : remove) sectors[sec].erase(p);
@@ -165,10 +202,21 @@ void Sectorization::updateSectors() {
   // If we are the only processor, we are done
   if (numProc==1) return; 
   // Wait for everyone to finish
-  COMM_WORLD.Barrier();
+  // COMM_WORLD.Barrier(); //**
 
   // Send particles to other domains as neccessary
-  //**--------------------------------------------
+  if (0<numProc) {
+    auto start = clock();
+    passParticles( 1, 0, moveRight);
+    passParticles(-1, 0, moveLeft);
+    passParticles(0,  1, moveUp);
+    passParticles(0, -1, moveDown);
+    auto end = clock();
+    transferTime += (double)(end-start)/CLOCKS_PER_SEC;
+  }
+  // Tell other domains what is happening at boundary sectors
+  //**---------------------------
+  
   return;
 }
 
@@ -291,6 +339,23 @@ inline void Sectorization::createNeighborLists() {
     }
 }
 
+inline void Sectorization::createWallNeighborList() {
+  // Create Wall Neighbor list
+  wallNeighbors.clear();
+  for (auto &p : particles) {
+    list<Wall*> lst;
+    for (auto &w : walls) {
+      
+      vect<> displacement = getDisplacement(p.position, w.left);
+      wallDisplacement(displacement, p, w);
+      if (sqr(displacement)<sqr(1.25*p.sigma))
+	lst.push_back(&w);
+    }
+    if (!lst.empty())
+      wallNeighbors.push_back(pair<Particle*, list<Wall*> >(&p, lst));
+  }
+}
+
 inline vect<> Sectorization::getDisplacement(vect<> A, vect<> B) {
   // Get the correct (minimal) displacement vector pointing from B to A
   double X = A.x-B.x;
@@ -304,4 +369,58 @@ inline vect<> Sectorization::getDisplacement(vect<> A, vect<> B) {
     if (dy<fabs(Y)) Y = Y>0 ? -dy : dy;
   }
   return vect<>(X,Y);
+}
+
+inline void Sectorization::passParticles(const int tx, const int ty, list<Particle*> &allParticles) {
+  int dx = rank % ndx, dy = rank / ndy;
+  if (tx!=0) { // Transfer X
+    int send = rank+sign(tx), recv = rank-sign(tx), sendX = dx+sign(tx), recvX = dx-sign(tx);
+    if (dx%2==0) { // Even
+      if (-1<sendX && sendX<ndx) passParticleSend(send, allParticles);
+      if (-1<recvX && recvX<ndx) passParticleRecv(recv);
+    }
+    else { // Odd
+      if (-1<recvX && recvX<ndx) passParticleRecv(recv);
+      if (-1<sendX && sendX<ndx) passParticleSend(send, allParticles);
+    }
+  }
+  
+  else { // Transfer Y
+    int send = rank+sign(ty)*ndx, recv = rank-sign(ty)*ndx, sendY = dy+sign(ty), recvY = dy-sign(ty);
+    
+    if (dy%2==0) { // Even
+      if (-1<sendY && sendY<ndy) passParticleSend(send, allParticles);
+      if (-1<recvY && recvY<ndy) passParticleRecv(recv);
+    }
+    else { // Odd
+      if (-1<recvY && recvY<ndy) passParticleRecv(recv);
+      if (-1<sendY && sendY<ndy) passParticleSend(send, allParticles);
+    }
+  }
+  // COMM_WORLD.Barrier(); //** Neccessary ?
+}
+
+inline void Sectorization::passParticleSend(const int send, list<Particle*> &allParticles) {
+  // Send
+  int sz = allParticles.size();
+  COMM_WORLD.Send(&sz, 1, MPI_INT, send, 0);
+  Particle *buffer = new Particle[sz];
+  int i=0;
+  for (auto p : allParticles) {
+    buffer[i] = *p;
+    ++i;
+  }
+  COMM_WORLD.Send(buffer, sz, PARTICLE, send, 0);
+  delete [] buffer;
+}
+
+inline void Sectorization::passParticleRecv(const int recv) {
+  // Recieve
+  int sz = -1;
+  COMM_WORLD.Recv(&sz, 1, MPI_INT, recv, 0);
+  Particle *buffer = new Particle[sz];
+  COMM_WORLD.Recv(buffer, sz, PARTICLE, recv,0);
+  // Add particles to sector
+  for(int i=0; i<sz; ++i) addParticle(buffer[i]);
+  delete [] buffer;
 }

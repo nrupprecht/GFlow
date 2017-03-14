@@ -22,13 +22,18 @@ int main(int argc, char** argv) {
   double density = 10;
   double velocity = 0.25;
   double dispersion = 0;
+  double temperature = 0;
   double time = 1.;
+  double start = 0;
   double phi = -1;
   bool interact = true;
+  bool seedRand = true;
 
   // Animation Paramaters
   bool animate = false;
   bool KE      = false;
+  bool omega   = false;
+  bool cluster = false;
   bool novid   = false;
 
   // Simulation type
@@ -42,11 +47,6 @@ int main(int argc, char** argv) {
   numProc = MPI::COMM_WORLD.Get_size();
   MPI::COMM_WORLD.Barrier();
 
-  // Seed random number generators
-  srand48( std::time(0) );
-  srand( std::time(0) );
-  seedNormalDistribution();
-
   //----------------------------------------
   // Parse command line arguments
   //----------------------------------------
@@ -59,15 +59,27 @@ int main(int argc, char** argv) {
   parser.get("density", density);
   parser.get("velocity", velocity);
   parser.get("dispersion", dispersion);
+  parser.get("temperature", temperature);
   parser.get("time", time);
+  parser.get("start", start);
   parser.get("phi", phi);
   parser.get("interact", interact);
+  parser.get("srand", seedRand);
   parser.get("animate", animate);
   parser.get("KE", KE);
+  parser.get("omega", omega);
+  parser.get("cluster", cluster);
   parser.get("novid", novid);
   parser.get("square", square);
   parser.get("buoyancy", buoyancy);
   //----------------------------------------
+
+  // Seed random number generators
+  if (seedRand) {
+    srand48( std::time(0) );
+    srand( std::time(0) );
+    seedNormalDistribution();
+  }
 
   // Calculate number of particles given a packing fraction
   if (phi!=-1) {
@@ -92,9 +104,16 @@ int main(int argc, char** argv) {
   if (buoyancy) simulator.createBuoyancyBox(radius, bR, density, width, height, velocity, dispersion);
   else if (square) simulator.createSquare(number, radius, width, height, velocity, dispersion);
   else throw false; // No selection
+
+  simulator.setTemperature(temperature);
   simulator.setDoInteractions(interact);
+  simulator.setStartRec(start);
+
   simulator.setRecPositions(animate);
-  simulator.setRecKE(KE);
+
+  if (KE) simulator.addStatFunction(Stat_KE, "ke");
+  if (omega) simulator.addStatFunction(Stat_Omega, "omega");
+  if (cluster) simulator.addStatFunction(Stat_Clustering, "cluster");
 
   if (rank==0) {
     cout << "Dimensions: " << simulator.getWidth() << " x " << simulator.getHeight() << endl;
@@ -118,11 +137,8 @@ int main(int argc, char** argv) {
 
     /// Print recorded data
     if (animate) cout << simulator.printAnimationCommand(novid) << endl;
-    if (KE) {
-      cout << "ke=" << mmPreproc(simulator.getKERecord()) << ";\n";
-      cout << "ListLinePlot[ke,ImageSize->Large,PlotStyle->Black,PlotRange->{0,1.1*Max[ke]}]\n";
-    }
-
+    string stats = simulator.printStatFunctions();
+    if (!stats.empty()) cout << stats;
   }
   // End MPI
   MPI::Finalize();

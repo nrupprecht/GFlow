@@ -15,9 +15,11 @@ class Sectorization {
   int getNSX()                   { return nsx; }
   int getNSY()                   { return nsy; }
   int size()                     { return particles.size(); }
+  int getWallSize()              { return walls.size(); }
   double getSecWidth()           { return secWidth; }
   double getSecHeight()          { return secHeight; }
   double getEpsilon()            { return epsilon; }
+  double getTransferTime()       { return transferTime; }
   bool getDoInteractions()       { return doInteractions; }
   bool getWrapX()                { return wrapX; }
   bool getWrapY()                { return wrapY; }
@@ -27,10 +29,13 @@ class Sectorization {
   Bounds getSimBounds()          { return simBounds; }
 
   // Mutators
-  void setEpsilon(double e)      { epsilon = e; }
+  void giveDomainInfo(int x, int y) { ndx=x; ndy=y; }
+  void setEpsilon(double e)      { epsilon = e; sqrtEpsilon = sqrt(e); }
   void setDoInteractions(bool i) { doInteractions = i; }
   void setDrag(double d)         { drag = d; }
   void setGravity(vect<> g)      { gravity = g; }
+  void setTemperature(double t)  { temperature = t; }
+  void setViscosity(double h)    { viscosity = h; }
   void setCutoff(double c)       { cutoff = c; }
   void setSkinDepth(double d)    { skinDepth = d; }
   void setBounds(double, double, double, double);
@@ -53,21 +58,30 @@ class Sectorization {
   inline int getSec(vect<>);         // What sector does a position fall into
   inline void add(Particle*);        // Add a particle address to the appropriate sector
   inline void createNeighborLists(); // Create neighbor lists
+  inline void createWallNeighborList();
   inline vect<> getDisplacement(vect<>, vect<>);
+  inline void passParticles(const int, const int, list<Particle*>&);
+  inline void passParticleSend(const int, list<Particle*>&);
+  inline void passParticleRecv(const int);
 
   // Data
   int nsx, nsy;                      // Number of sectors in x and y, includes edge sectors
+  int ndx, ndy;                      // Number of domains in x and y
   double secWidth, secHeight;        // The width and height of sectors
-  double epsilon;                    // Timestep
+  double epsilon, sqrtEpsilon;       // Timestep and its square root
+  double transferTime;               // How much time is spent transfering data
   bool wrapX, wrapY;                 // Whether we wrap distances in the x and y directions
   bool doInteractions;
   double drag;                       // A drag coefficient, useful for finding a packed solution
 
   vect<> gravity;                    // Gravitational acceleration
+  double temperature, viscosity;
 
   list<Particle> particles;          // All the particles
   list<Particle*> *sectors;          // The sectors
   list<list<Particle*> > neighborList;// Neighbor list, the first particle in the list is the particle itself, the remaining particles are its neighbors
+  list<pair<Particle*, list<Wall*> > > wallNeighbors; // Particle - wall neighbor
+  bool doWallNeighbors;              // Create and use wall Neighbor list
   double cutoff, skinDepth;          // The particle interaction cutoff, and the skin depth (for creating neighbor lists)
   int itersSinceBuild, buildDelay;   // How many iterations since we last rebuilt the neighbor list, and how many iterations we wait before rebuilding
   list<Wall> walls;                  // All the walls

@@ -1,9 +1,30 @@
 #include "Particle.h"
 
-Wall::Wall(vect<> l, vect<> r) : left(l), right(r) {
+Wall::Wall() : left(Zero) {
+  length = 0;
+  normal = Zero;
+  
+  repulsion = default_wall_repulsion;
+  dissipation = default_wall_dissipation;
+  coeff = default_wall_coeff;
+}
+
+Wall::Wall(vect<> l, vect<> r) : left(l) {
   length = sqrt(sqr(l-r));
   normal = (1./length)*(r-l);
 
+  repulsion = default_wall_repulsion;
+  dissipation = default_wall_dissipation;
+  coeff = default_wall_coeff;
+}
+
+Wall::Wall(double lx, double ly, double rx, double ry) {
+  left = vect<>(lx, ly); vect<> right(rx, ry);
+  length = sqrt(sqr(left-right));
+  normal = (1./length)*(right-left);
+
+  repulsion = default_wall_repulsion;
+  dissipation = default_wall_dissipation;
   coeff = default_wall_coeff;
 }
 

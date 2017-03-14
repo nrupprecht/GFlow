@@ -18,11 +18,17 @@ Each type of particle has to have the same basic parameters, kinetic variables (
 
 /// Wall structure --- Size: 64 bytes ( 8 x 8 bytes )
 struct Wall {
+  Wall();
   Wall(vect<>, vect<>);
-  vect<> left, right;    // Left and right edge of the wall
+  Wall(double, double, double, double);
+  
+  vect<> getLeft()  { return left; }
+  vect<> getRight() { return left+length*normal; }
+
+  vect<> left;    // Left and right edge of the wall
   double length;         // Length of the wall (store instead of recalculate)
   vect<> normal;         // Normal vector in wall direction (store instead of recalculate)
-  double coeff;
+  double repulsion, dissipation, coeff;
 };
 
 /// Particle data structure -- Size: 128 bytes ( 16 x 8 bytes )

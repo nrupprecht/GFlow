@@ -11,6 +11,7 @@ GFlowBase::GFlowBase() {
   epsilon = 1e-4; sqrtEpsilon = sqrt(epsilon);
   sectorization.setEpsilon(epsilon);
   dispTime = 1./15.; lastDisp = 0;
+  startRec = 0;
   iter = 0; recIter = 0; maxIter = 0;
   runTime = 0;
   running = false;
@@ -28,8 +29,9 @@ GFlowBase::GFlowBase() {
   recKE = false;
   //---
 
-  rank = MPI::COMM_WORLD.Get_rank();
-  numProc = MPI::COMM_WORLD.Get_size();
+  // Get MPI system data
+  rank = COMM_WORLD.Get_rank();
+  numProc = COMM_WORLD.Get_size();
 
   // Define the particle data type
   MPI_Type_contiguous( 16, MPI_DOUBLE, &PARTICLE );
@@ -45,17 +47,16 @@ void GFlowBase::initialize() {
 
 void GFlowBase::run(double runLength) {
   resetVariables();
-  // setUpSectorization();
   // Calculate the number of iterations we will run for
   maxIter = runLength/epsilon;
   clock_t start = clock();
   running = true;
-  record(); // Initial record
+  if (startRec<=0) record(); // Initial record
   for (iter=0; iter<maxIter; ++iter) {
     if (doWork) {
       objectUpdates();
     }
-    if (time-lastDisp>dispTime) record();
+    if (time-lastDisp>dispTime && startRec<time) record();
 
     logisticUpdates();
     COMM_WORLD.Barrier();
@@ -97,6 +98,26 @@ void GFlowBase::setBounds(Bounds b) {
   sectorization.setSimBounds(b);
 }
 
+void GFlowBase::setGravity(vect<> g) {
+  gravity = g;
+  sectorization.setGravity(g);
+}
+
+void GFlowBase::setTemperature(double t) {
+  temperature = t;
+  sectorization.setTemperature(t);
+}
+
+void GFlowBase::setViscosity(double h) {
+  viscosity = h;
+  sectorization.setViscosity(h);
+}
+
+void GFlowBase::setDoInteractions(bool i) {
+  doInteractions = i;
+  sectorization.setDoInteractions(i);
+}
+
 bool GFlowBase::loadConfigurationFromFile (string filename) {
   throw false; // UNIMPLEMENTED
 }
@@ -108,6 +129,7 @@ bool GFlowBase::createConfigurationFile (string filename) {
 void GFlowBase::setUpSectorization() {
   // Decide how to divide up the space into domains
   bestProcessorGrid(ndx, ndy, numProc, Bounds(left, right, bottom, top));
+  sectorization.giveDomainInfo(ndx, ndy);
   // Calculate what bounds this processor is in charge of
   if (rank<ndx*ndy) {
     doWork = true; // This processor needs to do work
@@ -126,6 +148,7 @@ void GFlowBase::setUpSectorization() {
 void GFlowBase::setUpSectorization(Sectorization &sectors, double cutoff, double skinDepth) {
   // Decide how to divide up the space into domains
   bestProcessorGrid(ndx, ndy, numProc, sectors.getSimBounds() );
+  sectors.giveDomainInfo(ndx, ndy);
   // Calculate what bounds this processor is in charge of
   if (rank<ndx*ndy) {
     doWork = true; // This processor needs to do work
@@ -158,7 +181,7 @@ void GFlowBase::logisticUpdates() {
 }
 
 void GFlowBase::record() {
-  if (recPositions || recKE) recordPositions();
+  if (recPositions || recKE || !statFunctions.empty()) recordPositions();
   // Update display 
   lastDisp = time;
   ++recIter;
@@ -256,233 +279,9 @@ void GFlowBase::distributeParticles(list<Particle> &allParticles, Sectorization 
   COMM_WORLD.Barrier();
 }
 
-list<Particle> GFlowBase::createParticles(vector<vect<> > positions, double radius, double dispersion, std::function<vect<>(double)> velocity, double coeff, double dissipation, double repulsion, int interaction) {
-  // Create particles on the root processor
-  list<Particle> allParticles;
-  if (rank==0) {
-    for (auto pos : positions) {
-      double r = dispersion>0 ? (1-drand48()*dispersion)*radius : radius;
-      Particle p(pos, r);
-      p.velocity = velocity(p.invMass);
-      p.dissipation = dissipation;
-      p.coeff = coeff;
-      p.repulsion = repulsion;
-      allParticles.push_back(p);
-    }
-  }
-  return allParticles;
-}
-
-void GFlowBase::createAndDistributeParticles(int number, const Bounds &b, Sectorization &sectors, double radius, double dispersion, std::function<vect<>(double)> velocity, double coeff, double dissipation, double repulsion, int interaction) {
-  // Bounds width and height
-  double width = b.right-b.left, height = b.top-b.bottom;
-  // Create particles on the root processor
-  list<Particle> allParticles;
-  if (rank==0) {
-    for (int i=0; i<number; ++i) {
-      double r = dispersion>0 ? (1-drand48()*dispersion)*radius : radius;
-      vect<> pos(drand48()*(width-2*r)+r, drand48()*(height-2*r)+r);
-      Particle p(pos, r);
-      p.velocity = velocity(p.invMass);
-      p.dissipation = dissipation;
-      p.coeff = coeff;
-      p.repulsion = repulsion;
-      allParticles.push_back(p);
-    }
-  }
-
-  distributeParticles(allParticles, sectors);
-
-  /*
-  // Take your own particles
-  if (rank==0) {
-    Bounds bnds = getBoundsForProc(0, sectors.getSimBounds() );
-    vector<list<Particle>::iterator> remove;
-    for (auto p=allParticles.begin(); p!=allParticles.end(); ++p)
-      if (bnds.contains(p->position)) {
-        remove.push_back(p);
-        particles.push_back(*p);
-      }
-    for (auto &p : remove) allParticles.erase(p);
-    // Add particles to sectors
-    for (auto &p : particles) sectors.addParticle(p);
-  }
-  // Distribute particles to processes
-  int max = min(ndx*ndy, numProc);
-  for (int proc=1; proc<max; ++proc) {
-    if (rank==0) { // Send
-      vector<Particle> domainParticles;
-      Bounds bnds = getBoundsForProc(proc, sectors.getSimBounds() );
-      vector<list<Particle>::iterator> remove;
-      for (auto p=allParticles.begin(); p!=allParticles.end(); ++p)
-        if (bnds.contains(p->position)) {
-          remove.push_back(p);
-          domainParticles.push_back(*p);
-        }
-      for (auto &p : remove) allParticles.erase(p);
-      int size = domainParticles.size();
-      Particle *buffer = new Particle[size];
-      for (int j=0; j<size; ++j) buffer[j] = domainParticles[j];
-      // Send the amount of data we are going to send to processor i
-      COMM_WORLD.Send( &size, 1, MPI_INT, proc, 0);
-      // Send the actual data to processor i
-      COMM_WORLD.Send( buffer, size, PARTICLE, proc, 0);
-    }
-    else if (rank==proc) { // Recieve
-      int size = 0, root = 0;
-      // Recieve the amount of data we should expect
-      COMM_WORLD.Recv( &size, 1, MPI_INT, root, 0);
-      // Recieve the actual data
-      Particle *buffer = new Particle[size];
-      COMM_WORLD.Recv( buffer, size, PARTICLE, root, 0);
-      // Add particles to sectors
-      for (int i=0; i<size; ++i) sectors.addParticle(buffer[i]);
-    }
-  }
-  COMM_WORLD.Barrier();
-  */
-}
-
-// Data will be sent to the rank 0 (head) processor
-vector<vect<> > GFlowBase::findPackedSolution(int number, double radius, Bounds b, vect<> force, double expandTime, double relaxTime) {
-  // Create a sectorization
-  Sectorization packedSectors;
-  packedSectors.setSimBounds(b);
-  // Vectors for the four corners
-  vect<> ll(b.left, b.bottom), lr(b.right, b.bottom), tl(b.left, b.top), tr(b.right, b.top);
-  // Add the boundary walls
-  packedSectors.addWall(Wall(ll,lr));
-  packedSectors.addWall(Wall(lr,tr));
-  packedSectors.addWall(Wall(tl,tr));
-  packedSectors.addWall(Wall(ll,tl));
-  // Add any "real" walls (so we don't put particles inside walls)
-  for (auto &w : walls) packedSectors.addWall(w);
-  // Calculate parameters
-  double initialRadius = 0.2*radius, finalRadius = 1.*radius;
-  int expandSteps = expandTime/epsilon, relaxSteps = relaxTime/epsilon;
-  double dr = (finalRadius-initialRadius)/static_cast<double>(expandSteps);
-  // Distribute particles
-  createAndDistributeParticles(number, b, packedSectors, radius);
-  // Set up sectorization
-  setUpSectorization(packedSectors, 2*radius, 0.25*radius);
-  packedSectors.setGravity(force); // Have to do this after setUpSectorization
-  packedSectors.setDrag(default_packed_drag);
-  // Simulate motion and expansion
-  for (int i=0; i<expandSteps; ++i) {
-    for (auto &p : packedSectors.getParticles()) p.sigma += dr;
-    packedSectors.update();
-  }
-  // Simulate pure motion (relaxation)
-  for (int i=0; i<relaxSteps; ++i) packedSectors.update();
-  // Get positions
-  auto sectorParticles = packedSectors.getParticles();
-  int size = sectorParticles.size();
-  Particle *parts = new Particle[size], *buffer = 0;
-  int i=0;
-  for (auto p=sectorParticles.begin(); p!=sectorParticles.end(); ++p, ++i) parts[i] = *p;
-  // If we didn't know that the total number of particles is [number], we would have to use MPI reduce operation
-  if (rank==0) buffer = new Particle[number];
-  // Send data to master processor
-  COMM_WORLD.Gather(parts, size, PARTICLE, buffer, number, PARTICLE, 0);
-  if (rank==0) {
-    vector<vect<> > positions;
-    positions.reserve(number);
-    for (int i=0; i<number; ++i) positions.push_back(buffer[i].position);
-    return positions;
-  }
-  else return vector<vect<> >(); // Empty vector
-}
-
-// ----- TO GO TO GFLOW.CPP -----
-
-void GFlowBase::createSquare(int number, double radius, double width, double height, double vsgma, double dispersion) {
-  // Start the clock
-  auto begin = clock();
-  // Discard any old state
-  discard();
-  // Bounds
-  Bounds bounds(0, width, 0, height);
-  setBounds(bounds);
-  // Set cutoff and skin depth
-  cutoff = 2*radius;
-  skinDepth = 0.25*radius;
-  // Everyone knows where the walls are
-  addWall(left, bottom, right, bottom);
-  addWall(left, bottom, left, top);
-  addWall(left, top, right, top);
-  addWall(right, bottom, right, top);
-  // Set up sectorization
-  setUpSectorization();
-  gravity = 0;
-  sectorization.setGravity(gravity);
-  // Velocity initialization function
-  std::function<vect<>(double)> velocity = [&] (double invMass) { 
-    double angle = 2*PI*drand48();
-    vect<> v(cos(angle), sin(angle));
-    double ke = fabs(vsgma*randNormal());
-    double velocity = sqrt(2*invMass*ke/127.324);
-    v *= velocity;
-    return v;
-  };
-  // Create particles and distribute them to the processors
-  vector<vect<> > positions = findPackedSolution(number, radius, bounds);  
-  list<Particle> allParticles = createParticles(positions, radius, dispersion, velocity, 0, 0);
-  // Send out particles
-  distributeParticles(allParticles, sectorization);
-  // End setup timing
-  auto end = clock();
-  setUpTime = (double)(end-begin)/CLOCKS_PER_SEC;
-}
-
-void GFlowBase::createBuoyancyBox(double radius, double bR, double density, double width, double depth, double velocity, double dispersion) {
-  // Start the clock
-  auto begin = clock();
-  // Discard any old state
-  discard();
-  // Bounds
-  Bounds bounds(0, width, 0, depth+2*bR);
-  setBounds(bounds);
-  // Set cutoff and skin depth
-  cutoff = radius+bR;
-  skinDepth = 0.25*radius;
-  // Everyone knows where the walls are
-  addWall(left, bottom, right, bottom);
-  addWall(left, bottom, left, top);
-  addWall(left, top, right, top);
-  addWall(right, bottom, right, top);
-  // Set up sectorization
-  setUpSectorization();
-  gravity = vect<>(0,-1);
-  sectorization.setGravity(gravity);
-  // Calculate how many particles we should start with
-  double maxPack = PI/(2*sqrt(3)); // Hexagonal packing
-  double Vfill = width*depth, Vgrain = PI*sqr(radius*(1-0.5*dispersion));
-  int number = maxPack * Vfill / Vgrain;
-  // Create particles and distribute them to the processors
-  vector<vect<> > positions = findPackedSolution(number, radius, bounds, gravity);
-  // Only allow particles that are below depth
-  list<list<Particle>::iterator> remove;
-  list<Particle> allParticles = createParticles(positions, radius, dispersion, ZeroV);
-  for (auto p=allParticles.begin(); p!=allParticles.end(); ++p)
-    if (depth<p->position.y+p->sigma) remove.push_back(p);
-  for (auto &p : remove) allParticles.erase(p);
-  // Add the large ball
-  if (rank==0) {
-    Particle ball(width/2, depth+bR, bR);
-    ball.setDensity(density);
-    allParticles.push_back(ball);
-  }
-  // Send out particles
-  distributeParticles(allParticles, sectorization);
-  // End setup timing
-  auto end = clock();
-  setUpTime = (double)(end-begin)/CLOCKS_PER_SEC;
-}
-
-void GFlowBase::recordPositions() {
+void GFlowBase::recallParticles(vector<Particle>& allParticles) {
   // Get all the particles back from the sectorizations
   auto begin = clock();
-  vector<Particle> allParticles;
   int max = min(ndx*ndy, numProc);
   if (rank==0)
     for (auto &p : sectorization.getParticles())
@@ -512,6 +311,215 @@ void GFlowBase::recordPositions() {
   auto end = clock();
   transferTime += (double)(end-begin)/CLOCKS_PER_SEC;
   // Particles are now all stored on processor 0
+}
+
+list<Particle> GFlowBase::createParticles(vector<vect<> > positions, double radius, double dispersion, std::function<vect<>(double)> velocity, double coeff, double dissipation, double repulsion, int interaction) {
+  // Create particles on the root processor
+  list<Particle> allParticles;
+  if (rank==0) {
+    for (auto pos : positions) {
+      double r = dispersion>0 ? (1-drand48()*dispersion)*radius : radius;
+      Particle p(pos, r);
+      p.velocity = velocity(p.invMass);
+      p.dissipation = dissipation;
+      p.coeff = coeff;
+      p.repulsion = repulsion;
+      p.interaction = interaction;
+      allParticles.push_back(p);
+    }
+  }
+  return allParticles;
+}
+
+void GFlowBase::createAndDistributeParticles(int number, const Bounds &b, Sectorization &sectors, double radius, double dispersion, std::function<vect<>(double)> velocity, double coeff, double dissipation, double repulsion, int interaction) {
+  // Bounds width and height
+  double width = b.right-b.left, height = b.top-b.bottom;
+  // Create particles on the root processor
+  list<Particle> allParticles;
+  if (rank==0) {
+    for (int i=0; i<number; ++i) {
+      double r = dispersion>0 ? (1-drand48()*dispersion)*radius : radius;
+      vect<> pos(drand48()*(width-2*r)+r, drand48()*(height-2*r)+r);
+      Particle p(pos, r);
+      p.velocity = velocity(p.invMass);
+      p.dissipation = dissipation;
+      p.coeff = coeff;
+      p.repulsion = repulsion;
+      allParticles.push_back(p);
+    }
+  }
+
+  distributeParticles(allParticles, sectors);
+}
+
+// Data will be sent to the rank 0 (head) processor
+vector<vect<> > GFlowBase::findPackedSolution(int number, double radius, Bounds b, vect<> force, double expandTime, double relaxTime) {
+  // Create a sectorization
+  Sectorization packedSectors;
+  packedSectors.setSimBounds(b);
+  // Vectors for the four corners
+  vect<> ll(b.left, b.bottom), lr(b.right, b.bottom), tl(b.left, b.top), tr(b.right, b.top);
+  // Add the boundary walls
+  packedSectors.addWall(Wall(ll,lr));
+  packedSectors.addWall(Wall(lr,tr));
+  packedSectors.addWall(Wall(tl,tr));
+  packedSectors.addWall(Wall(ll,tl));
+  // Add any "real" walls (so we don't put particles inside walls)
+  for (auto &w : walls) packedSectors.addWall(w);
+  // Calculate parameters
+  double initialRadius = 0.2*radius, finalRadius = 1.*radius;
+  int expandSteps = expandTime/epsilon, relaxSteps = relaxTime/epsilon;
+  double dr = (finalRadius-initialRadius)/static_cast<double>(expandSteps);
+  // Distribute particles
+  createAndDistributeParticles(number, b, packedSectors, radius, 0, ZeroV);
+  // Set up sectorization
+  setUpSectorization(packedSectors, 2*radius, 0.25*radius);
+  packedSectors.setGravity(force); // Have to do this after setUpSectorization
+  packedSectors.setDrag(default_packed_drag);
+  // Simulate motion and expansion
+  for (int i=0; i<expandSteps; ++i) {
+    for (auto &p : packedSectors.getParticles()) p.sigma += dr;
+    packedSectors.update();
+  }
+  // Simulate pure motion (relaxation)
+  for (int i=0; i<relaxSteps; ++i) packedSectors.update();
+  // Get positions
+  auto sectorParticles = packedSectors.getParticles();
+  int size = sectorParticles.size();
+  // Get the number of particles to expect from each processor
+  int *sizeBuff = 0;
+  if (rank==0) sizeBuff = new int[numProc];
+  COMM_WORLD.Gather(&size, 1, MPI_INT, sizeBuff, 1, MPI_INT, 0);
+  // Find the max number of particles in any sector with the head processor and broadcast it back
+  int max=0;
+  if (rank==0)
+    for (int i=0; i<numProc; ++i)
+      if (max<sizeBuff[i]) max = sizeBuff[i];
+  COMM_WORLD.Bcast(&max, 1, MPI_INT, 0);
+  // Now everyone knows what the max is. Allocate arrays only as large as neccessary
+  Particle *parts = new Particle[max], *buffer = 0;
+  if (rank==0) buffer = new Particle[number*max];
+  int i=0;
+  for (auto p=sectorParticles.begin(); p!=sectorParticles.end(); ++p, ++i) 
+    parts[i] = *p;
+  // Send Particle data to master processor
+  COMM_WORLD.Gather(parts, size, PARTICLE, buffer, max, PARTICLE, 0);
+  // If the head processor, fill with particle positions
+  vector<vect<> > positions;
+  if (rank==0) {
+    positions.reserve(number);
+    for (int r=0; r<numProc; ++r)
+      for (int i=0; i<sizeBuff[r]; ++i) {
+	int add = max*r+i;
+	positions.push_back(buffer[add].position);
+      }
+  }
+  // Delete memory
+  if (parts) delete[] parts;
+  if (buffer) delete[] buffer;
+  if (sizeBuff) delete[] sizeBuff;
+  // Return positions
+  return positions;
+}
+
+// ----- TO GO TO GFLOW.CPP -----
+
+void GFlowBase::createSquare(int number, double radius, double width, double height, double vsgma, double dispersion) {
+  // Start the clock
+  auto begin = clock();
+  // Discard any old state
+  discard();
+  // Bounds
+  Bounds bounds(0, width, 0, height);
+  setBounds(bounds);
+  // Set cutoff and skin depth
+  cutoff = 2*radius;
+  skinDepth = 0.25*radius;
+  // Everyone knows where the walls are
+  Wall w[4];
+  w[0] = Wall(left, bottom, right, bottom);
+  w[1] = Wall(left, bottom, left, top);
+  w[2] = Wall(left, top, right, top);
+  w[3] = Wall(right, bottom, right, top);
+  for (int i=0; i<4; ++i) {
+    w[i].dissipation = 0;
+    w[i].coeff = 0;
+    addWall(w[i]);
+  }
+  
+  // Set up sectorization
+  setUpSectorization();
+  gravity = 0;
+  sectorization.setGravity(gravity);
+  // Velocity initialization function
+  std::function<vect<>(double)> velocity = [&] (double invMass) { 
+    double angle = 2*PI*drand48();
+    vect<> v(cos(angle), sin(angle));
+    double ke = fabs(vsgma*randNormal());
+    double velocity = sqrt(2*invMass*ke/127.324);
+    v *= velocity;
+    return v;
+  };
+  // Create particles and distribute them to the processors
+  vector<vect<> > positions = findPackedSolution(number, radius, bounds);  
+  list<Particle> allParticles = createParticles(positions, radius, dispersion, velocity, 0, 0, default_sphere_repulsion, 1);
+  // Send out particles
+  distributeParticles(allParticles, sectorization);
+  // End setup timing
+  auto end = clock();
+  setUpTime = (double)(end-begin)/CLOCKS_PER_SEC;
+}
+
+void GFlowBase::createBuoyancyBox(double radius, double bR, double density, double width, double depth, double velocity, double dispersion) {
+  // Start the clock
+  auto begin = clock();
+  // Discard any old state
+  discard();
+  // Bounds
+  Bounds bounds(0, width, 0, depth+2*bR+radius);
+  setBounds(bounds);
+  // Set cutoff and skin depth
+  cutoff = radius+bR;
+  skinDepth = 0.25*radius;
+  // Everyone knows where the walls are
+  addWall(left, bottom, right, bottom);
+  addWall(left, bottom, left, top);
+  addWall(left, top, right, top);
+  addWall(right, bottom, right, top);
+  // Set up sectorization
+  setUpSectorization();
+  gravity = vect<>(0,-1);
+  sectorization.setGravity(gravity);
+  // Calculate how many particles we should start with
+
+  double maxPack = PI/(2*sqrt(3)); // Hexagonal packing
+  double Vfill = width*depth, Vgrain = PI*sqr(radius*(1-0.5*dispersion));
+  int number = 0.9 * maxPack * Vfill / Vgrain;
+  // Create particles and distribute them to the processors
+  vector<vect<> > positions = findPackedSolution(number, radius, bounds, Zero);
+  // Only allow particles that are below depth
+  list<list<Particle>::iterator> remove;
+  list<Particle> allParticles = createParticles(positions, radius, dispersion, ZeroV, 0); 
+  for (auto p=allParticles.begin(); p!=allParticles.end(); ++p)
+    if (depth<p->position.y+p->sigma) remove.push_back(p);
+  for (auto &p : remove) allParticles.erase(p);
+  // Add the large ball
+  if (rank==0 && bR>0) {
+    Particle ball(width/2, depth+bR, bR);
+    ball.setDensity(density);
+    allParticles.push_back(ball);
+  }
+  // Send out particles
+  distributeParticles(allParticles, sectorization);
+  // End setup timing
+  auto end = clock();
+  setUpTime = (double)(end-begin)/CLOCKS_PER_SEC;
+}
+
+void GFlowBase::recordPositions() {
+  // Get all the particles back from the sectorizations
+  vector<Particle> allParticles;
+  recallParticles(allParticles);
   
   if (recPositions) {
     vector<pair<vect<>, double> > positions;
@@ -524,11 +532,36 @@ void GFlowBase::recordPositions() {
     ke *= (0.5*(1./allParticles.size()));
     keRecord.push_back(ke);
   }
+
+  int i=0;
+  for (auto &sf : statFunctions) {
+    statRecord.at(i).push_back(vect<>(time, sf.first(allParticles)));
+    ++i;
+  }
+}
+
+void GFlowBase::addStatFunction(StatFunc sf, string str) {
+  statFunctions.push_back(pair<StatFunc,string>(sf, str));
+  statRecord.push_back(vector<vect<> >());
+}
+
+string GFlowBase::printStatFunctions() {
+  if (statFunctions.empty() || rank!=0) return "";
+  stringstream stream;
+  string str, strh;
+  for (int i=0; i<statFunctions.size(); ++i) {
+    string name = statFunctions.at(i).second;
+    stream << name << "=" << mmPreproc(statRecord.at(i));
+    stream >> strh;
+    str += (strh+";\nPrint[\""+name+"\"]\nListLinePlot["+name+",PlotStyle->Black,ImageSize->Large]\n");
+    stream.clear(); strh.clear();
+  }
+  return str;
 }
 
 vector<vpair> GFlowBase::getWallsPositions() {
   vector<vpair> positions;
-  for (auto w : walls) positions.push_back(vpair(w.left, w.right));
+  for (auto w : walls) positions.push_back(vpair(w.getLeft(), w.getRight()));
   return positions;
 }
 

@@ -2,6 +2,7 @@
 #define GFLOWBASE_H
 
 #include "Sectorization.h"
+#include "StatFunc.h"
 #include <functional>
 
 typedef pair<vect<>, vect<> > vpair;
@@ -40,7 +41,7 @@ class GFlowBase {
   int getIter()            { return iter; }
   double getRunTime()      { return runTime; }
   bool getRunning()        { return running; }
-  double getTransferTime() { return transferTime; }
+  double getTransferTime() { return transferTime+sectorization.getTransferTime(); }
   bool getDoInteractions() { return doInteractions; }
   int getNDX()             { return ndx; }
   int getNDY()             { return ndy; }
@@ -50,10 +51,12 @@ class GFlowBase {
   void setBounds(Bounds);
   void setWrapX(bool w)          { wrapX = w; }
   void setWrapY(bool w)          { wrapY = w; }
-  void setGravity(vect<> g)      { gravity = g; }
-  void setTemperature(double t)  { temperature = t; }
-  void setViscosity(double h)    { viscosity = h; }
-  void setDoInteractions(bool i) { doInteractions = i; }
+  void setGravity(vect<> g);
+  
+  void setTemperature(double t);
+  void setViscosity(double h);
+  void setStartRec(double s)     { startRec = s; }
+  void setDoInteractions(bool i);
 
   // File functions
   virtual bool loadConfigurationFromFile (string);
@@ -63,6 +66,9 @@ class GFlowBase {
   void createSquare(int, double, double=4., double=4., double=0.1, double=0.);
   void createBuoyancyBox(double, double, double, double, double, double, double);
   void recordPositions();
+
+  void addStatFunction(StatFunc, string);
+  string printStatFunctions();
 
   string printAnimationCommand(bool=false);
 
@@ -80,6 +86,9 @@ class GFlowBase {
   bool recPositions;
   vector<double> keRecord;
   bool recKE;
+
+  vector<pair<StatFunc,string> > statFunctions; // Statistic functions and a string to name them
+  vector<vector<vect<> > >  statRecord;    // Save the data produced by the statistic functions
 
  public:
   // -------------------------------
@@ -101,6 +110,7 @@ class GFlowBase {
   Bounds getBoundsForProc(int);
   Bounds getBoundsForProc(int, const Bounds&);
   void distributeParticles(list<Particle>&, Sectorization&);
+  void recallParticles(vector<Particle>&); // Gather copies of all particles into a vector
 
   list<Particle> createParticles(vector<vect<> >, double, double, std::function<vect<>(double)> = ZeroV, double=default_sphere_coeff, double=default_sphere_dissipation, double=default_sphere_repulsion, int=0);
   void createAndDistributeParticles(int, const Bounds&, Sectorization&, double, double=0, std::function<vect<>(double)> = ZeroV, double=default_sphere_coeff, double=default_sphere_dissipation, double=default_sphere_repulsion, int=0);
@@ -116,6 +126,7 @@ class GFlowBase {
   double time;                   // Simulated time
   double epsilon, sqrtEpsilon;   // Time step and its square root
   double dispTime, lastDisp;     // Time between recording (1. / display rate), last time data was recorded
+  double startRec;               // When to start recording data
   int iter, recIter, maxIter;    // Simulation iteration, how many iterations we have recorded data at, maximum iteration
   double runTime;                // How much (real) time the last simulation took to run
   bool running;                  // True if the simulation is currently runnint
