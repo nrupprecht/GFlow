@@ -24,9 +24,8 @@ inline double Stat_Clustering(const vector<Particle> &particles) {
   double clustering = 0;
   for (auto p=particles.begin(); p!=particles.end(); ++p) {
     auto q = p; ++q;
-    for (; q!=particles.end(); ++q) {
-      clustering += 1./sqr(p->position-q->position);
-    }
+    for (; q!=particles.end(); ++q)
+      clustering += sqr(p->sigma+q->sigma)/sqr(p->position-q->position);
   }
   //  double size = particles.size();
   //  clustering /= (0.5*size*(size+1.));

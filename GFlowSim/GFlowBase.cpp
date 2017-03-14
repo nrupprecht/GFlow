@@ -469,6 +469,7 @@ void GFlowBase::createSquare(int number, double radius, double width, double hei
   list<Particle> allParticles = createParticles(positions, radius, dispersion, velocity, 0, 0);
   // Send out particles
   distributeParticles(allParticles, sectorization);
+  sectorization.initialize();
   // End setup timing
   auto end = clock();
   setUpTime = (double)(end-begin)/CLOCKS_PER_SEC;

@@ -2,7 +2,7 @@
 
 using MPI::COMM_WORLD;
 
-Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), time(0), epsilon(1e-4), sqrtEpsilon(1e-4), transferTime(0), wrapX(false), wrapY(false), doInteractions(true), drag(0), gravity(Zero), temperature(0), viscosity(1.308e-3), tempDelay(5e-3), sqrtTempDelay(sqrt(5e-3)), lastTemp(0), sectors(0), doWallNeighbors(true), cutoff(0.1), skinDepth(0.025), itersSinceBuild(0), buildDelay(20), numProc(1), rank(0) {
+Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), time(0), epsilon(1e-4), sqrtEpsilon(1e-4), transferTime(0), wrapX(false), wrapY(false), doInteractions(true), drag(0), gravity(Zero), temperature(0), viscosity(1.308e-3), tempDelay(5e-3), sqrtTempDelay(sqrt(5e-3)), lastTemp(0), particles(0), sectors(0), doWallNeighbors(true), cutoff(0.1), skinDepth(0.025), itersSinceBuild(0), buildDelay(20), numProc(1), rank(0) {
   // Get our rank and the number of processors
   rank =    COMM_WORLD.Get_rank();
   numProc = COMM_WORLD.Get_size();  
@@ -14,6 +14,7 @@ Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), time
 
 Sectorization::~Sectorization() {
   if (sectors) delete [] sectors;
+  if (particles) delete [] particles;
   sectors = 0;
 }
 
@@ -27,19 +28,34 @@ void Sectorization::initialize() {
   secHeight = (bounds.top-bounds.bottom)/nsy; 
   // Add for edge sectors
   nsx += 2; nsy += 2;
-  // Remake
+  // Remake sectors
   if (sectors) delete [] sectors;
   sectors = new list<Particle*>[nsx*nsy+1]; // +1 For special sector
-  for (auto &p : particles) add(&p);
-  
+  // Remake particles
+  if (particles) delete [] particles;
+  size = plist.size();
+  particles = new Particle[size];
+  int i=0;
+  for (auto &p : plist) {
+    particles[i] = p;
+    ++i;
+  }
+  for (int i=0; i<size; ++i) add(&particles[i]);
+
   // Create the initial neighborlist
   createNeighborLists();
   if (doWallNeighbors) createWallNeighborList();
   itersSinceBuild = 0;
-  
+
+  // Reset times
   time = 0;
   transferTime = 0;
   lastTemp = 0;
+}
+
+list<Particle>& Sectorization::getParticles() {
+  updatePList();
+  return plist;
 }
 
 void Sectorization::setBounds(double l, double r, double b, double t) {
@@ -54,12 +70,14 @@ void Sectorization::setSimBounds(double l, double r, double b, double t) {
   simBounds = Bounds(l, r, b, t);
 }
 
-void Sectorization::setInteractionType(int i) {
-  for (auto &p : particles) p.interaction = i;
+void Sectorization::setInteractionType(int inter) {
+  for (int i=0; i<size; ++i) particles[i].interaction = inter;
 }
 
 void Sectorization::discard() {
-  particles.clear();
+  if (particles) delete [] particles;
+  particles = 0;
+  size = 0;
   if (sectors) for (int i=0; i<nsx*nsy+1; ++i) sectors[i].clear();
   neighborList.clear();
   wallNeighbors.clear();
@@ -113,7 +131,8 @@ void Sectorization::wallInteractions() {
   }
   else { 
     for (auto& w : walls)
-      for (auto& p : particles) {
+      for (int i=0; i<size; ++i) {
+	Particle &p = particles[i];
 	double n=0, s=0;
 	vect<> displacement = getDisplacement(p.position, w.left);
 	switch (p.interaction) {
@@ -131,13 +150,15 @@ void Sectorization::wallInteractions() {
 
 void Sectorization::update() {
   // Reset particle's force recordings
-  for (auto &p : particles) {
+  for (int i=0; i<size; ++i) {
+    Particle &p = particles[i];
     p.force = Zero;
     p.torque = 0;
   }
   // Half-kick velocity update, update position
   double dt = 0.5 * epsilon;
-  for (auto &p : particles) {
+  for (int i=0; i<size; ++i) {
+    Particle &p = particles[i];
     double mass = 1./p.invMass;
     p.velocity += dt * p.invMass * p.force;
     p.omega    += dt * p.invII * p.torque;
@@ -169,7 +190,8 @@ void Sectorization::update() {
   // Do behaviors (particle characteristics)
   // ---------- Behaviors ----------
   // Velocity update part two (step four)
-  for (auto &p :particles) {
+  for (int i=0; i<size; ++i) {
+    Particle &p = particles[i];
     p.velocity += dt * p.invMass * p.force;
     p.omega    += dt * p.invII * p.torque;
   }
@@ -233,9 +255,7 @@ void Sectorization::updateSectors() {
 }
 
 void Sectorization::addParticle(Particle p) {
-  particles.push_back(p);
-  Particle *P = &(*particles.rbegin());
-  add(P);
+  plist.push_back(p);
 }
 
 void Sectorization::addWall(Wall w) {
@@ -354,7 +374,8 @@ inline void Sectorization::createNeighborLists() {
 inline void Sectorization::createWallNeighborList() {
   // Create Wall Neighbor list
   wallNeighbors.clear();
-  for (auto &p : particles) {
+  for (int i=0; i<size; ++i) {
+    Particle &p = particles[i];
     list<Wall*> lst;
     for (auto &w : walls) {
       
@@ -471,4 +492,9 @@ inline void Sectorization::passParticleRecv(const int recv) {
   // Add particles to sector
   for(int i=0; i<sz; ++i) addParticle(buffer[i]);
   delete [] buffer;
+}
+
+inline void Sectorization::updatePList() {
+  plist.clear();
+  for (int i=0; i<size; ++i) plist.push_back(particles[i]);
 }

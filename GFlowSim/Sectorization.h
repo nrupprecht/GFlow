@@ -14,7 +14,7 @@ class Sectorization {
   // Accessors
   int getNSX()                   { return nsx; }
   int getNSY()                   { return nsy; }
-  int size()                     { return particles.size(); }
+  int getSize()                  { return size; }
   int getWallSize()              { return walls.size(); }
   double getSecWidth()           { return secWidth; }
   double getSecHeight()          { return secHeight; }
@@ -24,7 +24,7 @@ class Sectorization {
   bool getWrapX()                { return wrapX; }
   bool getWrapY()                { return wrapY; }
   vect<> getGravity()            { return gravity; }
-  auto& getParticles()           { return particles; }
+  list<Particle>& getParticles();
   Bounds getBounds()             { return bounds; }
   Bounds getSimBounds()          { return simBounds; }
 
@@ -82,7 +82,11 @@ class Sectorization {
   double tempDelay, sqrtTempDelay;   // How long we wait between applying temperature perturbations
   double lastTemp;                   // Last time we applied temperature perturbations
 
-  list<Particle> particles;          // All the particles
+  // All the particles
+  list<Particle> plist;
+  Particle *particles;
+  int size;
+  inline void updatePList();
 
   list<Particle*> *sectors;          // The sectors
   list<list<Particle*> > neighborList;// Neighbor list, the first particle in the list is the particle itself, the remaining particles are its neighbors
