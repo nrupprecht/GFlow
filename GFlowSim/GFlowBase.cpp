@@ -118,6 +118,10 @@ void GFlowBase::setDoInteractions(bool i) {
   sectorization.setDoInteractions(i);
 }
 
+void GFlowBase::setInteractionType(int i) {
+  sectorization.setInteractionType(i);
+}
+
 bool GFlowBase::loadConfigurationFromFile (string filename) {
   throw false; // UNIMPLEMENTED
 }
@@ -297,7 +301,7 @@ void GFlowBase::recallParticles(vector<Particle>& allParticles) {
       for (int i=0; i<size; ++i) allParticles.push_back(buffer[i]);
     }
     else if (rank==proc) {
-      list<Particle> &parts = sectorization.getParticles();
+      auto &parts = sectorization.getParticles();
       int size = parts.size(), root = 0;
       COMM_WORLD.Send( &size, 1, MPI_INT, root, 0);
       // Create a buffer of Particles to send
@@ -462,7 +466,7 @@ void GFlowBase::createSquare(int number, double radius, double width, double hei
   };
   // Create particles and distribute them to the processors
   vector<vect<> > positions = findPackedSolution(number, radius, bounds);  
-  list<Particle> allParticles = createParticles(positions, radius, dispersion, velocity, 0, 0, default_sphere_repulsion, 1);
+  list<Particle> allParticles = createParticles(positions, radius, dispersion, velocity, 0, 0);
   // Send out particles
   distributeParticles(allParticles, sectorization);
   // End setup timing

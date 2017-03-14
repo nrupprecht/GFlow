@@ -25,11 +25,11 @@ inline double Stat_Clustering(const vector<Particle> &particles) {
   for (auto p=particles.begin(); p!=particles.end(); ++p) {
     auto q = p; ++q;
     for (; q!=particles.end(); ++q) {
-      clustering += sqrt(sqr(p->position-q->position));
+      clustering += 1./sqr(p->position-q->position);
     }
   }
-  double size = particles.size();
-  clustering /= (0.5*size*(size+1.));
+  //  double size = particles.size();
+  //  clustering /= (0.5*size*(size+1.));
   return clustering;
 }
 

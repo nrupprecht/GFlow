@@ -1,7 +1,7 @@
 CC = icpc
 MPICC = mpic++
 CFLAG = -std=c++14 -Wall
-FLAGS = $(CFLAG) -g -O3 #-g
+FLAGS = $(CFLAG) -g -O3
 
 targets = driver
 

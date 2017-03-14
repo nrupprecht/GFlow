@@ -52,11 +52,11 @@ class GFlowBase {
   void setWrapX(bool w)          { wrapX = w; }
   void setWrapY(bool w)          { wrapY = w; }
   void setGravity(vect<> g);
-  
   void setTemperature(double t);
   void setViscosity(double h);
   void setStartRec(double s)     { startRec = s; }
   void setDoInteractions(bool i);
+  void setInteractionType(int i);
 
   // File functions
   virtual bool loadConfigurationFromFile (string);

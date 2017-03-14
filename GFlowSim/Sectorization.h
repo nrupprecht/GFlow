@@ -24,7 +24,7 @@ class Sectorization {
   bool getWrapX()                { return wrapX; }
   bool getWrapY()                { return wrapY; }
   vect<> getGravity()            { return gravity; }
-  list<Particle>& getParticles() { return particles; }
+  auto& getParticles()           { return particles; }
   Bounds getBounds()             { return bounds; }
   Bounds getSimBounds()          { return simBounds; }
 
@@ -42,6 +42,7 @@ class Sectorization {
   void setBounds(Bounds);
   void setSimBounds(double, double, double, double);
   void setSimBounds(Bounds);
+  void setInteractionType(int);
   void discard();
 
   // Functionality
@@ -59,6 +60,7 @@ class Sectorization {
   inline void add(Particle*);        // Add a particle address to the appropriate sector
   inline void createNeighborLists(); // Create neighbor lists
   inline void createWallNeighborList();
+  inline void migrateParticles();    // Migrate particles to other domains, update domain edges
   inline vect<> getDisplacement(vect<>, vect<>);
   inline void passParticles(const int, const int, list<Particle*>&);
   inline void passParticleSend(const int, list<Particle*>&);
@@ -68,6 +70,7 @@ class Sectorization {
   int nsx, nsy;                      // Number of sectors in x and y, includes edge sectors
   int ndx, ndy;                      // Number of domains in x and y
   double secWidth, secHeight;        // The width and height of sectors
+  double time;                       // Simulation time
   double epsilon, sqrtEpsilon;       // Timestep and its square root
   double transferTime;               // How much time is spent transfering data
   bool wrapX, wrapY;                 // Whether we wrap distances in the x and y directions
@@ -76,8 +79,11 @@ class Sectorization {
 
   vect<> gravity;                    // Gravitational acceleration
   double temperature, viscosity;
+  double tempDelay, sqrtTempDelay;   // How long we wait between applying temperature perturbations
+  double lastTemp;                   // Last time we applied temperature perturbations
 
   list<Particle> particles;          // All the particles
+
   list<Particle*> *sectors;          // The sectors
   list<list<Particle*> > neighborList;// Neighbor list, the first particle in the list is the particle itself, the remaining particles are its neighbors
   list<pair<Particle*, list<Wall*> > > wallNeighbors; // Particle - wall neighbor

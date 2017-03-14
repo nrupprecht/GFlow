@@ -2,7 +2,7 @@
 
 using MPI::COMM_WORLD;
 
-Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), epsilon(1e-4), sqrtEpsilon(1e-4), transferTime(0), wrapX(false), wrapY(false), doInteractions(true), drag(0), gravity(Zero), temperature(0), viscosity(1.308e-3), sectors(0), doWallNeighbors(true), cutoff(0.1), skinDepth(0.025), itersSinceBuild(0), buildDelay(20), numProc(1), rank(0) {
+Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), time(0), epsilon(1e-4), sqrtEpsilon(1e-4), transferTime(0), wrapX(false), wrapY(false), doInteractions(true), drag(0), gravity(Zero), temperature(0), viscosity(1.308e-3), tempDelay(5e-3), sqrtTempDelay(sqrt(5e-3)), lastTemp(0), sectors(0), doWallNeighbors(true), cutoff(0.1), skinDepth(0.025), itersSinceBuild(0), buildDelay(20), numProc(1), rank(0) {
   // Get our rank and the number of processors
   rank =    COMM_WORLD.Get_rank();
   numProc = COMM_WORLD.Get_size();  
@@ -37,7 +37,9 @@ void Sectorization::initialize() {
   if (doWallNeighbors) createWallNeighborList();
   itersSinceBuild = 0;
   
-  transferTime=0;
+  time = 0;
+  transferTime = 0;
+  lastTemp = 0;
 }
 
 void Sectorization::setBounds(double l, double r, double b, double t) {
@@ -50,6 +52,10 @@ void Sectorization::setBounds(Bounds b) {
 
 void Sectorization::setSimBounds(double l, double r, double b, double t) {
   simBounds = Bounds(l, r, b, t);
+}
+
+void Sectorization::setInteractionType(int i) {
+  for (auto &p : particles) p.interaction = i;
 }
 
 void Sectorization::discard() {
@@ -140,13 +146,16 @@ void Sectorization::update() {
     // Apply gravity (part of step 3)
     p.force += (gravity*mass - drag*p.velocity);
     // Apply temperature force (part of step 3)
-    if (temperature>0) {
-      double DT = temperature/(6*viscosity*PI*p.sigma); // Assumes Kb = 1;
-      double coeffD = sqrt(2*DT)*sqrtEpsilon;
+    if (temperature>0 && tempDelay<time-lastTemp) {
+      static double DT1 = temperature/(6*viscosity*PI);
+      double DT = DT1*(1./p.sigma); // Assumes Kb = 1;
+      double coeffD = sqrt(2*DT)*sqrtTempDelay;
       vect<> TForce = coeffD*(randNormal()*randV()); // Addative gaussian white noise
       p.force += TForce;
     }
   }
+  // Reset last temp
+  if (tempDelay<time-lastTemp) lastTemp = time;
   // Update sectorization, keep track of particles that need to migrate to other processors, send particles to the correct processor
   updateSectors();
   if (buildDelay<=itersSinceBuild) {
@@ -166,10 +175,11 @@ void Sectorization::update() {
   }
   // Update counter
   itersSinceBuild++;
+  time += epsilon;
 }
 
 void Sectorization::updateSectors() {
-  if (sectors==0) return;
+  if (doInteractions==false || sectors==0) return;
   // Move particles to the appropriate sectors, if they leave the domain, take note so we can migrate them. Only required to update particles in the sectors we manage (i.e. not the edge sectors)
   list<Particle*> moveUp, moveDown, moveLeft, moveRight;
   for (int y=1; y<nsy-1; ++y) 
@@ -178,14 +188,14 @@ void Sectorization::updateSectors() {
       vector<list<Particle*>::iterator> remove;
       for (auto p=sectors[sec].begin(); p!=sectors[sec].end(); ++p) {
 	vect<> position = (*p)->position;
-	if (!bounds.contains(position)) { 
+	if (!bounds.contains(position)) ; /*{ 
 	  // The particle has migrated out of the domain. This should never happen if this is the only processor
 	  remove.push_back(p);
 	  if (position.x<bounds.left) moveLeft.push_back(*p);
 	  else if (position.y<bounds.bottom) moveDown.push_back(*p);
 	  else if (bounds.right<position.x) moveRight.push_back(*p);
 	  else if (bounds.top<position.y) moveUp.push_back(*p);
-	}
+	} */
 	else { // The particle is still in the domain
 	  int secNum = getSec(position);
 	  if (secNum != sec) { // Needs to change sector
@@ -205,7 +215,8 @@ void Sectorization::updateSectors() {
   // COMM_WORLD.Barrier(); //**
 
   // Send particles to other domains as neccessary
-  if (0<numProc) {
+  /*
+  if (1<numProc) {
     auto start = clock();
     passParticles( 1, 0, moveRight);
     passParticles(-1, 0, moveLeft);
@@ -214,6 +225,7 @@ void Sectorization::updateSectors() {
     auto end = clock();
     transferTime += (double)(end-start)/CLOCKS_PER_SEC;
   }
+  */
   // Tell other domains what is happening at boundary sectors
   //**---------------------------
   
@@ -354,6 +366,42 @@ inline void Sectorization::createWallNeighborList() {
     if (!lst.empty())
       wallNeighbors.push_back(pair<Particle*, list<Wall*> >(&p, lst));
   }
+}
+
+inline void Sectorization::migrateParticles() {
+  if (numProc==1) return;
+  // Look for particles that need to migrate
+  list<Particle*> moveUp, moveDown, moveLeft, moveRight;
+  for (int y=1; y<nsy-1; ++y)
+    for (int x=1; x<nsx-1; ++x ) {
+      int sec = y*nsx + x;
+      vector<list<Particle*>::iterator> remove;
+      for (auto p=sectors[sec].begin(); p!=sectors[sec].end(); ++p) {
+        vect<> position = (*p)->position;
+        if (!bounds.contains(position)) {
+          // The particle has migrated out of the domain. This should never happen if this is the only processor
+	  remove.push_back(p);
+	  if (position.x<bounds.left) moveLeft.push_back(*p);
+	  else if (position.y<bounds.bottom) moveDown.push_back(*p);
+	  else if (bounds.right<position.x) moveRight.push_back(*p);
+	  else if (bounds.top<position.y) moveUp.push_back(*p);
+        }
+      }
+      // Remove particles from sector as neccessary
+      for (auto &p : remove) sectors[sec].erase(p);
+    }
+  // Send particles to other domains as neccessary
+  auto start = clock();
+  passParticles( 1, 0, moveRight);
+  passParticles(-1, 0, moveLeft);
+  passParticles(0,  1, moveUp);
+  passParticles(0, -1, moveDown);
+  auto end = clock();
+  transferTime += (double)(end-start)/CLOCKS_PER_SEC;
+  
+  // Tell other domains what is happening at boundary sectors
+  //**---------------------------
+  
 }
 
 inline vect<> Sectorization::getDisplacement(vect<> A, vect<> B) {

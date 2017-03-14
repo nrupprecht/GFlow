@@ -26,6 +26,7 @@ int main(int argc, char** argv) {
   double time = 1.;
   double start = 0;
   double phi = -1;
+  int interaction = 0;
   bool interact = true;
   bool seedRand = true;
 
@@ -63,6 +64,7 @@ int main(int argc, char** argv) {
   parser.get("time", time);
   parser.get("start", start);
   parser.get("phi", phi);
+  parser.get("interaction", interaction);
   parser.get("interact", interact);
   parser.get("srand", seedRand);
   parser.get("animate", animate);
@@ -120,6 +122,8 @@ int main(int argc, char** argv) {
     cout << "Set up time: " << simulator.getSetUpTime() << endl;
     cout << "  ..........................\n";
   }
+
+  if (interaction!=0) simulator.setInteractionType(interaction);
 
   // Run the simulation
   simulator.run(time);
