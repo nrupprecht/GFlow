@@ -525,6 +525,7 @@ void GFlowBase::createBuoyancyBox(double radius, double bR, double density, doub
   }
   // Send out particles
   distributeParticles(allParticles, sectorization);
+  sectorization.initialize();
   // End setup timing
   auto end = clock();
   setUpTime = (double)(end-begin)/CLOCKS_PER_SEC;
@@ -567,7 +568,7 @@ string GFlowBase::printStatFunctions() {
     string name = statFunctions.at(i).second;
     stream << name << "=" << mmPreproc(statRecord.at(i));
     stream >> strh;
-    str += (strh+";\nPrint[\""+name+"\"]\nListLinePlot["+name+",PlotStyle->Black,ImageSize->Large]\n");
+    str += (strh+";\nPrint[\""+name+"\"]\nListLinePlot["+name+",PlotStyle->Black,ImageSize->Large,PlotRange->All]\n");
     stream.clear(); strh.clear();
   }
   return str;

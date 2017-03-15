@@ -1,7 +1,8 @@
 CC = icpc
 MPICC = mpic++
 CFLAG = -std=c++14 -Wall
-FLAGS = $(CFLAG) -g -O3
+FLAGS = $(CFLAG) -g -xHost -O3 -no-prec-div -static -fp-model fast=2 -restrict -funroll-loops
+#-qopt-report 5
 
 targets = driver
 
@@ -19,4 +20,4 @@ driver : driver.o $(files)
 
 .PHONY : clean
 clean:
-	rm *.o $(targets)
+	rm -f *.o *.optrpt $(targets)

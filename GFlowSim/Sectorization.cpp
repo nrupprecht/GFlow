@@ -154,30 +154,24 @@ void Sectorization::wallInteractions() {
 }
 
 void Sectorization::update() {
-  // Reset particle's force recordings
-  for (int i=0; i<size; ++i) {
-    Particle &p = particles[i];
-    p.force = Zero;
-    p.torque = 0;
-  }
   // Half-kick velocity update, update position
   double dt = 0.5 * epsilon;
-  for (int i=0; i<size; ++i) {
-    Particle &p = particles[i];
-    double mass = 1./p.invMass;
-    p.velocity += dt * p.invMass * p.force;
-    p.omega    += dt * p.invII * p.torque;
-    p.position += epsilon * p.velocity;    
-    wrap(p.position);
+  for (int i=0; i<size; ++i) { //--
+    double mass = 1./particles[i].invMass;
+    particles[i].velocity += dt * particles[i].invMass * particles[i].force;
+    particles[i].omega    += dt * particles[i].invII * particles[i].torque;
+    particles[i].position += epsilon * particles[i].velocity;    
+    wrap(particles[i].position);
     // Apply gravity (part of step 3)
-    p.force += (gravity*mass - drag*p.velocity);
+    particles[i].force = (gravity*mass - drag*particles[i].velocity); // This resets force
+    particles[i].torque = 0; // Reset torque
     // Apply temperature force (part of step 3)
     if (temperature>0 && tempDelay<time-lastTemp) {
       static double DT1 = temperature/(6*viscosity*PI);
-      double DT = DT1*(1./p.sigma); // Assumes Kb = 1;
+      double DT = DT1*(1./particles[i].sigma); // Assumes Kb = 1;
       double coeffD = sqrt(2*DT)*sqrtTempDelay;
       vect<> TForce = coeffD*(randNormal()*randV()); // Addative gaussian white noise
-      p.force += TForce;
+      particles[i].force += TForce;
     }
   }
   // Reset last temp
@@ -208,6 +202,7 @@ void Sectorization::updateSectors() {
   if (doInteractions==false || sectors==0) return;
   // Move particles to the appropriate sectors, if they leave the domain, take note so we can migrate them. Only required to update particles in the sectors we manage (i.e. not the edge sectors)
   list<Particle*> moveUp, moveDown, moveLeft, moveRight;
+  #pragma simd
   for (int y=1; y<nsy-1; ++y) 
     for (int x=1; x<nsx-1; ++x ) {
       int sec = y*nsx + x;
