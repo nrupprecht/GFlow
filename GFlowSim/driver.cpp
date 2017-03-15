@@ -14,7 +14,7 @@ using std::endl;
 
 int main(int argc, char** argv) {
   // Simulation parameters
-  int number = 100;
+  int number = -1;
   double width = 4;
   double height = 4;
   double radius = 0.05;
@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
   double temperature = 0;
   double time = 1.;
   double start = 0;
-  double phi = -1;
+  double phi = 0.5;
   int interaction = 0;
   bool interact = true;
   bool seedRand = true;
@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
   }
 
   // Calculate number of particles given a packing fraction
-  if (phi!=-1) {
+  if (number==-1) {
     double Vol = width*height;
     number = Vol/(PI*sqr(radius))*phi;
   }

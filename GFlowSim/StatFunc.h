@@ -22,13 +22,24 @@ inline double Stat_KE(const vector<Particle> &particles) {
 inline double Stat_Clustering(const vector<Particle> &particles) {
   if (particles.empty()) return 0;
   double clustering = 0;
+  /*
   for (auto p=particles.begin(); p!=particles.end(); ++p) {
     auto q = p; ++q;
     for (; q!=particles.end(); ++q)
       clustering += sqr(p->sigma+q->sigma)/sqr(p->position-q->position);
   }
-  //  double size = particles.size();
-  //  clustering /= (0.5*size*(size+1.));
+  double size = particles.size();
+  clustering /= (0.5*size*(size+1.));
+  */
+
+  for (auto p : particles) {
+    double c = 0;
+    for (auto q : particles)
+      if (p.position!=q.position) 
+	clustering += 1./sqr(p.position-q.position);
+    clustering += c*sqr(p.sigma);
+  }
+  clustering /= particles.size();
   return clustering;
 }
 

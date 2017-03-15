@@ -2,7 +2,7 @@
 
 using MPI::COMM_WORLD;
 
-Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), time(0), epsilon(1e-4), sqrtEpsilon(1e-4), transferTime(0), wrapX(false), wrapY(false), doInteractions(true), drag(0), gravity(Zero), temperature(0), viscosity(1.308e-3), tempDelay(5e-3), sqrtTempDelay(sqrt(5e-3)), lastTemp(0), particles(0), sectors(0), doWallNeighbors(true), cutoff(0.1), skinDepth(0.025), itersSinceBuild(0), buildDelay(20), numProc(1), rank(0) {
+Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), time(0), epsilon(1e-4), sqrtEpsilon(1e-4), transferTime(0), wrapX(false), wrapY(false), doInteractions(true), drag(0), gravity(Zero), temperature(0), viscosity(1.308e-3), tempDelay(5e-3), sqrtTempDelay(sqrt(5e-3)), lastTemp(0), particles(0), positionTracker(0), sectors(0), doWallNeighbors(true), cutoff(0.1), skinDepth(0.05), itersSinceBuild(0), buildDelay(20), numProc(1), rank(0) {
   // Get our rank and the number of processors
   rank =    COMM_WORLD.Get_rank();
   numProc = COMM_WORLD.Get_size();  
@@ -33,11 +33,14 @@ void Sectorization::initialize() {
   sectors = new list<Particle*>[nsx*nsy+1]; // +1 For special sector
   // Remake particles
   if (particles) delete [] particles;
+  if (positionTracker) delete [] positionTracker;
   size = plist.size();
   particles = new Particle[size];
+  positionTracker = new vect<>[size];
   int i=0;
   for (auto &p : plist) {
     particles[i] = p;
+    positionTracker[i] = p.position;
     ++i;
   }
   for (int i=0; i<size; ++i) add(&particles[i]);
@@ -77,6 +80,8 @@ void Sectorization::setInteractionType(int inter) {
 void Sectorization::discard() {
   if (particles) delete [] particles;
   particles = 0;
+  if (positionTracker) delete [] positionTracker;
+  positionTracker = 0;
   size = 0;
   if (sectors) for (int i=0; i<nsx*nsy+1; ++i) sectors[i].clear();
   neighborList.clear();
@@ -178,10 +183,9 @@ void Sectorization::update() {
   // Reset last temp
   if (tempDelay<time-lastTemp) lastTemp = time;
   // Update sectorization, keep track of particles that need to migrate to other processors, send particles to the correct processor
-  updateSectors();
   if (buildDelay<=itersSinceBuild) {
     itersSinceBuild = 0;
-    createNeighborLists();
+    createNeighborLists(); // Create the neighborhood lists
     if (doWallNeighbors) createWallNeighborList();
   }
   // Interaction forces (step 3)
@@ -210,14 +214,7 @@ void Sectorization::updateSectors() {
       vector<list<Particle*>::iterator> remove;
       for (auto p=sectors[sec].begin(); p!=sectors[sec].end(); ++p) {
 	vect<> position = (*p)->position;
-	if (!bounds.contains(position)) ; /*{ 
-	  // The particle has migrated out of the domain. This should never happen if this is the only processor
-	  remove.push_back(p);
-	  if (position.x<bounds.left) moveLeft.push_back(*p);
-	  else if (position.y<bounds.bottom) moveDown.push_back(*p);
-	  else if (bounds.right<position.x) moveRight.push_back(*p);
-	  else if (bounds.top<position.y) moveUp.push_back(*p);
-	} */
+	if (!bounds.contains(position)) ;
 	else { // The particle is still in the domain
 	  int secNum = getSec(position);
 	  if (secNum != sec) { // Needs to change sector
@@ -230,28 +227,6 @@ void Sectorization::updateSectors() {
       // Remove particles from sector as neccessary
       for (auto &p : remove) sectors[sec].erase(p);
     }
-  
-  // If we are the only processor, we are done
-  if (numProc==1) return; 
-  // Wait for everyone to finish
-  // COMM_WORLD.Barrier(); //**
-
-  // Send particles to other domains as neccessary
-  /*
-  if (1<numProc) {
-    auto start = clock();
-    passParticles( 1, 0, moveRight);
-    passParticles(-1, 0, moveLeft);
-    passParticles(0,  1, moveUp);
-    passParticles(0, -1, moveDown);
-    auto end = clock();
-    transferTime += (double)(end-start)/CLOCKS_PER_SEC;
-  }
-  */
-  // Tell other domains what is happening at boundary sectors
-  //**---------------------------
-  
-  return;
 }
 
 void Sectorization::addParticle(Particle p) {
@@ -317,6 +292,17 @@ inline void Sectorization::add(Particle *p) {
 inline void Sectorization::createNeighborLists() {
   if (sectors==0) return;
   if (!doInteractions) return;
+  // Find an upper bound on how far particles might have moved from one another
+  double m0 = 0, m1 = 0;
+  for (int i=0; i<size; ++i) {
+    double distSqr = sqr(getDisplacement(positionTracker[i],particles[i].position));
+    if (distSqr>m0) m0 = distSqr;
+    else if (distSqr>m1) m1 = distSqr;
+  }
+  double maxDiff = sqrt(m0) + sqrt(m1);
+  if (maxDiff<skinDepth) return;
+  // Update sectors
+  updateSectors();
   // The square of the neighbor distance
   double distance = sqr(cutoff+skinDepth);
   // Get rid of the old neighbor lists
@@ -369,6 +355,8 @@ inline void Sectorization::createNeighborLists() {
 	if (nlist.size()>1) neighborList.push_back(nlist);
       }
     }
+  // Update position tracker array
+  for (int i=0; i<size; ++i) positionTracker[i] = particles[i].position;
 }
 
 inline void Sectorization::createWallNeighborList() {

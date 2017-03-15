@@ -380,6 +380,7 @@ vector<vect<> > GFlowBase::findPackedSolution(int number, double radius, Bounds 
   setUpSectorization(packedSectors, 2*radius, 0.25*radius);
   packedSectors.setGravity(force); // Have to do this after setUpSectorization
   packedSectors.setDrag(default_packed_drag);
+  packedSectors.initialize();
   // Simulate motion and expansion
   for (int i=0; i<expandSteps; ++i) {
     for (auto &p : packedSectors.getParticles()) p.sigma += dr;
@@ -389,41 +390,49 @@ vector<vect<> > GFlowBase::findPackedSolution(int number, double radius, Bounds 
   for (int i=0; i<relaxSteps; ++i) packedSectors.update();
   // Get positions
   auto sectorParticles = packedSectors.getParticles();
-  int size = sectorParticles.size();
-  // Get the number of particles to expect from each processor
-  int *sizeBuff = 0;
-  if (rank==0) sizeBuff = new int[numProc];
-  COMM_WORLD.Gather(&size, 1, MPI_INT, sizeBuff, 1, MPI_INT, 0);
-  // Find the max number of particles in any sector with the head processor and broadcast it back
-  int max=0;
-  if (rank==0)
-    for (int i=0; i<numProc; ++i)
-      if (max<sizeBuff[i]) max = sizeBuff[i];
-  COMM_WORLD.Bcast(&max, 1, MPI_INT, 0);
-  // Now everyone knows what the max is. Allocate arrays only as large as neccessary
-  Particle *parts = new Particle[max], *buffer = 0;
-  if (rank==0) buffer = new Particle[number*max];
-  int i=0;
-  for (auto p=sectorParticles.begin(); p!=sectorParticles.end(); ++p, ++i) 
-    parts[i] = *p;
-  // Send Particle data to master processor
-  COMM_WORLD.Gather(parts, size, PARTICLE, buffer, max, PARTICLE, 0);
-  // If the head processor, fill with particle positions
-  vector<vect<> > positions;
-  if (rank==0) {
-    positions.reserve(number);
-    for (int r=0; r<numProc; ++r)
-      for (int i=0; i<sizeBuff[r]; ++i) {
-	int add = max*r+i;
-	positions.push_back(buffer[add].position);
-      }
-  }
-  // Delete memory
-  if (parts) delete[] parts;
-  if (buffer) delete[] buffer;
-  if (sizeBuff) delete[] sizeBuff;
+  if (numProc>1) {
+    int size = sectorParticles.size();
+    // Get the number of particles to expect from each processor
+    int *sizeBuff = 0;
+    if (rank==0) sizeBuff = new int[numProc];
+    COMM_WORLD.Gather(&size, 1, MPI_INT, sizeBuff, 1, MPI_INT, 0);
+    // Find the max number of particles in any sector with the head processor and broadcast it back
+    int max=0;
+    if (rank==0)
+      for (int i=0; i<numProc; ++i)
+	if (max<sizeBuff[i]) max = sizeBuff[i];
+    COMM_WORLD.Bcast(&max, 1, MPI_INT, 0);
+    // Now everyone knows what the max is. Allocate arrays only as large as neccessary
+    Particle *parts = new Particle[max], *buffer = 0;
+    if (rank==0) buffer = new Particle[number*max];
+    int i=0;
+    for (auto p=sectorParticles.begin(); p!=sectorParticles.end(); ++p, ++i) 
+      parts[i] = *p;
+    // Send Particle data to master processor
+    COMM_WORLD.Gather(parts, size, PARTICLE, buffer, max, PARTICLE, 0);
+    // If the head processor, fill with particle positions
+    vector<vect<> > positions;
+    if (rank==0) {
+      positions.reserve(number);
+      for (int r=0; r<numProc; ++r)
+	for (int i=0; i<sizeBuff[r]; ++i) {
+	  int add = max*r+i;
+	  positions.push_back(buffer[add].position);
+	}
+    }
+    // Delete memory
+    if (parts) delete[] parts;
+    if (buffer) delete[] buffer;
+    if (sizeBuff) delete[] sizeBuff;
   // Return positions
-  return positions;
+    return positions;
+  }
+  else { // Single processor run
+    vector<vect<> > positions;
+    for (auto p : sectorParticles) positions.push_back(p.position);
+    // Return positions
+    return positions;
+  }
 }
 
 // ----- TO GO TO GFLOW.CPP -----
@@ -438,7 +447,7 @@ void GFlowBase::createSquare(int number, double radius, double width, double hei
   setBounds(bounds);
   // Set cutoff and skin depth
   cutoff = 2*radius;
-  skinDepth = 0.25*radius;
+  skinDepth = radius;
   // Everyone knows where the walls are
   Wall w[4];
   w[0] = Wall(left, bottom, right, bottom);

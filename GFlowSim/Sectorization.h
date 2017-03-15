@@ -85,6 +85,7 @@ class Sectorization {
   // All the particles
   list<Particle> plist;
   Particle *particles;
+  vect<> *positionTracker;           
   int size;
   inline void updatePList();
 
