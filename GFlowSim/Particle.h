@@ -5,7 +5,6 @@
 #ifndef PARTICLE_H
 #define PARTICLE_H
 
-#include "../Utility.h"
 #include "DefaultConstants.h"
 
 /* 
@@ -16,18 +15,18 @@ Each type of particle has to have the same basic parameters, kinetic variables (
 
 */
 
-/// Wall structure --- Size: 64 bytes ( 8 x 8 bytes )
+/// Wall structure --- Size: 8 x sizeof(floatType) bytes 
 struct Wall {
   Wall();
-  Wall(vect<>, vect<>);
-  Wall(double, double, double, double);
+  Wall(vec2, vec2);
+  Wall(floatType, floatType, floatType, floatType);
   
-  vect<> getLeft()  { return left; }
-  vect<> getRight() { return left+length*normal; }
+  vec2 getLeft()  { return left; }
+  vec2 getRight() { return left+length*normal; }
 
-  vect<> left;    // Left and right edge of the wall
-  double length;         // Length of the wall (store instead of recalculate)
-  vect<> normal;         // Normal vector in wall direction (store instead of recalculate)
+  vec2 left;    // Left and right edge of the wall
+  floatType length;         // Length of the wall (store instead of recalculate)
+  vec2 normal;         // Normal vector in wall direction (store instead of recalculate)
   double repulsion, dissipation, coeff;
 };
 
@@ -35,33 +34,22 @@ struct Wall {
 struct Particle {
   // Constructor
   Particle();
-  Particle(vect<>, double);
-  Particle(double, double, double);
+  Particle(vec2, floatType);
+  Particle(floatType, floatType, floatType);
   // Helper functions
-  void setDensity(double);
+  void setDensity(floatType);
   // Error class
   class BadMassError {};
   // Kinetic variable
-  vect<> position, velocity, force; // Linear kinetic variables
-  double /*theta,*/ omega, torque;  // Angular kinetic variables (no need for theta)
+  vec2 position, velocity, force; // Linear kinetic variables
+  floatType /*theta,*/ omega, torque;  // Angular kinetic variables (no need for theta)
   
-  int interaction; // Interaction type
+  floatType interaction; // Interaction type
 
-  double sigma; // Radius or force cutoff
-  double invMass, invII; // Inverses of mass and moment of inertia
-  double repulsion, dissipation, coeff, drag;
+  floatType sigma; // Radius or force cutoff
+  floatType invMass, invII; // Inverses of mass and moment of inertia
+  floatType repulsion, dissipation, coeff, drag;
 };
-
-/// Interaction functions --> First two arguments are the particles or walls effected
-//  Next two arguments are references used to extract the magnitude of the normal force and shear force
-/*
-extern void hardDiskRepulsion_sym  (Particle &, Particle &, double&, double&);
-extern void hardDiskRepulsion_asym (Particle &, const Particle &, double&, double&);
-extern void hardDiskRepulsion_wall (Particle &, const Wall &, double&, double&);
-extern void LJinteraction_sym      (Particle &, Particle &, double&, double&);
-inline void LJinteraction_asym     (Particle &, const Particle &, double&, double&);
-inline void LJinteraction_wall     (Particle &, const Wall &, double&, double&);
-*/
 
 /// Purely abstract base class for characteristics
 class Characteristic {

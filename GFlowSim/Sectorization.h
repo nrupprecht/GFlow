@@ -27,14 +27,14 @@ class Sectorization {
   int getNSY()                   { return nsy; }
   int getSize()                  { return size; }
   int getWallSize()              { return walls.size(); }
-  double getSecWidth()           { return secWidth; }
-  double getSecHeight()          { return secHeight; }
-  double getEpsilon()            { return epsilon; }
+  floatType getSecWidth()        { return secWidth; }
+  floatType getSecHeight()       { return secHeight; }
+  floatType getEpsilon()         { return epsilon; }
   double getTransferTime()       { return transferTime; }
   bool getDoInteractions()       { return doInteractions; }
   bool getWrapX()                { return wrapX; }
   bool getWrapY()                { return wrapY; }
-  vect<> getGravity()            { return gravity; }
+  vec2 getGravity()              { return gravity; }
   list<Particle>& getParticles();
   Bounds getBounds()             { return bounds; }
   Bounds getSimBounds()          { return simBounds; }
@@ -50,17 +50,17 @@ class Sectorization {
 
   // Mutators
   void giveDomainInfo(int x, int y) { ndx=x; ndy=y; }
-  void setEpsilon(double e)      { epsilon = e; sqrtEpsilon = sqrt(e); }
-  void setDoInteractions(bool i) { doInteractions = i; }
-  void setDrag(double d)         { drag = d; }
-  void setGravity(vect<> g)      { gravity = g; }
-  void setTemperature(double t)  { temperature = t; DT1 = temperature/(6*viscosity*PI); }
-  void setViscosity(double h)    { viscosity = h; DT1 = temperature/(6*viscosity*PI); }
-  void setCutoff(double c)       { cutoff = c; }
-  void setSkinDepth(double d)    { skinDepth = d; }
-  void setBounds(double, double, double, double);
+  void setEpsilon(floatType e)      { epsilon = e; sqrtEpsilon = sqrt(e); }
+  void setDoInteractions(bool i)    { doInteractions = i; }
+  void setDrag(floatType d)         { drag = d; }
+  void setGravity(vec2 g)           { gravity = g; }
+  void setTemperature(floatType t)  { temperature = t; DT1 = temperature/(6*viscosity*PI); }
+  void setViscosity(floatType h)    { viscosity = h; DT1 = temperature/(6*viscosity*PI); }
+  void setCutoff(floatType c)       { cutoff = c; }
+  void setSkinDepth(floatType d)    { skinDepth = d; }
+  void setBounds(floatType, floatType, floatType, floatType);
   void setBounds(Bounds);
-  void setSimBounds(double, double, double, double);
+  void setSimBounds(floatType, floatType, floatType, floatType);
   void setSimBounds(Bounds);
   void setInteractionType(int);
   void setASize(int i);
@@ -76,45 +76,42 @@ class Sectorization {
   void addWall(Wall);
 
  private:
-  inline void wrap(double&, double&);
-  inline void wrap(vect<>&);         // Keep a position in bounds by wrapping
-  inline int getSec(const vect<>&);         // What sector does a position fall into
-  inline int getSec(const double, const double);
-  inline void add(Particle*);        // Add a particle address to the appropriate sector
+  inline void wrap(floatType&, floatType&);
+  inline void wrap(vec2&);         // Keep a position in bounds by wrapping
+  inline int getSec(const vec2&);         // What sector does a position fall into
+  inline int getSec(const floatType, const floatType);
+  //inline void add(Particle*);        // Add a particle address to the appropriate sector
   inline void createNeighborLists(); // Create neighbor lists
   inline void createWallNeighborList();
   inline void migrateParticles();    // Migrate particles to other domains, update domain edges
-  inline vect<> getDisplacement(vect<>, vect<>);
-  inline vect<> getDisplacement(double, double, double, double);
-  // inline void passParticles(const int, const int, list<Particle*>&);
-  // inline void passParticleSend(const int, list<Particle*>&);
-  // inline void passParticleRecv(const int);
+  inline vec2 getDisplacement(vec2, vec2);
+  inline vec2 getDisplacement(floatType, floatType, floatType, floatType);
 
   // Data
   int nsx, nsy;                      // Number of sectors in x and y, includes edge sectors
   int ndx, ndy;                      // Number of domains in x and y
-  double secWidth, secHeight;        // The width and height of sectors
-  double time;                       // Simulation time
-  double epsilon, sqrtEpsilon;       // Timestep and its square root
+  floatType secWidth, secHeight;     // The width and height of sectors
+  floatType time;                    // Simulation time
+  floatType epsilon, sqrtEpsilon;    // Timestep and its square root
   double transferTime;               // How much time is spent transfering data
   bool wrapX, wrapY;                 // Whether we wrap distances in the x and y directions
   bool doInteractions;
-  double drag;                       // A drag coefficient, useful for finding a packed solution
+  floatType drag;                    // A drag coefficient, useful for finding a packed solution
 
-  vect<> gravity;                    // Gravitational acceleration
-  double temperature, viscosity, DT1;
-  double tempDelay, sqrtTempDelay;   // How long we wait between applying temperature perturbations
-  double lastTemp;                   // Last time we applied temperature perturbations
+  vec2 gravity;                      // Gravitational acceleration
+  floatType temperature, viscosity, DT1;
+  floatType tempDelay, sqrtTempDelay;// How long we wait between applying temperature perturbations
+  floatType lastTemp;                // Last time we applied temperature perturbations
 
   // All the particles
   list<Particle> plist;
-  vect<> *positionTracker;           
+  vec2 *positionTracker;           
   int size, asize;                  // The number of particles, and the amount of space we have to store particles
   inline void updatePList();
   // Particle data - position (2), velocity (2), force (2), omega, torque, sigma, inverse mass, inverse moment of inertia, repulsion, dissipation, coeff of friction, drag coefficient, interaction type
-  double *px, *py, *vx, *vy, *fx, *fy, *om, *tq, *sg, *im, *iI, *rp, *ds, *cf, *dg, *it;
-  double *ms; // Mass array
-  double *pdata[16]; // Pointers to px, py, etc
+  floatType *px, *py, *vx, *vy, *fx, *fy, *om, *tq, *sg, *im, *iI, *rp, *ds, *cf, *dg, *it;
+  floatType *ms; // Mass array
+  floatType *pdata[16]; // Pointers to px, py, etc
   inline void createArrays(); // Initialize the array and point the pointers to their propper sections
   inline void zeroPointers(); // Zero all pointers. Do not delete, just set them to zero
 
@@ -131,14 +128,14 @@ class Sectorization {
 
   bool doWallNeighbors;              // Create and use wall Neighbor list
   bool remakeToUpdate;               // Totally remake sectors to update them
-  double cutoff, skinDepth;          // The particle interaction cutoff, and the skin depth (for creating neighbor lists)
+  floatType cutoff, skinDepth;          // The particle interaction cutoff, and the skin depth (for creating neighbor lists)
   int itersSinceBuild, buildDelay;   // How many iterations since we last rebuilt the neighbor list, and how many iterations we wait before rebuilding
   list<Wall> walls;                  // All the walls
 
   // MPI
   int numProc, rank;                 // The number of processors MPI is using and the rank of this processor
   Bounds bounds, simBounds ; // The physical dimensions of this domain and of the entire simulation space
-  MPI_Datatype PARTICLE;            // The particle datatype for MPI
+  //MPI_Datatype PARTICLE;            // The particle datatype for MPI
 
   // Debugging and timing
   double firstHalfKick, secondHalfKick, updateSectorsTime, neighborListTime, wallNeighborListTime, particleInteractionTime, wallInteractionTime;

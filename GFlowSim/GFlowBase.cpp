@@ -5,7 +5,7 @@ using MPI::COMM_WORLD;
 GFlowBase::GFlowBase() {
   left = 0; right = 1; bottom = 0; top = 1;
   wrapX = true; wrapY = true;
-  gravity = vect<>(0., -1.);
+  gravity = vec2(0., -1.);
   temperature = 0; viscosity = 1.308e-3;
   time = 0;
   epsilon = 1e-4; sqrtEpsilon = sqrt(epsilon);
@@ -34,7 +34,7 @@ GFlowBase::GFlowBase() {
   numProc = COMM_WORLD.Get_size();
 
   // Define the particle data type
-  MPI_Type_contiguous( 16, MPI_DOUBLE, &PARTICLE );
+  MPI_Type_contiguous( 16*sizeof(floatType)/sizeof(float), MPI_FLOAT, &PARTICLE );
   MPI_Type_commit( &PARTICLE );
 }
 
@@ -74,8 +74,8 @@ void GFlowBase::addWall(Wall w) {
   sectorization.addWall(w);
 }
 
-void GFlowBase::addWall(double sx, double sy, double ex, double ey) {
-  Wall w(vect<>(sx,sy), vect<>(ex,ey));
+void GFlowBase::addWall(floatType sx, floatType sy, floatType ex, floatType ey) {
+  Wall w(vec2(sx,sy), vec2(ex,ey));
   walls.push_back(w);
   sectorization.addWall(w);
 }
@@ -84,11 +84,11 @@ void GFlowBase::addParticle(Particle p) {
   particles.push_back(p);
 }
 
-void GFlowBase::addParticle(double x, double y, double r) {
+void GFlowBase::addParticle(floatType x, floatType y, floatType r) {
   particles.push_back(Particle(x, y, r));
 }
 
-void GFlowBase::setBounds(double l, double r, double b, double t) {
+void GFlowBase::setBounds(floatType l, floatType r, floatType b, floatType t) {
   left = l; right = r; bottom = b; top = t;
   sectorization.setSimBounds(l, r, b, t);
 }
@@ -98,17 +98,17 @@ void GFlowBase::setBounds(Bounds b) {
   sectorization.setSimBounds(b);
 }
 
-void GFlowBase::setGravity(vect<> g) {
+void GFlowBase::setGravity(vec2 g) {
   gravity = g;
   sectorization.setGravity(g);
 }
 
-void GFlowBase::setTemperature(double t) {
+void GFlowBase::setTemperature(floatType t) {
   temperature = t;
   sectorization.setTemperature(t);
 }
 
-void GFlowBase::setViscosity(double h) {
+void GFlowBase::setViscosity(floatType h) {
   viscosity = h;
   sectorization.setViscosity(h);
 }
@@ -150,7 +150,7 @@ void GFlowBase::setUpSectorization() {
   else doWork = false;
 }
 
-void GFlowBase::setUpSectorization(Sectorization &sectors, double cutoff, double skinDepth) {
+void GFlowBase::setUpSectorization(Sectorization &sectors, floatType cutoff, floatType skinDepth) {
   // Decide how to divide up the space into domains
   bestProcessorGrid(ndx, ndy, numProc, sectors.getSimBounds() );
   sectors.giveDomainInfo(ndx, ndy);
@@ -209,11 +209,11 @@ void GFlowBase::discard() {
 
 void GFlowBase::bestProcessorGrid(int &x, int &y, const int number, const Bounds b) {
   int xm=1, ym=1;
-  double rmin=1e9, r=0, l=(b.right-b.left)/(b.top-b.bottom);
+  floatType rmin=1e9, r=0, l=(b.right-b.left)/(b.top-b.bottom);
   // Find the domain grid that is most square and uses the most number of processors
   for (int i=1; i<number; ++i) {
     int j=number/i;
-    double factor = static_cast<double>(j)/static_cast<double>(i)*l;
+    floatType factor = static_cast<floatType>(j)/static_cast<floatType>(i)*l;
     r = factor + 1./factor;
     if (r<rmin) { rmin = r; xm = i; ym = j; }
   } 
@@ -221,16 +221,16 @@ void GFlowBase::bestProcessorGrid(int &x, int &y, const int number, const Bounds
 }
 
 Bounds GFlowBase::getBoundsForProc(int rnk) {
-  double dx = (right-left)/ndx, dy = (top-bottom)/ndy;
-  double l = (rnk%ndx)*dx, r = l+dx;
-  double b = (rnk/ndx)*dy, t = b+dy;
+  floatType dx = (right-left)/ndx, dy = (top-bottom)/ndy;
+  floatType l = (rnk%ndx)*dx, r = l+dx;
+  floatType b = (rnk/ndx)*dy, t = b+dy;
   return Bounds(l, r, b, t);
 }
 
 Bounds GFlowBase::getBoundsForProc(int rnk, const Bounds &bnds) {
-  double dx = (bnds.right-bnds.left)/ndx, dy = (bnds.top-bnds.bottom)/ndy;
-  double l = (rnk%ndx)*dx, r = l+dx;
-  double b = (rnk/ndx)*dy, t = b+dy;
+  floatType dx = (bnds.right-bnds.left)/ndx, dy = (bnds.top-bnds.bottom)/ndy;
+  floatType l = (rnk%ndx)*dx, r = l+dx;
+  floatType b = (rnk/ndx)*dy, t = b+dy;
   return Bounds(l, r, b, t);
 }
 
@@ -319,12 +319,12 @@ void GFlowBase::recallParticles(vector<Particle>& allParticles) {
   // Particles are now all stored on processor 0
 }
 
-list<Particle> GFlowBase::createParticles(vector<vect<> > positions, double radius, double dispersion, std::function<vect<>(double)> velocity, double coeff, double dissipation, double repulsion, int interaction) {
+list<Particle> GFlowBase::createParticles(vector<vec2> positions, floatType radius, floatType dispersion, std::function<vec2(floatType)> velocity, floatType coeff, floatType dissipation, floatType repulsion, int interaction) {
   // Create particles on the root processor
   list<Particle> allParticles;
   if (rank==0) {
     for (auto pos : positions) {
-      double r = dispersion>0 ? (1-drand48()*dispersion)*radius : radius;
+      floatType r = dispersion>0 ? (1-drand48()*dispersion)*radius : radius;
       Particle p(pos, r);
       p.velocity = velocity(p.invMass);
       p.dissipation = dissipation;
@@ -337,15 +337,15 @@ list<Particle> GFlowBase::createParticles(vector<vect<> > positions, double radi
   return allParticles;
 }
 
-void GFlowBase::createAndDistributeParticles(int number, const Bounds &b, Sectorization &sectors, double radius, double dispersion, std::function<vect<>(double)> velocity, double coeff, double dissipation, double repulsion, int interaction) {
+void GFlowBase::createAndDistributeParticles(int number, const Bounds &b, Sectorization &sectors, floatType radius, floatType dispersion, std::function<vec2(floatType)> velocity, floatType coeff, floatType dissipation, floatType repulsion, int interaction) {
   // Bounds width and height
-  double width = b.right-b.left, height = b.top-b.bottom;
+  floatType width = b.right-b.left, height = b.top-b.bottom;
   // Create particles on the root processor
   list<Particle> allParticles;
   if (rank==0) {
     for (int i=0; i<number; ++i) {
-      double r = dispersion>0 ? (1-drand48()*dispersion)*radius : radius;
-      vect<> pos(drand48()*(width-2*r)+r, drand48()*(height-2*r)+r);
+      floatType r = dispersion>0 ? (1-drand48()*dispersion)*radius : radius;
+      vec2 pos(drand48()*(width-2*r)+r, drand48()*(height-2*r)+r);
       Particle p(pos, r);
       p.velocity = velocity(p.invMass);
       p.dissipation = dissipation;
@@ -359,12 +359,12 @@ void GFlowBase::createAndDistributeParticles(int number, const Bounds &b, Sector
 }
 
 // Data will be sent to the rank 0 (head) processor
-vector<vect<> > GFlowBase::findPackedSolution(int number, double radius, Bounds b, vect<> force, double expandTime, double relaxTime) {
+vector<vec2> GFlowBase::findPackedSolution(int number, floatType radius, Bounds b, vec2 force, floatType expandTime, floatType relaxTime) {
   // Create a sectorization
   Sectorization packedSectors;
   packedSectors.setSimBounds(b);
   // Vectors for the four corners
-  vect<> ll(b.left, b.bottom), lr(b.right, b.bottom), tl(b.left, b.top), tr(b.right, b.top);
+  vec2 ll(b.left, b.bottom), lr(b.right, b.bottom), tl(b.left, b.top), tr(b.right, b.top);
   // Add the boundary walls
   packedSectors.addWall(Wall(ll,lr));
   packedSectors.addWall(Wall(lr,tr));
@@ -373,9 +373,9 @@ vector<vect<> > GFlowBase::findPackedSolution(int number, double radius, Bounds 
   // Add any "real" walls (so we don't put particles inside walls)
   for (auto &w : walls) packedSectors.addWall(w);
   // Calculate parameters
-  double initialRadius = 0.2*radius, finalRadius = 1.*radius;
+  floatType initialRadius = 0.2*radius, finalRadius = 1.*radius;
   int expandSteps = expandTime/epsilon, relaxSteps = relaxTime/epsilon;
-  double dr = (finalRadius-initialRadius)/static_cast<double>(expandSteps);
+  floatType dr = (finalRadius-initialRadius)/static_cast<floatType>(expandSteps);
   // Distribute particles
   createAndDistributeParticles(number, b, packedSectors, radius, 0, ZeroV);
   // Set up sectorization
@@ -414,7 +414,7 @@ vector<vect<> > GFlowBase::findPackedSolution(int number, double radius, Bounds 
     // Send Particle data to master processor
     COMM_WORLD.Gather(parts, size, PARTICLE, buffer, max, PARTICLE, 0);
     // If the head processor, fill with particle positions
-    vector<vect<> > positions;
+    vector<vec2> positions;
     if (rank==0) {
       positions.reserve(number);
       for (int r=0; r<numProc; ++r)
@@ -431,7 +431,7 @@ vector<vect<> > GFlowBase::findPackedSolution(int number, double radius, Bounds 
     return positions;
   }
   else { // Single processor run
-    vector<vect<> > positions;
+    vector<vec2> positions;
     for (auto p : sectorParticles) positions.push_back(p.position);
     // Return positions
     return positions;
@@ -440,7 +440,7 @@ vector<vect<> > GFlowBase::findPackedSolution(int number, double radius, Bounds 
 
 // ----- TO GO TO GFLOW.CPP -----
 
-void GFlowBase::createSquare(int number, double radius, double width, double height, double vsgma, double dispersion) {
+void GFlowBase::createSquare(int number, floatType radius, floatType width, floatType height, floatType vsgma, floatType dispersion) {
   // Start the clock
   auto begin = clock();
   // Discard any old state
@@ -468,16 +468,16 @@ void GFlowBase::createSquare(int number, double radius, double width, double hei
   gravity = 0;
   sectorization.setGravity(gravity);
   // Velocity initialization function
-  std::function<vect<>(double)> velocity = [&] (double invMass) { 
-    double angle = 2*PI*drand48();
-    vect<> v(cos(angle), sin(angle));
-    double ke = fabs(vsgma*randNormal());
-    double velocity = sqrt(2*invMass*ke/127.324);
+  std::function<vec2(floatType)> velocity = [&] (floatType invMass) { 
+    floatType angle = 2*PI*drand48();
+    vec2 v(cos(angle), sin(angle));
+    floatType ke = fabs(vsgma*randNormal());
+    floatType velocity = sqrt(2*invMass*ke/127.324);
     v *= velocity;
     return v;
   };
   // Create particles and distribute them to the processors
-  vector<vect<> > positions = findPackedSolution(number, radius, bounds);  
+  vector<vec2> positions = findPackedSolution(number, radius, bounds);  
   list<Particle> allParticles = createParticles(positions, radius, dispersion, velocity, 0, 0);
   // Send out particles
   distributeParticles(allParticles, sectorization);
@@ -487,7 +487,7 @@ void GFlowBase::createSquare(int number, double radius, double width, double hei
   setUpTime = (double)(end-begin)/CLOCKS_PER_SEC;
 }
 
-void GFlowBase::createBuoyancyBox(double radius, double bR, double density, double width, double depth, double velocity, double dispersion) {
+void GFlowBase::createBuoyancyBox(floatType radius, floatType bR, floatType density, floatType width, floatType depth, floatType velocity, floatType dispersion) {
   // Start the clock
   auto begin = clock();
   // Discard any old state
@@ -505,16 +505,16 @@ void GFlowBase::createBuoyancyBox(double radius, double bR, double density, doub
   addWall(right, bottom, right, top);
   // Set up sectorization
   setUpSectorization();
-  gravity = vect<>(0,-1);
+  gravity = vec2(0,-1);
   sectorization.setGravity(gravity);
   // Calculate how many particles we should start with
 
-  double maxPack = PI/(2*sqrt(3)); // Hexagonal packing
-  double Vfill = width*depth, Vgrain = PI*sqr(radius*(1-0.5*dispersion));
+  floatType maxPack = PI/(2*sqrt(3)); // Hexagonal packing
+  floatType Vfill = width*depth, Vgrain = PI*sqr(radius*(1-0.5*dispersion));
   int number = 0.9 * maxPack * Vfill / Vgrain;
   sectorization.setASize(number); //** There should be a more efficient way to do this, memory-wise
   // Create particles and distribute them to the processors
-  vector<vect<> > positions = findPackedSolution(number, radius, bounds, Zero);
+  vector<vec2> positions = findPackedSolution(number, radius, bounds, 0);
   // Only allow particles that are below depth
   list<list<Particle>::iterator> remove;
   list<Particle> allParticles = createParticles(positions, radius, dispersion, ZeroV, 0); 
@@ -541,12 +541,12 @@ void GFlowBase::recordPositions() {
   recallParticles(allParticles);
   
   if (recPositions) {
-    vector<pair<vect<>, double> > positions;
-    for (auto p : allParticles) positions.push_back(pair<vect<>, double>(p.position, p.sigma));
+    vector<pair<vec2, floatType> > positions;
+    for (auto p : allParticles) positions.push_back(pair<vec2, floatType>(p.position, p.sigma));
     positionRecord.push_back(positions);
   }
   if (recKE) {
-    double ke = 0;
+    floatType ke = 0;
     for (auto p : allParticles) ke +=sqr(p.velocity)/p.invMass;
     ke *= (0.5*(1./allParticles.size()));
     keRecord.push_back(ke);
@@ -554,14 +554,14 @@ void GFlowBase::recordPositions() {
 
   int i=0;
   for (auto &sf : statFunctions) {
-    statRecord.at(i).push_back(vect<>(time, sf.first(allParticles)));
+    statRecord.at(i).push_back(vec2(time, sf.first(allParticles)));
     ++i;
   }
 }
 
 void GFlowBase::addStatFunction(StatFunc sf, string str) {
   statFunctions.push_back(pair<StatFunc,string>(sf, str));
-  statRecord.push_back(vector<vect<> >());
+  statRecord.push_back(vector<vec2>());
 }
 
 string GFlowBase::printStatFunctions() {
