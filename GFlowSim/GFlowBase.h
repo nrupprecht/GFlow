@@ -46,6 +46,15 @@ class GFlowBase {
   int getNDX()             { return ndx; }
   int getNDY()             { return ndy; }
 
+  // Debugging and timing accessors
+  double getFirstHalfKick() { return sectorization.getFirstHalfKick(); }
+  double getSecondHalfKick() { return sectorization.getSecondHalfKick(); }
+  double getUpdateSectorsTime() { return sectorization.getUpdateSectorsTime(); }
+  double getNeighborListTime() { return sectorization.getNeighborListTime(); }
+  double getWallNeighborListTime() { return sectorization.getWallNeighborListTime(); }
+  double getParticleInteractionTime() { return sectorization.getParticleInteractionTime(); }
+  double getWallInteractionTime() { return sectorization.getWallInteractionTime(); }
+
   // Mutators
   void setBounds(double, double, double, double);
   void setBounds(Bounds);
@@ -57,6 +66,7 @@ class GFlowBase {
   void setStartRec(double s)     { startRec = s; }
   void setDoInteractions(bool i);
   void setInteractionType(int i);
+  void setExpectedSize(int i) { sectorization.setASize(i); }
 
   // File functions
   virtual bool loadConfigurationFromFile (string);

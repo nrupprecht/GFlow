@@ -139,6 +139,7 @@ void GFlowBase::setUpSectorization() {
     doWork = true; // This processor needs to do work
     sectorization.setSimBounds(left, right, bottom, top);
     Bounds domainBounds = getBoundsForProc(rank);
+    sectorization.setASize(particles.size()); //**
     sectorization.setBounds(domainBounds);
     sectorization.setGravity(gravity);
     sectorization.setCutoff(cutoff);
@@ -158,6 +159,7 @@ void GFlowBase::setUpSectorization(Sectorization &sectors, double cutoff, double
     doWork = true; // This processor needs to do work
     sectors.setSimBounds(left, right, bottom, top);
     Bounds domainBounds = getBoundsForProc(rank, sectors.getSimBounds() );
+    sectors.setASize(particles.size()); //**
     sectors.setBounds(domainBounds);
     sectors.setGravity(gravity);
     sectors.setCutoff(cutoff);
@@ -380,6 +382,7 @@ vector<vect<> > GFlowBase::findPackedSolution(int number, double radius, Bounds 
   setUpSectorization(packedSectors, 2*radius, 0.25*radius);
   packedSectors.setGravity(force); // Have to do this after setUpSectorization
   packedSectors.setDrag(default_packed_drag);
+  packedSectors.setASize(number); //**
   packedSectors.initialize();
   // Simulate motion and expansion
   for (int i=0; i<expandSteps; ++i) {
@@ -509,6 +512,7 @@ void GFlowBase::createBuoyancyBox(double radius, double bR, double density, doub
   double maxPack = PI/(2*sqrt(3)); // Hexagonal packing
   double Vfill = width*depth, Vgrain = PI*sqr(radius*(1-0.5*dispersion));
   int number = 0.9 * maxPack * Vfill / Vgrain;
+  sectorization.setASize(number); //** There should be a more efficient way to do this, memory-wise
   // Create particles and distribute them to the processors
   vector<vect<> > positions = findPackedSolution(number, radius, bounds, Zero);
   // Only allow particles that are below depth

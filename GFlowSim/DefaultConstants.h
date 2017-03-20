@@ -16,4 +16,7 @@ const double default_wall_coeff         = sqrt(0.5);
 // Drag for findPackedSolution
 const double default_packed_drag        = 5.;
 
+typedef float floatType; // What type of floating point should we use for our data
+typedef vect<floatType> vec2;
+
 #endif 

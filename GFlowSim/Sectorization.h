@@ -3,7 +3,18 @@
 
 #include "Interactions.h"
 #include <mpi.h>
+#include <stdlib.h> // For aligned_malloc
 
+// To use:
+// --- These steps can be done in any order ---
+// 1) Set domain and simulation bounds
+// 2) Set characteristic length and cutoff
+// 3) Set parameters like gravity and whether to do interactions
+// 4) Add particles and walls
+// 5) Set expected number of particles
+// --- This step must be last ---
+// 6) Call "initialize"
+// --- Ready to run ---
 class Sectorization {
  public:
   Sectorization();
@@ -28,14 +39,23 @@ class Sectorization {
   Bounds getBounds()             { return bounds; }
   Bounds getSimBounds()          { return simBounds; }
 
+  // Debugging and timing accessors
+  double getFirstHalfKick()      { return firstHalfKick; }
+  double getSecondHalfKick()        { return secondHalfKick; }
+  double getUpdateSectorsTime()     { return updateSectorsTime;}
+  double getNeighborListTime()      { return neighborListTime; }
+  double getWallNeighborListTime()  { return wallNeighborListTime; }
+  double getParticleInteractionTime() { return particleInteractionTime; }
+  double getWallInteractionTime()   { return wallInteractionTime; }
+
   // Mutators
   void giveDomainInfo(int x, int y) { ndx=x; ndy=y; }
   void setEpsilon(double e)      { epsilon = e; sqrtEpsilon = sqrt(e); }
   void setDoInteractions(bool i) { doInteractions = i; }
   void setDrag(double d)         { drag = d; }
   void setGravity(vect<> g)      { gravity = g; }
-  void setTemperature(double t)  { temperature = t; }
-  void setViscosity(double h)    { viscosity = h; }
+  void setTemperature(double t)  { temperature = t; DT1 = temperature/(6*viscosity*PI); }
+  void setViscosity(double h)    { viscosity = h; DT1 = temperature/(6*viscosity*PI); }
   void setCutoff(double c)       { cutoff = c; }
   void setSkinDepth(double d)    { skinDepth = d; }
   void setBounds(double, double, double, double);
@@ -43,6 +63,7 @@ class Sectorization {
   void setSimBounds(double, double, double, double);
   void setSimBounds(Bounds);
   void setInteractionType(int);
+  void setASize(int i);
   void discard();
 
   // Functionality
@@ -55,16 +76,19 @@ class Sectorization {
   void addWall(Wall);
 
  private:
+  inline void wrap(double&, double&);
   inline void wrap(vect<>&);         // Keep a position in bounds by wrapping
-  inline int getSec(vect<>);         // What sector does a position fall into
+  inline int getSec(const vect<>&);         // What sector does a position fall into
+  inline int getSec(const double, const double);
   inline void add(Particle*);        // Add a particle address to the appropriate sector
   inline void createNeighborLists(); // Create neighbor lists
   inline void createWallNeighborList();
   inline void migrateParticles();    // Migrate particles to other domains, update domain edges
   inline vect<> getDisplacement(vect<>, vect<>);
-  inline void passParticles(const int, const int, list<Particle*>&);
-  inline void passParticleSend(const int, list<Particle*>&);
-  inline void passParticleRecv(const int);
+  inline vect<> getDisplacement(double, double, double, double);
+  // inline void passParticles(const int, const int, list<Particle*>&);
+  // inline void passParticleSend(const int, list<Particle*>&);
+  // inline void passParticleRecv(const int);
 
   // Data
   int nsx, nsy;                      // Number of sectors in x and y, includes edge sectors
@@ -78,21 +102,35 @@ class Sectorization {
   double drag;                       // A drag coefficient, useful for finding a packed solution
 
   vect<> gravity;                    // Gravitational acceleration
-  double temperature, viscosity;
+  double temperature, viscosity, DT1;
   double tempDelay, sqrtTempDelay;   // How long we wait between applying temperature perturbations
   double lastTemp;                   // Last time we applied temperature perturbations
 
   // All the particles
   list<Particle> plist;
-  Particle *particles;
   vect<> *positionTracker;           
-  int size;
+  int size, asize;                  // The number of particles, and the amount of space we have to store particles
   inline void updatePList();
+  // Particle data - position (2), velocity (2), force (2), omega, torque, sigma, inverse mass, inverse moment of inertia, repulsion, dissipation, coeff of friction, drag coefficient, interaction type
+  double *px, *py, *vx, *vy, *fx, *fy, *om, *tq, *sg, *im, *iI, *rp, *ds, *cf, *dg, *it;
+  double *ms; // Mass array
+  double *pdata[16]; // Pointers to px, py, etc
+  inline void createArrays(); // Initialize the array and point the pointers to their propper sections
+  inline void zeroPointers(); // Zero all pointers. Do not delete, just set them to zero
 
-  list<Particle*> *sectors;          // The sectors
-  list<list<Particle*> > neighborList;// Neighbor list, the first particle in the list is the particle itself, the remaining particles are its neighbors
-  list<pair<Particle*, list<Wall*> > > wallNeighbors; // Particle - wall neighbor
+  inline void remakeParticles(); // Delete and reallocate particle data arrays
+  inline void setParticles();       // Set particle data arrays from plist data
+  list<int> *sectors;
+  list<list<int> > neighborList;
+  list<pair<int, list<Wall*> > > wallNeighbors;
+  inline void atom_move();
+  inline void passParticles(int, int, const list<int>&);
+  inline void passParticleSend(const int, const list<int>&);
+  inline void passParticleRecv(const int);
+  inline void atom_copy();
+
   bool doWallNeighbors;              // Create and use wall Neighbor list
+  bool remakeToUpdate;               // Totally remake sectors to update them
   double cutoff, skinDepth;          // The particle interaction cutoff, and the skin depth (for creating neighbor lists)
   int itersSinceBuild, buildDelay;   // How many iterations since we last rebuilt the neighbor list, and how many iterations we wait before rebuilding
   list<Wall> walls;                  // All the walls
@@ -101,6 +139,10 @@ class Sectorization {
   int numProc, rank;                 // The number of processors MPI is using and the rank of this processor
   Bounds bounds, simBounds ; // The physical dimensions of this domain and of the entire simulation space
   MPI_Datatype PARTICLE;            // The particle datatype for MPI
+
+  // Debugging and timing
+  double firstHalfKick, secondHalfKick, updateSectorsTime, neighborListTime, wallNeighborListTime, particleInteractionTime, wallInteractionTime;
+
 };
 
 #endif

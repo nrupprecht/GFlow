@@ -452,6 +452,9 @@ struct Bounds {
   bool contains(const vect<> position) const {
     return position.x<right && left<position.x && position.y<top && bottom<position.y;
   }
+  bool contains(const double x, const double y) const {
+    return x<right && left<x && y<top && bottom<y;
+  }
 };
 
 /// The Agent structure
