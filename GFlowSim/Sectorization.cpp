@@ -10,6 +10,8 @@ Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), time
   zeroPointers();
   // Diffusion helper constant
   DT1 = temperature/(6*viscosity*PI);  
+  // Set work comm as COMM_WORLD for now
+  CommWork = COMM_WORLD;
 }
 
 Sectorization::~Sectorization() {
@@ -25,14 +27,6 @@ void Sectorization::initialize() {
   transferTime = 0;
   lastTemp = 0;
   itersSinceBuild = 0;
-  // Reset debug times
-  firstHalfKick = 0;
-  secondHalfKick = 0;
-  updateSectorsTime = 0;
-  neighborListTime = 0;
-  wallNeighborListTime = 0;
-  particleInteractionTime = 0;
-  wallInteractionTime = 0;
   // First estimate
   secWidth = secHeight = cutoff+skinDepth;
   nsx = (bounds.right-bounds.left)/secWidth; 
@@ -192,7 +186,6 @@ void Sectorization::wallInteractions() {
 
 void Sectorization::update() {
   // Half-kick velocity update, update position
-  auto start = clock(); //--
   double dt = 0.5 * epsilon;
   bool doTemp = (temperature>0 && tempDelay<time-lastTemp);
   if (doTemp) {
@@ -232,8 +225,6 @@ void Sectorization::update() {
       tq[i] = 0;
     }
   }
-  auto end = clock();
-  firstHalfKick += (double)(end-start)/CLOCKS_PER_SEC;
   // Reset last temp
   if (tempDelay<time-lastTemp) lastTemp = time;
   // Update sectorization, keep track of particles that need to migrate to other processors, send particles to the correct processor
@@ -243,10 +234,7 @@ void Sectorization::update() {
     compressArrays();
     // Create the neighborhood lists
     createNeighborLists(); 
-    start = clock(); //--
     if (doWallNeighbors) createWallNeighborList();
-    end = clock(); //--
-    wallNeighborListTime += (double)(end-start)/CLOCKS_PER_SEC; //--
   }
   // MPI coordination
   if (doInteractions && 1<numProc) {
@@ -254,16 +242,9 @@ void Sectorization::update() {
     atom_copy();
   }
   // Interaction forces (step 3)
-  start = clock(); //--
   particleInteractions();
-  end = clock(); //--
-  particleInteractionTime += (double)(end-start)/CLOCKS_PER_SEC; //--
-  start = clock(); //--
   wallInteractions();
-  end = clock(); //--
-  wallInteractionTime += (double)(end-start)/CLOCKS_PER_SEC; //--
   // Velocity update part two (step four) -- second half-kick
-  start = clock(); //--
 #pragma vector aligned
 #pragma simd
   for (int i=0; i<array_end; ++i) {
@@ -271,8 +252,6 @@ void Sectorization::update() {
     vy[i] += dt*im[i]*fy[i];
     om[i] += dt*iI[i]*tq[i];
   }
-  end = clock(); //--
-  secondHalfKick += (double)(end-start)/CLOCKS_PER_SEC; //--
   // Update counter
   itersSinceBuild++;
   time += epsilon;
@@ -389,11 +368,7 @@ inline void Sectorization::createNeighborLists() {
   if (maxDiff<skinDepth) return;
   
   // Update sectors
-  auto start = clock(); //--
   updateSectors();
-  auto end = clock(); //--
-  updateSectorsTime += (double)(end-start)/CLOCKS_PER_SEC; //--
-  start = clock(); //--
   // The square of the neighbor distance
   floatType distance = sqr(cutoff+skinDepth);
   // Get rid of the old neighbor lists
@@ -452,8 +427,6 @@ inline void Sectorization::createNeighborLists() {
 	if (nlist.size()>1) neighborList.push_back(nlist);
       }
     }
-  end = clock(); //--
-  neighborListTime += (double)(end-start)/CLOCKS_PER_SEC; //--
   // Update position tracker array
   for (int i=0; i<size; ++i) positionTracker[i] = vec2(px[i], py[i]);
 }
@@ -682,7 +655,7 @@ inline void Sectorization::passParticles(int tx, int ty, const list<int> &allPar
 inline void Sectorization::passParticleSend(const int send, const list<int> &allParticles) {
   // Send expected size
   int sz = allParticles.size();
-  COMM_WORLD.Send(&sz, 1, MPI_INT, send, 0); //** Isend
+  CommWork.Send(&sz, 1, MPI_INT, send, 0); //** Isend
   // If there are particles to send
   if (0<sz) {
     floatType *buffer = new floatType[16*sz];
@@ -712,7 +685,7 @@ inline void Sectorization::passParticleSend(const int send, const list<int> &all
     size -= sz; // Adjust our size
     // Send our data
     int msz = sz*16;
-    COMM_WORLD.Send(buffer, msz, MPI_DOUBLE, send, 0); // ISend
+    CommWork.Send(buffer, msz, MPI_DOUBLE, send, 0); // ISend
     delete [] buffer;
   }
 }
@@ -720,14 +693,14 @@ inline void Sectorization::passParticleSend(const int send, const list<int> &all
 inline void Sectorization::passParticleRecv(const int recv) {
   // Recieve expected size
   int sz = -1;
-  COMM_WORLD.Recv(&sz, 1, MPI_INT, recv, 0);
+  CommWork.Recv(&sz, 1, MPI_INT, recv, 0);
   // If there are particles to recieve
   if (0<sz) {
     // Get our data
     double *buffer = new double[16*sz];
     int msz = sz*16;
     MPI::Status status;
-    COMM_WORLD.Recv(buffer, msz, MPI_DOUBLE, recv, 0, status);
+    CommWork.Recv(buffer, msz, MPI_DOUBLE, recv, 0, status);
     // Add particles
     int j=0;
     for (int i=0; i<sz; i++) {

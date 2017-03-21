@@ -39,15 +39,6 @@ class Sectorization {
   Bounds getBounds()             { return bounds; }
   Bounds getSimBounds()          { return simBounds; }
 
-  // Debugging and timing accessors
-  double getFirstHalfKick()      { return firstHalfKick; }
-  double getSecondHalfKick()        { return secondHalfKick; }
-  double getUpdateSectorsTime()     { return updateSectorsTime;}
-  double getNeighborListTime()      { return neighborListTime; }
-  double getWallNeighborListTime()  { return wallNeighborListTime; }
-  double getParticleInteractionTime() { return particleInteractionTime; }
-  double getWallInteractionTime()   { return wallInteractionTime; }
-
   // Mutators
   void giveDomainInfo(int x, int y) { ndx=x; ndy=y; }
   void setEpsilon(floatType e)      { epsilon = e; sqrtEpsilon = sqrt(e); }
@@ -64,6 +55,8 @@ class Sectorization {
   void setSimBounds(Bounds);
   void setInteractionType(int);
   void setASize(int i);
+  void setCommWork(MPI::Intercomm &comm) { CommWork = comm; }
+  void resetComm()                 { CommWork = MPI::COMM_WORLD; }
   void discard();
 
   // Functionality
@@ -138,13 +131,9 @@ class Sectorization {
   list<Wall> walls;                  // All the walls
 
   // MPI
-  int numProc, rank;                 // The number of processors MPI is using and the rank of this processor
+  int numProc, rank;         // The number of processors MPI is using and the rank of this processor
   Bounds bounds, simBounds ; // The physical dimensions of this domain and of the entire simulation space
-  //MPI_Datatype PARTICLE;            // The particle datatype for MPI
-
-  // Debugging and timing
-  double firstHalfKick, secondHalfKick, updateSectorsTime, neighborListTime, wallNeighborListTime, particleInteractionTime, wallInteractionTime;
-
+  MPI::Intercomm CommWork;         // The communicator for the working processors
 };
 
 #endif

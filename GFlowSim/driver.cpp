@@ -146,17 +146,7 @@ int main(int argc, char** argv) {
     cout << "Iterations: " << iters << endl;
     cout << "Transfer Time: " << transferTime << " (" << (runTime>0 ? toStr(transferTime/runTime*100) : "---") << "%)" << endl;
     cout << "Ratio: " << (runTime>0 ? toStr(time/runTime) : "---") << endl;
-    cout << "\n----------------------- DEBUG TIMES -----------------------\n";
-    cout << "First Half Kick:  " << simulator.getFirstHalfKick() << endl;
-    cout << "Second Half Kick: " << simulator.getSecondHalfKick() << endl;
-    cout << "Sectors update time: " << simulator.getUpdateSectorsTime() << endl;
-    cout << "Neighbor List Create: " << simulator.getNeighborListTime() << endl;
-    cout << "Wall Neighbor Create: " << simulator.getWallNeighborListTime() << endl;
-    cout << "Particle interaction time: " << simulator.getParticleInteractionTime() << endl;
-    cout << "Wall interaction time: " << simulator.getWallInteractionTime() << endl;
-    double total = simulator.getFirstHalfKick()+simulator.getSecondHalfKick()+simulator.getUpdateSectorsTime()+simulator.getNeighborListTime()+simulator.getWallNeighborListTime()+simulator.getParticleInteractionTime();
-    cout << "Total: " << total << ", Other time: " << runTime-total << endl;
-    cout << "\n----------------------- END SUMMARY -----------------------\n\n"; 
+    cout << "----------------------- END SUMMARY -----------------------\n\n"; 
 
     /// Print recorded data
     if (animate) cout << simulator.printAnimationCommand(novid) << endl;

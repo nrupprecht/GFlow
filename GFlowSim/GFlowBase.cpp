@@ -32,6 +32,7 @@ GFlowBase::GFlowBase() {
   // Get MPI system data
   rank = COMM_WORLD.Get_rank();
   numProc = COMM_WORLD.Get_size();
+  CommWork = COMM_WORLD;
 
   // Define the particle data type
   MPI_Type_contiguous( 16*sizeof(floatType)/sizeof(float), MPI_FLOAT, &PARTICLE );
@@ -40,35 +41,33 @@ GFlowBase::GFlowBase() {
 
 GFlowBase::~GFlowBase() {}
 
-void GFlowBase::initialize() {
-  // Rank 0 distributes, other processes listen and obey
-  
-}
-
 void GFlowBase::run(double runLength) {
   resetVariables();
+  // Create work communicator
+  int color = doWork ? 1 : 0;
+  MPI::Intercomm CommWork = COMM_WORLD.Split(color, rank);
+  sectorization.setCommWork(CommWork);
   // Calculate the number of iterations we will run for
   maxIter = runLength/epsilon;
   clock_t start = clock();
   running = true;
   if (startRec<=0) record(); // Initial record
-  for (iter=0; iter<maxIter; ++iter) {
-    if (doWork) {
+  if (doWork) {
+    for (iter=0; iter<maxIter; ++iter) {
       objectUpdates();
+      if (time-lastDisp>dispTime && startRec<time) record();
+      
+      logisticUpdates();
+      CommWork.Barrier();
     }
-    if (time-lastDisp>dispTime && startRec<time) record();
-
-    logisticUpdates();
-    COMM_WORLD.Barrier();
   }
   running = false;
   clock_t end = clock();
   runTime = (double)(end-start)/CLOCKS_PER_SEC;
-  /*
-  COMM_WORLD.Barrier();
-  gatherData();
-  COMM_WORLD.Barrier();
-  */
+  // Release work comm and set sectorization comm back to comm world
+  sectorization.resetComm();
+  CommWork.Free(); 
+  // Update transfer time
   transferTime += sectorization.getTransferTime();
 }
 
@@ -338,24 +337,24 @@ void GFlowBase::recallParticles(vector<Particle>& allParticles) {
     if (rank==0) {
       int size = 0;
       // Recieve how many Particles to expect to recieve
-      COMM_WORLD.Recv( &size, 1, MPI_INT, proc, 0);
+      CommWork.Recv( &size, 1, MPI_INT, proc, 0);
       // Create a buffer of Particles to send
       Particle *buffer = new Particle[size];
-      COMM_WORLD.Recv( buffer, size, PARTICLE, proc, 0);
+      CommWork.Recv( buffer, size, PARTICLE, proc, 0);
       for (int i=0; i<size; ++i) allParticles.push_back(buffer[i]);
     }
     else if (rank==proc) {
       auto &parts = sectorization.getParticles();
       int size = parts.size(), root = 0;
-      COMM_WORLD.Send( &size, 1, MPI_INT, root, 0);
+      CommWork.Send( &size, 1, MPI_INT, root, 0);
       // Create a buffer of Particles to send
       Particle *buffer = new Particle[size];
       int i=0;
       for (auto p=parts.begin(); p!=parts.end(); ++p, ++i) buffer[i] = *p;
-      COMM_WORLD.Send( buffer, size, PARTICLE, root, 0);
+      CommWork.Send( buffer, size, PARTICLE, root, 0);
     }
   }
-  COMM_WORLD.Barrier();
+  CommWork.Barrier();
   auto end = clock();
   transferTime += (double)(end-begin)/CLOCKS_PER_SEC;
   // Particles are now all stored on processor 0
@@ -375,10 +374,10 @@ void GFlowBase::recallParticlesByProcessor(vector<vector<Particle> >& allParticl
     if (rank==0) {
       int size = 0;
       // Recieve how many Particles to expect to recieve
-      COMM_WORLD.Recv( &size, 1, MPI_INT, proc, 0);
+      CommWork.Recv( &size, 1, MPI_INT, proc, 0);
       // Create a buffer of Particles to send
       Particle *buffer = new Particle[size];
-      COMM_WORLD.Recv( buffer, size, PARTICLE, proc, 0);
+      CommWork.Recv( buffer, size, PARTICLE, proc, 0);
       vector<Particle> myParticles;
       for (int i=0; i<size; ++i) myParticles.push_back(buffer[i]);
       allParticles.push_back(myParticles);
@@ -386,15 +385,15 @@ void GFlowBase::recallParticlesByProcessor(vector<vector<Particle> >& allParticl
     else if (rank==proc) {
       auto &parts = sectorization.getParticles();
       int size = parts.size(), root = 0;
-      COMM_WORLD.Send( &size, 1, MPI_INT, root, 0);
+      CommWork.Send( &size, 1, MPI_INT, root, 0);
       // Create a buffer of Particles to send
       Particle *buffer = new Particle[size];
       int i=0;
       for (auto p=parts.begin(); p!=parts.end(); ++p, ++i) buffer[i] = *p;
-      COMM_WORLD.Send( buffer, size, PARTICLE, root, 0);
+      CommWork.Send( buffer, size, PARTICLE, root, 0);
     }
   }
-  COMM_WORLD.Barrier();
+  CommWork.Barrier();
   auto end = clock();
   transferTime += (double)(end-begin)/CLOCKS_PER_SEC;
   // Particles are now all stored, sorted by processor, on processor 0

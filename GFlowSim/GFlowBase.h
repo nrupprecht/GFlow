@@ -15,8 +15,6 @@ class GFlowBase {
  public:
   GFlowBase();
   ~GFlowBase();
-  
-  void initialize();  // Distribute particles to the appropriate processor (only rank 0 will do things in this function)
 
   void run(double);  // Run the simulation for some amount of time
 
@@ -51,15 +49,6 @@ class GFlowBase {
   bool getRunning()        { return running; }
   double getTransferTime() { return transferTime+sectorization.getTransferTime(); }
   bool getDoInteractions() { return doInteractions; }
-
-  // Debugging and timing accessors
-  double getFirstHalfKick() { return sectorization.getFirstHalfKick(); }
-  double getSecondHalfKick() { return sectorization.getSecondHalfKick(); }
-  double getUpdateSectorsTime() { return sectorization.getUpdateSectorsTime(); }
-  double getNeighborListTime() { return sectorization.getNeighborListTime(); }
-  double getWallNeighborListTime() { return sectorization.getWallNeighborListTime(); }
-  double getParticleInteractionTime() { return sectorization.getParticleInteractionTime(); }
-  double getWallInteractionTime() { return sectorization.getWallInteractionTime(); }
 
   // Mutators
   void setBounds(floatType, floatType, floatType, floatType);
@@ -166,6 +155,7 @@ class GFlowBase {
   int rank, numProc;             // The rank of this processor and the total number of processors
   int ndx, ndy;                  // Number of domains we divide into
   MPI_Datatype PARTICLE;
+  MPI::Intercomm CommWork;       // The communicator for the working processors
 };
 
 #endif
