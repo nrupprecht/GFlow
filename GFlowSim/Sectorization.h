@@ -83,7 +83,6 @@ class Sectorization {
   //inline void add(Particle*);        // Add a particle address to the appropriate sector
   inline void createNeighborLists(); // Create neighbor lists
   inline void createWallNeighborList();
-  inline void migrateParticles();    // Migrate particles to other domains, update domain edges
   inline vec2 getDisplacement(vec2, vec2);
   inline vec2 getDisplacement(floatType, floatType, floatType, floatType);
 
@@ -106,7 +105,7 @@ class Sectorization {
   // All the particles
   list<Particle> plist;
   vec2 *positionTracker;           
-  int size, asize;                  // The number of particles, and the amount of space we have to store particles
+  int size, array_end, asize;                  // The number of particles, the index after the last particle, and the last occupied array position
   inline void updatePList();
   // Particle data - position (2), velocity (2), force (2), omega, torque, sigma, inverse mass, inverse moment of inertia, repulsion, dissipation, coeff of friction, drag coefficient, interaction type
   floatType *px, *py, *vx, *vy, *fx, *fy, *om, *tq, *sg, *im, *iI, *rp, *ds, *cf, *dg, *it;
@@ -124,11 +123,12 @@ class Sectorization {
   inline void passParticles(int, int, const list<int>&);
   inline void passParticleSend(const int, const list<int>&);
   inline void passParticleRecv(const int);
+  inline void compressArrays(vector<int>&);
   inline void atom_copy();
 
   bool doWallNeighbors;              // Create and use wall Neighbor list
   bool remakeToUpdate;               // Totally remake sectors to update them
-  floatType cutoff, skinDepth;          // The particle interaction cutoff, and the skin depth (for creating neighbor lists)
+  floatType cutoff, skinDepth;          // The particle interaction cutoff (for finding sector size), and the skin depth (for creating neighbor lists)
   int itersSinceBuild, buildDelay;   // How many iterations since we last rebuilt the neighbor list, and how many iterations we wait before rebuilding
   list<Wall> walls;                  // All the walls
 

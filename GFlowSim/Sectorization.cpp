@@ -473,42 +473,6 @@ inline void Sectorization::createWallNeighborList() {
   }
 }
 
-inline void Sectorization::migrateParticles() {
-  /*
-  if (numProc==1) return;
-  // Look for particles that need to migrate
-  list<Particle*> moveUp, moveDown, moveLeft, moveRight;
-  for (int y=1; y<nsy-1; ++y)
-    for (int x=1; x<nsx-1; ++x ) {
-      int sec = y*nsx + x;
-      vector<list<Particle*>::iterator> remove;
-      for (auto p=sectors[sec].begin(); p!=sectors[sec].end(); ++p) {
-        vec2 position = (*p)->position;
-        if (!bounds.contains(position)) {
-          // The particle has migrated out of the domain. This should never happen if this is the only processor
-	  remove.push_back(p);
-	  if (position.x<bounds.left) moveLeft.push_back(*p);
-	  else if (position.y<bounds.bottom) moveDown.push_back(*p);
-	  else if (bounds.right<position.x) moveRight.push_back(*p);
-	  else if (bounds.top<position.y) moveUp.push_back(*p);
-        }
-      }
-      // Remove particles from sector as neccessary
-      for (auto &p : remove) sectors[sec].erase(p);
-    }
-  // Send particles to other domains as neccessary
-  auto start = clock();
-  passParticles( 1, 0, moveRight);
-  passParticles(-1, 0, moveLeft);
-  passParticles(0,  1, moveUp);
-  passParticles(0, -1, moveDown);
-  auto end = clock();
-  transferTime += (double)(end-start)/CLOCKS_PER_SEC;
-  
-  // Tell other domains what is happening at boundary sectors
-  */
-}
-
 inline vec2 Sectorization::getDisplacement(vec2 A, vec2 B) {
   return getDisplacement(A.x, A.y, B.x, B.y);
 }
