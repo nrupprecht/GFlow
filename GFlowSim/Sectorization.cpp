@@ -249,7 +249,7 @@ void Sectorization::update() {
     wallNeighborListTime += (double)(end-start)/CLOCKS_PER_SEC; //--
   }
   // MPI coordination
-  if (1<numProc) {
+  if (doInteractions && 1<numProc) {
     atom_move();
     atom_copy();
   }
