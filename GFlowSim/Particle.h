@@ -44,7 +44,7 @@ struct Particle {
   vec2 position, velocity, force; // Linear kinetic variables
   floatType /*theta,*/ omega, torque;  // Angular kinetic variables (no need for theta)
   
-  floatType interaction; // Interaction type
+  int interaction; // Interaction type
 
   floatType sigma; // Radius or force cutoff
   floatType invMass, invII; // Inverses of mass and moment of inertia

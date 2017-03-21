@@ -75,6 +75,9 @@ class Sectorization {
   void addParticle(Particle);
   void addWall(Wall);
 
+  // Exception classes
+  class BadParticle {};
+
  private:
   inline void wrap(floatType&, floatType&);
   inline void wrap(vec2&);         // Keep a position in bounds by wrapping
@@ -108,7 +111,8 @@ class Sectorization {
   int size, array_end, asize;                  // The number of particles, the index after the last particle, and the last occupied array position
   inline void updatePList();
   // Particle data - position (2), velocity (2), force (2), omega, torque, sigma, inverse mass, inverse moment of inertia, repulsion, dissipation, coeff of friction, drag coefficient, interaction type
-  floatType *px, *py, *vx, *vy, *fx, *fy, *om, *tq, *sg, *im, *iI, *rp, *ds, *cf, *dg, *it;
+  floatType *px, *py, *vx, *vy, *fx, *fy, *om, *tq, *sg, *im, *iI, *rp, *ds, *cf, *dg;
+  int *it;
   floatType *ms; // Mass array
   floatType *pdata[16]; // Pointers to px, py, etc
   inline void createArrays(); // Initialize the array and point the pointers to their propper sections

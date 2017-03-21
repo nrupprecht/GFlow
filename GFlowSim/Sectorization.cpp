@@ -2,7 +2,7 @@
 
 using MPI::COMM_WORLD;
 
-Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), time(0), epsilon(1e-4), sqrtEpsilon(1e-4), transferTime(0), wrapX(false), wrapY(false), doInteractions(true), drag(0), gravity(0), temperature(0), viscosity(1.308e-3), tempDelay(5e-3), sqrtTempDelay(sqrt(5e-3)), lastTemp(0), positionTracker(0), size(0), asize(0), px(0), it(0), sectors(0), doWallNeighbors(true), remakeToUpdate(false), cutoff(0.1), skinDepth(0.05), itersSinceBuild(0), buildDelay(20), numProc(1), rank(0) {
+Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), time(0), epsilon(1e-4), sqrtEpsilon(1e-4), transferTime(0), wrapX(false), wrapY(false), doInteractions(true), drag(0), gravity(0), temperature(0), viscosity(1.308e-3), tempDelay(5e-3), sqrtTempDelay(sqrt(5e-3)), lastTemp(0), size(0), array_end(0), asize(0), doWallNeighbors(true), remakeToUpdate(false), cutoff(0.1), skinDepth(0.1), itersSinceBuild(0), buildDelay(20), numProc(1), rank(0) {
   // Get our rank and the number of processors
   rank =    COMM_WORLD.Get_rank();
   numProc = COMM_WORLD.Get_size();  
@@ -14,9 +14,9 @@ Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), time
 
 Sectorization::~Sectorization() {
   if (sectors)   delete [] sectors;
-  if (px)        delete [] px;
+  for (int i=0; i<15; ++i)
+    if (pdata[i]) delete [] pdata[i];
   sectors = 0;
-  px = 0;
 }
 
 void Sectorization::initialize() {
@@ -47,13 +47,16 @@ void Sectorization::initialize() {
   sectors = new list<int>[nsx*nsy+1];
   // Remake particles
   if (asize<1) asize = 4*plist.size(); //----
-  if (asize<1) return; //---
+  if (asize<1) return;
   // Set particle data in arrays
   createArrays();
   setParticles();
   // Set position tracker
-  for (int i=0; i<size; ++i)
-    positionTracker[i] = vec2(px[i], px[i+size]);
+  /*
+    // Uncommenting this statement makes the program run at < half the speed it usually runs at
+  for (int i=0; i<size; ++i) positionTracker[i] = vec2(px[i], py[i]);
+  */
+
   // Add the particles to the proper sectors
   for (int i=0; i<size; ++i) { 
     int sec = getSec(px[i], py[i]);
@@ -109,7 +112,9 @@ void Sectorization::discard() {
   if (dg) delete [] dg; dg = 0;
   if (it) delete [] it; it = 0;
   if (ms) delete [] ms; ms = 0;
+  for (int i=0; i<15; ++i) pdata[i] = 0;
   size = 0;
+  array_end = 0;
   if (positionTracker) delete [] positionTracker;
   positionTracker = 0;
   if (sectors) for (int i=0; i<nsx*nsy+1; ++i) sectors[i].clear();
@@ -129,16 +134,24 @@ void Sectorization::particleInteractions() {
   for (auto &nl : neighborList) {
     auto p = nl.begin(); // The particle whose list this is
     auto q = p; ++q;
+    int i = *p;
     for (; q!=nl.end(); ++q) { // Try to interact with all other particles in the nl
       vec2 displacement = getDisplacement(vec2(px[*p],py[*p]), vec2(px[*q],py[*q]));
-      switch(static_cast<int>(it[*p])) {
+      int j = *q;
+
+      // if (it[i]!=0) cout << rank << " PI: " << it[i] << " " << i << endl; //**
+
+      switch(it[*p]) {
       default:
       case 0:
-        hardDiskRepulsion(pdata, *p, *q, asize, displacement, Fn, Fs);
+        hardDiskRepulsion(pdata, i, j, asize, displacement, Fn, Fs);
         break;
       case 1:
-        LJinteraction(pdata, *p, *q, asize, displacement, Fn, Fs);
+        LJinteraction(pdata, i, j, asize, displacement, Fn, Fs);
         break;
+      case -1:
+	// throw BadParticle();
+	break;
       }
     }
   }
@@ -148,18 +161,23 @@ void Sectorization::wallInteractions() {
   if (doWallNeighbors)
     for (auto pr : wallNeighbors) {
       floatType Fn=0, Fs=0;
-      //Particle *p = pr.first;
-      int p = pr.first;
+      int i = pr.first;
       for (auto w : pr.second) {
-	vec2 displacement = getDisplacement(vec2(px[p],py[p]), w->left);
-	switch (static_cast<int>(it[p])) {
+	vec2 displacement = getDisplacement(vec2(px[i],py[i]), w->left);
+
+	// if (it[i]!=0) cout << rank << " WI: " << it[i] << " " << i << endl; //**
+
+	switch (it[i]) {
         default:
         case 0:
-          hardDiskRepulsion_wall(pdata, p, *w, asize, displacement, Fn, Fs);
+          hardDiskRepulsion_wall(pdata, i, *w, asize, displacement, Fn, Fs);
           break;
         case 1:
           //LJinteraction_wall(*p, *w, displacement, Fn, Fs);
           break;
+	case -1:
+	  //throw BadParticle();
+	  break;
         }
       }
     }
@@ -168,13 +186,13 @@ void Sectorization::wallInteractions() {
       for (int i=0; i<size; ++i) {
 	floatType Fn=0, Fs=0;
 	vec2 displacement = getDisplacement(px[i], py[i], w.left.x, w.left.y);
-	switch (static_cast<int>(it[i])) {
+	switch (it[i]) {
 	default:
 	case 0:
 	  hardDiskRepulsion_wall(pdata, i, w, asize, displacement, Fn, Fs);
 	  break;
 	case 1:
-	  //LJinteraction_wall(p, w, displacement, n, s);
+	  // LJinteraction_wall(p, w, displacement, Fn, Fs);
 	  break;
 	}
       }
@@ -283,7 +301,8 @@ void Sectorization::updateSectors() {
 	int sec = nsx*y + x;
 	for (auto P=sectors[sec].begin(); P!=sectors[sec].end(); ++P) {
 	  int p = *P;
-	  if (bounds.contains(px[p], py[p])) {
+	  if (it[p]==-1.) P = sectors[sec].erase(P);
+	  else if (bounds.contains(px[p], py[p])) {
 	    int sec_num = getSec(px[p], py[p]);
 	    if (sec_num != sec) { // Changed sectors
 	      P = sectors[sec].erase(P);
@@ -360,15 +379,6 @@ inline int Sectorization::getSec(const floatType x, const floatType y) {
   return sy*nsx + sx;
 }
 
-/*
-inline void Sectorization::add(Particle *p) {
-  if (sectors) {
-    int sec = getSec(p->position);
-    sectors[sec].push_back(p);
-  }
-}
-*/
-
 inline void Sectorization::createNeighborLists() {
   if (sectors==0) return;
   if (!doInteractions) return;
@@ -397,6 +407,11 @@ inline void Sectorization::createNeighborLists() {
   for (int y=1; y<nsy-1; ++y)
     for (int x=1; x<nsx-1; ++x) {
       for (auto p=sectors[y*nsx+x].begin(); p!=sectors[y*nsx+x].end(); ++p) {
+	// Only treat valid particles
+	if (it[*p]<0) continue;
+
+	// if (*p==511) cout << "CNL: " << rank << " " << it[*p] << " " << *p << endl; //**
+
 	// Create a neighbor list for each particle, using the cells
 	list<int> nlist;
 	nlist.push_back(*p); // You are at the head of the list
@@ -455,6 +470,9 @@ inline void Sectorization::createWallNeighborList() {
   // Create Wall Neighbor list
   wallNeighbors.clear();
   for (int i=0; i<size; ++i) {
+
+    // if (it[i]<0 || i==511) cout << rank << " CWL " << i << " " << it[i] << endl; //**
+
     list<Wall*> lst;
     for (auto &w : walls) {
       vec2 displacement = getDisplacement(vec2(px[i], py[i]), w.left);
@@ -545,38 +563,20 @@ inline void Sectorization::createArrays() {
   pdata[12] = ds = (floatType*)aligned_alloc(64, asize*sizeof(floatType));
   pdata[13] = cf = (floatType*)aligned_alloc(64, asize*sizeof(floatType));
   pdata[14] = dg = (floatType*)aligned_alloc(64, asize*sizeof(floatType));
-  pdata[15] = it = (floatType*)aligned_alloc(64, asize*sizeof(floatType));
+  it = (int*)aligned_alloc(64, asize*sizeof(int));
+  memset(it, -1, asize);
   for (int i=0; i<asize; ++i) it[i] = -1.;
   ms = (floatType*)aligned_alloc(64, asize*sizeof(floatType));
-  /*
-  memset(vx, 0, asize*sizeof(floatType));
-  memset(px, 0, asize*sizeof(floatType));
-  memset(py, 0, asize*sizeof(floatType));
-  memset(vy, 0, asize*sizeof(floatType));
-  memset(fx, 0, asize*sizeof(floatType));
-  memset(fy, 0, asize*sizeof(floatType));
-  memset(iI, 0, asize*sizeof(floatType));
-  memset(rp, 0, asize*sizeof(floatType));
-  memset(ds, 0, asize*sizeof(floatType));
-  memset(cf, 0, asize*sizeof(floatType));
-  memset(dg, 0, asize*sizeof(floatType));
-  memset(om, 0, asize*sizeof(floatType));
-  memset(tq, 0, asize*sizeof(floatType));
-  memset(sg, 0, asize*sizeof(floatType));
-  memset(im, 0, asize*sizeof(floatType));
-  memset(ms, 0, asize*sizeof(floatType));
-  */
-
   // Set position tracker array
   if (positionTracker) delete [] positionTracker;
   positionTracker = (vec2*)aligned_alloc(64, asize*sizeof(vec2));
-  // memset(positionTracker, 0, asize*sizeof(vec2));
 }
  
 inline void Sectorization::zeroPointers() {
   positionTracker = 0;
-  px = py = vx = vy = fx = fy = om = tq = sg = im = iI = rp = ds = cf = dg = it = ms = 0;
-  for (int i=0; i<16; ++i) pdata[i] = 0;
+  px = py = vx = vy = fx = fy = om = tq = sg = im = iI = rp = ds = cf = dg = ms = 0;
+  it = 0;
+  for (int i=0; i<15; ++i) pdata[i] = 0;
   sectors = 0;
 }
 
@@ -602,18 +602,34 @@ inline void Sectorization::setParticles() {
     ms[i] = 1./p.invMass;  // Mass array
     ++i;
   }
-  size = plist.size();
+  size = i;
+  array_end = i;
   for ( ; i<asize; ++i) it[i] = -1; // No particle stored here
  }
 
 inline void Sectorization::atom_move() {
   // Assumes that only particles that were in boundary might need to move
   // list<int> tl, tm, tr;
-  // list<int> ml,     mr;
+  // list<int> ml, **  mr;
   // list<int> bl, bm, br;
   list<int> move_lsts[9]; // Entry 4 will always be unused
   vector<int> holes;      // Holes that open because of particles leaving. We will fill these holes
 
+  for (int i=0; i<size; ++i) {
+    // Check if the particle left the domain
+    if (!bounds.contains(vec2(px[i], py[i]))) {
+      holes.push_back(i);
+      int x = 1, y = 1;
+      if (px[i]<bounds.left) x = 0;
+      else if (bounds.right<px[i]) x = 2;
+      if (py[i]<bounds.bottom) y=0;
+      else if (bounds.top<py[i]) y=2;
+      int n_lst = 3*y+x;
+      if (n_lst!=4) move_lsts[n_lst].push_back(i); // Push back the index of the particle that needs to move
+    }
+  }
+
+  /*
   for (int j=1; j<nsy-1; ++j)
     for (int i=1; i<nsx-1; ++i) {
       int n_sec = nsx*j+i;
@@ -633,6 +649,7 @@ inline void Sectorization::atom_move() {
 	}
       }
     }
+  */
   
   // Do the actual migration
   auto start = clock();
@@ -647,7 +664,7 @@ inline void Sectorization::atom_move() {
   auto end = clock();
   transferTime += (double)(end-start)/CLOCKS_PER_SEC;
   // Get rid of holes in the array
-  // compressArray(holes);
+  compressArrays(holes);
 }
 
 inline void Sectorization::passParticles(int tx, int ty, const list<int> &allParticles) {
@@ -697,7 +714,7 @@ inline void Sectorization::passParticleSend(const int send, const list<int> &all
       buffer[i+12] = ds[j];
       buffer[i+13] = cf[j];
       buffer[i+14] = dg[j];
-      buffer[i+15] = it[j];
+      buffer[i+15] = static_cast<floatType>(it[j]);
       i+=16;
       // Remove the particle from the particle list by setting its interaction to -1
       it[j] = -1;
@@ -724,25 +741,24 @@ inline void Sectorization::passParticleRecv(const int recv) {
     // Add particles
     int j=0;
     for (int i=0; i<sz; i++) {
-      for ( ;it[j]!=-1; ++j); // Find the next open spot in which to put particle
-      px[j] = buffer[16*i+0 ];
-      py[j] = buffer[16*i+1 ];
-      vx[j] = buffer[16*i+2 ];
-      vy[j] = buffer[16*i+3 ];
-      fx[j] = buffer[16*i+4 ];
-      fy[j] = buffer[16*i+5 ];
-      om[j] = buffer[16*i+6 ];
-      tq[j] = buffer[16*i+7 ];
-      sg[j] = buffer[16*i+8 ];
-      im[j] = buffer[16*i+9 ];
-      iI[j] = buffer[16*i+10];
-      rp[j] = buffer[16*i+11];
-      ds[j] = buffer[16*i+12];
-      cf[j] = buffer[16*i+13];
-      dg[j] = buffer[16*i+14];
-      it[j] = buffer[16*i+15];
-      ms[j] = 1./im[j]; // Mass array
-      ++j;
+      px[array_end] = buffer[16*i+0 ];
+      py[array_end] = buffer[16*i+1 ];
+      vx[array_end] = buffer[16*i+2 ];
+      vy[array_end] = buffer[16*i+3 ];
+      fx[array_end] = buffer[16*i+4 ];
+      fy[array_end] = buffer[16*i+5 ];
+      om[array_end] = buffer[16*i+6 ];
+      tq[array_end] = buffer[16*i+7 ];
+      sg[array_end] = buffer[16*i+8 ];
+      im[array_end] = buffer[16*i+9 ];
+      iI[array_end] = buffer[16*i+10];
+      rp[array_end] = buffer[16*i+11];
+      ds[array_end] = buffer[16*i+12];
+      cf[array_end] = buffer[16*i+13];
+      dg[array_end] = buffer[16*i+14];
+      it[array_end] = static_cast<int>(buffer[16*i+15]);
+      ms[array_end] = 1./im[array_end]; // Mass array
+      ++array_end;
     } 
     // Array end points to the right place
     size += sz; // Adjust our size
