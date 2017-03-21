@@ -28,6 +28,11 @@ class GFlowBase {
 
   // Accessors
   Bounds getBounds()       { return Bounds(left, right, bottom, top); }
+  int getNSX()             { return sectorization.getNSX(); }
+  int getNSY()             { return sectorization.getNSY(); }
+  int getNDX()             { return ndx; }
+  int getNDY()             { return ndy; }
+  int getSize();
   floatType getWidth()     { return right-left; }
   floatType getHeight()    { return top-bottom; }
   bool getWrapX()          { return wrapX; }
@@ -46,8 +51,6 @@ class GFlowBase {
   bool getRunning()        { return running; }
   double getTransferTime() { return transferTime+sectorization.getTransferTime(); }
   bool getDoInteractions() { return doInteractions; }
-  int getNDX()             { return ndx; }
-  int getNDY()             { return ndy; }
 
   // Debugging and timing accessors
   double getFirstHalfKick() { return sectorization.getFirstHalfKick(); }

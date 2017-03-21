@@ -98,7 +98,6 @@ int main(int argc, char** argv) {
     for (int i=0; i<argc; i++) cout << argv[i] << " ";
     cout << endl << endl; // Line break
     cout << "Using " << numProc << " processors.\n";
-    cout << "Number: " << number << endl;
     cout << "  ..........................\n";
   }
   MPI::COMM_WORLD.Barrier();
@@ -121,7 +120,10 @@ int main(int argc, char** argv) {
   if (omega) simulator.addStatFunction(Stat_Omega, "omega");
   if (cluster) simulator.addStatFunction(Stat_Clustering, "cluster");
 
+  // Get the actual number of particles in the simulation
+  number = simulator.getSize();
   if (rank==0) {
+    cout << "Number: " << number << endl;
     cout << "Dimensions: " << simulator.getWidth() << " x " << simulator.getHeight() << endl;
     cout << "Set up time: " << simulator.getSetUpTime() << endl;
     cout << "  ..........................\n";
@@ -136,7 +138,9 @@ int main(int argc, char** argv) {
   if (rank==0) {
     double runTime = simulator.getRunTime(), transferTime = simulator.getTransferTime();
     int iters = simulator.getIter(), ndx = simulator.getNDX(), ndy = simulator.getNDY();
+    int nsx = simulator.getNSX(), nsy = simulator.getNSY();
     cout << "Domains: " << ndx << " x " << ndy << ", Total: " << ndx*ndy << endl;
+    cout << "Sectors: " << nsx << " x " << nsy << ", Per Domain: " << nsx*nsy << ", Total: " << nsx*nsy*ndx*ndy << endl;
     cout << "Run Time: " << runTime << ", Sim Time: " << time << endl;
     cout << "Start Time: " << simulator.getStartRec() << ", Record Time: " << time - simulator.getStartRec() << endl;
     cout << "Iterations: " << iters << endl;

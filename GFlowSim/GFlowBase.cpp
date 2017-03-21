@@ -91,6 +91,13 @@ void GFlowBase::addParticle(floatType x, floatType y, floatType r) {
   particles.push_back(Particle(x, y, r));
 }
 
+int GFlowBase::getSize() {
+  int sz = sectorization.getSize();
+  int size = 0;
+  COMM_WORLD.Reduce(&sz, &size, 1, MPI_INT, MPI_SUM, 0);
+  return size;
+}
+
 void GFlowBase::setBounds(floatType l, floatType r, floatType b, floatType t) {
   left = l; right = r; bottom = b; top = t;
   sectorization.setSimBounds(l, r, b, t);
@@ -590,11 +597,12 @@ void GFlowBase::createBuoyancyBox(floatType radius, floatType bR, floatType dens
   // Create particles and distribute them to the processors
   vector<vec2> positions = findPackedSolution(number, radius, bounds, 0);
   // Only allow particles that are below depth
-  list<list<Particle>::iterator> remove;
   list<Particle> allParticles = createParticles(positions, radius, dispersion, ZeroV, 0);
-  for (auto p=allParticles.begin(); p!=allParticles.end(); ++p)
-    if (depth<p->position.y+p->sigma) remove.push_back(p);
-  for (auto &p : remove) allParticles.erase(p);
+  // Remove particles whose centers are above the line
+  for (auto p=allParticles.begin(); p!=allParticles.end();) {
+    if (depth<p->position.y+p->sigma) p = allParticles.erase(p);
+    else ++p;
+  }
   // Add the large ball
   if (rank==0 && bR>0) {
     Particle ball(width/2, depth+bR, bR);
