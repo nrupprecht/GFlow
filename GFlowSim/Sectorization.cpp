@@ -611,14 +611,18 @@ inline void Sectorization::atom_move() {
   // list<int> tl, tm, tr;
   // list<int> ml,     mr;
   // list<int> bl, bm, br;
-  list<int> move_lsts[9];
+  list<int> move_lsts[9]; // Entry 4 will always be unused
+  vector<int> holes;      // Holes that open because of particles leaving. We will fill these holes
 
   for (int j=1; j<nsy-1; ++j)
     for (int i=1; i<nsx-1; ++i) {
       int n_sec = nsx*j+i;
-      for (auto p : sectors[n_sec] ) {
+      for (auto P=sectors[n_sec].begin(); P!=sectors[n_sec].end(); ++P) {
+	int p = *P;
 	// Check if the particle left the domain
 	if (!bounds.contains(vec2(px[p], py[p]))) {
+	  P = sectors[n_sec].erase(P);
+	  holes.push_back(p);
 	  int x = 1, y = 1;
 	  if (px[p]<bounds.left) x = 0;
 	  else if (bounds.right<px[p]) x = 2;
@@ -631,6 +635,7 @@ inline void Sectorization::atom_move() {
     }
   
   // Do the actual migration
+  auto start = clock();
   passParticles(-1, -1, move_lsts[0]); // bl
   passParticles( 0, -1, move_lsts[1]); // bm
   passParticles(+1, -1, move_lsts[2]); // br
@@ -639,6 +644,10 @@ inline void Sectorization::atom_move() {
   passParticles(-1, +1, move_lsts[6]); // tl
   passParticles( 0, +1, move_lsts[7]); // tm
   passParticles(+1, +1, move_lsts[8]); // tr
+  auto end = clock();
+  transferTime += (double)(end-start)/CLOCKS_PER_SEC;
+  // Get rid of holes in the array
+  // compressArray(holes);
 }
 
 inline void Sectorization::passParticles(int tx, int ty, const list<int> &allParticles) {
@@ -664,67 +673,108 @@ inline void Sectorization::passParticles(int tx, int ty, const list<int> &allPar
 }
 
 inline void Sectorization::passParticleSend(const int send, const list<int> &allParticles) {
+  // Send expected size
   int sz = allParticles.size();
   COMM_WORLD.Send(&sz, 1, MPI_INT, send, 0); //** Isend
-  floatType *buffer = new floatType[16*sz];
-  int i=0;
-  // Put particles into buffer
-  for (auto p : allParticles) {
-    buffer[16*i+0 ] = px[p];
-    buffer[16*i+1 ] = py[p];
-    buffer[16*i+2 ] = vx[p];
-    buffer[16*i+3 ] = vy[p];
-    buffer[16*i+4 ] = fx[p];
-    buffer[16*i+5 ] = fy[p];
-    buffer[16*i+6 ] = om[p];
-    buffer[16*i+7 ] = tq[p];
-    buffer[16*i+8 ] = sg[p];
-    buffer[16*i+9 ] = im[p];
-    buffer[16*i+10] = iI[p];
-    buffer[16*i+11] = rp[p];
-    buffer[16*i+12] = ds[p];
-    buffer[16*i+13] = cf[p];
-    buffer[16*i+14] = dg[p];
-    buffer[16*i+15] = it[p];
-    ++i;
-    // Remove the particle from the particle list by setting its interaction to -1
-    it[p] = -1;
+  // If there are particles to send
+  if (0<sz) {
+    floatType *buffer = new floatType[16*sz];
+    int i=0;
+    // Put particles into buffer
+    for (auto j : allParticles) {
+      buffer[i+0 ] = px[j];
+      buffer[i+1 ] = py[j];
+      buffer[i+2 ] = vx[j];
+      buffer[i+3 ] = vy[j];
+      buffer[i+4 ] = fx[j];
+      buffer[i+5 ] = fy[j];
+      buffer[i+6 ] = om[j];
+      buffer[i+7 ] = tq[j];
+      buffer[i+8 ] = sg[j];
+      buffer[i+9 ] = im[j];
+      buffer[i+10] = iI[j];
+      buffer[i+11] = rp[j];
+      buffer[i+12] = ds[j];
+      buffer[i+13] = cf[j];
+      buffer[i+14] = dg[j];
+      buffer[i+15] = it[j];
+      i+=16;
+      // Remove the particle from the particle list by setting its interaction to -1
+      it[j] = -1;
+    }
+    size -= sz; // Adjust our size
+    // Send our data
+    int msz = sz*16;
+    COMM_WORLD.Send(buffer, msz, MPI_DOUBLE, send, 0); // ISend
+    delete [] buffer;
   }
-  int factor = sizeof(floatType)/sizeof(float);
-  COMM_WORLD.Send(buffer, sz*16*sizeof(floatType)*factor, MPI_FLOAT, send, 0);
-  delete [] buffer;
 }
 
 inline void Sectorization::passParticleRecv(const int recv) {
+  // Recieve expected size
   int sz = -1;
   COMM_WORLD.Recv(&sz, 1, MPI_INT, recv, 0);
-  floatType *buffer = new floatType[16*sz];
-  int factor = sizeof(floatType)/sizeof(float);
-  COMM_WORLD.Recv(buffer, sz*16*sizeof(floatType)*factor, MPI_FLOAT, recv, 0);
-  int j=0;
-  for (int i=0; i<sz; i++) {
-    for ( ;it[j]!=-1; ++j); // Find the next open spot in which to put particle
-    px[j] = buffer[16*i+0 ];
-    py[j] = buffer[16*i+1 ];
-    vx[j] = buffer[16*i+2 ];
-    vy[j] = buffer[16*i+3 ];
-    fx[j] = buffer[16*i+4 ];
-    fy[j] = buffer[16*i+5 ];
-    om[j] = buffer[16*i+6 ];
-    tq[j] = buffer[16*i+7 ];
-    sg[j] = buffer[16*i+8 ];
-    im[j] = buffer[16*i+9 ];
-    iI[j] = buffer[16*i+10];
-    rp[j] = buffer[16*i+11];
-    ds[j] = buffer[16*i+12];
-    cf[j] = buffer[16*i+13];
-    dg[j] = buffer[16*i+14];
-    it[j] = buffer[16*i+15];
-    ms[j] = 1./im[j]; // Mass array
-    ++j;
-  } 
-  delete [] buffer;
+  // If there are particles to recieve
+  if (0<sz) {
+    // Get our data
+    double *buffer = new double[16*sz];
+    int msz = sz*16;
+    MPI::Status status;
+    COMM_WORLD.Recv(buffer, msz, MPI_DOUBLE, recv, 0, status);
+    // Add particles
+    int j=0;
+    for (int i=0; i<sz; i++) {
+      for ( ;it[j]!=-1; ++j); // Find the next open spot in which to put particle
+      px[j] = buffer[16*i+0 ];
+      py[j] = buffer[16*i+1 ];
+      vx[j] = buffer[16*i+2 ];
+      vy[j] = buffer[16*i+3 ];
+      fx[j] = buffer[16*i+4 ];
+      fy[j] = buffer[16*i+5 ];
+      om[j] = buffer[16*i+6 ];
+      tq[j] = buffer[16*i+7 ];
+      sg[j] = buffer[16*i+8 ];
+      im[j] = buffer[16*i+9 ];
+      iI[j] = buffer[16*i+10];
+      rp[j] = buffer[16*i+11];
+      ds[j] = buffer[16*i+12];
+      cf[j] = buffer[16*i+13];
+      dg[j] = buffer[16*i+14];
+      it[j] = buffer[16*i+15];
+      ms[j] = 1./im[j]; // Mass array
+      ++j;
+    } 
+    // Array end points to the right place
+    size += sz; // Adjust our size
+    delete [] buffer;
+  }
 }
+
+ inline void Sectorization::compressArrays(vector<int>& holes) {
+   if (holes.empty()) return;
+   for (int h=0; h<holes.size(); ++h) {
+     int j=holes.at(h);
+     px[j] = px[array_end-h-1];
+     py[j] = py[array_end-h-1];
+     vx[j] = vx[array_end-h-1];
+     vy[j] = vy[array_end-h-1];
+     fx[j] = fx[array_end-h-1];
+     fy[j] = fy[array_end-h-1];
+     om[j] = om[array_end-h-1];
+     tq[j] = tq[array_end-h-1];
+     sg[j] = sg[array_end-h-1];
+     im[j] = im[array_end-h-1];
+     iI[j] = iI[array_end-h-1];
+     rp[j] = rp[array_end-h-1];
+     ds[j] = ds[array_end-h-1];
+     cf[j] = cf[array_end-h-1];
+     dg[j] = dg[array_end-h-1];
+     it[j] = it[array_end-h-1];
+     ms[j] = ms[array_end-h-1]; // Mass array
+     it[array_end-h-1] = -1;    // This entry is now empty
+   }
+   array_end = size;
+ }
 
 inline void Sectorization::atom_copy() {
   
