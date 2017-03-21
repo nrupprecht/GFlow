@@ -28,7 +28,7 @@ Wall::Wall(floatType lx, floatType ly, floatType rx, floatType ry) {
   coeff = default_wall_coeff;
 }
 
-Particle::Particle() : position(0), sigma(0) {
+Particle::Particle() : position(0), sigma(0), interaction(0) {
   velocity = force = 0;
   omega = torque = 0;
   floatType mass = 0;
@@ -41,7 +41,7 @@ Particle::Particle() : position(0), sigma(0) {
   drag = 0;
 }
 
-Particle::Particle(vec2 p, floatType r) : position(p), sigma(r) {
+Particle::Particle(vec2 p, floatType r) : position(p), sigma(r), interaction(0) {
   velocity = force = 0;
   omega = torque = 0;
   floatType mass = PI*default_sphere_density*sqr(r);
@@ -54,9 +54,9 @@ Particle::Particle(vec2 p, floatType r) : position(p), sigma(r) {
   drag = default_sphere_drag*r;
 }
 
-Particle::Particle(floatType x, floatType y, floatType r) : position(vec2(x,y)), sigma(r) {
+Particle::Particle(floatType x, floatType y, floatType r) : position(vec2(x,y)), sigma(r), interaction(0) {
   velocity = force = 0;
-  omega= torque = 0;
+  omega = torque = 0;
   floatType mass = PI*default_sphere_density*sqr(r);
   invMass = 1./mass;
   invII= 1./(0.5*mass*sqr(r));

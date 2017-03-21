@@ -27,6 +27,7 @@
 #include <vector>
 #include <algorithm>
 #include <fstream>
+#include <tuple>
 
 using std::vector;
 using std::pair;
@@ -43,7 +44,7 @@ using std::ofstream;
 #include "../ArgParse.h"
 
 // --- What type of floating point we will use throughout the program ---
-typedef float floatType;
+typedef double floatType;
 
 const double PI = 3.14159265;
 
@@ -296,6 +297,7 @@ vect(const vect<T>& V) : x(V.x), y(V.y) {};
 
 // --- What type of vector we will use as our main vector type ---
 typedef vect<floatType> vec2;
+typedef std::tuple<vec2, floatType, floatType> Tri;
 
 /// Some common vectors
 const vect<double> Zero(0,0);
@@ -350,6 +352,10 @@ template<typename T> inline std::ostream& operator<<(std::ostream& out, const ve
   return out;
 }
 
+inline std::ostream& operator<<(std::ostream& out, const Tri& tup) {
+  out << "{" << std::get<0>(tup) << "," << std::get<1>(tup) << "," << std::get<2>(tup) << "}";
+  return out;
+}
 
 inline void istream_get_whitespace(std::istream& in) {
   char c;

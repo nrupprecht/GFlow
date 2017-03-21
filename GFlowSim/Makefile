@@ -1,7 +1,9 @@
 CC = icpc
 MPICC = mpic++
 CFLAG = -std=c++14 -Wall
-FLAGS = $(CFLAG) -g -xHost -O3 -no-prec-div -static -fp-model fast=2 -restrict -funroll-loops -no-inline-max-size -qopt-report=5
+OPTFLAGS = -xHost -O3 -no-prec-div -static -fp-model fast=2 -restrict -funroll-loops -no-inline-max-size #-qopt-report=5
+FLAGS = $(CFLAG) -g $(OPTFLAGS)
+
 
 targets = driver
 
