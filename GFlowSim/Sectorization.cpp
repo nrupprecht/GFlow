@@ -104,7 +104,7 @@ void Sectorization::discard() {
   if (rp) delete [] rp; rp = 0;
   if (ds) delete [] ds; ds = 0;
   if (cf) delete [] cf; cf = 0;
-  if (dg) delete [] dg; dg = 0;
+  if (th) delete [] th; th = 0;
   if (it) delete [] it; it = 0;
   if (ms) delete [] ms; ms = 0;
   for (int i=0; i<15; ++i) pdata[i] = 0;
@@ -480,6 +480,7 @@ inline void Sectorization::updatePList() {
     p.position = vec2(px[i], py[i]);
     p.velocity = vec2(vx[i], vy[i]);
     p.force    = vec2(fx[i], fy[i]);
+    p.theta    = th[i];
     p.omega    = om[i];
     p.torque   = tq[i];
     p.sigma    = sg[i];
@@ -488,7 +489,6 @@ inline void Sectorization::updatePList() {
     p.repulsion = rp[i];
     p.dissipation = ds[i];
     p.coeff    = cf[i];
-    p.drag     = dg[i];
     p.interaction = it[i];
     // Add particle to list
     plist.push_back(p);
@@ -503,6 +503,7 @@ inline void Sectorization::createArrays() {
   if (vy) delete [] vy;
   if (fx) delete [] fx;
   if (fy) delete [] fy;
+  if (th) delete [] th;
   if (om) delete [] om;
   if (tq) delete [] tq;
   if (sg) delete [] sg;
@@ -511,7 +512,6 @@ inline void Sectorization::createArrays() {
   if (rp) delete [] rp;
   if (ds) delete [] ds;
   if (cf) delete [] cf;
-  if (dg) delete [] dg;
   if (it) delete [] it;
   if (ms) delete [] ms;
   // Reallocate
@@ -522,15 +522,15 @@ inline void Sectorization::createArrays() {
   pdata[3]  = vy = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
   pdata[4]  = fx = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
   pdata[5]  = fy = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
-  pdata[6]  = om = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
-  pdata[7]  = tq = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
-  pdata[8]  = sg = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
-  pdata[9]  = im = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
-  pdata[10] = iI = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
-  pdata[11] = rp = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
-  pdata[12] = ds = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
-  pdata[13] = cf = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
-  pdata[14] = dg = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
+  pdata[6]  = th = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
+  pdata[7]  = om = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
+  pdata[8]  = tq = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
+  pdata[9]  = sg = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
+  pdata[10] = im = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
+  pdata[11] = iI = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
+  pdata[12] = rp = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
+  pdata[13] = ds = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
+  pdata[14] = cf = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
   it             =    (int*)   aligned_alloc(64, tsize*sizeof(int));
   memset(it, -1, tsize);
   // for (int i=0; i<asize; ++i) it[i] = -1.;
@@ -544,7 +544,7 @@ inline void Sectorization::createArrays() {
  
 inline void Sectorization::zeroPointers() {
   positionTracker = 0;
-  px = py = vx = vy = fx = fy = om = tq = sg = im = iI = rp = ds = cf = dg = ms = 0;
+  px = py = vx = vy = fx = fy = th = om = tq = sg = im = iI = rp = ds = cf = ms = 0;
   it = 0;
   for (int i=0; i<15; ++i) pdata[i] = 0;
   sectors = 0;
@@ -559,6 +559,7 @@ inline void Sectorization::setParticles() {
     vy[i] = p.velocity.y;
     fx[i] = p.force.x;
     fy[i] = p.force.y;
+    th[i] = p.theta;
     om[i] = p.omega;
     tq[i] = p.torque;
     sg[i] = p.sigma;
@@ -567,7 +568,6 @@ inline void Sectorization::setParticles() {
     rp[i] = p.repulsion;
     ds[i] = p.dissipation;
     cf[i] = p.coeff;
-    dg[i] = p.drag;
     it[i] = p.interaction;
     ms[i] = 1./p.invMass;  // Mass array
     ++i;
@@ -664,7 +664,7 @@ inline void Sectorization::passParticleSend(const int send, const list<int> &all
   CommWork.Send(&sz, 1, MPI_INT, send, 0); //** Isend
   // If there are particles to send
   if (0<sz) {
-    floatType *buffer = new floatType[16*sz];
+    double *buffer = new double[16*sz];
     int i=0;
     // Put particles into buffer
     for (auto j : allParticles) {
@@ -674,15 +674,15 @@ inline void Sectorization::passParticleSend(const int send, const list<int> &all
       buffer[i+3 ] = vy[j];
       buffer[i+4 ] = fx[j];
       buffer[i+5 ] = fy[j];
-      buffer[i+6 ] = om[j];
-      buffer[i+7 ] = tq[j];
-      buffer[i+8 ] = sg[j];
-      buffer[i+9 ] = im[j];
-      buffer[i+10] = iI[j];
-      buffer[i+11] = rp[j];
-      buffer[i+12] = ds[j];
-      buffer[i+13] = cf[j];
-      buffer[i+14] = dg[j];
+      buffer[i+6 ] = th[j];
+      buffer[i+7 ] = om[j];
+      buffer[i+8 ] = tq[j];
+      buffer[i+9 ] = sg[j];
+      buffer[i+10] = im[j];
+      buffer[i+11] = iI[j];
+      buffer[i+12] = rp[j];
+      buffer[i+13] = ds[j];
+      buffer[i+14] = cf[j];
       buffer[i+15] = static_cast<floatType>(it[j]);
       i+=16;
       // Remove the particle from the particle list by setting its interaction to -1
@@ -716,15 +716,15 @@ inline void Sectorization::passParticleRecv(const int recv) {
       vy[array_end] = buffer[16*i+3 ];
       fx[array_end] = buffer[16*i+4 ];
       fy[array_end] = buffer[16*i+5 ];
-      om[array_end] = buffer[16*i+6 ];
-      tq[array_end] = buffer[16*i+7 ];
-      sg[array_end] = buffer[16*i+8 ];
-      im[array_end] = buffer[16*i+9 ];
-      iI[array_end] = buffer[16*i+10];
-      rp[array_end] = buffer[16*i+11];
-      ds[array_end] = buffer[16*i+12];
-      cf[array_end] = buffer[16*i+13];
-      dg[array_end] = buffer[16*i+14];
+      th[array_end] = buffer[16*i+6 ];
+      om[array_end] = buffer[16*i+7 ];
+      tq[array_end] = buffer[16*i+8 ];
+      sg[array_end] = buffer[16*i+9 ];
+      im[array_end] = buffer[16*i+10];
+      iI[array_end] = buffer[16*i+11];
+      rp[array_end] = buffer[16*i+12];
+      ds[array_end] = buffer[16*i+13];
+      cf[array_end] = buffer[16*i+14];
       it[array_end] = static_cast<int>(buffer[16*i+15]);
       ms[array_end] = 1./im[array_end]; // Mass array
       // Add to sectors
@@ -753,6 +753,7 @@ inline void Sectorization::compressArrays() {
     vy[j] = vy[array_end-1];
     fx[j] = fx[array_end-1];
     fy[j] = fy[array_end-1];
+    th[j] = th[array_end-1];
     om[j] = om[array_end-1];
     tq[j] = tq[array_end-1];
     sg[j] = sg[array_end-1];
@@ -761,7 +762,6 @@ inline void Sectorization::compressArrays() {
     rp[j] = rp[array_end-1];
     ds[j] = ds[array_end-1];
     cf[j] = cf[array_end-1];
-    dg[j] = dg[array_end-1];
     it[j] = it[array_end-1];
     ms[j] = ms[array_end-1]; // Mass array
     it[array_end-1] = -1;    // This entry is now empty

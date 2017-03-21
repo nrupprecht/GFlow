@@ -28,9 +28,9 @@ Wall::Wall(floatType lx, floatType ly, floatType rx, floatType ry) {
   coeff = default_wall_coeff;
 }
 
-Particle::Particle() : position(0), sigma(0), interaction(0) {
-  velocity = force = 0;
-  omega = torque = 0;
+Particle::Particle() : sigma(0), interaction(0) {
+  position = velocity = force = 0;
+  theta = omega = torque = 0;
   floatType mass = 0;
   invMass = 1.;
   invII = 1.;
@@ -38,12 +38,11 @@ Particle::Particle() : position(0), sigma(0), interaction(0) {
   repulsion = default_sphere_repulsion;
   dissipation = default_sphere_dissipation;
   coeff = default_sphere_coeff;
-  drag = 0;
 }
 
 Particle::Particle(vec2 p, floatType r) : position(p), sigma(r), interaction(0) {
   velocity = force = 0;
-  omega = torque = 0;
+  theta = omega = torque = 0;
   floatType mass = PI*default_sphere_density*sqr(r);
   invMass = 1./mass;
   invII = 1./(0.5*mass*sqr(r));
@@ -51,20 +50,18 @@ Particle::Particle(vec2 p, floatType r) : position(p), sigma(r), interaction(0) 
   repulsion = default_sphere_repulsion;
   dissipation = default_sphere_dissipation;
   coeff = default_sphere_coeff;
-  drag = default_sphere_drag*r;
 }
 
 Particle::Particle(floatType x, floatType y, floatType r) : position(vec2(x,y)), sigma(r), interaction(0) {
   velocity = force = 0;
-  omega = torque = 0;
+  theta = omega = torque = 0;
   floatType mass = PI*default_sphere_density*sqr(r);
   invMass = 1./mass;
   invII= 1./(0.5*mass*sqr(r));
 
   repulsion = default_sphere_repulsion;
   dissipation =default_sphere_dissipation;
-  coeff =default_sphere_coeff;
-  drag = default_sphere_drag*r;
+  coeff = default_sphere_coeff;
 }
 
 void Particle::setDensity(floatType density) {

@@ -105,7 +105,7 @@ class Sectorization {
   int esize, earray_end, easize; // The number of edge particles, the index after the last edge particle, the amount of space allocated for edge particles
   inline void updatePList();
   // Particle data - position (2), velocity (2), force (2), omega, torque, sigma, inverse mass, inverse moment of inertia, repulsion, dissipation, coeff of friction, drag coefficient, interaction type
-  floatType *px, *py, *vx, *vy, *fx, *fy, *om, *tq, *sg, *im, *iI, *rp, *ds, *cf, *dg;
+  floatType *px, *py, *vx, *vy, *fx, *fy, *th, *om, *tq, *sg, *im, *iI, *rp, *ds, *cf;
   int *it;
   floatType *ms; // Mass array
   floatType *pdata[16]; // Pointers to px, py, etc
