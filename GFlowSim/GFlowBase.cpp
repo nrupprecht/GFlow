@@ -4,7 +4,7 @@ using MPI::COMM_WORLD;
 
 GFlowBase::GFlowBase() {
   left = 0; right = 1; bottom = 0; top = 1;
-  wrapX = true; wrapY = true;
+  wrapX = false; wrapY = false;
   gravity = vec2(0., -1.);
   temperature = 0; viscosity = 1.308e-3;
   time = 0;
@@ -21,7 +21,7 @@ GFlowBase::GFlowBase() {
 
   doWork = false;
   cutoff = 0.05;
-  skinDepth = 0.25*cutoff;
+  skinDepth = cutoff;
 
   //---
   setUpTime = 0;
@@ -64,9 +64,12 @@ void GFlowBase::run(double runLength) {
   running = false;
   clock_t end = clock();
   runTime = (double)(end-start)/CLOCKS_PER_SEC;
+  /*
   COMM_WORLD.Barrier();
   gatherData();
   COMM_WORLD.Barrier();
+  */
+  transferTime += sectorization.getTransferTime();
 }
 
 void GFlowBase::addWall(Wall w) {
@@ -187,7 +190,39 @@ void GFlowBase::logisticUpdates() {
 }
 
 void GFlowBase::record() {
-  if (recPositions || recKE || !statFunctions.empty()) recordPositions();
+  if (recPositions || recKE || !statFunctions.empty()) {
+    // Get all the particles back from the sectorizations
+    vector<Particle> allParticles;
+    recallParticles(allParticles);
+    // Record positions
+    if (recPositions) {
+      vector<pair<vec2, floatType> > positions;
+      for (const auto &p : allParticles) positions.push_back(pair<vec2, floatType>(p.position, p.interaction==0 ? p.sigma : p.sigma / 2.5));
+      positionRecord.push_back(positions);
+    }
+
+    // Record stat function statistics
+    int i=0;
+    for (auto &sf : statFunctions) {
+      statRecord.at(i).push_back(vec2(time, sf.first(allParticles)));
+      ++i;
+    }
+  }
+  // Special record
+  if (recSpecial) {
+    vector<vector<Particle> > specialView;
+    recallParticlesByProcessor(specialView);
+    int c = 0;
+    vector<Tri> positions;
+    for (const auto &lst : specialView) {
+      for (const auto &p : lst)
+	positions.push_back(Tri(p.position, p.sigma, c));
+      ++c;
+    } 
+    specialRecord.push_back(positions);
+  }
+
+
   // Update display 
   lastDisp = time;
   ++recIter;
@@ -317,6 +352,45 @@ void GFlowBase::recallParticles(vector<Particle>& allParticles) {
   auto end = clock();
   transferTime += (double)(end-begin)/CLOCKS_PER_SEC;
   // Particles are now all stored on processor 0
+}
+
+void GFlowBase::recallParticlesByProcessor(vector<vector<Particle> >& allParticles) {
+  // Get all the particles back from the sectorizations
+  auto begin = clock();
+  int max = min(ndx*ndy, numProc);
+  if (rank==0) {
+    vector<Particle> myParticles;
+    for (auto &p : sectorization.getParticles())
+      myParticles.push_back(p);
+    allParticles.push_back(myParticles); // Zeroth entry
+  }
+  for (int proc=1; proc<max; ++proc) {
+    if (rank==0) {
+      int size = 0;
+      // Recieve how many Particles to expect to recieve
+      COMM_WORLD.Recv( &size, 1, MPI_INT, proc, 0);
+      // Create a buffer of Particles to send
+      Particle *buffer = new Particle[size];
+      COMM_WORLD.Recv( buffer, size, PARTICLE, proc, 0);
+      vector<Particle> myParticles;
+      for (int i=0; i<size; ++i) myParticles.push_back(buffer[i]);
+      allParticles.push_back(myParticles);
+    }
+    else if (rank==proc) {
+      auto &parts = sectorization.getParticles();
+      int size = parts.size(), root = 0;
+      COMM_WORLD.Send( &size, 1, MPI_INT, root, 0);
+      // Create a buffer of Particles to send
+      Particle *buffer = new Particle[size];
+      int i=0;
+      for (auto p=parts.begin(); p!=parts.end(); ++p, ++i) buffer[i] = *p;
+      COMM_WORLD.Send( buffer, size, PARTICLE, root, 0);
+    }
+  }
+  COMM_WORLD.Barrier();
+  auto end = clock();
+  transferTime += (double)(end-begin)/CLOCKS_PER_SEC;
+  // Particles are now all stored, sorted by processor, on processor 0
 }
 
 list<Particle> GFlowBase::createParticles(vector<vec2> positions, floatType radius, floatType dispersion, std::function<vec2(floatType)> velocity, floatType coeff, floatType dissipation, floatType repulsion, int interaction) {
@@ -465,7 +539,7 @@ void GFlowBase::createSquare(int number, floatType radius, floatType width, floa
   
   // Set up sectorization
   setUpSectorization();
-  gravity = 0;
+  gravity = 0; 
   sectorization.setGravity(gravity);
   // Velocity initialization function
   std::function<vec2(floatType)> velocity = [&] (floatType invMass) { 
@@ -496,8 +570,8 @@ void GFlowBase::createBuoyancyBox(floatType radius, floatType bR, floatType dens
   Bounds bounds(0, width, 0, depth+2*bR+radius);
   setBounds(bounds);
   // Set cutoff and skin depth
-  cutoff = radius+bR;
-  skinDepth = 0.25*radius;
+  cutoff = radius+max(bR,radius);
+  skinDepth = 0.5*radius; //**
   // Everyone knows where the walls are
   addWall(left, bottom, right, bottom);
   addWall(left, bottom, left, top);
@@ -517,7 +591,7 @@ void GFlowBase::createBuoyancyBox(floatType radius, floatType bR, floatType dens
   vector<vec2> positions = findPackedSolution(number, radius, bounds, 0);
   // Only allow particles that are below depth
   list<list<Particle>::iterator> remove;
-  list<Particle> allParticles = createParticles(positions, radius, dispersion, ZeroV, 0); 
+  list<Particle> allParticles = createParticles(positions, radius, dispersion, ZeroV, 0);
   for (auto p=allParticles.begin(); p!=allParticles.end(); ++p)
     if (depth<p->position.y+p->sigma) remove.push_back(p);
   for (auto &p : remove) allParticles.erase(p);
@@ -533,30 +607,6 @@ void GFlowBase::createBuoyancyBox(floatType radius, floatType bR, floatType dens
   // End setup timing
   auto end = clock();
   setUpTime = (double)(end-begin)/CLOCKS_PER_SEC;
-}
-
-void GFlowBase::recordPositions() {
-  // Get all the particles back from the sectorizations
-  vector<Particle> allParticles;
-  recallParticles(allParticles);
-  
-  if (recPositions) {
-    vector<pair<vec2, floatType> > positions;
-    for (auto p : allParticles) positions.push_back(pair<vec2, floatType>(p.position, p.sigma));
-    positionRecord.push_back(positions);
-  }
-  if (recKE) {
-    floatType ke = 0;
-    for (auto p : allParticles) ke +=sqr(p.velocity)/p.invMass;
-    ke *= (0.5*(1./allParticles.size()));
-    keRecord.push_back(ke);
-  }
-
-  int i=0;
-  for (auto &sf : statFunctions) {
-    statRecord.at(i).push_back(vec2(time, sf.first(allParticles)));
-    ++i;
-  }
 }
 
 void GFlowBase::addStatFunction(StatFunc sf, string str) {
@@ -629,4 +679,57 @@ string GFlowBase::printAnimationCommand(bool novid) {
   command += "ListAnimate[frames]";
   
   return command;  
+}
+
+string GFlowBase::printSpecialAnimationCommand(bool novid) {
+  stringstream stream;
+  string command, strh, range, scale;
+
+  stream << "pos=" << mmPreproc(specialRecord) << ";";
+  stream >> command;
+  stream.clear();
+  command += "\n";
+  stream << "w=" << mmPreproc(getWallsPositions()) << ";";
+  stream >> strh;
+  stream.clear();
+  command += (strh+"\n");
+
+  stream << "len=" << recIter << ";";
+  stream >> strh;
+  stream.clear();
+  command += (strh+"\nscale=100;\n");
+
+  stream << "{{" << left << "," << right << "},{" << bottom << "," << top << "}}";
+  stream >> range;
+  stream.clear();
+
+  stream << "ImageSize->{scale*" << right-left << ",scale*" << top-bottom << "}";
+  stream >> scale;
+  stream.clear();
+
+  if (!walls.empty()) {
+    stream << "walls=Graphics[{";
+    for (int i=0; i<walls.size(); ++i) {
+      stream << "{Blue,Thick,Line[{w[[" << i+1 << "]][[1]],w[[" << i+1 << "]][[2]]}]}";
+      if (i!=walls.size()-1) stream << ",";
+    }
+    stream << "},PlotRange->" + range + "];\n";
+  }
+  else stream << "walls={};\n";
+  stream >> strh;
+  stream.clear();
+  command += strh;
+  command += "nproc=";
+  stream << numProc;
+  stream >> strh;
+  stream.clear();
+  command += strh+";\n";
+  command += "colors = Table[RGBColor[RandomReal[],RandomReal[],RandomReal[]],{i,1,nproc}]\n";
+  command += "sdisk[tr_]:={colors[[tr[[3]]+1]],Disk[tr[[1]],tr[[2]]]};\n";
+  command += "disks=Table[ Graphics[ Table[sdisk[pos[[i]][[j]] ],{j,1,Length[pos[[i]]]}],PlotRange->" + range + "], {i,1,len}];\n";
+  command += ("frames=Table[Show[disks[[i]],walls," + scale + "],{i,1,len}];\n");
+  if (!novid) command += "Export[\"vid.avi\",frames,\"CompressionLevel\"->0];\n";
+  command += "ListAnimate[frames]";
+
+  return command;
 }

@@ -4,8 +4,10 @@
 #include "Sectorization.h"
 #include "StatFunc.h"
 #include <functional>
+#include <tuple> 
 
 typedef pair<vec2, vec2> vpair;
+//typedef std::tuple<vec2, floatType, floatType> Tri;
 
 inline vec2 ZeroV(floatType) { return 0; }
 
@@ -37,6 +39,7 @@ class GFlowBase {
   floatType getEpsilon()      { return epsilon; }
   floatType getDispTime()     { return dispTime; }
   floatType getDispRate()     { return 1./dispTime; }
+  floatType getStartRec()  { return startRec; }
   int getRecIter()         { return recIter; }
   int getIter()            { return iter; }
   double getRunTime()      { return runTime; }
@@ -81,19 +84,22 @@ class GFlowBase {
   string printStatFunctions();
 
   string printAnimationCommand(bool=false);
+  string printSpecialAnimationCommand(bool=false);
 
   auto getPositionRecord() { return positionRecord; }
-  auto getKERecord() { return keRecord; }
+  auto getSpecialRecord()  { return specialRecord; }
   vector<vpair> getWallsPositions();
   double getSetUpTime() { return setUpTime; }
 
   void setRecPositions(bool b) { recPositions = b; }
-  void setRecKE(bool b)        { recKE = b; }
+  void setRecSpecial(bool b)   { recSpecial = b; }
  private:
   double setUpTime;
   // Data
   vector<vector<pair<vec2, floatType> > > positionRecord;
+  vector<vector<Tri> > specialRecord;
   bool recPositions;
+  bool recSpecial;
   vector<floatType> keRecord;
   bool recKE;
 
@@ -121,6 +127,7 @@ class GFlowBase {
   Bounds getBoundsForProc(int, const Bounds&);
   void distributeParticles(list<Particle>&, Sectorization&);
   void recallParticles(vector<Particle>&); // Gather copies of all particles into a vector
+  void recallParticlesByProcessor(vector<vector<Particle> >&); // Gather copies of all particles, remembering which particles came from which processor
 
   list<Particle> createParticles(vector<vec2>, floatType, floatType, std::function<vec2(floatType)> = ZeroV, floatType=default_sphere_coeff, floatType=default_sphere_dissipation, floatType=default_sphere_repulsion, int=0);
   void createAndDistributeParticles(int, const Bounds&, Sectorization&, floatType, floatType=0, std::function<vec2(floatType)> = ZeroV, floatType=default_sphere_coeff, floatType=default_sphere_dissipation, floatType=default_sphere_repulsion, int=0);

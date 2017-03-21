@@ -32,6 +32,7 @@ int main(int argc, char** argv) {
 
   // Animation Paramaters
   bool animate = false;
+  bool special = false;
   bool KE      = false;
   bool omega   = false;
   bool cluster = false;
@@ -68,6 +69,7 @@ int main(int argc, char** argv) {
   parser.get("interact", interact);
   parser.get("srand", seedRand);
   parser.get("animate", animate);
+  parser.get("special", special);
   parser.get("KE", KE);
   parser.get("omega", omega);
   parser.get("cluster", cluster);
@@ -113,6 +115,7 @@ int main(int argc, char** argv) {
   simulator.setStartRec(start);
 
   simulator.setRecPositions(animate);
+  simulator.setRecSpecial(special);
 
   if (KE) simulator.addStatFunction(Stat_KE, "ke");
   if (omega) simulator.addStatFunction(Stat_Omega, "omega");
@@ -135,6 +138,7 @@ int main(int argc, char** argv) {
     int iters = simulator.getIter(), ndx = simulator.getNDX(), ndy = simulator.getNDY();
     cout << "Domains: " << ndx << " x " << ndy << ", Total: " << ndx*ndy << endl;
     cout << "Run Time: " << runTime << ", Sim Time: " << time << endl;
+    cout << "Start Time: " << simulator.getStartRec() << ", Record Time: " << time - simulator.getStartRec() << endl;
     cout << "Iterations: " << iters << endl;
     cout << "Transfer Time: " << transferTime << " (" << (runTime>0 ? toStr(transferTime/runTime*100) : "---") << "%)" << endl;
     cout << "Ratio: " << (runTime>0 ? toStr(time/runTime) : "---") << endl;
@@ -152,6 +156,7 @@ int main(int argc, char** argv) {
 
     /// Print recorded data
     if (animate) cout << simulator.printAnimationCommand(novid) << endl;
+    if (special) cout << simulator.printSpecialAnimationCommand(novid) << endl;
     string stats = simulator.printStatFunctions();
     if (!stats.empty()) cout << stats;
   }
