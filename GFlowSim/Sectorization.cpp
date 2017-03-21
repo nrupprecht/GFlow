@@ -135,13 +135,11 @@ void Sectorization::particleInteractions() {
     auto p = nl.begin(); // The particle whose list this is
     auto q = p; ++q;
     int i = *p;
+    if (it[i]<0) continue;     // This particle is gone
     for (; q!=nl.end(); ++q) { // Try to interact with all other particles in the nl
-      vec2 displacement = getDisplacement(vec2(px[*p],py[*p]), vec2(px[*q],py[*q]));
       int j = *q;
-
-      // if (it[i]!=0) cout << rank << " PI: " << it[i] << " " << i << endl; //**
-
-      switch(it[*p]) {
+      vec2 displacement = getDisplacement(vec2(px[i],py[i]), vec2(px[j],py[j]));
+      switch(it[i]) {
       default:
       case 0:
         hardDiskRepulsion(pdata, i, j, asize, displacement, Fn, Fs);
@@ -149,9 +147,7 @@ void Sectorization::particleInteractions() {
       case 1:
         LJinteraction(pdata, i, j, asize, displacement, Fn, Fs);
         break;
-      case -1:
-	// throw BadParticle();
-	break;
+      case -1: break; // Particle has moved
       }
     }
   }
@@ -162,11 +158,9 @@ void Sectorization::wallInteractions() {
     for (auto pr : wallNeighbors) {
       floatType Fn=0, Fs=0;
       int i = pr.first;
+      if (it[i]<0) continue; // Particle has moved out
       for (auto w : pr.second) {
 	vec2 displacement = getDisplacement(vec2(px[i],py[i]), w->left);
-
-	// if (it[i]!=0) cout << rank << " WI: " << it[i] << " " << i << endl; //**
-
 	switch (it[i]) {
         default:
         case 0:
@@ -175,15 +169,13 @@ void Sectorization::wallInteractions() {
         case 1:
           //LJinteraction_wall(*p, *w, displacement, Fn, Fs);
           break;
-	case -1:
-	  //throw BadParticle();
-	  break;
         }
       }
     }
   else
     for (auto& w : walls)
-      for (int i=0; i<size; ++i) {
+      for (int i=0; i<array_end; ++i) {
+	if (it[i]<0) continue;
 	floatType Fn=0, Fs=0;
 	vec2 displacement = getDisplacement(px[i], py[i], w.left.x, w.left.y);
 	switch (it[i]) {
@@ -206,7 +198,7 @@ void Sectorization::update() {
   if (doTemp) {
 #pragma vector aligned
 #pragma simd
-    for (int i=0; i<size; ++i) {
+    for (int i=0; i<array_end; ++i) {
       // floatType mass = 1./im[i];
       vx[i] += dt*im[i]*fx[i];
       vy[i] += dt*im[i]*fy[i];
@@ -227,7 +219,7 @@ void Sectorization::update() {
   else {
 #pragma vector aligned
 #pragma simd
-    for (int i=0; i<size; ++i) {
+    for (int i=0; i<array_end; ++i) {
       // floatType mass = 1./im[i];
       vx[i] += dt*im[i]*fx[i];
       vy[i] += dt*im[i]*fy[i];
@@ -247,7 +239,10 @@ void Sectorization::update() {
   // Update sectorization, keep track of particles that need to migrate to other processors, send particles to the correct processor
   if (buildDelay<=itersSinceBuild) {
     itersSinceBuild = 0;
-    createNeighborLists(); // Create the neighborhood lists
+    // Get rid of holes in the array
+    compressArrays();
+    // Create the neighborhood lists
+    createNeighborLists(); 
     start = clock(); //--
     if (doWallNeighbors) createWallNeighborList();
     end = clock(); //--
@@ -271,7 +266,7 @@ void Sectorization::update() {
   start = clock(); //--
 #pragma vector aligned
 #pragma simd
-  for (int i=0; i<size; ++i) {
+  for (int i=0; i<array_end; ++i) {
     vx[i] += dt*im[i]*fx[i];
     vy[i] += dt*im[i]*fy[i];
     om[i] += dt*iI[i]*tq[i];
@@ -409,9 +404,6 @@ inline void Sectorization::createNeighborLists() {
       for (auto p=sectors[y*nsx+x].begin(); p!=sectors[y*nsx+x].end(); ++p) {
 	// Only treat valid particles
 	if (it[*p]<0) continue;
-
-	// if (*p==511) cout << "CNL: " << rank << " " << it[*p] << " " << *p << endl; //**
-
 	// Create a neighbor list for each particle, using the cells
 	list<int> nlist;
 	nlist.push_back(*p); // You are at the head of the list
@@ -470,9 +462,6 @@ inline void Sectorization::createWallNeighborList() {
   // Create Wall Neighbor list
   wallNeighbors.clear();
   for (int i=0; i<size; ++i) {
-
-    // if (it[i]<0 || i==511) cout << rank << " CWL " << i << " " << it[i] << endl; //**
-
     list<Wall*> lst;
     for (auto &w : walls) {
       vec2 displacement = getDisplacement(vec2(px[i], py[i]), w.left);
@@ -613,9 +602,10 @@ inline void Sectorization::atom_move() {
   // list<int> ml, **  mr;
   // list<int> bl, bm, br;
   list<int> move_lsts[9]; // Entry 4 will always be unused
-  vector<int> holes;      // Holes that open because of particles leaving. We will fill these holes
+  // vector<int> holes;      // Holes that open because of particles leaving. We will fill these holes
 
-  for (int i=0; i<size; ++i) {
+  for (int i=0; i<array_end; ++i) {
+    if (it[i]<0) continue;
     // Check if the particle left the domain
     if (!bounds.contains(vec2(px[i], py[i]))) {
       holes.push_back(i);
@@ -664,7 +654,7 @@ inline void Sectorization::atom_move() {
   auto end = clock();
   transferTime += (double)(end-start)/CLOCKS_PER_SEC;
   // Get rid of holes in the array
-  compressArrays(holes);
+  // compressArrays();
 }
 
 inline void Sectorization::passParticles(int tx, int ty, const list<int> &allParticles) {
@@ -766,31 +756,36 @@ inline void Sectorization::passParticleRecv(const int recv) {
   }
 }
 
- inline void Sectorization::compressArrays(vector<int>& holes) {
-   if (holes.empty()) return;
-   for (int h=0; h<holes.size(); ++h) {
-     int j=holes.at(h);
-     px[j] = px[array_end-h-1];
-     py[j] = py[array_end-h-1];
-     vx[j] = vx[array_end-h-1];
-     vy[j] = vy[array_end-h-1];
-     fx[j] = fx[array_end-h-1];
-     fy[j] = fy[array_end-h-1];
-     om[j] = om[array_end-h-1];
-     tq[j] = tq[array_end-h-1];
-     sg[j] = sg[array_end-h-1];
-     im[j] = im[array_end-h-1];
-     iI[j] = iI[array_end-h-1];
-     rp[j] = rp[array_end-h-1];
-     ds[j] = ds[array_end-h-1];
-     cf[j] = cf[array_end-h-1];
-     dg[j] = dg[array_end-h-1];
-     it[j] = it[array_end-h-1];
-     ms[j] = ms[array_end-h-1]; // Mass array
-     it[array_end-h-1] = -1;    // This entry is now empty
-   }
-   array_end = size;
- }
+inline void Sectorization::compressArrays() {
+  // Holes will not in general be in order
+  if (holes.empty()) return;
+  for (auto J=holes.begin(); J!=holes.end(); ++J) {
+    int j = *J;
+    while (it[array_end-1]<0) array_end--;
+    if (array_end-1<=j) continue; 
+    px[j] = px[array_end-1];
+    py[j] = py[array_end-1];
+    vx[j] = vx[array_end-1];
+    vy[j] = vy[array_end-1];
+    fx[j] = fx[array_end-1];
+    fy[j] = fy[array_end-1];
+    om[j] = om[array_end-1];
+    tq[j] = tq[array_end-1];
+    sg[j] = sg[array_end-1];
+    im[j] = im[array_end-1];
+    iI[j] = iI[array_end-1];
+    rp[j] = rp[array_end-1];
+    ds[j] = ds[array_end-1];
+    cf[j] = cf[array_end-1];
+    dg[j] = dg[array_end-1];
+    it[j] = it[array_end-1];
+    ms[j] = ms[array_end-1]; // Mass array
+    it[array_end-1] = -1;    // This entry is now empty
+    // Increment array end
+    --array_end;
+  }
+  holes.clear();
+}
 
 inline void Sectorization::atom_copy() {
   

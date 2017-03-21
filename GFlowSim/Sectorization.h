@@ -123,11 +123,12 @@ class Sectorization {
   list<int> *sectors;
   list<list<int> > neighborList;
   list<pair<int, list<Wall*> > > wallNeighbors;
+  list<int> holes;
   inline void atom_move();
   inline void passParticles(int, int, const list<int>&);
   inline void passParticleSend(const int, const list<int>&);
   inline void passParticleRecv(const int);
-  inline void compressArrays(vector<int>&);
+  inline void compressArrays();
   inline void atom_copy();
 
   bool doWallNeighbors;              // Create and use wall Neighbor list
