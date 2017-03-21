@@ -6,12 +6,6 @@ Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), time
   // Get our rank and the number of processors
   rank =    COMM_WORLD.Get_rank();
   numProc = COMM_WORLD.Get_size();  
-  // Define the particle data type
-  /*
-  int sz = static_cast<int>(sizeof(Particle)/sizeof(MPI_DOUBLE)); // Should be 16
-  MPI_Type_contiguous( sz, MPI_DOUBLE, &PARTICLE );
-  MPI_Type_commit( &PARTICLE );
-  */
   // Set all pointers to zero, create arrays
   zeroPointers();
   // Diffusion helper constant
@@ -130,7 +124,6 @@ void Sectorization::setSimBounds(Bounds b) {
 
 void Sectorization::particleInteractions() {
   if (!doInteractions) return;
-  
   // Neighbor list
   floatType Fn=0, Fs=0;
   for (auto &nl : neighborList) {
@@ -138,18 +131,15 @@ void Sectorization::particleInteractions() {
     auto q = p; ++q;
     for (; q!=nl.end(); ++q) { // Try to interact with all other particles in the nl
       vec2 displacement = getDisplacement(vec2(px[*p],py[*p]), vec2(px[*q],py[*q]));
-      hardDiskRepulsion(pdata, *p, *q, asize, displacement, Fn, Fs); //**
-      /*
       switch(static_cast<int>(it[*p])) {
       default:
       case 0:
-	hardDiskRepulsion(pdata, *p, *q, asize, displacement, n, s);
-	break;
+        hardDiskRepulsion(pdata, *p, *q, asize, displacement, Fn, Fs);
+        break;
       case 1:
-	// LJinteraction(pdata, *p, *q, asize, displacement, n, s);
-	break;
+        LJinteraction(pdata, *p, *q, asize, displacement, Fn, Fs);
+        break;
       }
-      */
     }
   }
 }
@@ -162,18 +152,15 @@ void Sectorization::wallInteractions() {
       int p = pr.first;
       for (auto w : pr.second) {
 	vec2 displacement = getDisplacement(vec2(px[p],py[p]), w->left);
-	hardDiskRepulsion_wall(pdata, p, *w, asize, displacement, Fn, Fs); //**
-	/*
-	  switch (static_cast<int>(it[p])) {
-	  default:
-	  case 0:
-	  hardDiskRepulsion_wall(pdata, p, *w, asize, displacement, n, s);
-	  break;
-	  case 1:
-	  //LJinteraction_wall(*p, *w, displacement, n, s);
-	  break;
-	  }
-	*/
+	switch (static_cast<int>(it[p])) {
+        default:
+        case 0:
+          hardDiskRepulsion_wall(pdata, p, *w, asize, displacement, Fn, Fs);
+          break;
+        case 1:
+          //LJinteraction_wall(*p, *w, displacement, Fn, Fs);
+          break;
+        }
       }
     }
   else
@@ -229,7 +216,6 @@ void Sectorization::update() {
       om[i] += dt*iI[i]*tq[i];
       px[i] += epsilon*vx[i];
       py[i] += epsilon*vy[i];
-
       wrap(px[i], py[i]);
       fx[i] = gravity.x*ms[i] - drag*vx[i];
       fy[i] = gravity.y*ms[i] - drag*vy[i];
@@ -249,7 +235,11 @@ void Sectorization::update() {
     end = clock(); //--
     wallNeighborListTime += (double)(end-start)/CLOCKS_PER_SEC; //--
   }
-  
+  // MPI coordination
+  if (1<numProc) {
+    atom_move();
+    atom_copy();
+  }
   // Interaction forces (step 3)
   start = clock(); //--
   particleInteractions();
@@ -410,6 +400,8 @@ inline void Sectorization::createNeighborLists() {
 	// Create a neighbor list for each particle, using the cells
 	list<int> nlist;
 	nlist.push_back(*p); // You are at the head of the list
+	floatType sigma = sg[*p], velocity = sqrt(sqr(vx[*p])+sqr(vy[*p]));
+	floatType range = sigma * max(velocity, 1.);
 	// Create symmetric lists, so only check the required surrounding sectors ( * ) around the sector you are in ( <*> )
 	// +---------+
 	// | *  x  x |
@@ -419,34 +411,36 @@ inline void Sectorization::createNeighborLists() {
 	
 	// Check the sector you are in
 	auto q = p; ++q;
-	if (q!=sectors[y*nsx+x].end()) // Same sector
-	  for (; q!=sectors[y*nsx+x].end(); ++q) 
-	    nlist.push_back(*q);
-	// Bottom left	    
-	int sx = x-1, sy = y-1;
-	for (auto &q : sectors[sy*nsx+sx]) {
-	  vec2 r = getDisplacement(px[*p], py[*p], px[q], py[q]);
-	  if (sqr(r)<distance) nlist.push_back(q);
-	}
-	// Bottom
-	sx = x;
-	for (auto &q : sectors[sy*nsx+sx]) {
-	  vec2 r = getDisplacement(px[*p], py[*p], px[q], py[q]);
-          if (sqr(r)<distance) nlist.push_back(q);
+        if (q!=sectors[y*nsx+x].end()) // Same sector
+          for (; q!=sectors[y*nsx+x].end(); ++q) {
+            vec2 r = getDisplacement(px[*p], py[*p], px[*q], py[*q]);
+            if (sqr(r)<sqr(range+sg[*q]+skinDepth)) nlist.push_back(*q);
+          }
+        // Bottom left
+        int sx = x-1, sy = y-1;
+        for (auto &q : sectors[sy*nsx+sx]) {
+          vec2 r = getDisplacement(px[*p], py[*p], px[q], py[q]);
+          if (sqr(r)<sqr(range+sg[q]+skinDepth)) nlist.push_back(q);
         }
-	// Left
-	sx = x-1; sy = y;
-	for (auto &q : sectors[sy*nsx+sx]) {
-	  vec2 r = getDisplacement(px[*p], py[*p], px[q], py[q]);
-          if (sqr(r)<distance) nlist.push_back(q);
+        // Bottom
+        sx = x;
+        for (auto &q : sectors[sy*nsx+sx]) {
+          vec2 r = getDisplacement(px[*p], py[*p], px[q], py[q]);
+          if (sqr(r)<sqr(range+sg[q]+skinDepth)) nlist.push_back(q);
         }
-	// Top left
-	sy = y+1;
-	for (auto &q : sectors[sy*nsx+sx]) {
-	  vec2 r = getDisplacement(px[*p], py[*p], px[q], py[q]);
-          if (sqr(r)<distance) nlist.push_back(q);
-        }
+        // Left
+        sx = x-1; sy = y;
+        for (auto &q : sectors[sy*nsx+sx]) {
+          vec2 r = getDisplacement(px[*p], py[*p], px[q], py[q]);
+          if (sqr(r)<sqr(range+sg[q]+skinDepth)) nlist.push_back(q);
 
+        }
+        // Top left
+        sy = y+1;
+        for (auto &q : sectors[sy*nsx+sx]) {
+          vec2 r = getDisplacement(px[*p], py[*p], px[q], py[q]);
+          if (sqr(r)<sqr(range+sg[q]+skinDepth)) nlist.push_back(q);
+        }
 	// Add the neighbor list to the collection if the particle has neighbors
 	if (nlist.size()>1) neighborList.push_back(nlist);
       }
@@ -497,6 +491,7 @@ inline void Sectorization::updatePList() {
   // Create particles and push them into plist
   for (int i=0; i<size; ++i) {
     Particle p;
+    // Set particle data
     p.position = vec2(px[i], py[i]);
     p.velocity = vec2(vx[i], vy[i]);
     p.force    = vec2(fx[i], fy[i]);
@@ -509,7 +504,9 @@ inline void Sectorization::updatePList() {
     p.dissipation = ds[i];
     p.coeff    = cf[i];
     p.drag     = dg[i];
-    plist.push_back(p);
+    p.interaction = it[i];
+    // Add particle to list
+   plist.push_back(p);
   }
 }
 
@@ -533,32 +530,53 @@ inline void Sectorization::createArrays() {
   if (it) delete [] it;
   if (ms) delete [] ms;
   // Reallocate
-  pdata[0]  = px = (floatType*)aligned_alloc(64, asize*sizeof(double));
-  pdata[1]  = py = (floatType*)aligned_alloc(64, asize*sizeof(double));
-  pdata[2]  = vx = (floatType*)aligned_alloc(64, asize*sizeof(double));
-  pdata[3]  = vy = (floatType*)aligned_alloc(64, asize*sizeof(double));
-  pdata[4]  = fx = (floatType*)aligned_alloc(64, asize*sizeof(double));
-  pdata[5]  = fy = (floatType*)aligned_alloc(64, asize*sizeof(double));
-  pdata[6]  = om = (floatType*)aligned_alloc(64, asize*sizeof(double));
-  pdata[7]  = tq = (floatType*)aligned_alloc(64, asize*sizeof(double));
-  pdata[8]  = sg = (floatType*)aligned_alloc(64, asize*sizeof(double));
-  pdata[9]  = im = (floatType*)aligned_alloc(64, asize*sizeof(double));
-  pdata[10] = iI = (floatType*)aligned_alloc(64, asize*sizeof(double));
-  pdata[11] = rp = (floatType*)aligned_alloc(64, asize*sizeof(double));
-  pdata[12] = ds = (floatType*)aligned_alloc(64, asize*sizeof(double));
-  pdata[13] = cf = (floatType*)aligned_alloc(64, asize*sizeof(double));
-  pdata[14] = dg = (floatType*)aligned_alloc(64, asize*sizeof(double));
-  pdata[15] = it = (floatType*)aligned_alloc(64, asize*sizeof(double));
-  ms = (floatType*)aligned_alloc(64, asize*sizeof(double));
+  pdata[0] = px = (floatType*)aligned_alloc(64, asize*sizeof(floatType));
+  pdata[1] = py = (floatType*)aligned_alloc(64, asize*sizeof(floatType));
+  pdata[2] = vx = (floatType*)aligned_alloc(64, asize*sizeof(floatType));
+  pdata[3] = vy = (floatType*)aligned_alloc(64, asize*sizeof(floatType));
+  pdata[4] = fx = (floatType*)aligned_alloc(64, asize*sizeof(floatType));
+  pdata[5] = fy = (floatType*)aligned_alloc(64, asize*sizeof(floatType));
+  pdata[6] = om = (floatType*)aligned_alloc(64, asize*sizeof(floatType));
+  pdata[7] = tq = (floatType*)aligned_alloc(64, asize*sizeof(floatType));
+  pdata[8] = sg = (floatType*)aligned_alloc(64, asize*sizeof(floatType));
+  pdata[9] = im = (floatType*)aligned_alloc(64, asize*sizeof(floatType));
+  pdata[10] = iI = (floatType*)aligned_alloc(64, asize*sizeof(floatType));
+  pdata[11] = rp = (floatType*)aligned_alloc(64, asize*sizeof(floatType));
+  pdata[12] = ds = (floatType*)aligned_alloc(64, asize*sizeof(floatType));
+  pdata[13] = cf = (floatType*)aligned_alloc(64, asize*sizeof(floatType));
+  pdata[14] = dg = (floatType*)aligned_alloc(64, asize*sizeof(floatType));
+  pdata[15] = it = (floatType*)aligned_alloc(64, asize*sizeof(floatType));
   for (int i=0; i<asize; ++i) it[i] = -1.;
+  ms = (floatType*)aligned_alloc(64, asize*sizeof(floatType));
+  /*
+  memset(vx, 0, asize*sizeof(floatType));
+  memset(px, 0, asize*sizeof(floatType));
+  memset(py, 0, asize*sizeof(floatType));
+  memset(vy, 0, asize*sizeof(floatType));
+  memset(fx, 0, asize*sizeof(floatType));
+  memset(fy, 0, asize*sizeof(floatType));
+  memset(iI, 0, asize*sizeof(floatType));
+  memset(rp, 0, asize*sizeof(floatType));
+  memset(ds, 0, asize*sizeof(floatType));
+  memset(cf, 0, asize*sizeof(floatType));
+  memset(dg, 0, asize*sizeof(floatType));
+  memset(om, 0, asize*sizeof(floatType));
+  memset(tq, 0, asize*sizeof(floatType));
+  memset(sg, 0, asize*sizeof(floatType));
+  memset(im, 0, asize*sizeof(floatType));
+  memset(ms, 0, asize*sizeof(floatType));
+  */
+
   // Set position tracker array
   if (positionTracker) delete [] positionTracker;
   positionTracker = (vec2*)aligned_alloc(64, asize*sizeof(vec2));
+  // memset(positionTracker, 0, asize*sizeof(vec2));
 }
  
 inline void Sectorization::zeroPointers() {
   positionTracker = 0;
   px = py = vx = vy = fx = fy = om = tq = sg = im = iI = rp = ds = cf = dg = it = ms = 0;
+  for (int i=0; i<16; ++i) pdata[i] = 0;
   sectors = 0;
 }
 
