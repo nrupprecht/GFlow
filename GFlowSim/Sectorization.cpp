@@ -198,7 +198,9 @@ void Sectorization::update() {
       om[i] += dt*iI[i]*tq[i];
       px[i] += epsilon*vx[i];
       py[i] += epsilon*vy[i];   
-      wrap(px[i], py[i]);
+      th[i] += epsilon*om[i];
+      wrap(px[i], py[i]); // Wrap position
+      wrap(th[i]);        // Wrap theta
       fx[i] = gravity.x*ms[i] - drag*vx[i];
       fy[i] = gravity.y*ms[i] - drag*vy[i];
       tq[i] = 0;
@@ -219,6 +221,7 @@ void Sectorization::update() {
       om[i] += dt*iI[i]*tq[i];
       px[i] += epsilon*vx[i];
       py[i] += epsilon*vy[i];
+      th[i] += epsilon*om[i];
       wrap(px[i], py[i]);
       fx[i] = gravity.x*ms[i] - drag*vx[i];
       fy[i] = gravity.y*ms[i] - drag*vy[i];
@@ -310,6 +313,11 @@ inline void Sectorization::wrap(vec2 &pos) {
   else if (simBounds.right<pos.x) pos.x = fmod(pos.x-simBounds.left, simBounds.right-simBounds.left)+simBounds.left;
   if (pos.y<simBounds.bottom)     pos.y = simBounds.top-fmod(simBounds.bottom-pos.y, simBounds.top-bounds.bottom);
   else if (simBounds.top<pos.y)   pos.y = fmod(pos.y-simBounds.bottom, simBounds.top-simBounds.bottom)+simBounds.bottom;
+}
+
+inline void Sectorization::wrap(floatType &theta) {
+  if (theta<0) theta = 2*PI-fmod(-theta, 2*PI);
+  else if (2*PI<theta) theta = fmod(theta, 2*PI);
 }
 
 inline int Sectorization::getSec(const vec2 &position) {

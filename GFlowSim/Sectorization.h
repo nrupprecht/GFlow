@@ -73,10 +73,10 @@ class Sectorization {
 
  private:
   inline void wrap(floatType&, floatType&);
-  inline void wrap(vec2&);         // Keep a position in bounds by wrapping
+  inline void wrap(vec2&);           // Keep a position in bounds by wrapping
+  inline void wrap(floatType&);      // Keep an angle between 0 and 2*PI
   inline int getSec(const vec2&);         // What sector does a position fall into
   inline int getSec(const floatType, const floatType);
-  //inline void add(Particle*);        // Add a particle address to the appropriate sector
   inline void createNeighborLists(); // Create neighbor lists
   inline void createWallNeighborList();
   inline vec2 getDisplacement(vec2, vec2);
