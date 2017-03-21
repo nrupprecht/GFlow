@@ -101,7 +101,8 @@ class Sectorization {
   // All the particles
   list<Particle> plist;
   vec2 *positionTracker;           
-  int size, array_end, asize;                  // The number of particles, the index after the last particle, and the last occupied array position
+  int size, array_end, asize; // The number of particles, the index after the last particle, the amount of space allocated for domain particles
+  int esize, earray_end, easize; // The number of edge particles, the index after the last edge particle, the amount of space allocated for edge particles
   inline void updatePList();
   // Particle data - position (2), velocity (2), force (2), omega, torque, sigma, inverse mass, inverse moment of inertia, repulsion, dissipation, coeff of friction, drag coefficient, interaction type
   floatType *px, *py, *vx, *vy, *fx, *fy, *om, *tq, *sg, *im, *iI, *rp, *ds, *cf, *dg;
@@ -123,10 +124,11 @@ class Sectorization {
   inline void passParticleRecv(const int);
   inline void compressArrays();
   inline void atom_copy();
-
+  
+  bool redoLists;                    // True if we need to remake neighbor lists
   bool doWallNeighbors;              // Create and use wall Neighbor list
   bool remakeToUpdate;               // Totally remake sectors to update them
-  floatType cutoff, skinDepth;          // The particle interaction cutoff (for finding sector size), and the skin depth (for creating neighbor lists)
+  floatType cutoff, skinDepth;       // The particle interaction cutoff (for finding sector size), and the skin depth (for creating neighbor lists)
   int itersSinceBuild, buildDelay;   // How many iterations since we last rebuilt the neighbor list, and how many iterations we wait before rebuilding
   list<Wall> walls;                  // All the walls
 
