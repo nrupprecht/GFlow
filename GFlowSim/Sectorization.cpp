@@ -125,7 +125,6 @@ void Sectorization::setSimBounds(Bounds b) {
 void Sectorization::particleInteractions() {
   if (!doInteractions) return;
   // Neighbor list
-  floatType Fn=0, Fs=0;
   for (auto &nl : neighborList) {
     auto p = nl.begin();       // The particle whose list this is
     int i = *p;
@@ -134,6 +133,7 @@ void Sectorization::particleInteractions() {
     for (; q!=nl.end(); ++q) { // Try to interact with all other particles in the nl
       int j = *q;
       vec2 displacement = getDisplacement(vec2(px[i],py[i]), vec2(px[j],py[j]));
+      floatType Fn=0, Fs=0;
       switch(it[i]) {
       default:
       case 0:
@@ -644,7 +644,7 @@ inline void Sectorization::atom_move() {
   transferTime += (double)(end-start)/CLOCKS_PER_SEC;
 }
 
-inline void Sectorization::passParticles(int tx, int ty, const list<int> &allParticles) {
+inline void Sectorization::passParticles(int tx, int ty, const list<int> &allParticles, bool edgeParticles) {
   // First, figure out the x,y coordinates of this sector
   int dx = rank % ndx, dy = rank / ndx;
   // Figure out what processor we pass to, do evens first, then odds
@@ -657,10 +657,10 @@ inline void Sectorization::passParticles(int tx, int ty, const list<int> &allPar
   // Pass the particles. Even passes first, then odd
   if (even) { // EVEN
     if (-1<send) passParticleSend(send, allParticles);
-    if (-1<recv) passParticleRecv(recv);
+    if (-1<recv) passParticleRecv(recv, edgeParticles);
   }
   else {      // ODD
-    if (-1<recv) passParticleRecv(recv);
+    if (-1<recv) passParticleRecv(recv, edgeParticles);
     if (-1<send) passParticleSend(send, allParticles);   
   }
 
@@ -704,7 +704,7 @@ inline void Sectorization::passParticleSend(const int send, const list<int> &all
   }
 }
 
-inline void Sectorization::passParticleRecv(const int recv) {
+inline void Sectorization::passParticleRecv(const int recv, bool edgeParticles) {
   // Recieve expected size
   int sz = -1;
   CommWork.Recv(&sz, 1, MPI_INT, recv, 0);
@@ -716,29 +716,30 @@ inline void Sectorization::passParticleRecv(const int recv) {
     MPI::Status status;
     CommWork.Recv(buffer, msz, MPI_DOUBLE, recv, 0, status);
     // Add particles
-    int j=0;
+    int &end = edgeParticles ? earray_end : array_end;
     for (int i=0; i<sz; i++) {
-      px[array_end] = buffer[16*i+0 ];
-      py[array_end] = buffer[16*i+1 ];
-      vx[array_end] = buffer[16*i+2 ];
-      vy[array_end] = buffer[16*i+3 ];
-      fx[array_end] = buffer[16*i+4 ];
-      fy[array_end] = buffer[16*i+5 ];
-      th[array_end] = buffer[16*i+6 ];
-      om[array_end] = buffer[16*i+7 ];
-      tq[array_end] = buffer[16*i+8 ];
-      sg[array_end] = buffer[16*i+9 ];
-      im[array_end] = buffer[16*i+10];
-      iI[array_end] = buffer[16*i+11];
-      rp[array_end] = buffer[16*i+12];
-      ds[array_end] = buffer[16*i+13];
-      cf[array_end] = buffer[16*i+14];
-      it[array_end] = static_cast<int>(buffer[16*i+15]);
-      ms[array_end] = 1./im[array_end]; // Mass array
-      // Add to sectors
-      // --- TBD //**
+      px[end] = buffer[16*i+0 ];
+      py[end] = buffer[16*i+1 ];
+      vx[end] = buffer[16*i+2 ];
+      vy[end] = buffer[16*i+3 ];
+      fx[end] = buffer[16*i+4 ];
+      fy[end] = buffer[16*i+5 ];
+      th[end] = buffer[16*i+6 ];
+      om[end] = buffer[16*i+7 ];
+      tq[end] = buffer[16*i+8 ];
+      sg[end] = buffer[16*i+9 ];
+      im[end] = buffer[16*i+10];
+      iI[end] = buffer[16*i+11];
+      rp[end] = buffer[16*i+12];
+      ds[end] = buffer[16*i+13];
+      cf[end] = buffer[16*i+14];
+      it[end] = static_cast<int>(buffer[16*i+15]);
+      ms[end] = 1./im[end]; // Mass array
+      // Add to sectors -- For some reason this creates errors when using  multiple processors
+      // int num_sec = getSec(px[end], py[end]);
+      // sectors[num_sec].push_back(end);
       // Increment array counter
-      ++array_end;
+      ++end;
     } 
     // Array end points to the right place
     size += sz; // Adjust our size
@@ -780,6 +781,22 @@ inline void Sectorization::compressArrays() {
 }
 
 inline void Sectorization::atom_copy() {
-  // 
+  return ;
+  // Arrays
+  list<int> leftEdge, rightEdge, topEdge, bottomEdge;
+  // Pass left edge to the left
+  for (int y=1; y<nsy-1; ++y)
+    for (auto i : sectors[nsx*y+1]) leftEdge.push_back(i);
+  passParticles(-1, 0, leftEdge, true);
+
+  // Pass right edge to the right
+  for (int y=1; y<nsy-1; ++y)
+    for (auto i : sectors[nsx*y+nsx-1]) leftEdge.push_back(i);
+  passParticles(1, 0, rightEdge, true);
+
+  // Pass top edge upwards
+
+  // Pass bottom edge downwards
+
 }
 
