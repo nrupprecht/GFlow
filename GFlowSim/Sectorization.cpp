@@ -86,6 +86,7 @@ void Sectorization::setInteractionType(int inter) {
 
 void Sectorization::setASize(int s) {
   asize = s;
+  easize = 0.25*s; //-- AD HOC
   createArrays();
 }
 
@@ -233,7 +234,7 @@ void Sectorization::update() {
   // MPI coordination
   if (doInteractions && 1<numProc) {
     atom_move();
-    atom_copy();
+    // atom_copy();
   }
   // Update sectorization, keep track of particles that need to migrate to other processors, send particles to the correct processor
   if (redoLists || buildDelay<=itersSinceBuild) {
@@ -482,7 +483,8 @@ inline vec2 Sectorization::getDisplacement(floatType ax, floatType ay, floatType
 inline void Sectorization::updatePList() {
   plist.clear();
   // Create particles and push them into plist
-  for (int i=0; i<size; ++i) {
+  for (int i=0; i<array_end; ++i) {
+    if (it[i]<0) continue;
     Particle p;
     // Set particle data
     p.position = vec2(px[i], py[i]);
@@ -642,6 +644,7 @@ inline void Sectorization::atom_move() {
   passParticles(+1, +1, move_lsts[8]); // tr
   auto end = clock();
   transferTime += (double)(end-start)/CLOCKS_PER_SEC;
+
 }
 
 inline void Sectorization::passParticles(int tx, int ty, const list<int> &allParticles, bool edgeParticles) {
@@ -711,7 +714,8 @@ inline void Sectorization::passParticleRecv(const int recv, bool edgeParticles) 
   // If there are particles to recieve
   if (0<sz) {
     // Get our data
-    double *buffer = new double[16*sz];
+    // cout << "Allocating: " << 16*sz*sizeof(double) << " bytes." << endl; //**
+    double *buffer = new double[16*sz]; // (double*)aligned_alloc(64, 16*sz*sizeof(double));
     int msz = sz*16;
     MPI::Status status;
     CommWork.Recv(buffer, msz, MPI_DOUBLE, recv, 0, status);
@@ -736,13 +740,15 @@ inline void Sectorization::passParticleRecv(const int recv, bool edgeParticles) 
       it[end] = static_cast<int>(buffer[16*i+15]);
       ms[end] = 1./im[end]; // Mass array
       // Add to sectors -- For some reason this creates errors when using  multiple processors
-      // int num_sec = getSec(px[end], py[end]);
-      // sectors[num_sec].push_back(end);
+      int num_sec = getSec(px[end], py[end]);
+      sectors[num_sec].push_back(end);
       // Increment array counter
       ++end;
     } 
-    // Array end points to the right place
-    size += sz; // Adjust our size
+    // Adjust our size
+    if (edgeParticles) esize += sz;
+    else size += sz;
+    // Free memory
     delete [] buffer;
     // We should redo lists since we have recieved particles
     redoLists = true;
@@ -781,27 +787,55 @@ inline void Sectorization::compressArrays() {
 }
 
 inline void Sectorization::atom_copy() {
-  return ;
+  // Clear edge sectors
+  for (int x=0; x<nsx; ++x)   sectors[x].clear(); // Bottom edge
+  for (int x=0; x<nsx; ++x)   sectors[nsx*nsy-x-1].clear(); // Top edge
+  for (int y=1; y<nsy-1; ++y) sectors[nsx*y].clear(); // Left edge
+  for (int y=1; y<nsy-1; ++y) sectors[nsx*y+nsx-1].clear(); // Right edge
+  earray_end = asize; // Reset edge particles
+  esize = 0;
+  // Domain coordinates
+  int dx = rank % ndx, dy = rank / ndx;
   // Arrays
   list<int> leftEdge, rightEdge, topEdge, bottomEdge;
+  // Start timing
+  auto start = clock();
   // Pass left edge to the left
-  for (int y=1; y<nsy-1; ++y)
-    for (auto i : sectors[nsx*y+1]) leftEdge.push_back(i);
-  passParticles(-1, 0, leftEdge, true);
+  if (0<dx) // Or wrap y
+    for (int y=1; y<nsy-1; ++y)
+      for (auto i : sectors[nsx*y+1]) 
+	if (0<=it[i]) leftEdge.push_back(i);
+  // passParticles(-1, 0, leftEdge, true);
+  passParticles(-1, 0, leftEdge);
 
   // Pass right edge to the right
-  for (int y=1; y<nsy-1; ++y)
-    for (auto i : sectors[nsx*y+nsx-1]) leftEdge.push_back(i);
-  passParticles(+1, 0, rightEdge, true);
+  if (dx<ndx-1) // Or wrap x
+    for (int y=1; y<nsy-1; ++y)
+      for (auto i : sectors[nsx*y+nsx-1]) 
+	if (0<=it[i]) leftEdge.push_back(i);
+  // passParticles(+1, 0, rightEdge, true);
+  passParticles(+1, 0, rightEdge);
 
   // Pass top edge upwards
-  for (int x=0; x<nsx; ++x)
-    for (auto i : sectors[nsx*(nsy-1)+x]) topEdge.push_back(i);
-  passParticles(0, +1, topEdge, true);
+  if (dy<ndy-1)
+    for (int x=0; x<nsx; ++x)
+      for (auto i : sectors[nsx*(nsy-1)+x]) 
+	if (0<=it[i]) topEdge.push_back(i);
+  // passParticles(0, +1, topEdge, true);
+  cout << "Rank: " << rank << ", " << topEdge.size() << endl; //**
+  passParticles(0, +1, topEdge);
 
   // Pass bottom edge downwards
-  for (int x=0; x<nsx; ++x)
-    for(auto i: sectors[nsx+x]) bottomEdge.push_back(i);
-  passParticles(0, -1, bottomEdge, true);
+  if (0<dy)
+    for (int x=0; x<nsx; ++x)
+      for(auto i: sectors[nsx+x]) 
+	if (0<=it[i]) bottomEdge.push_back(i);
+  // passParticles(0, -1, bottomEdge, true);
+  // cout << bottomEdge.size() << endl; //**
+  cout << "Rank: " << rank << ", " << bottomEdge.size() << endl; //**
+  passParticles(0, -1, bottomEdge);
+  // Timing
+  auto end = clock();
+  transferTime += (double)(end-start)/CLOCKS_PER_SEC;
 }
 

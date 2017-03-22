@@ -44,8 +44,8 @@ GFlowBase::~GFlowBase() {}
 void GFlowBase::run(double runLength) {
   resetVariables();
   // Create work communicator
-  int color = doWork ? 1 : 0;
-  MPI::Intercomm CommWork = COMM_WORLD.Split(color, rank);
+  //** int color = doWork ? 1 : 0;
+  //** MPI::Intercomm CommWork = COMM_WORLD.Split(color, rank);
   sectorization.setCommWork(CommWork);
   // Calculate the number of iterations we will run for
   maxIter = runLength/epsilon;
@@ -66,7 +66,7 @@ void GFlowBase::run(double runLength) {
   runTime = (double)(end-start)/CLOCKS_PER_SEC;
   // Release work comm and set sectorization comm back to comm world
   sectorization.resetComm();
-  CommWork.Free(); 
+  // CommWork.Free(); 
   // Update transfer time
   transferTime += sectorization.getTransferTime();
 }
@@ -93,7 +93,7 @@ void GFlowBase::addParticle(floatType x, floatType y, floatType r) {
 int GFlowBase::getSize() {
   int sz = sectorization.getSize();
   int size = 0;
-  COMM_WORLD.Reduce(&sz, &size, 1, MPI_INT, MPI_SUM, 0);
+  CommWork.Reduce(&sz, &size, 1, MPI_INT, MPI_SUM, 0);
   return size;
 }
 
@@ -308,22 +308,22 @@ void GFlowBase::distributeParticles(list<Particle> &allParticles, Sectorization 
       Particle *buffer = new Particle[size];
       for (int j=0; j<size; ++j) buffer[j] = domainParticles[j];
       // Send the amount of data we are going to send to processor i
-      COMM_WORLD.Send( &size, 1, MPI_INT, proc, 0);
+      CommWork.Send( &size, 1, MPI_INT, proc, 0);
       // Send the actual data to processor i
-      COMM_WORLD.Send( buffer, size, PARTICLE, proc, 0);
+      CommWork.Send( buffer, size, PARTICLE, proc, 0);
     }
     else if (rank==proc) { // Recieve
       int size = 0, root = 0;
       // Recieve the amount of data we should expect
-      COMM_WORLD.Recv( &size, 1, MPI_INT, root, 0);
+      CommWork.Recv( &size, 1, MPI_INT, root, 0);
       // Recieve the actual data
       Particle *buffer = new Particle[size];
-      COMM_WORLD.Recv( buffer, size, PARTICLE, root, 0);
+      CommWork.Recv( buffer, size, PARTICLE, root, 0);
       // Add particles to sectors
       for (int i=0; i<size; ++i) sectors.addParticle(buffer[i]);
     }
   }
-  COMM_WORLD.Barrier();
+  CommWork.Barrier();
 }
 
 void GFlowBase::recallParticles(vector<Particle>& allParticles) {
@@ -478,13 +478,13 @@ vector<vec2> GFlowBase::findPackedSolution(int number, floatType radius, Bounds 
     // Get the number of particles to expect from each processor
     int *sizeBuff = 0;
     if (rank==0) sizeBuff = new int[numProc];
-    COMM_WORLD.Gather(&size, 1, MPI_INT, sizeBuff, 1, MPI_INT, 0);
+    CommWork.Gather(&size, 1, MPI_INT, sizeBuff, 1, MPI_INT, 0);
     // Find the max number of particles in any sector with the head processor and broadcast it back
     int max=0;
     if (rank==0)
       for (int i=0; i<numProc; ++i)
 	if (max<sizeBuff[i]) max = sizeBuff[i];
-    COMM_WORLD.Bcast(&max, 1, MPI_INT, 0);
+    CommWork.Bcast(&max, 1, MPI_INT, 0);
     // Now everyone knows what the max is. Allocate arrays only as large as neccessary
     Particle *parts = new Particle[max], *buffer = 0;
     if (rank==0) buffer = new Particle[number*max];
@@ -492,7 +492,7 @@ vector<vec2> GFlowBase::findPackedSolution(int number, floatType radius, Bounds 
     for (auto p=sectorParticles.begin(); p!=sectorParticles.end(); ++p, ++i) 
       parts[i] = *p;
     // Send Particle data to master processor
-    COMM_WORLD.Gather(parts, size, PARTICLE, buffer, max, PARTICLE, 0);
+    CommWork.Gather(parts, size, PARTICLE, buffer, max, PARTICLE, 0);
     // If the head processor, fill with particle positions
     vector<vec2> positions;
     if (rank==0) {
