@@ -120,7 +120,7 @@ class Sectorization {
   list<int> holes;
   inline void atom_move();
   inline void passParticles(int, int, const list<int>&, bool=false);
-  inline void passParticleSend(const int, const list<int>&);
+  inline void passParticleSend(const int, const list<int>&, bool=false);
   inline void passParticleRecv(const int, bool=false);
   inline void compressArrays();
   inline void atom_copy();

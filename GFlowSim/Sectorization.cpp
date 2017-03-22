@@ -656,17 +656,17 @@ inline void Sectorization::passParticles(int tx, int ty, const list<int> &allPar
   bool even = ((ty==0 && dx%2==0) || (ty!=0 && dy%2==0)); // You are "even" if we are passing purely in the x-direction and you have even dx, or if we are not passing purely in the x-direction and you have even dy
   // Pass the particles. Even passes first, then odd
   if (even) { // EVEN
-    if (-1<send) passParticleSend(send, allParticles);
+    if (-1<send) passParticleSend(send, allParticles, edgeParticles);
     if (-1<recv) passParticleRecv(recv, edgeParticles);
   }
   else {      // ODD
     if (-1<recv) passParticleRecv(recv, edgeParticles);
-    if (-1<send) passParticleSend(send, allParticles);   
+    if (-1<send) passParticleSend(send, allParticles, edgeParticles);   
   }
 
 }
 
-inline void Sectorization::passParticleSend(const int send, const list<int> &allParticles) {
+inline void Sectorization::passParticleSend(const int send, const list<int> &allParticles, bool noErase) {
   // Send expected size
   int sz = allParticles.size();
   CommWork.Send(&sz, 1, MPI_INT, send, 0); //** Isend
@@ -694,7 +694,7 @@ inline void Sectorization::passParticleSend(const int send, const list<int> &all
       buffer[i+15] = static_cast<floatType>(it[j]);
       i+=16;
       // Remove the particle from the particle list by setting its interaction to -1
-      it[j] = -1;
+      if (!noErase) it[j] = -1;
     }
     size -= sz; // Adjust our size
     // Send our data
@@ -792,11 +792,16 @@ inline void Sectorization::atom_copy() {
   // Pass right edge to the right
   for (int y=1; y<nsy-1; ++y)
     for (auto i : sectors[nsx*y+nsx-1]) leftEdge.push_back(i);
-  passParticles(1, 0, rightEdge, true);
+  passParticles(+1, 0, rightEdge, true);
 
   // Pass top edge upwards
+  for (int x=0; x<nsx; ++x)
+    for (auto i : sectors[nsx*(nsy-1)+x]) topEdge.push_back(i);
+  passParticles(0, +1, topEdge, true);
 
   // Pass bottom edge downwards
-
+  for (int x=0; x<nsx; ++x)
+    for(auto i: sectors[nsx+x]) bottomEdge.push_back(i);
+  passParticles(0, -1, bottomEdge, true);
 }
 
