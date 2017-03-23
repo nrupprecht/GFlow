@@ -202,8 +202,8 @@ void GFlowBase::record() {
     recallParticles(allParticles);
     // Record positions
     if (recPositions) {
-      vector<pair<vec2, floatType> > positions;
-      for (const auto &p : allParticles) positions.push_back(pair<vec2, floatType>(p.position, p.interaction==0 ? p.sigma : p.sigma / 2.5));
+      vector<PData> positions;
+      for (const auto &p : allParticles) positions.push_back(PData(p.position, p.sigma, p.theta, p.interaction, 0));
       positionRecord.push_back(positions);
     }
 
@@ -558,6 +558,7 @@ void GFlowBase::createSquare(int number, floatType radius, floatType width, floa
   };
   // Create particles and distribute them to the processors
   vector<vec2> positions = findPackedSolution(number, radius, bounds);  
+  // Create particles at the given positions with - Radius, Dispersion, Velocity, Coeff, Dissipation, Repulsion, Interaction
   list<Particle> allParticles = createParticles(positions, radius, dispersion, velocity, 0, 0);
   // Send out particles
   distributeParticles(allParticles, sectorization);
@@ -645,11 +646,11 @@ string GFlowBase::printAnimationCommand(bool novid) {
   stringstream stream;
   string command, strh, range, scale;
   
-  stream << "pos=" << mmPreproc(positionRecord) << ";";
+  stream << "pos=" << mmPreproc(positionRecord,3) << ";";
   stream >> command;
   stream.clear();
   command += "\n";
-  stream << "w=" << mmPreproc(getWallsPositions()) << ";";
+  stream << "w=" << mmPreproc(getWallsPositions(),3) << ";";
   stream >> strh;
   stream.clear();
   command += (strh+"\n");
@@ -658,6 +659,11 @@ string GFlowBase::printAnimationCommand(bool novid) {
   stream >> strh;
   stream.clear();
   command += (strh+"\nscale=100;\n");
+
+  // Triangle animation command
+  command += "tri[dt_]:=Triangle[{dt[[1]]+dt[[2]]*{Cos[dt[[3]]],Sin[dt[[3]]]},dt[[1]]+dt[[2]]*{Cos[dt[[3]]+2*Pi/3],Sin[dt[[3]]+2*Pi/3]},dt[[1]]+dt[[2]]*{Cos[dt[[3]] + 4*Pi/3], Sin[dt[[3]] + 4*Pi/3]}}];\n";
+  // Disk animation command
+  command += "dsk[tr_]:={Black,Disk[tr[[1]],tr[[2]]]};\n";
 
   stream << "{{" << left << "," << right << "},{" << bottom << "," << top << "}}";
   stream >> range;
@@ -679,8 +685,8 @@ string GFlowBase::printAnimationCommand(bool novid) {
   stream >> strh;
   stream.clear();
   command += strh;
-  command += "disk[tr_]:={Black,Disk[tr[[1]],tr[[2]]]};\n";
-  command += "disks=Table[ Graphics[ Table[disk[pos[[i]][[j]] ],{j,1,Length[pos[[i]]]}],PlotRange->" + range + "], {i,1,len}];\n";
+
+  command += "disks=Table[Graphics[Table[dsk[pos[[i]][[j]]],{j,1,Length[pos[[i]]]}],PlotRange->" + range + "],{i,1,len}];\n";
   command += ("frames=Table[Show[disks[[i]],walls," + scale + "],{i,1,len}];\n");
   if (!novid) command += "Export[\"vid.avi\",frames,\"CompressionLevel\"->0];\n";
   command += "ListAnimate[frames]";

@@ -298,6 +298,7 @@ vect(const vect<T>& V) : x(V.x), y(V.y) {};
 // --- What type of vector we will use as our main vector type ---
 typedef vect<floatType> vec2;
 typedef std::tuple<vec2, floatType, floatType> Tri;
+typedef std::tuple<vec2, floatType, floatType, floatType, floatType> PData;
 
 /// Some common vectors
 const vect<double> Zero(0,0);
@@ -354,6 +355,11 @@ template<typename T> inline std::ostream& operator<<(std::ostream& out, const ve
 
 inline std::ostream& operator<<(std::ostream& out, const Tri& tup) {
   out << "{" << std::get<0>(tup) << "," << std::get<1>(tup) << "," << std::get<2>(tup) << "}";
+  return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const PData& pdata) {
+  out << "{" << std::get<0>(pdata) << "," << std::get<1>(pdata) << "," << std::get<2>(pdata) << "," << std::get<3>(pdata) << "," << std::get<4>(pdata) << "}";
   return out;
 }
 

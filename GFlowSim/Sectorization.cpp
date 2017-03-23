@@ -42,7 +42,7 @@ void Sectorization::initialize() {
   // Remake particles
   if (asize<1) asize = 4*plist.size(); //----  Ad hoc
   if (asize<1) return;
-  easize = 0.25*asize; //---- Ad hoc
+  easize = asize; //---- Ad hoc
   // Set particle data in arrays
   createArrays();
   setParticles();
@@ -86,7 +86,7 @@ void Sectorization::setInteractionType(int inter) {
 
 void Sectorization::setASize(int s) {
   asize = s;
-  easize = 0.25*s; //-- AD HOC
+  easize = s; //-- AD HOC
   createArrays();
 }
 
@@ -273,6 +273,10 @@ void Sectorization::updateSectors() {
       }
       else; // Particle not in the domain
     }
+    for (int i=asize; i<earray_end; ++i) {
+      int sec_num = getSec(px[i], py[i]);
+      sectors[sec_num].push_back(i);
+    }
   }
   else
     for (int y=1; y<nsy-1; ++y)
@@ -413,29 +417,34 @@ inline void Sectorization::createNeighborLists() {
           }
         // Bottom left
         int sx = x-1, sy = y-1;
-        for (auto &q : sectors[sy*nsx+sx]) {
-          vec2 r = getDisplacement(px[i], py[i], px[q], py[q]);
-          if (sqr(r)<sqr(range+sg[q]+skinDepth)) nlist.push_back(q);
-        }
-        // Bottom
-        sx = x;
-        for (auto &q : sectors[sy*nsx+sx]) {
-          vec2 r = getDisplacement(px[i], py[i], px[q], py[q]);
-          if (sqr(r)<sqr(range+sg[q]+skinDepth)) nlist.push_back(q);
-        }
+	if (0<sy) {
+	  if (0<sx) // Don't hit edge sectors
+	    for (auto &q : sectors[sy*nsx+sx]) {
+	      vec2 r = getDisplacement(px[i], py[i], px[q], py[q]);
+	      if (sqr(r)<sqr(range+sg[q]+skinDepth)) nlist.push_back(q);
+	    }
+	  // Bottom
+	  sx = x;
+	  for (auto &q : sectors[sy*nsx+sx]) {
+	    vec2 r = getDisplacement(px[i], py[i], px[q], py[q]);
+	    if (sqr(r)<sqr(range+sg[q]+skinDepth)) nlist.push_back(q);
+	  }
+	}
         // Left
         sx = x-1; sy = y;
-        for (auto &q : sectors[sy*nsx+sx]) {
-          vec2 r = getDisplacement(px[i], py[i], px[q], py[q]);
-          if (sqr(r)<sqr(range+sg[q]+skinDepth)) nlist.push_back(q);
-
-        }
-        // Top left
-        sy = y+1;
-        for (auto &q : sectors[sy*nsx+sx]) {
-          vec2 r = getDisplacement(px[i], py[i], px[q], py[q]);
-          if (sqr(r)<sqr(range+sg[q]+skinDepth)) nlist.push_back(q);
-        }
+	if (0<sx) {
+	  for (auto &q : sectors[sy*nsx+sx]) {
+	    vec2 r = getDisplacement(px[i], py[i], px[q], py[q]);
+	    if (sqr(r)<sqr(range+sg[q]+skinDepth)) nlist.push_back(q);
+	  }
+	  // Top left
+	  sy = y+1;
+	  if (sy<nsy-1)
+	    for (auto &q : sectors[sy*nsx+sx]) {
+	      vec2 r = getDisplacement(px[i], py[i], px[q], py[q]);
+	      if (sqr(r)<sqr(range+sg[q]+skinDepth)) nlist.push_back(q);
+	    }
+	}
 	// Add the neighbor list to the collection if the particle has neighbors
 	if (nlist.size()>1) neighborList.push_back(nlist);
       }

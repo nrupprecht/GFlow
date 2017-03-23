@@ -88,7 +88,7 @@ class GFlowBase {
  private:
   double setUpTime;
   // Data
-  vector<vector<pair<vec2, floatType> > > positionRecord;
+  vector<vector<PData> > positionRecord;
   vector<vector<Tri> > specialRecord;
   bool recPositions;
   bool recSpecial;
