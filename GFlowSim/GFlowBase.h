@@ -9,8 +9,11 @@
 typedef pair<vec2, vec2> vpair;
 //typedef std::tuple<vec2, floatType, floatType> Tri;
 
+// Zero velocity and angular velocity functions
 inline vec2 ZeroV(floatType) { return 0; }
+inline floatType ZeroOm(floatType) { return 0; }
 
+// Granular float base class
 class GFlowBase {
  public:
   GFlowBase();
@@ -121,7 +124,7 @@ class GFlowBase {
   void recallParticles(vector<Particle>&); // Gather copies of all particles into a vector
   void recallParticlesByProcessor(vector<vector<Particle> >&); // Gather copies of all particles, remembering which particles came from which processor
 
-  list<Particle> createParticles(vector<vec2>, floatType, floatType, std::function<vec2(floatType)> = ZeroV, floatType=default_sphere_coeff, floatType=default_sphere_dissipation, floatType=default_sphere_repulsion, int=0);
+  list<Particle> createParticles(vector<vec2>, floatType, floatType, std::function<vec2(floatType)> = ZeroV, std::function<floatType(floatType)> = ZeroOm, floatType=default_sphere_coeff, floatType=default_sphere_dissipation, floatType=default_sphere_repulsion, int=0);
   void createAndDistributeParticles(int, const Bounds&, Sectorization&, floatType, floatType=0, std::function<vec2(floatType)> = ZeroV, floatType=default_sphere_coeff, floatType=default_sphere_dissipation, floatType=default_sphere_repulsion, int=0);
   vector<vec2> findPackedSolution(int, floatType, Bounds, vec2 = 0, floatType=0.5, floatType=0.5);
 

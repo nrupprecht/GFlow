@@ -399,14 +399,17 @@ void GFlowBase::recallParticlesByProcessor(vector<vector<Particle> >& allParticl
   // Particles are now all stored, sorted by processor, on processor 0
 }
 
-list<Particle> GFlowBase::createParticles(vector<vec2> positions, floatType radius, floatType dispersion, std::function<vec2(floatType)> velocity, floatType coeff, floatType dissipation, floatType repulsion, int interaction) {
+list<Particle> GFlowBase::createParticles(vector<vec2> positions, floatType radius, floatType dispersion, std::function<vec2(floatType)> velocity, std::function<floatType(floatType)> omega, floatType coeff, floatType dissipation, floatType repulsion, int interaction) {
   // Create particles on the root processor
   list<Particle> allParticles;
   if (rank==0) {
     for (auto pos : positions) {
       floatType r = dispersion>0 ? (1-drand48()*dispersion)*radius : radius;
+      floatType theta = drand48()*2*PI;
       Particle p(pos, r);
+      p.theta = theta;
       p.velocity = velocity(p.invMass);
+      p.omega = omega(p.invII);
       p.dissipation = dissipation;
       p.coeff = coeff;
       p.repulsion = repulsion;
@@ -560,7 +563,18 @@ void GFlowBase::createSquare(int number, floatType radius, floatType width, floa
   // Create particles and distribute them to the processors
   vector<vec2> positions = findPackedSolution(number, radius, bounds);  
   // Create particles at the given positions with - Radius, Dispersion, Velocity, Coeff, Dissipation, Repulsion, Interaction
-  list<Particle> allParticles = createParticles(positions, radius, dispersion, velocity, default_sphere_coeff, 0);
+  list<Particle> allParticles = createParticles(positions, radius, dispersion, velocity, ZeroOm, default_sphere_coeff, 0, default_sphere_repulsion, 0);
+
+  /*
+  list<Particle> allParticles;
+  Particle P(1.25,2,0.75);
+  P.theta = 1.2*PI/2;
+  Particle Q(2.5,2,0.75);
+  Q.theta = 3*PI/2;
+  Q.omega = 1;
+  allParticles.push_back(P); allParticles.push_back(Q);
+  */
+
   // Send out particles
   distributeParticles(allParticles, sectorization);
   sectorization.initialize();
@@ -598,7 +612,7 @@ void GFlowBase::createBuoyancyBox(floatType radius, floatType bR, floatType dens
   // Create particles and distribute them to the processors
   vector<vec2> positions = findPackedSolution(number, radius, bounds, 0);
   // Only allow particles that are below depth
-  list<Particle> allParticles = createParticles(positions, radius, dispersion, ZeroV, 0);
+  list<Particle> allParticles = createParticles(positions, radius, dispersion, ZeroV, ZeroOm, 0);
   // Remove particles whose centers are above the line
   for (auto p=allParticles.begin(); p!=allParticles.end();) {
     if (depth<p->position.y+p->sigma) p = allParticles.erase(p);

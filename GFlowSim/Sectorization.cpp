@@ -27,10 +27,17 @@ void Sectorization::initialize() {
   transferTime = 0;
   lastTemp = 0;
   itersSinceBuild = 0;
+  // Find out what the cutoff should be -- The sum of the largest two interaction radii
+  floatType mx=0, snd=0;
+  for (auto &p : plist) {
+    if (p.sigma>mx) mx = p.sigma;
+    else if (p.sigma>snd) snd = p.sigma;
+  }
+  cutoff = mx+snd;
   // First estimate
-  secWidth = secHeight = cutoff+skinDepth;
-  nsx = static_cast<int>(max(1.,(bounds.right-bounds.left)/secWidth)); 
-  nsy = static_cast<int>(max(1.,(bounds.top-bounds.bottom)/secHeight));
+  secWidth = secHeight = cutoff + skinDepth;
+  nsx = static_cast<int>( max(1., (bounds.right-bounds.left)/secWidth) ); 
+  nsy = static_cast<int>( max(1., (bounds.top-bounds.bottom)/secHeight) );
   // Actual width and height
   secWidth = (bounds.right-bounds.left)/nsx; 
   secHeight = (bounds.top-bounds.bottom)/nsy; 
@@ -131,19 +138,44 @@ void Sectorization::particleInteractions() {
     int i = *p;
     if (it[i]<0) continue;     // This particle is gone
     auto q = p; ++q;           // Start with the particle after the head particle
+    int ibase = it[i]<<2;
     for (; q!=nl.end(); ++q) { // Try to interact with all other particles in the nl
       int j = *q;
       vec2 displacement = getDisplacement(vec2(px[j],py[j]), vec2(px[i],py[i]));
       floatType Fn=0, Fs=0;
-      switch(it[i]) {
-      default:
+      int iType = ibase+it[j]; // Same as 4*it[i]+it[j]
+      switch(iType) {
+	// Both are hard disks
       case 0:
-        hardDiskRepulsion(pdata, i, j, asize, displacement, Fn, Fs);
-        break;
-      case 1:
-        LJinteraction(pdata, i, j, asize, displacement, Fn, Fs);
-        break;
-      }
+	hardDiskRepulsion(pdata, i, j, asize, displacement, Fn, Fs);
+	break;
+      case 1: // Sphere - LJ --> LJ
+	LJinteraction(pdata, i, j, asize, displacement, Fn, Fs);
+	break;
+      case 2: // Sphere - Triangle
+	// UNIMPLEMENTED
+	break;
+      case 3: // UNIMPLEMENTED
+	hardDiskRepulsion(pdata, i, j, asize, displacement, Fn, Fs);
+	break;
+      case 4: // LJ - Sphere --> LJ
+      case 5: // LJ - LJ --> LJ
+      case 6: // LJ - Triangle --> LJ
+      case 7: // UNIMPLEMENTED
+	LJinteraction(pdata, i, j, asize, displacement, Fn, Fs);
+	break;
+      case 8: // Triangle - Sphere
+	// UNIMPLEMENTED
+	break;
+      case 9: // Triangle - LJ --> LJ
+	LJinteraction(pdata, i, j, asize, displacement, Fn, Fs);
+	break;
+      case 10: // Triangle - Triangle
+	TriTriInteraction(pdata, i, j, asize, displacement, Fn, Fs);
+	break;
+      default:
+	break;	
+      } // End outer switch
     }
   }
 }
@@ -723,7 +755,6 @@ inline void Sectorization::passParticleRecv(const int recv, bool edgeParticles) 
   // If there are particles to recieve
   if (0<sz) {
     // Get our data
-    // cout << "Allocating: " << 16*sz*sizeof(double) << " bytes." << endl; //**
     double *buffer = new double[16*sz]; // (double*)aligned_alloc(64, 16*sz*sizeof(double));
     int msz = sz*16;
     MPI::Status status;

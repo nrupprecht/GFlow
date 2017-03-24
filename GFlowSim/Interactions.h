@@ -101,7 +101,7 @@ inline bool LJinteraction(floatType **pdata, int p, int q, int asize, vec2& disp
   // Set up convenience pointers
   floatType *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
   floatType distSqr = sqr(displacement);
-  floatType cutoff = sg[p]=sg[q];
+  floatType cutoff = sg[p]+sg[q];
   floatType cutoffsqr = sqr(cutoff);
   /*
               ^ normal
@@ -131,9 +131,10 @@ inline bool LJinteraction(floatType **pdata, int p, int q, int asize, vec2& disp
     floatType Vn = dV*normal; // Normal velocity
     floatType Vs = dV*shear + sg[p]*om[p] + sg[q]*om[q]; // Shear velocity
     // Calculate the normal force
-    Fn = -strength-dissipation*clamp(-Vn); // Damped harmonic oscillator
+    Fn = -strength; // -dissipation*clamp(-Vn); // Damped harmonic oscillator
     // Calculate the Shear force
-    Fs = coeff ? -coeff*Fn*sign(Vs) : 0;
+    //Fs = coeff ? -coeff*Fn*sign(Vs) : 0;
+    Fs = 0; // At least for now
     // Update forces
     double FX = Fn*normal.x+Fs*shear.x, FY = Fn*normal.y+Fs*shear.y;
     fx[p] += FX;
@@ -147,6 +148,75 @@ inline bool LJinteraction(floatType **pdata, int p, int q, int asize, vec2& disp
     return true;
   }
   return false; // Particles did not interact
+}
+
+inline bool TriTriInteraction(floatType **pdata, int p, int q, int asize, vec2& displacement, floatType &Fn, floatType &Fs) {
+  // Set up convenience pointers
+  floatType *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
+  floatType distSqr = sqr(displacement);
+  floatType cutoff = sg[p]+sg[q];
+  floatType cutoffsqr = sqr(cutoff);
+  // Check if the bounding circles touch
+  if (distSqr < cutoffsqr) { // Passes the circle test
+    // Compute interaction parameters ( ad hoc )
+    floatType dissipation = ds[p]+ds[q];
+    floatType repulsion = rp[p]+rp[q];
+    floatType coeff = cf[p]*cf[q];
+    
+    // Possible normal vectors
+    double dth = 2*PI/3;
+    vec2 n1p(cos(th[p]),     sin(th[p]));
+    vec2 n2p(cos(th[p]+dth), sin(th[p]+dth));
+    vec2 n3p(cos(th[p]-dth), sin(th[p]-dth));
+    vec2 n1q(cos(th[q]),     sin(th[q]));
+    vec2 n2q(cos(th[q]+dth), sin(th[q]+dth));
+    vec2 n3q(cos(th[q]-dth), sin(th[q]-dth));
+    // Which is the correct normal vector
+    vec2 normP = n1p;
+    floatType dot = n1p*displacement;
+    if (dot<n2p*displacement) {
+      normP = n2p;
+      dot = n2p*displacement;
+    }
+    if (dot<n3p*displacement) normP = n3p;
+    vec2 normQ = n1q;
+    dot = n1q*displacement;
+    if (n2q*displacement<dot) {
+      normQ = n2q;
+      dot = n2q*displacement;
+    }
+    if (n3q*displacement<dot) normQ = n3q;
+    // Make sure Q is the "penetrating triangle"
+    if (-normQ*displacement<normP*displacement) { // Swap
+      swap(p, q);
+      swap(normP, normQ);
+      displacement = -displacement;
+    }
+    // Assign "shear" vector (triangle P face normal)
+    const floatType cth = 0.5, sth = sqrt(3.)/2.;
+    vec2 shear(normP.x*cth + normP.y*sth, -normP.x*sth + normP.y*cth);
+    // Cross product
+    if ((displacement^normP)<0) { // Need to use the other shear vector
+      shear.x -= 2*normP.y*sth;
+      shear.y += 2*normP.x*sth;
+    }
+    // Now we are reaady to check for intersection and compute forces
+    floatType sgprime = 0.5*sg[p];
+    vec2 intersect = displacement + sg[q]*normQ;
+    if (intersect*normP<sg[p] && intersect*shear<sgprime) {
+      vec2 force = repulsion*clamp(sgprime - intersect*shear)*shear;
+      fx[p] -= force.x;
+      fy[p] -= force.y;
+      fx[q] += force.x;
+      fy[q] += force.y;
+      // Update torque
+      tq[p] -= (intersect^force);
+      tq[q] += ((sg[q]*normQ)^force);
+      return true;
+    }
+    return false;
+  }
+  return false;
 }
 
 inline void wallDisplacement(vec2 &displacement, const floatType sigma, const Wall &w) {

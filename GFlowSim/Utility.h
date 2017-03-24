@@ -245,9 +245,9 @@ vect(const vect<T>& V) : x(V.x), y(V.y) {};
     return vect<T>(A.x*B, A.y*B);
   }
 
-  // Hadamard product
-  vect<T> operator^(const vect<T>& B) const {
-    return vect<T>(x*B.x, y*B.y);
+  // Cross product
+  T operator^(const vect<T>& B) const {
+    return x*B.y-y*B.x;
   }
     
   vect<T> operator+(const vect<T>& B) const {
