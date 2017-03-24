@@ -133,7 +133,7 @@ void Sectorization::particleInteractions() {
     auto q = p; ++q;           // Start with the particle after the head particle
     for (; q!=nl.end(); ++q) { // Try to interact with all other particles in the nl
       int j = *q;
-      vec2 displacement = getDisplacement(vec2(px[i],py[i]), vec2(px[j],py[j]));
+      vec2 displacement = getDisplacement(vec2(px[j],py[j]), vec2(px[i],py[i]));
       floatType Fn=0, Fs=0;
       switch(it[i]) {
       default:
@@ -196,14 +196,14 @@ void Sectorization::update() {
       // floatType mass = 1./im[i];
       vx[i] += dt*im[i]*fx[i];
       vy[i] += dt*im[i]*fy[i];
-      om[i] += dt*iI[i]*tq[i];
       px[i] += epsilon*vx[i];
       py[i] += epsilon*vy[i];   
-      th[i] += epsilon*om[i];
-      wrap(px[i], py[i]); // Wrap position
-      wrap(th[i]);        // Wrap theta
       fx[i] = gravity.x*ms[i] - drag*vx[i];
       fy[i] = gravity.y*ms[i] - drag*vy[i];
+      wrap(px[i], py[i]); // Wrap position
+      om[i] += dt*iI[i]*tq[i];
+      th[i] += epsilon*om[i];
+      wrap(th[i]);        // Wrap theta
       tq[i] = 0;
       // Temperature force
       floatType DT = DT1*(1./sg[i]); // Assumes Kb = 1;
@@ -219,13 +219,13 @@ void Sectorization::update() {
       // floatType mass = 1./im[i];
       vx[i] += dt*im[i]*fx[i];
       vy[i] += dt*im[i]*fy[i];
-      om[i] += dt*iI[i]*tq[i];
       px[i] += epsilon*vx[i];
       py[i] += epsilon*vy[i];
-      th[i] += epsilon*om[i];
-      wrap(px[i], py[i]);
       fx[i] = gravity.x*ms[i] - drag*vx[i];
       fy[i] = gravity.y*ms[i] - drag*vy[i];
+      wrap(px[i], py[i]);
+      om[i] += dt*iI[i]*tq[i];
+      th[i] += epsilon*om[i];
       tq[i] = 0;
     }
   }

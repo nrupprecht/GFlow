@@ -26,28 +26,24 @@ inline bool hardDiskRepulsion(floatType **pdata, int p, int q, int asize, vec2& 
     floatType coeff = cf[p]*cf[q];
     // Compute force
     floatType dist = sqrt(distSqr);
-
-    if (dist==0) return false; //**
-
     vec2 normal = (1.0/dist) * displacement;
     vec2 shear = vec2(normal.y, -normal.x);
     // Spring force strength
     floatType strength = repulsion*(cutoff-dist);
     // Velocities
-    vec2 dV(vx[q]-vx[p], vy[q]-vy[p]);
-    
+    vec2 dV(vx[q]-vx[p], vy[q]-vy[p]);    
     floatType Vn = dV*normal; // Normal velocity
     floatType Vs = dV*shear + sg[p]*om[p] + sg[q]*om[q]; // Shear velocity
     // Calculate the normal force
-    Fn = -strength-dissipation*clamp(Vn); // Damped harmonic oscillator
+    Fn = -strength-dissipation*clamp(-Vn); // Damped harmonic oscillator
     // Calculate the Shear force
     Fs = coeff ? -coeff*Fn*sign(Vs) : 0;
     // Update forces
     double FX = Fn*normal.x+Fs*shear.x, FY = Fn*normal.y+Fs*shear.y;
-    fx[p] -= FX;
-    fy[p] -= FY;
-    fx[q] += FX;
-    fy[q] += FY;
+    fx[p] += FX;
+    fy[p] += FY;
+    fx[q] -= FX;
+    fy[q] -= FY;
     // Update torque
     tq[p] -= (Fs*sg[p]);
     tq[q] -= (Fs*sg[q]);
@@ -101,52 +97,6 @@ inline bool hardDiskRepulsion_wall(floatType **pdata, int p, const Wall &w, int 
   return false; 
 }
 
-inline bool LJinteraction_sym(Particle &p, Particle &q, vec2 displacement, floatType &Fn, floatType &Fs) {
-  floatType distSqr = sqr(displacement);
-  floatType cutoff = p.sigma + q.sigma;
-  floatType cutoffsqr = sqr(cutoff);
-  /*
-              ^ normal
-              |
-              |
-              *------> shear
-  */
-  if (distSqr < cutoffsqr) { // Interaction
-    // Compute interaction parameters ( ad hoc )
-    floatType dissipation = p.dissipation + q.dissipation;
-    floatType repulsion = p.repulsion + q.repulsion;
-    floatType coeff = p.coeff * q.coeff;
-    // Compute force
-    floatType dist = sqrt(distSqr);
-    vec2 normal = (1.0/dist) * displacement;
-    vec2 shear = vec2(normal.y, -normal.x);
-    // LJ force strength 
-    floatType invD = 1./dist;
-    floatType prop = p.sigma*invD;
-    floatType d3 = sqr(prop)*prop;
-    floatType d6 = sqr(prop);
-    floatType d12 = sqr(d6);
-    // Force is - d/dx (LJ)
-    floatType strength = 4*repulsion*(12*d12-6*d6)*invD * 1e-5;
-     // Velocities
-    vec2 dV = q.velocity - p.velocity;
-    floatType Vn = dV*normal; // Normal velocity
-    floatType Vs = dV*shear + p.sigma*p.omega + q.sigma*q.omega; // Shear velocity
-    // Calculate the normal force
-    Fn = -strength-dissipation*clamp(Vn);
-    // Calculate the Shear force
-    Fs = coeff ? -coeff*Fn*sign(Vs) : 0;
-    // Update forces
-    p.force -= (Fn*normal+Fs*shear);
-    q.force += (Fn*normal+Fs*shear);
-    p.torque -= (-Fs*p.sigma);
-    q.torque += (-Fs*q.sigma);
-    // Particles interacted
-    return true;
-  }
-  return false; // Particles did not interact
-}
-
 inline bool LJinteraction(floatType **pdata, int p, int q, int asize, vec2& displacement, floatType &Fn, floatType &Fs) {
   // Set up convenience pointers
   floatType *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
@@ -181,17 +131,18 @@ inline bool LJinteraction(floatType **pdata, int p, int q, int asize, vec2& disp
     floatType Vn = dV*normal; // Normal velocity
     floatType Vs = dV*shear + sg[p]*om[p] + sg[q]*om[q]; // Shear velocity
     // Calculate the normal force
-    Fn = -strength-dissipation*clamp(Vn);
+    Fn = -strength-dissipation*clamp(-Vn); // Damped harmonic oscillator
     // Calculate the Shear force
     Fs = coeff ? -coeff*Fn*sign(Vs) : 0;
     // Update forces
-    floatType Fx = Fn*normal.x+Fs*shear.x, Fy = Fn*normal.y+Fs*shear.y;
-    fx[p] -= Fx;
-    fy[p] -= Fy;
-    fx[q] += Fx;
-    fy[q] += Fy;
-    tq[p] -= (-Fs*sg[p]);
-    tq[q] += (-Fs*sg[q]);
+    double FX = Fn*normal.x+Fs*shear.x, FY = Fn*normal.y+Fs*shear.y;
+    fx[p] += FX;
+    fy[p] += FY;
+    fx[q] -= FX;
+    fy[q] -= FY;
+    // Update torque
+    tq[p] -= (Fs*sg[p]);
+    tq[q] -= (Fs*sg[q]);
     // Particles interacted
     return true;
   }
