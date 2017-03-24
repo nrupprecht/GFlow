@@ -29,8 +29,8 @@ void Sectorization::initialize() {
   itersSinceBuild = 0;
   // First estimate
   secWidth = secHeight = cutoff+skinDepth;
-  nsx = (bounds.right-bounds.left)/secWidth; 
-  nsy = (bounds.top-bounds.bottom)/secHeight;
+  nsx = static_cast<int>(max(1.,(bounds.right-bounds.left)/secWidth)); 
+  nsy = static_cast<int>(max(1.,(bounds.top-bounds.bottom)/secHeight));
   // Actual width and height
   secWidth = (bounds.right-bounds.left)/nsx; 
   secHeight = (bounds.top-bounds.bottom)/nsy; 

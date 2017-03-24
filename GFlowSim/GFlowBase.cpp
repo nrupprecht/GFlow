@@ -154,7 +154,7 @@ void GFlowBase::setUpSectorization() {
     sectorization.setCutoff(cutoff);
     sectorization.setSkinDepth(skinDepth);
     sectorization.setDoInteractions(doInteractions);
-    sectorization.initialize();
+    // sectorization.initialize(); // We will do this later
   }
   else doWork = false;
 }
@@ -556,10 +556,11 @@ void GFlowBase::createSquare(int number, floatType radius, floatType width, floa
     v *= velocity;
     return v;
   };
+
   // Create particles and distribute them to the processors
   vector<vec2> positions = findPackedSolution(number, radius, bounds);  
   // Create particles at the given positions with - Radius, Dispersion, Velocity, Coeff, Dissipation, Repulsion, Interaction
-  list<Particle> allParticles = createParticles(positions, radius, dispersion, velocity, 0, 0);
+  list<Particle> allParticles = createParticles(positions, radius, dispersion, velocity, default_sphere_coeff, 0);
   // Send out particles
   distributeParticles(allParticles, sectorization);
   sectorization.initialize();
@@ -664,7 +665,9 @@ string GFlowBase::printAnimationCommand(bool novid) {
   command += "tri[dt_]:=Triangle[{dt[[1]]+dt[[2]]*{Cos[dt[[3]]],Sin[dt[[3]]]},dt[[1]]+dt[[2]]*{Cos[dt[[3]]+2*Pi/3],Sin[dt[[3]]+2*Pi/3]},dt[[1]]+dt[[2]]*{Cos[dt[[3]] + 4*Pi/3], Sin[dt[[3]] + 4*Pi/3]}}];\n";
   // Disk animation command
   command += "dsk[tr_]:={Black,Disk[tr[[1]],tr[[2]]]};\n";
-
+  // Oriented Disk animation command
+  command += "odsk[tr_]:={{Black,{Disk[tr[[1]],tr[[2]]]}},{Red,Line[{tr[[1]], tr[[1]] + tr[[2]]{Cos[tr[[3]]],Sin[tr[[3]]]}}]}};\n";
+  // Create range
   stream << "{{" << left << "," << right << "},{" << bottom << "," << top << "}}";
   stream >> range;
   stream.clear();

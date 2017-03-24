@@ -49,8 +49,8 @@ inline bool hardDiskRepulsion(floatType **pdata, int p, int q, int asize, vec2& 
     fx[q] += FX;
     fy[q] += FY;
     // Update torque
-    tq[p] -= (Fs*sg[p]); // +
-    tq[q] += (Fs*sg[q]); // -
+    tq[p] -= (Fs*sg[p]);
+    tq[q] -= (Fs*sg[q]);
     // Particles interacted
     return true;
   }
