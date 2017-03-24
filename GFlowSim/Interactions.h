@@ -219,6 +219,48 @@ inline bool TriTriInteraction(floatType **pdata, int p, int q, int asize, vec2& 
   return false;
 }
 
+inline bool Triangle_wall(floatType **pdata, int p, const Wall &w, int asize, vec2& displacement, floatType &Fn, floatType &Fs) {
+  // Set up convenience pointers
+  floatType *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
+  // We are given displacement = p.position - w.left;
+  floatType l_par = displacement*w.normal;
+  vec2 d_par = l_par*w.normal;
+  vec2 d_perp = displacement - d_par;
+  // Check whether the particle is between the start and end of the wall
+  floatType radSqr = sqr(sg[p]);
+  if (l_par>=0) { // Located forward of the origin
+    if (w.length>l_par) displacement = d_perp;  // The particle is above the wall (in the perp. direction)
+    else displacement -= w.length*w.normal; // Displacement from the nearest end (the far end) of the wall
+  }
+  floatType distSqr = sqr(displacement);   // Located behind the origin
+  /// We now have the correct displacement vector and distSqr value
+  if (distSqr<=radSqr) {
+    // Compute interaction parameters ( ad hoc )
+    floatType dissipation = ds[p] + w.dissipation;
+    floatType repulsion = rp[p] + w.repulsion;
+    floatType coeff = cf[p] * w.coeff;
+    // Compute force
+    floatType dist = sqrt(distSqr);
+    vec2 norm = (1.0/dist) * displacement;
+    vec2 shear = vec2(norm.y, -norm.x);
+    floatType strength = 2*repulsion*(sg[p] - dist);
+    floatType Vn = vx[p]*norm.x + vy[p]*norm.y;
+    floatType Vs = vx[p]*shear.x+vy[p]*shear.y + om[p]*sg[p]; // If the wall had velocity then we would subtract: - velocity*(shear*normal);
+    
+    // Damped harmonic oscillator
+    Fn = -strength-dissipation*clamp(-Vn);
+    // Fn /= p.invMass; //--- So Large Particles don't simply drop through the wall
+    Fs = 0;
+    if (coeff)
+      Fs = fabs(coeff*Fn)*sign(Vs);  
+
+    //** FORCES
+
+    return true;
+  }
+  return false;
+}
+
 inline void wallDisplacement(vec2 &displacement, const floatType sigma, const Wall &w) {
   // We are given displacement = p.position - w.left;
   floatType l_par = displacement*w.normal;

@@ -33,8 +33,10 @@ int main(int argc, char** argv) {
   // Animation Paramaters
   bool animate = false;
   bool special = false;
-  bool KE      = false;
   bool omega   = false;
+  bool KE      = false;
+  bool LKE     = false;
+  bool RKE     = false;
   bool cluster = false;
   bool novid   = false;
 
@@ -70,8 +72,10 @@ int main(int argc, char** argv) {
   parser.get("srand", seedRand);
   parser.get("animate", animate);
   parser.get("special", special);
-  parser.get("KE", KE);
   parser.get("omega", omega);
+  parser.get("KE", KE);
+  parser.get("LKE", LKE);
+  parser.get("RKE", RKE);
   parser.get("cluster", cluster);
   parser.get("novid", novid);
   parser.get("square", square);
@@ -116,8 +120,10 @@ int main(int argc, char** argv) {
   simulator.setRecPositions(animate);
   simulator.setRecSpecial(special);
 
-  if (KE) simulator.addStatFunction(Stat_KE, "ke");
   if (omega) simulator.addStatFunction(Stat_Omega, "omega");
+  if (KE) simulator.addStatFunction(Stat_KE, "ke");
+  if (LKE) simulator.addStatFunction(Stat_L_KE, "lke");
+  if (RKE) simulator.addStatFunction(Stat_R_KE, "rke");
   if (cluster) simulator.addStatFunction(Stat_Clustering, "cluster");
 
   // Get the actual number of particles in the simulation
