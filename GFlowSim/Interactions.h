@@ -120,7 +120,7 @@ inline bool LJinteraction(floatType **pdata, int p, int q, int asize, vec2& disp
     vec2 shear = vec2(normal.y, -normal.x);
     // LJ force strength
     floatType invD = 1./dist;
-    floatType prop = sg[p]*invD; // THIS IS ASYMMETRIC
+    floatType prop = sqrt(sg[p]*sg[q])*invD;
     floatType d3 = sqr(prop)*prop;
     floatType d6 = sqr(prop);
     floatType d12 = sqr(d6);
@@ -131,10 +131,9 @@ inline bool LJinteraction(floatType **pdata, int p, int q, int asize, vec2& disp
     floatType Vn = dV*normal; // Normal velocity
     floatType Vs = dV*shear + sg[p]*om[p] + sg[q]*om[q]; // Shear velocity
     // Calculate the normal force
-    Fn = -strength; // -dissipation*clamp(-Vn); // Damped harmonic oscillator
+    Fn = -strength-dissipation*clamp(-Vn); // Damped harmonic oscillator
     // Calculate the Shear force
-    //Fs = coeff ? -coeff*Fn*sign(Vs) : 0;
-    Fs = 0; // At least for now
+    Fs = coeff ? -coeff*Fn*sign(Vs) : 0;
     // Update forces
     double FX = Fn*normal.x+Fs*shear.x, FY = Fn*normal.y+Fs*shear.y;
     fx[p] += FX;

@@ -65,8 +65,12 @@ class Sectorization {
   void update();                     // Do a timestep
   void updateSectors();              // Update the sectors, migrating particles to the correct sectors
 
+  // Addition
   void addParticle(Particle);
   void addWall(Wall);
+
+  // Statistics
+  string printSectors();
 
   // Exception classes
   class BadParticle {};

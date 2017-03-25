@@ -39,6 +39,7 @@ int main(int argc, char** argv) {
   bool RKE     = false;
   bool cluster = false;
   bool novid   = false;
+  bool printSectors = false;
 
   // Simulation type
   bool square = true;
@@ -78,6 +79,7 @@ int main(int argc, char** argv) {
   parser.get("RKE", RKE);
   parser.get("cluster", cluster);
   parser.get("novid", novid);
+  parser.get("printSectors", printSectors);
   parser.get("square", square);
   parser.get("buoyancy", buoyancy);
   //----------------------------------------
@@ -160,6 +162,8 @@ int main(int argc, char** argv) {
     string stats = simulator.printStatFunctions();
     if (!stats.empty()) cout << stats;
   }
+  //if (printSectors) simulator.printSectors();
+
   // End MPI
   MPI::Finalize();
   return 0;

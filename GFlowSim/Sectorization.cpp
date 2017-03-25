@@ -194,7 +194,8 @@ void Sectorization::wallInteractions() {
           hardDiskRepulsion_wall(pdata, i, *w, asize, displacement, Fn, Fs);
           break;
         case 1:
-          //LJinteraction_wall(*p, *w, displacement, Fn, Fs);
+          hardDiskRepulsion_wall(pdata, i, *w, asize, displacement, Fn, Fs);
+	  //LJinteraction_wall(*p, *w, displacement, Fn, Fs);
           break;
         }
       }
@@ -336,6 +337,24 @@ void Sectorization::addParticle(Particle p) {
 
 void Sectorization::addWall(Wall w) {
   walls.push_back(w);
+}
+
+string Sectorization::printSectors() {
+  stringstream stream;
+  string str;
+  stream << "{";
+  for (int y=0; y<nsy; ++y) {
+    stream << "{";
+    for (int x=0; x<nsx; ++x) {
+      stream << sectors[nsx*y+x].size();
+      if (x!=nsx-1) stream << ",";
+    }
+    stream << "}";
+    if (y!=nsy-1) stream << ",";
+  }
+  stream << "}";
+  stream >> str;
+  return str;
 }
 
 inline void Sectorization::wrap(floatType &x, floatType &y) {
