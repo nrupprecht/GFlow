@@ -80,6 +80,7 @@ class GFlowBase {
 
   string printAnimationCommand(bool=false);
   string printSpecialAnimationCommand(bool=false);
+  void printSectors();
 
   auto getPositionRecord() { return positionRecord; }
   auto getSpecialRecord()  { return specialRecord; }

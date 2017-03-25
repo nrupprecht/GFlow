@@ -162,7 +162,7 @@ int main(int argc, char** argv) {
     string stats = simulator.printStatFunctions();
     if (!stats.empty()) cout << stats;
   }
-  //if (printSectors) simulator.printSectors();
+  if (printSectors) simulator.printSectors();
 
   // End MPI
   MPI::Finalize();

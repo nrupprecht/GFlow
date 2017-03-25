@@ -544,8 +544,7 @@ void GFlowBase::createSquare(int number, floatType radius, floatType width, floa
     w[i].dissipation = 0;
     w[i].coeff = 0;
     addWall(w[i]);
-  }
-  
+  }  
   // Set up sectorization
   setUpSectorization();
   gravity = 0; 
@@ -559,22 +558,10 @@ void GFlowBase::createSquare(int number, floatType radius, floatType width, floa
     v *= velocity;
     return v;
   };
-
   // Create particles and distribute them to the processors
   vector<vec2> positions = findPackedSolution(number, radius, bounds);  
   // Create particles at the given positions with - Radius, Dispersion, Velocity, Coeff, Dissipation, Repulsion, Interaction
   list<Particle> allParticles = createParticles(positions, radius, dispersion, velocity, ZeroOm, default_sphere_coeff, 0, default_sphere_repulsion, 0);
-
-  /*
-  list<Particle> allParticles;
-  Particle P(1.25,2,0.75);
-  P.theta = 1.2*PI/2;
-  Particle Q(2.5,2,0.75);
-  Q.theta = 3*PI/2;
-  Q.omega = 1;
-  allParticles.push_back(P); allParticles.push_back(Q);
-  */
-
   // Send out particles
   distributeParticles(allParticles, sectorization);
   sectorization.initialize();
@@ -762,4 +749,16 @@ string GFlowBase::printSpecialAnimationCommand(bool novid) {
   command += "ListAnimate[frames]";
 
   return command;
+}
+
+void GFlowBase::printSectors() {
+  string command;
+  for (int y=0; y<ndy; ++y)
+    for (int x=0; x<ndx; ++x) {
+      if (rank == ndx*y+x) {
+        cout << "sec" << x << "x" << y << "=" << sectorization.printSectors() << ";\n";
+        cout << "MatrixPlot[sec" << x << "x" << y << "]\n";
+      }
+      CommWork.Barrier();
+    }
 }
