@@ -83,22 +83,31 @@ class GFlowBase {
   string printSpecialAnimationCommand(bool=false);
   void printSectors();
 
+  vector<floatType> getBubbleSizes(vector<Particle>&, floatType=0.5, floatType=0.001, floatType=0.05);
+  vector<floatType> getBubbleSizes(vector<Particle>&, string&, floatType=0.5, floatType=0.001, floatType=0.05);
+  vector<string> getBubbles() { return visualizeBubbles; }
+  inline void unite(int*, int, int);
+  inline int getHead(int*, int);
+
   auto getPositionRecord() { return positionRecord; }
   auto getSpecialRecord()  { return specialRecord; }
+  auto getBubbleRecord()   { return bubbleRecord; }
   vector<vpair> getWallsPositions();
   double getSetUpTime() { return setUpTime; }
 
   void setRecPositions(bool b) { recPositions = b; }
   void setRecSpecial(bool b)   { recSpecial = b; }
+  void setRecBubbles(bool b)   { recBubbles = b; }
  private:
   double setUpTime;
   // Data
   vector<vector<PData> > positionRecord;
   vector<vector<Tri> > specialRecord;
+  vector<vector<floatType> > bubbleRecord;
+  vector<string> visualizeBubbles; //**
   bool recPositions;
   bool recSpecial;
-  vector<floatType> keRecord;
-  bool recKE;
+  bool recBubbles;
 
   vector<pair<StatFunc,string> > statFunctions; // Statistic functions and a string to name them
   vector<vector<vec2> >  statRecord;    // Save the data produced by the statistic functions

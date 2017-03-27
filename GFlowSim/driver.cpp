@@ -34,12 +34,14 @@ int main(int argc, char** argv) {
   // Animation Paramaters
   bool animate = false;
   bool special = false;
+  bool bubbles = false;
   bool omega   = false;
   bool KE      = false;
   bool LKE     = false;
   bool RKE     = false;
   bool cluster = false;
   bool triAlign = false;
+  bool trackHeight  = false;
   bool novid   = false;
   bool printSectors = false;
 
@@ -81,12 +83,14 @@ int main(int argc, char** argv) {
   parser.get("srand", seedRand);
   parser.get("animate", animate);
   parser.get("special", special);
+  parser.get("bubbles", bubbles);
   parser.get("omega", omega);
   parser.get("KE", KE);
   parser.get("LKE", LKE);
   parser.get("RKE", RKE);
   parser.get("cluster", cluster);
   parser.get("triAlign", triAlign);
+  parser.get("trackHeight", trackHeight);
   parser.get("novid", novid);
   parser.get("printSectors", printSectors);
   parser.get("square", square);
@@ -142,6 +146,7 @@ int main(int argc, char** argv) {
 
   simulator.setRecPositions(animate);
   simulator.setRecSpecial(special);
+  simulator.setRecBubbles(bubbles);
 
   if (omega) simulator.addStatFunction(Stat_Omega, "omega");
   if (KE) simulator.addStatFunction(Stat_KE, "ke");
@@ -149,6 +154,7 @@ int main(int argc, char** argv) {
   if (RKE) simulator.addStatFunction(Stat_R_KE, "rke");
   if (cluster) simulator.addStatFunction(Stat_Clustering, "cluster");
   if (triAlign) simulator.addStatFunction(Stat_Triangle_Align, "triAlign");
+  if (trackHeight) simulator.addStatFunction(Stat_Large_Object_Height, "height");
 
   // Get the actual number of particles in the simulation
   number = simulator.getSize();
@@ -177,7 +183,7 @@ int main(int argc, char** argv) {
     cout << "Sectors: " << nsx << " x " << nsy << ", Per Domain: " << nsx*nsy << ", Total: " << nsx*nsy*ndx*ndy << endl;
     cout << "Run Time: " << runTime << " (" << printAsTime(runTime) << "), Sim Time: " << time << endl;
     cout << "Start Time: " << simulator.getStartRec() << ", Record Time: " << time - simulator.getStartRec() << endl;
-    cout << "Iterations: " << iters << ", time per iter: " << runTime/iters << endl;
+    cout << "Iterations: " << iters << ", time per iter: " << (iters>0 ? toStr(runTime/iters) : "---") << endl;
     cout << "Transfer Time: " << transferTime << " (" << (runTime>0 ? toStr(transferTime/runTime*100) : "---") << "%)" << endl;
     cout << "Ratio: " << (runTime>0 ? toStr(time/runTime) : "---") << ", Ratio x Particles: " << (runTime>0 ? toStr(time/runTime*number) : "---") << endl;
     cout << "----------------------- END SUMMARY -----------------------\n\n"; 
@@ -185,6 +191,10 @@ int main(int argc, char** argv) {
     /// Print recorded data
     if (animate) cout << simulator.printAnimationCommand(novid) << endl;
     if (special) cout << simulator.printSpecialAnimationCommand(novid) << endl;
+    if (bubbles) {
+      cout << "bsize=" << simulator.getBubbleRecord() << ";\n"; //**
+      cout << "bubbles=" << simulator.getBubbles() << ";\n"; //**
+    }
     string stats = simulator.printStatFunctions();
     if (!stats.empty()) cout << stats;
   }

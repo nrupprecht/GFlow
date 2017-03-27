@@ -23,7 +23,8 @@ GFlowBase::GFlowBase() {
   //---
   setUpTime = 0;
   recPositions = false;
-  recKE = false;
+  recSpecial = false;
+  recBubbles = false;
   //---
 
   // Get MPI system data
@@ -255,7 +256,7 @@ void GFlowBase::logisticUpdates() {
 }
 
 void GFlowBase::record() {
-  if (recPositions || recKE || !statFunctions.empty()) {
+  if (recPositions || recBubbles || !statFunctions.empty()) {
     // Get all the particles back from the sectorizations
     vector<Particle> allParticles;
     recallParticles(allParticles);
@@ -271,6 +272,13 @@ void GFlowBase::record() {
     for (auto &sf : statFunctions) {
       statRecord.at(i).push_back(vec2(time, sf.first(allParticles)));
       ++i;
+    }
+
+    // Find bubble volumes
+    if (recBubbles) {
+      string vis;
+      bubbleRecord.push_back(getBubbleSizes(allParticles, vis));
+      visualizeBubbles.push_back(vis);
     }
   }
   // Special record
@@ -611,7 +619,7 @@ void GFlowBase::createSquare(int number, floatType radius, floatType width, floa
   // Create particles and distribute them to the processors
   vector<vec2> positions = findPackedSolution(number, radius, bounds);  
   // Create particles at the given positions with - Radius, Dispersion, Velocity function, Angular velocity function, Coeff, Dissipation, Repulsion, Interaction
-  particles = createParticles(positions, radius, dispersion, velocity, ZeroOm, default_sphere_coeff, 0, default_sphere_repulsion, 0);
+  particles = createParticles(positions, radius, dispersion, velocity, ZeroOm, 0, 0, default_sphere_repulsion, 0);
   // Send out particles
   setUpSectorization();
   distributeParticles(particles, sectorization);
@@ -807,4 +815,153 @@ void GFlowBase::printSectors() {
       }
       CommWork.Barrier();
     }
+}
+
+vector<floatType> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, floatType volCutoff, floatType minV, floatType dr) {
+  string str="-1";
+  return getBubbleSizes(allParticles, str, minV, dr);
+}
+
+vector<floatType> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, string &shapes, floatType volCutoff, floatType minV, floatType dr) {
+  floatType sx = sqrt(minV), sy = sqrt(minV);
+  int nsx = (right-left)/sx, nsy = (top-bottom)/sy;
+  sx = (right-left)/nsx; sy = (top-bottom)/nsy;
+  list<int> *sectors = new list<int>[nsx*nsy];
+
+  // Fill sectors
+  int i=0;
+  for (const auto &p : allParticles) {
+    int sec_x = (p.position.x - left)/sx;
+    int sec_y = (p.position.y - bottom)/sy;
+    sectors[nsx*sec_y+sec_x].push_back(i);
+    ++i;
+  }
+  // Find the particle of maximum radius
+  floatType maxR = 0;
+  for (const auto &p : allParticles)
+    if (p.sigma>maxR) maxR = p.sigma;
+  // Check which sector centers are covered by particles
+  int *array = new int[nsx*nsy];
+  int sweepX = (maxR+dr)/sx, sweepY = (maxR+dr)/sy;
+  for (int y=0; y<nsy; ++y)
+    for (int x=0; x<nsx; ++x) {
+      // Check whether center of sector is covered by any particles
+      array[nsx*y+x] = nsx*y+x;
+      bool done = false;
+      vec2 pos((x+0.5)*sx, (y+0.5)*sy);
+      int startX = max(0, x-sweepX), endX = min(nsx-1, x+sweepX);
+      int startY = max(0, y-sweepY), endY = min(nsy-1, y+sweepY);
+      // Check your own sector first for speed's sake
+      for (const auto index : sectors[nsx*y+x])
+	if (sqr(pos-allParticles.at(index).position)<sqr(dr+allParticles.at(index).sigma)) {
+	  done = true;
+	  array[nsx*y+x] = -1;
+	  break;
+	}
+      // Search the other sectors
+      for (int Y=startY; Y<endY && !done; ++Y) {
+	for (int X=startX; X<endX && !done; ++X) {
+	  if (X!=x || Y!=y)
+	    for (const auto index : sectors[nsx*Y+X])
+	      if (sqr(pos-allParticles.at(index).position)<sqr(dr)) {		
+		done = true;
+		array[nsx*y+x] = -1;
+		break;
+	      }
+	  if (done) break;
+	}
+	if (done) break;
+      }
+    }
+  // Unite bubbles
+  unite(array, nsx, nsy);
+  
+  // Point all sectors to their head
+  for (int i=0; i<nsx*nsx; ++i)
+    if (array[i]!=-1) array[i] = getHead(array, i);
+  // Collect all head nodes
+  vector<int> heads;
+  for (int i=0; i<nsx*nsx; ++i)
+    if (array[i]!=-1) {
+      bool contains = false;
+      for (const auto j : heads) 
+	if (j==array[i]) {
+	  contains = true;
+	  break;
+	}
+      if (!contains) heads.push_back(array[i]);
+    }
+
+  // Count volumes
+  vector<int> volCount(heads.size(), 0);
+  for (int i=0; i<nsx*nsy; ++i) {
+    if (array[i]!=-1) { // Search for the proper index
+      int j=0;
+      // Find the index
+      for (; j<heads.size(); ++j) 
+	if (heads.at(j)==array[i]) break;
+      // Give array a better index
+      array[i] = j;
+      // Increment volume counter
+      ++volCount.at(j);
+    }
+  }
+
+  // Record the picture of the volumes in a string
+  if (shapes!="-1") {
+    stringstream stream;
+    stream << "{";
+    for (int y=0; y<nsy; ++y) {
+      stream << "{";
+      for (int x=0; x<nsx; ++x) {
+	stream << array[nsx*y+x]+1;
+	if (x!=nsx-1) stream << ",";
+      }
+      stream << "}";
+      if (y!=nsy-1) stream << ",";
+    }
+    stream << "}";
+    stream >> shapes;
+  }
+  // record volumes
+  vector<floatType> bubbles;
+  for (const auto c : volCount) {
+    floatType vol = sx*sy*c;
+    //if (volCutoff<vol) bubbles.push_back(sx*sy*c);
+    bubbles.push_back(sx*sy*c);
+  }
+  // Clean up and return
+  delete [] sectors;
+  delete [] array;
+  return bubbles;
+}
+
+inline void GFlowBase::unite(int *array, int nsx, int nsy) {
+  // Find out which volumes are connected
+  for (int y=0; y<nsy; ++y)
+    for (int x=0; x<nsx; ++x) {
+      // Check the sectors around you, point yourself to the largest head
+      if (array[nsx*y+x]!=-1) {
+        int head = nsx*nsy;
+        if (0<x && -1<array[nsx*y+x-1] && getHead(array, nsx*y+x-1)<head) head = array[nsx*y+x-1];
+        if (x+1<nsx && -1<array[nsx*y+x+1] && getHead(array, nsx*y+x+1)<head) head = array[nsx*y+x+1];
+        if (0<y && -1<array[nsx*(y-1)+x] && getHead(array, nsx*(y-1)+x)<head) head = array[nsx*(y-1)+x];
+        if (y+1<nsy && -1<array[nsx*(y+1)+x] && getHead(array, nsx*(y+1)+x)<head) head = array[nsx*y+x+1];
+        if (-1<head && head<nsx*nsy) {
+	  head = getHead(array, head);
+          array[nsx*y+x] = head;
+          // Set the heads of all your neighbors as well
+          if (0<x && -1<array[nsx*y+x-1]) array[getHead(array, nsx*y+x-1)] = head;
+          if (x+1<nsx && -1<array[nsx*y+x+1]) array[getHead(array, nsx*y+x+1)] = head;
+          if (0<y && -1<array[nsx*(y-1)+x]) array[getHead(array, nsx*(y-1)+x)] = head;
+          if (y+1<nsy && -1<array[nsx*(y+1)+x]) array[getHead(array, nsx*(y+1)+x)] = head;
+        }
+      }
+    }
+}
+
+inline int GFlowBase::getHead(int* array, int index) {
+  if (index<0) return -1;
+  while (array[index]!=index) index = array[index];
+  return index;
 }
