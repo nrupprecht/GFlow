@@ -30,6 +30,7 @@ class Sectorization {
   floatType getSecWidth()        { return secWidth; }
   floatType getSecHeight()       { return secHeight; }
   floatType getEpsilon()         { return epsilon; }
+  floatType getMaxNeighborDiff() { return maxNLDiff; }
   double getTransferTime()       { return transferTime; }
   bool getDoInteractions()       { return doInteractions; }
   bool getWrapX()                { return wrapX; }
@@ -39,14 +40,18 @@ class Sectorization {
   Bounds getBounds()             { return bounds; }
   Bounds getSimBounds()          { return simBounds; }
 
+  // Statistic accessors
+  int getNeighborListSize()      { return neighborList.size(); }
+  double getAvePerNeighborList();
+
   // Mutators
   void giveDomainInfo(int x, int y) { ndx=x; ndy=y; }
   void setEpsilon(floatType e)      { epsilon = e; sqrtEpsilon = sqrt(e); }
   void setDoInteractions(bool i)    { doInteractions = i; }
   void setDrag(floatType d)         { drag = d; }
   void setGravity(vec2 g)           { gravity = g; }
-  void setTemperature(floatType t)  { temperature = t; DT1 = temperature/(6*viscosity*PI); }
-  void setViscosity(floatType h)    { viscosity = h; DT1 = temperature/(6*viscosity*PI); }
+  void setTemperature(floatType t)  { temperature = t; DT1 = t/(6*viscosity*PI); }
+  void setViscosity(floatType h)    { viscosity = h; DT1 = temperature/(6*h*PI); }
   void setCutoff(floatType c)       { cutoff = c; }
   void setSkinDepth(floatType d)    { skinDepth = d; }
   void setBounds(floatType, floatType, floatType, floatType);
@@ -56,7 +61,7 @@ class Sectorization {
   void setInteractionType(int);
   void setASize(int i);
   void setCommWork(MPI::Intercomm &comm) { CommWork = comm; }
-  void resetComm()                 { CommWork = MPI::COMM_WORLD; }
+  void resetComm()                  { CommWork = MPI::COMM_WORLD; }
   void discard();
 
   // Functionality
@@ -76,17 +81,31 @@ class Sectorization {
   class BadParticle {};
 
  private:
+  /// Helper functions
+  inline void firstHalfKick();
+  inline void secondHalfKick();
   inline void wrap(floatType&, floatType&);
   inline void wrap(vec2&);           // Keep a position in bounds by wrapping
   inline void wrap(floatType&);      // Keep an angle between 0 and 2*PI
   inline int getSec(const vec2&);         // What sector does a position fall into
   inline int getSec(const floatType, const floatType);
-  inline void createNeighborLists(); // Create neighbor lists
+  inline void createNeighborLists(bool=false); // Create neighbor lists
   inline void createWallNeighborList();
   inline vec2 getDisplacement(vec2, vec2);
   inline vec2 getDisplacement(floatType, floatType, floatType, floatType);
+  inline void updatePList(); // Fill plist with the particles from the data buffers
+  inline void createArrays(); // Initialize the array and point the pointers to their propper sections
+  inline void zeroPointers(); // Zero all pointers. Do not delete, just set them to zero
+  inline void remakeParticles(); // Delete and reallocate particle data arrays
+  inline void setParticles();       // Set particle data arrays from plist data
+  inline void atom_move();
+  inline void passParticles(int, int, const list<int>&, bool=false);
+  inline void passParticleSend(const int, const list<int>&, bool=false);
+  inline void passParticleRecv(const int, bool=false);
+  inline void compressArrays();
+  inline void atom_copy();
 
-  // Data
+  /// Data
   int nsx, nsy;                      // Number of sectors in x and y, includes edge sectors
   int ndx, ndy;                      // Number of domains in x and y
   floatType secWidth, secHeight;     // The width and height of sectors
@@ -107,34 +126,30 @@ class Sectorization {
   vec2 *positionTracker;           
   int size, array_end, asize; // The number of particles, the index after the last particle, the amount of space allocated for domain particles
   int esize, earray_end, easize; // The number of edge particles, the index after the last edge particle, the amount of space allocated for edge particles
-  inline void updatePList();
-  // Particle data - position (2), velocity (2), force (2), omega, torque, sigma, inverse mass, inverse moment of inertia, repulsion, dissipation, coeff of friction, drag coefficient, interaction type
-  floatType *px, *py, *vx, *vy, *fx, *fy, *th, *om, *tq, *sg, *im, *iI, *rp, *ds, *cf;
-  int *it;
-  floatType *ms; // Mass array
-  floatType *pdata[16]; // Pointers to px, py, etc
-  inline void createArrays(); // Initialize the array and point the pointers to their propper sections
-  inline void zeroPointers(); // Zero all pointers. Do not delete, just set them to zero
 
-  inline void remakeParticles(); // Delete and reallocate particle data arrays
-  inline void setParticles();       // Set particle data arrays from plist data
+  // Particle data - position (2), velocity (2), force (2), theta, omega, torque, sigma, inverse mass, inverse moment of inertia, repulsion, dissipation, coeff of friction
+  floatType *px, *py, *vx, *vy, *fx, *fy, *th, *om, *tq, *sg, *im, *iI, *rp, *ds, *cf;
+  // Particle data - pointers to px, py, vx, vy, etc
+  floatType *pdata[15]; 
+  // Particle data - interaction type
+  int *it;
+  // Auxilary particle data - mass array
+  floatType *ms;
+  // Walls 
+  list<Wall> walls;
+  
+  // Sectors and neighbors
   list<int> *sectors;
   list<list<int> > neighborList;
+  floatType maxNLDiff; // The largest possible distance from the last time we checked
   list<pair<int, list<Wall*> > > wallNeighbors;
   list<int> holes;
-  inline void atom_move();
-  inline void passParticles(int, int, const list<int>&, bool=false);
-  inline void passParticleSend(const int, const list<int>&, bool=false);
-  inline void passParticleRecv(const int, bool=false);
-  inline void compressArrays();
-  inline void atom_copy();
   
   bool redoLists;                    // True if we need to remake neighbor lists
   bool doWallNeighbors;              // Create and use wall Neighbor list
   bool remakeToUpdate;               // Totally remake sectors to update them
   floatType cutoff, skinDepth;       // The particle interaction cutoff (for finding sector size), and the skin depth (for creating neighbor lists)
   int itersSinceBuild, buildDelay;   // How many iterations since we last rebuilt the neighbor list, and how many iterations we wait before rebuilding
-  list<Wall> walls;                  // All the walls
 
   // MPI
   int numProc, rank;         // The number of processors MPI is using and the rank of this processor

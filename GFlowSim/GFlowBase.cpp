@@ -16,12 +16,9 @@ GFlowBase::GFlowBase() {
   runTime = 0;
   running = false;
   transferTime = 0;
-
+  skinDepth = 0.025;
   doInteractions = true;
-
   doWork = false;
-  cutoff = 0.05;
-  skinDepth = cutoff;
 
   //---
   setUpTime = 0;
@@ -132,11 +129,76 @@ void GFlowBase::setInteractionType(int i) {
 }
 
 bool GFlowBase::loadConfigurationFromFile (string filename) {
-  throw false; // UNIMPLEMENTED
+  if (rank==0) {
+    double left, right, bottom, top;
+    vect<> g;
+    vector<double> radii;
+    vector<vect<> > wallLeft, wallRight, positions;
+    
+    ifstream fin(filename);
+    if (fin.fail()) return false;
+    // Get simulation bounds
+    fin >> left >> right >> bottom >> top;
+    // Get gravity
+    fin >> g;
+    // Get walls
+    fin >> wallLeft;
+    fin >> wallRight;
+    // Get radii and positions
+    fin >> radii;
+    fin >> positions;
+    fin.close();
+    // Clear current configuration
+    discard();
+    // Set up
+    setBounds(left, right, bottom, top);
+    gravity = g;
+    int size = positions.size(), rsize = radii.size(), wsize = min(wallLeft.size(), wallRight.size());
+    for (int i=0; i<wsize; ++i)
+      addWall(Wall(wallLeft[i], wallRight[i]));
+    for (int i=0; i<size; ++i)
+      addParticle(Particle(positions.at(i), radii.at(i%rsize)));
+    // Send out particles
+    setUpSectorization();
+    distributeParticles(particles, sectorization);
+    sectorization.initialize();
+    // Return success
+    return true;
+  }
+  return false;
 }
 
 bool GFlowBase::createConfigurationFile (string filename) {
-  throw false; // UNIMPLEMENTED
+  if (rank==0) {
+    vector<floatType> radii;
+    vector<vec2> wallLeft, wallRight, positions;
+    // Accumulate data
+    ofstream fout(filename);
+    if (fout.fail()) return false;
+    // Recall particles
+    vector<Particle> allParticles;
+    recallParticles(allParticles);
+    // Record wall positions
+    for (const auto &W : walls) {
+      wallLeft.push_back(W.getLeft());
+      wallRight.push_back(W.getRight());
+    }
+    // Record particle positions
+    for (const auto &P : allParticles) {
+      radii.push_back(P.sigma);
+      positions.push_back(P.position);
+    }
+    // Write data to file
+    fout << left << " " << right << " " << bottom << " " << top << "\n";
+    fout << gravity << "\n";
+    fout << wallLeft << "\n";
+    fout << wallRight << "\n";
+    fout << radii << "\n";
+    fout << positions << "\n";
+    fout.close();
+    return true;
+  }
+  return false;
 }
 
 void GFlowBase::setUpSectorization() {
@@ -147,19 +209,18 @@ void GFlowBase::setUpSectorization() {
   if (rank<ndx*ndy) {
     doWork = true; // This processor needs to do work
     sectorization.setSimBounds(left, right, bottom, top);
-    Bounds domainBounds = getBoundsForProc(rank);
-    sectorization.setASize(particles.size()); //**
-    sectorization.setBounds(domainBounds);
-    sectorization.setGravity(gravity);
-    sectorization.setCutoff(cutoff);
     sectorization.setSkinDepth(skinDepth);
+    Bounds domainBounds = getBoundsForProc(rank);
+    sectorization.setBounds(domainBounds);
+    sectorization.setASize(particles.size()); //** AD HOC
+    sectorization.setGravity(gravity);
     sectorization.setDoInteractions(doInteractions);
     // sectorization.initialize(); // We will do this later
   }
   else doWork = false;
 }
 
-void GFlowBase::setUpSectorization(Sectorization &sectors, floatType cutoff, floatType skinDepth) {
+void GFlowBase::setUpSectorization(Sectorization &sectors, vec2 grav) {
   // Decide how to divide up the space into domains
   bestProcessorGrid(ndx, ndy, numProc, sectors.getSimBounds() );
   sectors.giveDomainInfo(ndx, ndy);
@@ -167,12 +228,10 @@ void GFlowBase::setUpSectorization(Sectorization &sectors, floatType cutoff, flo
   if (rank<ndx*ndy) {
     doWork = true; // This processor needs to do work
     sectors.setSimBounds(left, right, bottom, top);
-    Bounds domainBounds = getBoundsForProc(rank, sectors.getSimBounds() );
-    sectors.setASize(particles.size()); //**
-    sectors.setBounds(domainBounds);
-    sectors.setGravity(gravity);
-    sectors.setCutoff(cutoff);
     sectors.setSkinDepth(skinDepth);
+    Bounds domainBounds = getBoundsForProc(rank, sectors.getSimBounds() );
+    sectors.setBounds(domainBounds);
+    sectors.setGravity(grav);
     sectors.setDoInteractions(doInteractions);
     sectors.initialize();
   }
@@ -227,7 +286,6 @@ void GFlowBase::record() {
     } 
     specialRecord.push_back(positions);
   }
-
 
   // Update display 
   lastDisp = time;
@@ -459,13 +517,11 @@ vector<vec2> GFlowBase::findPackedSolution(int number, floatType radius, Bounds 
   floatType initialRadius = 0.2*radius, finalRadius = 1.*radius;
   int expandSteps = expandTime/epsilon, relaxSteps = relaxTime/epsilon;
   floatType dr = (finalRadius-initialRadius)/static_cast<floatType>(expandSteps);
-  // Distribute particles
-  createAndDistributeParticles(number, b, packedSectors, radius, 0, ZeroV);
   // Set up sectorization
-  setUpSectorization(packedSectors, 2*radius, 0.25*radius);
-  packedSectors.setGravity(force); // Have to do this after setUpSectorization
+  packedSectors.setASize(number); //** AD HOC
+  setUpSectorization(packedSectors, force);
   packedSectors.setDrag(default_packed_drag);
-  packedSectors.setASize(number); //**
+  createAndDistributeParticles(number, b, packedSectors, radius, 0, ZeroV);
   packedSectors.initialize();
   // Simulate motion and expansion
   for (int i=0; i<expandSteps; ++i) {
@@ -531,9 +587,6 @@ void GFlowBase::createSquare(int number, floatType radius, floatType width, floa
   // Bounds
   Bounds bounds(0, width, 0, height);
   setBounds(bounds);
-  // Set cutoff and skin depth
-  cutoff = 2*radius;
-  skinDepth = radius;
   // Everyone knows where the walls are
   Wall w[4];
   w[0] = Wall(left, bottom, right, bottom);
@@ -544,11 +597,8 @@ void GFlowBase::createSquare(int number, floatType radius, floatType width, floa
     w[i].dissipation = 0;
     w[i].coeff = 0;
     addWall(w[i]);
-  }  
-  // Set up sectorization
-  setUpSectorization();
+  }
   gravity = 0; 
-  sectorization.setGravity(gravity);
   // Velocity initialization function
   std::function<vec2(floatType)> velocity = [&] (floatType invMass) { 
     floatType angle = 2*PI*drand48();
@@ -560,10 +610,11 @@ void GFlowBase::createSquare(int number, floatType radius, floatType width, floa
   };
   // Create particles and distribute them to the processors
   vector<vec2> positions = findPackedSolution(number, radius, bounds);  
-  // Create particles at the given positions with - Radius, Dispersion, Velocity, Coeff, Dissipation, Repulsion, Interaction
-  list<Particle> allParticles = createParticles(positions, radius, dispersion, velocity, ZeroOm, default_sphere_coeff, 0, default_sphere_repulsion, 0);
+  // Create particles at the given positions with - Radius, Dispersion, Velocity function, Angular velocity function, Coeff, Dissipation, Repulsion, Interaction
+  particles = createParticles(positions, radius, dispersion, velocity, ZeroOm, default_sphere_coeff, 0, default_sphere_repulsion, 0);
   // Send out particles
-  distributeParticles(allParticles, sectorization);
+  setUpSectorization();
+  distributeParticles(particles, sectorization);
   sectorization.initialize();
   // End setup timing
   auto end = clock();
@@ -576,43 +627,38 @@ void GFlowBase::createBuoyancyBox(floatType radius, floatType bR, floatType dens
   // Discard any old state
   discard();
   // Bounds
-  Bounds bounds(0, width, 0, depth+2*bR+radius);
+  double height = depth+2*bR+10*radius;
+  Bounds bounds(0, width, 0, height);
   setBounds(bounds);
-  // Set cutoff and skin depth
-  cutoff = radius+max(bR,radius);
-  skinDepth = 0.5*radius; //**
   // Everyone knows where the walls are
   addWall(left, bottom, right, bottom);
   addWall(left, bottom, left, top);
   addWall(left, top, right, top);
   addWall(right, bottom, right, top);
   // Set up sectorization
-  setUpSectorization();
-  gravity = vec2(0,-1);
-  sectorization.setGravity(gravity);
+  gravity = vec2(0.,-1.);
   // Calculate how many particles we should start with
-
   floatType maxPack = PI/(2*sqrt(3)); // Hexagonal packing
-  floatType Vfill = width*depth, Vgrain = PI*sqr(radius*(1-0.5*dispersion));
-  int number = 0.9 * maxPack * Vfill / Vgrain;
-  sectorization.setASize(number); //** There should be a more efficient way to do this, memory-wise
+  floatType Vfill = width*height, Vgrain = PI*sqr(radius*(1-0.5*dispersion));
+  int number = 0.95*maxPack*Vfill/Vgrain;
   // Create particles and distribute them to the processors
   vector<vec2> positions = findPackedSolution(number, radius, bounds, 0);
-  // Only allow particles that are below depth
-  list<Particle> allParticles = createParticles(positions, radius, dispersion, ZeroV, ZeroOm, 0);
+  // Create particles at the given positions with - Radius, Dispersion, Velocity function, Angular velocity function, Coeff, Dissipation, Repulsion, Interaction
+  particles = createParticles(positions, radius, dispersion, ZeroV, ZeroOm);
   // Remove particles whose centers are above the line
-  for (auto p=allParticles.begin(); p!=allParticles.end();) {
-    if (depth<p->position.y+p->sigma) p = allParticles.erase(p);
+  for (auto p=particles.begin(); p!=particles.end();) {
+    if (depth<p->position.y+p->sigma) p = particles.erase(p);
     else ++p;
   }
   // Add the large ball
   if (rank==0 && bR>0) {
     Particle ball(width/2, depth+bR, bR);
     ball.setDensity(density);
-    allParticles.push_back(ball);
+    particles.push_back(ball);
   }
   // Send out particles
-  distributeParticles(allParticles, sectorization);
+  setUpSectorization();
+  distributeParticles(particles, sectorization);
   sectorization.initialize();
   // End setup timing
   auto end = clock();

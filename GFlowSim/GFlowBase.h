@@ -65,6 +65,7 @@ class GFlowBase {
   void setDoInteractions(bool i);
   void setInteractionType(int i);
   void setExpectedSize(int i) { sectorization.setASize(i); }
+  void setSkinDepth(floatType s) { skinDepth = s; sectorization.setSkinDepth(s); }
 
   // File functions
   virtual bool loadConfigurationFromFile (string);
@@ -108,7 +109,7 @@ class GFlowBase {
  protected:
   /// Principal functions
   virtual void setUpSectorization(); // Set up the sectorization
-  virtual void setUpSectorization(Sectorization&, floatType, floatType); // Set up a sectorization
+  virtual void setUpSectorization(Sectorization&, vec2); // Set up a sectorization
   virtual void resetVariables();     // Reset variables for the start of a simulation
   virtual void objectUpdates();      // Do forces, move objects
   virtual void logisticUpdates();    // Update times
@@ -137,7 +138,7 @@ class GFlowBase {
 
   /// Times
   double time;                   // Simulated time
-  floatType epsilon, sqrtEpsilon;   // Time step and its square root
+  floatType epsilon, sqrtEpsilon;// Time step and its square root
   double dispTime, lastDisp;     // Time between recording (1. / display rate), last time data was recorded
   double startRec;               // When to start recording data
   int iter, recIter, maxIter;    // Simulation iteration, how many iterations we have recorded data at, maximum iteration
@@ -147,13 +148,13 @@ class GFlowBase {
 
   /// Objects
   vector<Wall> walls;            // A vector of all the walls in the simulation
-  vector<Particle> particles;    // A vector of all the particles in the simulation
+  list<Particle> particles;      // A vector of all the particles in the simulation
   bool doInteractions;           // True if we let the particles interact with one another
 
   /// Sectorization
   Sectorization sectorization;   // The sectorization for this processor
+  floatType skinDepth;           // What skin depth we should use for our sectors
   bool doWork;                   // True if this processor needs to do work
-  floatType cutoff, skinDepth;      // The particle interaction cutoff and skin depth
 
   // MPI
   int rank, numProc;             // The rank of this processor and the total number of processors

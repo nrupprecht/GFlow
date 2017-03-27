@@ -26,6 +26,7 @@ int main(int argc, char** argv) {
   double time = 1.;
   double start = 0;
   double phi = 0.5;
+  double skinDepth = -1;
   int interaction = 0;
   bool interact = true;
   bool seedRand = true;
@@ -38,12 +39,18 @@ int main(int argc, char** argv) {
   bool LKE     = false;
   bool RKE     = false;
   bool cluster = false;
+  bool triAlign = false;
   bool novid   = false;
   bool printSectors = false;
 
   // Simulation type
   bool square = true;
   bool buoyancy = false;
+
+  // Load and save
+  string loadFile = "";
+  string loadBuoyancy = "";
+  string saveFile = "";
 
   // Initialize MPI
   int rank, numProc;
@@ -68,6 +75,7 @@ int main(int argc, char** argv) {
   parser.get("time", time);
   parser.get("start", start);
   parser.get("phi", phi);
+  parser.get("skinDepth", skinDepth);
   parser.get("interaction", interaction);
   parser.get("interact", interact);
   parser.get("srand", seedRand);
@@ -78,10 +86,14 @@ int main(int argc, char** argv) {
   parser.get("LKE", LKE);
   parser.get("RKE", RKE);
   parser.get("cluster", cluster);
+  parser.get("triAlign", triAlign);
   parser.get("novid", novid);
   parser.get("printSectors", printSectors);
   parser.get("square", square);
   parser.get("buoyancy", buoyancy);
+  parser.get("loadFile", loadFile);
+  parser.get("loadBuoyancy", loadBuoyancy);
+  parser.get("saveFile", saveFile);
   //----------------------------------------
 
   // Seed random number generators
@@ -110,10 +122,19 @@ int main(int argc, char** argv) {
 
   // Set up the simulation
   GFlowBase simulator;  
-  simulator.setExpectedSize(number); //**
-  if (buoyancy) simulator.createBuoyancyBox(radius, bR, density, width, height, velocity, dispersion);
-  else if (square) simulator.createSquare(number, radius, width, height, velocity, dispersion);
-  else throw false; // No selection
+  if (0<skinDepth) simulator.setSkinDepth(skinDepth);
+  // Create scenario
+  if (loadFile=="" && loadBuoyancy=="") {
+    if (buoyancy) simulator.createBuoyancyBox(radius, bR, density, width, height, velocity, dispersion);
+    else if (square) simulator.createSquare(number, radius, width, height, velocity, dispersion);
+    else throw false; // No selection
+  }
+  else if (loadBuoyancy!="") {
+    
+  }
+  else { // We must have that loadFile!=""
+    simulator.loadConfigurationFromFile(loadFile);
+  }
 
   simulator.setTemperature(temperature);
   simulator.setDoInteractions(interact);
@@ -127,6 +148,7 @@ int main(int argc, char** argv) {
   if (LKE) simulator.addStatFunction(Stat_L_KE, "lke");
   if (RKE) simulator.addStatFunction(Stat_R_KE, "rke");
   if (cluster) simulator.addStatFunction(Stat_Clustering, "cluster");
+  if (triAlign) simulator.addStatFunction(Stat_Triangle_Align, "triAlign");
 
   // Get the actual number of particles in the simulation
   number = simulator.getSize();
@@ -142,18 +164,22 @@ int main(int argc, char** argv) {
   // Run the simulation
   simulator.run(time);
 
-  // Print Run summary
+  // Head node prints the run summary
   if (rank==0) {
+    if (saveFile!="") {
+      if (simulator.createConfigurationFile(saveFile)) cout << "Saved configuration to file [" << saveFile << "]" << endl;
+    }
+
     double runTime = simulator.getRunTime(), transferTime = simulator.getTransferTime();
     int iters = simulator.getIter(), ndx = simulator.getNDX(), ndy = simulator.getNDY();
     int nsx = simulator.getNSX(), nsy = simulator.getNSY();
     cout << "Domains: " << ndx << " x " << ndy << ", Total: " << ndx*ndy << endl;
     cout << "Sectors: " << nsx << " x " << nsy << ", Per Domain: " << nsx*nsy << ", Total: " << nsx*nsy*ndx*ndy << endl;
-    cout << "Run Time: " << runTime << ", Sim Time: " << time << endl;
+    cout << "Run Time: " << runTime << " (" << printAsTime(runTime) << "), Sim Time: " << time << endl;
     cout << "Start Time: " << simulator.getStartRec() << ", Record Time: " << time - simulator.getStartRec() << endl;
-    cout << "Iterations: " << iters << endl;
+    cout << "Iterations: " << iters << ", time per iter: " << runTime/iters << endl;
     cout << "Transfer Time: " << transferTime << " (" << (runTime>0 ? toStr(transferTime/runTime*100) : "---") << "%)" << endl;
-    cout << "Ratio: " << (runTime>0 ? toStr(time/runTime) : "---") << endl;
+    cout << "Ratio: " << (runTime>0 ? toStr(time/runTime) : "---") << ", Ratio x Particles: " << (runTime>0 ? toStr(time/runTime*number) : "---") << endl;
     cout << "----------------------- END SUMMARY -----------------------\n\n"; 
 
     /// Print recorded data

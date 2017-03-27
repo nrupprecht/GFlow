@@ -2,7 +2,7 @@
 
 using MPI::COMM_WORLD;
 
-Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), time(0), epsilon(1e-4), sqrtEpsilon(1e-4), transferTime(0), wrapX(false), wrapY(false), doInteractions(true), drag(0), gravity(0), temperature(0), viscosity(1.308e-3), tempDelay(5e-3), sqrtTempDelay(sqrt(5e-3)), lastTemp(0), size(0), array_end(0), asize(0), esize(0), earray_end(0), easize(0), redoLists(false), doWallNeighbors(true), remakeToUpdate(false), cutoff(0.1), skinDepth(0.1), itersSinceBuild(0), buildDelay(20), numProc(1), rank(0) {
+Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), time(0), epsilon(1e-4), sqrtEpsilon(1e-4), transferTime(0), wrapX(false), wrapY(false), doInteractions(true), drag(0), gravity(0), temperature(0), viscosity(1.308e-3), tempDelay(5e-3), sqrtTempDelay(sqrt(5e-3)), lastTemp(0), size(0), array_end(0), asize(0), esize(0), earray_end(0), easize(0), redoLists(false), doWallNeighbors(true), remakeToUpdate(false), cutoff(0.1), skinDepth(0.025), itersSinceBuild(0), buildDelay(20), numProc(1), rank(0) {
   // Get our rank and the number of processors
   rank =    COMM_WORLD.Get_rank();
   numProc = COMM_WORLD.Get_size();  
@@ -35,7 +35,7 @@ void Sectorization::initialize() {
   }
   cutoff = mx+snd;
   // First estimate
-  secWidth = secHeight = cutoff + skinDepth;
+  secWidth = secHeight = (cutoff+skinDepth);
   nsx = static_cast<int>( max(1., (bounds.right-bounds.left)/secWidth) ); 
   nsy = static_cast<int>( max(1., (bounds.top-bounds.bottom)/secHeight) );
   // Actual width and height
@@ -54,10 +54,10 @@ void Sectorization::initialize() {
   createArrays();
   setParticles();
   // Set position tracker
-  /*
-    // Uncommenting this statement makes the program run at < half the speed it usually runs at
+  
+  // Uncommenting this statement makes the program run at < half the speed it usually runs at
   for (int i=0; i<size; ++i) positionTracker[i] = vec2(px[i], py[i]);
-  */
+  
 
   // Add the particles to the proper sectors
   for (int i=0; i<size; ++i) { 
@@ -66,8 +66,14 @@ void Sectorization::initialize() {
   }
   
   // Create the initial neighborlist
-  createNeighborLists();
+  createNeighborLists(true);
   if (doWallNeighbors) createWallNeighborList();
+}
+
+double Sectorization::getAvePerNeighborList() {
+  int count;
+  for (auto &n : neighborList) count += n.size();
+  return static_cast<double>(count)/neighborList.size();
 }
 
 list<Particle>& Sectorization::getParticles() {
@@ -141,7 +147,7 @@ void Sectorization::particleInteractions() {
     int ibase = it[i]<<2;
     for (; q!=nl.end(); ++q) { // Try to interact with all other particles in the nl
       int j = *q;
-      vec2 displacement = getDisplacement(vec2(px[j],py[j]), vec2(px[i],py[i]));
+      vec2 displacement = vec2(px[j]-px[i], py[j]-py[i]); //** getDisplacement(vec2(px[j],py[j]), vec2(px[i],py[i]));
       floatType Fn=0, Fs=0;
       int iType = ibase+it[j]; // Same as 4*it[i]+it[j]
       switch(iType) {
@@ -186,8 +192,8 @@ void Sectorization::wallInteractions() {
       int i = pr.first;
       if (it[i]<0) continue; // Particle has moved out
       for (auto w : pr.second) {
-      floatType Fn=0, Fs=0;
-	vec2 displacement = getDisplacement(vec2(px[i],py[i]), w->left);
+	floatType Fn=0, Fs=0;
+	vec2 displacement = getDisplacement(px[i], py[i], w->left.x, w->left.y);
 	switch (it[i]) {
         default:
         case 0:
@@ -220,48 +226,7 @@ void Sectorization::wallInteractions() {
 
 void Sectorization::update() {
   // Half-kick velocity update, update position
-  double dt = 0.5 * epsilon;
-  bool doTemp = (temperature>0 && tempDelay<time-lastTemp);
-  if (doTemp) {
-#pragma vector aligned
-#pragma simd
-    for (int i=0; i<array_end; ++i) {
-      // floatType mass = 1./im[i];
-      vx[i] += dt*im[i]*fx[i];
-      vy[i] += dt*im[i]*fy[i];
-      px[i] += epsilon*vx[i];
-      py[i] += epsilon*vy[i];   
-      fx[i] = gravity.x*ms[i] - drag*vx[i];
-      fy[i] = gravity.y*ms[i] - drag*vy[i];
-      wrap(px[i], py[i]); // Wrap position
-      om[i] += dt*iI[i]*tq[i];
-      th[i] += epsilon*om[i];
-      wrap(th[i]);        // Wrap theta
-      tq[i] = 0;
-      // Temperature force
-      floatType DT = DT1*(1./sg[i]); // Assumes Kb = 1;
-      floatType coeffD = sqrt(2*DT)*sqrtTempDelay;
-      vec2 TForce = coeffD*randNormal()*randV();
-      fx[i] += TForce.x; fy[i] += TForce.y;
-    }
-  }
-  else {
-#pragma vector aligned
-#pragma simd
-    for (int i=0; i<array_end; ++i) {
-      // floatType mass = 1./im[i];
-      vx[i] += dt*im[i]*fx[i];
-      vy[i] += dt*im[i]*fy[i];
-      px[i] += epsilon*vx[i];
-      py[i] += epsilon*vy[i];
-      fx[i] = gravity.x*ms[i] - drag*vx[i];
-      fy[i] = gravity.y*ms[i] - drag*vy[i];
-      wrap(px[i], py[i]);
-      om[i] += dt*iI[i]*tq[i];
-      th[i] += epsilon*om[i];
-      tq[i] = 0;
-    }
-  }
+  firstHalfKick();
   // Reset last temp
   if (tempDelay<time-lastTemp) lastTemp = time;
   // MPI coordination
@@ -283,13 +248,7 @@ void Sectorization::update() {
   particleInteractions();
   wallInteractions();
   // Velocity update part two (step four) -- second half-kick
-#pragma vector aligned
-#pragma simd
-  for (int i=0; i<array_end; ++i) {
-    vx[i] += dt*im[i]*fx[i];
-    vy[i] += dt*im[i]*fy[i];
-    om[i] += dt*iI[i]*tq[i];
-  }
+  secondHalfKick(); 
   // Update counter
   itersSinceBuild++;
   time += epsilon;
@@ -357,6 +316,62 @@ string Sectorization::printSectors() {
   return str;
 }
 
+inline void Sectorization::firstHalfKick() {
+  double dt = 0.5 * epsilon;
+  bool doTemp = (temperature>0 && tempDelay<time-lastTemp);
+  if (doTemp) {
+#pragma vector aligned
+#pragma simd
+    for (int i=0; i<array_end; ++i) {
+      // floatType mass = 1./im[i];
+      vx[i] += dt*im[i]*fx[i];
+      vy[i] += dt*im[i]*fy[i];
+      px[i] += epsilon*vx[i];
+      py[i] += epsilon*vy[i];
+      fx[i] = gravity.x*ms[i] - drag*vx[i];
+      fy[i] = gravity.y*ms[i] - drag*vy[i];
+      wrap(px[i], py[i]); // Wrap position
+      om[i] += dt*iI[i]*tq[i];
+      th[i] += epsilon*om[i];
+      wrap(th[i]);        // Wrap theta
+      tq[i] = 0;
+      // Temperature force
+      floatType DT = DT1*(1./sg[i]); // Assumes Kb = 1;
+      floatType coeffD = sqrt(2*DT)*sqrtTempDelay;
+      vec2 TForce = coeffD*randNormal()*randV();
+      fx[i] += TForce.x; fy[i] += TForce.y;
+    }
+  }
+  else {
+#pragma vector aligned
+#pragma simd
+    for (int i=0; i<array_end; ++i) {
+      // floatType mass = 1./im[i];
+      vx[i] += dt*im[i]*fx[i];
+      vy[i] += dt*im[i]*fy[i];
+      px[i] += epsilon*vx[i];
+      py[i] += epsilon*vy[i];
+      fx[i] = gravity.x*ms[i] - drag*vx[i];
+      fy[i] = gravity.y*ms[i] - drag*vy[i];
+      wrap(px[i], py[i]);
+      om[i] += dt*iI[i]*tq[i];
+      th[i] += epsilon*om[i];
+      tq[i] = 0;
+    }
+  }
+}
+
+inline void Sectorization::secondHalfKick() {
+  double dt = 0.5 * epsilon;
+#pragma vector aligned
+#pragma simd
+  for (int i=0; i<array_end; ++i) {
+    vx[i] += dt*im[i]*fx[i];
+    vy[i] += dt*im[i]*fy[i];
+    om[i] += dt*iI[i]*tq[i];
+  }
+}
+
 inline void Sectorization::wrap(floatType &x, floatType &y) {
   if (x<simBounds.left)       x = simBounds.right-fmod(simBounds.left-x, simBounds.right-simBounds.left);
   else if (simBounds.right<x) x = fmod(x-simBounds.left, simBounds.right-simBounds.left)+simBounds.left;
@@ -418,22 +433,23 @@ inline int Sectorization::getSec(const floatType x, const floatType y) {
   return sy*nsx + sx;
 }
 
-inline void Sectorization::createNeighborLists() {
+inline void Sectorization::createNeighborLists(bool force) {
   if (sectors==0) return;
   if (!doInteractions) return;
   
-  // Find an upper bound on how far particles might have moved from one another
-  floatType m0 = 0, m1 = 0;
-  for (int i=0; i<array_end; ++i) {
-    if (0<=it[i]) {
-      floatType distSqr = sqr(getDisplacement(positionTracker[i], vec2(px[i], py[i])));
-      if (distSqr>m0) m0 = distSqr;
-      else if (distSqr>m1) m1 = distSqr;
+  // Find an upper bound on how far particles might have moved from one another, unless we are forcing a redo
+  if (!force) {
+    floatType m0 = 0, m1 = 0;
+    for (int i=0; i<array_end; ++i) {
+      if (0<=it[i]) {
+	floatType distSqr = sqr(getDisplacement(positionTracker[i], vec2(px[i], py[i])));
+	if (distSqr>m0) m0 = distSqr;
+	else if (distSqr>m1) m1 = distSqr;
+      }
     }
+    maxNLDiff = sqrt(m0) + sqrt(m1);
+    if (maxNLDiff<skinDepth) return;
   }
-  floatType maxDiff = sqrt(m0) + sqrt(m1);
-  if (maxDiff<skinDepth) return;
-  
   // Update sectors
   updateSectors();
   // The square of the neighbor distance
@@ -602,8 +618,7 @@ inline void Sectorization::createArrays() {
   pdata[13] = ds = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
   pdata[14] = cf = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
   it             =    (int*)   aligned_alloc(64, tsize*sizeof(int));
-  memset(it, -1, tsize);
-  // for (int i=0; i<asize; ++i) it[i] = -1.;
+  memset(it, -1, tsize*sizeof(int)); // Each int is 4 bytes
   ms = (floatType*)aligned_alloc(64, asize*sizeof(floatType));
   // Set position tracker array
   if (positionTracker) delete [] positionTracker;
@@ -649,9 +664,9 @@ inline void Sectorization::setParticles() {
 
 inline void Sectorization::atom_move() {
   // Assumes that only particles that were in boundary might need to move
-  // list<int> tl, tm, tr;
-  // list<int> ml, **  mr;
-  // list<int> bl, bm, br;
+  //  tl, tm, tr;
+  //  ml, **  mr;
+  //  bl, bm, br;
   list<int> move_lsts[9]; // Entry 4 will always be unused
   // vector<int> holes;      // Holes that open because of particles leaving. We will fill these holes
 

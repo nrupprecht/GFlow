@@ -51,4 +51,25 @@ inline double Stat_Clustering(const vector<Particle> &particles) {
   return clustering;
 }
 
+inline double Stat_Triangle_Align(const vector<Particle> &particles) {
+  if (particles.empty()) return 0;
+  double align = 0;
+  int count = 0;
+  for (auto q = particles.begin(); q!=particles.end(); ++q) {
+    if (q->interaction==2) {
+      auto p = q; ++p;
+      double angQ = 3*fmod(q->theta, 2.*PI/3.)*(3./2./PI);
+      vec2 qvec(cos(angQ), sin(angQ));
+      for (; p!=particles.end(); ++p)
+	if (p->interaction==2) {
+	  double angP = 3*fmod(p->theta, 2.*PI/3.);
+	  vec2 pvec(cos(angP), sin(angP));
+	  align += fabs(qvec*pvec/sqr(q->position-p->position));
+	  count++;
+	}
+    }
+  } 
+  return count>0 ? align/count : 0;
+}
+
 #endif // __STAT_FUNC_H__

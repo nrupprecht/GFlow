@@ -5,8 +5,8 @@
 
 // Sphere (Disk) constants
 const double default_sphere_density     = 1.;
-const double default_sphere_repulsion   = 50.;
-const double default_sphere_dissipation = 10.;
+const double default_sphere_repulsion   = 100.;
+const double default_sphere_dissipation = 7.5;
 const double default_sphere_coeff       = sqrt(0.5);
 const double default_sphere_drag        = 1.;
 

@@ -21,8 +21,8 @@ struct Wall {
   Wall(vec2, vec2);
   Wall(floatType, floatType, floatType, floatType);
   
-  vec2 getLeft()  { return left; }
-  vec2 getRight() { return left+length*normal; }
+  vec2 getLeft()  const { return left; }
+  vec2 getRight() const { return left+length*normal; }
 
   vec2 left;    // Left and right edge of the wall
   floatType length;         // Length of the wall (store instead of recalculate)
