@@ -130,8 +130,8 @@ void GFlowBase::setInteractionType(int i) {
 }
 
 bool GFlowBase::loadConfigurationFromFile (string filename) {
+  discard();
   if (rank==0) {
-    double left, right, bottom, top;
     vect<> g;
     vector<double> radii;
     vector<vect<> > wallLeft, wallRight, positions;
@@ -468,14 +468,22 @@ void GFlowBase::recallParticlesByProcessor(vector<vector<Particle> >& allParticl
   // Particles are now all stored, sorted by processor, on processor 0
 }
 
-floatType GFlowBase::reduceStatFunction(StatFunc f) {
+floatType GFlowBase::reduceStatFunction(StatFunc f, int choice) {
   int total = 0;
   pair<floatType, int> data = sectorization.doStatFunction(f);
-  floatType send = data.first*data.second, aggregate = 0;
-  CommWork.Reduce(&send, &aggregate, 1, MPI_DOUBLE, MPI_SUM, 0);
-  CommWork.Reduce(&data.second, &total, 1, MPI_INT, MPI_SUM, 0);
-  if (rank==0) return total>0 ? aggregate/total : 0;
-  else return 0;
+  if (choice==0) { // Average
+    floatType send = data.first*data.second, aggregate = 0;
+    CommWork.Reduce(&send, &aggregate, 1, MPI_DOUBLE, MPI_SUM, 0);
+    CommWork.Reduce(&data.second, &total, 1, MPI_INT, MPI_SUM, 0);
+    if (rank==0) return total>0 ? aggregate/total : 0;
+    else return 0;
+  }
+  else if (choice==1) { // Max
+    floatType aggregate;
+    CommWork.Reduce(&data, &aggregate, 1, MPI_DOUBLE, MPI_MAX, 0);
+    return aggregate;
+  }
+  else return -1;
 }
 
 list<Particle> GFlowBase::createParticles(vector<vec2> positions, floatType radius, floatType dispersion, std::function<vec2(floatType)> velocity, std::function<floatType(floatType)> omega, floatType coeff, floatType dissipation, floatType repulsion, int interaction) {
@@ -693,10 +701,15 @@ bool GFlowBase::loadBuoyancy(string fileName, floatType radius, floatType veloci
   discard();
   // Load data
   if (!loadConfigurationFromFile(fileName)) return false;
+  // Lambda that finds the tops of the balls
+  StatFunc upperEdge = [&] (const vector<Particle> &particles, int&) {
+    double tp = -1e9;
+    for (const auto &p : particles)
+      if (tp<p.position.y+p.sigma) tp = p.position.y+p.sigma;
+    return tp;
+  };
   // Find the tops of the balls
-  floatType tp = 0;
-  for (const auto &p : particles) 
-    if (tp<p.position.y+p.sigma) tp = p.position.y+p.sigma;
+  double tp = reduceStatFunction(upperEdge, 1);
   // Set bounds
   double height = tp + 2*radius+0.5;
   Bounds bounds(left, right, bottom, height);
@@ -711,7 +724,7 @@ bool GFlowBase::loadBuoyancy(string fileName, floatType radius, floatType veloci
   if (0<radius) {
     list<Particle> intruder;
     Particle P((right-left)/2, tp+radius, radius);
-    P.velocity = vec2(0, velocity);
+    P.velocity = vec2(0, -velocity);
     P.setDensity(density);
     intruder.push_back(P);
     distributeParticles(intruder, sectorization);
@@ -774,6 +787,8 @@ string GFlowBase::printAnimationCommand(bool novid) {
   command += "dsk[tr_]:={Black,Disk[tr[[1]],tr[[2]]]};\n";
   // Oriented Disk animation command
   command += "odsk[tr_]:={{Black,{Disk[tr[[1]],tr[[2]]]}},{Red,Line[{tr[[1]], tr[[1]] + tr[[2]]{Cos[tr[[3]]],Sin[tr[[3]]]}}]}};\n";
+  // Point animation command
+  command += "pnt[tr_]:={Black,Point[tr[[1]]]};\n";
   // Create range
   stream << "{{" << left << "," << right << "},{" << bottom << "," << top << "}}";
   stream >> range;
@@ -869,23 +884,26 @@ void GFlowBase::printSectors() {
     }
 }
 
-vector<floatType> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, floatType volCutoff, floatType minV, floatType dr) {
+vector<floatType> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, floatType volCutoff, floatType minV, floatType dr, Bounds region) {
   string str="-1";
-  return getBubbleSizes(allParticles, str, minV, dr);
+  return getBubbleSizes(allParticles, str, volCutoff, minV, dr, region);
 }
 
-vector<floatType> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, string &shapes, floatType volCutoff, floatType minV, floatType dr) {
+vector<floatType> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, string &shapes, floatType volCutoff, floatType minV, floatType dr, Bounds region) {
+  // Might use full bounds
+  if (region.right<region.left) region = Bounds(left, right, bottom, top);
+  // Calculate parameters
   floatType sx = sqrt(minV), sy = sqrt(minV);
-  int nsx = (right-left)/sx, nsy = (top-bottom)/sy;
-  sx = (right-left)/nsx; sy = (top-bottom)/nsy;
+  int nsx = (region.right-region.left)/sx, nsy = (region.top-region.bottom)/sy;
+  sx = (region.right-region.left)/nsx; sy = (region.top-region.bottom)/nsy;
   list<int> *sectors = new list<int>[nsx*nsy];
-
   // Fill sectors
   int i=0;
   for (const auto &p : allParticles) {
-    int sec_x = (p.position.x - left)/sx;
-    int sec_y = (p.position.y - bottom)/sy;
-    sectors[nsx*sec_y+sec_x].push_back(i);
+    int sec_x = (p.position.x - region.left)/sx;
+    int sec_y = (p.position.y - region.bottom)/sy;
+    if (-1<sec_x && sec_x<nsx && -1<sec_y && sec_y<nsy)
+      sectors[nsx*sec_y+sec_x].push_back(i);
     ++i;
   }
   // Find the particle of maximum radius

@@ -477,6 +477,8 @@ struct Bounds {
   }
 };
 
+const Bounds NullBounds(0., -1., 0., -1.);
+
 struct Trio {
   Trio() : x(0), y(0), z(0) {};
   Trio(double x, double y, double z) : x(x), y(y), z(z) {};
