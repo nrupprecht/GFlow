@@ -58,7 +58,6 @@ void Sectorization::initialize() {
   // Uncommenting this statement makes the program run at < half the speed it usually runs at
   for (int i=0; i<size; ++i) positionTracker[i] = vec2(px[i], py[i]);
   
-
   // Add the particles to the proper sectors
   for (int i=0; i<size; ++i) { 
     int sec = getSec(px[i], py[i]);
@@ -76,7 +75,7 @@ double Sectorization::getAvePerNeighborList() {
   return static_cast<double>(count)/neighborList.size();
 }
 
-list<Particle>& Sectorization::getParticles() {
+vector<Particle>& Sectorization::getParticles() {
   updatePList();
   return plist;
 }
@@ -144,12 +143,13 @@ void Sectorization::particleInteractions() {
     int i = *p;
     if (it[i]<0) continue;     // This particle is gone
     auto q = p; ++q;           // Start with the particle after the head particle
-    int ibase = it[i]<<2;
+    int ibase = it[i]<<2;      // Represents the interaction type of particle p
     for (; q!=nl.end(); ++q) { // Try to interact with all other particles in the nl
       int j = *q;
       vec2 displacement = vec2(px[j]-px[i], py[j]-py[i]); //** getDisplacement(vec2(px[j],py[j]), vec2(px[i],py[i]));
       floatType Fn=0, Fs=0;
       int iType = ibase+it[j]; // Same as 4*it[i]+it[j]
+      // Switch on interaction type
       switch(iType) {
 	// Both are hard disks
       case 0:
@@ -314,6 +314,13 @@ string Sectorization::printSectors() {
   stream << "}";
   stream >> str;
   return str;
+}
+
+pair<floatType, int> Sectorization::doStatFunction(StatFunc func) {
+  // You are responsible for updating plist beforehand
+  int count;
+  floatType data = func(plist, count);
+  return pair<floatType, int>(data, count);
 }
 
 inline void Sectorization::firstHalfKick() {
@@ -556,7 +563,7 @@ inline vec2 Sectorization::getDisplacement(floatType ax, floatType ay, floatType
   return vec2(X,Y);
 }
 
-inline void Sectorization::updatePList() {
+void Sectorization::updatePList() {
   plist.clear();
   // Create particles and push them into plist
   for (int i=0; i<array_end; ++i) {

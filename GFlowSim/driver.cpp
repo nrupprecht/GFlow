@@ -35,6 +35,7 @@ int main(int argc, char** argv) {
   bool animate = false;
   bool special = false;
   bool bubbles = false;
+  bool visBubbles = false;
   bool omega   = false;
   bool KE      = false;
   bool LKE     = false;
@@ -84,6 +85,7 @@ int main(int argc, char** argv) {
   parser.get("animate", animate);
   parser.get("special", special);
   parser.get("bubbles", bubbles);
+  parser.get("visBubbles", visBubbles);
   parser.get("omega", omega);
   parser.get("KE", KE);
   parser.get("LKE", LKE);
@@ -129,15 +131,21 @@ int main(int argc, char** argv) {
   if (0<skinDepth) simulator.setSkinDepth(skinDepth);
   // Create scenario
   if (loadFile=="" && loadBuoyancy=="") {
-    if (buoyancy) simulator.createBuoyancyBox(radius, bR, density, width, height, velocity, dispersion);
-    else if (square) simulator.createSquare(number, radius, width, height, velocity, dispersion);
+    if (buoyancy) simulator.createBuoyancyBox(radius, bR, density, width, height, velocity, dispersion, interaction);
+    else if (square) simulator.createSquare(number, radius, width, height, velocity, dispersion, interaction);
     else throw false; // No selection
   }
   else if (loadBuoyancy!="") {
-    
+    if (!simulator.loadBuoyancy(loadBuoyancy, bR, velocity, density)) {
+      cout << "Failed to load [" << loadFile << "], exiting.\n";
+      return 0;
+    }
   }
   else { // We must have that loadFile!=""
-    simulator.loadConfigurationFromFile(loadFile);
+    if (!simulator.loadConfigurationFromFile(loadFile)) {
+      cout << "Failed to load [" << loadFile <<"], exiting.\n";
+      return 0;
+    }
   }
 
   simulator.setTemperature(temperature);
@@ -147,6 +155,7 @@ int main(int argc, char** argv) {
   simulator.setRecPositions(animate);
   simulator.setRecSpecial(special);
   simulator.setRecBubbles(bubbles);
+  simulator.setVisBubbles(visBubbles);
 
   if (omega) simulator.addStatFunction(Stat_Omega, "omega");
   if (KE) simulator.addStatFunction(Stat_KE, "ke");
@@ -193,6 +202,9 @@ int main(int argc, char** argv) {
     if (special) cout << simulator.printSpecialAnimationCommand(novid) << endl;
     if (bubbles) {
       cout << "bsize=" << simulator.getBubbleRecord() << ";\n"; //**
+    }
+    if (visBubbles) {
+      if (!bubbles) cout << "bsize=" << simulator.getBubbleRecord() << ";\n";
       cout << "bubbles=" << simulator.getBubbles() << ";\n"; //**
     }
     string stats = simulator.printStatFunctions();

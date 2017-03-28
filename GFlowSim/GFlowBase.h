@@ -2,7 +2,6 @@
 #define GFLOWBASE_H
 
 #include "Sectorization.h"
-#include "StatFunc.h"
 #include <functional>
 #include <tuple> 
 
@@ -72,8 +71,9 @@ class GFlowBase {
   virtual bool createConfigurationFile   (string);
 
   // -----  TO GO TO GFLOW.H  ------
-  void createSquare(int, floatType, floatType=4., floatType=4., floatType=0.1, floatType=0.);
-  void createBuoyancyBox(floatType,floatType,floatType,floatType,floatType,floatType,floatType);
+  void createSquare(int, floatType, floatType=4., floatType=4., floatType=0.1, floatType=0., int=0);
+  void createBuoyancyBox(floatType,floatType,floatType,floatType,floatType,floatType,floatType, int=0);
+  bool loadBuoyancy(string, floatType=0.5, floatType=5., floatType=10.);
   void recordPositions();
 
   void addStatFunction(StatFunc, string);
@@ -98,16 +98,18 @@ class GFlowBase {
   void setRecPositions(bool b) { recPositions = b; }
   void setRecSpecial(bool b)   { recSpecial = b; }
   void setRecBubbles(bool b)   { recBubbles = b; }
+  void setVisBubbles(bool b)   { visBubbles = b; }
  private:
   double setUpTime;
   // Data
   vector<vector<PData> > positionRecord;
   vector<vector<Tri> > specialRecord;
   vector<vector<floatType> > bubbleRecord;
-  vector<string> visualizeBubbles; //**
+  vector<string> visualizeBubbles;
   bool recPositions;
   bool recSpecial;
   bool recBubbles;
+  bool visBubbles;
 
   vector<pair<StatFunc,string> > statFunctions; // Statistic functions and a string to name them
   vector<vector<vec2> >  statRecord;    // Save the data produced by the statistic functions
@@ -134,6 +136,7 @@ class GFlowBase {
   void distributeParticles(list<Particle>&, Sectorization&);
   void recallParticles(vector<Particle>&); // Gather copies of all particles into a vector
   void recallParticlesByProcessor(vector<vector<Particle> >&); // Gather copies of all particles, remembering which particles came from which processor
+  floatType reduceStatFunction(StatFunc);
 
   list<Particle> createParticles(vector<vec2>, floatType, floatType, std::function<vec2(floatType)> = ZeroV, std::function<floatType(floatType)> = ZeroOm, floatType=default_sphere_coeff, floatType=default_sphere_dissipation, floatType=default_sphere_repulsion, int=0);
   void createAndDistributeParticles(int, const Bounds&, Sectorization&, floatType, floatType=0, std::function<vec2(floatType)> = ZeroV, floatType=default_sphere_coeff, floatType=default_sphere_dissipation, floatType=default_sphere_repulsion, int=0);

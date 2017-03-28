@@ -216,7 +216,6 @@ void GFlowBase::setUpSectorization() {
     sectorization.setASize(particles.size()); //** AD HOC
     sectorization.setGravity(gravity);
     sectorization.setDoInteractions(doInteractions);
-    // sectorization.initialize(); // We will do this later
   }
   else doWork = false;
 }
@@ -234,7 +233,7 @@ void GFlowBase::setUpSectorization(Sectorization &sectors, vec2 grav) {
     sectors.setBounds(domainBounds);
     sectors.setGravity(grav);
     sectors.setDoInteractions(doInteractions);
-    sectors.initialize();
+    sectors.initialize(); // Keep this here (for now)
   }
   else doWork = false;
 }
@@ -256,7 +255,7 @@ void GFlowBase::logisticUpdates() {
 }
 
 void GFlowBase::record() {
-  if (recPositions || recBubbles || !statFunctions.empty()) {
+  if (recPositions || recBubbles || visBubbles) {
     // Get all the particles back from the sectorizations
     vector<Particle> allParticles;
     recallParticles(allParticles);
@@ -266,20 +265,24 @@ void GFlowBase::record() {
       for (const auto &p : allParticles) positions.push_back(PData(p.position, p.sigma, p.theta, p.interaction, 0));
       positionRecord.push_back(positions);
     }
-
-    // Record stat function statistics
-    int i=0;
-    for (auto &sf : statFunctions) {
-      statRecord.at(i).push_back(vec2(time, sf.first(allParticles)));
-      ++i;
-    }
-
     // Find bubble volumes
-    if (recBubbles) {
+    if (recBubbles)
+      bubbleRecord.push_back(getBubbleSizes(allParticles));
+    // Visualize bubbles
+    if (visBubbles) {
       string vis;
       bubbleRecord.push_back(getBubbleSizes(allParticles, vis));
       visualizeBubbles.push_back(vis);
     }
+  }
+  // Record stat function statistics
+  if (!recPositions && !recBubbles) sectorization.updatePList();
+  int i=0;
+  for (auto &sf : statFunctions) {
+    int count = 0;
+    floatType data = reduceStatFunction(sf.first);
+    statRecord.at(i).push_back(vec2(time, data));
+    ++i;
   }
   // Special record
   if (recSpecial) {
@@ -294,7 +297,7 @@ void GFlowBase::record() {
     } 
     specialRecord.push_back(positions);
   }
-
+  
   // Update display 
   lastDisp = time;
   ++recIter;
@@ -465,6 +468,16 @@ void GFlowBase::recallParticlesByProcessor(vector<vector<Particle> >& allParticl
   // Particles are now all stored, sorted by processor, on processor 0
 }
 
+floatType GFlowBase::reduceStatFunction(StatFunc f) {
+  int total = 0;
+  pair<floatType, int> data = sectorization.doStatFunction(f);
+  floatType send = data.first*data.second, aggregate = 0;
+  CommWork.Reduce(&send, &aggregate, 1, MPI_DOUBLE, MPI_SUM, 0);
+  CommWork.Reduce(&data.second, &total, 1, MPI_INT, MPI_SUM, 0);
+  if (rank==0) return total>0 ? aggregate/total : 0;
+  else return 0;
+}
+
 list<Particle> GFlowBase::createParticles(vector<vec2> positions, floatType radius, floatType dispersion, std::function<vec2(floatType)> velocity, std::function<floatType(floatType)> omega, floatType coeff, floatType dissipation, floatType repulsion, int interaction) {
   // Create particles on the root processor
   list<Particle> allParticles;
@@ -587,7 +600,7 @@ vector<vec2> GFlowBase::findPackedSolution(int number, floatType radius, Bounds 
 
 // ----- TO GO TO GFLOW.CPP -----
 
-void GFlowBase::createSquare(int number, floatType radius, floatType width, floatType height, floatType vsgma, floatType dispersion) {
+void GFlowBase::createSquare(int number, floatType radius, floatType width, floatType height, floatType vsgma, floatType dispersion, int interaction) {
   // Start the clock
   auto begin = clock();
   // Discard any old state
@@ -619,7 +632,7 @@ void GFlowBase::createSquare(int number, floatType radius, floatType width, floa
   // Create particles and distribute them to the processors
   vector<vec2> positions = findPackedSolution(number, radius, bounds);  
   // Create particles at the given positions with - Radius, Dispersion, Velocity function, Angular velocity function, Coeff, Dissipation, Repulsion, Interaction
-  particles = createParticles(positions, radius, dispersion, velocity, ZeroOm, 0, 0, default_sphere_repulsion, 0);
+  particles = createParticles(positions, radius, dispersion, velocity, ZeroOm, 0, 0, default_sphere_repulsion, interaction);
   // Send out particles
   setUpSectorization();
   distributeParticles(particles, sectorization);
@@ -629,7 +642,7 @@ void GFlowBase::createSquare(int number, floatType radius, floatType width, floa
   setUpTime = (double)(end-begin)/CLOCKS_PER_SEC;
 }
 
-void GFlowBase::createBuoyancyBox(floatType radius, floatType bR, floatType density, floatType width, floatType depth, floatType velocity, floatType dispersion) {
+void GFlowBase::createBuoyancyBox(floatType radius, floatType bR, floatType density, floatType width, floatType depth, floatType velocity, floatType dispersion, int interaction) {
   // Start the clock
   auto begin = clock();
   // Discard any old state
@@ -652,7 +665,7 @@ void GFlowBase::createBuoyancyBox(floatType radius, floatType bR, floatType dens
   // Create particles and distribute them to the processors
   vector<vec2> positions = findPackedSolution(number, radius, bounds, 0);
   // Create particles at the given positions with - Radius, Dispersion, Velocity function, Angular velocity function, Coeff, Dissipation, Repulsion, Interaction
-  particles = createParticles(positions, radius, dispersion, ZeroV, ZeroOm);
+  particles = createParticles(positions, radius, dispersion, ZeroV, ZeroOm, default_sphere_coeff, default_sphere_dissipation, default_sphere_repulsion, interaction);
   // Remove particles whose centers are above the line
   for (auto p=particles.begin(); p!=particles.end();) {
     if (depth<p->position.y+p->sigma) p = particles.erase(p);
@@ -671,6 +684,45 @@ void GFlowBase::createBuoyancyBox(floatType radius, floatType bR, floatType dens
   // End setup timing
   auto end = clock();
   setUpTime = (double)(end-begin)/CLOCKS_PER_SEC;
+}
+
+bool GFlowBase::loadBuoyancy(string fileName, floatType radius, floatType velocity, floatType density) {
+  // Start the clock
+  auto begin = clock();
+  // Discard any old state
+  discard();
+  // Load data
+  if (!loadConfigurationFromFile(fileName)) return false;
+  // Find the tops of the balls
+  floatType tp = 0;
+  for (const auto &p : particles) 
+    if (tp<p.position.y+p.sigma) tp = p.position.y+p.sigma;
+  // Set bounds
+  double height = tp + 2*radius+0.5;
+  Bounds bounds(left, right, bottom, height);
+  setBounds(bounds);
+  // Clear old walls, create new ones
+  walls.clear();
+  addWall(left, bottom, right, bottom);
+  addWall(left,bottom,left,top);
+  addWall(right,bottom,right,top);
+  addWall(left,top,right,top);
+  // Add the intruding particle
+  if (0<radius) {
+    list<Particle> intruder;
+    Particle P((right-left)/2, tp+radius, radius);
+    P.velocity = vec2(0, velocity);
+    P.setDensity(density);
+    intruder.push_back(P);
+    distributeParticles(intruder, sectorization);
+  }
+  // Send out particles
+  setUpSectorization();
+  sectorization.initialize();
+  // End setup timing
+  auto end = clock();
+  setUpTime = (double)(end-begin)/CLOCKS_PER_SEC;
+  return true;
 }
 
 void GFlowBase::addStatFunction(StatFunc sf, string str) {
@@ -852,22 +904,28 @@ vector<floatType> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, stri
       int startX = max(0, x-sweepX), endX = min(nsx-1, x+sweepX);
       int startY = max(0, y-sweepY), endY = min(nsy-1, y+sweepY);
       // Check your own sector first for speed's sake
-      for (const auto index : sectors[nsx*y+x])
-	if (sqr(pos-allParticles.at(index).position)<sqr(dr+allParticles.at(index).sigma)) {
+      for (const auto index : sectors[nsx*y+x]) {
+	vec2 dR = pos-allParticles.at(index).position;
+	floatType R = dr+allParticles.at(index).sigma;
+	if (sqr(dR)<sqr(R)) {
 	  done = true;
 	  array[nsx*y+x] = -1;
 	  break;
 	}
+      }
       // Search the other sectors
       for (int Y=startY; Y<endY && !done; ++Y) {
 	for (int X=startX; X<endX && !done; ++X) {
 	  if (X!=x || Y!=y)
-	    for (const auto index : sectors[nsx*Y+X])
-	      if (sqr(pos-allParticles.at(index).position)<sqr(dr)) {		
+	    for (const auto index : sectors[nsx*Y+X]) {
+	      vec2 dR= pos-allParticles.at(index).position;
+	      floatType R = dr+allParticles.at(index).sigma;
+	      if (sqr(dR)<sqr(R)) {		
 		done = true;
 		array[nsx*y+x] = -1;
 		break;
 	      }
+	    }
 	  if (done) break;
 	}
 	if (done) break;
@@ -881,17 +939,18 @@ vector<floatType> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, stri
     if (array[i]!=-1) array[i] = getHead(array, i);
   // Collect all head nodes
   vector<int> heads;
-  for (int i=0; i<nsx*nsx; ++i)
+  for (int i=0; i<nsx*nsy; ++i)
     if (array[i]!=-1) {
-      bool contains = false;
-      for (const auto j : heads) 
-	if (j==array[i]) {
-	  contains = true;
-	  break;
-	}
-      if (!contains) heads.push_back(array[i]);
+      // If we have not already recorded this head
+      if (std::find(heads.begin(), heads.end(), array[i])==heads.end())
+	heads.push_back(array[i]);
     }
-
+  // If there are no empty volumes
+  if (heads.empty()) {
+      delete [] sectors;
+      delete [] array;
+      return vector<floatType>();
+  }
   // Count volumes
   vector<int> volCount(heads.size(), 0);
   for (int i=0; i<nsx*nsy; ++i) {
@@ -906,30 +965,32 @@ vector<floatType> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, stri
       ++volCount.at(j);
     }
   }
-
+  // Record volumes
+  vector<floatType> bubbles;
+  for (const auto c : volCount) {
+    floatType vol = sx*sy*c;
+    if (volCutoff<vol) bubbles.push_back(sx*sy*c);
+  }
   // Record the picture of the volumes in a string
   if (shapes!="-1") {
     stringstream stream;
     stream << "{";
-    for (int y=0; y<nsy; ++y) {
+    for (int y=nsy-1; 0<=y; --y) {
       stream << "{";
       for (int x=0; x<nsx; ++x) {
-	stream << array[nsx*y+x]+1;
+	if (-1<array[nsx*y+x] && volCutoff<volCount.at(array[nsx*y+x])*sx*sy)
+	  stream << array[nsx*y+x]+1;
+	else stream << -1;
 	if (x!=nsx-1) stream << ",";
       }
       stream << "}";
-      if (y!=nsy-1) stream << ",";
+      if (y!=0) stream << ",";
     }
     stream << "}";
     stream >> shapes;
   }
-  // record volumes
-  vector<floatType> bubbles;
-  for (const auto c : volCount) {
-    floatType vol = sx*sy*c;
-    //if (volCutoff<vol) bubbles.push_back(sx*sy*c);
-    bubbles.push_back(sx*sy*c);
-  }
+  // Sort sizes
+  std::sort(bubbles.begin(), bubbles.end());
   // Clean up and return
   delete [] sectors;
   delete [] array;

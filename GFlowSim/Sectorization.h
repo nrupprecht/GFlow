@@ -2,6 +2,7 @@
 #define SECTORIZATION_H
 
 #include "Interactions.h"
+#include "StatFunc.h"
 #include <mpi.h>
 #include <stdlib.h> // For aligned_malloc
 
@@ -36,7 +37,7 @@ class Sectorization {
   bool getWrapX()                { return wrapX; }
   bool getWrapY()                { return wrapY; }
   vec2 getGravity()              { return gravity; }
-  list<Particle>& getParticles();
+  vector<Particle>& getParticles();
   Bounds getBounds()             { return bounds; }
   Bounds getSimBounds()          { return simBounds; }
 
@@ -63,6 +64,7 @@ class Sectorization {
   void setCommWork(MPI::Intercomm &comm) { CommWork = comm; }
   void resetComm()                  { CommWork = MPI::COMM_WORLD; }
   void discard();
+  void updatePList(); // Fill plist with the particles from the data buffers
 
   // Functionality
   void particleInteractions();       // Handle the interactions between pair of particles
@@ -76,6 +78,7 @@ class Sectorization {
 
   // Statistics
   string printSectors();
+  pair<floatType, int> doStatFunction(StatFunc);
 
   // Exception classes
   class BadParticle {};
@@ -93,7 +96,6 @@ class Sectorization {
   inline void createWallNeighborList();
   inline vec2 getDisplacement(vec2, vec2);
   inline vec2 getDisplacement(floatType, floatType, floatType, floatType);
-  inline void updatePList(); // Fill plist with the particles from the data buffers
   inline void createArrays(); // Initialize the array and point the pointers to their propper sections
   inline void zeroPointers(); // Zero all pointers. Do not delete, just set them to zero
   inline void remakeParticles(); // Delete and reallocate particle data arrays
@@ -122,7 +124,7 @@ class Sectorization {
   floatType lastTemp;                // Last time we applied temperature perturbations
 
   // All the particles
-  list<Particle> plist;
+  vector<Particle> plist;
   vec2 *positionTracker;           
   int size, array_end, asize; // The number of particles, the index after the last particle, the amount of space allocated for domain particles
   int esize, earray_end, easize; // The number of edge particles, the index after the last edge particle, the amount of space allocated for edge particles
