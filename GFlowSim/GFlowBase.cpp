@@ -933,10 +933,9 @@ vector<floatType> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, stri
     }
   // Unite bubbles
   unite(array, nsx, nsy);
-  
+  unite(array, nsx, nsy); //** Bad solution, but it works
   // Point all sectors to their head
-  for (int i=0; i<nsx*nsx; ++i)
-    if (array[i]!=-1) array[i] = getHead(array, i);
+  for (int i=0; i<nsx*nsx; ++i) array[i] = getHead(array, i);
   // Collect all head nodes
   vector<int> heads;
   for (int i=0; i<nsx*nsy; ++i)
@@ -1002,27 +1001,38 @@ inline void GFlowBase::unite(int *array, int nsx, int nsy) {
   for (int y=0; y<nsy; ++y)
     for (int x=0; x<nsx; ++x) {
       // Check the sectors around you, point yourself to the largest head
+      int h0=-1, h1=-1, h2=-1, h3=-1;
       if (array[nsx*y+x]!=-1) {
-        int head = nsx*nsy;
-        if (0<x && -1<array[nsx*y+x-1] && getHead(array, nsx*y+x-1)<head) head = array[nsx*y+x-1];
-        if (x+1<nsx && -1<array[nsx*y+x+1] && getHead(array, nsx*y+x+1)<head) head = array[nsx*y+x+1];
-        if (0<y && -1<array[nsx*(y-1)+x] && getHead(array, nsx*(y-1)+x)<head) head = array[nsx*(y-1)+x];
-        if (y+1<nsy && -1<array[nsx*(y+1)+x] && getHead(array, nsx*(y+1)+x)<head) head = array[nsx*y+x+1];
-        if (-1<head && head<nsx*nsy) {
-	  head = getHead(array, head);
-          array[nsx*y+x] = head;
-          // Set the heads of all your neighbors as well
-          if (0<x && -1<array[nsx*y+x-1]) array[getHead(array, nsx*y+x-1)] = head;
-          if (x+1<nsx && -1<array[nsx*y+x+1]) array[getHead(array, nsx*y+x+1)] = head;
-          if (0<y && -1<array[nsx*(y-1)+x]) array[getHead(array, nsx*(y-1)+x)] = head;
-          if (y+1<nsy && -1<array[nsx*(y+1)+x]) array[getHead(array, nsx*(y+1)+x)] = head;
-        }
+        int head = getHead(array, nsx*y+x);
+        if (0<x && -1<array[nsx*y+x-1]) { // Left
+	  h0 = getHead(array, nsx*y+x-1);
+	  if (h0<head) head = h0;
+	}
+        if (x+1<nsx && -1<array[nsx*y+x+1]) { // Right
+	  h1 = getHead(array, nsx*y+x+1);
+	  if (h1<head) head = h1;
+	}
+        if (0<y && -1<array[nsx*(y-1)+x]) { // Bottom
+	  int h2 = getHead(array, nsx*(y-1)+x);
+	  if (h2<head) head = h2;
+	}
+        if (y+1<nsy && -1<array[nsx*(y+1)+x]) { // Top
+	  int h3 = getHead(array, nsx*(y+1)+x);
+	  if (h3<head) head = h3;
+	}
+	// Set your head and the heads of all your neighbors as well
+	array[nsx*y+x] = head;	
+	if (-1<h0) array[h0] = head;
+	if (-1<h1) array[h1] = head;
+	if (-1<h2) array[h2] = head;
+	if (-1<h3) array[h3] = head;
       }
     }
 }
 
 inline int GFlowBase::getHead(int* array, int index) {
   if (index<0) return -1;
+  if (array[index]<0) return -1;
   while (array[index]!=index) index = array[index];
   return index;
 }
