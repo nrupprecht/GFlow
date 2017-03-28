@@ -535,6 +535,28 @@ void GFlowBase::createAndDistributeParticles(int number, const Bounds &b, Sector
       allParticles.push_back(p);
     }
   }
+  
+  distributeParticles(allParticles, sectors);
+}
+
+void GFlowBase::createAndDistributeParticles(const vector<double>& radii, const vector<int>& interaction, const Bounds &b, Sectorization &sectors, std::function<vec2(floatType)> velocity, floatType coeff, floatType dissipation, floatType repulsion) {
+  // Bounds width and height
+  floatType width = b.right-b.left, height = b.top-b.bottom;
+  // Create particles on the root processor
+  list<Particle> allParticles;
+  if (rank==0) {
+    for (int i=0; i<radii.size(); ++i) {
+      double r = radii.at(i);
+      vec2 pos(drand48()*(width-2*r)+r, drand48()*(height-2*r)+r);
+      Particle p(pos, r);
+      p.velocity = velocity(p.invMass);
+      p.dissipation = dissipation;
+      p.coeff = coeff;
+      p.repulsion = repulsion;
+      p.interaction = interaction.at(i);
+      allParticles.push_back(p);
+    }
+  }
 
   distributeParticles(allParticles, sectors);
 }
@@ -617,8 +639,92 @@ vector<vec2> GFlowBase::findPackedSolution(int number, floatType radius, Bounds 
   }
 }
 
+vector<vec2> GFlowBase::findPackedSolution(const vector<double>& radii, const vector<int>& interactions, const Bounds& b, vec2 force, floatType expandTime, floatType relaxTime) {
+  int number = min(radii.size(), interactions.size());
+  // Create a sectorization
+  Sectorization packedSectors;
+  packedSectors.setSimBounds(b);
+  // Vectors for the four corners
+  vec2 ll(b.left, b.bottom), lr(b.right, b.bottom), tl(b.left, b.top), tr(b.right, b.top);
+  // Add the boundary walls
+  packedSectors.addWall(Wall(ll,lr));
+  packedSectors.addWall(Wall(lr,tr));
+  packedSectors.addWall(Wall(tl,tr));
+  packedSectors.addWall(Wall(ll,tl));
+  // Add any "real" walls (so we don't put particles inside walls)
+  for (auto &w : walls) packedSectors.addWall(w);
+  // Calculate parameters
+  floatType initialFraction = 0.2, finalFraction = 1.;
+  int expandSteps = expandTime/epsilon, relaxSteps = relaxTime/epsilon;
+  floatType dr = (finalFraction-initialFraction)/static_cast<floatType>(expandSteps);
+  floatType fraction = initialFraction;
+  // Set up sectorization
+  packedSectors.setASize(number); //** AD HOC
+  setUpSectorization(packedSectors, force);
+  packedSectors.setDrag(default_packed_drag);
+  createAndDistributeParticles(radii, interactions, b, packedSectors);
+  packedSectors.initialize();
+  // Simulate motion and expansion
+  for (int i=0; i<expandSteps; ++i) {
+    int j=0;
+    for (auto &p : packedSectors.getParticles()) {
+      p.sigma = radii.at(j)*fraction;
+      ++j;
+    }
+    fraction += dr;
+    packedSectors.update();
+  }
+  // Simulate pure motion (relaxation)
+  for (int i=0; i<relaxSteps; ++i) packedSectors.update();
+  // Get positions
+  auto sectorParticles = packedSectors.getParticles();
+  if (numProc>1) {
+    int size = sectorParticles.size();
+    // Get the number of particles to expect from each processor
+    int *sizeBuff = 0;
+    if (rank==0) sizeBuff = new int[numProc];
+    CommWork.Gather(&size, 1, MPI_INT, sizeBuff, 1, MPI_INT, 0);
+    // Find the max number of particles in any sector with the head processor and broadcast it back
+    int max=0;
+    if (rank==0)
+      for (int i=0; i<numProc; ++i)
+	if (max<sizeBuff[i]) max = sizeBuff[i];
+    CommWork.Bcast(&max, 1, MPI_INT, 0);
+    // Now everyone knows what the max is. Allocate arrays only as large as neccessary
+    Particle *parts = new Particle[max], *buffer = 0;
+    if (rank==0) buffer = new Particle[number*max];
+    int i=0;
+    for (auto p=sectorParticles.begin(); p!=sectorParticles.end(); ++p, ++i)
+      parts[i] = *p;
+    // Send Particle data to master processor
+    CommWork.Gather(parts, size, PARTICLE, buffer, max, PARTICLE, 0);
+    // If the head processor, fill with particle positions
+    vector<vec2> positions;
+    if (rank==0) {
+      positions.reserve(number);
+      for (int r=0; r<numProc; ++r)
+	for (int i=0; i<sizeBuff[r]; ++i) {
+	  int add = max*r+i;
+	  positions.push_back(buffer[add].position);
+	}
+    }
+    // Delete memory
+    if (parts) delete[] parts;
+    if (buffer) delete[] buffer;
+    if (sizeBuff) delete[] sizeBuff;
+    // Return positions
+    return positions;
+  }
+  else { // Single processor run
+    vector<vec2> positions;
+    for (auto p : sectorParticles) positions.push_back(p.position);
+    // Return positions
+    return positions;
+  }
+}
+  
 // ----- TO GO TO GFLOW.CPP -----
-
+  
 void GFlowBase::createSquare(int number, floatType radius, floatType width, floatType height, floatType vsgma, floatType dispersion, int interaction) {
   // Start the clock
   auto begin = clock();
@@ -686,10 +792,12 @@ void GFlowBase::createBuoyancyBox(floatType radius, floatType bR, floatType dens
   // Create particles at the given positions with - Radius, Dispersion, Velocity function, Angular velocity function, Coeff, Dissipation, Repulsion, Interaction
   particles = createParticles(positions, radius, dispersion, ZeroV, ZeroOm, default_sphere_coeff, default_sphere_dissipation, default_sphere_repulsion, interaction);
   // Remove particles whose centers are above the line
+  /*
   for (auto p=particles.begin(); p!=particles.end();) {
     if (depth<p->position.y+p->sigma) p = particles.erase(p);
     else ++p;
   }
+  */
   // Add the large ball
   if (rank==0 && bR>0) {
     Particle ball(width/2, depth+bR, bR);

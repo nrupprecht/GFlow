@@ -65,7 +65,14 @@ int main(int argc, char** argv) {
   //----------------------------------------
   // Parse command line arguments
   //----------------------------------------
-  ArgParse parser(argc, argv);
+  ArgParse parser;
+  try {
+    parser.set(argc, argv);
+  }
+  catch (ArgParse::IllegalToken token) {
+    cout << "Illegal Token: [" << token.c << "]. Exiting.\n";
+    exit(1);
+  }
   parser.get("number", number);
   parser.get("width", width);
   parser.get("height", height);

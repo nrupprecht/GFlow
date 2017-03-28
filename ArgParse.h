@@ -14,12 +14,15 @@ using std::vector;
 /// Command line argument parsing class
 class ArgParse {
 public:
+  ArgParse() : argc(0), argv(0) {};
   ArgParse(int argc, char** argv) {
     this->argc = argc;
     this->argv = argv;
     parse();
   }
   
+  void set(int ac, char** av) { argc = ac; argv = av; }
+
   // Parse the command line arguments for information
   void parse() {
     for (int i=1; i<argc; i++) {
@@ -43,7 +46,7 @@ public:
 	}
 	tlist.push_back(pair<string,string>(tok,val));
       }
-      else throw IllegalToken();
+      else throw IllegalToken(argv[i][0]);
     }
   }
 
@@ -69,7 +72,11 @@ public:
   }
 
   /// Exception classes
-  class IllegalToken {};
+  class IllegalToken {
+  public:
+    IllegalToken(char d) : c(d) {};
+    char c;
+  };
 
 private:
   int argc;

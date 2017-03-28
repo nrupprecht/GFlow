@@ -142,7 +142,9 @@ class GFlowBase {
 
   list<Particle> createParticles(vector<vec2>, floatType, floatType, std::function<vec2(floatType)> = ZeroV, std::function<floatType(floatType)> = ZeroOm, floatType=default_sphere_coeff, floatType=default_sphere_dissipation, floatType=default_sphere_repulsion, int=0);
   void createAndDistributeParticles(int, const Bounds&, Sectorization&, floatType, floatType=0, std::function<vec2(floatType)> = ZeroV, floatType=default_sphere_coeff, floatType=default_sphere_dissipation, floatType=default_sphere_repulsion, int=0);
+  void createAndDistributeParticles(const vector<double>&, const vector<int>&, const Bounds&, Sectorization&, std::function<vec2(floatType)> = ZeroV, floatType=default_sphere_coeff, floatType=default_sphere_dissipation, floatType=default_sphere_repulsion);
   vector<vec2> findPackedSolution(int, floatType, Bounds, vec2 = 0, floatType=0.5, floatType=0.5);
+  vector<vec2> findPackedSolution(const vector<double>&, const vector<int>&, const Bounds&, vec2, floatType, floatType);
 
   /// Data
   floatType left, right, bottom, top;
