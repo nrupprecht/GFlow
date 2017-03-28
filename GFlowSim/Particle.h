@@ -15,17 +15,17 @@ Each type of particle has to have the same basic parameters, kinetic variables (
 
 */
 
-/// Wall structure --- Size: 8 x sizeof(floatType) bytes 
+/// Wall structure --- Size: 8 x sizeof(double) bytes 
 struct Wall {
   Wall();
   Wall(vec2, vec2);
-  Wall(floatType, floatType, floatType, floatType);
+  Wall(double, double, double, double);
   
   vec2 getLeft()  const { return left; }
   vec2 getRight() const { return left+length*normal; }
 
   vec2 left;    // Left and right edge of the wall
-  floatType length;         // Length of the wall (store instead of recalculate)
+  double length;         // Length of the wall (store instead of recalculate)
   vec2 normal;         // Normal vector in wall direction (store instead of recalculate)
   double repulsion, dissipation, coeff;
 };
@@ -34,21 +34,21 @@ struct Wall {
 struct Particle {
   // Constructor
   Particle();
-  Particle(vec2, floatType);
-  Particle(floatType, floatType, floatType);
+  Particle(vec2, double);
+  Particle(double, double, double);
   // Helper functions
-  void setDensity(floatType);
+  void setDensity(double);
   // Error class
   class BadMassError {};
   // Kinetic variable
   vec2 position, velocity, force; // Linear kinetic variables
-  floatType theta, omega, torque;  // Angular kinetic variables
+  double theta, omega, torque;  // Angular kinetic variables
   
   int interaction; // Interaction type
 
-  floatType sigma; // Radius or force cutoff
-  floatType invMass, invII; // Inverses of mass and moment of inertia
-  floatType repulsion, dissipation, coeff;
+  double sigma; // Radius or force cutoff
+  double invMass, invII; // Inverses of mass and moment of inertia
+  double repulsion, dissipation, coeff;
 };
 
 /// Purely abstract base class for characteristics

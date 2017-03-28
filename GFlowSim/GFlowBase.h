@@ -6,11 +6,11 @@
 #include <tuple> 
 
 typedef pair<vec2, vec2> vpair;
-//typedef std::tuple<vec2, floatType, floatType> Tri;
+//typedef std::tuple<vec2, double, double> Tri;
 
 // Zero velocity and angular velocity functions
-inline vec2 ZeroV(floatType) { return 0; }
-inline floatType ZeroOm(floatType) { return 0; }
+inline vec2 ZeroV(double) { return 0; }
+inline double ZeroOm(double) { return 0; }
 
 // Granular float base class
 class GFlowBase {
@@ -22,9 +22,9 @@ class GFlowBase {
 
   // Addition
   void addWall(Wall);
-  void addWall(floatType, floatType, floatType, floatType);
+  void addWall(double, double, double, double);
   void addParticle(Particle);
-  void addParticle(floatType, floatType, floatType);
+  void addParticle(double, double, double);
 
   // Accessors
   Bounds getBounds()       { return Bounds(left, right, bottom, top); }
@@ -33,18 +33,18 @@ class GFlowBase {
   int getNDX()             { return ndx; }
   int getNDY()             { return ndy; }
   int getSize();
-  floatType getWidth()     { return right-left; }
-  floatType getHeight()    { return top-bottom; }
+  double getWidth()     { return right-left; }
+  double getHeight()    { return top-bottom; }
   bool getWrapX()          { return wrapX; }
   bool getWrapY()          { return wrapY; }
   vec2 getGravity()        { return gravity; }
-  floatType getTemperature()  { return temperature; }
-  floatType getViscosity()    { return viscosity; }
+  double getTemperature()  { return temperature; }
+  double getViscosity()    { return viscosity; }
   double getTime()         { return time; }
-  floatType getEpsilon()      { return epsilon; }
-  floatType getDispTime()     { return dispTime; }
-  floatType getDispRate()     { return 1./dispTime; }
-  floatType getStartRec()  { return startRec; }
+  double getEpsilon()      { return epsilon; }
+  double getDispTime()     { return dispTime; }
+  double getDispRate()     { return 1./dispTime; }
+  double getStartRec()  { return startRec; }
   int getRecIter()         { return recIter; }
   int getIter()            { return iter; }
   double getRunTime()      { return runTime; }
@@ -53,27 +53,27 @@ class GFlowBase {
   bool getDoInteractions() { return doInteractions; }
 
   // Mutators
-  void setBounds(floatType, floatType, floatType, floatType);
+  void setBounds(double, double, double, double);
   void setBounds(Bounds);
   void setWrapX(bool w)          { wrapX = w; }
   void setWrapY(bool w)          { wrapY = w; }
   void setGravity(vec2 g);
-  void setTemperature(floatType t);
-  void setViscosity(floatType h);
-  void setStartRec(floatType s)  { startRec = s; }
+  void setTemperature(double t);
+  void setViscosity(double h);
+  void setStartRec(double s)  { startRec = s; }
   void setDoInteractions(bool i);
   void setInteractionType(int i);
   void setExpectedSize(int i) { sectorization.setASize(i); }
-  void setSkinDepth(floatType s) { skinDepth = s; sectorization.setSkinDepth(s); }
+  void setSkinDepth(double s) { skinDepth = s; sectorization.setSkinDepth(s); }
 
   // File functions
   virtual bool loadConfigurationFromFile (string);
   virtual bool createConfigurationFile   (string);
 
   // -----  TO GO TO GFLOW.H  ------
-  void createSquare(int, floatType, floatType=4., floatType=4., floatType=0.1, floatType=0., int=0);
-  void createBuoyancyBox(floatType,floatType,floatType,floatType,floatType,floatType,floatType, int=0);
-  bool loadBuoyancy(string, floatType=0.5, floatType=5., floatType=10.);
+  void createSquare(int, double, double=4., double=4., double=0.1, double=0., int=0);
+  void createBuoyancyBox(double,double,double,double,double,double,double, int=0);
+  bool loadBuoyancy(string, double=0.5, double=5., double=10.);
   void recordPositions();
 
   void addStatFunction(StatFunc, string);
@@ -83,8 +83,8 @@ class GFlowBase {
   string printSpecialAnimationCommand(bool=false);
   void printSectors();
 
-  vector<floatType> getBubbleSizes(vector<Particle>&, Bounds=NullBounds, floatType=0.01, floatType=0.001, floatType=0.05);
-  vector<floatType> getBubbleSizes(vector<Particle>&, string&, Bounds=NullBounds, floatType=0.01, floatType=0.001, floatType=0.05);
+  vector<double> getBubbleSizes(vector<Particle>&, Bounds=NullBounds, double=0.01, double=0.001, double=0.05);
+  vector<double> getBubbleSizes(vector<Particle>&, string&, Bounds=NullBounds, double=0.01, double=0.001, double=0.05);
   vector<string> getBubbles() { return visualizeBubbles; }
   inline void unite(int*, int, int);
   inline int getHead(int*, int);
@@ -105,7 +105,7 @@ class GFlowBase {
   // Data
   vector<vector<PData> > positionRecord;
   vector<vector<Tri> > specialRecord;
-  vector<vector<floatType> > bubbleRecord;
+  vector<vector<double> > bubbleRecord;
   vector<string> visualizeBubbles;
   bool recPositions;
   bool recSpecial;
@@ -138,23 +138,23 @@ class GFlowBase {
   void distributeParticles(list<Particle>&, Sectorization&);
   void recallParticles(vector<Particle>&); // Gather copies of all particles into a vector
   void recallParticlesByProcessor(vector<vector<Particle> >&); // Gather copies of all particles, remembering which particles came from which processor
-  floatType reduceStatFunction(StatFunc, int=0);
+  double reduceStatFunction(StatFunc, int=0);
 
-  list<Particle> createParticles(vector<vec2>, floatType, floatType, std::function<vec2(floatType)> = ZeroV, std::function<floatType(floatType)> = ZeroOm, floatType=default_sphere_coeff, floatType=default_sphere_dissipation, floatType=default_sphere_repulsion, int=0);
-  void createAndDistributeParticles(int, const Bounds&, Sectorization&, floatType, floatType=0, std::function<vec2(floatType)> = ZeroV, floatType=default_sphere_coeff, floatType=default_sphere_dissipation, floatType=default_sphere_repulsion, int=0);
-  void createAndDistributeParticles(const vector<double>&, const vector<int>&, const Bounds&, Sectorization&, std::function<vec2(floatType)> = ZeroV, floatType=default_sphere_coeff, floatType=default_sphere_dissipation, floatType=default_sphere_repulsion);
-  vector<vec2> findPackedSolution(int, floatType, Bounds, vec2 = 0, floatType=0.5, floatType=0.5);
-  vector<vec2> findPackedSolution(const vector<double>&, const vector<int>&, const Bounds&, vec2, floatType, floatType);
+  list<Particle> createParticles(vector<vec2>, double, double, std::function<vec2(double)> = ZeroV, std::function<double(double)> = ZeroOm, double=default_sphere_coeff, double=default_sphere_dissipation, double=default_sphere_repulsion, int=0);
+  void createAndDistributeParticles(int, const Bounds&, Sectorization&, double, double=0, std::function<vec2(double)> = ZeroV, double=default_sphere_coeff, double=default_sphere_dissipation, double=default_sphere_repulsion, int=0);
+  void createAndDistributeParticles(const vector<double>&, const vector<int>&, const Bounds&, Sectorization&, std::function<vec2(double)> = ZeroV, double=default_sphere_coeff, double=default_sphere_dissipation, double=default_sphere_repulsion);
+  vector<vec2> findPackedSolution(int, double, Bounds, vec2 = 0, double=0.5, double=0.5);
+  vector<vec2> findPackedSolution(const vector<double>&, const vector<int>&, const Bounds&, vec2, double, double);
 
   /// Data
-  floatType left, right, bottom, top;
+  double left, right, bottom, top;
   bool wrapX, wrapY;
   vec2 gravity;
-  floatType temperature, viscosity;
+  double temperature, viscosity;
 
   /// Times
   double time;                   // Simulated time
-  floatType epsilon, sqrtEpsilon;// Time step and its square root
+  double epsilon, sqrtEpsilon;// Time step and its square root
   double dispTime, lastDisp;     // Time between recording (1. / display rate), last time data was recorded
   double startRec;               // When to start recording data
   int iter, recIter, maxIter;    // Simulation iteration, how many iterations we have recorded data at, maximum iteration
@@ -169,7 +169,7 @@ class GFlowBase {
 
   /// Sectorization
   Sectorization sectorization;   // The sectorization for this processor
-  floatType skinDepth;           // What skin depth we should use for our sectors
+  double skinDepth;           // What skin depth we should use for our sectors
   bool doWork;                   // True if this processor needs to do work
 
   // MPI

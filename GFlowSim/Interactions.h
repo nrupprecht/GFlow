@@ -6,13 +6,13 @@
 /// Interaction functions --> First two arguments are the particles or walls effected
 //  Next two arguments are references used to extract the magnitude of the normal force and shear force
 
-inline bool hardDiskRepulsion(floatType **pdata, int p, int q, int asize, vec2& displacement, floatType &Fn, floatType &Fs) {
+inline bool hardDiskRepulsion(double **pdata, int p, int q, int asize, vec2& displacement, double &Fn, double &Fs) {
   // Set up convenience pointers
-  floatType *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
+  double *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
   // Find out if the particles interact
-  floatType distSqr = sqr(displacement);
-  floatType cutoff = sg[p] + sg[q];
-  floatType cutoffsqr = sqr(cutoff);
+  double distSqr = sqr(displacement);
+  double cutoff = sg[p] + sg[q];
+  double cutoffsqr = sqr(cutoff);
   /*
               ^ normal
               |
@@ -21,19 +21,19 @@ inline bool hardDiskRepulsion(floatType **pdata, int p, int q, int asize, vec2& 
 	      */
   if (distSqr < cutoffsqr) { // Interaction
     // Compute interaction parameters ( ad hoc )
-    floatType dissipation = ds[p]+ds[q];
-    floatType repulsion = rp[p]+rp[q];
-    floatType coeff = cf[p]*cf[q];
+    double dissipation = ds[p]+ds[q];
+    double repulsion = rp[p]+rp[q];
+    double coeff = cf[p]*cf[q];
     // Compute force
-    floatType dist = sqrt(distSqr);
+    double dist = sqrt(distSqr);
     vec2 normal = (1.0/dist) * displacement;
     vec2 shear = vec2(normal.y, -normal.x);
     // Spring force strength
-    floatType strength = repulsion*(cutoff-dist);
+    double strength = repulsion*(cutoff-dist);
     // Velocities
     vec2 dV(vx[q]-vx[p], vy[q]-vy[p]);    
-    floatType Vn = dV*normal; // Normal velocity
-    floatType Vs = dV*shear + sg[p]*om[p] + sg[q]*om[q]; // Shear velocity
+    double Vn = dV*normal; // Normal velocity
+    double Vs = dV*shear + sg[p]*om[p] + sg[q]*om[q]; // Shear velocity
     // Calculate the normal force
     Fn = -strength-dissipation*clamp(-Vn); // Damped harmonic oscillator
     // Calculate the Shear force
@@ -53,33 +53,33 @@ inline bool hardDiskRepulsion(floatType **pdata, int p, int q, int asize, vec2& 
   return false; // Particles did not interact
 }
 
-inline bool hardDiskRepulsion_wall(floatType **pdata, int p, const Wall &w, int asize, vec2& displacement, floatType &Fn, floatType &Fs) {
+inline bool hardDiskRepulsion_wall(double **pdata, int p, const Wall &w, int asize, vec2& displacement, double &Fn, double &Fs) {
   // Set up convenience pointers
-  floatType *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
+  double *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
   // We are given displacement = p.position - w.left;
-  floatType l_par = displacement*w.normal;
+  double l_par = displacement*w.normal;
   vec2 d_par = l_par*w.normal;
   vec2 d_perp = displacement - d_par;
   // Check whether the particle is between the start and end of the wall
-  floatType radSqr = sqr(sg[p]);
+  double radSqr = sqr(sg[p]);
   if (l_par>=0) { // Located forward of the origin
     if (w.length>l_par) displacement = d_perp;  // The particle is above the wall (in the perp. direction)
     else displacement -= w.length*w.normal; // Displacement from the nearest end (the far end) of the wall
   }
-  floatType distSqr = sqr(displacement);   // Located behind the origin
+  double distSqr = sqr(displacement);   // Located behind the origin
   /// We now have the correct displacement vector and distSqr value
   if (distSqr<=radSqr) {
     // Compute interaction parameters ( ad hoc )
-    floatType dissipation = ds[p] + w.dissipation;
-    floatType repulsion = rp[p] + w.repulsion;
-    floatType coeff = cf[p] * w.coeff;
+    double dissipation = ds[p] + w.dissipation;
+    double repulsion = rp[p] + w.repulsion;
+    double coeff = cf[p] * w.coeff;
     // Compute force
-    floatType dist = sqrt(distSqr);
+    double dist = sqrt(distSqr);
     vec2 norm = (1.0/dist) * displacement;
     vec2 shear = vec2(norm.y, -norm.x);
-    floatType strength = 2*repulsion*(sg[p] - dist);
-    floatType Vn = vx[p]*norm.x + vy[p]*norm.y;
-    floatType Vs = vx[p]*shear.x+vy[p]*shear.y + om[p]*sg[p]; // If the wall had velocity then we would subtract: - velocity*(shear*normal);
+    double strength = 2*repulsion*(sg[p] - dist);
+    double Vn = vx[p]*norm.x + vy[p]*norm.y;
+    double Vs = vx[p]*shear.x+vy[p]*shear.y + om[p]*sg[p]; // If the wall had velocity then we would subtract: - velocity*(shear*normal);
     
     // Damped harmonic oscillator
     Fn = -strength-dissipation*clamp(-Vn);
@@ -97,12 +97,12 @@ inline bool hardDiskRepulsion_wall(floatType **pdata, int p, const Wall &w, int 
   return false; 
 }
 
-inline bool LJinteraction(floatType **pdata, int p, int q, int asize, vec2& displacement, floatType &Fn, floatType &Fs) {
+inline bool LJinteraction(double **pdata, int p, int q, int asize, vec2& displacement, double &Fn, double &Fs) {
   // Set up convenience pointers
-  floatType *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
-  floatType distSqr = sqr(displacement);
-  floatType cutoff = sg[p]+sg[q];
-  floatType cutoffsqr = sqr(cutoff);
+  double *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
+  double distSqr = sqr(displacement);
+  double cutoff = sg[p]+sg[q];
+  double cutoffsqr = sqr(cutoff);
   /*
               ^ normal
               |
@@ -111,25 +111,25 @@ inline bool LJinteraction(floatType **pdata, int p, int q, int asize, vec2& disp
   */
   if (distSqr < cutoffsqr) { // Interaction
     // Compute interaction parameters ( ad hoc )
-    floatType dissipation = ds[p]+ds[q];
-    floatType repulsion = rp[p]+rp[q];
-    floatType coeff = cf[p]*cf[q];
+    double dissipation = ds[p]+ds[q];
+    double repulsion = rp[p]+rp[q];
+    double coeff = cf[p]*cf[q];
     // Compute force
-    floatType dist = sqrt(distSqr);
+    double dist = sqrt(distSqr);
     vec2 normal = (1.0/dist) * displacement;
     vec2 shear = vec2(normal.y, -normal.x);
     // LJ force strength
-    floatType invD = 1./dist;
-    floatType prop = sqrt(sg[p]*sg[q])*invD;
-    floatType d3 = sqr(prop)*prop;
-    floatType d6 = sqr(prop);
-    floatType d12 = sqr(d6);
+    double invD = 1./dist;
+    double prop = sqrt(sg[p]*sg[q])*invD;
+    double d3 = sqr(prop)*prop;
+    double d6 = sqr(prop);
+    double d12 = sqr(d6);
     // Force is - d/dx (LJ)
-    floatType strength = 4*repulsion*(12*d12-6*d6)*invD * 1e-5;
+    double strength = 4*repulsion*(12*d12-6*d6)*invD * 1e-5;
     // Velocities
     vec2 dV(vx[q]-vx[p], vy[q]-vy[p]);
-    floatType Vn = dV*normal; // Normal velocity
-    floatType Vs = dV*shear + sg[p]*om[p] + sg[q]*om[q]; // Shear velocity
+    double Vn = dV*normal; // Normal velocity
+    double Vs = dV*shear + sg[p]*om[p] + sg[q]*om[q]; // Shear velocity
     // Calculate the normal force
     Fn = -strength-dissipation*clamp(-Vn); // Damped harmonic oscillator
     // Calculate the Shear force
@@ -149,18 +149,18 @@ inline bool LJinteraction(floatType **pdata, int p, int q, int asize, vec2& disp
   return false; // Particles did not interact
 }
 
-inline bool TriTriInteraction(floatType **pdata, int p, int q, int asize, vec2& displacement, floatType &Fn, floatType &Fs) {
+inline bool TriTriInteraction(double **pdata, int p, int q, int asize, vec2& displacement, double &Fn, double &Fs) {
   // Set up convenience pointers
-  floatType *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
-  floatType distSqr = sqr(displacement);
-  floatType cutoff = sg[p]+sg[q];
-  floatType cutoffsqr = sqr(cutoff);
+  double *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
+  double distSqr = sqr(displacement);
+  double cutoff = sg[p]+sg[q];
+  double cutoffsqr = sqr(cutoff);
   // Check if the bounding circles touch
   if (distSqr < cutoffsqr) { // Passes the circle test
     // Compute interaction parameters ( ad hoc )
-    floatType dissipation = ds[p]+ds[q];
-    floatType repulsion = rp[p]+rp[q];
-    floatType coeff = cf[p]*cf[q];
+    double dissipation = ds[p]+ds[q];
+    double repulsion = rp[p]+rp[q];
+    double coeff = cf[p]*cf[q];
     
     // Possible normal vectors
     double dth = 2*PI/3;
@@ -172,7 +172,7 @@ inline bool TriTriInteraction(floatType **pdata, int p, int q, int asize, vec2& 
     vec2 n3q(cos(th[q]-dth), sin(th[q]-dth));
     // Which is the correct normal vector
     vec2 normP = n1p;
-    floatType dot = n1p*displacement;
+    double dot = n1p*displacement;
     if (dot<n2p*displacement) {
       normP = n2p;
       dot = n2p*displacement;
@@ -192,7 +192,7 @@ inline bool TriTriInteraction(floatType **pdata, int p, int q, int asize, vec2& 
       displacement = -displacement;
     }
     // Assign "shear" vector (triangle P face normal)
-    const floatType cth = 0.5, sth = sqrt(3.)/2.;
+    const double cth = 0.5, sth = sqrt(3.)/2.;
     vec2 shear(normP.x*cth + normP.y*sth, -normP.x*sth + normP.y*cth);
     // Cross product
     if ((displacement^normP)<0) { // Need to use the other shear vector
@@ -200,7 +200,7 @@ inline bool TriTriInteraction(floatType **pdata, int p, int q, int asize, vec2& 
       shear.y += 2*normP.x*sth;
     }
     // Now we are reaady to check for intersection and compute forces
-    floatType sgprime = 0.5*sg[p];
+    double sgprime = 0.5*sg[p];
     vec2 intersect = displacement + sg[q]*normQ;
     if (intersect*normP<sg[p] && intersect*shear<sgprime) {
       vec2 force = repulsion*clamp(sgprime - intersect*shear)*shear;
@@ -218,33 +218,33 @@ inline bool TriTriInteraction(floatType **pdata, int p, int q, int asize, vec2& 
   return false;
 }
 
-inline bool Triangle_wall(floatType **pdata, int p, const Wall &w, int asize, vec2& displacement, floatType &Fn, floatType &Fs) {
+inline bool Triangle_wall(double **pdata, int p, const Wall &w, int asize, vec2& displacement, double &Fn, double &Fs) {
   // Set up convenience pointers
-  floatType *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
+  double *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
   // We are given displacement = p.position - w.left;
-  floatType l_par = displacement*w.normal;
+  double l_par = displacement*w.normal;
   vec2 d_par = l_par*w.normal;
   vec2 d_perp = displacement - d_par;
   // Check whether the particle is between the start and end of the wall
-  floatType radSqr = sqr(sg[p]);
+  double radSqr = sqr(sg[p]);
   if (l_par>=0) { // Located forward of the origin
     if (w.length>l_par) displacement = d_perp;  // The particle is above the wall (in the perp. direction)
     else displacement -= w.length*w.normal; // Displacement from the nearest end (the far end) of the wall
   }
-  floatType distSqr = sqr(displacement);   // Located behind the origin
+  double distSqr = sqr(displacement);   // Located behind the origin
   /// We now have the correct displacement vector and distSqr value
   if (distSqr<=radSqr) {
     // Compute interaction parameters ( ad hoc )
-    floatType dissipation = ds[p] + w.dissipation;
-    floatType repulsion = rp[p] + w.repulsion;
-    floatType coeff = cf[p] * w.coeff;
+    double dissipation = ds[p] + w.dissipation;
+    double repulsion = rp[p] + w.repulsion;
+    double coeff = cf[p] * w.coeff;
     // Compute force
-    floatType dist = sqrt(distSqr);
+    double dist = sqrt(distSqr);
     vec2 norm = (1.0/dist) * displacement;
     vec2 shear = vec2(norm.y, -norm.x);
-    floatType strength = 2*repulsion*(sg[p] - dist);
-    floatType Vn = vx[p]*norm.x + vy[p]*norm.y;
-    floatType Vs = vx[p]*shear.x+vy[p]*shear.y + om[p]*sg[p]; // If the wall had velocity then we would subtract: - velocity*(shear*normal);
+    double strength = 2*repulsion*(sg[p] - dist);
+    double Vn = vx[p]*norm.x + vy[p]*norm.y;
+    double Vs = vx[p]*shear.x+vy[p]*shear.y + om[p]*sg[p]; // If the wall had velocity then we would subtract: - velocity*(shear*normal);
     
     // Damped harmonic oscillator
     Fn = -strength-dissipation*clamp(-Vn);
@@ -260,13 +260,13 @@ inline bool Triangle_wall(floatType **pdata, int p, const Wall &w, int asize, ve
   return false;
 }
 
-inline void wallDisplacement(vec2 &displacement, const floatType sigma, const Wall &w) {
+inline void wallDisplacement(vec2 &displacement, const double sigma, const Wall &w) {
   // We are given displacement = p.position - w.left;
-  floatType l_par = displacement*w.normal;
+  double l_par = displacement*w.normal;
   vec2 d_par = l_par*w.normal;
   vec2 d_perp = displacement - d_par;
   // Check whether the particle is between the start and end of the wall
-  floatType radSqr = sqr(sigma);
+  double radSqr = sqr(sigma);
   if (l_par>=0) { // Located forward of the origin
     if (w.length>l_par) displacement = d_perp;  // The particle is above the wall (in the perp. direction)
   else displacement -= w.length*w.normal; // Displacement from the nearest end (the far end) of the wall

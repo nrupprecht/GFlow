@@ -28,7 +28,7 @@ void Sectorization::initialize() {
   lastTemp = 0;
   itersSinceBuild = 0;
   // Find out what the cutoff should be -- The sum of the largest two interaction radii
-  floatType mx=0, snd=0;
+  double mx=0, snd=0;
   for (auto &p : plist) {
     if (p.sigma>mx) mx = p.sigma;
     else if (p.sigma>snd) snd = p.sigma;
@@ -80,7 +80,7 @@ vector<Particle>& Sectorization::getParticles() {
   return plist;
 }
 
-void Sectorization::setBounds(floatType l, floatType r, floatType b, floatType t) {
+void Sectorization::setBounds(double l, double r, double b, double t) {
   bounds = Bounds(l, r, b, t);
 }
 
@@ -88,7 +88,7 @@ void Sectorization::setBounds(Bounds b) {
   bounds = b;
 }
 
-void Sectorization::setSimBounds(floatType l, floatType r, floatType b, floatType t) {
+void Sectorization::setSimBounds(double l, double r, double b, double t) {
   simBounds = Bounds(l, r, b, t);
 }
 
@@ -147,7 +147,7 @@ void Sectorization::particleInteractions() {
     for (; q!=nl.end(); ++q) { // Try to interact with all other particles in the nl
       int j = *q;
       vec2 displacement = vec2(px[j]-px[i], py[j]-py[i]); //** getDisplacement(vec2(px[j],py[j]), vec2(px[i],py[i]));
-      floatType Fn=0, Fs=0;
+      double Fn=0, Fs=0;
       int iType = ibase+it[j]; // Same as 4*it[i]+it[j]
       // Switch on interaction type
       switch(iType) {
@@ -192,7 +192,7 @@ void Sectorization::wallInteractions() {
       int i = pr.first;
       if (it[i]<0) continue; // Particle has moved out
       for (auto w : pr.second) {
-	floatType Fn=0, Fs=0;
+	double Fn=0, Fs=0;
 	vec2 displacement = getDisplacement(px[i], py[i], w->left.x, w->left.y);
 	switch (it[i]) {
         default:
@@ -210,7 +210,7 @@ void Sectorization::wallInteractions() {
     for (auto& w : walls)
       for (int i=0; i<array_end; ++i) {
 	if (it[i]<0) continue;
-	floatType Fn=0, Fs=0;
+	double Fn=0, Fs=0;
 	vec2 displacement = getDisplacement(px[i], py[i], w.left.x, w.left.y);
 	switch (it[i]) {
 	default:
@@ -316,11 +316,11 @@ string Sectorization::printSectors() {
   return str;
 }
 
-pair<floatType, int> Sectorization::doStatFunction(StatFunc func) {
+pair<double, int> Sectorization::doStatFunction(StatFunc func) {
   // You are responsible for updating plist beforehand
   int count;
-  floatType data = func(plist, count);
-  return pair<floatType, int>(data, count);
+  double data = func(plist, count);
+  return pair<double, int>(data, count);
 }
 
 inline void Sectorization::firstHalfKick() {
@@ -330,7 +330,7 @@ inline void Sectorization::firstHalfKick() {
 #pragma vector aligned
 #pragma simd
     for (int i=0; i<array_end; ++i) {
-      // floatType mass = 1./im[i];
+      // double mass = 1./im[i];
       vx[i] += dt*im[i]*fx[i];
       vy[i] += dt*im[i]*fy[i];
       px[i] += epsilon*vx[i];
@@ -343,8 +343,8 @@ inline void Sectorization::firstHalfKick() {
       wrap(th[i]);        // Wrap theta
       tq[i] = 0;
       // Temperature force
-      floatType DT = DT1*(1./sg[i]); // Assumes Kb = 1;
-      floatType coeffD = sqrt(2*DT)*sqrtTempDelay;
+      double DT = DT1*(1./sg[i]); // Assumes Kb = 1;
+      double coeffD = sqrt(2*DT)*sqrtTempDelay;
       vec2 TForce = coeffD*randNormal()*randV();
       fx[i] += TForce.x; fy[i] += TForce.y;
     }
@@ -353,7 +353,7 @@ inline void Sectorization::firstHalfKick() {
 #pragma vector aligned
 #pragma simd
     for (int i=0; i<array_end; ++i) {
-      // floatType mass = 1./im[i];
+      // double mass = 1./im[i];
       vx[i] += dt*im[i]*fx[i];
       vy[i] += dt*im[i]*fy[i];
       px[i] += epsilon*vx[i];
@@ -379,7 +379,7 @@ inline void Sectorization::secondHalfKick() {
   }
 }
 
-inline void Sectorization::wrap(floatType &x, floatType &y) {
+inline void Sectorization::wrap(double &x, double &y) {
   if (x<simBounds.left)       x = simBounds.right-fmod(simBounds.left-x, simBounds.right-simBounds.left);
   else if (simBounds.right<x) x = fmod(x-simBounds.left, simBounds.right-simBounds.left)+simBounds.left;
   if (y<simBounds.bottom)     y = simBounds.top-fmod(simBounds.bottom-y, simBounds.top-bounds.bottom);
@@ -393,7 +393,7 @@ inline void Sectorization::wrap(vec2 &pos) {
   else if (simBounds.top<pos.y)   pos.y = fmod(pos.y-simBounds.bottom, simBounds.top-simBounds.bottom)+simBounds.bottom;
 }
 
-inline void Sectorization::wrap(floatType &theta) {
+inline void Sectorization::wrap(double &theta) {
   if (theta<0) theta = 2*PI-fmod(-theta, 2*PI);
   else if (2*PI<theta) theta = fmod(theta, 2*PI);
 }
@@ -402,8 +402,8 @@ inline int Sectorization::getSec(const vec2 &position) {
   return getSec(position.x, position.y);
 }
  
-inline int Sectorization::getSec(const floatType x, const floatType y) {
-  floatType edge = cutoff + skinDepth;
+inline int Sectorization::getSec(const double x, const double y) {
+  double edge = cutoff + skinDepth;
   int sx = (x-bounds.left)/secWidth, sy = (y-bounds.bottom)/secHeight;
   
   // If inside the domain, we are done
@@ -446,10 +446,10 @@ inline void Sectorization::createNeighborLists(bool force) {
   
   // Find an upper bound on how far particles might have moved from one another, unless we are forcing a redo
   if (!force) {
-    floatType m0 = 0, m1 = 0;
+    double m0 = 0, m1 = 0;
     for (int i=0; i<array_end; ++i) {
       if (0<=it[i]) {
-	floatType distSqr = sqr(getDisplacement(positionTracker[i], vec2(px[i], py[i])));
+	double distSqr = sqr(getDisplacement(positionTracker[i], vec2(px[i], py[i])));
 	if (distSqr>m0) m0 = distSqr;
 	else if (distSqr>m1) m1 = distSqr;
       }
@@ -460,7 +460,7 @@ inline void Sectorization::createNeighborLists(bool force) {
   // Update sectors
   updateSectors();
   // The square of the neighbor distance
-  floatType distance = sqr(cutoff+skinDepth);
+  double distance = sqr(cutoff+skinDepth);
   // Get rid of the old neighbor lists
   neighborList.clear();
   // Create new neighbor lists
@@ -473,8 +473,8 @@ inline void Sectorization::createNeighborLists(bool force) {
 	// Create a neighbor list for each particle, using the cells
 	list<int> nlist;
 	nlist.push_back(i); // You are at the head of the list
-	floatType sigma = sg[i], velocity = sqrt(sqr(vx[i])+sqr(vy[i]));
-	floatType range = sigma * max(velocity, 1.);
+	double sigma = sg[i], velocity = sqrt(sqr(vx[i])+sqr(vy[i]));
+	double range = sigma * max(velocity, 1.);
 	// Create symmetric lists, so only check the required surrounding sectors ( * ) around the sector you are in ( <*> )
 	// +---------+
 	// | *  x  x |
@@ -548,16 +548,16 @@ inline vec2 Sectorization::getDisplacement(vec2 A, vec2 B) {
   return getDisplacement(A.x, A.y, B.x, B.y);
 }
 
-inline vec2 Sectorization::getDisplacement(floatType ax, floatType ay, floatType bx, floatType by) {
+inline vec2 Sectorization::getDisplacement(double ax, double ay, double bx, double by) {
   // Get the correct (minimal) displacement vector pointing from B to A
-  floatType X = ax-bx;
-  floatType Y = ay-by;
+  double X = ax-bx;
+  double Y = ay-by;
   if (wrapX) {
-    floatType dx = (simBounds.right-simBounds.left)-fabs(X);
+    double dx = (simBounds.right-simBounds.left)-fabs(X);
     if (dx<fabs(X)) X = X>0 ? -dx : dx;
   }
   if (wrapY) {
-    floatType dy =(simBounds.top-simBounds.bottom)-fabs(Y);
+    double dy =(simBounds.top-simBounds.bottom)-fabs(Y);
     if (dy<fabs(Y)) Y = Y>0 ? -dy : dy;
   }
   return vec2(X,Y);
@@ -609,24 +609,24 @@ inline void Sectorization::createArrays() {
   if (ms) delete [] ms;
   // Reallocate
   int tsize = asize + easize;
-  pdata[0]  = px = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
-  pdata[1]  = py = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
-  pdata[2]  = vx = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
-  pdata[3]  = vy = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
-  pdata[4]  = fx = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
-  pdata[5]  = fy = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
-  pdata[6]  = th = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
-  pdata[7]  = om = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
-  pdata[8]  = tq = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
-  pdata[9]  = sg = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
-  pdata[10] = im = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
-  pdata[11] = iI = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
-  pdata[12] = rp = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
-  pdata[13] = ds = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
-  pdata[14] = cf = (floatType*)aligned_alloc(64, tsize*sizeof(floatType));
+  pdata[0]  = px = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pdata[1]  = py = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pdata[2]  = vx = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pdata[3]  = vy = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pdata[4]  = fx = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pdata[5]  = fy = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pdata[6]  = th = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pdata[7]  = om = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pdata[8]  = tq = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pdata[9]  = sg = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pdata[10] = im = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pdata[11] = iI = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pdata[12] = rp = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pdata[13] = ds = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pdata[14] = cf = (double*)aligned_alloc(64, tsize*sizeof(double));
   it             =    (int*)   aligned_alloc(64, tsize*sizeof(int));
   memset(it, -1, tsize*sizeof(int)); // Each int is 4 bytes
-  ms = (floatType*)aligned_alloc(64, asize*sizeof(floatType));
+  ms = (double*)aligned_alloc(64, asize*sizeof(double));
   // Set position tracker array
   if (positionTracker) delete [] positionTracker;
   positionTracker = (vec2*)aligned_alloc(64, asize*sizeof(vec2));
@@ -776,7 +776,7 @@ inline void Sectorization::passParticleSend(const int send, const list<int> &all
       buffer[i+12] = rp[j];
       buffer[i+13] = ds[j];
       buffer[i+14] = cf[j];
-      buffer[i+15] = static_cast<floatType>(it[j]);
+      buffer[i+15] = static_cast<double>(it[j]);
       i+=16;
       // Remove the particle from the particle list by setting its interaction to -1
       if (!noErase) it[j] = -1;

@@ -43,9 +43,6 @@ using std::ofstream;
 
 #include "../ArgParse.h"
 
-// --- What type of floating point we will use throughout the program ---
-typedef double floatType;
-
 const double PI = 3.14159265;
 
 static std::mt19937 generator;
@@ -296,9 +293,9 @@ vect(const vect<T>& V) : x(V.x), y(V.y) {};
 };
 
 // --- What type of vector we will use as our main vector type ---
-typedef vect<floatType> vec2;
-typedef std::tuple<vec2, floatType, floatType> Tri;
-typedef std::tuple<vec2, floatType, floatType, floatType, floatType> PData;
+typedef vect<double> vec2;
+typedef std::tuple<vec2, double, double> Tri;
+typedef std::tuple<vec2, double, double, double, double> PData;
 
 /// Some common vectors
 const vect<double> Zero(0,0);
@@ -461,9 +458,9 @@ typedef pair<int,int> ipair;
 /// The bounds structure
 struct Bounds {
   Bounds() : left(0), right(0), bottom(0), top(0) {};
-  Bounds(floatType l, floatType r, floatType b, floatType t) : left(l), right(r), bottom(b), top(t) {};
+  Bounds(double l, double r, double b, double t) : left(l), right(r), bottom(b), top(t) {};
   // Data
-  floatType left, right, bottom, top;
+  double left, right, bottom, top;
   // Member and friend functions
   friend std::ostream& operator<<(std::ostream& out, const Bounds& B) {
     out << "{" << B.left << "," << B.right << "," << B.bottom << "," << B.top << "}";
@@ -472,7 +469,7 @@ struct Bounds {
   bool contains(const vec2 position) const {
     return position.x<right && left<position.x && position.y<top && bottom<position.y;
   }
-  bool contains(const floatType x, const floatType y) const {
+  bool contains(const double x, const double y) const {
     return x<right && left<x && y<top && bottom<y;
   }
 };

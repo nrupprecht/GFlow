@@ -18,7 +18,7 @@ Wall::Wall(vec2 l, vec2 r) : left(l) {
   coeff = default_wall_coeff;
 }
 
-Wall::Wall(floatType lx, floatType ly, floatType rx, floatType ry) {
+Wall::Wall(double lx, double ly, double rx, double ry) {
   left = vec2(lx, ly); vec2 right(rx, ry);
   length = sqrt(sqr(left-right));
   normal = (1./length)*(right-left);
@@ -32,7 +32,7 @@ Particle::Particle() : sigma(0), interaction(0) {
   position = velocity = force = 0;
   theta = 2*drand48()*PI;
   omega = torque = 0;
-  floatType mass = 0;
+  double mass = 0;
   invMass = 1.;
   invII = 1.;
 
@@ -41,11 +41,11 @@ Particle::Particle() : sigma(0), interaction(0) {
   coeff = default_sphere_coeff;
 }
 
-Particle::Particle(vec2 p, floatType r) : position(p), sigma(r), interaction(0) {
+Particle::Particle(vec2 p, double r) : position(p), sigma(r), interaction(0) {
   velocity = force = 0;
   theta = 2*drand48()*PI;
   omega = torque = 0;
-  floatType mass = PI*default_sphere_density*sqr(r);
+  double mass = PI*default_sphere_density*sqr(r);
   invMass = 1./mass;
   invII = 1./(0.5*mass*sqr(r));
 
@@ -54,11 +54,11 @@ Particle::Particle(vec2 p, floatType r) : position(p), sigma(r), interaction(0) 
   coeff = default_sphere_coeff;
 }
 
-Particle::Particle(floatType x, floatType y, floatType r) : position(vec2(x,y)), sigma(r), interaction(0) {
+Particle::Particle(double x, double y, double r) : position(vec2(x,y)), sigma(r), interaction(0) {
   velocity = force = 0;
   theta = 2*drand48()*PI;
   omega = torque = 0;
-  floatType mass = PI*default_sphere_density*sqr(r);
+  double mass = PI*default_sphere_density*sqr(r);
   invMass = 1./mass;
   invII= 1./(0.5*mass*sqr(r));
 
@@ -67,9 +67,9 @@ Particle::Particle(floatType x, floatType y, floatType r) : position(vec2(x,y)),
   coeff = default_sphere_coeff;
 }
 
-void Particle::setDensity(floatType density) {
+void Particle::setDensity(double density) {
   if (density<=0) throw BadMassError();
-  floatType mass = PI*density*sqr(sigma);
+  double mass = PI*density*sqr(sigma);
   invMass = 1./mass;
   invII = 1.0/(0.5*mass*sqr(sigma));
 }
