@@ -90,4 +90,30 @@ inline double Stat_Large_Object_Height(const vector<Particle> &particles, int &c
   return count>0 ? height/count : 0;
 }
 
+inline double Stat_Large_Object_X(const vector<Particle> &particles, int &count) {
+  if (particles.empty()) return 0;
+  double px = 0;
+  count = 0;
+  for (const auto &p : particles) {
+    if (0.1<p.sigma) {
+      px += p.position.x;
+      count++;
+    }
+  }
+  return count>0 ? px/count : 0;
+}
+
+inline double Stat_Large_Object_Radius(const vector<Particle> &particles, int &count) {
+  if (particles.empty()) return 0;
+  double sigma = 0;
+  count = 0;
+  for (const auto &p : particles) {
+    if (0.1<p.sigma) {
+      sigma += p.sigma;
+      count++;
+    }
+  }
+  return count>0 ? sigma/count : 0;
+}
+
 #endif // __STAT_FUNC_H__

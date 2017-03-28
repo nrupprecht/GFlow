@@ -30,7 +30,8 @@ Wall::Wall(floatType lx, floatType ly, floatType rx, floatType ry) {
 
 Particle::Particle() : sigma(0), interaction(0) {
   position = velocity = force = 0;
-  theta = omega = torque = 0;
+  theta = 2*drand48()*PI;
+  omega = torque = 0;
   floatType mass = 0;
   invMass = 1.;
   invII = 1.;
@@ -42,7 +43,8 @@ Particle::Particle() : sigma(0), interaction(0) {
 
 Particle::Particle(vec2 p, floatType r) : position(p), sigma(r), interaction(0) {
   velocity = force = 0;
-  theta = omega = torque = 0;
+  theta = 2*drand48()*PI;
+  omega = torque = 0;
   floatType mass = PI*default_sphere_density*sqr(r);
   invMass = 1./mass;
   invII = 1./(0.5*mass*sqr(r));
@@ -54,7 +56,8 @@ Particle::Particle(vec2 p, floatType r) : position(p), sigma(r), interaction(0) 
 
 Particle::Particle(floatType x, floatType y, floatType r) : position(vec2(x,y)), sigma(r), interaction(0) {
   velocity = force = 0;
-  theta = omega = torque = 0;
+  theta = 2*drand48()*PI;
+  omega = torque = 0;
   floatType mass = PI*default_sphere_density*sqr(r);
   invMass = 1./mass;
   invII= 1./(0.5*mass*sqr(r));

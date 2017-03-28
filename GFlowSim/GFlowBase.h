@@ -83,8 +83,8 @@ class GFlowBase {
   string printSpecialAnimationCommand(bool=false);
   void printSectors();
 
-  vector<floatType> getBubbleSizes(vector<Particle>&, floatType=0., floatType=0.001, floatType=0.05, Bounds=NullBounds);
-  vector<floatType> getBubbleSizes(vector<Particle>&, string&, floatType=0., floatType=0.001, floatType=0.05, Bounds=NullBounds);
+  vector<floatType> getBubbleSizes(vector<Particle>&, Bounds=NullBounds, floatType=0.01, floatType=0.001, floatType=0.05);
+  vector<floatType> getBubbleSizes(vector<Particle>&, string&, Bounds=NullBounds, floatType=0.01, floatType=0.001, floatType=0.05);
   vector<string> getBubbles() { return visualizeBubbles; }
   inline void unite(int*, int, int);
   inline int getHead(int*, int);
@@ -99,6 +99,7 @@ class GFlowBase {
   void setRecSpecial(bool b)   { recSpecial = b; }
   void setRecBubbles(bool b)   { recBubbles = b; }
   void setVisBubbles(bool b)   { visBubbles = b; }
+  void setRestrictBubbleDomain(bool b) { restrictBubbleDomain = b; }
  private:
   double setUpTime;
   // Data
@@ -110,6 +111,7 @@ class GFlowBase {
   bool recSpecial;
   bool recBubbles;
   bool visBubbles;
+  bool restrictBubbleDomain;
 
   vector<pair<StatFunc,string> > statFunctions; // Statistic functions and a string to name them
   vector<vector<vec2> >  statRecord;    // Save the data produced by the statistic functions

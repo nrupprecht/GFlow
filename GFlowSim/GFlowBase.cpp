@@ -266,13 +266,24 @@ void GFlowBase::record() {
       positionRecord.push_back(positions);
     }
     // Find bubble volumes
-    if (recBubbles)
-      bubbleRecord.push_back(getBubbleSizes(allParticles));
-    // Visualize bubbles
-    if (visBubbles) {
-      string vis;
-      bubbleRecord.push_back(getBubbleSizes(allParticles, vis));
-      visualizeBubbles.push_back(vis);
+    if (recBubbles || visBubbles) {
+      Bounds domain = NullBounds;
+      if (restrictBubbleDomain) {
+	double X = reduceStatFunction(Stat_Large_Object_X);
+	double Y = reduceStatFunction(Stat_Large_Object_Height);
+	static double R= reduceStatFunction(Stat_Large_Object_Radius);
+	domain.bottom = max(bottom, Y-R); domain.top =top;
+	domain.left = max(left,X-4*R);domain.right = min(right, X+4*R);
+      }
+      // Just record sizes
+      if (recBubbles)
+	bubbleRecord.push_back(getBubbleSizes(allParticles, domain));
+      // Visualize bubbles and record sizes
+      if (visBubbles) {
+	string vis;
+	bubbleRecord.push_back(getBubbleSizes(allParticles, vis, domain));
+	visualizeBubbles.push_back(vis);
+      }
     }
   }
   // Record stat function statistics
@@ -884,12 +895,12 @@ void GFlowBase::printSectors() {
     }
 }
 
-vector<floatType> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, floatType volCutoff, floatType minV, floatType dr, Bounds region) {
+vector<floatType> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, Bounds region, floatType volCutoff, floatType minV, floatType dr) {
   string str="-1";
-  return getBubbleSizes(allParticles, str, volCutoff, minV, dr, region);
+  return getBubbleSizes(allParticles, str, region, volCutoff, minV, dr);
 }
 
-vector<floatType> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, string &shapes, floatType volCutoff, floatType minV, floatType dr, Bounds region) {
+vector<floatType> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, string &shapes, Bounds region, floatType volCutoff, floatType minV, floatType dr) {
   // Might use full bounds
   if (region.right<region.left) region = Bounds(left, right, bottom, top);
   // Calculate parameters
@@ -904,6 +915,15 @@ vector<floatType> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, stri
     int sec_y = (p.position.y - region.bottom)/sy;
     if (-1<sec_x && sec_x<nsx && -1<sec_y && sec_y<nsy)
       sectors[nsx*sec_y+sec_x].push_back(i);
+    // If part of the particle sticks into the region, place the particle in the closest sector. This ignores particles "diagonal" to the region that stick into the region
+    else if (region.left<p.position.x+p.sigma   && -1<sec_y && sec_y<nsy)
+      sectors[nsx*sec_y+0].push_back(i); // Left
+    else if (p.position.x-p.sigma<region.right  && -1<sec_y && sec_y<nsy)
+      sectors[nsx*sec_y+(nsx-1)].push_back(i); // Right
+    else if (region.bottom<p.position.y+p.sigma && -1<sec_x && sec_x<nsx)
+      sectors[sec_x].push_back(i); // Bottom
+    else if (p.position.y-p.sigma<region.top    && -1<sec_x && sec_x<nsx)
+      sectors[nsx*(nsy-1)+sec_x].push_back(i); // Top
     ++i;
   }
   // Find the particle of maximum radius
@@ -918,7 +938,7 @@ vector<floatType> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, stri
       // Check whether center of sector is covered by any particles
       array[nsx*y+x] = nsx*y+x;
       bool done = false;
-      vec2 pos((x+0.5)*sx, (y+0.5)*sy);
+      vec2 pos((x+0.5)*sx+region.left, (y+0.5)*sy+region.bottom);
       int startX = max(0, x-sweepX), endX = min(nsx-1, x+sweepX);
       int startY = max(0, y-sweepY), endY = min(nsy-1, y+sweepY);
       // Check your own sector first for speed's sake
@@ -953,7 +973,7 @@ vector<floatType> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, stri
   unite(array, nsx, nsy);
   unite(array, nsx, nsy); //** Bad solution, but it works
   // Point all sectors to their head
-  for (int i=0; i<nsx*nsx; ++i) array[i] = getHead(array, i);
+  for (int i=0; i<nsx*nsy; ++i) array[i] = getHead(array, i);
   // Collect all head nodes
   vector<int> heads;
   for (int i=0; i<nsx*nsy; ++i)

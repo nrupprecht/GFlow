@@ -156,6 +156,7 @@ int main(int argc, char** argv) {
   simulator.setRecSpecial(special);
   simulator.setRecBubbles(bubbles);
   simulator.setVisBubbles(visBubbles);
+  if (buoyancy || loadBuoyancy!="") simulator.setRestrictBubbleDomain(true);
 
   if (omega) simulator.addStatFunction(Stat_Omega, "omega");
   if (KE) simulator.addStatFunction(Stat_KE, "ke");
