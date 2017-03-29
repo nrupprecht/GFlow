@@ -30,8 +30,9 @@ void Sectorization::initialize() {
   // Find out what the cutoff should be -- The sum of the largest two interaction radii
   double mx=0, snd=0;
   for (auto &p : plist) {
-    if (p.sigma>mx) mx = p.sigma;
-    else if (p.sigma>snd) snd = p.sigma;
+    double r = particle_cutoff(p.sigma, p.interaction);
+    if (r>mx) mx = r;
+    else if (r>snd) snd = r;
   }
   cutoff = mx+snd;
   // First estimate
@@ -459,8 +460,6 @@ inline void Sectorization::createNeighborLists(bool force) {
   }
   // Update sectors
   updateSectors();
-  // The square of the neighbor distance
-  double distance = sqr(cutoff+skinDepth);
   // Get rid of the old neighbor lists
   neighborList.clear();
   // Create new neighbor lists
