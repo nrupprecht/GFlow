@@ -7,6 +7,7 @@ GFlowBase::GFlowBase() {
   wrapX = false; wrapY = false;
   gravity = vec2(0., -1.);
   temperature = 0; viscosity = 1.308e-3;
+  latticeType = 0;
   time = 0;
   epsilon = 1e-4; sqrtEpsilon = sqrt(epsilon);
   sectorization.setEpsilon(epsilon);
@@ -756,19 +757,42 @@ vector<vec2> GFlowBase::findPackedSolution(const vector<double>& radii, const ve
   }
 }
 
-vector<vec2> GFlowBase::findLatticeSolution(int number, double radius, Bounds bounds, double dr) {
-  double latt = 0.5*sqrt(3.);
-  int nx = (bounds.right-bounds.left)/(2.*(radius+dr));
-  int ny = (bounds.top-bounds.bottom)/(2.*(radius+dr));
+vector<vec2> GFlowBase::findLatticeSolution(int number, double radius, Bounds bounds, int ltype, double drf) {
+  if (ltype<0) ltype = latticeType;
+  // Calculate some parameters
+  double latt = sqrt(3.);
+  double dr = radius*drf;
+  double width = bounds.right - bounds.left;
+  int nx = width/(2.*radius+dr);
+  int ny = (bounds.top-bounds.bottom)/(2.*radius+dr);
   
   int count = 0;
   vector<vec2> positions;
-  for (int y=0; y<ny && count<number; ++y)
-    for (int x=0; x<nx && count<number; ++x) {
-      double X = 2*(x+0.5)*(radius+dr), Y = 2*(y+0.5)*(radius+dr);
-      positions.push_back(vec2(X,Y));
-      ++count;
+  if (ltype==0) { // Hexagonal lattice
+    double dx = 0, Y = radius;
+    for (int y=0; y<ny && count<number; ++y) {
+      double X = radius+dr;
+      if (y%2==1) X += (radius+0.5*dr); // Staggered
+      for (int x=0; x<nx && X+radius<width; ++x) {
+	positions.push_back(vec2(X,Y));
+	X += (2.*radius+dr);
+	++count;
+      }
+      Y += (latt*radius+dr);
     }
+  }
+  else { // Rectangular lattice
+    double Y = radius;
+    for (int y=0; y<ny && count<number; ++y) {
+      double X = radius+dr;
+      for (int x=0; x<nx && count<number; ++x) {
+	positions.push_back(vec2(X,Y));
+	X += (2*radius+dr);
+	++count;
+      }
+      Y += (2*radius+dr);
+    }
+  }
 
   return positions;
 }
@@ -821,11 +845,13 @@ void GFlowBase::createSquare(int number, double radius, double width, double hei
 void GFlowBase::createBuoyancyBox(double radius, double bR, double density, double width, double depth, double velocity, double dispersion, int interaction) {
   // Start the clock
   auto begin = clock();
+  bR = fabs(bR); radius = fabs(radius);
   // Discard any old state
   discard();
   // Bounds
   double height = depth+2*bR+10*radius;
   Bounds bounds(0, width, 0, height);
+  Bounds initialBounds(0, width, 0, depth);
   setBounds(bounds);
   // Everyone knows where the walls are
   addWall(left, bottom, right, bottom);
@@ -846,7 +872,7 @@ void GFlowBase::createBuoyancyBox(double radius, double bR, double density, doub
     double Vgrain = PI*sqr(radius);
     int number = 0.95*maxPack*Vfill/Vgrain;
     // Create particles and distribute them to the processors
-    positions =  findLatticeSolution(number, radius, bounds); //** findPackedSolution(number, radius, bounds, gravity);
+    positions =  findLatticeSolution(number, radius, initialBounds); //** findPackedSolution(number, radius, initialBounds, gravity);
   }
   else {
     // Not all particles have the same radius

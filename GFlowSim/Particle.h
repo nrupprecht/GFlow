@@ -15,6 +15,16 @@ Each type of particle has to have the same basic parameters, kinetic variables (
 
 */
 
+inline double particle_cutoff(double sigma, int interaction) {
+  switch (interaction) {
+  default:
+  case 0:
+    return sigma;
+  case 1:
+    return LJ_cutoff_factor*sigma;
+  }
+}
+
 /// Wall structure --- Size: 8 x sizeof(double) bytes 
 struct Wall {
   Wall();

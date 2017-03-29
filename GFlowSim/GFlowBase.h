@@ -66,12 +66,13 @@ class GFlowBase {
   void setGravity(vec2 g);
   void setTemperature(double t);
   void setViscosity(double h);
-  void setStartRec(double s)  { startRec = s; }
+  void setLatticeType(int l)     { latticeType = l; }
+  void setStartRec(double s)     { startRec = s; }
   void setDoInteractions(bool i);
   void setInteractionType(int i);
-  void setExpectedSize(int i) { sectorization.setASize(i); }
-  void setSkinDepth(double s) { skinDepth = s; sectorization.setSkinDepth(s); }
-  void setFrameRate(double f) { dispTime = 1./f; }
+  void setExpectedSize(int i)    { sectorization.setASize(i); }
+  void setSkinDepth(double s)    { skinDepth = s; sectorization.setSkinDepth(s); }
+  void setFrameRate(double f)    { dispTime = 1./f; }
 
   // File functions
   virtual bool loadConfigurationFromFile (string);
@@ -156,8 +157,8 @@ class GFlowBase {
   // Find packed solution variants
   vector<vec2> findPackedSolution(int, double, Bounds, vec2 = 0, double=0.5, double=0.5);
   vector<vec2> findPackedSolution(const vector<double>&, const vector<int>&, const Bounds&, vec2=0, double=0.5, double=0.5);
-  // Create lattice
-  vector<vec2> findLatticeSolution(int, double, Bounds, double=0);
+  // Find lattice solution
+  vector<vec2> findLatticeSolution(int, double, Bounds, int=-1, double=0.1);
 
   /// Data
   double left, right, bottom, top;
@@ -174,6 +175,8 @@ class GFlowBase {
   double runTime;                // How much (real) time the last simulation took to run
   bool running;                  // True if the simulation is currently runnint
   double transferTime;           // How much time is spent by MPI transfering data
+  // Initialization
+  int latticeType;               // What type of lattice we should initialize
 
   /// Objects
   vector<Wall> walls;            // A vector of all the walls in the simulation

@@ -30,6 +30,7 @@ int main(int argc, char** argv) {
   int interaction = 0;
   bool interact = true;
   bool seedRand = true;
+  int lattice   = 0;
 
   // Animation Paramaters
   int mode     = 0;     // Animation mode
@@ -91,6 +92,7 @@ int main(int argc, char** argv) {
   parser.get("interaction", interaction);
   parser.get("interact", interact);
   parser.get("srand", seedRand);
+  parser.get("lattice", lattice);
   parser.get("mode", mode);
   parser.get("animate", animate);
   parser.get("special", special);
@@ -147,6 +149,7 @@ int main(int argc, char** argv) {
 
   // Set up the simulation
   GFlowBase simulator;
+  simulator.setLatticeType(lattice);
   if (0<fps) simulator.setFrameRate(fps);
   if (0<skinDepth) simulator.setSkinDepth(skinDepth);
   // Create scenario

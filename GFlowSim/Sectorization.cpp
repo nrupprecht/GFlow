@@ -474,7 +474,7 @@ inline void Sectorization::createNeighborLists(bool force) {
 	list<int> nlist;
 	nlist.push_back(i); // You are at the head of the list
 	double sigma = sg[i], velocity = sqrt(sqr(vx[i])+sqr(vy[i]));
-	double range = sigma * max(velocity, 1.);
+	double range = particle_cutoff(sigma, it[i]) * max(velocity, 1.);
 	// Create symmetric lists, so only check the required surrounding sectors ( * ) around the sector you are in ( <*> )
 	// +---------+
 	// | *  x  x |
@@ -487,7 +487,7 @@ inline void Sectorization::createNeighborLists(bool force) {
         if (q!=sectors[y*nsx+x].end()) // Same sector
           for (; q!=sectors[y*nsx+x].end(); ++q) {
             vec2 r = getDisplacement(px[i], py[i], px[*q], py[*q]);
-            if (sqr(r)<sqr(range+sg[*q]+skinDepth)) nlist.push_back(*q);
+            if (sqr(r)<sqr(range+particle_cutoff(sg[*q],it[*q])+skinDepth)) nlist.push_back(*q);
           }
         // Bottom left
         int sx = x-1, sy = y-1;
@@ -495,13 +495,13 @@ inline void Sectorization::createNeighborLists(bool force) {
 	  if (0<sx) // Don't hit edge sectors
 	    for (auto &q : sectors[sy*nsx+sx]) {
 	      vec2 r = getDisplacement(px[i], py[i], px[q], py[q]);
-	      if (sqr(r)<sqr(range+sg[q]+skinDepth)) nlist.push_back(q);
+	      if (sqr(r)<sqr(range+particle_cutoff(sg[q],it[i])+skinDepth)) nlist.push_back(q);
 	    }
 	  // Bottom
 	  sx = x;
 	  for (auto &q : sectors[sy*nsx+sx]) {
 	    vec2 r = getDisplacement(px[i], py[i], px[q], py[q]);
-	    if (sqr(r)<sqr(range+sg[q]+skinDepth)) nlist.push_back(q);
+	    if (sqr(r)<sqr(range+particle_cutoff(sg[q],it[i])+skinDepth)) nlist.push_back(q);
 	  }
 	}
         // Left
@@ -509,14 +509,14 @@ inline void Sectorization::createNeighborLists(bool force) {
 	if (0<sx) {
 	  for (auto &q : sectors[sy*nsx+sx]) {
 	    vec2 r = getDisplacement(px[i], py[i], px[q], py[q]);
-	    if (sqr(r)<sqr(range+sg[q]+skinDepth)) nlist.push_back(q);
+	    if (sqr(r)<sqr(range+particle_cutoff(sg[q],it[i])+skinDepth)) nlist.push_back(q);
 	  }
 	  // Top left
 	  sy = y+1;
 	  if (sy<nsy-1)
 	    for (auto &q : sectors[sy*nsx+sx]) {
 	      vec2 r = getDisplacement(px[i], py[i], px[q], py[q]);
-	      if (sqr(r)<sqr(range+sg[q]+skinDepth)) nlist.push_back(q);
+	      if (sqr(r)<sqr(range+particle_cutoff(sg[q],it[i])+skinDepth)) nlist.push_back(q);
 	    }
 	}
 	// Add the neighbor list to the collection if the particle has neighbors
@@ -536,7 +536,7 @@ inline void Sectorization::createWallNeighborList() {
     for (auto &w : walls) {
       vec2 displacement = getDisplacement(vec2(px[i], py[i]), w.left);
       wallDisplacement(displacement, sg[i], w);
-      if (sqr(displacement)<sqr(1.25*sg[i]))
+      if (sqr(displacement)<sqr(1.25*particle_cutoff(sg[i], it[i])))
 	lst.push_back(&w);
     }
     if (!lst.empty())

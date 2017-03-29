@@ -101,7 +101,7 @@ inline bool LJinteraction(double **pdata, int p, int q, int asize, vec2& displac
   // Set up convenience pointers
   double *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
   double distSqr = sqr(displacement);
-  double cutoff = sg[p]+sg[q];
+  double cutoff = LJ_cutoff_factor*(sg[p]+sg[q]);
   double cutoffsqr = sqr(cutoff);
   /*
               ^ normal
@@ -116,16 +116,16 @@ inline bool LJinteraction(double **pdata, int p, int q, int asize, vec2& displac
     double coeff = cf[p]*cf[q];
     // Compute force
     double dist = sqrt(distSqr);
-    vec2 normal = (1.0/dist) * displacement;
+    double invD = 1./dist;
+    vec2 normal = invD * displacement;
     vec2 shear = vec2(normal.y, -normal.x);
     // LJ force strength
-    double invD = 1./dist;
-    double prop = sqrt(sg[p]*sg[q])*invD;
+    double prop = invD*(sg[p]+sg[q]); // sigma/r --> AD HOC
     double d3 = sqr(prop)*prop;
     double d6 = sqr(prop);
     double d12 = sqr(d6);
     // Force is - d/dx (LJ)
-    double strength = 4*repulsion*(12*d12-6*d6)*invD * 1e-5;
+    double strength = repulsion*(12*d12-6*d6)*invD * 1e-5;
     // Velocities
     vec2 dV(vx[q]-vx[p], vy[q]-vy[p]);
     double Vn = dV*normal; // Normal velocity
