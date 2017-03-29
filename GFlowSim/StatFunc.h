@@ -6,6 +6,7 @@
 typedef double (*StatFunc) (const vector<Particle> &, int&);
 
 inline double Stat_Omega(const vector<Particle> &particles, int &count) {
+  count = 0;
   if (particles.empty()) return 0;
   double omega = 0;
   for (const auto &p : particles) omega += p.omega;
@@ -14,6 +15,7 @@ inline double Stat_Omega(const vector<Particle> &particles, int &count) {
 }
 
 inline double Stat_KE(const vector<Particle> &particles, int &count) {
+  count = 0;
   if (particles.empty()) return 0;
   double ke = 0;
   for (const auto &p :particles) ke += (1./p.invMass * sqr(p.velocity) + 1/p.invII * sqr(p.omega));
@@ -23,6 +25,7 @@ inline double Stat_KE(const vector<Particle> &particles, int &count) {
 }
 
 inline double Stat_L_KE(const vector<Particle> &particles, int &count) {
+  count = 0;
   if (particles.empty()) return 0;
   double ke = 0;
   for (const auto &p : particles) ke += (1./p.invMass * sqr(p.velocity));
@@ -32,6 +35,7 @@ inline double Stat_L_KE(const vector<Particle> &particles, int &count) {
 }
 
 inline double Stat_R_KE(const vector<Particle>&particles, int &count) {
+  count = 0;
   if (particles.empty()) return 0;
   double ke = 0;
   for (const auto &p :particles) ke +=1/p.invII * sqr(p.omega);
@@ -42,6 +46,7 @@ inline double Stat_R_KE(const vector<Particle>&particles, int &count) {
 
 // Does not wrap boundaries
 inline double Stat_Clustering(const vector<Particle> &particles, int &count) {
+  count = 0;
   if (particles.empty()) return 0;
   double clustering = 0;
   for (const auto &p : particles) {
@@ -57,9 +62,9 @@ inline double Stat_Clustering(const vector<Particle> &particles, int &count) {
 }
 
 inline double Stat_Triangle_Align(const vector<Particle> &particles, int &count) {
+  count = 0;
   if (particles.empty()) return 0;
   double align = 0;
-  count = 0;
   for (auto q = particles.begin(); q!=particles.end(); ++q) {
     if (q->interaction==2) {
       auto p = q; ++p;
@@ -78,9 +83,9 @@ inline double Stat_Triangle_Align(const vector<Particle> &particles, int &count)
 }
 
 inline double Stat_Large_Object_Height(const vector<Particle> &particles, int &count) {
+  count = 0;
   if (particles.empty()) return 0;
   double height = 0;
-  count = 0;
   for (const auto &p : particles) {
     if (0.1<p.sigma) {
       height += p.position.y;
@@ -91,9 +96,9 @@ inline double Stat_Large_Object_Height(const vector<Particle> &particles, int &c
 }
 
 inline double Stat_Large_Object_X(const vector<Particle> &particles, int &count) {
+  count = 0;
   if (particles.empty()) return 0;
   double px = 0;
-  count = 0;
   for (const auto &p : particles) {
     if (0.1<p.sigma) {
       px += p.position.x;
@@ -104,9 +109,9 @@ inline double Stat_Large_Object_X(const vector<Particle> &particles, int &count)
 }
 
 inline double Stat_Large_Object_Radius(const vector<Particle> &particles, int &count) {
+  count = 0;
   if (particles.empty()) return 0;
   double sigma = 0;
-  count = 0;
   for (const auto &p : particles) {
     if (0.1<p.sigma) {
       sigma += p.sigma;
@@ -114,6 +119,23 @@ inline double Stat_Large_Object_Radius(const vector<Particle> &particles, int &c
     }
   }
   return count>0 ? sigma/count : 0;
+}
+
+inline double Stat_Volume(const vector<Particle> &particles, int &count) {
+  count = 0;
+  if (particles.empty()) return 0;
+  double vol = 0;
+  for (const auto &p : particles) vol += PI*sqr(p.sigma);
+  return vol;
+}
+
+inline double Stat_Potential_Energy(const vector<Particle> &particles, int &count) {
+  count = 0;
+  if (particles.empty()) return 0;
+  double U = 0;
+  for (const auto &p : particles) U += p.position.y/p.invMass;
+  count = particles.size();
+  return count>0 ? U/count : 0;
 }
 
 #endif // __STAT_FUNC_H__

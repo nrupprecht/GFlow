@@ -21,7 +21,11 @@ public:
     parse();
   }
   
-  void set(int ac, char** av) { argc = ac; argv = av; }
+  void set(int ac, char** av) { 
+    argc = ac; 
+    argv = av; 
+    parse();
+  }
 
   // Parse the command line arguments for information
   void parse() {
@@ -45,6 +49,7 @@ public:
 	  c = argv[i][j];
 	}
 	tlist.push_back(pair<string,string>(tok,val));
+	checked.push_back(false);
       }
       else throw IllegalToken(argv[i][0]);
     }
@@ -53,10 +58,13 @@ public:
   // Returns a pair of empty strings if not found
   pair<string,string> find(string token) {
     pair<string,string> opt("","");
+    int i=0;
     for (auto tpair : tlist) {
       if (tpair.first==token) {
 	opt = tpair;
+	checked.at(i) = true;
       }
+      ++i;
     }
     return opt;
   }
@@ -71,6 +79,11 @@ public:
     }
   }
 
+  void check() {
+    for (int i=0; i<checked.size(); ++i)
+      if (!checked.at(i)) throw UncheckedToken("Tok=["+tlist.at(i).first + "]: Val=[" + tlist.at(i).second+"]");
+  }
+
   /// Exception classes
   class IllegalToken {
   public:
@@ -78,11 +91,18 @@ public:
     char c;
   };
 
+  class UncheckedToken {
+  public:
+    UncheckedToken(string s) : token(s) {};
+    string token;
+  };
+
 private:
   int argc;
   char** argv;
   
   vector<pair<string,string> > tlist; // List of found tokens and their corresponding value
+  vector<bool> checked;               // Whether we have asked about the tlist token
 
 };
 

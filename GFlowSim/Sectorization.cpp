@@ -70,9 +70,9 @@ void Sectorization::initialize() {
 }
 
 double Sectorization::getAvePerNeighborList() {
-  int count;
+  int count = 0, size = neighborList.size();
   for (auto &n : neighborList) count += n.size();
-  return static_cast<double>(count)/neighborList.size();
+  return size>0 ? static_cast<double>(count)/size : 0;
 }
 
 vector<Particle>& Sectorization::getParticles() {

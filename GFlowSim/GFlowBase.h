@@ -33,6 +33,8 @@ class GFlowBase {
   int getNDX()             { return ndx; }
   int getNDY()             { return ndy; }
   int getSize();
+  double getFilledVolume();
+  double getVolume()       { return (right-left)*(top-bottom); }
   double getWidth()     { return right-left; }
   double getHeight()    { return top-bottom; }
   bool getWrapX()          { return wrapX; }
@@ -44,13 +46,17 @@ class GFlowBase {
   double getEpsilon()      { return epsilon; }
   double getDispTime()     { return dispTime; }
   double getDispRate()     { return 1./dispTime; }
-  double getStartRec()  { return startRec; }
+  double getStartRec()     { return startRec; }
   int getRecIter()         { return recIter; }
   int getIter()            { return iter; }
   double getRunTime()      { return runTime; }
   bool getRunning()        { return running; }
   double getTransferTime() { return transferTime+sectorization.getTransferTime(); }
   bool getDoInteractions() { return doInteractions; }
+
+  // Statistics accessors
+  int getNeighborListSize() { return sectorization.getNeighborListSize(); }
+  double getAvePerNeighborList() { return sectorization.getAvePerNeighborList(); }
 
   // Mutators
   void setBounds(double, double, double, double);
@@ -65,6 +71,7 @@ class GFlowBase {
   void setInteractionType(int i);
   void setExpectedSize(int i) { sectorization.setASize(i); }
   void setSkinDepth(double s) { skinDepth = s; sectorization.setSkinDepth(s); }
+  void setFrameRate(double f) { dispTime = 1./f; }
 
   // File functions
   virtual bool loadConfigurationFromFile (string);
@@ -79,7 +86,7 @@ class GFlowBase {
   void addStatFunction(StatFunc, string);
   string printStatFunctions();
 
-  string printAnimationCommand(bool=false);
+  string printAnimationCommand(int=0, bool=false);
   string printSpecialAnimationCommand(bool=false);
   void printSectors();
 
@@ -90,6 +97,7 @@ class GFlowBase {
   inline int getHead(int*, int);
 
   auto getPositionRecord() { return positionRecord; }
+  string printPositionRecord(int);
   auto getSpecialRecord()  { return specialRecord; }
   auto getBubbleRecord()   { return bubbleRecord; }
   vector<vpair> getWallsPositions();
@@ -141,10 +149,15 @@ class GFlowBase {
   double reduceStatFunction(StatFunc, int=0);
 
   list<Particle> createParticles(vector<vec2>, double, double, std::function<vec2(double)> = ZeroV, std::function<double(double)> = ZeroOm, double=default_sphere_coeff, double=default_sphere_dissipation, double=default_sphere_repulsion, int=0);
+  // Create and distribute particles variants
   void createAndDistributeParticles(int, const Bounds&, Sectorization&, double, double=0, std::function<vec2(double)> = ZeroV, double=default_sphere_coeff, double=default_sphere_dissipation, double=default_sphere_repulsion, int=0);
+  void createAndDistributeParticles(const vector<vec2>&, const vector<double>&, const vector<int>&, const Bounds&, Sectorization&, std::function<vec2(double)> = ZeroV, double=default_sphere_coeff, double=default_sphere_dissipation, double=default_sphere_repulsion);
   void createAndDistributeParticles(const vector<double>&, const vector<int>&, const Bounds&, Sectorization&, std::function<vec2(double)> = ZeroV, double=default_sphere_coeff, double=default_sphere_dissipation, double=default_sphere_repulsion);
+  // Find packed solution variants
   vector<vec2> findPackedSolution(int, double, Bounds, vec2 = 0, double=0.5, double=0.5);
-  vector<vec2> findPackedSolution(const vector<double>&, const vector<int>&, const Bounds&, vec2, double, double);
+  vector<vec2> findPackedSolution(const vector<double>&, const vector<int>&, const Bounds&, vec2=0, double=0.5, double=0.5);
+  // Create lattice
+  vector<vec2> findLatticeSolution(int, double, Bounds, double=0);
 
   /// Data
   double left, right, bottom, top;

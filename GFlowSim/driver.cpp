@@ -32,6 +32,7 @@ int main(int argc, char** argv) {
   bool seedRand = true;
 
   // Animation Paramaters
+  int mode     = 0;     // Animation mode
   bool animate = false;
   bool special = false;
   bool bubbles = false;
@@ -45,6 +46,7 @@ int main(int argc, char** argv) {
   bool trackHeight  = false;
   bool novid   = false;
   bool printSectors = false;
+  double fps = -1; // FPS
 
   // Simulation type
   bool square = true;
@@ -70,7 +72,7 @@ int main(int argc, char** argv) {
     parser.set(argc, argv);
   }
   catch (ArgParse::IllegalToken token) {
-    cout << "Illegal Token: [" << token.c << "]. Exiting.\n";
+    cout << "Illegal Token: " << token.c << ". Exiting.\n";
     exit(1);
   }
   parser.get("number", number);
@@ -89,6 +91,7 @@ int main(int argc, char** argv) {
   parser.get("interaction", interaction);
   parser.get("interact", interact);
   parser.get("srand", seedRand);
+  parser.get("mode", mode);
   parser.get("animate", animate);
   parser.get("special", special);
   parser.get("bubbles", bubbles);
@@ -102,11 +105,20 @@ int main(int argc, char** argv) {
   parser.get("trackHeight", trackHeight);
   parser.get("novid", novid);
   parser.get("printSectors", printSectors);
+  parser.get("fps", fps);
   parser.get("square", square);
   parser.get("buoyancy", buoyancy);
   parser.get("loadFile", loadFile);
   parser.get("loadBuoyancy", loadBuoyancy);
   parser.get("saveFile", saveFile);
+  // Make sure we didn't enter any illegal tokens (ones not listed above) on the command line
+  try {
+    parser.check();
+  }
+  catch (ArgParse::UncheckedToken illegal) {
+    cout << "Illegal option: [" << illegal.token << "]. Exiting.\n";
+    exit(1);
+  }
   //----------------------------------------
 
   // Seed random number generators
@@ -134,7 +146,8 @@ int main(int argc, char** argv) {
   MPI::COMM_WORLD.Barrier();
 
   // Set up the simulation
-  GFlowBase simulator;  
+  GFlowBase simulator;
+  if (0<fps) simulator.setFrameRate(fps);
   if (0<skinDepth) simulator.setSkinDepth(skinDepth);
   // Create scenario
   if (loadFile=="" && loadBuoyancy=="") {
@@ -175,8 +188,9 @@ int main(int argc, char** argv) {
 
   // Get the actual number of particles in the simulation
   number = simulator.getSize();
+  double filled = simulator.getFilledVolume(), vol = simulator.getVolume();
   if (rank==0) {
-    cout << "Number: " << number << endl;
+    cout << "Number: " << number << ", Packing fraction: " << filled/vol << endl;
     cout << "Dimensions: " << simulator.getWidth() << " x " << simulator.getHeight() << endl;
     cout << "Set up time: " << simulator.getSetUpTime() << endl;
     cout << "  ..........................\n";
@@ -203,10 +217,12 @@ int main(int argc, char** argv) {
     cout << "Iterations: " << iters << ", time per iter: " << (iters>0 ? toStr(runTime/iters) : "---") << endl;
     cout << "Transfer Time: " << transferTime << " (" << (runTime>0 ? toStr(transferTime/runTime*100) : "---") << "%)" << endl;
     cout << "Ratio: " << (runTime>0 ? toStr(time/runTime) : "---") << ", Ratio x Particles: " << (runTime>0 ? toStr(time/runTime*number) : "---") << endl;
+    cout << " --- STATS ---\n";
+    cout << "Neighbor list size: " << simulator.getNeighborListSize() << ", Ave per list: " << simulator.getAvePerNeighborList() << endl;
     cout << "----------------------- END SUMMARY -----------------------\n\n"; 
 
     /// Print recorded data
-    if (animate) cout << simulator.printAnimationCommand(novid) << endl;
+    if (animate) cout << simulator.printAnimationCommand(mode, novid) << endl;
     if (special) cout << simulator.printSpecialAnimationCommand(novid) << endl;
     if (bubbles) {
       cout << "bsize=" << simulator.getBubbleRecord() << ";\n"; //**

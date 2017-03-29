@@ -95,6 +95,10 @@ int GFlowBase::getSize() {
   return size;
 }
 
+double GFlowBase::getFilledVolume() {
+  return reduceStatFunction(Stat_Volume, 2);
+}
+
 void GFlowBase::setBounds(double l, double r, double b, double t) {
   left = l; right = r; bottom = b; top = t;
   sectorization.setSimBounds(l, r, b, t);
@@ -494,6 +498,11 @@ double GFlowBase::reduceStatFunction(StatFunc f, int choice) {
     CommWork.Reduce(&data, &aggregate, 1, MPI_DOUBLE, MPI_MAX, 0);
     return aggregate;
   }
+  else if (choice==2) { // SUM
+    double aggregate;
+    CommWork.Reduce(&data, &aggregate, 1, MPI_DOUBLE, MPI_SUM, 0);
+    return aggregate;
+  }
   else return -1;
 }
 
@@ -540,15 +549,38 @@ void GFlowBase::createAndDistributeParticles(int number, const Bounds &b, Sector
 }
 
 void GFlowBase::createAndDistributeParticles(const vector<double>& radii, const vector<int>& interaction, const Bounds &b, Sectorization &sectors, std::function<vec2(double)> velocity, double coeff, double dissipation, double repulsion) {
+  int number = min(interaction.size(), radii.size());
   // Bounds width and height
   double width = b.right-b.left, height = b.top-b.bottom;
   // Create particles on the root processor
   list<Particle> allParticles;
   if (rank==0) {
-    for (int i=0; i<radii.size(); ++i) {
+    for (int i=0; i<number; ++i) {
       double r = radii.at(i);
       vec2 pos(drand48()*(width-2*r)+r, drand48()*(height-2*r)+r);
       Particle p(pos, r);
+      p.velocity = velocity(p.invMass);
+      p.dissipation = dissipation;
+      p.coeff = coeff;
+      p.repulsion = repulsion;
+      p.interaction = interaction.at(i);
+      allParticles.push_back(p);
+    }
+  }
+
+  distributeParticles(allParticles, sectors);
+}
+
+void GFlowBase::createAndDistributeParticles(const vector<vec2>& positions, const vector<double>& radii, const vector<int>& interaction, const Bounds &b, Sectorization &sectors, std::function<vec2(double)> velocity, double coeff, double dissipation, double repulsion) {
+  int number = min(positions.size(), radii.size());
+  // Bounds width and height
+  double width = b.right-b.left, height = b.top-b.bottom;
+  // Create particles on the root processor
+  list<Particle> allParticles;
+  if (rank==0) {
+    for (int i=0; i<number; ++i) {
+      double r = radii.at(i);
+      Particle p(positions.at(i), r);
       p.velocity = velocity(p.invMass);
       p.dissipation = dissipation;
       p.coeff = coeff;
@@ -662,6 +694,7 @@ vector<vec2> GFlowBase::findPackedSolution(const vector<double>& radii, const ve
   packedSectors.setASize(number); //** AD HOC
   setUpSectorization(packedSectors, force);
   packedSectors.setDrag(default_packed_drag);
+  // Create random initial positions
   createAndDistributeParticles(radii, interactions, b, packedSectors);
   packedSectors.initialize();
   // Simulate motion and expansion
@@ -722,6 +755,23 @@ vector<vec2> GFlowBase::findPackedSolution(const vector<double>& radii, const ve
     return positions;
   }
 }
+
+vector<vec2> GFlowBase::findLatticeSolution(int number, double radius, Bounds bounds, double dr) {
+  double latt = 0.5*sqrt(3.);
+  int nx = (bounds.right-bounds.left)/(2.*(radius+dr));
+  int ny = (bounds.top-bounds.bottom)/(2.*(radius+dr));
+  
+  int count = 0;
+  vector<vec2> positions;
+  for (int y=0; y<ny && count<number; ++y)
+    for (int x=0; x<nx && count<number; ++x) {
+      double X = 2*(x+0.5)*(radius+dr), Y = 2*(y+0.5)*(radius+dr);
+      positions.push_back(vec2(X,Y));
+      ++count;
+    }
+
+  return positions;
+}
   
 // ----- TO GO TO GFLOW.CPP -----
   
@@ -754,6 +804,7 @@ void GFlowBase::createSquare(int number, double radius, double width, double hei
     v *= velocity;
     return v;
   };
+  // Create 
   // Create particles and distribute them to the processors
   vector<vec2> positions = findPackedSolution(number, radius, bounds);  
   // Create particles at the given positions with - Radius, Dispersion, Velocity function, Angular velocity function, Coeff, Dissipation, Repulsion, Interaction
@@ -783,30 +834,47 @@ void GFlowBase::createBuoyancyBox(double radius, double bR, double density, doub
   addWall(right, bottom, right, top);
   // Set up sectorization
   gravity = vec2(0.,-1.);
+  setUpSectorization();
   // Calculate how many particles we should start with
   double maxPack = PI/(2*sqrt(3)); // Hexagonal packing
-  double Vfill = width*height, Vgrain = PI*sqr(radius*(1-0.5*dispersion));
-  int number = 0.95*maxPack*Vfill/Vgrain;
-  // Create particles and distribute them to the processors
-  vector<vec2> positions = findPackedSolution(number, radius, bounds, 0);
-  // Create particles at the given positions with - Radius, Dispersion, Velocity function, Angular velocity function, Coeff, Dissipation, Repulsion, Interaction
-  particles = createParticles(positions, radius, dispersion, ZeroV, ZeroOm, default_sphere_coeff, default_sphere_dissipation, default_sphere_repulsion, interaction);
-  // Remove particles whose centers are above the line
-  /*
-  for (auto p=particles.begin(); p!=particles.end();) {
-    if (depth<p->position.y+p->sigma) p = particles.erase(p);
-    else ++p;
+  double Vfill = 0.9*width*height;
+  // Get positions
+  vector<vec2> positions;
+  vector<double> radii;
+  vector<int> interactions;
+  if (dispersion==0) { // All particles have the same radius
+    double Vgrain = PI*sqr(radius);
+    int number = 0.95*maxPack*Vfill/Vgrain;
+    // Create particles and distribute them to the processors
+    positions =  findLatticeSolution(number, radius, bounds); //** findPackedSolution(number, radius, bounds, gravity);
   }
-  */
+  else {
+    // Not all particles have the same radius
+    double totalV = 0;
+    // Get enough particles to fill the volume
+    while (totalV<Vfill) {
+      double r = (1-drand48()*dispersion)*radius;
+      totalV += PI*sqr(r);
+      radii.push_back(r);
+      interactions.push_back(interaction);
+    }
+    positions = findPackedSolution(radii, interactions, bounds, gravity);
+  }
+  // Create particles at the given positions with - Radius, Dispersion, Velocity function, Angular velocity function, Coeff, Dissipation, Repulsion, Interaction
+  if (dispersion==0) {
+    particles = createParticles(positions, radius, dispersion, ZeroV, ZeroOm, default_sphere_coeff, default_sphere_dissipation, default_sphere_repulsion, interaction);
+    distributeParticles(particles, sectorization);
+  }
+  else createAndDistributeParticles(positions, radii, interactions, bounds, sectorization);
   // Add the large ball
+  list<Particle> large;
   if (rank==0 && bR>0) {
     Particle ball(width/2, depth+bR, bR);
     ball.setDensity(density);
-    particles.push_back(ball);
+    large.push_back(ball);
   }
   // Send out particles
-  setUpSectorization();
-  distributeParticles(particles, sectorization);
+  distributeParticles(large, sectorization);
   sectorization.initialize();
   // End setup timing
   auto end = clock();
@@ -882,11 +950,11 @@ vector<vpair> GFlowBase::getWallsPositions() {
   return positions;
 }
 
-string GFlowBase::printAnimationCommand(bool novid) {
+string GFlowBase::printAnimationCommand(int mode, bool novid) {
   stringstream stream;
   string command, strh, range, scale;
   
-  stream << "pos=" << mmPreproc(positionRecord,3) << ";";
+  stream << "pos=" << printPositionRecord(mode) << ";\n";
   stream >> command;
   stream.clear();
   command += "\n";
@@ -908,6 +976,8 @@ string GFlowBase::printAnimationCommand(bool novid) {
   command += "odsk[tr_]:={{Black,{Disk[tr[[1]],tr[[2]]]}},{Red,Line[{tr[[1]], tr[[1]] + tr[[2]]{Cos[tr[[3]]],Sin[tr[[3]]]}}]}};\n";
   // Point animation command
   command += "pnt[tr_]:={Black,Point[tr[[1]]]};\n";
+  // Dot (point) animation command
+  command += "dot[tr_]:={Black,Point[tr]};\n";
   // Create range
   stream << "{{" << left << "," << right << "},{" << bottom << "," << top << "}}";
   stream >> range;
@@ -930,7 +1000,10 @@ string GFlowBase::printAnimationCommand(bool novid) {
   stream.clear();
   command += strh;
 
-  command += "disks=Table[Graphics[Table[dsk[pos[[i]][[j]]],{j,1,Length[pos[[i]]]}],PlotRange->" + range + "],{i,1,len}];\n";
+  stream << (mode==0 ? "dsk" : "dot");
+  stream >> strh;
+
+  command += "disks=Table[Graphics[Table[" + strh + "[pos[[i]][[j]]],{j,1,Length[pos[[i]]]}],PlotRange->" + range + "],{i,1,len}];\n";
   command += ("frames=Table[Show[disks[[i]],walls," + scale + "],{i,1,len}];\n");
   if (!novid) command += "Export[\"vid.avi\",frames,\"CompressionLevel\"->0];\n";
   command += "ListAnimate[frames]";
@@ -1181,4 +1254,21 @@ inline int GFlowBase::getHead(int* array, int index) {
   if (array[index]<0) return -1;
   while (array[index]!=index) index = array[index];
   return index;
+}
+
+string GFlowBase::printPositionRecord(int mode) {
+  switch (mode) {
+  default:
+  case 0: // Normal
+    return mmPreproc(positionRecord, 3);
+    break;
+  case 1: // Compressed form
+    vector<vector<vec2> > reducedData;
+    for (const auto& v : positionRecord) {
+      vector<vec2> positions;
+      for (const auto& p : v) positions.push_back(std::get<0>(p));
+      reducedData.push_back(positions);
+    }
+    return mmPreproc(reducedData, 2);
+  }
 }
