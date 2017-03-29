@@ -893,14 +893,18 @@ void GFlowBase::createBuoyancyBox(double radius, double bR, double density, doub
   }
   else createAndDistributeParticles(positions, radii, interactions, bounds, sectorization);
   // Add the large ball
-  list<Particle> large;
+  /*
+
   if (rank==0 && bR>0) {
+    list<Particle> large;
     Particle ball(width/2, depth+bR, bR);
     ball.setDensity(density);
     large.push_back(ball);
+    // Send out particle
+    distributeParticles(large, sectorization);
   }
-  // Send out particles
-  distributeParticles(large, sectorization);
+  */
+  sectorization.setDrag(default_packed_drag);
   sectorization.initialize();
   // End setup timing
   auto end = clock();

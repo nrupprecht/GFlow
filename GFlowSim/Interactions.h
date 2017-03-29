@@ -122,7 +122,7 @@ inline bool LJinteraction(double **pdata, int p, int q, int asize, vec2& displac
     // LJ force strength
     double prop = invD*(sg[p]+sg[q]); // sigma/r --> AD HOC
     double d3 = sqr(prop)*prop;
-    double d6 = sqr(prop);
+    double d6 = sqr(d3);
     double d12 = sqr(d6);
     // Force is - d/dx (LJ)
     double strength = repulsion*(12*d12-6*d6)*invD * 1e-5;
