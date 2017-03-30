@@ -18,6 +18,8 @@ Sectorization::~Sectorization() {
   if (sectors)   delete [] sectors;
   for (int i=0; i<15; ++i)
     if (pdata[i]) delete [] pdata[i];
+  if (it) delete [] it;
+  if (ms) delete [] ms;
   sectors = 0;
 }
 
@@ -61,6 +63,8 @@ void Sectorization::initialize() {
     int sec = getSec(px[i], py[i]);
     sectors[sec].push_back(i);
   }
+  // Reallocate in a memory friendly way (using the sectorized data)
+  memory_rearrange();
   
   // Create the initial neighborlist
   createNeighborLists(true);
@@ -325,14 +329,14 @@ pair<double, int> Sectorization::doStatFunction(StatFunc func) {
   return pair<double, int>(data, count);
 }
 
-vector<std::tuple<vec2, double, double> > Sectorization::forceAnimate(int choice) {
-  if (!doInteractions) return vector<std::tuple<vec2, double, double> >();
+vector<Tri> Sectorization::forceAnimate(int choice) {
+  if (!doInteractions) return vector<Tri>();
   // Get rid of holes in the array
   compressArrays();
   // Create the neighborhood lists
   createNeighborLists();
   // Data array with an entry for every particle
-  vector<std::tuple<vec2, double, double> > data(size); 
+  vector<Tri> data(size); 
   // Set positions and radii
   for (int i=0; i<size; ++i) {
     std::get<0>(data.at(i)) = vec2(px[i], py[i]);
@@ -350,16 +354,17 @@ vector<std::tuple<vec2, double, double> > Sectorization::forceAnimate(int choice
       int j = *q;
       double Fn=0, Fs=0, F=0;
       interactionHelper(i, j, ibase, Fn, Fs);
-      // Record either total force (0), normal force (1), or shear force (2)
+      // Record either total pressure (0), total force (1), normal force (2), or shear force (3)
       switch (choice) {
       default:
       case 0:
+      case 1:
 	F = Fn+Fs;
 	break;
-      case 1:
+      case 2:
 	F = Fn;
 	break;
-      case 2:
+      case 3:
 	F = Fs;
 	break;
       }
@@ -368,6 +373,10 @@ vector<std::tuple<vec2, double, double> > Sectorization::forceAnimate(int choice
       std::get<2>(data.at(j)) += fabs(F);
     }
   }
+
+  // Turn force into pressure
+  if (choice==0)
+    for (int i=0; i<size; ++i) std::get<2>(data.at(i)) /= sg[i];
 
   return data;
 }
@@ -967,3 +976,70 @@ inline void Sectorization::atom_copy() {
   transferTime += (double)(end-start)/CLOCKS_PER_SEC;
 }
 
+inline void Sectorization::memory_rearrange() {
+  if (size==0) return;
+  // Get a memory friendly ordering for the particles
+  int count = 0;
+  vector<int> order(size);
+  for (int y=1; y<nsy-1; ++y)
+    for (int x=1; x<nsx-1; ++x)
+      for (auto index : sectors[nsx*y+x])
+	if (-1<it[index]) {
+	  order[count] = index;
+	  ++count;
+	}
+  // Create new arrays and put the particles in them in our new order
+  double *pd[15]; // New pdata
+  int *nit; // New interaction
+  // Reallocate
+  int tsize = asize + easize;
+  pd[0]  = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pd[1]  = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pd[2]  = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pd[3]  = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pd[4]  = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pd[5]  = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pd[6]  = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pd[7]  = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pd[8]  = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pd[9]  = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pd[10] = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pd[11] = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pd[12] = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pd[13] = (double*)aligned_alloc(64, tsize*sizeof(double));
+  pd[14] = (double*)aligned_alloc(64, tsize*sizeof(double));
+  nit    =    (int*)   aligned_alloc(64, tsize*sizeof(int));
+  // Set
+  for (int i=0; i<size; ++i) {
+    int j     = order[i];
+    pd[0][i]  = px[j];
+    pd[1][i]  = py[j];
+    pd[2][i]  = vx[j];
+    pd[3][i]  = vy[j];
+    pd[4][i]  = fx[j];
+    pd[5][i]  = fy[j];
+    pd[6][i]  = th[j];
+    pd[7][i]  = om[j];
+    pd[8][i]  = tq[j];
+    pd[9][i]  = sg[j];
+    pd[10][i] = im[j];
+    pd[11][i] = iI[j];
+    pd[12][i] = rp[j];
+    pd[13][i] = ds[j];
+    pd[14][i] = cf[j];
+    nit[i]    = it[j];
+    ms[i]     = 1./im[j]; // Don't need a new mass array
+  }
+  // Delete old arrays and set new data
+  for (int i=0; i<15; ++i) {
+    delete [] pdata[i];
+    pdata[i] = pd[i];
+  }
+  // Set new data arrays
+  px = pdata[0]; py = pdata[1]; vx = pdata[2]; vy = pdata[3]; fx = pdata[4]; fy = pdata[5]; th = pdata[6]; om = pdata[7]; tq = pdata[8]; sg = pdata[9]; im = pdata[10]; iI = pdata[11]; rp = pdata[12]; ds = pdata[13]; cf = pdata[14]; it = nit;
+  // Rebuild all lists (arrays are already compressed)
+  itersSinceBuild = 0;
+  createNeighborLists(true); // Position tracker is updated here
+  if (doWallNeighbors) createWallNeighborList();
+  redoLists = false;
+}

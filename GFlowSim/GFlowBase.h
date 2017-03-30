@@ -90,6 +90,7 @@ class GFlowBase {
 
   string printAnimationCommand(int=0, bool=false);
   string printSpecialAnimationCommand(bool=false);
+  string printForcesAnimationCommand(bool=false);
   void printSectors();
 
   vector<double> getBubbleSizes(vector<Particle>&, Bounds=NullBounds, double=0.01, double=0.001, double=0.05);
@@ -101,12 +102,14 @@ class GFlowBase {
   auto getPositionRecord() { return positionRecord; }
   string printPositionRecord(int);
   auto getSpecialRecord()  { return specialRecord; }
+  auto getForceRecord()    { return forceRecord; }
   auto getBubbleRecord()   { return bubbleRecord; }
   vector<vpair> getWallsPositions();
   double getSetUpTime() { return setUpTime; }
 
   void setRecPositions(bool b) { recPositions = b; }
   void setRecSpecial(bool b)   { recSpecial = b; }
+  void setRecForces(bool b)    { recForces = b; }
   void setRecBubbles(bool b)   { recBubbles = b; }
   void setVisBubbles(bool b)   { visBubbles = b; }
   void setRestrictBubbleDomain(bool b) { restrictBubbleDomain = b; }
@@ -115,10 +118,12 @@ class GFlowBase {
   // Data
   vector<vector<PData> > positionRecord;
   vector<vector<Tri> > specialRecord;
+  vector<vector<Tri> > forceRecord;
   vector<vector<double> > bubbleRecord;
   vector<string> visualizeBubbles;
   bool recPositions;
   bool recSpecial;
+  bool recForces;
   bool recBubbles;
   bool visBubbles;
   bool restrictBubbleDomain;

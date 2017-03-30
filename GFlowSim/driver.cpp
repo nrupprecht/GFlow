@@ -33,12 +33,14 @@ int main(int argc, char** argv) {
   int Tri = -1;
   bool interact = true;
   bool seedRand = true;
+  bool quiet    = false;
   int lattice   = 0;
 
   // Animation Paramaters
   int mode     = 0;     // Animation mode
   bool animate = false;
   bool special = false;
+  bool forces  = false;
   bool bubbles = false;
   bool visBubbles = false;
   bool omega   = false;
@@ -98,10 +100,12 @@ int main(int argc, char** argv) {
   parser.get("Tri", Tri);
   parser.get("interact", interact);
   parser.get("srand", seedRand);
+  parser.get("quiet", quiet);
   parser.get("lattice", lattice);
   parser.get("mode", mode);
   parser.get("animate", animate);
   parser.get("special", special);
+  parser.get("forces", forces);
   parser.get("bubbles", bubbles);
   parser.get("visBubbles", visBubbles);
   parser.get("omega", omega);
@@ -187,6 +191,7 @@ int main(int argc, char** argv) {
 
   simulator.setRecPositions(animate);
   simulator.setRecSpecial(special);
+  simulator.setRecForces(forces);
   simulator.setRecBubbles(bubbles);
   simulator.setVisBubbles(visBubbles);
   if (buoyancy || loadBuoyancy!="") simulator.setRestrictBubbleDomain(true);
@@ -202,7 +207,7 @@ int main(int argc, char** argv) {
   // Get the actual number of particles in the simulation
   number = simulator.getSize();
   double filled = simulator.getFilledVolume(), vol = simulator.getVolume();
-  if (rank==0) {
+  if (rank==0 && !quiet) {
     cout << "Number: " << number << ", Packing fraction: " << filled/vol << endl;
     cout << "Dimensions: " << simulator.getWidth() << " x " << simulator.getHeight() << endl;
     cout << "Set up time: " << simulator.getSetUpTime() << endl;
@@ -215,7 +220,7 @@ int main(int argc, char** argv) {
   simulator.run(time);
 
   // Head node prints the run summary
-  if (rank==0) {
+  if (rank==0 && !quiet) {
     if (saveFile!="") {
       if (simulator.createConfigurationFile(saveFile)) cout << "Saved configuration to file [" << saveFile << "]" << endl;
     }
@@ -233,10 +238,12 @@ int main(int argc, char** argv) {
     cout << " --- STATS ---\n";
     cout << "Neighbor list size: " << simulator.getNeighborListSize() << ", Ave per list: " << simulator.getAvePerNeighborList() << endl;
     cout << "----------------------- END SUMMARY -----------------------\n\n"; 
-
+  }
+  if (rank==0) { // Do this even when quiet = true
     /// Print recorded data
     if (animate) cout << simulator.printAnimationCommand(mode, novid) << endl;
     if (special) cout << simulator.printSpecialAnimationCommand(novid) << endl;
+    if (forces)  cout << simulator.printForcesAnimationCommand(novid) << endl;
     if (bubbles) {
       cout << "bsize=" << simulator.getBubbleRecord() << ";\n"; //**
     }

@@ -318,6 +318,11 @@ void GFlowBase::record() {
     } 
     specialRecord.push_back(positions);
   }
+  // Force record
+  if (recForces) {
+    //** Would have to change this for multiprocessor use
+    forceRecord.push_back(sectorization.forceAnimate());
+  }
   
   // Update display 
   lastDisp = time;
@@ -1063,7 +1068,7 @@ string GFlowBase::printSpecialAnimationCommand(bool novid) {
   stringstream stream;
   string command, strh, range, scale;
 
-  stream << "pos=" << mmPreproc(specialRecord) << ";";
+  stream << "pos=" << mmPreproc(specialRecord,3) << ";";
   stream >> command;
   stream.clear();
   command += "\n";
@@ -1105,6 +1110,68 @@ string GFlowBase::printSpecialAnimationCommand(bool novid) {
   command += "colors = Table[RGBColor[RandomReal[],RandomReal[],RandomReal[]],{i,1,nproc}]\n";
   command += "sdisk[tr_]:={colors[[tr[[3]]+1]],Disk[tr[[1]],tr[[2]]]};\n";
   command += "disks=Table[ Graphics[ Table[sdisk[pos[[i]][[j]] ],{j,1,Length[pos[[i]]]}],PlotRange->" + range + "], {i,1,len}];\n";
+  command += ("frames=Table[Show[disks[[i]],walls," + scale + "],{i,1,len}];\n");
+  if (!novid) command += "Export[\"vid.avi\",frames,\"CompressionLevel\"->0];\n";
+  command += "ListAnimate[frames]";
+
+  return command;
+}
+
+string GFlowBase::printForcesAnimationCommand(bool novid) {
+  stringstream stream;
+  string command, strh, range, scale;
+  // Find maximum force
+  double maxF = 0;
+  for (const auto& v : forceRecord)
+    for (auto f : v) {
+      double force = std::get<2>(f);
+      if (force>maxF) maxF = force;
+    }
+  // Create command
+  stream << "pos=" << mmPreproc(forceRecord,3) << ";";
+  stream >> command;
+  stream.clear();
+  command += "\n";
+  // Print max force
+  stream << "maxF=" << maxF << ";";
+  stream >> strh;
+  stream.clear();
+  command += (strh+'\n');
+  // Print walls
+  stream << "w=" << mmPreproc(getWallsPositions()) << ";";
+  stream >> strh;
+  stream.clear();
+  command += (strh+"\n");
+  // Print length and scale
+  stream << "len=" << recIter << ";";
+  stream >> strh;
+  stream.clear();
+  command += (strh+"\nscale=100;\n");
+  // Create range string
+  stream << "{{" << left << "," << right << "},{" << bottom << "," << top << "}}";
+  stream >> range;
+  stream.clear();
+  // Create scale string
+  stream << "ImageSize->{scale*" << right-left << ",scale*" << top-bottom << "}";
+  stream >> scale;
+  stream.clear();
+  // Create walls graphic
+  if (!walls.empty()) {
+    stream << "walls=Graphics[{";
+    for (int i=0; i<walls.size(); ++i) {
+      stream << "{Blue,Thick,Line[{w[[" << i+1 << "]][[1]],w[[" << i+1 << "]][[2]]}]}";
+      if (i!=walls.size()-1) stream << ",";
+    }
+    stream << "},PlotRange->" + range + "];\n";
+  }
+  else stream << "walls={};\n";
+  stream >> strh;
+  stream.clear();
+  command += strh;
+  // Create disk graphics
+  command += "col[f_]:=RGBColor[f/maxF,0,0];\n";
+  command += "sdisk[tr_]:={col[tr[[3]]],Disk[tr[[1]],tr[[2]]]};\n";
+  command += "disks=Table[Graphics[Table[sdisk[pos[[i]][[j]] ],{j,1,Length[pos[[i]]]}],PlotRange->" + range + "], {i,1,len}];\n";
   command += ("frames=Table[Show[disks[[i]],walls," + scale + "],{i,1,len}];\n");
   if (!novid) command += "Export[\"vid.avi\",frames,\"CompressionLevel\"->0];\n";
   command += "ListAnimate[frames]";

@@ -77,7 +77,7 @@ class Sectorization {
   // Statistics
   string printSectors();
   pair<double, int> doStatFunction(StatFunc);
-  vector<std::tuple<vec2,double,double> > forceAnimate(int);
+  vector<Tri> forceAnimate(int=0);
 
   // Exception classes
   class BadParticle {};
@@ -108,17 +108,18 @@ class Sectorization {
   inline void passParticleRecv(const int, bool=false);
   inline void compressArrays();
   inline void atom_copy();
+  inline void memory_rearrange();
 
   /// Data
   int nsx, nsy;                      // Number of sectors in x and y, includes edge sectors
   int ndx, ndy;                      // Number of domains in x and y
-  double secWidth, secHeight;     // The width and height of sectors
-  double time;                    // Simulation time
-  double epsilon, sqrtEpsilon;    // Timestep and its square root
+  double secWidth, secHeight;        // The width and height of sectors
+  double time;                       // Simulation time
+  double epsilon, sqrtEpsilon;       // Timestep and its square root
   double transferTime;               // How much time is spent transfering data
   bool wrapX, wrapY;                 // Whether we wrap distances in the x and y directions
   bool doInteractions;
-  double drag;                    // A drag coefficient, useful for finding a packed solution
+  double drag;                       // A drag coefficient, useful for finding a packed solution
 
   vec2 gravity;                      // Gravitational acceleration
   double temperature, viscosity, DT1;
