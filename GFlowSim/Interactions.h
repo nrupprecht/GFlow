@@ -113,7 +113,7 @@ inline bool LJinteraction(double **pdata, int p, int q, int asize, vec2& displac
     // Compute interaction parameters ( ad hoc )
     double dissipation = ds[p]+ds[q];
     double repulsion = rp[p]+rp[q];
-    double coeff = cf[p]*cf[q];
+    // double coeff = cf[p]*cf[q];
     // Compute force
     double dist = sqrt(distSqr);
     double invD = 1./dist;
@@ -129,20 +129,21 @@ inline bool LJinteraction(double **pdata, int p, int q, int asize, vec2& displac
     // Velocities
     vec2 dV(vx[q]-vx[p], vy[q]-vy[p]);
     double Vn = dV*normal; // Normal velocity
-    double Vs = dV*shear + sg[p]*om[p] + sg[q]*om[q]; // Shear velocity
+    // double Vs = dV*shear + sg[p]*om[p] + sg[q]*om[q]; // Shear velocity
     // Calculate the normal force
     Fn = -strength-dissipation*clamp(-Vn); // Damped harmonic oscillator
     // Calculate the Shear force
-    Fs = coeff ? -coeff*Fn*sign(Vs) : 0;
+    // Fs = coeff ? -coeff*Fn*sign(Vs) : 0;
     // Update forces
-    double FX = Fn*normal.x+Fs*shear.x, FY = Fn*normal.y+Fs*shear.y;
+    // double FX = Fn*normal.x+Fs*shear.x, FY = Fn*normal.y+Fs*shear.y;
+    double FX = Fn*normal.x, FY = Fn*normal.y;
     fx[p] += FX;
     fy[p] += FY;
     fx[q] -= FX;
     fy[q] -= FY;
     // Update torque
-    tq[p] -= (Fs*sg[p]);
-    tq[q] -= (Fs*sg[q]);
+    // tq[p] -= (Fs*sg[p]);
+    // tq[q] -= (Fs*sg[q]);
     // Particles interacted
     return true;
   }

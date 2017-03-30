@@ -73,6 +73,7 @@ class GFlowBase {
   void setExpectedSize(int i)    { sectorization.setASize(i); }
   void setSkinDepth(double s)    { skinDepth = s; sectorization.setSkinDepth(s); }
   void setFrameRate(double f)    { dispTime = 1./f; }
+  void setEpsilon(double);
 
   // File functions
   virtual bool loadConfigurationFromFile (string);
@@ -158,7 +159,7 @@ class GFlowBase {
   vector<vec2> findPackedSolution(int, double, Bounds, vec2 = 0, double=0.5, double=0.5);
   vector<vec2> findPackedSolution(const vector<double>&, const vector<int>&, const Bounds&, vec2=0, double=0.5, double=0.5);
   // Find lattice solution
-  vector<vec2> findLatticeSolution(int, double, Bounds, int=-1, double=0.1);
+  vector<vec2> findLatticeSolution(int, double, Bounds, int=-1, double=0.1, double=0.);
 
   /// Data
   double left, right, bottom, top;
@@ -168,7 +169,7 @@ class GFlowBase {
 
   /// Times
   double time;                   // Simulated time
-  double epsilon, sqrtEpsilon;// Time step and its square root
+  double epsilon;                // Time step and its square root
   double dispTime, lastDisp;     // Time between recording (1. / display rate), last time data was recorded
   double startRec;               // When to start recording data
   int iter, recIter, maxIter;    // Simulation iteration, how many iterations we have recorded data at, maximum iteration

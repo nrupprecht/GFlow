@@ -55,10 +55,7 @@ void Sectorization::initialize() {
   createArrays();
   setParticles();
   // Set position tracker
-  
-  // Uncommenting this statement makes the program run at < half the speed it usually runs at
-  for (int i=0; i<size; ++i) positionTracker[i] = vec2(px[i], py[i]);
-  
+  for (int i=0; i<size; ++i) positionTracker[i] = vec2(px[i], py[i]);  
   // Add the particles to the proper sectors
   for (int i=0; i<size; ++i) { 
     int sec = getSec(px[i], py[i]);
@@ -136,7 +133,7 @@ void Sectorization::setSimBounds(Bounds b) {
   simBounds = b;
 }
 
-void Sectorization::particleInteractions() {
+inline void Sectorization::particleInteractions() {
   if (!doInteractions) return;
   // Neighbor list
   for (auto &nl : neighborList) {
@@ -147,47 +144,51 @@ void Sectorization::particleInteractions() {
     int ibase = it[i]<<2;      // Represents the interaction type of particle p
     for (; q!=nl.end(); ++q) { // Try to interact with all other particles in the nl
       int j = *q;
-      vec2 displacement = vec2(px[j]-px[i], py[j]-py[i]); //** getDisplacement(vec2(px[j],py[j]), vec2(px[i],py[i]));
       double Fn=0, Fs=0;
-      int iType = ibase+it[j]; // Same as 4*it[i]+it[j]
-      // Switch on interaction type
-      switch(iType) {
-	// Both are hard disks
-      case 0:
-	hardDiskRepulsion(pdata, i, j, asize, displacement, Fn, Fs);
-	break;
-      case 1: // Sphere - LJ --> LJ
-	LJinteraction(pdata, i, j, asize, displacement, Fn, Fs);
-	break;
-      case 2: // Sphere - Triangle
-	// UNIMPLEMENTED
-	break;
-      case 3: // UNIMPLEMENTED
-	hardDiskRepulsion(pdata, i, j, asize, displacement, Fn, Fs);
-	break;
-      case 4: // LJ - Sphere --> LJ
-      case 5: // LJ - LJ --> LJ
-      case 6: // LJ - Triangle --> LJ
-      case 7: // UNIMPLEMENTED
-	LJinteraction(pdata, i, j, asize, displacement, Fn, Fs);
-	break;
-      case 8: // Triangle - Sphere
-	// UNIMPLEMENTED
-	break;
-      case 9: // Triangle - LJ --> LJ
-	LJinteraction(pdata, i, j, asize, displacement, Fn, Fs);
-	break;
-      case 10: // Triangle - Triangle
-	TriTriInteraction(pdata, i, j, asize, displacement, Fn, Fs);
-	break;
-      default:
-	break;	
-      } // End outer switch
+      interactionHelper(i, j, ibase, Fn, Fs);
     }
   }
 }
 
-void Sectorization::wallInteractions() {
+inline void Sectorization::interactionHelper(int i, int j, int ibase, double &Fn, double &Fs) {
+  vec2 displacement = getDisplacement(vec2(px[j],py[j]), vec2(px[i],py[i]));
+  int iType = ibase+it[j]; // Same as 4*it[i]+it[j]
+  // Switch on interaction type
+  switch(iType) {
+    // Both are hard disks
+  case 0:
+    hardDiskRepulsion(pdata, i, j, asize, displacement, Fn, Fs);
+    break;
+  case 1: // Sphere - LJ --> LJ
+    LJinteraction(pdata, i, j, asize, displacement, Fn, Fs);
+    break;
+  case 2: // Sphere - Triangle
+    // UNIMPLEMENTED
+    break;
+  case 3: // UNIMPLEMENTED
+    hardDiskRepulsion(pdata, i, j, asize, displacement, Fn, Fs);
+    break;
+  case 4: // LJ - Sphere --> LJ
+  case 5: // LJ - LJ --> LJ
+  case 6: // LJ - Triangle --> LJ
+  case 7: // UNIMPLEMENTED
+    LJinteraction(pdata, i, j, asize, displacement, Fn, Fs);
+    break;
+  case 8: // Triangle - Sphere
+    // UNIMPLEMENTED
+    break;
+  case 9: // Triangle - LJ --> LJ
+    LJinteraction(pdata, i, j, asize, displacement, Fn, Fs);
+    break;
+  case 10: // Triangle - Triangle
+    TriTriInteraction(pdata, i, j, asize, displacement, Fn, Fs);
+    break;
+  default:
+    break;
+  } // End outer switch
+}
+
+inline void Sectorization::wallInteractions() {
   if (doWallNeighbors)
     for (auto pr : wallNeighbors) {
       int i = pr.first;
@@ -322,6 +323,53 @@ pair<double, int> Sectorization::doStatFunction(StatFunc func) {
   int count;
   double data = func(plist, count);
   return pair<double, int>(data, count);
+}
+
+vector<std::tuple<vec2, double, double> > Sectorization::forceAnimate(int choice) {
+  if (!doInteractions) return vector<std::tuple<vec2, double, double> >();
+  // Get rid of holes in the array
+  compressArrays();
+  // Create the neighborhood lists
+  createNeighborLists();
+  // Data array with an entry for every particle
+  vector<std::tuple<vec2, double, double> > data(size); 
+  // Set positions and radii
+  for (int i=0; i<size; ++i) {
+    std::get<0>(data.at(i)) = vec2(px[i], py[i]);
+    std::get<1>(data.at(i)) = sg[i];
+    std::get<2>(data.at(i)) = 0;
+  }
+  // Calculate forces
+  for (auto &nl : neighborList) {
+    auto p = nl.begin();       // The particle whose list this is
+    int i = *p;
+    if (it[i]<0) continue;     // This particle is gone
+    auto q = p; ++q;           // Start with the particle after the head particle
+    int ibase = it[i]<<2;      // Represents the interaction type of particle p
+    for (; q!=nl.end(); ++q) { // Try to interact with all other particles in the nl
+      int j = *q;
+      double Fn=0, Fs=0, F=0;
+      interactionHelper(i, j, ibase, Fn, Fs);
+      // Record either total force (0), normal force (1), or shear force (2)
+      switch (choice) {
+      default:
+      case 0:
+	F = Fn+Fs;
+	break;
+      case 1:
+	F = Fn;
+	break;
+      case 2:
+	F = Fs;
+	break;
+      }
+      // Store
+      std::get<2>(data.at(i)) += fabs(F);
+      std::get<2>(data.at(j)) += fabs(F);
+    }
+  }
+
+  return data;
 }
 
 inline void Sectorization::firstHalfKick() {

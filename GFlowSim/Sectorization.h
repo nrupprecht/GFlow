@@ -67,8 +67,6 @@ class Sectorization {
   void updatePList(); // Fill plist with the particles from the data buffers
 
   // Functionality
-  void particleInteractions();       // Handle the interactions between pair of particles
-  void wallInteractions();           // Handle the interactions between particles and walls
   void update();                     // Do a timestep
   void updateSectors();              // Update the sectors, migrating particles to the correct sectors
 
@@ -79,6 +77,7 @@ class Sectorization {
   // Statistics
   string printSectors();
   pair<double, int> doStatFunction(StatFunc);
+  vector<std::tuple<vec2,double,double> > forceAnimate(int);
 
   // Exception classes
   class BadParticle {};
@@ -86,12 +85,15 @@ class Sectorization {
  private:
   /// Helper functions
   inline void firstHalfKick();
+  inline void particleInteractions(); // Handle the interactions between pair of particles
+  inline void interactionHelper(int, int, int, double&, double&); // Switch statement for particle interaction
+  inline void wallInteractions(); // Handle the interactions between particles and walls
   inline void secondHalfKick();
   inline void wrap(double&, double&);
   inline void wrap(vec2&);           // Keep a position in bounds by wrapping
   inline void wrap(double&);      // Keep an angle between 0 and 2*PI
-  inline int getSec(const vec2&);         // What sector does a position fall into
-  inline int getSec(const double, const double);
+  inline int  getSec(const vec2&);         // What sector does a position fall into
+  inline int  getSec(const double, const double);
   inline void createNeighborLists(bool=false); // Create neighbor lists
   inline void createWallNeighborList();
   inline vec2 getDisplacement(vec2, vec2);

@@ -9,7 +9,7 @@ GFlowBase::GFlowBase() {
   temperature = 0; viscosity = 1.308e-3;
   latticeType = 0;
   time = 0;
-  epsilon = 1e-4; sqrtEpsilon = sqrt(epsilon);
+  epsilon = 1e-4;
   sectorization.setEpsilon(epsilon);
   dispTime = 1./15.; lastDisp = 0;
   startRec = 0;
@@ -132,6 +132,11 @@ void GFlowBase::setDoInteractions(bool i) {
 
 void GFlowBase::setInteractionType(int i) {
   sectorization.setInteractionType(i);
+}
+
+void GFlowBase::setEpsilon(double ep) {
+  epsilon = ep;
+  sectorization.setEpsilon(ep);
 }
 
 bool GFlowBase::loadConfigurationFromFile (string filename) {
@@ -757,11 +762,11 @@ vector<vec2> GFlowBase::findPackedSolution(const vector<double>& radii, const ve
   }
 }
 
-vector<vec2> GFlowBase::findLatticeSolution(int number, double radius, Bounds bounds, int ltype, double drf) {
+vector<vec2> GFlowBase::findLatticeSolution(int number, double radius, Bounds bounds, int ltype, double drf, double prob) {
   if (ltype<0) ltype = latticeType;
   // Calculate some parameters
   double latt = sqrt(3.);
-  double dr = radius*drf;
+  double dr = drf*radius;
   double width = bounds.right - bounds.left;
   int nx = width/(2.*radius+dr);
   int ny = (bounds.top-bounds.bottom)/(2.*radius+dr);
@@ -774,9 +779,16 @@ vector<vec2> GFlowBase::findLatticeSolution(int number, double radius, Bounds bo
       double X = radius+dr;
       if (y%2==1) X += (radius+0.5*dr); // Staggered
       for (int x=0; x<nx && X+radius<width; ++x) {
-	positions.push_back(vec2(X,Y));
+	if (prob<1. && drand48()<prob) {
+          positions.push_back(vec2(X,Y));
+          ++count;
+        }
+        else {
+          positions.push_back(vec2(X,Y));
+          ++count;
+        }
+	// Update
 	X += (2.*radius+dr);
-	++count;
       }
       Y += (latt*radius+dr);
     }
@@ -786,9 +798,16 @@ vector<vec2> GFlowBase::findLatticeSolution(int number, double radius, Bounds bo
     for (int y=0; y<ny && count<number; ++y) {
       double X = radius+dr;
       for (int x=0; x<nx && count<number; ++x) {
-	positions.push_back(vec2(X,Y));
+	if (prob<1. && drand48()<prob) {
+	  positions.push_back(vec2(X,Y));
+	  ++count; 
+	}
+	else {
+	  positions.push_back(vec2(X,Y));
+	  ++count;
+	}
+	// Update x
 	X += (2*radius+dr);
-	++count;
       }
       Y += (2*radius+dr);
     }
@@ -884,7 +903,7 @@ void GFlowBase::createBuoyancyBox(double radius, double bR, double density, doub
       radii.push_back(r);
       interactions.push_back(interaction);
     }
-    positions = findPackedSolution(radii, interactions, bounds, gravity);
+    positions = findLatticeSolution(radii.size(), radius, initialBounds); //** findPackedSolution(radii, interactions, bounds, gravity);
   }
   // Create particles at the given positions with - Radius, Dispersion, Velocity function, Angular velocity function, Coeff, Dissipation, Repulsion, Interaction
   if (dispersion==0) {
@@ -904,7 +923,6 @@ void GFlowBase::createBuoyancyBox(double radius, double bR, double density, doub
     distributeParticles(large, sectorization);
   }
   */
-  sectorization.setDrag(default_packed_drag);
   sectorization.initialize();
   // End setup timing
   auto end = clock();

@@ -25,9 +25,12 @@ int main(int argc, char** argv) {
   double temperature = 0;
   double time = 1.;
   double start = 0;
+  double epsilon = 1.e-4;
   double phi = 0.5;
   double skinDepth = -1;
   int interaction = 0;
+  int LJ = -1;
+  int Tri = -1;
   bool interact = true;
   bool seedRand = true;
   int lattice   = 0;
@@ -87,9 +90,12 @@ int main(int argc, char** argv) {
   parser.get("temperature", temperature);
   parser.get("time", time);
   parser.get("start", start);
+  parser.get("epsilon", epsilon);
   parser.get("phi", phi);
   parser.get("skinDepth", skinDepth);
   parser.get("interaction", interaction);
+  parser.get("LJ", LJ);
+  parser.get("Tri", Tri);
   parser.get("interact", interact);
   parser.get("srand", seedRand);
   parser.get("lattice", lattice);
@@ -149,9 +155,13 @@ int main(int argc, char** argv) {
 
   // Set up the simulation
   GFlowBase simulator;
+  simulator.setEpsilon(epsilon);
   simulator.setLatticeType(lattice);
   if (0<fps) simulator.setFrameRate(fps);
   if (0<skinDepth) simulator.setSkinDepth(skinDepth);
+  // Adjust interaction
+  if (LJ!=-1) interaction = 1;
+  else if (Tri!=-1) interaction = 2;
   // Create scenario
   if (loadFile=="" && loadBuoyancy=="") {
     if (buoyancy) simulator.createBuoyancyBox(radius, bR, density, width, height, velocity, dispersion, interaction);
