@@ -50,6 +50,9 @@ int main(int argc, char** argv) {
   bool cluster = false;
   bool triAlign = false;
   bool trackHeight  = false;
+  bool trackX  = false;
+  bool GPE     = false;
+  bool maxV    = false;
   bool novid   = false;
   bool printSectors = false;
   double fps = -1; // FPS
@@ -115,6 +118,9 @@ int main(int argc, char** argv) {
   parser.get("cluster", cluster);
   parser.get("triAlign", triAlign);
   parser.get("trackHeight", trackHeight);
+  parser.get("trackX", trackX);
+  parser.get("GPE", GPE);
+  parser.get("maxV", maxV);
   parser.get("novid", novid);
   parser.get("printSectors", printSectors);
   parser.get("fps", fps);
@@ -203,6 +209,9 @@ int main(int argc, char** argv) {
   if (cluster) simulator.addStatFunction(Stat_Clustering, "cluster");
   if (triAlign) simulator.addStatFunction(Stat_Triangle_Align, "triAlign");
   if (trackHeight) simulator.addStatFunction(Stat_Large_Object_Height, "height");
+  if (trackX) simulator.addStatFunction(Stat_Large_Object_X, "posx");
+  if (GPE) simulator.addStatFunction(Stat_Gravitational_PE, "gpe");
+  if (maxV) simulator.addStatFunction(Stat_Max_Velocity, "maxv");
 
   // Get the actual number of particles in the simulation
   number = simulator.getSize();
@@ -233,7 +242,8 @@ int main(int argc, char** argv) {
     cout << "Run Time: " << runTime << " (" << printAsTime(runTime) << "), Sim Time: " << time << endl;
     cout << "Start Time: " << simulator.getStartRec() << ", Record Time: " << time - simulator.getStartRec() << endl;
     cout << "Iterations: " << iters << ", time per iter: " << (iters>0 ? toStr(runTime/iters) : "---") << endl;
-    cout << "Transfer Time: " << transferTime << " (" << (runTime>0 ? toStr(transferTime/runTime*100) : "---") << "%)" << endl;
+    double transferPercent = transferTime/runTime*100;
+    cout << "Transfer Time: " << transferTime << " (" << (runTime>0 ? (transferPercent>0.01 ? toStr(transferPercent) : "~ 0") : "---") << "%)" << endl;
     cout << "Ratio: " << (runTime>0 ? toStr(time/runTime) : "---") << ", Ratio x Particles: " << (runTime>0 ? toStr(time/runTime*number) : "---") << endl;
     cout << " --- STATS ---\n";
     cout << "Neighbor list size: " << simulator.getNeighborListSize() << ", Ave per list: " << simulator.getAvePerNeighborList() << endl;
@@ -243,7 +253,7 @@ int main(int argc, char** argv) {
     /// Print recorded data
     if (animate) cout << simulator.printAnimationCommand(mode, novid) << endl;
     if (special) cout << simulator.printSpecialAnimationCommand(novid) << endl;
-    if (forces)  cout << simulator.printForcesAnimationCommand(novid) << endl;
+    if (forces)  cout << simulator.printForcesAnimationCommand(mode, novid) << endl;
     if (bubbles) {
       cout << "bsize=" << simulator.getBubbleRecord() << ";\n"; //**
     }

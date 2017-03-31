@@ -28,6 +28,7 @@
 #include <algorithm>
 #include <fstream>
 #include <tuple>
+#include <chrono>
 
 using std::vector;
 using std::pair;
@@ -40,6 +41,9 @@ using std::time;
 using std::ostream;
 using std::ifstream;
 using std::ofstream;
+using std::chrono::high_resolution_clock;
+using std::chrono::duration;
+using std::chrono::duration_cast;
 
 #include "../ArgParse.h"
 
@@ -61,6 +65,17 @@ inline void seedNormalDistribution() {
 /// Random number, normal distribution
 inline double randNormal() {
   return normal_dist(generator);
+}
+
+/// Get the current time
+inline auto current_time() {
+  return high_resolution_clock::now();
+}
+
+// high_resolution_clock::time_point
+template<typename T> inline double time_span(T end, T start) {
+  duration<double> span = duration_cast<duration<double>>(end-start);
+  return span.count();
 }
 
 /// Precision clamp

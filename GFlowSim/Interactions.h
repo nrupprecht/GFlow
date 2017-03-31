@@ -204,7 +204,7 @@ inline bool TriTriInteraction(double **pdata, int p, int q, int asize, vec2& dis
     double sgprime = 0.5*sg[p];
     vec2 intersect = displacement + sg[q]*normQ;
     if (intersect*normP<sg[p] && intersect*shear<sgprime) {
-      vec2 force = repulsion*clamp(sgprime - intersect*shear)*shear;
+      vec2 force = repulsion*(sgprime - intersect*shear)*shear;
       fx[p] -= force.x;
       fy[p] -= force.y;
       fx[q] += force.x;

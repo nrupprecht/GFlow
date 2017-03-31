@@ -48,7 +48,7 @@ void GFlowBase::run(double runLength) {
   sectorization.setCommWork(CommWork);
   // Calculate the number of iterations we will run for
   maxIter = runLength/epsilon;
-  clock_t start = clock();
+  auto start = current_time();
   running = true;
   if (startRec<=0) record(); // Initial record
   if (doWork) {
@@ -61,8 +61,8 @@ void GFlowBase::run(double runLength) {
     }
   }
   running = false;
-  clock_t end = clock();
-  runTime = (double)(end-start)/CLOCKS_PER_SEC;
+  auto end = current_time();
+  runTime = time_span(end, start);
   // Release work comm and set sectorization comm back to comm world
   sectorization.resetComm();
   // CommWork.Free(); 
@@ -423,7 +423,7 @@ void GFlowBase::distributeParticles(list<Particle> &allParticles, Sectorization 
 
 void GFlowBase::recallParticles(vector<Particle>& allParticles) {
   // Get all the particles back from the sectorizations
-  auto begin = clock();
+  auto start = current_time();
   int max = min(ndx*ndy, numProc);
   if (rank==0)
     for (auto &p : sectorization.getParticles())
@@ -450,14 +450,14 @@ void GFlowBase::recallParticles(vector<Particle>& allParticles) {
     }
   }
   CommWork.Barrier();
-  auto end = clock();
-  transferTime += (double)(end-begin)/CLOCKS_PER_SEC;
+  auto end = current_time();
+  transferTime += time_span(end, start);
   // Particles are now all stored on processor 0
 }
 
 void GFlowBase::recallParticlesByProcessor(vector<vector<Particle> >& allParticles) {
   // Get all the particles back from the sectorizations
-  auto begin = clock();
+  auto start = current_time();
   int max = min(ndx*ndy, numProc);
   if (rank==0) {
     vector<Particle> myParticles;
@@ -489,8 +489,8 @@ void GFlowBase::recallParticlesByProcessor(vector<vector<Particle> >& allParticl
     }
   }
   CommWork.Barrier();
-  auto end = clock();
-  transferTime += (double)(end-begin)/CLOCKS_PER_SEC;
+  auto end = current_time();
+  transferTime += time_span(end, start);
   // Particles are now all stored, sorted by processor, on processor 0
 }
 
@@ -825,7 +825,7 @@ vector<vec2> GFlowBase::findLatticeSolution(int number, double radius, Bounds bo
   
 void GFlowBase::createSquare(int number, double radius, double width, double height, double vsgma, double dispersion, int interaction) {
   // Start the clock
-  auto begin = clock();
+  auto start = current_time();
   // Discard any old state
   discard();
   // Bounds
@@ -862,13 +862,13 @@ void GFlowBase::createSquare(int number, double radius, double width, double hei
   distributeParticles(particles, sectorization);
   sectorization.initialize();
   // End setup timing
-  auto end = clock();
-  setUpTime = (double)(end-begin)/CLOCKS_PER_SEC;
+  auto end = current_time();
+  setUpTime = time_span(end, start);
 }
 
 void GFlowBase::createBuoyancyBox(double radius, double bR, double density, double width, double depth, double velocity, double dispersion, int interaction) {
   // Start the clock
-  auto begin = clock();
+  auto start = current_time();
   bR = fabs(bR); radius = fabs(radius);
   // Discard any old state
   discard();
@@ -930,13 +930,13 @@ void GFlowBase::createBuoyancyBox(double radius, double bR, double density, doub
   */
   sectorization.initialize();
   // End setup timing
-  auto end = clock();
-  setUpTime = (double)(end-begin)/CLOCKS_PER_SEC;
+  auto end = current_time();
+  setUpTime = time_span(end, start);
 }
 
 bool GFlowBase::loadBuoyancy(string fileName, double radius, double velocity, double density) {
   // Start the clock
-  auto begin = clock();
+  auto start = current_time();
   // Discard any old state
   discard();
   // Load data
@@ -973,8 +973,8 @@ bool GFlowBase::loadBuoyancy(string fileName, double radius, double velocity, do
   setUpSectorization();
   sectorization.initialize();
   // End setup timing
-  auto end = clock();
-  setUpTime = (double)(end-begin)/CLOCKS_PER_SEC;
+  auto end = current_time();
+  setUpTime = time_span(end, start);
   return true;
 }
 
@@ -1117,7 +1117,7 @@ string GFlowBase::printSpecialAnimationCommand(bool novid) {
   return command;
 }
 
-string GFlowBase::printForcesAnimationCommand(bool novid) {
+string GFlowBase::printForcesAnimationCommand(int mode, bool novid) {
   stringstream stream;
   string command, strh, range, scale;
   // Find maximum force
@@ -1127,8 +1127,9 @@ string GFlowBase::printForcesAnimationCommand(bool novid) {
       double force = std::get<2>(f);
       if (force>maxF) maxF = force;
     }
-  // Create command
-  stream << "pos=" << mmPreproc(forceRecord,3) << ";";
+  // Create command - do this as the mode switching for now
+  if (mode==0) stream << "pos=" << mmPreproc(forceRecord,3) << ";"; 
+  else stream << "pos=" << mmPreproc(forceRecord) << ";";
   stream >> command;
   stream.clear();
   command += "\n";
@@ -1414,10 +1415,11 @@ inline void GFlowBase::createMatrix(int* array, int nsx, int nsy, double sx, dou
 string GFlowBase::printPositionRecord(int mode) {
   switch (mode) {
   default:
-  case 0: // Normal
+  case 0: { // Normal
     return mmPreproc(positionRecord, 3);
     break;
-  case 1: // Compressed form
+  }
+  case 1: { // Compressed form
     vector<vector<vec2> > reducedData;
     for (const auto& v : positionRecord) {
       vector<vec2> positions;
@@ -1425,5 +1427,9 @@ string GFlowBase::printPositionRecord(int mode) {
       reducedData.push_back(positions);
     }
     return mmPreproc(reducedData, 2);
+  }
+  case 2: { // Long form
+    return mmPreproc(positionRecord);
+  }
   }
 }

@@ -90,7 +90,7 @@ class GFlowBase {
 
   string printAnimationCommand(int=0, bool=false);
   string printSpecialAnimationCommand(bool=false);
-  string printForcesAnimationCommand(bool=false);
+  string printForcesAnimationCommand(int=0, bool=false);
   void printSectors();
 
   // Get bubble sizes variants and helper functions

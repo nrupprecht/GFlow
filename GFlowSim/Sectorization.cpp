@@ -749,7 +749,7 @@ inline void Sectorization::atom_move() {
     }
   }
   // Do the actual migration
-  auto start = clock();
+  auto start = current_time();
   passParticles(-1, -1, move_lsts[0]); // bl
   passParticles( 0, -1, move_lsts[1]); // bm
   passParticles(+1, -1, move_lsts[2]); // br
@@ -758,8 +758,8 @@ inline void Sectorization::atom_move() {
   passParticles(-1, +1, move_lsts[6]); // tl
   passParticles( 0, +1, move_lsts[7]); // tm
   passParticles(+1, +1, move_lsts[8]); // tr
-  auto end = clock();
-  transferTime += (double)(end-start)/CLOCKS_PER_SEC;
+  auto end = current_time();
+  transferTime += time_span(end, start);
 }
 
 inline void Sectorization::passParticles(int tx, int ty, const list<int> &allParticles, bool edgeParticles) {
@@ -911,7 +911,7 @@ inline void Sectorization::atom_copy() {
   // Arrays
   list<int> leftEdge, rightEdge, topEdge, bottomEdge;
   // Start timing
-  auto start = clock();
+  auto start = current_time();
   // Pass left edge to the left
   if (0<dx) // Or wrap y
     for (int y=1; y<nsy-1; ++y)
@@ -947,8 +947,8 @@ inline void Sectorization::atom_copy() {
   cout << "Rank: " << rank << ", " << bottomEdge.size() << endl; //**
   passParticles(0, -1, bottomEdge);
   // Timing
-  auto end = clock();
-  transferTime += (double)(end-start)/CLOCKS_PER_SEC;
+  auto end = current_time();
+  transferTime += time_span(end, start);
 }
 
 inline void Sectorization::memory_rearrange() {

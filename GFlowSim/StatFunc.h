@@ -129,13 +129,25 @@ inline double Stat_Volume(const vector<Particle> &particles, int &count) {
   return vol;
 }
 
-inline double Stat_Potential_Energy(const vector<Particle> &particles, int &count) {
+inline double Stat_Gravitational_PE(const vector<Particle> &particles, int &count) {
   count = 0;
   if (particles.empty()) return 0;
   double U = 0;
   for (const auto &p : particles) U += p.position.y/p.invMass;
   count = particles.size();
   return count>0 ? U/count : 0;
+}
+
+inline double Stat_Max_Velocity(const vector<Particle> &particles, int &count) {
+  count = 0;
+  if (particles.empty()) return 0;
+  count = 1;
+  double maxV = 0;
+  for (const auto &p : particles) {
+    double v = sqrt(sqr(p.velocity));
+    if (maxV<v) maxV = v;
+  }
+  return maxV;
 }
 
 #endif // __STAT_FUNC_H__
