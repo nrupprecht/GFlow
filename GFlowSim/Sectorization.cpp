@@ -19,7 +19,6 @@ Sectorization::~Sectorization() {
   for (int i=0; i<15; ++i)
     if (pdata[i]) delete [] pdata[i];
   if (it) delete [] it;
-  if (ms) delete [] ms;
   sectors = 0;
 }
 
@@ -121,7 +120,6 @@ void Sectorization::discard() {
   if (cf) delete [] cf; cf = 0;
   if (th) delete [] th; th = 0;
   if (it) delete [] it; it = 0;
-  if (ms) delete [] ms; ms = 0;
   for (int i=0; i<15; ++i) pdata[i] = 0;
   size = 0;
   array_end = 0;
@@ -373,11 +371,10 @@ vector<Tri> Sectorization::forceAnimate(int choice) {
       std::get<2>(data.at(j)) += fabs(F);
     }
   }
-
   // Turn force into pressure
   if (choice==0)
-    for (int i=0; i<size; ++i) std::get<2>(data.at(i)) /= sg[i];
-
+    for (int i=0; i<size; ++i) std::get<2>(data.at(i)) /= (2*PI*sg[i]);
+  // Return data
   return data;
 }
 
@@ -388,13 +385,13 @@ inline void Sectorization::firstHalfKick() {
 #pragma vector aligned
 #pragma simd
     for (int i=0; i<array_end; ++i) {
-      // double mass = 1./im[i];
+      double mass = 1./im[i];
       vx[i] += dt*im[i]*fx[i];
       vy[i] += dt*im[i]*fy[i];
       px[i] += epsilon*vx[i];
       py[i] += epsilon*vy[i];
-      fx[i] = gravity.x*ms[i] - drag*vx[i];
-      fy[i] = gravity.y*ms[i] - drag*vy[i];
+      fx[i] = gravity.x*mass - drag*vx[i];
+      fy[i] = gravity.y*mass - drag*vy[i];
       wrap(px[i], py[i]); // Wrap position
       om[i] += dt*iI[i]*tq[i];
       th[i] += epsilon*om[i];
@@ -411,13 +408,13 @@ inline void Sectorization::firstHalfKick() {
 #pragma vector aligned
 #pragma simd
     for (int i=0; i<array_end; ++i) {
-      // double mass = 1./im[i];
+      double mass = 1./im[i];
       vx[i] += dt*im[i]*fx[i];
       vy[i] += dt*im[i]*fy[i];
       px[i] += epsilon*vx[i];
       py[i] += epsilon*vy[i];
-      fx[i] = gravity.x*ms[i] - drag*vx[i];
-      fy[i] = gravity.y*ms[i] - drag*vy[i];
+      fx[i] = gravity.x*mass - drag*vx[i];
+      fy[i] = gravity.y*mass - drag*vy[i];
       wrap(px[i], py[i]);
       om[i] += dt*iI[i]*tq[i];
       th[i] += epsilon*om[i];
@@ -438,17 +435,25 @@ inline void Sectorization::secondHalfKick() {
 }
 
 inline void Sectorization::wrap(double &x, double &y) {
-  if (x<simBounds.left)       x = simBounds.right-fmod(simBounds.left-x, simBounds.right-simBounds.left);
-  else if (simBounds.right<x) x = fmod(x-simBounds.left, simBounds.right-simBounds.left)+simBounds.left;
-  if (y<simBounds.bottom)     y = simBounds.top-fmod(simBounds.bottom-y, simBounds.top-bounds.bottom);
-  else if (simBounds.top<y)   y = fmod(y-simBounds.bottom, simBounds.top-simBounds.bottom)+simBounds.bottom;
+  if (wrapX) {
+    if (x<simBounds.left)       x = simBounds.right-fmod(simBounds.left-x, simBounds.right-simBounds.left);
+    else if (simBounds.right<x) x = fmod(x-simBounds.left, simBounds.right-simBounds.left)+simBounds.left;
+  }
+  if (wrapY) {
+    if (y<simBounds.bottom)     y = simBounds.top-fmod(simBounds.bottom-y, simBounds.top-bounds.bottom);
+    else if (simBounds.top<y)   y = fmod(y-simBounds.bottom, simBounds.top-simBounds.bottom)+simBounds.bottom;
+  }
 }
 
 inline void Sectorization::wrap(vec2 &pos) {
-  if (pos.x<simBounds.left)       pos.x = simBounds.right-fmod(simBounds.left-pos.x, simBounds.right-simBounds.left);
-  else if (simBounds.right<pos.x) pos.x = fmod(pos.x-simBounds.left, simBounds.right-simBounds.left)+simBounds.left;
-  if (pos.y<simBounds.bottom)     pos.y = simBounds.top-fmod(simBounds.bottom-pos.y, simBounds.top-bounds.bottom);
-  else if (simBounds.top<pos.y)   pos.y = fmod(pos.y-simBounds.bottom, simBounds.top-simBounds.bottom)+simBounds.bottom;
+  if (wrapX) {
+    if (pos.x<simBounds.left)       pos.x = simBounds.right-fmod(simBounds.left-pos.x, simBounds.right-simBounds.left);
+    else if (simBounds.right<pos.x) pos.x = fmod(pos.x-simBounds.left, simBounds.right-simBounds.left)+simBounds.left;
+  }
+  if (wrapY) {
+    if (pos.y<simBounds.bottom)     pos.y = simBounds.top-fmod(simBounds.bottom-pos.y, simBounds.top-bounds.bottom);
+    else if (simBounds.top<pos.y)   pos.y = fmod(pos.y-simBounds.bottom, simBounds.top-simBounds.bottom)+simBounds.bottom;
+  }
 }
 
 inline void Sectorization::wrap(double &theta) {
@@ -537,7 +542,6 @@ inline void Sectorization::createNeighborLists(bool force) {
 	// | * <*> x |
 	// | *  *  x |
 	// +---------+
-	
 	// Check the sector you are in
 	auto q = p; ++q;
         if (q!=sectors[y*nsx+x].end()) // Same sector
@@ -647,7 +651,7 @@ void Sectorization::updatePList() {
 inline void Sectorization::createArrays() {
   if (asize<1) return;
   if (px) delete [] px;
-  if (py) delete [] py; 
+  if (py) delete [] py;
   if (vx) delete [] vx;
   if (vy) delete [] vy;
   if (fx) delete [] fx;
@@ -662,7 +666,6 @@ inline void Sectorization::createArrays() {
   if (ds) delete [] ds;
   if (cf) delete [] cf;
   if (it) delete [] it;
-  if (ms) delete [] ms;
   // Reallocate
   int tsize = asize + easize;
   pdata[0]  = px = (double*)aligned_alloc(64, tsize*sizeof(double));
@@ -682,7 +685,6 @@ inline void Sectorization::createArrays() {
   pdata[14] = cf = (double*)aligned_alloc(64, tsize*sizeof(double));
   it             =    (int*)   aligned_alloc(64, tsize*sizeof(int));
   memset(it, -1, tsize*sizeof(int)); // Each int is 4 bytes
-  ms = (double*)aligned_alloc(64, asize*sizeof(double));
   // Set position tracker array
   if (positionTracker) delete [] positionTracker;
   positionTracker = (vec2*)aligned_alloc(64, asize*sizeof(vec2));
@@ -692,7 +694,7 @@ inline void Sectorization::createArrays() {
  
 inline void Sectorization::zeroPointers() {
   positionTracker = 0;
-  px = py = vx = vy = fx = fy = th = om = tq = sg = im = iI = rp = ds = cf = ms = 0;
+  px = py = vx = vy = fx = fy = th = om = tq = sg = im = iI = rp = ds = cf = 0;
   it = 0;
   for (int i=0; i<15; ++i) pdata[i] = 0;
   sectors = 0;
@@ -717,7 +719,6 @@ inline void Sectorization::setParticles() {
     ds[i] = p.dissipation;
     cf[i] = p.coeff;
     it[i] = p.interaction;
-    ms[i] = 1./p.invMass;  // Mass array
     ++i;
   }
   size = i;
@@ -747,29 +748,6 @@ inline void Sectorization::atom_move() {
       if (n_lst!=4) move_lsts[n_lst].push_back(i); // Push back the index of the particle that needs to move
     }
   }
-
-  /*
-  for (int j=1; j<nsy-1; ++j)
-    for (int i=1; i<nsx-1; ++i) {
-      int n_sec = nsx*j+i;
-      for (auto P=sectors[n_sec].begin(); P!=sectors[n_sec].end(); ++P) {
-	int p = *P;
-	// Check if the particle left the domain
-	if (!bounds.contains(vec2(px[p], py[p]))) {
-	  P = sectors[n_sec].erase(P);
-	  holes.push_back(p);
-	  int x = 1, y = 1;
-	  if (px[p]<bounds.left) x = 0;
-	  else if (bounds.right<px[p]) x = 2;
-	  if (py[p]<bounds.bottom) y=0;
-	  else if (bounds.top<py[p]) y=2;
-	  int n_lst = 3*y+x;
-	  if (n_lst!=4) move_lsts[n_lst].push_back(p); // Push back the index of the particle that needs to move
-	}
-      }
-    }
-  */
-  
   // Do the actual migration
   auto start = clock();
   passParticles(-1, -1, move_lsts[0]); // bl
@@ -782,7 +760,6 @@ inline void Sectorization::atom_move() {
   passParticles(+1, +1, move_lsts[8]); // tr
   auto end = clock();
   transferTime += (double)(end-start)/CLOCKS_PER_SEC;
-
 }
 
 inline void Sectorization::passParticles(int tx, int ty, const list<int> &allParticles, bool edgeParticles) {
@@ -875,7 +852,6 @@ inline void Sectorization::passParticleRecv(const int recv, bool edgeParticles) 
       ds[end] = buffer[16*i+13];
       cf[end] = buffer[16*i+14];
       it[end] = static_cast<int>(buffer[16*i+15]);
-      ms[end] = 1./im[end]; // Mass array
       // Add to sectors -- For some reason this creates errors when using  multiple processors
       int num_sec = getSec(px[end], py[end]);
       sectors[num_sec].push_back(end);
@@ -915,7 +891,6 @@ inline void Sectorization::compressArrays() {
     ds[j] = ds[array_end-1];
     cf[j] = cf[array_end-1];
     it[j] = it[array_end-1];
-    ms[j] = ms[array_end-1]; // Mass array
     it[array_end-1] = -1;    // This entry is now empty
     // Increment array end
     --array_end;
@@ -1028,7 +1003,6 @@ inline void Sectorization::memory_rearrange() {
     pd[13][i] = ds[j];
     pd[14][i] = cf[j];
     nit[i]    = it[j];
-    ms[i]     = 1./im[j]; // Don't need a new mass array
   }
   // Delete old arrays and set new data
   for (int i=0; i<15; ++i) {

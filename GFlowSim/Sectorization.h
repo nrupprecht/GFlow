@@ -138,8 +138,6 @@ class Sectorization {
   double *pdata[15]; 
   // Particle data - interaction type
   int *it;
-  // Auxilary particle data - mass array
-  double *ms;
   // Walls 
   list<Wall> walls;
   

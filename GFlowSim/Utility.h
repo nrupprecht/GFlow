@@ -294,6 +294,7 @@ vect(const vect<T>& V) : x(V.x), y(V.y) {};
 
 // --- What type of vector we will use as our main vector type ---
 typedef vect<double> vec2;
+typedef pair<vec2, vec2> VPair;
 typedef std::tuple<vec2, double, double> Tri;
 typedef std::tuple<vec2, double, double, double, double> PData;
 

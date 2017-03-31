@@ -290,7 +290,7 @@ void GFlowBase::record() {
 	bubbleRecord.push_back(getBubbleSizes(allParticles, domain));
       // Visualize bubbles and record sizes
       if (visBubbles) {
-	string vis;
+	vector<VPair> vis;
 	bubbleRecord.push_back(getBubbleSizes(allParticles, vis, domain));
 	visualizeBubbles.push_back(vis);
       }
@@ -1191,16 +1191,22 @@ void GFlowBase::printSectors() {
     }
 }
 
-vector<double> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, Bounds region, double volCutoff, double minV, double dr) {
+vector<double> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, Bounds region, double volCutoff, double boxV, double dr) {
   string str="-1";
-  return getBubbleSizes(allParticles, str, region, volCutoff, minV, dr);
+  vector<VPair> lines;
+  return getBubbleSizes(allParticles, str, lines, false, region, volCutoff, boxV, dr);
 }
 
-vector<double> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, string &shapes, Bounds region, double volCutoff, double minV, double dr) {
+vector<double> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, vector<VPair>& lines, Bounds region, double volCutoff, double boxV, double dr) {
+  string str="-1";
+  return getBubbleSizes(allParticles, str, lines, true, region, volCutoff, boxV, dr);
+}
+
+vector<double> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, string &shapes, vector<VPair>& lines, bool getOutline, Bounds region, double volCutoff, double boxV, double dr) {
   // Might use full bounds
   if (region.right<region.left) region = Bounds(left, right, bottom, top);
   // Calculate parameters
-  double sx = sqrt(minV), sy = sqrt(minV);
+  double sx = sqrt(boxV), sy = sx;
   int nsx = (region.right-region.left)/sx, nsy = (region.top-region.bottom)/sy;
   sx = (region.right-region.left)/nsx; sy = (region.top-region.bottom)/nsy;
   list<int> *sectors = new list<int>[nsx*nsy];
@@ -1269,14 +1275,14 @@ vector<double> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, string 
   unite(array, nsx, nsy);
   unite(array, nsx, nsy); //** Bad solution, but it works
   // Point all sectors to their head
-  for (int i=0; i<nsx*nsy; ++i) array[i] = getHead(array, i);
+  for (int k=0; k<nsx*nsy; ++k) array[k] = getHead(array, k);
   // Collect all head nodes
   vector<int> heads;
-  for (int i=0; i<nsx*nsy; ++i)
-    if (array[i]!=-1) {
+  for (int k=0; k<nsx*nsy; ++k)
+    if (array[k]!=-1) {
       // If we have not already recorded this head
-      if (std::find(heads.begin(), heads.end(), array[i])==heads.end())
-	heads.push_back(array[i]);
+      if (std::find(heads.begin(), heads.end(), array[k])==heads.end())
+	heads.push_back(array[k]);
     }
   // If there are no empty volumes
   if (heads.empty()) {
@@ -1286,42 +1292,35 @@ vector<double> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, string 
   }
   // Count volumes
   vector<int> volCount(heads.size(), 0);
-  for (int i=0; i<nsx*nsy; ++i) {
-    if (array[i]!=-1) { // Search for the proper index
+  for (int k=0; k<nsx*nsy; ++k) {
+    if (array[k]!=-1) { // Search for the proper index
       int j=0;
       // Find the index
       for (; j<heads.size(); ++j) 
-	if (heads.at(j)==array[i]) break;
+	if (heads.at(j)==array[k]) break;
       // Give array a better index
-      array[i] = j;
+      array[k] = j;
       // Increment volume counter
       ++volCount.at(j);
     }
   }
-  // Record volumes
+  // Record volume sizes
   vector<double> bubbles;
+  i=0;
   for (const auto c : volCount) {
     double vol = sx*sy*c;
     if (volCutoff<vol) bubbles.push_back(sx*sy*c);
   }
-  // Record the picture of the volumes in a string
-  if (shapes!="-1") {
-    stringstream stream;
-    stream << "{";
-    for (int y=nsy-1; 0<=y; --y) {
-      stream << "{";
-      for (int x=0; x<nsx; ++x) {
-	if (-1<array[nsx*y+x] && volCutoff<volCount.at(array[nsx*y+x])*sx*sy)
-	  stream << array[nsx*y+x]+1;
-	else stream << -1;
-	if (x!=nsx-1) stream << ",";
-      }
-      stream << "}";
-      if (y!=0) stream << ",";
+  // Remove volumes that are to small
+  for (int y=0; y<nsy; ++y)
+    for (int x=0; x<nsx; ++x) {
+      int j = array[nsx*y+x];
+      if (-1<j && volCount.at(j)*sx*sy<=volCutoff) array[nsx*y+x] = -1;
     }
-    stream << "}";
-    stream >> shapes;
-  }
+  // Create outline
+  if (getOutline) createOutline(array, nsx, nsy, sx, sy, region, lines);
+  // Record the picture of the volumes as a matrix
+  if (shapes!="-1") createMatrix(array, nsx, nsy, sx, sy, volCutoff, volCount, shapes);
   // Sort sizes
   std::sort(bubbles.begin(), bubbles.end());
   // Clean up and return
@@ -1369,6 +1368,47 @@ inline int GFlowBase::getHead(int* array, int index) {
   if (array[index]<0) return -1;
   while (array[index]!=index) index = array[index];
   return index;
+}
+
+inline void GFlowBase::createOutline(int *array, int nsx, int nsy, double sx, double sy, Bounds region, vector<VPair>& lines) {
+  // Create a lambda function to edge detect
+  auto isEdge = [&] (int x, int y) {
+    if (x<0 || nsx<=x || y<0 || nsy<=y || array[nsx*y+x]!=-1) return false;
+    if (x+1<nsx && array[nsx*y+x+1]>-1)  return true;
+    else if (0<x && array[nsx*y+x-1]>-1) return true;
+    else if (y+1<nsy && array[nsx*(y+1)+x]>-1) return true;
+    else if (0<y && array[nsx*(y-1)+x]>-1) return true;
+    return false;
+  };
+  lines.clear();
+  for (int y=0; y<nsy; ++y)
+    for (int x=0; x<nsx; ++x) {
+      if (isEdge(x,y)) {
+	vec2 pos((x+0.5)*sx+region.left, (y+0.5)*sy+region.bottom);
+	if (isEdge(x+1,y-1)) lines.push_back(VPair(pos, pos+vec2(sx,-sy)));
+	if (isEdge(x+1,y))   lines.push_back(VPair(pos, pos+vec2(sx,0)));
+	if (isEdge(x+1,y+1)) lines.push_back(VPair(pos, pos-vec2(sx,sy)));
+	if (isEdge(x,y+1))   lines.push_back(VPair(pos, pos+vec2(0,sy)));
+      }
+    }
+}
+
+inline void GFlowBase::createMatrix(int* array, int nsx, int nsy, double sx, double sy, double volCutoff, vector<int> volCount, string& shapes) {
+  stringstream stream;
+  stream << "{";
+  for (int y=nsy-1; 0<=y; --y) {
+    stream << "{";
+    for (int x=0; x<nsx; ++x) {
+      if (-1<array[nsx*y+x] && volCutoff<volCount.at(array[nsx*y+x])*sx*sy)
+	stream << array[nsx*y+x]+1;
+      else stream << -1;
+      if (x!=nsx-1) stream << ",";
+    }
+    stream << "}";
+    if (y!=0) stream << ",";
+  }
+  stream << "}";
+  stream >> shapes;
 }
 
 string GFlowBase::printPositionRecord(int mode) {

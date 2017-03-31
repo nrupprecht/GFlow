@@ -93,18 +93,24 @@ class GFlowBase {
   string printForcesAnimationCommand(bool=false);
   void printSectors();
 
-  vector<double> getBubbleSizes(vector<Particle>&, Bounds=NullBounds, double=0.01, double=0.001, double=0.05);
-  vector<double> getBubbleSizes(vector<Particle>&, string&, Bounds=NullBounds, double=0.01, double=0.001, double=0.05);
-  vector<string> getBubbles() { return visualizeBubbles; }
+  // Get bubble sizes variants and helper functions
+  vector<double> getBubbleSizes(vector<Particle>&, Bounds=NullBounds, double=0.01, double=0.0001, double=0.01);
+  vector<double> getBubbleSizes(vector<Particle>&, vector<VPair>&, Bounds=NullBounds, double=0.01, double=0.0001, double=0.01);
+  vector<double> getBubbleSizes(vector<Particle>&, string&, vector<VPair>&, bool, Bounds=NullBounds, double=0.01, double=0.0001, double=0.01);
   inline void unite(int*, int, int);
   inline int getHead(int*, int);
+  inline void createOutline(int*, int, int, double, double, Bounds, vector<VPair>&);
+  inline void createMatrix(int*, int, int, double, double, double, vector<int>, string&);
 
+  // Record accessors
   auto getPositionRecord() { return positionRecord; }
-  string printPositionRecord(int);
   auto getSpecialRecord()  { return specialRecord; }
   auto getForceRecord()    { return forceRecord; }
   auto getBubbleRecord()   { return bubbleRecord; }
+  auto getBubbles()        { return visualizeBubbles; }
+  string printPositionRecord(int);
   vector<vpair> getWallsPositions();
+
   double getSetUpTime() { return setUpTime; }
 
   void setRecPositions(bool b) { recPositions = b; }
@@ -120,7 +126,7 @@ class GFlowBase {
   vector<vector<Tri> > specialRecord;
   vector<vector<Tri> > forceRecord;
   vector<vector<double> > bubbleRecord;
-  vector<string> visualizeBubbles;
+  vector<vector<VPair> > visualizeBubbles;
   bool recPositions;
   bool recSpecial;
   bool recForces;
