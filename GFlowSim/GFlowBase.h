@@ -94,9 +94,9 @@ class GFlowBase {
   void printSectors();
 
   // Get bubble sizes variants and helper functions
-  vector<double> getBubbleSizes(vector<Particle>&, Bounds=NullBounds, double=0.01, double=0.0001, double=0.01);
-  vector<double> getBubbleSizes(vector<Particle>&, vector<VPair>&, Bounds=NullBounds, double=0.01, double=0.0001, double=0.01);
-  vector<double> getBubbleSizes(vector<Particle>&, string&, vector<VPair>&, bool, Bounds=NullBounds, double=0.01, double=0.0001, double=0.01);
+  vector<double> getBulkData(vector<Particle>&, Bounds=NullBounds, double=0.01, double=0.0001, double=0.01);
+  vector<double> getBulkData(vector<Particle>&, vector<VPair>&, Bounds=NullBounds, double=0.01, double=0.0001, double=0.01);
+  vector<double> getBulkData(vector<Particle>&, string&, vector<VPair>&, bool, Bounds=NullBounds, double=0.01, double=0.0001, double=0.01);
   inline void unite(int*, int, int);
   inline int getHead(int*, int);
   inline void createOutline(int*, int, int, double, double, Bounds, vector<VPair>&);
@@ -119,7 +119,7 @@ class GFlowBase {
   void setRecBubbles(bool b)   { recBubbles = b; }
   void setVisBubbles(bool b)   { visBubbles = b; }
   void setRestrictBubbleDomain(bool b) { restrictBubbleDomain = b; }
- private:
+ protected:
   double setUpTime;
   // Data
   vector<vector<PData> > positionRecord;
@@ -148,6 +148,7 @@ class GFlowBase {
   virtual void objectUpdates();      // Do forces, move objects
   virtual void logisticUpdates();    // Update times
   virtual void record();             // Record data
+  virtual void checkTermination();   // Check whether we should terminate the program
   virtual void resets();             // Reset objects as neccessary
   virtual void gatherData();         // Gather data back to processor 0
   virtual void discard();            // Discard and reset the simulation state
@@ -194,6 +195,10 @@ class GFlowBase {
   vector<Wall> walls;            // A vector of all the walls in the simulation
   list<Particle> particles;      // A vector of all the particles in the simulation
   bool doInteractions;           // True if we let the particles interact with one another
+
+  /// Termination
+  vector<pair<StatFunc, std::function<bool(double)> > > terminationConditions;
+  double startChecking, lastCheck, checkDelay;
 
   /// Sectorization
   Sectorization sectorization;   // The sectorization for this processor

@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
   int Tri = -1;
   bool interact = true;
   bool seedRand = true;
-  bool quiet    = false;
+  int quiet     = -1;
   int lattice   = 0;
 
   // Animation Paramaters
@@ -65,6 +65,7 @@ int main(int argc, char** argv) {
   string loadFile = "";
   string loadBuoyancy = "";
   string saveFile = "";
+  string updateBuoyancy = "";
 
   // Initialize MPI
   int rank, numProc;
@@ -129,6 +130,7 @@ int main(int argc, char** argv) {
   parser.get("loadFile", loadFile);
   parser.get("loadBuoyancy", loadBuoyancy);
   parser.get("saveFile", saveFile);
+  parser.get("updateBuoyancy", updateBuoyancy);
   // Make sure we didn't enter any illegal tokens (ones not listed above) on the command line
   try {
     parser.check();
@@ -153,7 +155,7 @@ int main(int argc, char** argv) {
   }
 
   /// Print condition summary
-  if (rank==0) {
+  if (rank==0 && quiet==-1) {
     cout << "----------------------- RUN SUMMARY -----------------------\n";
     cout << "Command: ";
     for (int i=0; i<argc; i++) cout << argv[i] << " ";
@@ -173,14 +175,21 @@ int main(int argc, char** argv) {
   if (LJ!=-1) interaction = 1;
   else if (Tri!=-1) interaction = 2;
   // Create scenario
-  if (loadFile=="" && loadBuoyancy=="") {
+  if (loadFile=="" && loadBuoyancy=="" && updateBuoyancy=="") {
     if (buoyancy) simulator.createBuoyancyBox(radius, bR, density, width, height, velocity, dispersion, interaction);
     else if (square) simulator.createSquare(number, radius, width, height, velocity, dispersion, interaction);
     else throw false; // No selection
   }
+  else if (updateBuoyancy!="") {
+    // Use bR = 0
+    if (!simulator.loadBuoyancy(updateBuoyancy, 0, velocity, density)) { 
+      cout << "Failed to load [" << updateBuoyancy << "], exiting.\n";
+      return 0;
+    }
+  }
   else if (loadBuoyancy!="") {
     if (!simulator.loadBuoyancy(loadBuoyancy, bR, velocity, density)) {
-      cout << "Failed to load [" << loadFile << "], exiting.\n";
+      cout << "Failed to load [" << loadBuoyancy << "], exiting.\n";
       return 0;
     }
   }
@@ -216,7 +225,7 @@ int main(int argc, char** argv) {
   // Get the actual number of particles in the simulation
   number = simulator.getSize();
   double filled = simulator.getFilledVolume(), vol = simulator.getVolume();
-  if (rank==0 && !quiet) {
+  if (rank==0 && quiet==-1) {
     cout << "Number: " << number << ", Packing fraction: " << filled/vol << endl;
     cout << "Dimensions: " << simulator.getWidth() << " x " << simulator.getHeight() << endl;
     cout << "Set up time: " << simulator.getSetUpTime() << endl;
@@ -229,7 +238,10 @@ int main(int argc, char** argv) {
   simulator.run(time);
 
   // Head node prints the run summary
-  if (rank==0 && !quiet) {
+  if (rank==0 && quiet==-1) {
+    if (updateBuoyancy!="") {
+      if (simulator.createConfigurationFile(updateBuoyancy)) cout << "Saved configuration to file [" << updateBuoyancy << "]" << endl;
+    }
     if (saveFile!="") {
       if (simulator.createConfigurationFile(saveFile)) cout << "Saved configuration to file [" << saveFile << "]" << endl;
     }

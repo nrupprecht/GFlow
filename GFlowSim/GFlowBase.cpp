@@ -17,8 +17,11 @@ GFlowBase::GFlowBase() {
   runTime = 0;
   running = false;
   transferTime = 0;
-  skinDepth = 0.025;
   doInteractions = true;
+  startChecking = 1.;
+  lastCheck = 0.;
+  checkDelay = 0.1;
+  skinDepth = 0.025;
   doWork = false;
 
   //---
@@ -52,11 +55,11 @@ void GFlowBase::run(double runLength) {
   running = true;
   if (startRec<=0) record(); // Initial record
   if (doWork) {
-    for (iter=0; iter<maxIter; ++iter) {
+    for (iter=0; iter<maxIter && running; ++iter) {
       objectUpdates();
       if (time-lastDisp>dispTime && startRec<time) record();
-      
       logisticUpdates();
+      if (time-lastCheck>checkDelay && time>startChecking) checkTermination();
       CommWork.Barrier();
     }
   }
@@ -145,7 +148,7 @@ bool GFlowBase::loadConfigurationFromFile (string filename) {
     vect<> g;
     vector<double> radii;
     vector<vect<> > wallLeft, wallRight, positions;
-    
+    vector<int> interactions;
     ifstream fin(filename);
     if (fin.fail()) return false;
     // Get simulation bounds
@@ -158,17 +161,21 @@ bool GFlowBase::loadConfigurationFromFile (string filename) {
     // Get radii and positions
     fin >> radii;
     fin >> positions;
+    fin >> interactions;
     fin.close();
     // Clear current configuration
     discard();
     // Set up
     setBounds(left, right, bottom, top);
     gravity = g;
-    int size = positions.size(), rsize = radii.size(), wsize = min(wallLeft.size(), wallRight.size());
+    int size = positions.size(), rsize = radii.size(), wsize = min(wallLeft.size(), wallRight.size()), isize = interactions.size();
     for (int i=0; i<wsize; ++i)
       addWall(Wall(wallLeft[i], wallRight[i]));
-    for (int i=0; i<size; ++i)
-      addParticle(Particle(positions.at(i), radii.at(i%rsize)));
+    for (int i=0; i<size; ++i) {
+      Particle p(positions.at(i), radii.at(i%rsize));
+      p.interaction = interactions.at(i%isize);
+      addParticle(p);
+    }
     // Send out particles
     setUpSectorization();
     distributeParticles(particles, sectorization);
@@ -183,6 +190,7 @@ bool GFlowBase::createConfigurationFile (string filename) {
   if (rank==0) {
     vector<double> radii;
     vector<vec2> wallLeft, wallRight, positions;
+    vector<int> interactions;
     // Accumulate data
     ofstream fout(filename);
     if (fout.fail()) return false;
@@ -195,17 +203,34 @@ bool GFlowBase::createConfigurationFile (string filename) {
       wallRight.push_back(W.getRight());
     }
     // Record particle positions
-    for (const auto &P : allParticles) {
-      radii.push_back(P.sigma);
-      positions.push_back(P.position);
+    double sig = 0;
+    bool sameSig = true, sameInteraction = true;
+    int inter = 0;
+    if (!allParticles.empty()) {
+      sig = allParticles.at(0).sigma;
+      inter = allParticles.at(0).interaction;
+      for (const auto &P : allParticles) {
+	radii.push_back(P.sigma);
+	if (P.sigma!=sig) sameSig = false;
+	positions.push_back(P.position);
+	interactions.push_back(P.interaction);
+	if (P.interaction!=inter) sameInteraction = false;
+      }
     }
     // Write data to file
     fout << left << " " << right << " " << bottom << " " << top << "\n";
     fout << gravity << "\n";
+    // Print wall data
     fout << wallLeft << "\n";
     fout << wallRight << "\n";
-    fout << radii << "\n";
+    // Print radii (or radius if they are all the same)
+    if (sameSig) fout << "{" << sig << "}\n";
+    else fout << radii << "\n";
+    // Print positions
     fout << positions << "\n";
+    // Print interactions
+    if (sameInteraction) fout << "{" << inter << "}\n";
+    else fout << interactions << "\n";
     fout.close();
     return true;
   }
@@ -287,11 +312,11 @@ void GFlowBase::record() {
       }
       // Just record sizes
       if (recBubbles)
-	bubbleRecord.push_back(getBubbleSizes(allParticles, domain));
+	bubbleRecord.push_back(getBulkData(allParticles, domain));
       // Visualize bubbles and record sizes
       if (visBubbles) {
 	vector<VPair> vis;
-	bubbleRecord.push_back(getBubbleSizes(allParticles, vis, domain));
+	bubbleRecord.push_back(getBulkData(allParticles, vis, domain));
 	visualizeBubbles.push_back(vis);
       }
     }
@@ -327,6 +352,21 @@ void GFlowBase::record() {
   // Update display 
   lastDisp = time;
   ++recIter;
+}
+
+void GFlowBase::checkTermination() {
+  lastCheck = time;
+  if (terminationConditions.empty()) return;
+  vector<Particle> allParticles;
+  recallParticles(allParticles);  
+  for (const auto& pr : terminationConditions) {
+    int count = 0;
+    double data = pr.first(allParticles, count);
+    if (pr.second(data)) {
+      running = false;
+      break;
+    }
+  }
 }
 
 void GFlowBase::resets() {
@@ -951,7 +991,7 @@ bool GFlowBase::loadBuoyancy(string fileName, double radius, double velocity, do
   // Find the tops of the balls
   double tp = reduceStatFunction(upperEdge, 1);
   // Set bounds
-  double height = tp + 2*radius+0.5;
+  double height = tp + 10*radius+0.5;
   Bounds bounds(left, right, bottom, height);
   setBounds(bounds);
   // Clear old walls, create new ones
@@ -1192,18 +1232,18 @@ void GFlowBase::printSectors() {
     }
 }
 
-vector<double> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, Bounds region, double volCutoff, double boxV, double dr) {
+vector<double> GFlowBase::getBulkData(vector<Particle> &allParticles, Bounds region, double volCutoff, double boxV, double dr) {
   string str="-1";
   vector<VPair> lines;
-  return getBubbleSizes(allParticles, str, lines, false, region, volCutoff, boxV, dr);
+  return getBulkData(allParticles, str, lines, false, region, volCutoff, boxV, dr);
 }
 
-vector<double> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, vector<VPair>& lines, Bounds region, double volCutoff, double boxV, double dr) {
+vector<double> GFlowBase::getBulkData(vector<Particle> &allParticles, vector<VPair>& lines, Bounds region, double volCutoff, double boxV, double dr) {
   string str="-1";
-  return getBubbleSizes(allParticles, str, lines, true, region, volCutoff, boxV, dr);
+  return getBulkData(allParticles, str, lines, true, region, volCutoff, boxV, dr);
 }
 
-vector<double> GFlowBase::getBubbleSizes(vector<Particle> &allParticles, string &shapes, vector<VPair>& lines, bool getOutline, Bounds region, double volCutoff, double boxV, double dr) {
+vector<double> GFlowBase::getBulkData(vector<Particle> &allParticles, string &shapes, vector<VPair>& lines, bool getOutline, Bounds region, double volCutoff, double boxV, double dr) {
   // Might use full bounds
   if (region.right<region.left) region = Bounds(left, right, bottom, top);
   // Calculate parameters

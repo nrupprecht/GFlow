@@ -18,15 +18,16 @@ inline bool hardDiskRepulsion(double **pdata, int p, int q, int asize, vec2& dis
               |
               |
               *------> shear
-	      */
+  */
   if (distSqr < cutoffsqr) { // Interaction
+    double dist = sqrt(distSqr);
+    double invDist = 1./dist;
     // Compute interaction parameters ( ad hoc )
     double dissipation = ds[p]+ds[q];
     double repulsion = rp[p]+rp[q];
     double coeff = cf[p]*cf[q];
     // Compute force
-    double dist = sqrt(distSqr);
-    vec2 normal = (1.0/dist) * displacement;
+    vec2 normal = invDist * displacement;
     vec2 shear = vec2(normal.y, -normal.x);
     // Spring force strength
     double strength = repulsion*(cutoff-dist);
