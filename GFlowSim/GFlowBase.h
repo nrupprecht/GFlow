@@ -88,12 +88,15 @@ class GFlowBase {
   void addStatFunction(StatFunc, string);
   string printStatFunctions();
 
+  string printWallsCommand();
   string printAnimationCommand(int=0, bool=false);
   string printSpecialAnimationCommand(bool=false);
   string printForcesAnimationCommand(int=0, bool=false);
+  string printBulkAnimationCommand(bool=false);
   void printSectors();
 
   // Get bubble sizes variants and helper functions
+  void getBulkData(vector<VPair>&, double=0.01, double=0.025, double=0.05);
   vector<double> getBulkData(vector<Particle>&, Bounds=NullBounds, double=0.01, double=0.0001, double=0.01);
   vector<double> getBulkData(vector<Particle>&, vector<VPair>&, Bounds=NullBounds, double=0.01, double=0.0001, double=0.01);
   vector<double> getBulkData(vector<Particle>&, string&, vector<VPair>&, bool, Bounds=NullBounds, double=0.01, double=0.0001, double=0.01);
@@ -107,7 +110,7 @@ class GFlowBase {
   auto getSpecialRecord()  { return specialRecord; }
   auto getForceRecord()    { return forceRecord; }
   auto getBubbleRecord()   { return bubbleRecord; }
-  auto getBubbles()        { return visualizeBubbles; }
+  auto getBulkRecord()     { return bulkRecord; }
   string printPositionRecord(int);
   vector<vpair> getWallsPositions();
 
@@ -118,6 +121,7 @@ class GFlowBase {
   void setRecForces(bool b)    { recForces = b; }
   void setRecBubbles(bool b)   { recBubbles = b; }
   void setVisBubbles(bool b)   { visBubbles = b; }
+  void setRecBulk(bool b)      { recBulk = b; }
   void setRestrictBubbleDomain(bool b) { restrictBubbleDomain = b; }
  protected:
   double setUpTime;
@@ -126,12 +130,13 @@ class GFlowBase {
   vector<vector<Tri> > specialRecord;
   vector<vector<Tri> > forceRecord;
   vector<vector<double> > bubbleRecord;
-  vector<vector<VPair> > visualizeBubbles;
+  vector<vector<VPair> > bulkRecord;
   bool recPositions;
   bool recSpecial;
   bool recForces;
   bool recBubbles;
   bool visBubbles;
+  bool recBulk;
   bool restrictBubbleDomain;
 
   vector<pair<StatFunc,string> > statFunctions; // Statistic functions and a string to name them

@@ -43,6 +43,7 @@ int main(int argc, char** argv) {
   bool forces  = false;
   bool bubbles = false;
   bool visBubbles = false;
+  bool bulk    = false;
   bool omega   = false;
   bool KE      = false;
   bool LKE     = false;
@@ -112,6 +113,7 @@ int main(int argc, char** argv) {
   parser.get("forces", forces);
   parser.get("bubbles", bubbles);
   parser.get("visBubbles", visBubbles);
+  parser.get("bulk", bulk);
   parser.get("omega", omega);
   parser.get("KE", KE);
   parser.get("LKE", LKE);
@@ -209,6 +211,7 @@ int main(int argc, char** argv) {
   simulator.setRecForces(forces);
   simulator.setRecBubbles(bubbles);
   simulator.setVisBubbles(visBubbles);
+  simulator.setRecBulk(bulk);
   if (buoyancy || loadBuoyancy!="") simulator.setRestrictBubbleDomain(true);
 
   if (omega) simulator.addStatFunction(Stat_Omega, "omega");
@@ -271,8 +274,9 @@ int main(int argc, char** argv) {
     }
     if (visBubbles) {
       if (!bubbles) cout << "bsize=" << simulator.getBubbleRecord() << ";\n";
-      cout << "bubbles=" << simulator.getBubbles() << ";\n"; //**
+      cout << simulator.printBulkAnimationCommand(novid) << endl;
     }
+    else if (bulk) cout << simulator.printBulkAnimationCommand(novid) << endl;
     string stats = simulator.printStatFunctions();
     if (!stats.empty()) cout << stats;
   }

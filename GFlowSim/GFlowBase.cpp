@@ -290,7 +290,7 @@ void GFlowBase::logisticUpdates() {
 }
 
 void GFlowBase::record() {
-  if (recPositions || recBubbles || visBubbles) {
+  if (recPositions || recBubbles || visBubbles || recBulk) {
     // Get all the particles back from the sectorizations
     vector<Particle> allParticles;
     recallParticles(allParticles);
@@ -301,7 +301,7 @@ void GFlowBase::record() {
       positionRecord.push_back(positions);
     }
     // Find bubble volumes
-    if (recBubbles || visBubbles) {
+    if (recBubbles || visBubbles || recBulk) {
       Bounds domain = NullBounds;
       if (restrictBubbleDomain) {
 	double X = reduceStatFunction(Stat_Large_Object_X);
@@ -317,7 +317,12 @@ void GFlowBase::record() {
       if (visBubbles) {
 	vector<VPair> vis;
 	bubbleRecord.push_back(getBulkData(allParticles, vis, domain));
-	visualizeBubbles.push_back(vis);
+	bulkRecord.push_back(vis);
+      }
+      else if (recBulk) {
+	vector<VPair> vis;
+	getBulkData(vis);
+	bulkRecord.push_back(vis);
       }
     }
   }
@@ -1043,6 +1048,27 @@ vector<vpair> GFlowBase::getWallsPositions() {
   return positions;
 }
 
+string GFlowBase::printWallsCommand() {
+  stringstream stream;
+  string str, range;
+  // Create range
+  stream << "{{" << left << "," << right << "},{" << bottom << "," << top << "}}";
+  stream >> range;
+  stream.clear();
+  // Create walls graphic
+  if (!walls.empty()) {
+    stream << "walls=Graphics[{";
+    for (int i=0; i<walls.size(); ++i) {
+      stream << "{Blue,Thick,Line[{w[[" << i+1 << "]][[1]],w[[" << i+1 << "]][[2]]}]}";
+      if (i!=walls.size()-1) stream << ",";
+    }
+    stream << "},PlotRange->" + range + "];\n";
+  }
+  else stream << "walls={};\n";
+  stream >> str;
+  return str;
+}
+
 string GFlowBase::printAnimationCommand(int mode, bool novid) {
   stringstream stream;
   string command, strh, range, scale;
@@ -1079,19 +1105,8 @@ string GFlowBase::printAnimationCommand(int mode, bool novid) {
   stream << "ImageSize->{scale*" << right-left << ",scale*" << top-bottom << "}";
   stream >> scale;
   stream.clear();
-
-  if (!walls.empty()) {
-    stream << "walls=Graphics[{";
-    for (int i=0; i<walls.size(); ++i) {
-      stream << "{Blue,Thick,Line[{w[[" << i+1 << "]][[1]],w[[" << i+1 << "]][[2]]}]}";
-      if (i!=walls.size()-1) stream << ",";
-    }
-    stream << "},PlotRange->" + range + "];\n";
-  }
-  else stream << "walls={};\n";
-  stream >> strh;
-  stream.clear();
-  command += strh;
+  // Print walls
+  command += printWallsCommand();
 
   stream << (mode==0 ? "dsk" : "dot");
   stream >> strh;
@@ -1129,19 +1144,8 @@ string GFlowBase::printSpecialAnimationCommand(bool novid) {
   stream << "ImageSize->{scale*" << right-left << ",scale*" << top-bottom << "}";
   stream >> scale;
   stream.clear();
-
-  if (!walls.empty()) {
-    stream << "walls=Graphics[{";
-    for (int i=0; i<walls.size(); ++i) {
-      stream << "{Blue,Thick,Line[{w[[" << i+1 << "]][[1]],w[[" << i+1 << "]][[2]]}]}";
-      if (i!=walls.size()-1) stream << ",";
-    }
-    stream << "},PlotRange->" + range + "];\n";
-  }
-  else stream << "walls={};\n";
-  stream >> strh;
-  stream.clear();
-  command += strh;
+  // Print walls
+  command += printWallsCommand();
   command += "nproc=";
   stream << numProc;
   stream >> strh;
@@ -1197,18 +1201,7 @@ string GFlowBase::printForcesAnimationCommand(int mode, bool novid) {
   stream >> scale;
   stream.clear();
   // Create walls graphic
-  if (!walls.empty()) {
-    stream << "walls=Graphics[{";
-    for (int i=0; i<walls.size(); ++i) {
-      stream << "{Blue,Thick,Line[{w[[" << i+1 << "]][[1]],w[[" << i+1 << "]][[2]]}]}";
-      if (i!=walls.size()-1) stream << ",";
-    }
-    stream << "},PlotRange->" + range + "];\n";
-  }
-  else stream << "walls={};\n";
-  stream >> strh;
-  stream.clear();
-  command += strh;
+  command += printWallsCommand();
   // Create disk graphics
   command += "col[f_]:=RGBColor[f/maxF,0,0];\n";
   command += "sdisk[tr_]:={col[tr[[3]]],Disk[tr[[1]],tr[[2]]]};\n";
@@ -1218,6 +1211,23 @@ string GFlowBase::printForcesAnimationCommand(int mode, bool novid) {
   command += "ListAnimate[frames]";
 
   return command;
+}
+
+string GFlowBase::printBulkAnimationCommand(bool novid) {
+  stringstream stream;
+  string command, strh;
+  command = "scale=100;\n";
+  stream << "bulk=" << bulkRecord << ";";
+  stream >> strh;
+  stream.clear();
+  command += (strh + "\n");
+  command += printWallsCommand();
+  strh.clear();
+  stream << "bulkFrames=Table[Show[Graphics[{Thick,Line[bulk[[i]]]}],PlotRange->{{" << left << ","<< right << "},{" << bottom << "," << top << "}},ImageSize->{scale*" << right-left << ",scale*" << top-bottom << "}],{i,1,Length[bulk]}];";
+  stream >> strh;
+  if (!novid) strh += "Export[\"vidB.avi\",bulkFrames,\"CompressionLevel\"->0];\n";
+  strh += "\nListAnimate[bulkFrames]";
+  return command+strh;
 }
 
 void GFlowBase::printSectors() {
@@ -1230,6 +1240,12 @@ void GFlowBase::printSectors() {
       }
       CommWork.Barrier();
     }
+}
+
+void GFlowBase::getBulkData(vector<VPair>& lines, double volCutoff, double boxV, double dr) {
+  vector<Particle> allParticles;
+  recallParticles(allParticles);
+  getBulkData(allParticles, lines, Bounds(left, right, bottom, top), volCutoff, boxV, dr);
 }
 
 vector<double> GFlowBase::getBulkData(vector<Particle> &allParticles, Bounds region, double volCutoff, double boxV, double dr) {
