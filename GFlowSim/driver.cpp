@@ -46,6 +46,8 @@ int main(int argc, char** argv) {
   bool bulk    = false;
   bool omega   = false;
   bool KE      = false;
+  bool KEX     = false;
+  bool KEY     = false;
   bool LKE     = false;
   bool RKE     = false;
   bool cluster = false;
@@ -116,6 +118,8 @@ int main(int argc, char** argv) {
   parser.get("bulk", bulk);
   parser.get("omega", omega);
   parser.get("KE", KE);
+  parser.get("KEX", KEX);
+  parser.get("KEY", KEY);
   parser.get("LKE", LKE);
   parser.get("RKE", RKE);
   parser.get("cluster", cluster);
@@ -216,6 +220,8 @@ int main(int argc, char** argv) {
 
   if (omega) simulator.addStatFunction(Stat_Omega, "omega");
   if (KE) simulator.addStatFunction(Stat_KE, "ke");
+  if (KEX) simulator.addStatFunction(Stat_KE_X, "kex");
+  if (KEY) simulator.addStatFunction(Stat_KE_Y, "key");
   if (LKE) simulator.addStatFunction(Stat_L_KE, "lke");
   if (RKE) simulator.addStatFunction(Stat_R_KE, "rke");
   if (cluster) simulator.addStatFunction(Stat_Clustering, "cluster");

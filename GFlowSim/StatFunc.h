@@ -24,6 +24,26 @@ inline double Stat_KE(const vector<Particle> &particles, int &count) {
   return ke;
 }
 
+inline double Stat_KE_X(const vector<Particle> &particles, int &count) {
+  count = 0;
+  if (particles.empty()) return 0;
+  double ke = 0;
+  for (const auto &p :particles) ke += (1./p.invMass * sqr(p.velocity.x));
+  ke *= 0.5*(1./particles.size());
+  count = particles.size();
+  return ke;
+}
+
+inline double Stat_KE_Y(const vector<Particle> &particles, int &count) {
+  count = 0;
+  if (particles.empty()) return 0;
+  double ke = 0;
+  for (const auto &p :particles) ke += (1./p.invMass * sqr(p.velocity.y));
+  ke *= 0.5*(1./particles.size());
+  count = particles.size();
+  return ke;
+}
+
 inline double Stat_L_KE(const vector<Particle> &particles, int &count) {
   count = 0;
   if (particles.empty()) return 0;

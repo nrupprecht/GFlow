@@ -1,20 +1,19 @@
 ----------------------- RUN SUMMARY -----------------------
-Command: ./driver -time=60 
+Command: ./driver -time=60
 
 Using 1 processors.
   ..........................
 Number: 1018, Packing fraction: 0.49971
 Dimensions: 4 x 4
-Set up time: 1.25301
+Set up time: 1.33727
   ..........................
 Domains: 1 x 1, Total: 1
 Sectors: 34 x 34, Per Domain: 1156, Total: 1156
-Run Time: 26.228 (00:00:26.228), Sim Time: 60
+Run Time: 25.8466 (00:00:25.8466), Sim Time: 60
 Start Time: 0, Record Time: 60
-Iterations: 600000, time per iter: 4.37133e-05
+Iterations: 600000, time per iter: 4.30776e-05
 Transfer Time: 0 (~ 0%)
-Ratio: 2.28763, Ratio x Particles: 2328.81
+Ratio: 2.32139, Ratio x Particles: 2363.18
  --- STATS ---
-Neighbor list size: 800, Ave per list: 2.6025
+Neighbor list size: 792, Ave per list: 2.5846
 ----------------------- END SUMMARY -----------------------
-

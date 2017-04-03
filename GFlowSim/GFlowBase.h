@@ -194,7 +194,7 @@ class GFlowBase {
   bool running;                  // True if the simulation is currently runnint
   double transferTime;           // How much time is spent by MPI transfering data
   // Initialization
-  int latticeType;               // What type of lattice we should initialize
+  int latticeType;               // What type of lattice we should initialize, -1 means use find packed solution
 
   /// Objects
   vector<Wall> walls;            // A vector of all the walls in the simulation

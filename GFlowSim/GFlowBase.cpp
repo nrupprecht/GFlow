@@ -939,9 +939,10 @@ void GFlowBase::createBuoyancyBox(double radius, double bR, double density, doub
   vector<int> interactions;
   if (dispersion==0) { // All particles have the same radius
     double Vgrain = PI*sqr(radius);
-    int number = 0.95*maxPack*Vfill/Vgrain;
+    int number = 0.85*maxPack*Vfill/Vgrain;
     // Create particles and distribute them to the processors
-    positions =  findLatticeSolution(number, radius, initialBounds); //** findPackedSolution(number, radius, initialBounds, gravity);
+    if (latticeType>-1) positions = findLatticeSolution(number, radius, initialBounds, latticeType);
+    else positions = findPackedSolution(number, radius, initialBounds, gravity);
   }
   else {
     // Not all particles have the same radius
@@ -953,26 +954,17 @@ void GFlowBase::createBuoyancyBox(double radius, double bR, double density, doub
       radii.push_back(r);
       interactions.push_back(interaction);
     }
-    positions = findLatticeSolution(radii.size(), radius, initialBounds); //** findPackedSolution(radii, interactions, bounds, gravity);
+    if (latticeType>-1) positions = findLatticeSolution(radii.size(), radius, initialBounds, latticeType);
+    else positions = findPackedSolution(radii, interactions, bounds, gravity);
   }
   // Create particles at the given positions with - Radius, Dispersion, Velocity function, Angular velocity function, Coeff, Dissipation, Repulsion, Interaction
+  double coeff = 0;
   if (dispersion==0) {
-    particles = createParticles(positions, radius, dispersion, ZeroV, ZeroOm, default_sphere_coeff, default_sphere_dissipation, default_sphere_repulsion, interaction);
+    particles = createParticles(positions, radius, dispersion, ZeroV, ZeroOm, coeff, default_sphere_dissipation, default_sphere_repulsion, interaction);
     distributeParticles(particles, sectorization);
   }
-  else createAndDistributeParticles(positions, radii, interactions, bounds, sectorization);
+  else createAndDistributeParticles(positions, radii, interactions, bounds, sectorization, ZeroV, coeff);
   // Add the large ball
-  /*
-
-  if (rank==0 && bR>0) {
-    list<Particle> large;
-    Particle ball(width/2, depth+bR, bR);
-    ball.setDensity(density);
-    large.push_back(ball);
-    // Send out particle
-    distributeParticles(large, sectorization);
-  }
-  */
   sectorization.initialize();
   // End setup timing
   auto end = current_time();
@@ -1050,12 +1042,16 @@ vector<vpair> GFlowBase::getWallsPositions() {
 
 string GFlowBase::printWallsCommand() {
   stringstream stream;
-  string str, range;
+  string str, strh, range;
   // Create range
   stream << "{{" << left << "," << right << "},{" << bottom << "," << top << "}}";
   stream >> range;
   stream.clear();
   // Create walls graphic
+  stream << "w=" << mmPreproc(getWallsPositions(),3) << ";";
+  stream >> str;
+  stream.clear();
+  str += "\n";
   if (!walls.empty()) {
     stream << "walls=Graphics[{";
     for (int i=0; i<walls.size(); ++i) {
@@ -1065,8 +1061,8 @@ string GFlowBase::printWallsCommand() {
     stream << "},PlotRange->" + range + "];\n";
   }
   else stream << "walls={};\n";
-  stream >> str;
-  return str;
+  stream >> strh;
+  return str+strh;
 }
 
 string GFlowBase::printAnimationCommand(int mode, bool novid) {
@@ -1077,7 +1073,6 @@ string GFlowBase::printAnimationCommand(int mode, bool novid) {
   stream >> command;
   stream.clear();
   command += "\n";
-  stream << "w=" << mmPreproc(getWallsPositions(),3) << ";";
   stream >> strh;
   stream.clear();
   command += (strh+"\n");
@@ -1127,10 +1122,6 @@ string GFlowBase::printSpecialAnimationCommand(bool novid) {
   stream >> command;
   stream.clear();
   command += "\n";
-  stream << "w=" << mmPreproc(getWallsPositions()) << ";";
-  stream >> strh;
-  stream.clear();
-  command += (strh+"\n");
 
   stream << "len=" << recIter << ";";
   stream >> strh;
@@ -1182,11 +1173,6 @@ string GFlowBase::printForcesAnimationCommand(int mode, bool novid) {
   stream >> strh;
   stream.clear();
   command += (strh+'\n');
-  // Print walls
-  stream << "w=" << mmPreproc(getWallsPositions()) << ";";
-  stream >> strh;
-  stream.clear();
-  command += (strh+"\n");
   // Print length and scale
   stream << "len=" << recIter << ";";
   stream >> strh;
@@ -1223,10 +1209,10 @@ string GFlowBase::printBulkAnimationCommand(bool novid) {
   command += (strh + "\n");
   command += printWallsCommand();
   strh.clear();
-  stream << "bulkFrames=Table[Show[Graphics[{Thick,Line[bulk[[i]]]}],PlotRange->{{" << left << ","<< right << "},{" << bottom << "," << top << "}},ImageSize->{scale*" << right-left << ",scale*" << top-bottom << "}],{i,1,Length[bulk]}];";
+  stream << "bulkFrames=Table[Show[{walls,Graphics[{Thick,Line[bulk[[i]]]}]},PlotRange->{{" << left << ","<< right << "},{" << bottom << "," << top << "}},ImageSize->{scale*" << right-left << ",scale*" << top-bottom << "}],{i,1,Length[bulk]}];";
   stream >> strh;
   if (!novid) strh += "Export[\"vidB.avi\",bulkFrames,\"CompressionLevel\"->0];\n";
-  strh += "\nListAnimate[bulkFrames]";
+  strh += "ListAnimate[bulkFrames]";
   return command+strh;
 }
 
