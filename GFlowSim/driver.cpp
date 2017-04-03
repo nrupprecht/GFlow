@@ -41,6 +41,7 @@ int main(int argc, char** argv) {
   bool animate = false;
   bool special = false;
   bool forces  = false;
+  int forceChoice = 0;
   bool bubbles = false;
   bool visBubbles = false;
   bool bulk    = false;
@@ -113,6 +114,7 @@ int main(int argc, char** argv) {
   parser.get("animate", animate);
   parser.get("special", special);
   parser.get("forces", forces);
+  parser.get("forceChoice", forceChoice);
   parser.get("bubbles", bubbles);
   parser.get("visBubbles", visBubbles);
   parser.get("bulk", bulk);
@@ -213,6 +215,7 @@ int main(int argc, char** argv) {
   simulator.setRecPositions(animate);
   simulator.setRecSpecial(special);
   simulator.setRecForces(forces);
+  simulator.setForceChoice(forceChoice);
   simulator.setRecBubbles(bubbles);
   simulator.setVisBubbles(visBubbles);
   simulator.setRecBulk(bulk);

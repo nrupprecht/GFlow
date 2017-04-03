@@ -123,6 +123,7 @@ class GFlowBase {
   void setVisBubbles(bool b)   { visBubbles = b; }
   void setRecBulk(bool b)      { recBulk = b; }
   void setRestrictBubbleDomain(bool b) { restrictBubbleDomain = b; }
+  void setForceChoice(int c)   { forceChoice = c; }
  protected:
   double setUpTime;
   // Data
@@ -138,6 +139,7 @@ class GFlowBase {
   bool visBubbles;
   bool recBulk;
   bool restrictBubbleDomain;
+  int forceChoice;
 
   vector<pair<StatFunc,string> > statFunctions; // Statistic functions and a string to name them
   vector<vector<vec2> >  statRecord;    // Save the data produced by the statistic functions

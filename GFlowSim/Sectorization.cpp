@@ -327,7 +327,7 @@ pair<double, int> Sectorization::doStatFunction(StatFunc func) {
   return pair<double, int>(data, count);
 }
 
-vector<Tri> Sectorization::forceAnimate(int choice) {
+vector<Tri> Sectorization::forceAnimate(int choice, bool pressure) {
   if (!doInteractions) return vector<Tri>();
   // Get rid of holes in the array
   compressArrays();
@@ -352,18 +352,27 @@ vector<Tri> Sectorization::forceAnimate(int choice) {
       int j = *q;
       double Fn=0, Fs=0, F=0;
       interactionHelper(i, j, ibase, Fn, Fs);
-      // Record either total pressure (0), total force (1), normal force (2), or shear force (3)
+      // 0 -- Total force/pressure
+      // 1 -- Normal force/pressure
+      // 2 -- Shear force/pressure
+      // 3 -- Inward force/pressure
+      // 4 -- Outward force/pressure
       switch (choice) {
       default:
       case 0:
-      case 1:
 	F = Fn+Fs;
 	break;
-      case 2:
+      case 1:
 	F = Fn;
 	break;
-      case 3:
+      case 2:
 	F = Fs;
+	break;
+      case 3:
+	F = clamp(Fn+Fs);
+	break;
+      case 4: 
+	F = clamp(-Fn-Fs);
 	break;
       }
       // Store
@@ -372,7 +381,7 @@ vector<Tri> Sectorization::forceAnimate(int choice) {
     }
   }
   // Turn force into pressure
-  if (choice==0)
+  if (pressure)
     for (int i=0; i<size; ++i) std::get<2>(data.at(i)) /= (2*PI*sg[i]);
   // Return data
   return data;

@@ -131,7 +131,8 @@ inline bool LJinteraction(double **pdata, int p, int q, int asize, vec2& displac
     double Vn = dV*normal; // Normal velocity
     // double Vs = dV*shear + sg[p]*om[p] + sg[q]*om[q]; // Shear velocity
     // Calculate the normal force
-    Fn = -strength-dissipation*clamp(-Vn); // Damped harmonic oscillator
+    Fn = -strength;
+    if (dist<sg[p]+sg[q]) Fn -= dissipation*clamp(-Vn); // Damped harmonic oscillator
     // Calculate the Shear force
     // Fs = coeff ? -coeff*Fn*sign(Vs) : 0;
     // Update forces

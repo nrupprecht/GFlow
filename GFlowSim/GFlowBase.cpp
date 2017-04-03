@@ -29,6 +29,10 @@ GFlowBase::GFlowBase() {
   recPositions = false;
   recSpecial = false;
   recBubbles = false;
+  visBubbles = false;
+  recBulk = false;
+  restrictBubbleDomain = true;
+  forceChoice = 0;
   //---
 
   // Get MPI system data
@@ -351,7 +355,7 @@ void GFlowBase::record() {
   // Force record
   if (recForces) {
     //** Would have to change this for multiprocessor use
-    forceRecord.push_back(sectorization.forceAnimate());
+    forceRecord.push_back(sectorization.forceAnimate(forceChoice));
   }
   
   // Update display 
@@ -958,7 +962,7 @@ void GFlowBase::createBuoyancyBox(double radius, double bR, double density, doub
     else positions = findPackedSolution(radii, interactions, bounds, gravity);
   }
   // Create particles at the given positions with - Radius, Dispersion, Velocity function, Angular velocity function, Coeff, Dissipation, Repulsion, Interaction
-  double coeff = 0;
+  double coeff = default_sphere_coeff;
   if (dispersion==0) {
     particles = createParticles(positions, radius, dispersion, ZeroV, ZeroOm, coeff, default_sphere_dissipation, default_sphere_repulsion, interaction);
     distributeParticles(particles, sectorization);
