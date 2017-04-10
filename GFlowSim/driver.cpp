@@ -23,6 +23,7 @@ int main(int argc, char** argv) {
   double velocity = 0.25;
   double dispersion = 0;
   double temperature = 0;
+  double drag = 0;
   double time = 1.;
   double start = 0;
   double epsilon = 1.e-4;
@@ -57,6 +58,7 @@ int main(int argc, char** argv) {
   bool trackX  = false;
   bool GPE     = false;
   bool maxV    = false;
+  bool maxVy   = false;
   bool novid   = false;
   bool printSectors = false;
   double fps = -1; // FPS
@@ -98,6 +100,7 @@ int main(int argc, char** argv) {
   parser.get("velocity", velocity);
   parser.get("dispersion", dispersion);
   parser.get("temperature", temperature);
+  parser.get("drag", drag);
   parser.get("time", time);
   parser.get("start", start);
   parser.get("epsilon", epsilon);
@@ -130,6 +133,7 @@ int main(int argc, char** argv) {
   parser.get("trackX", trackX);
   parser.get("GPE", GPE);
   parser.get("maxV", maxV);
+  parser.get("maxVy", maxVy);
   parser.get("novid", novid);
   parser.get("printSectors", printSectors);
   parser.get("fps", fps);
@@ -194,21 +198,25 @@ int main(int argc, char** argv) {
       cout << "Failed to load [" << updateBuoyancy << "], exiting.\n";
       return 0;
     }
+    if (LJ!=-1) simulator.setInteractionType(1);
   }
   else if (loadBuoyancy!="") {
     if (!simulator.loadBuoyancy(loadBuoyancy, bR, velocity, density)) {
       cout << "Failed to load [" << loadBuoyancy << "], exiting.\n";
       return 0;
     }
+    if (LJ!=-1) simulator.setInteractionType(1);
   }
   else { // We must have that loadFile!=""
     if (!simulator.loadConfigurationFromFile(loadFile)) {
       cout << "Failed to load [" << loadFile <<"], exiting.\n";
       return 0;
     }
+    if (LJ!=-1) simulator.setInteractionType(1);
   }
 
   simulator.setTemperature(temperature);
+  simulator.setDrag(drag);
   simulator.setDoInteractions(interact);
   simulator.setStartRec(start);
 
@@ -233,6 +241,7 @@ int main(int argc, char** argv) {
   if (trackX) simulator.addStatFunction(Stat_Large_Object_X, "posx");
   if (GPE) simulator.addStatFunction(Stat_Gravitational_PE, "gpe");
   if (maxV) simulator.addStatFunction(Stat_Max_Velocity, "maxv");
+  if (maxVy) simulator.addStatFunction(Stat_Max_Velocity_Y, "maxvy");
 
   // Get the actual number of particles in the simulation
   number = simulator.getSize();
@@ -268,7 +277,7 @@ int main(int argc, char** argv) {
     cout << "Iterations: " << iters << ", time per iter: " << (iters>0 ? toStr(runTime/iters) : "---") << endl;
     double transferPercent = transferTime/runTime*100;
     cout << "Transfer Time: " << transferTime << " (" << (runTime>0 ? (transferPercent>0.01 ? toStr(transferPercent) : "~ 0") : "---") << "%)" << endl;
-    cout << "Ratio: " << (runTime>0 ? toStr(time/runTime) : "---") << ", Ratio x Particles: " << (runTime>0 ? toStr(time/runTime*number) : "---") << endl;
+    cout << "Ratio: " << (runTime>0 ? toStr(time/runTime) : "---") << " (" << (runTime>0 ? toStr(runTime/time) : "---") <<  "), Ratio x Particles: " << (runTime>0 ? toStr(time/runTime*number) : "---") << endl;
     cout << " --- STATS ---\n";
     cout << "Neighbor list size: " << simulator.getNeighborListSize() << ", Ave per list: " << simulator.getAvePerNeighborList() << endl;
     cout << "----------------------- END SUMMARY -----------------------\n\n"; 

@@ -101,7 +101,8 @@ inline bool LJinteraction(double **pdata, int p, int q, int asize, vec2& displac
   // Set up convenience pointers
   double *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
   double distSqr = sqr(displacement);
-  double cutoff = particle_cutoff(sg[p]+sg[q], 1);
+  double hardCut = sg[p]+sg[q];
+  double cutoff = particle_cutoff(hardCut, 1);
   double cutoffsqr = sqr(cutoff);
   /*
               ^ normal
@@ -113,7 +114,7 @@ inline bool LJinteraction(double **pdata, int p, int q, int asize, vec2& displac
     // Compute interaction parameters ( ad hoc )
     double dissipation = ds[p]+ds[q];
     double repulsion = rp[p]+rp[q];
-    // double coeff = cf[p]*cf[q];
+    double coeff = cf[p]*cf[q];
     // Compute force
     double dist = sqrt(distSqr);
     double invD = 1./dist;
@@ -129,22 +130,25 @@ inline bool LJinteraction(double **pdata, int p, int q, int asize, vec2& displac
     // Velocities
     vec2 dV(vx[q]-vx[p], vy[q]-vy[p]);
     double Vn = dV*normal; // Normal velocity
-    // double Vs = dV*shear + sg[p]*om[p] + sg[q]*om[q]; // Shear velocity
+
     // Calculate the normal force
     Fn = -strength;
-    if (dist<sg[p]+sg[q]) Fn -= dissipation*clamp(-Vn); // Damped harmonic oscillator
+    if (dist<hardCut) Fn -= dissipation*clamp(-Vn); // Damped harmonic oscillator
     // Calculate the Shear force
-    // Fs = coeff ? -coeff*Fn*sign(Vs) : 0;
+    if (dist<hardCut && coeff>0) {
+      double Vs = dV*shear + sg[p]*om[p] + sg[q]*om[q]; // Shear velocity      
+      Fs = -coeff*Fn*sign(Vs);
+    }
     // Update forces
-    // double FX = Fn*normal.x+Fs*shear.x, FY = Fn*normal.y+Fs*shear.y;
-    double FX = Fn*normal.x, FY = Fn*normal.y;
+    double FX = Fn*normal.x+Fs*shear.x, FY = Fn*normal.y+Fs*shear.y;
+    // double FX = Fn*normal.x, FY = Fn*normal.y;
     fx[p] += FX;
     fy[p] += FY;
     fx[q] -= FX;
     fy[q] -= FY;
     // Update torque
-    // tq[p] -= (Fs*sg[p]);
-    // tq[q] -= (Fs*sg[q]);
+    tq[p] -= (Fs*sg[p]);
+    tq[q] -= (Fs*sg[q]);
     // Particles interacted
     return true;
   }
@@ -261,6 +265,62 @@ inline bool Triangle_wall(double **pdata, int p, const Wall &w, int asize, vec2&
   }
   return false;
 }
+
+inline bool ChargedInteraction(double **pdata, int p, int q, int asize, vec2& displacement, double charge, double &Fn, double &Fs) {
+  // Set up convenience pointers
+  double *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
+  double distSqr = sqr(displacement);
+  double hardCut = sg[p]+sg[q];
+  double cutoff = particle_cutoff(charge, 3); // Cutoff depends on charge
+  cutoff = max(hardCut, cutoff);
+  double cutoffsqr = sqr(cutoff);
+  /*
+              ^ normal
+              |
+              |
+              *------> shear
+  */
+  if (distSqr < cutoffsqr) { // Interaction
+    // Compute interaction parameters ( ad hoc )
+    double dissipation = ds[p]+ds[q];
+    double repulsion = rp[p]+rp[q];
+    double coeff = cf[p]*cf[q];
+    // Compute force
+    double dist = sqrt(distSqr);
+    double invD = 1./dist;
+    vec2 normal = invD * displacement;
+    vec2 shear = vec2(normal.y, -normal.x);
+    // Electric force strength
+    double strength = sqr(charge)/distSqr;
+    // Hard core repulsion
+    vec2 dV(vx[q]-vx[p], vy[q]-vy[p]);
+    if (dist<hardCut) {
+      double Vn = dV*normal; // Normal velocity
+      strength += (repulsion*(hardCut-dist) + dissipation*clamp(-Vn));
+    }
+    Fn = -strength;
+    // Calculate the Shear force
+    double Fs = 0;
+   if (dist<hardCut && coeff>0) {
+      double Vs = dV*shear + sg[p]*om[p] + sg[q]*om[q]; // Shear velocity
+      Fs = -coeff*Fn*sign(Vs);
+    }
+    // Update forces
+    double FX = Fn*normal.x+Fs*shear.x, FY = Fn*normal.y+Fs*shear.y;
+    fx[p] += FX;
+    fy[p] += FY;
+    fx[q] -= FX;
+    fy[q] -= FY;
+    // Update torque
+    tq[p] -= (Fs*sg[p]);
+    tq[q] -= (Fs*sg[q]);
+    // Particles interacted
+    return true;
+  }
+  return false; // Particles did not interact  
+}
+
+// ------ Wall displacement function ------
 
 inline void wallDisplacement(vec2 &displacement, const double sigma, const Wall &w) {
   // We are given displacement = p.position - w.left;

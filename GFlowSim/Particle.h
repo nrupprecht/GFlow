@@ -22,7 +22,10 @@ inline double particle_cutoff(double sigma, int interaction) {
     return sigma;
   case 1:
     return LJ_cutoff_factor*sigma;
+  case 3: // Charged particles
+    return sqr(sigma)*EF_cutoff_factor;
   }
+
 }
 
 /// Wall structure --- Size: 8 x sizeof(double) bytes 

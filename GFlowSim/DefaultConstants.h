@@ -12,6 +12,9 @@ const double default_sphere_coeff       = sqrt(0.3);
 // Lenard Jones constants
 const double LJ_cutoff_factor           = 2.5;
 
+// Electric field constants
+const double EF_cutoff_factor           = 0.1 ; // Distance per unit charge
+
 // Wall constants
 const double default_wall_repulsion     = 100.;
 const double default_wall_dissipation   = 50.;

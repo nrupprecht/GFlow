@@ -170,4 +170,16 @@ inline double Stat_Max_Velocity(const vector<Particle> &particles, int &count) {
   return maxV;
 }
 
+inline double Stat_Max_Velocity_Y(const vector<Particle> &particles, int &count) {
+  count = 0;
+  if (particles.empty()) return 0;
+  count = 1;
+  double maxV = 0;
+  for (const auto &p : particles) {
+    double v = p.velocity.y;
+    if (maxV<v) maxV = v;
+  }
+  return maxV;
+}
+
 #endif // __STAT_FUNC_H__

@@ -35,8 +35,8 @@ class GFlowBase {
   int getSize();
   double getFilledVolume();
   double getVolume()       { return (right-left)*(top-bottom); }
-  double getWidth()     { return right-left; }
-  double getHeight()    { return top-bottom; }
+  double getWidth()        { return right-left; }
+  double getHeight()       { return top-bottom; }
   bool getWrapX()          { return wrapX; }
   bool getWrapY()          { return wrapY; }
   vec2 getGravity()        { return gravity; }
@@ -52,6 +52,7 @@ class GFlowBase {
   double getRunTime()      { return runTime; }
   bool getRunning()        { return running; }
   double getTransferTime() { return transferTime+sectorization.getTransferTime(); }
+  double getCutoff()       { return sectorization.getCutoff(); }
   bool getDoInteractions() { return doInteractions; }
 
   // Statistics accessors
@@ -65,6 +66,7 @@ class GFlowBase {
   void setWrapY(bool w)          { wrapY = w; }
   void setGravity(vec2 g);
   void setTemperature(double t);
+  void setDrag(double d)         { sectorization.setDrag(d); }
   void setViscosity(double h);
   void setLatticeType(int l)     { latticeType = l; }
   void setStartRec(double s)     { startRec = s; }
@@ -178,7 +180,7 @@ class GFlowBase {
   vector<vec2> findPackedSolution(int, double, Bounds, vec2 = 0, double=0.5, double=0.5);
   vector<vec2> findPackedSolution(const vector<double>&, const vector<int>&, const Bounds&, vec2=0, double=0.5, double=0.5);
   // Find lattice solution
-  vector<vec2> findLatticeSolution(int, double, Bounds, int=-1, double=0.1, double=0.);
+  vector<vec2> findLatticeSolution(int, double, Bounds, int=-1, double=0.1, double=0.2);
 
   /// Data
   double left, right, bottom, top;

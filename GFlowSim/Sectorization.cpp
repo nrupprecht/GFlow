@@ -399,8 +399,8 @@ inline void Sectorization::firstHalfKick() {
       vy[i] += dt*im[i]*fy[i];
       px[i] += epsilon*vx[i];
       py[i] += epsilon*vy[i];
-      fx[i] = gravity.x*mass - drag*vx[i];
-      fy[i] = gravity.y*mass - drag*vy[i];
+      fx[i] = gravity.x*mass - drag*sg[i]*vx[i];
+      fy[i] = gravity.y*mass - drag*sg[i]*vy[i];
       wrap(px[i], py[i]); // Wrap position
       om[i] += dt*iI[i]*tq[i];
       th[i] += epsilon*om[i];
@@ -414,20 +414,58 @@ inline void Sectorization::firstHalfKick() {
     }
   }
   else {
+    if (gravity!=Zero) {
 #pragma vector aligned
 #pragma simd
-    for (int i=0; i<array_end; ++i) {
-      double mass = 1./im[i];
-      vx[i] += dt*im[i]*fx[i];
-      vy[i] += dt*im[i]*fy[i];
-      px[i] += epsilon*vx[i];
-      py[i] += epsilon*vy[i];
-      fx[i] = gravity.x*mass - drag*vx[i];
-      fy[i] = gravity.y*mass - drag*vy[i];
-      wrap(px[i], py[i]);
-      om[i] += dt*iI[i]*tq[i];
-      th[i] += epsilon*om[i];
-      tq[i] = 0;
+      for (int i=0; i<array_end; ++i) {
+	double mass = 1./im[i];
+	vx[i] += dt*im[i]*fx[i];
+	vy[i] += dt*im[i]*fy[i];
+	px[i] += epsilon*vx[i];
+	py[i] += epsilon*vy[i];
+	fx[i] = gravity.x*mass - drag*sg[i]*vx[i];
+	fy[i] = gravity.y*mass - drag*sg[i]*vy[i];
+	wrap(px[i], py[i]);
+	om[i] += dt*iI[i]*tq[i];
+	th[i] += epsilon*om[i];
+	tq[i] = 0;
+      }
+    }
+    else if (gravity==0) {
+      if (drag==0) {
+#pragma vector aligned
+#pragma simd
+	for (int i=0; i<array_end; ++i) {
+	  double mass = 1./im[i];
+	  vx[i] += dt*im[i]*fx[i];
+	  vy[i] += dt*im[i]*fy[i];
+	  px[i] += epsilon*vx[i];
+	  py[i] += epsilon*vy[i];
+	  fx[i] = 0;
+	  fy[i] = 0;
+	  wrap(px[i], py[i]);
+	  om[i] += dt*iI[i]*tq[i];
+	  th[i] += epsilon*om[i];
+	  tq[i] = 0;
+	}
+      }
+      else {
+#pragma vector aligned
+#pragma simd
+	for (int i=0; i<array_end; ++i) {
+	  double mass = 1./im[i];
+	  vx[i] += dt*im[i]*fx[i];
+	  vy[i] += dt*im[i]*fy[i];
+	  px[i] += epsilon*vx[i];
+	  py[i] += epsilon*vy[i];
+	  fx[i] = -drag*sg[i]*vx[i];
+	  fy[i] = -drag*sg[i]*vy[i];
+	  wrap(px[i], py[i]);
+	  om[i] += dt*iI[i]*tq[i];
+	  th[i] += epsilon*om[i];
+	  tq[i] = 0;
+	}
+      }
     }
   }
 }

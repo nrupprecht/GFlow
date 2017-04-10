@@ -28,11 +28,12 @@ class Sectorization {
   int getNSY()                   { return nsy; }
   int getSize()                  { return size; }
   int getWallSize()              { return walls.size(); }
-  double getSecWidth()        { return secWidth; }
-  double getSecHeight()       { return secHeight; }
-  double getEpsilon()         { return epsilon; }
-  double getMaxNeighborDiff() { return maxNLDiff; }
+  double getSecWidth()           { return secWidth; }
+  double getSecHeight()          { return secHeight; }
+  double getEpsilon()            { return epsilon; }
+  double getMaxNeighborDiff()    { return maxNLDiff; }
   double getTransferTime()       { return transferTime; }
+  double getCutoff()             { return cutoff; }
   bool getDoInteractions()       { return doInteractions; }
   bool getWrapX()                { return wrapX; }
   bool getWrapY()                { return wrapY; }
