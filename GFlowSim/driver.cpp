@@ -62,10 +62,12 @@ int main(int argc, char** argv) {
   bool novid   = false;
   bool printSectors = false;
   double fps = -1; // FPS
+  string label = "";
 
   // Simulation type
   bool square = true;
   bool buoyancy = false;
+  bool bacteria = false;
 
   // Load and save
   string loadFile = "";
@@ -137,8 +139,10 @@ int main(int argc, char** argv) {
   parser.get("novid", novid);
   parser.get("printSectors", printSectors);
   parser.get("fps", fps);
+  parser.get("label", label);
   parser.get("square", square);
   parser.get("buoyancy", buoyancy);
+  parser.get("bacteria", bacteria);
   parser.get("loadFile", loadFile);
   parser.get("loadBuoyancy", loadBuoyancy);
   parser.get("saveFile", saveFile);
@@ -215,6 +219,8 @@ int main(int argc, char** argv) {
     if (LJ!=-1) simulator.setInteractionType(1);
   }
 
+  if (bacteria) simulator.setAsBacteria();
+
   simulator.setTemperature(temperature);
   simulator.setDrag(drag);
   simulator.setDoInteractions(interact);
@@ -284,7 +290,7 @@ int main(int argc, char** argv) {
   }
   if (rank==0) { // Do this even when quiet = true
     /// Print recorded data
-    if (animate) cout << simulator.printAnimationCommand(mode, novid) << endl;
+    if (animate) cout << simulator.printAnimationCommand(mode, novid, label) << endl;
     if (special) cout << simulator.printSpecialAnimationCommand(novid) << endl;
     if (forces)  cout << simulator.printForcesAnimationCommand(mode, novid) << endl;
     if (bubbles) {
@@ -295,7 +301,7 @@ int main(int argc, char** argv) {
       cout << simulator.printBulkAnimationCommand(novid) << endl;
     }
     else if (bulk) cout << simulator.printBulkAnimationCommand(novid) << endl;
-    string stats = simulator.printStatFunctions();
+    string stats = simulator.printStatFunctions(label);
     if (!stats.empty()) cout << stats;
   }
   if (printSectors) simulator.printSectors();

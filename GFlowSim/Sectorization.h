@@ -2,6 +2,7 @@
 #define SECTORIZATION_H
 
 #include "Interactions.h"
+#include "Characteristic.h"
 #include "StatFunc.h"
 #include <mpi.h>
 #include <stdlib.h> // For aligned_malloc
@@ -74,6 +75,7 @@ class Sectorization {
   // Addition
   void addParticle(Particle);
   void addWall(Wall);
+  void setCharacteristic(Characteristic*);
 
   // Statistics
   string printSectors();
@@ -139,6 +141,9 @@ class Sectorization {
   double *pdata[15]; 
   // Particle data - interaction type
   int *it;
+  // Particle data - characteristics
+  Characteristic **ch;
+  bool useCharacteristics;
   // Walls 
   list<Wall> walls;
   

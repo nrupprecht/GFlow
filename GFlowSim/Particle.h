@@ -25,7 +25,6 @@ inline double particle_cutoff(double sigma, int interaction) {
   case 3: // Charged particles
     return sqr(sigma)*EF_cutoff_factor;
   }
-
 }
 
 /// Wall structure --- Size: 8 x sizeof(double) bytes 
@@ -62,17 +61,6 @@ struct Particle {
   double sigma; // Radius or force cutoff
   double invMass, invII; // Inverses of mass and moment of inertia
   double repulsion, dissipation, coeff;
-};
-
-/// Purely abstract base class for characteristics
-class Characteristic {
-  // Constructor
-  Characteristic() : particle(0) {};
-  Characteristic(Particle *p) : particle(p) {};
-  
-  virtual void apply()=0;
- private:
-  Particle *particle;
 };
 
 #endif

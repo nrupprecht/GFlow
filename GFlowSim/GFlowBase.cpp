@@ -872,6 +872,13 @@ vector<vec2> GFlowBase::findLatticeSolution(int number, double radius, Bounds bo
   
 // ----- TO GO TO GFLOW.CPP -----
   
+void GFlowBase::setAsBacteria() {
+  Characteristic *B = new Bacteria;
+  sectorization.setCharacteristic(B);
+  delete B;
+  sectorization.setDrag(5);
+}
+
 void GFlowBase::createSquare(int number, double radius, double width, double height, double vsgma, double dispersion, int interaction) {
   // Start the clock
   auto start = current_time();
@@ -1024,15 +1031,15 @@ void GFlowBase::addStatFunction(StatFunc sf, string str) {
   statRecord.push_back(vector<vec2>());
 }
 
-string GFlowBase::printStatFunctions() {
+string GFlowBase::printStatFunctions(string label) {
   if (statFunctions.empty() || rank!=0) return "";
   stringstream stream;
   string str, strh;
   for (int i=0; i<statFunctions.size(); ++i) {
     string name = statFunctions.at(i).second;
-    stream << name << "=" << mmPreproc(statRecord.at(i));
+    stream << name << label << "=" << mmPreproc(statRecord.at(i));
     stream >> strh;
-    str += (strh+";\nPrint[\""+name+"\"]\nListLinePlot["+name+",PlotStyle->Black,ImageSize->Large,PlotRange->All]\n");
+    str += (strh+";\nPrint[\""+name+"\"]\nListLinePlot["+name+label+",PlotStyle->Black,ImageSize->Large,PlotRange->All]\n");
     stream.clear(); strh.clear();
   }
   return str;
@@ -1069,11 +1076,11 @@ string GFlowBase::printWallsCommand() {
   return str+strh;
 }
 
-string GFlowBase::printAnimationCommand(int mode, bool novid) {
+string GFlowBase::printAnimationCommand(int mode, bool novid, string label) {
   stringstream stream;
   string command, strh, range, scale;
   
-  stream << "pos=" << printPositionRecord(mode) << ";\n";
+  stream << "pos" << label << "=" << printPositionRecord(mode) << ";\n";
   stream >> command;
   stream.clear();
   command += "\n";
@@ -1110,7 +1117,7 @@ string GFlowBase::printAnimationCommand(int mode, bool novid) {
   stream << (mode==0 ? "dsk" : "dot");
   stream >> strh;
 
-  command += "disks=Table[Graphics[Table[" + strh + "[pos[[i]][[j]]],{j,1,Length[pos[[i]]]}],PlotRange->" + range + "],{i,1,len}];\n";
+  command += "disks=Table[Graphics[Table[" + strh + "[pos" + label + "[[i]][[j]]],{j,1,Length[pos" + label + "[[i]]]}],PlotRange->" + range + "],{i,1,len}];\n";
   command += ("frames=Table[Show[disks[[i]],walls," + scale + "],{i,1,len}];\n");
   if (!novid) command += "Export[\"vid.avi\",frames,\"CompressionLevel\"->0];\n";
   command += "ListAnimate[frames]";

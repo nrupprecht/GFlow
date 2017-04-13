@@ -2,7 +2,7 @@
 
 using MPI::COMM_WORLD;
 
-Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), time(0), epsilon(1e-4), sqrtEpsilon(1e-4), transferTime(0), wrapX(false), wrapY(false), doInteractions(true), drag(0), gravity(0), temperature(0), viscosity(1.308e-3), tempDelay(5e-3), sqrtTempDelay(sqrt(5e-3)), lastTemp(0), size(0), array_end(0), asize(0), esize(0), earray_end(0), easize(0), redoLists(false), doWallNeighbors(true), remakeToUpdate(false), cutoff(0.1), skinDepth(0.025), itersSinceBuild(0), buildDelay(20), numProc(1), rank(0) {
+Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), time(0), epsilon(1e-4), sqrtEpsilon(1e-4), transferTime(0), wrapX(false), wrapY(false), doInteractions(true), drag(0), gravity(0), temperature(0), viscosity(1.308e-3), tempDelay(5e-3), sqrtTempDelay(sqrt(5e-3)), lastTemp(0), size(0), array_end(0), asize(0), esize(0), earray_end(0), easize(0), useCharacteristics(false), redoLists(false), doWallNeighbors(true), remakeToUpdate(false), cutoff(0.1), skinDepth(0.025), itersSinceBuild(0), buildDelay(20), numProc(1), rank(0) {
   // Get our rank and the number of processors
   rank =    COMM_WORLD.Get_rank();
   numProc = COMM_WORLD.Get_size();  
@@ -19,6 +19,11 @@ Sectorization::~Sectorization() {
   for (int i=0; i<15; ++i)
     if (pdata[i]) delete [] pdata[i];
   if (it) delete [] it;
+  if (ch) {
+    for (int i=0; i<asize; ++i)
+      if (ch[i]) delete ch[i];
+    delete [] ch;
+  }
   sectors = 0;
 }
 
@@ -120,6 +125,11 @@ void Sectorization::discard() {
   if (cf) delete [] cf; cf = 0;
   if (th) delete [] th; th = 0;
   if (it) delete [] it; it = 0;
+  if (ch) {
+    for (int i=0; i<asize; ++i)
+      if (ch[i]) delete ch[i];
+    delete [] ch; ch = 0;
+  }
   for (int i=0; i<15; ++i) pdata[i] = 0;
   size = 0;
   array_end = 0;
@@ -146,6 +156,7 @@ inline void Sectorization::particleInteractions() {
     int ibase = it[i]<<2;      // Represents the interaction type of particle p
     for (; q!=nl.end(); ++q) { // Try to interact with all other particles in the nl
       int j = *q;
+      if (it[j]<0) continue;   // This particle is gone
       double Fn=0, Fs=0;
       interactionHelper(i, j, ibase, Fn, Fs);
     }
@@ -204,7 +215,7 @@ inline void Sectorization::wallInteractions() {
           hardDiskRepulsion_wall(pdata, i, *w, asize, displacement, Fn, Fs);
           break;
         case 1:
-          hardDiskRepulsion_wall(pdata, i, *w, asize, displacement, Fn, Fs);
+          hardDiskRepulsion_wall(pdata, i, *w, asize, displacement, Fn, Fs); //**
 	  //LJinteraction_wall(*p, *w, displacement, Fn, Fs);
           break;
         }
@@ -222,6 +233,7 @@ inline void Sectorization::wallInteractions() {
 	  hardDiskRepulsion_wall(pdata, i, w, asize, displacement, Fn, Fs);
 	  break;
 	case 1:
+	  hardDiskRepulsion_wall(pdata, i, w, asize, displacement, Fn, Fs); //**
 	  // LJinteraction_wall(p, w, displacement, Fn, Fs);
 	  break;
 	}
@@ -233,6 +245,10 @@ void Sectorization::update() {
   firstHalfKick();
   // Reset last temp
   if (tempDelay<time-lastTemp) lastTemp = time;
+  // Characteristics
+  if (ch) {
+    for (int i=0; i<array_end; ++i) ch[i]->modify(vx[i], vy[i], fx[i], fy[i], tq[i], this);
+  }
   // MPI coordination
   if (doInteractions && 1<numProc) {
     atom_move();
@@ -300,6 +316,17 @@ void Sectorization::addParticle(Particle p) {
 
 void Sectorization::addWall(Wall w) {
   walls.push_back(w);
+}
+
+void Sectorization::setCharacteristic(Characteristic *C) {
+  if (!useCharacteristics) {
+    ch = (Characteristic**)aligned_alloc(64, asize*sizeof(Characteristic*));
+    memset(ch, 0, asize*sizeof(Characteristic*));
+    useCharacteristics = true;
+  }
+  for (int i=0; i<array_end; ++i) {
+    if (it[i]!=-1) ch[i] = C->create();
+  }
 }
 
 string Sectorization::printSectors() {
@@ -713,6 +740,11 @@ inline void Sectorization::createArrays() {
   if (ds) delete [] ds;
   if (cf) delete [] cf;
   if (it) delete [] it;
+  if (useCharacteristics && ch) {
+    for (int i=0; i<asize; ++i) 
+      if (ch[i]) delete ch[i];
+    delete [] ch;
+  }
   // Reallocate
   int tsize = asize + easize;
   pdata[0]  = px = (double*)aligned_alloc(64, tsize*sizeof(double));
@@ -732,6 +764,10 @@ inline void Sectorization::createArrays() {
   pdata[14] = cf = (double*)aligned_alloc(64, tsize*sizeof(double));
   it             =    (int*)   aligned_alloc(64, tsize*sizeof(int));
   memset(it, -1, tsize*sizeof(int)); // Each int is 4 bytes
+  if (useCharacteristics) {
+    ch           = (Characteristic**)aligned_alloc(64, asize*sizeof(Characteristic*));
+    memset(ch, 0, asize*sizeof(Characteristic*));
+  }
   // Set position tracker array
   if (positionTracker) delete [] positionTracker;
   positionTracker = (vec2*)aligned_alloc(64, asize*sizeof(vec2));
@@ -743,6 +779,7 @@ inline void Sectorization::zeroPointers() {
   positionTracker = 0;
   px = py = vx = vy = fx = fy = th = om = tq = sg = im = iI = rp = ds = cf = 0;
   it = 0;
+  ch = 0;
   for (int i=0; i<15; ++i) pdata[i] = 0;
   sectors = 0;
 }

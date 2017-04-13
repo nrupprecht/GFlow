@@ -7,7 +7,7 @@ FLAGS = $(CFLAG) -g $(OPTFLAGS)
 
 targets = driver
 
-files = GFlowBase.o Sectorization.o Particle.o
+files = GFlowBase.o Sectorization.o Particle.o Characteristic.o
 
 all: $(targets)
 

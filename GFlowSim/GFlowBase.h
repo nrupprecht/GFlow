@@ -82,16 +82,18 @@ class GFlowBase {
   virtual bool createConfigurationFile   (string);
 
   // -----  TO GO TO GFLOW.H  ------
+  void setAsBacteria();
+
   void createSquare(int, double, double=4., double=4., double=0.1, double=0., int=0);
   void createBuoyancyBox(double,double,double,double,double,double,double, int=0);
   bool loadBuoyancy(string, double=0.5, double=5., double=10.);
   void recordPositions();
 
   void addStatFunction(StatFunc, string);
-  string printStatFunctions();
+  string printStatFunctions(string="");
 
   string printWallsCommand();
-  string printAnimationCommand(int=0, bool=false);
+  string printAnimationCommand(int=0, bool=false, string="");
   string printSpecialAnimationCommand(bool=false);
   string printForcesAnimationCommand(int=0, bool=false);
   string printBulkAnimationCommand(bool=false);
