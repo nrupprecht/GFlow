@@ -103,22 +103,17 @@ void Sectorization::setInteractionType(int inter) {
 }
 
 void Sectorization::setASize(int s) {
-
-  cout << "Setting asize: " << asize << ", " << s << endl; //**
-
   updatePList();
   discard();
   asize = s;
   easize = s; //-- AD HOC
   createArrays();
-
   setParticles();
-
-  cout << "Done" << endl;
-
+  //** Need to redo all lists
 }
 
 void Sectorization::discard() {
+  // Discard arrays only. Not plist or clist. Also, do not delete individual characteristics ( ch[i] )
   if (px) delete [] px; px = 0;
   if (py) delete [] py; py = 0;
   if (vx) delete [] vx; vx = 0;
@@ -135,11 +130,7 @@ void Sectorization::discard() {
   if (cf) delete [] cf; cf = 0;
   if (th) delete [] th; th = 0;
   if (it) delete [] it; it = 0;
-  if (ch) {
-    for (int i=0; i<asize; ++i)
-      if (ch[i]) delete ch[i];
-    delete [] ch; ch = 0;
-  }
+  if (ch) delete [] ch; ch = 0;
   for (int i=0; i<15; ++i) pdata[i] = 0;
   size = 0;
   array_end = 0;
@@ -148,7 +139,18 @@ void Sectorization::discard() {
   if (sectors) for (int i=0; i<nsx*nsy+1; ++i) sectors[i].clear();
   neighborList.clear();
   wallNeighbors.clear();
+}
+
+void Sectorization::discardAll() {
+  if (ch) {
+    for (int i=0; i<array_end; ++i) 
+      if (ch[i]) {
+	delete ch[i];
+	ch[i] = 0;
+      }
+  }
   walls.clear();
+  discard();
 }
 
 void Sectorization::setSimBounds(Bounds b) {
@@ -212,7 +214,7 @@ inline void Sectorization::interactionHelper(int i, int j, int ibase, double &Fn
 }
 
 inline void Sectorization::wallInteractions() {
-  if (doWallNeighbors)
+  if (doWallNeighbors) {
     for (auto pr : wallNeighbors) {
       int i = pr.first;
       if (it[i]<0) continue; // Particle has moved out
@@ -231,6 +233,8 @@ inline void Sectorization::wallInteractions() {
         }
       }
     }
+
+  }
   else
     for (auto& w : walls)
       for (int i=0; i<array_end; ++i) {
@@ -256,9 +260,9 @@ void Sectorization::update() {
   // Reset last temp
   if (tempDelay<time-lastTemp) lastTemp = time;
   // Characteristics
-  if (ch) {
-    for (int i=0; i<array_end; ++i) ch[i]->modify(pdata, this, i);
-  }
+  if (ch)
+    for (int i=0; i<array_end; ++i) 
+      if (ch[i]) ch[i]->modify(pdata, this, i);
   // MPI coordination
   if (doInteractions && 1<numProc) {
     atom_move();
@@ -274,6 +278,8 @@ void Sectorization::update() {
     if (doWallNeighbors) createWallNeighborList();
     redoLists = false;
   }
+  // Compress array
+  else compressArrays();
   // Interaction forces (step 3)
   particleInteractions();
   wallInteractions();
@@ -358,9 +364,21 @@ void Sectorization::insertParticle(Particle p) {
   ++array_end;
 }
 
+void Sectorization::insertParticle(Particle p, Characteristic *c) {
+  if (ch) ch[array_end] = c;
+  insertParticle(p);
+}
+
 void Sectorization::removeAt(int i) {
   if (i<0 || asize-1<i) throw false; 
   it[i] = -1;
+  // If the particle had a characteristic, destroy it
+  if (ch && ch[i]) {
+    delete ch[i];
+    ch[i] = 0;
+  }
+  // There is now a hole to be filled
+  holes.push_back(i);
 }
 
 void Sectorization::addWall(Wall w) {
@@ -368,6 +386,7 @@ void Sectorization::addWall(Wall w) {
 }
 
 void Sectorization::setCharacteristic(Characteristic *C) {
+  useCharacteristics = true;
   // Delete old characteristics
   if (ch) {
     for (int i=0; i<asize; ++i)
@@ -376,15 +395,12 @@ void Sectorization::setCharacteristic(Characteristic *C) {
 	ch[i] =0;
       }
   }
-  // Create ch array if neccessary
-  if (!useCharacteristics || ch==0) { 
+  else { // Create ch array if neccessary
     ch = (Characteristic**)aligned_alloc(64, asize*sizeof(Characteristic*));
     memset(ch, 0, asize*sizeof(Characteristic*));
-    useCharacteristics = true;
   }
-  for (int i=0; i<array_end; ++i) {
+  for (int i=0; i<array_end; ++i)
     if (it[i]!=-1) ch[i] = C->create();
-  }
 }
 
 string Sectorization::printSectors() {
@@ -800,11 +816,7 @@ inline void Sectorization::createArrays() {
   if (ds) delete [] ds;
   if (cf) delete [] cf;
   if (it) delete [] it;
-  if (useCharacteristics && ch) {
-    for (int i=0; i<asize; ++i) 
-      if (ch[i]) delete ch[i];
-    delete [] ch;
-  }
+  if (useCharacteristics && ch) delete [] ch;
   // Reallocate
   int tsize = asize + easize;
   pdata[0]  = px = (double*)aligned_alloc(64, tsize*sizeof(double));
@@ -828,6 +840,7 @@ inline void Sectorization::createArrays() {
     ch           = (Characteristic**)aligned_alloc(64, asize*sizeof(Characteristic*));
     memset(ch, 0, asize*sizeof(Characteristic*));
   }
+  else ch = 0;
   // Set position tracker array
   if (positionTracker) delete [] positionTracker;
   positionTracker = (vec2*)aligned_alloc(64, asize*sizeof(vec2));
@@ -1024,10 +1037,11 @@ inline void Sectorization::passParticleRecv(const int recv, bool edgeParticles) 
 inline void Sectorization::compressArrays() {
   // Holes will not in general be in order
   if (holes.empty()) return;
+  holes.sort(); // Holes are now in order
   for (auto J=holes.begin(); J!=holes.end(); ++J) {
     int j = *J;
     while (it[array_end-1]<0) array_end--;
-    if (array_end-1<=j) continue; 
+    if (array_end-1<=j) break; // No further holes need to be filled
     px[j] = px[array_end-1];
     py[j] = py[array_end-1];
     vx[j] = vx[array_end-1];
@@ -1044,6 +1058,10 @@ inline void Sectorization::compressArrays() {
     ds[j] = ds[array_end-1];
     cf[j] = cf[array_end-1];
     it[j] = it[array_end-1];
+    if (ch) {
+      ch[j] = ch[array_end-1];
+      ch[array_end-1] = 0;
+    }
     it[array_end-1] = -1;    // This entry is now empty
     // Increment array end
     --array_end;

@@ -401,7 +401,7 @@ void GFlowBase::gatherData() {
 void GFlowBase::discard() {
   walls.clear();
   particles.clear();
-  sectorization.discard();
+  sectorization.discardAll();
 }
 
 void GFlowBase::bestProcessorGrid(int &x, int &y, const int number, const Bounds b) {
@@ -437,12 +437,11 @@ void GFlowBase::distributeParticles(list<Particle> &allParticles, Sectorization 
   if (rank==0) {
     Bounds bnds = getBoundsForProc(0, sectors.getSimBounds() );
     vector<list<Particle>::iterator> remove;
-    for (auto p=allParticles.begin(); p!=allParticles.end(); ++p) {
+    for (auto p=allParticles.begin(); p!=allParticles.end(); ++p)
       if (bnds.contains(p->position)) {
         remove.push_back(p);
         parts.push_back(*p);
       }
-    }
     for (auto &p : remove) allParticles.erase(p);
     // Add particles to sectors
     for (auto &p : parts) sectors.addParticle(p);
@@ -889,8 +888,7 @@ void GFlowBase::setAsBacteria() {
   sectorization.setCharacteristic(B);
   delete B;
   sectorization.setDrag(5);
-  int size = sectorization.getASize();
-  //sectorization.setASize(2*size); //**
+  sectorization.setASize(5000); //** AD HOC
 }
 
 void GFlowBase::createSquare(int number, double radius, double width, double height, double vsgma, double dispersion, int interaction) {

@@ -182,4 +182,9 @@ inline double Stat_Max_Velocity_Y(const vector<Particle> &particles, int &count)
   return maxV;
 }
 
+inline double Stat_Number_Particles(const vector<Particle> &particles, int &count) {
+  count = particles.size();
+  return count;
+}
+
 #endif // __STAT_FUNC_H__

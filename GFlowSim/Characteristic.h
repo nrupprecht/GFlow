@@ -23,7 +23,7 @@ class Bacteria : public Characteristic {
 
   void setFitness(double f) { fitness = f; }
   
- protected:
+  //protected:
   vec2 orient;
   double reorient; // Probability of reorientation
   double strength; // Run strength
@@ -32,7 +32,7 @@ class Bacteria : public Characteristic {
 
   double fitness;
   double reproduction; // Probability of reproduction
-  
+  double death;        // Probability of death
 };
 
 #endif

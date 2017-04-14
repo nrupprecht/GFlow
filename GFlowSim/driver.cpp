@@ -68,6 +68,7 @@ int main(int argc, char** argv) {
   bool GPE     = false;
   bool maxV    = false;
   bool maxVy   = false;
+  bool num     = false;
   bool novid   = false;
   bool printSectors = false;
   double fps = -1; // FPS
@@ -145,6 +146,7 @@ int main(int argc, char** argv) {
   parser.get("GPE", GPE);
   parser.get("maxV", maxV);
   parser.get("maxVy", maxVy);
+  parser.get("num", num);
   parser.get("novid", novid);
   parser.get("printSectors", printSectors);
   parser.get("fps", fps);
@@ -257,6 +259,7 @@ int main(int argc, char** argv) {
   if (GPE) simulator.addStatFunction(Stat_Gravitational_PE, "gpe");
   if (maxV) simulator.addStatFunction(Stat_Max_Velocity, "maxv");
   if (maxVy) simulator.addStatFunction(Stat_Max_Velocity_Y, "maxvy");
+  if (num) simulator.addStatFunction(Stat_Number_Particles, "num");
 
   // Get the actual number of particles in the simulation
   number = simulator.getSize();

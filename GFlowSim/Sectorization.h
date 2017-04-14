@@ -44,7 +44,7 @@ class Sectorization {
   vector<Particle>& getParticles();
   Bounds getBounds()             { return bounds; }
   Bounds getSimBounds()          { return simBounds; }
-  bool isFull()                  { return array_end<asize; }
+  bool isFull()                  { return asize<=array_end; }
 
   // Pointer accessors
   double *getPX()                { return px; }
@@ -75,6 +75,7 @@ class Sectorization {
   void setCommWork(MPI::Intercomm &comm) { CommWork = comm; }
   void resetComm()                  { CommWork = MPI::COMM_WORLD; }
   void discard();
+  void discardAll();
   void updatePList(); // Fill plist with the particles from the data buffers
 
   // Functionality
@@ -84,6 +85,7 @@ class Sectorization {
   // Addition
   void addParticle(Particle);
   void insertParticle(Particle);
+  void insertParticle(Particle, Characteristic*);
   void removeAt(int);
   void addWall(Wall);
   void setCharacteristic(Characteristic*);
