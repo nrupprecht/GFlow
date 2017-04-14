@@ -13,6 +13,15 @@ using std::cout;
 using std::endl;
 
 int main(int argc, char** argv) {
+  /*
+  ScalarField field(-1,1,-1,1);
+  std::function<double(double,double)> gaussian = [] (double x, double y) {
+    return exp(-sqr(x)-sqr(y));
+  };
+  field.set( gaussian );
+  cout << "field=" << mmPreproc(field,3) << endl;
+  return 0;
+  */
   // Simulation parameters
   int number = -1;
   double width = 4;

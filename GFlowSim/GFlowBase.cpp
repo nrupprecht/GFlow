@@ -287,6 +287,18 @@ void GFlowBase::resetVariables () {
 
 void GFlowBase::objectUpdates () {
   sectorization.update();
+
+  if (doFields) {
+    // Eating
+    double *px = sectorization.getPX();
+    double *py = sectorization.getPY();
+    int *it = sectorization.getIT();
+    
+
+    // Update fields
+    Resource.update(epsilon);
+    Waste.update(epsilon);
+  }
 }
 
 void GFlowBase::logisticUpdates() {
@@ -877,6 +889,8 @@ void GFlowBase::setAsBacteria() {
   sectorization.setCharacteristic(B);
   delete B;
   sectorization.setDrag(5);
+  int size = sectorization.getASize();
+  //sectorization.setASize(2*size); //**
 }
 
 void GFlowBase::createSquare(int number, double radius, double width, double height, double vsgma, double dispersion, int interaction) {

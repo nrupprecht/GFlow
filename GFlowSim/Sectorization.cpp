@@ -103,9 +103,19 @@ void Sectorization::setInteractionType(int inter) {
 }
 
 void Sectorization::setASize(int s) {
+
+  cout << "Setting asize: " << asize << ", " << s << endl; //**
+
+  updatePList();
+  discard();
   asize = s;
   easize = s; //-- AD HOC
   createArrays();
+
+  setParticles();
+
+  cout << "Done" << endl;
+
 }
 
 void Sectorization::discard() {
@@ -247,7 +257,7 @@ void Sectorization::update() {
   if (tempDelay<time-lastTemp) lastTemp = time;
   // Characteristics
   if (ch) {
-    for (int i=0; i<array_end; ++i) ch[i]->modify(vx[i], vy[i], fx[i], fy[i], tq[i], this);
+    for (int i=0; i<array_end; ++i) ch[i]->modify(pdata, this, i);
   }
   // MPI coordination
   if (doInteractions && 1<numProc) {
@@ -314,12 +324,60 @@ void Sectorization::addParticle(Particle p) {
   plist.push_back(p);
 }
 
+void Sectorization::insertParticle(Particle p) {
+  if (asize<=array_end) throw false; // To many particles
+  px[array_end] = p.position.x;
+  py[array_end] = p.position.y;
+  vx[array_end] = p.velocity.x;
+  vy[array_end] = p.velocity.y;
+  fx[array_end] = p.force.x;
+  fy[array_end] = p.force.y;
+  th[array_end] = p.theta;
+  om[array_end] = p.omega;
+  tq[array_end] = p.torque;
+  sg[array_end] = p.sigma;
+  im[array_end] = p.invMass;
+  iI[array_end] = p.invII;
+  rp[array_end] = p.repulsion;
+  ds[array_end] = p.dissipation;
+  cf[array_end] = p.coeff;
+  it[array_end] = p.interaction;
+  // Create (potentially) wall neighbor lists
+  list<Wall*> lst;
+  for (auto &w : walls) {
+    vec2 displacement = getDisplacement(vec2(px[array_end], py[array_end]), w.left);
+    wallDisplacement(displacement, sg[array_end], w);
+    if (sqr(displacement)<sqr(1.25*particle_cutoff(sg[array_end], it[array_end])))
+      lst.push_back(&w);
+  }
+  if (!lst.empty())
+    wallNeighbors.push_back(pair<int, list<Wall*> >(array_end, lst));
+  //** Should redo neighbor lists now -- can just create a NL for the inserted particle
+  
+  // Increment array end
+  ++array_end;
+}
+
+void Sectorization::removeAt(int i) {
+  if (i<0 || asize-1<i) throw false; 
+  it[i] = -1;
+}
+
 void Sectorization::addWall(Wall w) {
   walls.push_back(w);
 }
 
 void Sectorization::setCharacteristic(Characteristic *C) {
-  if (!useCharacteristics) {
+  // Delete old characteristics
+  if (ch) {
+    for (int i=0; i<asize; ++i)
+      if (ch[i]) {
+	delete ch[i];
+	ch[i] =0;
+      }
+  }
+  // Create ch array if neccessary
+  if (!useCharacteristics || ch==0) { 
     ch = (Characteristic**)aligned_alloc(64, asize*sizeof(Characteristic*));
     memset(ch, 0, asize*sizeof(Characteristic*));
     useCharacteristics = true;
@@ -699,6 +757,7 @@ inline vec2 Sectorization::getDisplacement(double ax, double ay, double bx, doub
 
 void Sectorization::updatePList() {
   plist.clear();
+  clist.clear();
   // Create particles and push them into plist
   for (int i=0; i<array_end; ++i) {
     if (it[i]<0) continue;
@@ -719,6 +778,7 @@ void Sectorization::updatePList() {
     p.interaction = it[i];
     // Add particle to list
     plist.push_back(p);
+    if (useCharacteristics) clist.push_back(ch[i]);
   }
 }
 
@@ -762,7 +822,7 @@ inline void Sectorization::createArrays() {
   pdata[12] = rp = (double*)aligned_alloc(64, tsize*sizeof(double));
   pdata[13] = ds = (double*)aligned_alloc(64, tsize*sizeof(double));
   pdata[14] = cf = (double*)aligned_alloc(64, tsize*sizeof(double));
-  it             =    (int*)   aligned_alloc(64, tsize*sizeof(int));
+  it             =    (int*)aligned_alloc(64, tsize*sizeof(int));
   memset(it, -1, tsize*sizeof(int)); // Each int is 4 bytes
   if (useCharacteristics) {
     ch           = (Characteristic**)aligned_alloc(64, asize*sizeof(Characteristic*));
@@ -786,6 +846,7 @@ inline void Sectorization::zeroPointers() {
 
 inline void Sectorization::setParticles() {
   int i=0;
+  // Set particles
   for (auto p : plist) {
     px[i] = p.position.x;
     py[i] = p.position.y;
@@ -808,6 +869,14 @@ inline void Sectorization::setParticles() {
   size = i;
   array_end = i;
   for ( ; i<asize; ++i) it[i] = -1; // No particle stored here
+  // Set characteristics
+  if (useCharacteristics && ch) {
+    i = 0;
+    for (auto c : clist) {
+      ch[i] = c;
+      ++i;
+    }
+  }
  }
 
 inline void Sectorization::atom_move() {

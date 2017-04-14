@@ -28,6 +28,8 @@ class Sectorization {
   int getNSX()                   { return nsx; }
   int getNSY()                   { return nsy; }
   int getSize()                  { return size; }
+  int getASize()                 { return asize; }
+  int getESize()                 { return esize; }
   int getWallSize()              { return walls.size(); }
   double getSecWidth()           { return secWidth; }
   double getSecHeight()          { return secHeight; }
@@ -42,6 +44,13 @@ class Sectorization {
   vector<Particle>& getParticles();
   Bounds getBounds()             { return bounds; }
   Bounds getSimBounds()          { return simBounds; }
+  bool isFull()                  { return array_end<asize; }
+
+  // Pointer accessors
+  double *getPX()                { return px; }
+  double *getPY()                { return py; }
+  int *getIT()                   { return it; }
+  Characteristic** getCH()       { return ch; }
 
   // Statistic accessors
   int getNeighborListSize()      { return neighborList.size(); }
@@ -74,6 +83,8 @@ class Sectorization {
 
   // Addition
   void addParticle(Particle);
+  void insertParticle(Particle);
+  void removeAt(int);
   void addWall(Wall);
   void setCharacteristic(Characteristic*);
 
@@ -131,6 +142,7 @@ class Sectorization {
 
   // All the particles
   vector<Particle> plist;
+  vector<Characteristic*> clist;
   vec2 *positionTracker;           
   int size, array_end, asize; // The number of particles, the index after the last particle, the amount of space allocated for domain particles
   int esize, earray_end, easize; // The number of edge particles, the index after the last edge particle, the amount of space allocated for edge particles

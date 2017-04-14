@@ -28,7 +28,7 @@ const double default_bacteria_reorient = 0.1;
 const double default_bacteria_strength = 0.1;
 const double default_bacteria_drag     = 10.;
 const double default_bacteria_target_velocity = 0.25;
-const double default_bacteria_target_velocity_sqr = 
-  sqr(default_bacteria_target_velocity);
+const double default_bacteria_target_velocity_sqr = sqr(default_bacteria_target_velocity);
+const double default_bacteria_reproduction_const = 1.;
 
 #endif 

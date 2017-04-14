@@ -7,19 +7,34 @@ Bacteria::Bacteria() {
   strength = default_bacteria_strength;
   delay = 0.05;
   timer = drand48()*delay;
+  fitness = 0.5;
+  reproduction = 1./default_bacteria_reproduction_const;
 }
 
-void Bacteria::modify(double& vx, double& vy, double& fx, double& fy, double& torque, Sectorization *sectors) {
-  // (Possibly) reorient
+void Bacteria::modify(double **pdata, Sectorization *sectors, int id) {
+  // Set up convenience pointers
+  double *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
+  // (Possibly) die
+  if (fitness<0) {
+    sectors->removeAt(id);
+    return;
+  }
+  // (Possibly) reorient or reproduce
   if (delay<timer) {
     timer = 0;
-    double p = exp(-delay*reorient);
-    if (p<drand48()) orient = randV();
+    static double po = exp(-delay*reorient);
+    if (po<drand48()) orient = randV();
+    static double pr = exp(-delay*reproduction);
+    /*
+    if (pr<drand48()) {
+      if (!sectors->isFull()) sectors->insertParticle(Particle(px[id], py[id], sg[id]));
+      }
+    */
   }
   // Run
-  if (sqr(vx)+sqr(vy)<default_bacteria_target_velocity_sqr) {
-    fx += strength*orient.x;
-    fy += strength*orient.y;
+  if (sqr(vx[id])+sqr(vy[id])<default_bacteria_target_velocity_sqr) {
+    fx[id] += strength*orient.x;
+    fy[id] += strength*orient.y;
   }
   // Update timer
   timer += sectors->getEpsilon();

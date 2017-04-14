@@ -2,6 +2,7 @@
 #define GFLOWBASE_H
 
 #include "Sectorization.h"
+#include "ScalarField.h"
 #include <functional>
 #include <tuple> 
 
@@ -147,6 +148,10 @@ class GFlowBase {
 
   vector<pair<StatFunc,string> > statFunctions; // Statistic functions and a string to name them
   vector<vector<vec2> >  statRecord;    // Save the data produced by the statistic functions
+
+  // For bacteria
+  bool doFields;
+  ScalarField Resource, Waste;
 
  public:
   // -------------------------------
