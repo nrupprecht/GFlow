@@ -33,6 +33,8 @@ GFlowBase::GFlowBase() {
   recBulk = false;
   restrictBubbleDomain = true;
   forceChoice = 0;
+  fieldUpdateDelay = 0.05;
+  fieldUpdateCounter = 0;
   //---
 
   // Get MPI system data
@@ -293,11 +295,22 @@ void GFlowBase::objectUpdates () {
     double *px = sectorization.getPX();
     double *py = sectorization.getPY();
     int *it = sectorization.getIT();
-    
-
+    int array_end = sectorization.getArrayEnd();
+    // Eat and produce waste
+    for (int i=0; i<array_end; ++i)
+      if (-1<it[i]) {
+	Resource.reduce(px[i], py[i], 1.0*epsilon);
+	Waste.increase (px[i], py[i], 0.5*epsilon);
+      }
     // Update fields
-    Resource.update(epsilon);
-    Waste.update(epsilon);
+    if (fieldUpdateDelay<fieldUpdateCounter) {
+      Resource.update(epsilon);
+      Waste.update(epsilon);
+      fieldUpdateCounter = 0;
+    }
+    fieldUpdateCounter += epsilon;
+    // Set fitnesses
+    
   }
 }
 
@@ -889,6 +902,12 @@ void GFlowBase::setAsBacteria() {
   delete B;
   sectorization.setDrag(5);
   sectorization.setASize(5000); //** AD HOC
+  doFields = true;
+  Bounds bounds(left, right, bottom, top);
+  Resource.setBounds(bounds);
+  Resource.setResolution(0.01);
+  Waste.setBounds(bounds);
+  Waste.setResolution(0.01);
 }
 
 void GFlowBase::createSquare(int number, double radius, double width, double height, double vsgma, double dispersion, int interaction) {
@@ -1497,4 +1516,20 @@ string GFlowBase::printPositionRecord(int mode) {
     return mmPreproc(positionRecord);
   }
   }
+}
+
+string GFlowBase::printResource() {
+  stringstream stream;
+  string str;
+  stream << Resource;
+  stream >> str;
+  return str;
+}
+
+string GFlowBase::printWaste() {
+  stringstream stream;
+  string str;
+  stream << Waste;
+  stream >> str;
+  return str;
 }

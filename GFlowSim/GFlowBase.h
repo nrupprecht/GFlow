@@ -117,6 +117,8 @@ class GFlowBase {
   auto getBubbleRecord()   { return bubbleRecord; }
   auto getBulkRecord()     { return bulkRecord; }
   string printPositionRecord(int);
+  string printResource();
+  string printWaste();
   vector<vpair> getWallsPositions();
 
   double getSetUpTime() { return setUpTime; }
@@ -152,6 +154,7 @@ class GFlowBase {
   // For bacteria
   bool doFields;
   ScalarField Resource, Waste;
+  double fieldUpdateDelay, fieldUpdateCounter;
 
  public:
   // -------------------------------

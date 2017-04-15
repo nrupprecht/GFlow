@@ -30,6 +30,7 @@ class Sectorization {
   int getSize()                  { return size; }
   int getASize()                 { return asize; }
   int getESize()                 { return esize; }
+  int getArrayEnd()              { return array_end; }
   int getWallSize()              { return walls.size(); }
   double getSecWidth()           { return secWidth; }
   double getSecHeight()          { return secHeight; }

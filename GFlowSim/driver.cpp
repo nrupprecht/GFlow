@@ -15,11 +15,21 @@ using std::endl;
 int main(int argc, char** argv) {
   /*
   ScalarField field(-1,1,-1,1);
+  field.setResolution(0.025);
   std::function<double(double,double)> gaussian = [] (double x, double y) {
-    return exp(-sqr(x)-sqr(y));
+    return exp(-5*(sqr(x)+sqr(y)));
   };
   field.set( gaussian );
-  cout << "field=" << mmPreproc(field,3) << endl;
+  double Epsilon = 0.01, Time=1.;
+  double delay = 1./10., timer=0;
+  for (int i=0; i<Time/Epsilon; ++i) {
+    field.update(Epsilon, 0.1);
+    if (delay<timer) {
+      cout << "field=" << mmPreproc(field) << ";\nListPlot3D[field]\n";
+      timer = 0;
+    }
+    timer+=Epsilon;
+  }
   return 0;
   */
   // Simulation parameters
@@ -315,6 +325,9 @@ int main(int argc, char** argv) {
     else if (bulk) cout << simulator.printBulkAnimationCommand(novid) << endl;
     string stats = simulator.printStatFunctions(label);
     if (!stats.empty()) cout << stats;
+
+    // cout << "res=" << simulator.printResource() << ";\n";
+    // cout << "wst=" << simulator.printWaste() << ";\n";
   }
   if (printSectors) simulator.printSectors();
 
