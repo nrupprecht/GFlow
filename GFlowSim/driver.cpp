@@ -59,6 +59,7 @@ int main(int argc, char** argv) {
   // Animation Paramaters
   int mode     = 0;     // Animation mode
   bool animate = false;
+  bool snapshot = false;
   bool special = false;
   bool forces  = false;
   int forceChoice = 0;
@@ -137,6 +138,7 @@ int main(int argc, char** argv) {
   parser.get("lattice", lattice);
   parser.get("mode", mode);
   parser.get("animate", animate);
+  parser.get("snapshot", snapshot);
   parser.get("special", special);
   parser.get("forces", forces);
   parser.get("forceChoice", forceChoice);
@@ -313,6 +315,7 @@ int main(int argc, char** argv) {
   if (rank==0) { // Do this even when quiet = true
     /// Print recorded data
     if (animate) cout << simulator.printAnimationCommand(mode, novid, label) << endl;
+    if (snapshot) cout << simulator.printSnapshot() << endl;
     if (special) cout << simulator.printSpecialAnimationCommand(novid) << endl;
     if (forces)  cout << simulator.printForcesAnimationCommand(mode, novid) << endl;
     if (bubbles) {

@@ -32,4 +32,7 @@ const double default_bacteria_target_velocity_sqr = sqr(default_bacteria_target_
 const double default_bacteria_reproduction_const = 5.;
 const double default_bacteria_death_const = 10.;
 
+// Other
+const double default_upper_window_factor = 6;
+
 #endif 

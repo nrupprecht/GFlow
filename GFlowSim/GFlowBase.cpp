@@ -31,7 +31,7 @@ GFlowBase::GFlowBase() {
   recBubbles = false;
   visBubbles = false;
   recBulk = false;
-  restrictBubbleDomain = true;
+  restrictBubbleDomain = false;
   forceChoice = 0;
   fieldUpdateDelay = 0.05;
   fieldUpdateCounter = 0;
@@ -254,7 +254,7 @@ void GFlowBase::setUpSectorization() {
     sectorization.setSkinDepth(skinDepth);
     Bounds domainBounds = getBoundsForProc(rank);
     sectorization.setBounds(domainBounds);
-    sectorization.setASize(particles.size()); //** AD HOC
+    // sectorization.setASize(particles.size()); //** AD HOC
     sectorization.setGravity(gravity);
     sectorization.setDoInteractions(doInteractions);
   }
@@ -335,9 +335,10 @@ void GFlowBase::record() {
       if (restrictBubbleDomain) {
 	double X = reduceStatFunction(Stat_Large_Object_X);
 	double Y = reduceStatFunction(Stat_Large_Object_Height);
-	static double R= reduceStatFunction(Stat_Large_Object_Radius);
-	domain.bottom = max(bottom, Y-R); domain.top =top;
-	domain.left = max(left,X-4*R);domain.right = min(right, X+4*R);
+	static double R= reduceStatFunction(Stat_Large_Object_Radius, 1);
+	domain.bottom = max(bottom, Y-R); domain.top = min(top,Y+18*R);
+	domain.left = left; domain.right = right;
+	// domain.left = max(left,X-8*R); domain.right = min(right, X+8*R);
       }
       // Just record sizes
       if (recBubbles)
@@ -347,11 +348,13 @@ void GFlowBase::record() {
 	vector<VPair> vis;
 	bubbleRecord.push_back(getBulkData(allParticles, vis, domain));
 	bulkRecord.push_back(vis);
+	bulkBounds.push_back(domain);
       }
       else if (recBulk) {
 	vector<VPair> vis;
 	getBulkData(vis);
 	bulkRecord.push_back(vis);
+	bulkBounds.push_back(Bounds(left,right,bottom,top));
       }
     }
   }
@@ -948,8 +951,10 @@ void GFlowBase::createSquare(int number, double radius, double width, double hei
   setUpSectorization();
   distributeParticles(particles, sectorization);
   sectorization.initialize();
+  // sectorization.setASize(number); //**-- AD HOC
   // End setup timing
   auto end = current_time();
+  restrictBubbleDomain = false;
   setUpTime = time_span(end, start);
 }
 
@@ -979,9 +984,10 @@ void GFlowBase::createBuoyancyBox(double radius, double bR, double density, doub
   vector<vec2> positions;
   vector<double> radii;
   vector<int> interactions;
+  int number = 0;
   if (dispersion==0) { // All particles have the same radius
     double Vgrain = PI*sqr(radius);
-    int number = 0.85*maxPack*Vfill/Vgrain;
+    number = 0.85*maxPack*Vfill/Vgrain;
     // Create particles and distribute them to the processors
     if (latticeType>-1) positions = findLatticeSolution(number, radius, initialBounds, latticeType);
     else positions = findPackedSolution(number, radius, initialBounds, gravity);
@@ -996,7 +1002,8 @@ void GFlowBase::createBuoyancyBox(double radius, double bR, double density, doub
       radii.push_back(r);
       interactions.push_back(interaction);
     }
-    if (latticeType>-1) positions = findLatticeSolution(radii.size(), radius, initialBounds, latticeType);
+    number = radii.size();
+    if (latticeType>-1) positions = findLatticeSolution(number, radius, initialBounds, latticeType);
     else positions = findPackedSolution(radii, interactions, bounds, gravity);
   }
   // Create particles at the given positions with - Radius, Dispersion, Velocity function, Angular velocity function, Coeff, Dissipation, Repulsion, Interaction
@@ -1008,8 +1015,10 @@ void GFlowBase::createBuoyancyBox(double radius, double bR, double density, doub
   else createAndDistributeParticles(positions, radii, interactions, bounds, sectorization, ZeroV, coeff);
   // Add the large ball
   sectorization.initialize();
+  // sectorization.setASize(number+1); //** AD HOC
   // End setup timing
   auto end = current_time();
+  restrictBubbleDomain = false;
   setUpTime = time_span(end, start);
 }
 
@@ -1054,6 +1063,7 @@ bool GFlowBase::loadBuoyancy(string fileName, double radius, double velocity, do
   // End setup timing
   auto end = current_time();
   setUpTime = time_span(end, start);
+  restrictBubbleDomain = true;
   return true;
 }
 
@@ -1245,17 +1255,82 @@ string GFlowBase::printBulkAnimationCommand(bool novid) {
   stringstream stream;
   string command, strh;
   command = "scale=100;\n";
+  // Print bulk data
   stream << "bulk=" << bulkRecord << ";";
   stream >> strh;
   stream.clear();
   command += (strh + "\n");
+  // Print bounds data
+  stream << "bnds=" << bulkBounds << ";";
+  stream >> strh;
+  stream.clear();
+  command += (strh + "\n");
+  // Bounds boxes
+  command += "rect[b_]:=Graphics[{Opacity[0],EdgeForm[Green],Polygon[b]}];\n";
+  command += "Bd[{a_,b_,c_,d_}]:={{a,c},{a,d},{b,d},{b,c}};\n";
+  command += "bounds=Table[rect[Bd[bnds[[i]]]],{i,1,Length[bnds]}];\n";
+  // Add walls
   command += printWallsCommand();
   strh.clear();
-  stream << "bulkFrames=Table[Show[{walls,Graphics[{Thick,Line[bulk[[i]]]}]},PlotRange->{{" << left << ","<< right << "},{" << bottom << "," << top << "}},ImageSize->{scale*" << right-left << ",scale*" << top-bottom << "}],{i,1,Length[bulk]}];";
+  stream << "bulkFrames=Table[Show[{walls,bounds[[i]],Graphics[{Thick,Line[bulk[[i]]]}]},PlotRange->{{" << left << ","<< right << "},{" << bottom << "," << top << "}},ImageSize->{scale*" << right-left << ",scale*" << top-bottom << "}],{i,1,Length[bulk]}];";
   stream >> strh;
   if (!novid) strh += "Export[\"vidB.avi\",bulkFrames,\"CompressionLevel\"->0];\n";
   strh += "ListAnimate[bulkFrames]";
   return command+strh;
+}
+
+string GFlowBase::printSnapshot() {
+  stringstream stream;
+  string command, strh, range, scale;
+
+  vector<Particle> allParticles;
+  recallParticles(allParticles);
+  // Record positions
+  vector<PData> positions;
+  for (const auto &p : allParticles) positions.push_back(PData(p.position, p.sigma, p.theta, p.interaction, 0));
+  stream << "snap=" << positions << ";\n";
+  stream >> command;
+  stream.clear();
+  command += "\n";
+  stream >> strh;
+  stream.clear();
+  command += (strh+"\n");
+
+  stream << "len=" << positions.size() << ";";
+  stream >> strh;
+  stream.clear();
+  command += (strh+"\nscale=100;\n");
+
+  // Triangle animation command
+  command += "tri[dt_]:=Triangle[{dt[[1]]+dt[[2]]*{Cos[dt[[3]]],Sin[dt[[3]]]},dt[[1]]+dt[[2]]*{Cos[dt[[3]]+2*Pi/3],Sin[dt[[3]]+2*Pi/3]},dt[[1]]+dt[[2]]*{Cos[dt[[3]] + 4*Pi/3],Sin[dt[[3]] + 4*Pi/3]}}];\n";
+  // Disk animation command
+  command += "dsk[tr_]:={Black,Disk[tr[[1]],tr[[2]]]};\n";
+  // Oriented Disk animation command
+  command += "odsk[tr_]:={{Black,{Disk[tr[[1]],tr[[2]]]}},{Red,Line[{tr[[1]],tr[[1]]+tr[[2]]{Cos[tr[[3]]],Sin[tr[[3]]]}}]}};\n";
+  // Point animation command
+  command += "pnt[tr_]:={Black,Point[tr[[1]]]};\n";
+  // Dot (point) animation command
+  command += "dot[tr_]:={Black,Point[tr]};\n";
+  // Create range
+  stream << "{{" << left << "," << right << "},{" << bottom << "," << top << "}}";
+  stream >> range;
+  stream.clear();
+
+  stream << "ImageSize->{scale*" << right-left << ",scale*" << top-bottom << "}";
+  stream >> scale;
+  stream.clear();
+
+  // Print walls
+  command += printWallsCommand();
+
+  stream << "dsk";
+  stream >> strh;
+
+  command += "disks=Graphics[Table[" + strh + "[snap[[i]]], {i,1,len} ],PlotRange->" + range + "];\n";
+  command += ("img=Show[disks,walls," + scale + "]\n");
+  
+
+  return command;
 }
 
 void GFlowBase::printSectors() {
@@ -1270,26 +1345,26 @@ void GFlowBase::printSectors() {
     }
 }
 
-void GFlowBase::getBulkData(vector<VPair>& lines, double volCutoff, double boxV, double dr) {
+void GFlowBase::getBulkData(vector<VPair>& lines, double volCutoff, double boxV, double dr, double upperVolCutoff) {
   vector<Particle> allParticles;
   recallParticles(allParticles);
   getBulkData(allParticles, lines, Bounds(left, right, bottom, top), volCutoff, boxV, dr);
 }
 
-vector<double> GFlowBase::getBulkData(vector<Particle> &allParticles, Bounds region, double volCutoff, double boxV, double dr) {
+vector<double> GFlowBase::getBulkData(vector<Particle> &allParticles, Bounds region, double volCutoff, double boxV, double dr, double upperVolCutoff) {
   string str="-1";
   vector<VPair> lines;
   return getBulkData(allParticles, str, lines, false, region, volCutoff, boxV, dr);
 }
 
-vector<double> GFlowBase::getBulkData(vector<Particle> &allParticles, vector<VPair>& lines, Bounds region, double volCutoff, double boxV, double dr) {
+vector<double> GFlowBase::getBulkData(vector<Particle> &allParticles, vector<VPair>& lines, Bounds region, double volCutoff, double boxV, double dr, double upperVolCutoff) {
   string str="-1";
   return getBulkData(allParticles, str, lines, true, region, volCutoff, boxV, dr);
 }
 
-vector<double> GFlowBase::getBulkData(vector<Particle> &allParticles, string &shapes, vector<VPair>& lines, bool getOutline, Bounds region, double volCutoff, double boxV, double dr) {
+vector<double> GFlowBase::getBulkData(vector<Particle> &allParticles, string &shapes, vector<VPair>& lines, bool getOutline, Bounds region, double volCutoff, double boxV, double dr, double upperVolCutoff) {
   // Might use full bounds
-  if (region.right<region.left) region = Bounds(left, right, bottom, top);
+  if (region.right<=region.left) region = Bounds(left, right, bottom, top);
   // Calculate parameters
   double sx = sqrt(boxV), sy = sx;
   int nsx = (region.right-region.left)/sx, nsy = (region.top-region.bottom)/sy;
@@ -1394,7 +1469,7 @@ vector<double> GFlowBase::getBulkData(vector<Particle> &allParticles, string &sh
   i=0;
   for (const auto c : volCount) {
     double vol = sx*sy*c;
-    if (volCutoff<vol) bubbles.push_back(sx*sy*c);
+    if (volCutoff<vol && vol<upperVolCutoff) bubbles.push_back(sx*sy*c);
   }
   // Remove volumes that are to small
   for (int y=0; y<nsy; ++y)

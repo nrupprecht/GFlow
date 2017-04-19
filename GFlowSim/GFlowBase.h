@@ -98,13 +98,14 @@ class GFlowBase {
   string printSpecialAnimationCommand(bool=false);
   string printForcesAnimationCommand(int=0, bool=false);
   string printBulkAnimationCommand(bool=false);
+  string printSnapshot();
   void printSectors();
 
   // Get bubble sizes variants and helper functions
-  void getBulkData(vector<VPair>&, double=0.01, double=0.025, double=0.05);
-  vector<double> getBulkData(vector<Particle>&, Bounds=NullBounds, double=0.01, double=0.0001, double=0.01);
-  vector<double> getBulkData(vector<Particle>&, vector<VPair>&, Bounds=NullBounds, double=0.01, double=0.0001, double=0.01);
-  vector<double> getBulkData(vector<Particle>&, string&, vector<VPair>&, bool, Bounds=NullBounds, double=0.01, double=0.0001, double=0.01);
+  void getBulkData(vector<VPair>&, double=0.01, double=0.025, double=0.05, double=default_upper_window_factor);
+  vector<double> getBulkData(vector<Particle>&, Bounds=NullBounds, double=0.01, double=0.0001, double=0.01, double=default_upper_window_factor);
+  vector<double> getBulkData(vector<Particle>&, vector<VPair>&, Bounds=NullBounds, double=0.01, double=0.0001, double=0.01, double=default_upper_window_factor);
+  vector<double> getBulkData(vector<Particle>&, string&, vector<VPair>&, bool, Bounds=NullBounds, double=0.01, double=0.0001, double=0.01, double=default_upper_window_factor);
   inline void unite(int*, int, int);
   inline int getHead(int*, int);
   inline void createOutline(int*, int, int, double, double, Bounds, vector<VPair>&);
@@ -139,6 +140,7 @@ class GFlowBase {
   vector<vector<Tri> > forceRecord;
   vector<vector<double> > bubbleRecord;
   vector<vector<VPair> > bulkRecord;
+  vector<Bounds> bulkBounds;  // The bounds in which we did bubble analysis
   bool recPositions;
   bool recSpecial;
   bool recForces;
