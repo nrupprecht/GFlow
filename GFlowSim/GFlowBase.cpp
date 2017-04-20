@@ -951,7 +951,7 @@ void GFlowBase::createSquare(int number, double radius, double width, double hei
   setUpSectorization();
   distributeParticles(particles, sectorization);
   sectorization.initialize();
-  // sectorization.setASize(number); //**-- AD HOC
+  // sectorization.setASize(number); //**  AD HOC
   // End setup timing
   auto end = current_time();
   restrictBubbleDomain = false;
@@ -1285,13 +1285,19 @@ string GFlowBase::printSnapshot() {
 
   vector<Particle> allParticles;
   recallParticles(allParticles);
+  int number = allParticles.size();
+  // Find average radius
+  double radius = 0.;
+  for (auto &p : allParticles) radius += p.sigma;
+  radius = number>0 ? radius/number : 0.;
   // Record positions
-  vector<PData> positions;
-  for (const auto &p : allParticles) positions.push_back(PData(p.position, p.sigma, p.theta, p.interaction, 0));
-  stream << "snap=" << positions << ";\n";
+  vector<vec2> positions;
+  for (const auto &p : allParticles) positions.push_back(p.position);
+  stream << "snap=" << mmPreproc(positions,2) << ";\n";
   stream >> command;
   stream.clear();
   command += "\n";
+  stream << "R=" << radius << ";";
   stream >> strh;
   stream.clear();
   command += (strh+"\n");
@@ -1302,15 +1308,15 @@ string GFlowBase::printSnapshot() {
   command += (strh+"\nscale=100;\n");
 
   // Triangle animation command
-  command += "tri[dt_]:=Triangle[{dt[[1]]+dt[[2]]*{Cos[dt[[3]]],Sin[dt[[3]]]},dt[[1]]+dt[[2]]*{Cos[dt[[3]]+2*Pi/3],Sin[dt[[3]]+2*Pi/3]},dt[[1]]+dt[[2]]*{Cos[dt[[3]] + 4*Pi/3],Sin[dt[[3]] + 4*Pi/3]}}];\n";
+  //command += "tri[dt_]:=Triangle[{dt[[1]]+dt[[2]]*{Cos[dt[[3]]],Sin[dt[[3]]]},dt[[1]]+dt[[2]]*{Cos[dt[[3]]+2*Pi/3],Sin[dt[[3]]+2*Pi/3]},dt[[1]]+dt[[2]]*{Cos[dt[[3]] + 4*Pi/3],Sin[dt[[3]] + 4*Pi/3]}}];\n";
   // Disk animation command
-  command += "dsk[tr_]:={Black,Disk[tr[[1]],tr[[2]]]};\n";
+  command += "dsk[tr_]:={Black,Disk[tr,R]};\n";
   // Oriented Disk animation command
-  command += "odsk[tr_]:={{Black,{Disk[tr[[1]],tr[[2]]]}},{Red,Line[{tr[[1]],tr[[1]]+tr[[2]]{Cos[tr[[3]]],Sin[tr[[3]]]}}]}};\n";
+  //command += "odsk[tr_]:={{Black,{Disk[tr[[1]],tr[[2]]]}},{Red,Line[{tr[[1]],tr[[1]]+tr[[2]]{Cos[tr[[3]]],Sin[tr[[3]]]}}]}};\n";
   // Point animation command
-  command += "pnt[tr_]:={Black,Point[tr[[1]]]};\n";
+  //command += "pnt[tr_]:={Black,Point[tr[[1]]]};\n";
   // Dot (point) animation command
-  command += "dot[tr_]:={Black,Point[tr]};\n";
+  //command += "dot[tr_]:={Black,Point[tr]};\n";
   // Create range
   stream << "{{" << left << "," << right << "},{" << bottom << "," << top << "}}";
   stream >> range;
@@ -1322,14 +1328,8 @@ string GFlowBase::printSnapshot() {
 
   // Print walls
   command += printWallsCommand();
-
-  stream << "dsk";
-  stream >> strh;
-
-  command += "disks=Graphics[Table[" + strh + "[snap[[i]]], {i,1,len} ],PlotRange->" + range + "];\n";
+  command += "disks=Graphics[Table[dsk[snap[[i]]], {i,1,len} ],PlotRange->" + range + "];\n";
   command += ("img=Show[disks,walls," + scale + "]\n");
-  
-
   return command;
 }
 
@@ -1363,6 +1363,7 @@ vector<double> GFlowBase::getBulkData(vector<Particle> &allParticles, vector<VPa
 }
 
 vector<double> GFlowBase::getBulkData(vector<Particle> &allParticles, string &shapes, vector<VPair>& lines, bool getOutline, Bounds region, double volCutoff, double boxV, double dr, double upperVolCutoff) {
+  if (region.left==region.right || region.bottom==region.top) return vector<double>();
   // Might use full bounds
   if (region.right<=region.left) region = Bounds(left, right, bottom, top);
   // Calculate parameters
@@ -1433,10 +1434,25 @@ vector<double> GFlowBase::getBulkData(vector<Particle> &allParticles, string &sh
     }
   // Unite bubbles
   unite(array, nsx, nsy);
-  unite(array, nsx, nsy); //** Bad solution, but it works
+  // Find all bubbles that border an edge
+  std::set<int> edgeBubbles;
+  auto contains = [&] (int i) { return edgeBubbles.find(i)!=edgeBubbles.end(); };
+  auto add = [&] (int i) {
+    int h = getHead(array, i);
+    if (h<0 || contains(h));
+    else edgeBubbles.insert(h);
+  };
+  for (int x=0; x<nsx; ++x) add(x); // Bottom
+  for (int x=0; x<nsx; ++x) add(nsx*nsy-x-1); // Top
+  for (int y=0; y<nsy; ++y) add(nsx*y); // Left
+  for (int y=0; y<nsy; ++y) add(nsx*y+nsx-1); // Right
   // Point all sectors to their head
-  for (int k=0; k<nsx*nsy; ++k) array[k] = getHead(array, k);
+  for (int k=0; k<nsx*nsy; ++k) array[k] = getHead(array,k);
+  // "Erase" bubbles that touch the bounds
+  for (int k=0; k<nsx*nsy; ++k)
+    if (contains(array[k])) array[k] = -1;
   // Collect all head nodes
+  //std::map<int, int> volCount;
   vector<int> heads;
   for (int k=0; k<nsx*nsy; ++k)
     if (array[k]!=-1) {
@@ -1480,7 +1496,11 @@ vector<double> GFlowBase::getBulkData(vector<Particle> &allParticles, string &sh
   // Create outline
   if (getOutline) createOutline(array, nsx, nsy, sx, sy, region, lines);
   // Record the picture of the volumes as a matrix
+
+  //**
+
   if (shapes!="-1") createMatrix(array, nsx, nsy, sx, sy, volCutoff, volCount, shapes);
+
   // Sort sizes
   std::sort(bubbles.begin(), bubbles.end());
   // Clean up and return
@@ -1498,23 +1518,23 @@ inline void GFlowBase::unite(int *array, int nsx, int nsy) {
       if (array[nsx*y+x]!=-1) {
         int head = getHead(array, nsx*y+x);
         if (0<x && -1<array[nsx*y+x-1]) { // Left
-	  h0 = getHead(array, nsx*y+x-1);
+	  h0 = getHead(array, nsx*y+(x-1));
 	  if (h0<head) head = h0;
 	}
         if (x+1<nsx && -1<array[nsx*y+x+1]) { // Right
-	  h1 = getHead(array, nsx*y+x+1);
+	  h1 = getHead(array, nsx*y+(x+1));
 	  if (h1<head) head = h1;
 	}
         if (0<y && -1<array[nsx*(y-1)+x]) { // Bottom
-	  int h2 = getHead(array, nsx*(y-1)+x);
+	  h2 = getHead(array, nsx*(y-1)+x);
 	  if (h2<head) head = h2;
 	}
         if (y+1<nsy && -1<array[nsx*(y+1)+x]) { // Top
-	  int h3 = getHead(array, nsx*(y+1)+x);
+	  h3 = getHead(array, nsx*(y+1)+x);
 	  if (h3<head) head = h3;
 	}
 	// Set your head and the heads of all your neighbors as well
-	array[nsx*y+x] = head;	
+	array[nsx*y+x] = head;
 	if (-1<h0) array[h0] = head;
 	if (-1<h1) array[h1] = head;
 	if (-1<h2) array[h2] = head;
@@ -1525,8 +1545,7 @@ inline void GFlowBase::unite(int *array, int nsx, int nsy) {
 
 inline int GFlowBase::getHead(int* array, int index) {
   if (index<0) return -1;
-  if (array[index]<0) return -1;
-  while (array[index]!=index) index = array[index];
+  while (array[index]!=index && -1<array[index]) index = array[index];
   return index;
 }
 
@@ -1559,7 +1578,7 @@ inline void GFlowBase::createMatrix(int* array, int nsx, int nsy, double sx, dou
   for (int y=nsy-1; 0<=y; --y) {
     stream << "{";
     for (int x=0; x<nsx; ++x) {
-      if (-1<array[nsx*y+x] && volCutoff<volCount.at(array[nsx*y+x])*sx*sy)
+      if (-1<array[nsx*y+x] && (volCount.empty() || volCutoff<volCount.at(array[nsx*y+x])*sx*sy))
 	stream << array[nsx*y+x]+1;
       else stream << -1;
       if (x!=nsx-1) stream << ",";

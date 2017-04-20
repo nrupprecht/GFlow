@@ -318,12 +318,18 @@ int main(int argc, char** argv) {
     if (snapshot) cout << simulator.printSnapshot() << endl;
     if (special) cout << simulator.printSpecialAnimationCommand(novid) << endl;
     if (forces)  cout << simulator.printForcesAnimationCommand(mode, novid) << endl;
-    if (bubbles) {
-      cout << "bsize=" << simulator.getBubbleRecord() << ";\n"; //**
-    }
+    if (bubbles) cout << "bsize" + label + "=" << simulator.getBubbleRecord() << ";\n";
     if (visBubbles) {
       if (!bubbles) cout << "bsize=" << simulator.getBubbleRecord() << ";\n";
       cout << simulator.printBulkAnimationCommand(novid) << endl;
+    }
+    if (bubbles || visBubbles) {
+      cout << "num" + label + "=Table[Length[bsize[[i]]],{i,1,Length[bsize]}];\n";
+      cout << "vol" + label + "=Table[Total[bsize[[i]]],{i,1,Length[bsize]}];\n";
+      cout << "Print [\"Number of bubbles\"]\n";
+      cout << "ListLinePlot[num" + label + ",PlotStyle->Black,ImageSize->Large,PlotRange -> All]\n";
+      cout << "Print[\"Total bubble volume\"]\n";
+      cout << "ListLinePlot[vol" + label + ",PlotStyle->Black,ImageSize->Large,PlotRange->All]\n";
     }
     else if (bulk) cout << simulator.printBulkAnimationCommand(novid) << endl;
     string stats = simulator.printStatFunctions(label);
