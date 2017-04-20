@@ -1452,46 +1452,48 @@ vector<double> GFlowBase::getBulkData(vector<Particle> &allParticles, string &sh
   for (int k=0; k<nsx*nsy; ++k)
     if (contains(array[k])) array[k] = -1;
   // Collect all head nodes
-  //std::map<int, int> volCount;
-  vector<int> heads;
+  std::map<int, int> labels; // Maps old label to new label
+  std::map<int, int> volCount; // Maps (new) label to number of cells in the bubble
+  int lab = 0;
   for (int k=0; k<nsx*nsy; ++k)
-    if (array[k]!=-1) {
+    if (array[k]!=-1)
       // If we have not already recorded this head
-      if (std::find(heads.begin(), heads.end(), array[k])==heads.end())
-	heads.push_back(array[k]);
-    }
+      if (labels.find(array[k])==labels.end()) {
+	labels.insert(pair<int, int>(array[k], lab));
+	volCount.insert(pair<int, int>(lab, 0));
+	++lab;
+      }
   // If there are no empty volumes
-  if (heads.empty()) {
+  if (labels.empty()) {
       delete [] sectors;
       delete [] array;
       return vector<double>();
   }
   // Count volumes
-  vector<int> volCount(heads.size(), 0);
   for (int k=0; k<nsx*nsy; ++k) {
     if (array[k]!=-1) { // Search for the proper index
       int j=0;
-      // Find the index
-      for (; j<heads.size(); ++j) 
-	if (heads.at(j)==array[k]) break;
-      // Give array a better index
-      array[k] = j;
       // Increment volume counter
-      ++volCount.at(j);
+      auto it = volCount.find(array[k]);
+      if (it!=volCount.end())
+	++it->second;
     }
   }
   // Record volume sizes
   vector<double> bubbles;
   i=0;
   for (const auto c : volCount) {
-    double vol = sx*sy*c;
-    if (volCutoff<vol && vol<upperVolCutoff) bubbles.push_back(sx*sy*c);
+    double vol = sx*sy*c.second;
+    if (volCutoff<vol && vol<upperVolCutoff) bubbles.push_back(vol);
   }
   // Remove volumes that are to small
   for (int y=0; y<nsy; ++y)
     for (int x=0; x<nsx; ++x) {
       int j = array[nsx*y+x];
-      if (-1<j && volCount.at(j)*sx*sy<=volCutoff) array[nsx*y+x] = -1;
+      if (-1<j) {
+	auto it = volCount.find(j);
+	if (sx*sy*it->second<volCutoff) array[nsx*y+x] = -1;
+      }
     }
   // Create outline
   if (getOutline) createOutline(array, nsx, nsy, sx, sy, region, lines);
@@ -1572,13 +1574,13 @@ inline void GFlowBase::createOutline(int *array, int nsx, int nsy, double sx, do
     }
 }
 
-inline void GFlowBase::createMatrix(int* array, int nsx, int nsy, double sx, double sy, double volCutoff, vector<int> volCount, string& shapes) {
+inline void GFlowBase::createMatrix(int* array, int nsx, int nsy, double sx, double sy, double volCutoff, std::map<int,int> volCount, string& shapes) {
   stringstream stream;
   stream << "{";
   for (int y=nsy-1; 0<=y; --y) {
     stream << "{";
     for (int x=0; x<nsx; ++x) {
-      if (-1<array[nsx*y+x] && (volCount.empty() || volCutoff<volCount.at(array[nsx*y+x])*sx*sy))
+      if (-1<array[nsx*y+x] && (volCount.empty() || volCutoff<volCount.find(array[nsx*y+x])->second*sx*sy))
 	stream << array[nsx*y+x]+1;
       else stream << -1;
       if (x!=nsx-1) stream << ",";

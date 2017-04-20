@@ -109,7 +109,7 @@ class GFlowBase {
   inline void unite(int*, int, int);
   inline int getHead(int*, int);
   inline void createOutline(int*, int, int, double, double, Bounds, vector<VPair>&);
-  inline void createMatrix(int*, int, int, double, double, double, vector<int>, string&);
+  inline void createMatrix(int*, int, int, double, double, double, std::map<int,int>, string&);
 
   // Record accessors
   auto getPositionRecord() { return positionRecord; }
