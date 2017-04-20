@@ -2,7 +2,7 @@
 
 using MPI::COMM_WORLD;
 
-Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), time(0), epsilon(1e-4), sqrtEpsilon(1e-4), transferTime(0), wrapX(false), wrapY(false), doInteractions(true), drag(0), gravity(0), temperature(0), viscosity(1.308e-3), tempDelay(5e-3), sqrtTempDelay(sqrt(5e-3)), lastTemp(0), size(0), array_end(0), asize(0), esize(0), earray_end(0), easize(0), useCharacteristics(false), redoLists(false), doWallNeighbors(true), remakeToUpdate(false), cutoff(0.1), skinDepth(0.025), itersSinceBuild(0), buildDelay(20), numProc(1), rank(0) {
+Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), time(0), epsilon(1e-4), sqrtEpsilon(1e-4), transferTime(0), wrapX(false), wrapY(false), doInteractions(true), drag(false), gravity(0), temperature(0), viscosity(1.308e-3), tempDelay(5e-3), sqrtTempDelay(sqrt(5e-3)), lastTemp(0), size(0), array_end(0), asize(0), esize(0), earray_end(0), easize(0), useCharacteristics(false), redoLists(false), doWallNeighbors(true), remakeToUpdate(false), cutoff(0.1), skinDepth(0.025), itersSinceBuild(0), buildDelay(20), numProc(1), rank(0) {
   // Get our rank and the number of processors
   rank =    COMM_WORLD.Get_rank();
   numProc = COMM_WORLD.Get_size();  
@@ -84,6 +84,12 @@ double Sectorization::getAvePerNeighborList() {
 vector<Particle>& Sectorization::getParticles() {
   updatePList();
   return plist;
+}
+
+void Sectorization::setCoeff(double c) {
+  if (cf!=0)
+    for (int i=0; i<array_end; ++i) cf[i] = c;
+  for (auto &p :plist) p.coeff = c;
 }
 
 void Sectorization::setBounds(double l, double r, double b, double t) {
@@ -500,8 +506,8 @@ inline void Sectorization::firstHalfKick() {
       vy[i] += dt*im[i]*fy[i];
       px[i] += epsilon*vx[i];
       py[i] += epsilon*vy[i];
-      fx[i] = gravity.x*mass - drag*sg[i]*vx[i];
-      fy[i] = gravity.y*mass - drag*sg[i]*vy[i];
+      fx[i] = gravity.x*mass - 6*PI*viscosity*sg[i]*vx[i]; // Stokes' law
+      fy[i] = gravity.y*mass - 6*PI*viscosity*sg[i]*vy[i];
       wrap(px[i], py[i]); // Wrap position
       om[i] += dt*iI[i]*tq[i];
       th[i] += epsilon*om[i];
@@ -516,24 +522,43 @@ inline void Sectorization::firstHalfKick() {
   }
   else {
     if (gravity!=Zero) {
+      if (!drag) {
 #pragma vector aligned
 #pragma simd
-      for (int i=0; i<array_end; ++i) {
-	double mass = 1./im[i];
-	vx[i] += dt*im[i]*fx[i];
-	vy[i] += dt*im[i]*fy[i];
-	px[i] += epsilon*vx[i];
-	py[i] += epsilon*vy[i];
-	fx[i] = gravity.x*mass - drag*sg[i]*vx[i];
-	fy[i] = gravity.y*mass - drag*sg[i]*vy[i];
-	wrap(px[i], py[i]);
-	om[i] += dt*iI[i]*tq[i];
-	th[i] += epsilon*om[i];
-	tq[i] = 0;
+	for (int i=0; i<array_end; ++i) {
+          double mass = 1./im[i];
+          vx[i] += dt*im[i]*fx[i];
+          vy[i] += dt*im[i]*fy[i];
+          px[i] += epsilon*vx[i];
+          py[i] += epsilon*vy[i];
+          fx[i] = gravity.x*mass;
+          fy[i] = gravity.y*mass;
+          wrap(px[i], py[i]);
+          om[i] += dt*iI[i]*tq[i];
+          th[i] += epsilon*om[i];
+          tq[i] = 0;
+	}
+      }
+      else {
+#pragma vector aligned
+#pragma simd
+	for (int i=0; i<array_end; ++i) {
+	  double mass = 1./im[i];
+	  vx[i] += dt*im[i]*fx[i];
+	  vy[i] += dt*im[i]*fy[i];
+	  px[i] += epsilon*vx[i];
+	  py[i] += epsilon*vy[i];
+	  fx[i] = gravity.x*mass - 6*PI*viscosity*sg[i]*vx[i]; // Stokes' law
+	  fy[i] = gravity.y*mass - 6*PI*viscosity*sg[i]*vy[i];
+	  wrap(px[i], py[i]);
+	  om[i] += dt*iI[i]*tq[i];
+	  th[i] += epsilon*om[i];
+	  tq[i] = 0;
+	}
       }
     }
     else if (gravity==0) {
-      if (drag==0) {
+      if (!drag) {
 #pragma vector aligned
 #pragma simd
 	for (int i=0; i<array_end; ++i) {
@@ -550,7 +575,7 @@ inline void Sectorization::firstHalfKick() {
 	  tq[i] = 0;
 	}
       }
-      else {
+      else { // Gravity == 0, drag != 0
 #pragma vector aligned
 #pragma simd
 	for (int i=0; i<array_end; ++i) {
@@ -559,8 +584,8 @@ inline void Sectorization::firstHalfKick() {
 	  vy[i] += dt*im[i]*fy[i];
 	  px[i] += epsilon*vx[i];
 	  py[i] += epsilon*vy[i];
-	  fx[i] = -drag*sg[i]*vx[i];
-	  fy[i] = -drag*sg[i]*vy[i];
+	  fx[i] = -6*PI*viscosity*sg[i]*vx[i]; // Stokes' law
+	  fy[i] = -6*PI*viscosity*sg[i]*vy[i];
 	  wrap(px[i], py[i]);
 	  om[i] += dt*iI[i]*tq[i];
 	  th[i] += epsilon*om[i];
@@ -594,16 +619,8 @@ inline void Sectorization::wrap(double &x, double &y) {
 }
 
 inline void Sectorization::wrap(vec2 &pos) {
-  if (wrapX) {
-    if (pos.x<simBounds.left)       pos.x = simBounds.right-fmod(simBounds.left-pos.x, simBounds.right-simBounds.left);
-    else if (simBounds.right<pos.x) pos.x = fmod(pos.x-simBounds.left, simBounds.right-simBounds.left)+simBounds.left;
-  }
-  if (wrapY) {
-    if (pos.y<simBounds.bottom)     pos.y = simBounds.top-fmod(simBounds.bottom-pos.y, simBounds.top-bounds.bottom);
-    else if (simBounds.top<pos.y)   pos.y = fmod(pos.y-simBounds.bottom, simBounds.top-simBounds.bottom)+simBounds.bottom;
-  }
+  wrap(pos.x, pos.y);
 }
-
 inline void Sectorization::wrap(double &theta) {
   if (theta<0) theta = 2*PI-fmod(-theta, 2*PI);
   else if (2*PI<theta) theta = fmod(theta, 2*PI);
@@ -733,6 +750,10 @@ inline void Sectorization::createNeighborLists(bool force) {
     }
   // Update position tracker array
   for (int i=0; i<array_end; ++i) positionTracker[i] = vec2(px[i], py[i]);
+}
+
+inline void Sectorization::createEdgeNeighborLists() {
+  
 }
 
 inline void Sectorization::createWallNeighborList() {
@@ -898,7 +919,6 @@ inline void Sectorization::atom_move() {
   //  ml, **  mr;
   //  bl, bm, br;
   list<int> move_lsts[9]; // Entry 4 will always be unused
-  // vector<int> holes;      // Holes that open because of particles leaving. We will fill these holes
 
   for (int i=0; i<array_end; ++i) {
     if (it[i]<0) continue;
@@ -1088,35 +1108,31 @@ inline void Sectorization::atom_copy() {
     for (int y=1; y<nsy-1; ++y)
       for (auto i : sectors[nsx*y+1]) 
 	if (0<=it[i]) leftEdge.push_back(i);
-  // passParticles(-1, 0, leftEdge, true);
-  passParticles(-1, 0, leftEdge);
+  passParticles(-1, 0, leftEdge, true);
 
   // Pass right edge to the right
   if (dx<ndx-1) // Or wrap x
     for (int y=1; y<nsy-1; ++y)
       for (auto i : sectors[nsx*y+nsx-1]) 
 	if (0<=it[i]) leftEdge.push_back(i);
-  // passParticles(+1, 0, rightEdge, true);
-  passParticles(+1, 0, rightEdge);
+  passParticles(+1, 0, rightEdge, true);
 
   // Pass top edge upwards
   if (dy<ndy-1)
     for (int x=0; x<nsx; ++x)
       for (auto i : sectors[nsx*(nsy-1)+x]) 
 	if (0<=it[i]) topEdge.push_back(i);
-  // passParticles(0, +1, topEdge, true);
-  cout << "Rank: " << rank << ", " << topEdge.size() << endl; //**
-  passParticles(0, +1, topEdge);
+  passParticles(0, +1, topEdge, true);
 
   // Pass bottom edge downwards
   if (0<dy)
     for (int x=0; x<nsx; ++x)
       for(auto i: sectors[nsx+x]) 
 	if (0<=it[i]) bottomEdge.push_back(i);
-  // passParticles(0, -1, bottomEdge, true);
-  // cout << bottomEdge.size() << endl; //**
-  cout << "Rank: " << rank << ", " << bottomEdge.size() << endl; //**
-  passParticles(0, -1, bottomEdge);
+  passParticles(0, -1, bottomEdge, true);
+  
+  // Create neighborhood lists for the edge sector particles
+  createEdgeNeighborLists();
   // Timing
   auto end = current_time();
   transferTime += time_span(end, start);

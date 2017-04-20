@@ -42,7 +42,9 @@ int main(int argc, char** argv) {
   double velocity = 0.25;
   double dispersion = 0;
   double temperature = 0;
+  double gravity = -1e9;
   double drag = 0;
+  double coeff = -1;
   double time = 1.;
   double start = 0;
   double epsilon = 1.e-4;
@@ -84,6 +86,7 @@ int main(int argc, char** argv) {
   bool printSectors = false;
   double fps = -1; // FPS
   string label = "";
+  double scale = 100;
 
   // Simulation type
   bool square = true;
@@ -123,7 +126,9 @@ int main(int argc, char** argv) {
   parser.get("velocity", velocity);
   parser.get("dispersion", dispersion);
   parser.get("temperature", temperature);
+  parser.get("gravity", gravity);
   parser.get("drag", drag);
+  parser.get("coeff", coeff);
   parser.get("time", time);
   parser.get("start", start);
   parser.get("epsilon", epsilon);
@@ -163,6 +168,7 @@ int main(int argc, char** argv) {
   parser.get("printSectors", printSectors);
   parser.get("fps", fps);
   parser.get("label", label);
+  parser.get("scale", scale);
   parser.get("square", square);
   parser.get("buoyancy", buoyancy);
   parser.get("bacteria", bacteria);
@@ -245,7 +251,9 @@ int main(int argc, char** argv) {
   if (bacteria) simulator.setAsBacteria();
 
   simulator.setTemperature(temperature);
+  if (gravity!=-1e9) simulator.setGravity(vec2(0,gravity));
   simulator.setDrag(drag);
+  if (0<=coeff) simulator.setCoeff(coeff);
   simulator.setDoInteractions(interact);
   simulator.setStartRec(start);
 
@@ -314,6 +322,7 @@ int main(int argc, char** argv) {
   }
   if (rank==0) { // Do this even when quiet = true
     /// Print recorded data
+    simulator.setScale(scale);
     if (animate) cout << simulator.printAnimationCommand(mode, novid, label) << endl;
     if (snapshot) cout << simulator.printSnapshot() << endl;
     if (special) cout << simulator.printSpecialAnimationCommand(novid) << endl;

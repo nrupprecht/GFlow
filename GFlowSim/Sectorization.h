@@ -60,11 +60,12 @@ class Sectorization {
   // Mutators
   void giveDomainInfo(int x, int y) { ndx=x; ndy=y; }
   void setEpsilon(double e)      { epsilon = e; sqrtEpsilon = sqrt(e); }
-  void setDoInteractions(bool i)    { doInteractions = i; }
-  void setDrag(double d)         { drag = d; }
-  void setGravity(vec2 g)           { gravity = g; }
+  void setDoInteractions(bool i) { doInteractions = i; }
+  void setDrag(bool d)           { drag = d; }
+  void setGravity(vec2 g)        { gravity = g; }
   void setTemperature(double t)  { temperature = t; DT1 = t/(6*viscosity*PI); }
   void setViscosity(double h)    { viscosity = h; DT1 = temperature/(6*h*PI); }
+  void setCoeff(double c);
   void setCutoff(double c)       { cutoff = c; }
   void setSkinDepth(double d)    { skinDepth = d; }
   void setBounds(double, double, double, double);
@@ -108,10 +109,11 @@ class Sectorization {
   inline void secondHalfKick();
   inline void wrap(double&, double&);
   inline void wrap(vec2&);           // Keep a position in bounds by wrapping
-  inline void wrap(double&);      // Keep an angle between 0 and 2*PI
-  inline int  getSec(const vec2&);         // What sector does a position fall into
+  inline void wrap(double&);         // Keep an angle between 0 and 2*PI
+  inline int  getSec(const vec2&);   // What sector does a position fall into
   inline int  getSec(const double, const double);
   inline void createNeighborLists(bool=false); // Create neighbor lists
+  inline void createEdgeNeighborLists();       // Create edge neighbor lists
   inline void createWallNeighborList();
   inline vec2 getDisplacement(vec2, vec2);
   inline vec2 getDisplacement(double, double, double, double);
@@ -136,7 +138,7 @@ class Sectorization {
   double transferTime;               // How much time is spent transfering data
   bool wrapX, wrapY;                 // Whether we wrap distances in the x and y directions
   bool doInteractions;
-  double drag;                       // A drag coefficient, useful for finding a packed solution
+  bool drag;                         // A drag coefficient, useful for finding a packed solution
 
   vec2 gravity;                      // Gravitational acceleration
   double temperature, viscosity, DT1;
@@ -164,7 +166,8 @@ class Sectorization {
   
   // Sectors and neighbors
   list<int> *sectors;
-  list<list<int> > neighborList;
+  list<list<int> > neighborList;     // Neighbor list for domain particles
+  list<list<int> > edgeNeighborList; // Neighbor list for edge particles
   double maxNLDiff; // The largest possible distance from the last time we checked
   list<pair<int, list<Wall*> > > wallNeighbors;
   list<int> holes;

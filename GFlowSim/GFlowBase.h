@@ -68,6 +68,7 @@ class GFlowBase {
   void setGravity(vec2 g);
   void setTemperature(double t);
   void setDrag(double d)         { sectorization.setDrag(d); }
+  void setCoeff(double c)        { sectorization.setCoeff(c); }
   void setViscosity(double h);
   void setLatticeType(int l)     { latticeType = l; }
   void setStartRec(double s)     { startRec = s; }
@@ -84,6 +85,7 @@ class GFlowBase {
 
   // -----  TO GO TO GFLOW.H  ------
   void setAsBacteria();
+  void setScale(double s) { scale = s; }
 
   void createSquare(int, double, double=4., double=4., double=0.1, double=0., int=0);
   void createBuoyancyBox(double,double,double,double,double,double,double, int=0);
@@ -97,7 +99,7 @@ class GFlowBase {
   string printAnimationCommand(int=0, bool=false, string="");
   string printSpecialAnimationCommand(bool=false);
   string printForcesAnimationCommand(int=0, bool=false);
-  string printBulkAnimationCommand(bool=false);
+  string printBulkAnimationCommand(bool=false, bool=true);
   string printSnapshot();
   void printSectors();
 
@@ -157,6 +159,7 @@ class GFlowBase {
   bool doFields;
   ScalarField Resource, Waste;
   double fieldUpdateDelay, fieldUpdateCounter;
+  double scale;
 
  public:
   // -------------------------------
