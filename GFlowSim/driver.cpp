@@ -14,24 +14,29 @@ using std::endl;
 
 int main(int argc, char** argv) {
   /*
-  ScalarField field(-1,1,-1,1);
+  ScalarField field(-2,2,-2,2);
   field.setResolution(0.025);
-  std::function<double(double,double)> gaussian = [] (double x, double y) {
-    return exp(-5*(sqr(x)+sqr(y)));
-  };
-  field.set( gaussian );
-  double Epsilon = 0.01, Time=1.;
+  //std::function<double(double,double)> gaussian = [] (double x, double y) {
+  //return 0; //return exp(-20*(sqr(x)+sqr(y)));
+  //};
+  //field.set( gaussian );
+
+  field.increase(0,0,1);
+
+  double Epsilon = 0.0005, Time=1.;
   double delay = 1./10., timer=0;
+  cout << "field=" << mmPreproc(field.sliceX(0)) << ";\nListPlot[field,PlotStyle->Black,ImageSize->Large]\n";
   for (int i=0; i<Time/Epsilon; ++i) {
     field.update(Epsilon, 0.1);
     if (delay<timer) {
-      cout << "field=" << mmPreproc(field) << ";\nListPlot3D[field]\n";
+      cout << "field=" << mmPreproc(field.sliceX(0)) << ";\nListPlot[field,PlotStyle->Black,ImageSize->Large]\n";
       timer = 0;
     }
     timer+=Epsilon;
   }
   return 0;
   */
+  
   // Simulation parameters
   int number = -1;
   double width = 4;
@@ -333,19 +338,19 @@ int main(int argc, char** argv) {
       cout << simulator.printBulkAnimationCommand(novid) << endl;
     }
     if (bubbles || visBubbles) {
-      cout << "num" + label + "=Table[Length[bsize[[i]]],{i,1,Length[bsize]}];\n";
-      cout << "vol" + label + "=Table[Total[bsize[[i]]],{i,1,Length[bsize]}];\n";
+      cout << "num" << label << "=Table[Length[bsize" << label << "[[i]]],{i,1,Length[bsize]}];\n";
+      cout << "vol" << label << "=Table[Total[bsize" << label << "[[i]]],{i,1,Length[bsize]}];\n";
       cout << "Print [\"Number of bubbles\"]\n";
-      cout << "ListLinePlot[num" + label + ",PlotStyle->Black,ImageSize->Large,PlotRange -> All]\n";
+      cout << "ListLinePlot[num" << label << ",PlotStyle->Black,ImageSize->Large,PlotRange -> All]\n";
       cout << "Print[\"Total bubble volume\"]\n";
-      cout << "ListLinePlot[vol" + label + ",PlotStyle->Black,ImageSize->Large,PlotRange->All]\n";
+      cout << "ListLinePlot[vol" << label << ",PlotStyle->Black,ImageSize->Large,PlotRange->All]\n";
     }
     else if (bulk) cout << simulator.printBulkAnimationCommand(novid) << endl;
     string stats = simulator.printStatFunctions(label);
     if (!stats.empty()) cout << stats;
 
-    // cout << "res=" << simulator.printResource() << ";\n";
-    // cout << "wst=" << simulator.printWaste() << ";\n";
+    // cout << "res=" << mmPreproc(simulator.printResource(),2) << ";\n";
+    cout << "wst=" << mmPreproc(simulator.printWaste(),2) << ";\n";
   }
   if (printSectors) simulator.printSectors();
 

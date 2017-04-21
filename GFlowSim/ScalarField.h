@@ -9,6 +9,7 @@ class ScalarField {
   ScalarField(double, double, double, double);
 
   // Accessors
+  double get(double, double) const; // <-----
   double& at(int, int);
   double at(int, int)  const;
   double lap(int, int) const;
@@ -24,6 +25,8 @@ class ScalarField {
   double d2Y(double, double) const;
   double d2XAt(int, int) const;
   double d2YAt(int, int) const;
+  vector<double> sliceX(double, int=100);
+  vector<double> sliceY(double, int=100);
   // double derivative(double, double, int, int) const;
   // double derivativeAt(int, int, int, int) const;
   void laplacian();
@@ -37,13 +40,16 @@ class ScalarField {
   void setResolution(double);
   void set(Bounds, double);
   void discard();
+  void setWrap(bool w)  { wrapX = wrapY = w; }
+  void setWrapX(bool w) { wrapX = w; }
+  void setWrapY(bool w) { wrapY = w; }
 
   // Field evolution
   void update(double, double=1., double=0.);
 
   // Printing
   friend std::ostream& operator<<(std::ostream&, ScalarField &);
-
+  
   // Error class
   class FieldOutOfBounds {
   public:
@@ -54,6 +60,10 @@ class ScalarField {
   class IllegalResolution {};
 
  private:
+  // Private helper functions
+  void cinc(int, int, double); // Conditional increase, increase the entry if it exists
+
+  // Private data
   int nsx, nsy;
   Bounds bounds;
   double dx, idx, dy, idy;

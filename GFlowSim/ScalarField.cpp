@@ -54,13 +54,52 @@ void ScalarField::discard() {
   dx = dy = idx = idy = 0;
 }
 
+double ScalarField::get(double x, double y) const {
+  int X = (int)((x-bounds.left)*idx), Y = (int)((y-bounds.bottom)*idy);
+  double cX = bounds.left + dx*X, cY = bounds.bottom +dy*Y;
+  double DX = x-cX, DY = y-cY;
+  double V1, V2;
+
+  double A, B, C, D;
+
+  if (-1<X && X+1<nsx && -1<Y && Y+1<nsy) {
+    A = at(X,Y);
+    B = at(X+1,Y);
+    C = at(X,Y+1);
+    D = at(X+1,Y+1);
+  }
+  else return 0; //**
+
+  V1 = (B-A)*DX*idx + A;
+  V2 = (D-C)*DX*idx + C;
+  return (V2-V1)*DY*idy+V1;
+}
+
 double& ScalarField::at(int x, int y) {
-  if (x<0 || nsx<=x || y<0 || nsy<=y) throw ScalarField::FieldOutOfBounds(x,y);
+  if (x<0 || nsx<=x) {
+    if (wrapX && x<0) x+= nsx;
+    else if (wrapX && nsx-1<x) x-=nsx;
+    else throw ScalarField::FieldOutOfBounds(x,y);
+  }
+  if (y<0 || nsy<=y) {
+    if (wrapY && y<0) y+=nsy;
+    else if (wrapY && nsy-1<y) y-=nsy;
+    else throw ScalarField::FieldOutOfBounds(x,y);
+  }
   return array[nsx*y+x];
 }
 
 double ScalarField::at(int x, int y) const {
-  if (x<0 || nsx<=x || y<0 || nsy<=y) throw ScalarField::FieldOutOfBounds(x,y);
+  if (x<0 || nsx<=x) {
+    if (wrapX && x<0) x+= nsx;
+    else if (wrapX && nsx-1<x) x-=nsx;
+    else throw ScalarField::FieldOutOfBounds(x,y);
+  }
+  if (y<0 || nsy<=y) {
+    if (wrapY && y<0) y+=nsy;
+    else if (wrapY && nsy-1<y) y-=nsy;
+    else throw ScalarField::FieldOutOfBounds(x,y);
+  }
   return array[nsx*y+x];
 }
 
@@ -80,13 +119,13 @@ double ScalarField::dY(double x, double y) const {
 }
 
 double ScalarField::dXAt(int x, int y) const {
-  if (0<x && x<nsx-1) return 0.5*(at(x+1, y)-at(x-1,y))*idx;
+  if (wrapX || (0<x && x<nsx-1)) return 0.5*(at(x+1, y)-at(x-1,y))*idx;
   else if (x==0)      return (at(1,y)-at(0,y))*idx;
   else /* x==nsx-1 */ return 0.5*(at(nsx-1, y)-at(nsx-2, y))*idx;
 }
 
 double ScalarField::dYAt(int x, int y) const {
-  if (0<y && y<nsy-1) return 0.5*(at(x,y+1)-at(x,y-1))*idy;
+  if (wrapY || (0<y && y<nsy-1)) return 0.5*(at(x,y+1)-at(x,y-1))*idy;
   else if (y==0)      return(at(x,1)-at(x,0))*idy;
   else /* y==nsy-1 */ return 0.5*(at(x,nsy-1)-at(x,nsy-2))*idy;
 }
@@ -111,6 +150,30 @@ double ScalarField::d2YAt(int x, int y) const {
   if (wrapY || (0<y && y<nsy-1)) return (at(x,y+1)+at(x,y-1)-2*at(x,y))*sqr(idy);
   else if (y==0)      return 2*d2YAt(x,1)-d2YAt(x,2);
   else /* y==nsy-1 */ return 2*d2YAt(x,nsy-2)-d2YAt(x,nsy-3);
+}
+
+vector<double> ScalarField::sliceX(double y, int res) {
+  if (y<bounds.bottom || bounds.top<y) return vector<double>();
+  vector<double> array;
+  double DX = (bounds.right-bounds.left)/res;
+  double X = bounds.left;
+  for (int i=0; i<res; ++i) {
+    array.push_back(get(X,y));
+    X += DX;
+  }
+  return array;
+}
+
+vector<double> ScalarField::sliceY(double x, int res) {
+  if (x<bounds.left || bounds.right < x) return vector<double>();
+  vector<double> array;
+  double DY = (bounds.top-bounds.bottom)/res;
+  double Y = bounds.bottom;
+  for (int i=0; i<res; ++i) {
+    array.push_back(get(x,Y));
+    Y += DY;
+  }
+  return array;
 }
 
 /*
@@ -157,11 +220,20 @@ void ScalarField::laplacian(ScalarField& sf) {
       sf.array[nsx*y+x] = d2XAt(x,y) + d2YAt(x,y);
 }
 
-void ScalarField::increase(double x, double y, double change) {
+void ScalarField::increase(double x, double y, double c) {
   if (!bounds.contains(x,y)) return;
   // Find field coordinates
   int X = (x-bounds.left)*idx, Y = (y-bounds.bottom)*idy;
-  at(X,Y) += change;
+  
+  cinc(X,Y,c);
+  return;
+
+  // Two point gaussian
+  cinc(X-2,Y+2,0.13*c); cinc(X-1,Y+2,0.22*c); cinc(X,Y+2,0.37*c); cinc(X+1,Y+2,0.22*c); cinc(X+2,Y+2,0.13*c);
+  cinc(X-2,Y+1,0.23*c); cinc(X-1,Y+1,0.60*c); cinc(X,Y+1,0.78*c); cinc(X+1,Y+1,0.60*c); cinc(X+2,Y+1,0.23*c);
+  cinc(X-2,Y,0.37*c);   cinc(X-1,Y,0.78*c);   cinc(X,Y,c);        cinc(X+1,Y,0.78*c);   cinc(X+2,Y,0.37*c);
+  cinc(X-2,Y-1,0.23*c); cinc(X-1,Y-1,0.60*c); cinc(X,Y-1,0.78*c); cinc(X+1,Y-1,0.60*c); cinc(X+2,Y-1,0.23*c);
+  cinc(X-2,Y-2,0.13*c); cinc(X-1,Y-2,0.22*c); cinc(X,Y-2,0.37*c); cinc(X+1,Y-2,0.22*c);cinc(X+2,Y-2,0.13*c);
 }
 
 void ScalarField::reduce(double x, double y, double change) {
@@ -197,4 +269,8 @@ std::ostream& operator<<(std::ostream& out, ScalarField& field) {
   }
   out << "}";
   return out;
+}
+
+void ScalarField::cinc(int x, int y, double increase) {
+  if (-1<x && x<nsx && -1<y && y<nsy) at(x,y) += increase;
 }

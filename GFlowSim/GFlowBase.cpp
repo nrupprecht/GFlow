@@ -33,7 +33,7 @@ GFlowBase::GFlowBase() {
   recBulk = false;
   restrictBubbleDomain = false;
   forceChoice = 0;
-  fieldUpdateDelay = 0.05;
+  fieldUpdateDelay = 0.0005;
   fieldUpdateCounter = 0;
   scale = 100;
   //---
@@ -300,7 +300,7 @@ void GFlowBase::objectUpdates () {
     // Eat and produce waste
     for (int i=0; i<array_end; ++i)
       if (-1<it[i]) {
-	Resource.reduce(px[i], py[i], 1.0*epsilon);
+	// Resource.reduce(px[i], py[i], 1.0*epsilon); // --> This needs to be handled more carefully, and be proportional to the resouce at the point
 	Waste.increase (px[i], py[i], 0.5*epsilon);
       }
     // Update fields
@@ -903,14 +903,16 @@ void GFlowBase::setAsBacteria() {
   Characteristic *B = new Bacteria;
   sectorization.setCharacteristic(B);
   delete B;
-  sectorization.setDrag(5);
+  sectorization.setDrag(true);
   sectorization.setASize(5000); //** AD HOC
   doFields = true;
   Bounds bounds(left, right, bottom, top);
   Resource.setBounds(bounds);
-  Resource.setResolution(0.01);
+  Resource.setWrap(true);
+  Resource.setResolution(0.025);
   Waste.setBounds(bounds);
-  Waste.setResolution(0.01);
+  Waste.setResolution(0.025);
+  Waste.setWrap(true);
 }
 
 void GFlowBase::createSquare(int number, double radius, double width, double height, double vsgma, double dispersion, int interaction) {
@@ -1270,7 +1272,7 @@ string GFlowBase::printForcesAnimationCommand(int mode, bool novid) {
 string GFlowBase::printBulkAnimationCommand(bool novid, bool center) {
   stringstream stream;
   string command, strh;
-  command = "scale=" + toStr(scale) + "100;\n";
+  command = "scale=" + toStr(scale) + ";\n";
   // Print bulk data
   stream << "bulk=" << mmPreproc(bulkRecord,2) << ";";
   stream >> strh;
