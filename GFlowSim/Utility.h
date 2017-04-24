@@ -396,12 +396,13 @@ template<typename... T> string toCSV(const PData& pdata) {
   return str;
 }
 
-template<typename T> void printToCSV(string filename, const vector<T>& lst) {
-  if (lst.empty()) return;
+template<typename T> bool printToCSV(string filename, const vector<T>& lst) {
+  if (lst.empty()) return true;
   ofstream fout(filename);
-  if (fout.fail()) return;
+  if (fout.fail()) return false;
   for (int i=0; i<lst.size(); i++) fout << toCSV(lst.at(i)) << endl;
   fout.close();
+  return true;
 }
 
 inline std::ostream& operator<<(std::ostream& out, const Tri& tup) {

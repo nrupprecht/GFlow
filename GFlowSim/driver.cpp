@@ -50,6 +50,7 @@ int main(int argc, char** argv) {
   bool bubbles = false;
   bool visBubbles = false;
   bool writeFields = false;
+  bool writeFitness = false;
   bool writeAnimation = false;
   bool bulk    = false;
   bool omega   = false;
@@ -136,6 +137,7 @@ int main(int argc, char** argv) {
   parser.get("bubbles", bubbles);
   parser.get("visBubbles", visBubbles);
   parser.get("writeFields", writeFields);
+  parser.get("writeFitness", writeFitness);
   parser.get("writeAnimation", writeAnimation);
   parser.get("bulk", bulk);
   parser.get("omega", omega);
@@ -254,6 +256,7 @@ int main(int argc, char** argv) {
   simulator.setRecBubbles(bubbles);
   simulator.setVisBubbles(visBubbles);
   simulator.setWriteFields(writeFields);
+  simulator.setWriteFitness(writeFitness);
   simulator.setWriteAnimation(writeAnimation);
   simulator.setWriteDirectory(writeDirectory);
   simulator.setRecBulk(bulk);

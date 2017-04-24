@@ -75,6 +75,7 @@ class Sectorization {
   void setSimBounds(Bounds);
   void setInteractionType(int);
   void setASize(int i);
+  void stopParticles();
   void setCommWork(MPI::Intercomm &comm) { CommWork = comm; }
   void resetComm()                  { CommWork = MPI::COMM_WORLD; }
   void discard();

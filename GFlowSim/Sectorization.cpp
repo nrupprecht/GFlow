@@ -118,6 +118,10 @@ void Sectorization::setASize(int s) {
   //** Need to redo all lists
 }
 
+void Sectorization::stopParticles() {
+  for (int i=0; i<array_end; ++i) vx[i] = vy[i] = 0;
+}
+
 void Sectorization::discard() {
   // Discard arrays only. Not plist or clist. Also, do not delete individual characteristics ( ch[i] )
   if (px) delete [] px; px = 0;

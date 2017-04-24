@@ -45,11 +45,11 @@ const double default_waste_diffusion    = 0.5;
 const double default_waste_lambda       = -5;
 
 // Simulation bacteria constants
-const double default_alphaR = 1.;
+const double default_alphaR = 2.;
 const double default_alphaW = 1.;
 const double default_csatR = 1.;
 const double default_csatW = 1.;
-const double default_betaR = 1.;
+const double default_betaR = 0.;
 
 // Other
 const double default_upper_window_factor = 20.;

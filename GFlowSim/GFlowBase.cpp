@@ -33,7 +33,7 @@ GFlowBase::GFlowBase() {
   recBulk = false;
   restrictBubbleDomain = false;
   writeFields = false;
-  writeFitness = true; //**--
+  writeFitness = false;
   writeAnimation = false;
   forceChoice = 0;
   doFields = false;
@@ -317,8 +317,9 @@ void GFlowBase::resetVariables () {
 }
 
 void GFlowBase::objectUpdates() {
+  // Update particles
   sectorization.update();
-
+  // Update fields
   if (doFields) {
     // Get the particle
     double *px = sectorization.getPX();
@@ -331,7 +332,7 @@ void GFlowBase::objectUpdates() {
       if (-1<it[i]) {
 	Bacteria *b = reinterpret_cast<Bacteria*>(ch[i]);
 	if (b!=0) {
-	  double rSec = b->secretion;
+	  double rSec = b->secretion;	  
 	  Resource.increase(px[i], py[i], rSec*epsilon);
 	  Waste.increase(px[i], py[i], default_bacteria_waste*epsilon);
 	}
@@ -351,7 +352,7 @@ void GFlowBase::objectUpdates() {
 	  double res = Resource.at(px[i],py[i]), wst = Waste.at(px[i],py[i]);
 	  double rSec = b->secretion;
 	  double fitness = alphaR*res/(res+csatR) - alphaW*wst/(wst+csatW) - betaR*rSec;
-	  b->setFitness(1); //**-- fitness);
+	  b->setFitness(fitness);
 	}
       }
   }
@@ -426,7 +427,7 @@ void GFlowBase::record() {
 	string filename;
 	stream << writeDirectory+"/Pos/pos" << recIter << ".csv";
 	stream >> filename;
-	printToCSV(filename, positions);
+	if (!printToCSV(filename, positions)) cout << "Failed to print to [" << filename << "].\n";
       }
       else positionRecord.push_back(positions);
     }
@@ -813,6 +814,7 @@ vector<vec2> GFlowBase::findPackedSolution(int number, double radius, Bounds b, 
   double dr = (finalRadius-initialRadius)/static_cast<double>(expandSteps);
   // Set up sectorization
   packedSectors.setASize(number); //** AD HOC
+  packedSectors.setDoInteractions(doInteractions);
   setUpSectorization(packedSectors, force);
   packedSectors.setDrag(default_packed_drag);
   createAndDistributeParticles(number, b, packedSectors, radius, 0, ZeroV); //** START WITH INITIAL RADIUS, NOT RADIUS
@@ -892,6 +894,7 @@ vector<vec2> GFlowBase::findPackedSolution(const vector<double>& radii, const ve
   double fraction = initialFraction;
   // Set up sectorization
   packedSectors.setASize(number); //** AD HOC
+  packedSectors.setDoInteractions(doInteractions);
   setUpSectorization(packedSectors, force);
   packedSectors.setDrag(default_packed_drag);
   // Create random initial positions
@@ -1017,6 +1020,7 @@ void GFlowBase::setAsBacteria() {
   sectorization.setCharacteristic(B);
   delete B;
   sectorization.setDrag(true);
+  sectorization.stopParticles();
   sectorization.setASize(5000); //** AD HOC
   doFields = true;
   Bounds bounds(left, right, bottom, top);
@@ -1024,6 +1028,7 @@ void GFlowBase::setAsBacteria() {
   Resource.setWrap(true);
   Resource.setResolution(0.025);
   Resource.setDiffusion(default_resource_diffusion);
+  Resource.set(ConstantField); // Give some initial resource so we don't die immediately
   Resource.setLambda(default_resource_lambda);
   Waste.setBounds(bounds);
   Waste.setResolution(0.025);

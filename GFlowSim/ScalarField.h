@@ -3,13 +3,15 @@
 
 #include "DefaultConstants.h"
 
+inline double ConstantField(double, double) { return 0.05; }
+
 class ScalarField {
  public:
   ScalarField();
   ScalarField(double, double, double, double);
 
   // Accessors
-  double get(double, double) const; // <-----
+  double get(double, double) const; // Get the value of the field at a point, interpolates value
   double& at(int, int);
   double at(int, int)  const;
   double lap(int, int) const;
