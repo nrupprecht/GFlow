@@ -25,8 +25,9 @@ class Bacteria : public Characteristic {
   
   //protected:
   vec2 orient;
-  double reorient; // Probability of reorientation
-  double strength; // Run strength
+  double reorient;  // Probability of reorientation
+  double strength;  // Run strength
+  double secretion; // Resource secretion
 
   double delay, timer; // Reorientation delay and timer
 

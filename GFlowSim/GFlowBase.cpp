@@ -33,6 +33,7 @@ GFlowBase::GFlowBase() {
   recBulk = false;
   restrictBubbleDomain = false;
   writeFields = false;
+  writeFitness = true; //**--
   writeAnimation = false;
   forceChoice = 0;
   doFields = false;
@@ -40,6 +41,11 @@ GFlowBase::GFlowBase() {
   fieldUpdateCounter = 0;
   scale = 100;
   writeDirectory = "RunData";
+  alphaR = default_alphaR;
+  alphaW = default_alphaW;
+  csatR = default_csatR;
+  csatW = default_csatW;
+  betaR = default_betaR;
   //---
 
   // Get MPI system data
@@ -287,7 +293,7 @@ void GFlowBase::setUpSectorization(Sectorization &sectors, vec2 grav) {
 }
 
 void GFlowBase::setUp() {
-  if (writeFields || writeAnimation) {
+  if (writeFields || writeFitness || writeAnimation) {
     // Remove any previously existing file
     system(("rm -r "+writeDirectory).c_str());
     // Create the directory
@@ -296,10 +302,8 @@ void GFlowBase::setUp() {
       mkdir((writeDirectory+"/Waste").c_str(), 0777); // Waste director
       mkdir((writeDirectory+"/Resource").c_str(), 0777); // Resource directory
     }
-    if (writeAnimation) {
-      mkdir((writeDirectory+"/Pos").c_str(), 0777); // Position directory
-      // Walls directory
-    }
+    if (writeFitness) mkdir((writeDirectory+"/Fitness").c_str(), 0777); // Fitness director
+    if (writeAnimation) mkdir((writeDirectory+"/Pos").c_str(), 0777); // Position directory
   }
   resetVariables();
 }
@@ -323,26 +327,32 @@ void GFlowBase::objectUpdates() {
     Characteristic **ch = sectorization.getCH();
     int array_end = sectorization.getArrayEnd();
     // Eat and produce waste
-    for (int i=0; i<array_end; ++i)
+    for (int i=0; i<array_end; ++i) 
       if (-1<it[i]) {
-	//** Resource.propReduceCue(px[i], py[i], default_bacteria_eating*epsilon);
-	Resource.increase(px[i], py[i], default_bacteria_production*epsilon);
-	Waste.increase (px[i], py[i], default_bacteria_waste*epsilon);
+	Bacteria *b = reinterpret_cast<Bacteria*>(ch[i]);
+	if (b!=0) {
+	  double rSec = b->secretion;
+	  Resource.increase(px[i], py[i], rSec*epsilon);
+	  Waste.increase(px[i], py[i], default_bacteria_waste*epsilon);
+	}
       }
     // Update fields
     if (fieldUpdateDelay<fieldUpdateCounter) {
-      Resource.update(epsilon, default_resource_diffusion, default_resource_lambda);
-      Waste.update(epsilon, default_waste_diffusion, default_waste_lambda);
+      Resource.update(epsilon);
+      Waste.update(epsilon);
       fieldUpdateCounter = 0;
     }
-    //** Resource.propReduceExec(); // Has the effect of the particles "consuming" the resource
     fieldUpdateCounter += epsilon;
     // Set fitnesses
     for (int i=0; i<array_end; ++i)
       if (-1<it[i]) {
-	double fitness = Resource.at(px[i],py[i]) - Waste.at(px[i],py[i]);
 	Bacteria *b = reinterpret_cast<Bacteria*>(ch[i]);
-	if (b!=0) b->setFitness(fitness);
+	if (b!=0) {
+	  double res = Resource.at(px[i],py[i]), wst = Waste.at(px[i],py[i]);
+	  double rSec = b->secretion;
+	  double fitness = alphaR*res/(res+csatR) - alphaW*wst/(wst+csatW) - betaR*rSec;
+	  b->setFitness(1); //**-- fitness);
+	}
       }
   }
 }
@@ -362,6 +372,23 @@ void GFlowBase::record() {
     stream << writeDirectory << "/Resource/rsc" << recIter << ".csv";
     stream >> filename;
     if (!Resource.printToCSV(filename)) cout << "Resource write failed.\n";
+  }
+  if (writeFitness) {
+    stringstream stream;
+    string filename;
+    stream << writeDirectory << "/Fitness/fit" << recIter << ".csv";
+    stream >> filename;
+    ScalarField Fitness;
+    Fitness.setBounds(Resource.getBounds());
+    Fitness.setResolution(Resource.getResolution());
+    int nsx = Fitness.getNSX(), nsy = Fitness.getNSY();
+    for (int y=0; y<nsy; ++y)
+      for (int x=0; x<nsx; ++x) {
+	double res = Resource.at(x,y), wst = Waste.at(x,y);
+	double fitness = alphaR*res/(res+csatR) - alphaW*wst/(wst+csatW);
+	Fitness.at(x,y) = fitness;
+      }
+    if (!Fitness.printToCSV(filename)) cout << "Fitness write failed.\n";
   }
   if (recPositions || recBubbles || visBubbles || recBulk) {
     // Get all the particles back from the sectorizations
@@ -489,7 +516,7 @@ void GFlowBase::gatherData() {
 }
 
 void GFlowBase::endOfRun() {
-  if ((writeAnimation || writeFields) && rank==0) {
+  if ((writeAnimation || writeFields || writeFitness) && rank==0) {
     // Print a master file
     printToCSV(writeDirectory+"/number.csv", vector<int>(1,recIter)); // Print how many files to expect
     // Print walls to file
@@ -996,9 +1023,13 @@ void GFlowBase::setAsBacteria() {
   Resource.setBounds(bounds);
   Resource.setWrap(true);
   Resource.setResolution(0.025);
+  Resource.setDiffusion(default_resource_diffusion);
+  Resource.setLambda(default_resource_lambda);
   Waste.setBounds(bounds);
   Waste.setResolution(0.025);
   Waste.setWrap(true);
+  Waste.setDiffusion(default_waste_diffusion);
+  Waste.setLambda(default_waste_lambda);
 }
 
 void GFlowBase::createSquare(int number, double radius, double width, double height, double vsgma, double dispersion, int interaction) {

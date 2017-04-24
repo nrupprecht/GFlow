@@ -5,6 +5,7 @@ Bacteria::Bacteria() {
   orient = randV();
   reorient = 1./default_bacteria_reorient;
   strength = default_bacteria_strength;
+  secretion = default_bacteria_secretion;
   delay = 0.05;
   timer = drand48()*delay;
   fitness = 0.5;

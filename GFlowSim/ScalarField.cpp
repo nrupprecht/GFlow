@@ -1,8 +1,8 @@
 #include "ScalarField.h"
 
-ScalarField::ScalarField() : nsx(0), nsy(0), dx(0), idx(0), dy(0), idy(0), wrapX(false), wrapY(false), array(0), lap_array(0) {};
+ScalarField::ScalarField() : nsx(0), nsy(0), dx(0), idx(0), dy(0), idy(0), wrapX(false), wrapY(false), array(0), lap_array(0), diffusion(default_diffusion), lambda(default_lambda) {};
 
-ScalarField::ScalarField(double l, double r, double b, double t) : bounds(Bounds(l,r,b,t)), nsx(100), nsy(100), dx((r-l)/nsx), idx(1./dx), dy((t-b)/nsy), idy(1./dy), wrapX(false), wrapY(false) {
+ScalarField::ScalarField(double l, double r, double b, double t) : bounds(Bounds(l,r,b,t)), nsx(100), nsy(100), dx((r-l)/nsx), idx(1./dx), dy((t-b)/nsy), idy(1./dy), wrapX(false), wrapY(false), diffusion(default_diffusion), lambda(default_lambda) {
     array = new double[nsx*nsy];
     lap_array = new double[nsx*nsy];
 }
@@ -22,6 +22,12 @@ void ScalarField::set(std::function<double(double,double)> f) {
 void ScalarField::setBounds(Bounds b) {
   double res = (bounds.right-bounds.left)/nsx;
   bounds = b;
+  if (0<res) setResolution(res);
+}
+
+void ScalarField::setBounds(double l, double r, double b, double t) {
+  double res = (r-l)/nsx;
+  bounds = Bounds(l,r,b,t);
   if (0<res) setResolution(res);
 }
 
@@ -259,14 +265,28 @@ void ScalarField::propReduceExec() {
   propReduce.clear();
 }
 
-void ScalarField::update(double epsilon, double diffusion, double lambda) {  
+void ScalarField::update(double epsilon) {  
   if (array==0) return;
   // Take the laplacian
-  laplacian();
-  // Update field
-  for (int y=0;y<nsy; ++y)
-    for(int x=0; x<nsx; ++x)
-      at(x,y) += (diffusion*lap(x,y) + lambda*at(x,y))*epsilon;
+  if (diffusion!=0) { // Diffusion
+    laplacian();
+    // Update field
+    if (lambda!=0) // Decay
+      for (int y=0;y<nsy; ++y)
+	for(int x=0; x<nsx; ++x)
+	  at(x,y) += (diffusion*lap(x,y) + lambda*at(x,y))*epsilon;
+    else // No decay
+      for (int y=0;y<nsy; ++y)
+	for(int x=0; x<nsx; ++x)
+	  at(x,y) += diffusion*lap(x,y)*epsilon;
+  }
+  else { // No diffusion
+    if (lambda!=0) // Decay
+      for (int y=0;y<nsy; ++y)
+	for(int x=0; x<nsx; ++x)
+	  at(x,y) += lambda*at(x,y)*epsilon;
+    else; // Nothing needs to be done to update the field
+  }
 }
 
 std::ostream& operator<<(std::ostream& out, ScalarField& field) {

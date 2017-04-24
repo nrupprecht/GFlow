@@ -15,6 +15,8 @@ class ScalarField {
   double lap(int, int) const;
   int getNSX() const { return nsx; }
   int getNSY() const { return nsy; }
+  Bounds getBounds() const { return bounds; }
+  double getResolution() const { return (bounds.right - bounds.left)/nsx; }
   double getDX() const { return dx; }
   double getDY() const { return dy; }
   double dX(double, double)  const;
@@ -40,15 +42,18 @@ class ScalarField {
   void propReduceExec(); // Actually to the proportional reduction
   void set(std::function<double(double,double)>);
   void setBounds(Bounds);
+  void setBounds(double, double, double, double);
   void setResolution(double);
   void set(Bounds, double);
+  void setDiffusion(double d) { diffusion = d; }
+  void setLambda(double l) { lambda = l; }
   void discard();
   void setWrap(bool w)  { wrapX = wrapY = w; }
   void setWrapX(bool w) { wrapX = w; }
   void setWrapY(bool w) { wrapY = w; }
 
-  // Field evolution
-  void update(double, double=1., double=0.);
+  // Field evolution, pass in timestep
+  void update(double);
 
   // Printing
   friend std::ostream& operator<<(std::ostream&, ScalarField &);
@@ -74,6 +79,8 @@ class ScalarField {
   bool wrapX, wrapY;
   double *array;
   double *lap_array;
+
+  double diffusion, lambda;
 
   std::map<int,double> propReduce; // For doing a proportional reduction (-lambda*n(x))
   double& cue(int, int); // Update the proportional reduce structure

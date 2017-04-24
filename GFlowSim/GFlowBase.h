@@ -137,6 +137,7 @@ class GFlowBase {
   void setRecBubbles(bool b)   { recBubbles = b; }
   void setVisBubbles(bool b)   { visBubbles = b; }
   void setWriteFields(bool b)  { writeFields = b; }
+  void setWriteFitness(bool b) { writeFitness = b; }
   void setWriteAnimation(bool b) { writeAnimation = b; }
   void setWriteDirectory(string d) { writeDirectory = d; }
   void setRecBulk(bool b)      { recBulk = b; }
@@ -161,6 +162,7 @@ class GFlowBase {
   bool recBulk;
   bool restrictBubbleDomain;
   bool writeFields;
+  bool writeFitness;
   bool writeAnimation;
   int forceChoice;
 
@@ -175,6 +177,7 @@ class GFlowBase {
   ScalarField Resource, Waste;
   double fieldUpdateDelay, fieldUpdateCounter;
   double scale;
+  double alphaR, alphaW, csatR, csatW, betaR;
 
  public:
   // -------------------------------
