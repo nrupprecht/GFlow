@@ -31,10 +31,13 @@ class ScalarField {
   // double derivativeAt(int, int, int, int) const;
   void laplacian();
   void laplacian(ScalarField&);
+  bool empty() { return array==0; }
 
   // Mutators
   void increase(double, double, double);
   void reduce(double, double, double);
+  void propReduceCue(double, double, double); // Load proportional reductions
+  void propReduceExec(); // Actually to the proportional reduction
   void set(std::function<double(double,double)>);
   void setBounds(Bounds);
   void setResolution(double);
@@ -49,6 +52,7 @@ class ScalarField {
 
   // Printing
   friend std::ostream& operator<<(std::ostream&, ScalarField &);
+  bool printToCSV(string, int=50);
   
   // Error class
   class FieldOutOfBounds {
@@ -70,6 +74,9 @@ class ScalarField {
   bool wrapX, wrapY;
   double *array;
   double *lap_array;
+
+  std::map<int,double> propReduce; // For doing a proportional reduction (-lambda*n(x))
+  double& cue(int, int); // Update the proportional reduce structure
 };
 
 #endif

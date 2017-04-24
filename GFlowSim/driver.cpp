@@ -13,37 +13,13 @@ using std::cout;
 using std::endl;
 
 int main(int argc, char** argv) {
-  /*
-  ScalarField field(-2,2,-2,2);
-  field.setResolution(0.025);
-  //std::function<double(double,double)> gaussian = [] (double x, double y) {
-  //return 0; //return exp(-20*(sqr(x)+sqr(y)));
-  //};
-  //field.set( gaussian );
-
-  field.increase(0,0,1);
-
-  double Epsilon = 0.0005, Time=1.;
-  double delay = 1./10., timer=0;
-  cout << "field=" << mmPreproc(field.sliceX(0)) << ";\nListPlot[field,PlotStyle->Black,ImageSize->Large]\n";
-  for (int i=0; i<Time/Epsilon; ++i) {
-    field.update(Epsilon, 0.1);
-    if (delay<timer) {
-      cout << "field=" << mmPreproc(field.sliceX(0)) << ";\nListPlot[field,PlotStyle->Black,ImageSize->Large]\n";
-      timer = 0;
-    }
-    timer+=Epsilon;
-  }
-  return 0;
-  */
-  
   // Simulation parameters
   int number = -1;
   double width = 4;
   double height = 4;
   double radius = 0.05;
   double bR = 0.2;
-  double density = 10;
+  double density = 100;
   double velocity = 0.25;
   double dispersion = 0;
   double temperature = 0;
@@ -66,12 +42,15 @@ int main(int argc, char** argv) {
   // Animation Paramaters
   int mode     = 0;     // Animation mode
   bool animate = false;
+  int center   = false;
   bool snapshot = false;
   bool special = false;
   bool forces  = false;
   int forceChoice = 0;
   bool bubbles = false;
   bool visBubbles = false;
+  bool writeFields = false;
+  bool writeAnimation = false;
   bool bulk    = false;
   bool omega   = false;
   bool KE      = false;
@@ -148,12 +127,15 @@ int main(int argc, char** argv) {
   parser.get("lattice", lattice);
   parser.get("mode", mode);
   parser.get("animate", animate);
+  parser.get("center", center);
   parser.get("snapshot", snapshot);
   parser.get("special", special);
   parser.get("forces", forces);
   parser.get("forceChoice", forceChoice);
   parser.get("bubbles", bubbles);
   parser.get("visBubbles", visBubbles);
+  parser.get("writeFields", writeFields);
+  parser.get("writeAnimation", writeAnimation);
   parser.get("bulk", bulk);
   parser.get("omega", omega);
   parser.get("KE", KE);
@@ -263,11 +245,14 @@ int main(int argc, char** argv) {
   simulator.setStartRec(start);
 
   simulator.setRecPositions(animate);
+  simulator.setAnimationCentering(center);
   simulator.setRecSpecial(special);
   simulator.setRecForces(forces);
   simulator.setForceChoice(forceChoice);
   simulator.setRecBubbles(bubbles);
   simulator.setVisBubbles(visBubbles);
+  simulator.setWriteFields(writeFields);
+  simulator.setWriteAnimation(writeAnimation);
   simulator.setRecBulk(bulk);
   if (buoyancy || loadBuoyancy!="") simulator.setRestrictBubbleDomain(true);
 
@@ -285,6 +270,8 @@ int main(int argc, char** argv) {
   if (maxV) simulator.addStatFunction(Stat_Max_Velocity, "maxv");
   if (maxVy) simulator.addStatFunction(Stat_Max_Velocity_Y, "maxvy");
   if (num) simulator.addStatFunction(Stat_Number_Particles, "num");
+
+  if (bacteria) simulator.addTerminationCondition(Stat_Number_Particles, allGone);
 
   // Get the actual number of particles in the simulation
   number = simulator.getSize();
@@ -328,7 +315,7 @@ int main(int argc, char** argv) {
   if (rank==0) { // Do this even when quiet = true
     /// Print recorded data
     simulator.setScale(scale);
-    if (animate) cout << simulator.printAnimationCommand(mode, novid, label) << endl;
+    if (animate && !writeAnimation) cout << simulator.printAnimationCommand(mode, novid, label) << endl;
     if (snapshot) cout << simulator.printSnapshot() << endl;
     if (special) cout << simulator.printSpecialAnimationCommand(novid) << endl;
     if (forces)  cout << simulator.printForcesAnimationCommand(mode, novid) << endl;
@@ -348,9 +335,6 @@ int main(int argc, char** argv) {
     else if (bulk) cout << simulator.printBulkAnimationCommand(novid) << endl;
     string stats = simulator.printStatFunctions(label);
     if (!stats.empty()) cout << stats;
-
-    // cout << "res=" << mmPreproc(simulator.printResource(),2) << ";\n";
-    cout << "wst=" << mmPreproc(simulator.printWaste(),2) << ";\n";
   }
   if (printSectors) simulator.printSectors();
 

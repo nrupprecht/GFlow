@@ -36,11 +36,19 @@ struct Wall {
   vec2 getLeft()  const { return left; }
   vec2 getRight() const { return left+length*normal; }
 
-  vec2 left;    // Left and right edge of the wall
-  double length;         // Length of the wall (store instead of recalculate)
-  vec2 normal;         // Normal vector in wall direction (store instead of recalculate)
+  vec2 left;       // Left and right edge of the wall
+  double length;   // Length of the wall (store instead of recalculate)
+  vec2 normal;     // Normal vector in wall direction (store instead of recalculate)
   double repulsion, dissipation, coeff;
 };
+
+inline string toCSV(const Wall& w) {
+  stringstream stream;
+  string str;
+  stream << toCSV(w.getLeft()) << "," << toCSV(w.getRight());
+  stream >> str;
+  return str;
+}
 
 /// Particle data structure -- Size: 128 bytes ( 16 x 8 bytes )
 struct Particle {
@@ -62,5 +70,13 @@ struct Particle {
   double invMass, invII; // Inverses of mass and moment of inertia
   double repulsion, dissipation, coeff;
 };
+
+inline string toCSV(const Particle& p) {
+  stringstream stream;
+  string str;
+  stream << p.position.x << "," << p.position.y << "," << p.sigma << "," << p.theta << "," << p.interaction << ",0";
+  stream >> str;
+  return str;
+}
 
 #endif

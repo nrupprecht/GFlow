@@ -179,6 +179,20 @@ inline void Sectorization::particleInteractions() {
       interactionHelper(i, j, ibase, Fn, Fs);
     }
   }
+  // Edge neighbor list
+  for (auto &nl : edgeNeighborList) {
+    auto p = nl.begin();       // The particle whose list this is
+    int i = *p;
+    if (it[i]<0) continue;     // This particle is gone
+    auto q = p; ++q;           // Start with the particle after the head particle
+    int ibase = it[i]<<2;      // Represents the interaction type of particle p
+    for (; q!=nl.end(); ++q) { // Try to interact with all other particles in the nl
+      int j = *q;
+      if (it[j]<0) continue;   // This particle is gone
+      double Fn=0, Fs=0;
+      interactionHelper(i, j, ibase, Fn, Fs);
+    }
+  }
 }
 
 inline void Sectorization::interactionHelper(int i, int j, int ibase, double &Fn, double &Fs) {

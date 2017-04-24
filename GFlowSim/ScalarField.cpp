@@ -243,6 +243,22 @@ void ScalarField::reduce(double x, double y, double change) {
   at(X,Y) += change;
 }
 
+void ScalarField::propReduceCue(double x, double y, double lam) {
+  if (!bounds.contains(x,y)) return;
+  // Find field coordinates
+  int X = (x-bounds.left)*idx, Y = (y-bounds.bottom)*idy;
+  cue(X,Y) += lam;
+}
+
+
+void ScalarField::propReduceExec() {
+  for (const auto &p : propReduce) {
+    int x = p.first%nsx, y = p.first/nsx;
+    at(x,y) += (p.second*at(x,y));
+  }
+  propReduce.clear();
+}
+
 void ScalarField::update(double epsilon, double diffusion, double lambda) {  
   if (array==0) return;
   // Take the laplacian
@@ -250,10 +266,11 @@ void ScalarField::update(double epsilon, double diffusion, double lambda) {
   // Update field
   for (int y=0;y<nsy; ++y)
     for(int x=0; x<nsx; ++x)
-      at(x,y) += (diffusion*lap(x,y) - lambda*at(x,y))*epsilon;
+      at(x,y) += (diffusion*lap(x,y) + lambda*at(x,y))*epsilon;
 }
 
 std::ostream& operator<<(std::ostream& out, ScalarField& field) {
+  if (field.array==0) return out;
   out << "{";
   int nsx = field.nsx, nsy = field.nsy;
   double X, Y = field.bounds.bottom;
@@ -271,6 +288,36 @@ std::ostream& operator<<(std::ostream& out, ScalarField& field) {
   return out;
 }
 
+bool ScalarField::printToCSV(string filename, int resolution) {
+  if (array==0) return true;
+  if (resolution==-1) resolution=min(nsx,nsy);
+  if (max(nsx,nsy)<resolution) resolution=max(nsx,nsy);
+  // Open file
+  ofstream fout(filename);
+  if(fout.fail()) return false;
+  // Print data
+  double X, Y = bounds.bottom;
+  double DX = (bounds.right-bounds.left)/resolution, DY = (bounds.top-bounds.bottom)/resolution;
+  for (int y=0; y<resolution; ++y) {
+    X = bounds.left;
+    for (int x=0; x<resolution; ++x) {
+      fout << X << "," << Y << "," << get(X,Y) /*array[nsx*y+x]*/ << endl;
+      X += DX;
+    }
+    Y += DY;
+  }
+  return true;
+}
+
 void ScalarField::cinc(int x, int y, double increase) {
   if (-1<x && x<nsx && -1<y && y<nsy) at(x,y) += increase;
+}
+
+double& ScalarField::cue(int x, int y) {
+  auto p = propReduce.find(nsx*y+x);
+  if (p!=propReduce.end()) return p->second;
+  else {
+    propReduce.insert(pair<int,double>(nsx*y+x,0));
+    return propReduce.find(nsx*y+x)->second;
+  }
 }

@@ -32,6 +32,8 @@
 #include <tuple>
 #include <chrono>
 
+#include <sys/stat.h> // For linux
+
 using std::vector;
 using std::pair;
 using std::list;
@@ -250,6 +252,14 @@ vect(const vect<T>& V) : x(V.x), y(V.y) {};
     os << str;
     return os;
   }
+
+  string csv() {
+    stringstream stream;
+    string str;
+    stream << v.x << ',' << v.y;
+    stream >> str;
+    return str;
+  }
     
   T operator*(const vect<T>& B) const {
     return x*B.x + y*B.y;
@@ -368,6 +378,32 @@ template<typename T> inline std::ostream& operator<<(std::ostream& out, const ve
   return out;
 }
 
+inline string toCSV(const int n) { return toStr(n); }
+inline string toCSV(const double n) { return toStr(n); }
+inline string toCSV(const vec2& p) {
+  stringstream stream;
+  string str;
+  stream << p.x << "," << p.y;
+  stream >> str;
+  return str;
+}
+template<typename... T> string toCSV(const PData& pdata) {
+  stringstream stream;
+  string str;
+  int size = sizeof...(T);
+  stream << toCSV(std::get<0>(pdata)) << "," << std::get<1>(pdata) << "," << std::get<2>(pdata) << "," << std::get<3>(pdata) << "," << std::get<4>(pdata);
+  stream >> str;
+  return str;
+}
+
+template<typename T> void printToCSV(string filename, const vector<T>& lst) {
+  if (lst.empty()) return;
+  ofstream fout(filename);
+  if (fout.fail()) return;
+  for (int i=0; i<lst.size(); i++) fout << toCSV(lst.at(i)) << endl;
+  fout.close();
+}
+
 inline std::ostream& operator<<(std::ostream& out, const Tri& tup) {
   out << "{" << std::get<0>(tup) << "," << std::get<1>(tup) << "," << std::get<2>(tup) << "}";
   return out;
@@ -484,6 +520,14 @@ struct Bounds {
     out << "{" << B.left << "," << B.right << "," << B.bottom << "," << B.top << "}";
     return out;
   }
+  void cut(double c) {
+    left+=c; right-=c; bottom+=c; top-=c;
+  }
+  Bounds& operator=(const Bounds& b) {
+    left = b.left; right = b.right;
+    bottom = b.bottom; top = b.top;
+    return *this;
+  }
   bool contains(const vec2 position) const {
     return position.x<right && left<position.x && position.y<top && bottom<position.y;
   }
@@ -505,5 +549,14 @@ struct Trio {
 
   double x,y,z;
 };
+
+inline string toCSV(const Bounds& b) {
+  stringstream stream;
+  string str;
+  stream << b.left << "," << b.right << "," << b.bottom << "," << b.top;
+  stream >> str;
+  return str;
+}
+
 
 #endif

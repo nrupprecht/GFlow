@@ -50,6 +50,7 @@ class Sectorization {
   // Pointer accessors
   double *getPX()                { return px; }
   double *getPY()                { return py; }
+  double *getSG()                { return sg; }
   int *getIT()                   { return it; }
   Characteristic** getCH()       { return ch; }
 

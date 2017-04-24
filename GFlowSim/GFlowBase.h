@@ -13,6 +13,9 @@ typedef pair<vec2, vec2> vpair;
 inline vec2 ZeroV(double) { return 0; }
 inline double ZeroOm(double) { return 0; }
 
+// "All gone" termination condition
+inline bool allGone(double num) { return num<=0; }
+
 // Granular float base class
 class GFlowBase {
  public:
@@ -86,6 +89,7 @@ class GFlowBase {
   // -----  TO GO TO GFLOW.H  ------
   void setAsBacteria();
   void setScale(double s) { scale = s; }
+  void setAnimationCentering(int c) { animationCentering = c; }
 
   void createSquare(int, double, double=4., double=4., double=0.1, double=0., int=0);
   void createBuoyancyBox(double,double,double,double,double,double,double, int=0);
@@ -93,6 +97,7 @@ class GFlowBase {
   void recordPositions();
 
   void addStatFunction(StatFunc, string);
+  void addTerminationCondition(StatFunc, std::function<bool(double)>);
   string printStatFunctions(string="");
 
   string printWallsCommand();
@@ -131,6 +136,8 @@ class GFlowBase {
   void setRecForces(bool b)    { recForces = b; }
   void setRecBubbles(bool b)   { recBubbles = b; }
   void setVisBubbles(bool b)   { visBubbles = b; }
+  void setWriteFields(bool b)  { writeFields = b; }
+  void setWriteAnimation(bool b) { writeAnimation = b; }
   void setRecBulk(bool b)      { recBulk = b; }
   void setRestrictBubbleDomain(bool b) { restrictBubbleDomain = b; }
   void setForceChoice(int c)   { forceChoice = c; }
@@ -138,11 +145,13 @@ class GFlowBase {
   double setUpTime;
   // Data
   vector<vector<PData> > positionRecord;
+  vector<Bounds> animationBounds;
   vector<vector<Tri> > specialRecord;
   vector<vector<Tri> > forceRecord;
   vector<vector<double> > bubbleRecord;
   vector<vector<VPair> > bulkRecord;
   vector<Bounds> bulkBounds;  // The bounds in which we did bubble analysis
+  int animationCentering;
   bool recPositions;
   bool recSpecial;
   bool recForces;
@@ -150,10 +159,15 @@ class GFlowBase {
   bool visBubbles;
   bool recBulk;
   bool restrictBubbleDomain;
+  bool writeFields;
+  bool writeAnimation;
   int forceChoice;
 
   vector<pair<StatFunc,string> > statFunctions; // Statistic functions and a string to name them
   vector<vector<vec2> >  statRecord;    // Save the data produced by the statistic functions
+
+  // For printing data
+  string printRoot;
 
   // For bacteria
   bool doFields;
@@ -168,6 +182,7 @@ class GFlowBase {
   /// Principal functions
   virtual void setUpSectorization(); // Set up the sectorization
   virtual void setUpSectorization(Sectorization&, vec2); // Set up a sectorization
+  virtual void setUp();              // Set up before a run
   virtual void resetVariables();     // Reset variables for the start of a simulation
   virtual void objectUpdates();      // Do forces, move objects
   virtual void logisticUpdates();    // Update times
@@ -175,6 +190,7 @@ class GFlowBase {
   virtual void checkTermination();   // Check whether we should terminate the program
   virtual void resets();             // Reset objects as neccessary
   virtual void gatherData();         // Gather data back to processor 0
+  virtual void endOfRun();           // Do things at the end of the run
   virtual void discard();            // Discard and reset the simulation state
 
   /// Helper functions
@@ -219,6 +235,7 @@ class GFlowBase {
   vector<Wall> walls;            // A vector of all the walls in the simulation
   list<Particle> particles;      // A vector of all the particles in the simulation
   bool doInteractions;           // True if we let the particles interact with one another
+  bool quitWhenNone;             // True if we want the simulation to end if/when there are no particles
 
   /// Termination
   vector<pair<StatFunc, std::function<bool(double)> > > terminationConditions;

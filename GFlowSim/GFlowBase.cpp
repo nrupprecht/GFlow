@@ -19,23 +19,27 @@ GFlowBase::GFlowBase() {
   transferTime = 0;
   doInteractions = true;
   startChecking = 1.;
-  lastCheck = 0.;
-  checkDelay = 0.1;
+  checkDelay = 1./15.; lastCheck = 0.;
   skinDepth = 0.025;
   doWork = false;
 
   //---
   setUpTime = 0;
   recPositions = false;
+  animationCentering = 0;
   recSpecial = false;
   recBubbles = false;
   visBubbles = false;
   recBulk = false;
   restrictBubbleDomain = false;
+  writeFields = false;
+  writeAnimation = false;
   forceChoice = 0;
+  doFields = false;
   fieldUpdateDelay = 0.0005;
   fieldUpdateCounter = 0;
   scale = 100;
+  printRoot = "RunData";
   //---
 
   // Get MPI system data
@@ -51,6 +55,7 @@ GFlowBase::GFlowBase() {
 GFlowBase::~GFlowBase() {}
 
 void GFlowBase::run(double runLength) {
+  setUp();
   resetVariables();
   // Create work communicator
   //** int color = doWork ? 1 : 0;
@@ -78,6 +83,7 @@ void GFlowBase::run(double runLength) {
   // CommWork.Free(); 
   // Update transfer time
   transferTime += sectorization.getTransferTime();
+  endOfRun();
 }
 
 void GFlowBase::addWall(Wall w) {
@@ -280,6 +286,21 @@ void GFlowBase::setUpSectorization(Sectorization &sectors, vec2 grav) {
   else doWork = false;
 }
 
+void GFlowBase::setUp() {
+  if (writeFields || writeAnimation) {
+    mkdir(printRoot.c_str(), 0777);
+    if (writeFields) {
+      mkdir((printRoot+"/Waste").c_str(), 0777); // Waste director
+      mkdir((printRoot+"/Resource").c_str(), 0777); // Resource directory
+    }
+    if (writeAnimation) {
+      mkdir((printRoot+"/Pos").c_str(), 0777); // Position directory
+      // Walls directory
+    }
+  }
+  resetVariables();
+}
+
 void GFlowBase::resetVariables () {
   time = 0;
   iter = 0;
@@ -288,30 +309,38 @@ void GFlowBase::resetVariables () {
   runTime = 0;
 }
 
-void GFlowBase::objectUpdates () {
+void GFlowBase::objectUpdates() {
   sectorization.update();
 
   if (doFields) {
-    // Eating
+    // Get the particle
     double *px = sectorization.getPX();
     double *py = sectorization.getPY();
     int *it = sectorization.getIT();
+    Characteristic **ch = sectorization.getCH();
     int array_end = sectorization.getArrayEnd();
     // Eat and produce waste
     for (int i=0; i<array_end; ++i)
       if (-1<it[i]) {
-	// Resource.reduce(px[i], py[i], 1.0*epsilon); // --> This needs to be handled more carefully, and be proportional to the resouce at the point
-	Waste.increase (px[i], py[i], 0.5*epsilon);
+	Resource.propReduceCue(px[i], py[i], default_bacteria_eating*epsilon);
+	Resource.increase(px[i], py[i], default_bacteria_production*epsilon);
+	Waste.increase (px[i], py[i], default_bacteria_waste*epsilon);
       }
     // Update fields
     if (fieldUpdateDelay<fieldUpdateCounter) {
-      Resource.update(epsilon);
-      Waste.update(epsilon);
+      Resource.update(epsilon, default_resource_diffusion, default_resource_lambda);
+      Waste.update(epsilon, default_waste_diffusion, default_waste_lambda);
       fieldUpdateCounter = 0;
     }
+    Resource.propReduceExec(); // Has the effect of the particles "consuming" the resource
     fieldUpdateCounter += epsilon;
     // Set fitnesses
-    
+    for (int i=0; i<array_end; ++i)
+      if (-1<it[i]) {
+	double fitness = Resource.at(px[i],py[i]) - Waste.at(px[i],py[i]);
+	Bacteria *b = reinterpret_cast<Bacteria*>(ch[i]);
+	if (b!=0) b->setFitness(fitness);
+      }
   }
 }
 
@@ -320,6 +349,17 @@ void GFlowBase::logisticUpdates() {
 }
 
 void GFlowBase::record() {
+  if (writeFields) {
+    stringstream stream;
+    string filename;
+    stream << printRoot << "/Waste/wst" << recIter << ".csv";
+    stream >> filename;
+    if (!Waste.printToCSV(filename)) cout << "Waste write failed.\n";
+    stream.clear();
+    stream << printRoot << "/Resource/rsc" << recIter << ".csv";
+    stream >> filename;
+    if (!Resource.printToCSV(filename)) cout << "Resource write failed.\n";
+  }
   if (recPositions || recBubbles || visBubbles || recBulk) {
     // Get all the particles back from the sectorizations
     vector<Particle> allParticles;
@@ -327,8 +367,38 @@ void GFlowBase::record() {
     // Record positions
     if (recPositions) {
       vector<PData> positions;
-      for (const auto &p : allParticles) positions.push_back(PData(p.position, p.sigma, p.theta, p.interaction, 0));
-      positionRecord.push_back(positions);
+      Bounds domain = NullBounds;
+      if (animationCentering==1) {
+	double X = reduceStatFunction(Stat_Large_Object_X);
+        double Y = reduceStatFunction(Stat_Large_Object_Height);
+        static double R = reduceStatFunction(Stat_Large_Object_Radius, 1);
+        domain.bottom = Y-2*R; domain.top = Y+18*R;
+        domain.left = max(left,X-8*R); domain.right = min(right, X+8*R);
+	Bounds d2 = domain;
+	d2.cut(R);
+	animationBounds.push_back(d2);
+      }
+      for (const auto &p : allParticles) {
+	switch(animationCentering) {
+	case 0: {
+	  positions.push_back(PData(p.position, p.sigma, p.theta, p.interaction, 0));
+	  break;
+	}
+	case 1: {
+	  if (domain.contains(p.position))
+	    positions.push_back(PData(p.position, p.sigma, p.theta, p.interaction, 0));
+	  break;
+	}
+	}
+      }
+      if (writeAnimation) {
+	stringstream stream;
+	string filename;
+	stream << printRoot+"/Pos/pos" << recIter << ".csv";
+	stream >> filename;
+	printToCSV(filename, positions);
+      }
+      else positionRecord.push_back(positions);
     }
     // Find bubble volumes
     if (recBubbles || visBubbles || recBulk) {
@@ -336,7 +406,7 @@ void GFlowBase::record() {
       if (restrictBubbleDomain) {
 	double X = reduceStatFunction(Stat_Large_Object_X);
 	double Y = reduceStatFunction(Stat_Large_Object_Height);
-	static double R= reduceStatFunction(Stat_Large_Object_Radius, 1);
+	static double R = reduceStatFunction(Stat_Large_Object_Radius, 1);
 	domain.bottom = Y-R; domain.top = Y+18*R;
 	domain.left = left; domain.right = right;
 	// domain.left = max(left,X-8*R); domain.right = min(right, X+8*R);
@@ -393,6 +463,7 @@ void GFlowBase::record() {
 
 void GFlowBase::checkTermination() {
   lastCheck = time;
+  // Check termination conditions
   if (terminationConditions.empty()) return;
   vector<Particle> allParticles;
   recallParticles(allParticles);  
@@ -412,6 +483,18 @@ void GFlowBase::resets() {
 
 void GFlowBase::gatherData() {
   
+}
+
+void GFlowBase::endOfRun() {
+  if (writeAnimation && rank==0) {
+    // Print a master file
+    printToCSV(printRoot+"/number.csv", vector<int>(1,recIter)); // Print how many files to expect
+    // Print walls to file
+    printToCSV(printRoot+"/walls.csv", walls);
+    // Print bounds to file
+    Bounds bounds(left,right,bottom,top);
+    printToCSV(printRoot+"/bnds.csv", vector<Bounds>(1,bounds));
+  }
 }
 
 void GFlowBase::discard() {
@@ -702,13 +785,29 @@ vector<vec2> GFlowBase::findPackedSolution(int number, double radius, Bounds b, 
   packedSectors.setASize(number); //** AD HOC
   setUpSectorization(packedSectors, force);
   packedSectors.setDrag(default_packed_drag);
-  createAndDistributeParticles(number, b, packedSectors, radius, 0, ZeroV);
+  createAndDistributeParticles(number, b, packedSectors, initialRadius, 0, ZeroV);
   packedSectors.initialize();
   // Simulate motion and expansion
+  double delay = 1./150., counter = 0;
+  int j=0;
+  double *sg = packedSectors.getSG();
   for (int i=0; i<expandSteps; ++i) {
-    for (auto &p : packedSectors.getParticles()) p.sigma += dr;
+    //for (int n=0; n<packedSectors.getArrayEnd(); ++n) sg[n] += dr;
+    //for (auto &p : packedSectors.getParticles()) p.sigma += dr;
     packedSectors.update();
+    
+    // View progress
+    /*
+    if (delay<counter) {
+      printToCSV("pos"+toStr(j)+".csv", packedSectors.getParticles());
+      counter = 0;
+      ++j;
+    }
+    counter += epsilon;
+    */
   }
+  // Make sure final radii are correct
+  for(int n=0; n<packedSectors.getArrayEnd(); ++n) sg[n] = radius;
   // Simulate pure motion (relaxation)
   for (int i=0; i<relaxSteps; ++i) packedSectors.update();
   // Get positions
@@ -1074,6 +1173,10 @@ void GFlowBase::addStatFunction(StatFunc sf, string str) {
   statRecord.push_back(vector<vec2>());
 }
 
+void GFlowBase::addTerminationCondition(StatFunc sf, std::function<bool(double)> tc) {
+  terminationConditions.push_back(pair<StatFunc, std::function<bool(double)> >(sf, tc));
+}
+
 string GFlowBase::printStatFunctions(string label) {
   if (statFunctions.empty() || rank!=0) return "";
   stringstream stream;
@@ -1123,13 +1226,18 @@ string GFlowBase::printAnimationCommand(int mode, bool novid, string label) {
   stringstream stream;
   string command, strh, range, scl;
   
-  stream << "pos" << label << "=" << printPositionRecord(mode) << ";\n";
+  stream << "pos" << label << "=" << printPositionRecord(mode) << ";";
   stream >> command;
   stream.clear();
   command += "\n";
-  stream >> strh;
-  stream.clear();
-  command += (strh+"\n");
+
+  // Print animation bounds if neccessary
+  if (animationCentering==1) {
+    stream << "bnds=" << mmPreproc(animationBounds,2) << ";";
+    stream >> strh;
+    stream.clear();
+    command += (strh+"\n");
+  }
 
   stream << "len=" << recIter << ";";
   stream >> strh;
@@ -1151,12 +1259,24 @@ string GFlowBase::printAnimationCommand(int mode, bool novid, string label) {
   command += "pnt[tr_]:={Black,Point[tr[[1]]]};\n";
   // Dot (point) animation command
   command += "dot[tr_]:={Black,Point[tr]};\n";
+
+  // Bounds boxes
+  if (animationCentering==1) {
+    command += "Bd[{a_,b_,c_,d_}]:={{a,c},{a,d},{b,d},{b,c}};\n";
+    command += "bounds=Table[rect[Bd[bnds[[i]]]],{i,1,Length[bnds]}];\n";
+    command += "Bd2[{a_,b_,c_,d_}]:={{a,b},{c,d}};\n";
+  }
+
   // Create range
-  stream << "{{" << left << "," << right << "},{" << bottom << "," << top << "}}";
+  if (animationCentering==1) stream << "Bd2[bnds[[i]]]";
+  else stream << "{{" << left << ","<< right << "},{" << bottom << "," << top << "}}";
   stream >> range;
   stream.clear();
 
-  stream << "ImageSize->{scale*" << right-left << ",scale*" << top-bottom << "}";
+  stream << "ImageSize->{";
+  if (animationCentering==1) stream << "scale*(bnds[[i]][[2]]-bnds[[i]][[1]]),scale*(bnds[[i]][[4]]-bnds[[i]][[3]])";
+  else stream << "scale*" << right-left << ",scale*" << top-bottom;
+  stream << "}";
   stream >> scl;
   stream.clear();
   // Print walls
