@@ -288,6 +288,9 @@ void GFlowBase::setUpSectorization(Sectorization &sectors, vec2 grav) {
 
 void GFlowBase::setUp() {
   if (writeFields || writeAnimation) {
+    // Remove any previously existing file
+    system(("rm -r "+writeDirectory).c_str());
+    // Create the directory
     mkdir(writeDirectory.c_str(), 0777);
     if (writeFields) {
       mkdir((writeDirectory+"/Waste").c_str(), 0777); // Waste director
@@ -322,7 +325,7 @@ void GFlowBase::objectUpdates() {
     // Eat and produce waste
     for (int i=0; i<array_end; ++i)
       if (-1<it[i]) {
-	Resource.propReduceCue(px[i], py[i], default_bacteria_eating*epsilon);
+	//** Resource.propReduceCue(px[i], py[i], default_bacteria_eating*epsilon);
 	Resource.increase(px[i], py[i], default_bacteria_production*epsilon);
 	Waste.increase (px[i], py[i], default_bacteria_waste*epsilon);
       }
@@ -332,7 +335,7 @@ void GFlowBase::objectUpdates() {
       Waste.update(epsilon, default_waste_diffusion, default_waste_lambda);
       fieldUpdateCounter = 0;
     }
-    Resource.propReduceExec(); // Has the effect of the particles "consuming" the resource
+    //** Resource.propReduceExec(); // Has the effect of the particles "consuming" the resource
     fieldUpdateCounter += epsilon;
     // Set fitnesses
     for (int i=0; i<array_end; ++i)
@@ -486,7 +489,7 @@ void GFlowBase::gatherData() {
 }
 
 void GFlowBase::endOfRun() {
-  if (writeAnimation && rank==0) {
+  if ((writeAnimation || writeFields) && rank==0) {
     // Print a master file
     printToCSV(writeDirectory+"/number.csv", vector<int>(1,recIter)); // Print how many files to expect
     // Print walls to file
