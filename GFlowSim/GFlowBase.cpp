@@ -39,7 +39,7 @@ GFlowBase::GFlowBase() {
   fieldUpdateDelay = 0.0005;
   fieldUpdateCounter = 0;
   scale = 100;
-  printRoot = "RunData";
+  writeDirectory = "RunData";
   //---
 
   // Get MPI system data
@@ -288,13 +288,13 @@ void GFlowBase::setUpSectorization(Sectorization &sectors, vec2 grav) {
 
 void GFlowBase::setUp() {
   if (writeFields || writeAnimation) {
-    mkdir(printRoot.c_str(), 0777);
+    mkdir(writeDirectory.c_str(), 0777);
     if (writeFields) {
-      mkdir((printRoot+"/Waste").c_str(), 0777); // Waste director
-      mkdir((printRoot+"/Resource").c_str(), 0777); // Resource directory
+      mkdir((writeDirectory+"/Waste").c_str(), 0777); // Waste director
+      mkdir((writeDirectory+"/Resource").c_str(), 0777); // Resource directory
     }
     if (writeAnimation) {
-      mkdir((printRoot+"/Pos").c_str(), 0777); // Position directory
+      mkdir((writeDirectory+"/Pos").c_str(), 0777); // Position directory
       // Walls directory
     }
   }
@@ -352,11 +352,11 @@ void GFlowBase::record() {
   if (writeFields) {
     stringstream stream;
     string filename;
-    stream << printRoot << "/Waste/wst" << recIter << ".csv";
+    stream << writeDirectory << "/Waste/wst" << recIter << ".csv";
     stream >> filename;
     if (!Waste.printToCSV(filename)) cout << "Waste write failed.\n";
     stream.clear();
-    stream << printRoot << "/Resource/rsc" << recIter << ".csv";
+    stream << writeDirectory << "/Resource/rsc" << recIter << ".csv";
     stream >> filename;
     if (!Resource.printToCSV(filename)) cout << "Resource write failed.\n";
   }
@@ -394,7 +394,7 @@ void GFlowBase::record() {
       if (writeAnimation) {
 	stringstream stream;
 	string filename;
-	stream << printRoot+"/Pos/pos" << recIter << ".csv";
+	stream << writeDirectory+"/Pos/pos" << recIter << ".csv";
 	stream >> filename;
 	printToCSV(filename, positions);
       }
@@ -488,12 +488,12 @@ void GFlowBase::gatherData() {
 void GFlowBase::endOfRun() {
   if (writeAnimation && rank==0) {
     // Print a master file
-    printToCSV(printRoot+"/number.csv", vector<int>(1,recIter)); // Print how many files to expect
+    printToCSV(writeDirectory+"/number.csv", vector<int>(1,recIter)); // Print how many files to expect
     // Print walls to file
-    printToCSV(printRoot+"/walls.csv", walls);
+    printToCSV(writeDirectory+"/walls.csv", walls);
     // Print bounds to file
     Bounds bounds(left,right,bottom,top);
-    printToCSV(printRoot+"/bnds.csv", vector<Bounds>(1,bounds));
+    printToCSV(writeDirectory+"/bnds.csv", vector<Bounds>(1,bounds));
   }
 }
 
@@ -785,29 +785,13 @@ vector<vec2> GFlowBase::findPackedSolution(int number, double radius, Bounds b, 
   packedSectors.setASize(number); //** AD HOC
   setUpSectorization(packedSectors, force);
   packedSectors.setDrag(default_packed_drag);
-  createAndDistributeParticles(number, b, packedSectors, initialRadius, 0, ZeroV);
+  createAndDistributeParticles(number, b, packedSectors, radius, 0, ZeroV); //** START WITH INITIAL RADIUS, NOT RADIUS
   packedSectors.initialize();
   // Simulate motion and expansion
-  double delay = 1./150., counter = 0;
-  int j=0;
-  double *sg = packedSectors.getSG();
   for (int i=0; i<expandSteps; ++i) {
-    //for (int n=0; n<packedSectors.getArrayEnd(); ++n) sg[n] += dr;
-    //for (auto &p : packedSectors.getParticles()) p.sigma += dr;
+    for (auto &p : packedSectors.getParticles()) p.sigma += dr; //** DOESN'T DO ANYTHING
     packedSectors.update();
-    
-    // View progress
-    /*
-    if (delay<counter) {
-      printToCSV("pos"+toStr(j)+".csv", packedSectors.getParticles());
-      counter = 0;
-      ++j;
-    }
-    counter += epsilon;
-    */
   }
-  // Make sure final radii are correct
-  for(int n=0; n<packedSectors.getArrayEnd(); ++n) sg[n] = radius;
   // Simulate pure motion (relaxation)
   for (int i=0; i<relaxSteps; ++i) packedSectors.update();
   // Get positions
@@ -1515,14 +1499,15 @@ vector<double> GFlowBase::getBulkData(vector<Particle> &allParticles, vector<VPa
 }
 
 vector<double> GFlowBase::getBulkData(vector<Particle> &allParticles, string &shapes, vector<VPair>& lines, bool getOutline, Bounds region, double volCutoff, double boxV, double dr, double upperVolCutoff) {
-  if (region.left==region.right || region.bottom==region.top) return vector<double>();
   // Might use full bounds
-  if (region.right<=region.left) region = Bounds(left, right, bottom, top);
+  if (region.right<region.left || region.top<region.bottom) region = Bounds(left, right, bottom, top);
   // Might have to truncate bounds
   if (region.left<left) region.left = left;
   if (right<region.right) region.right = right;
   if (region.bottom<bottom) region.bottom = bottom;
   if (top<region.top) region.top = top;
+  // Invalid bounds
+  if (region.right<=region.left || region.top<=region.bottom) return vector<double>();
   // Calculate parameters
   double sx = sqrt(boxV), sy = sx;
   int nsx = (region.right-region.left)/sx, nsy = (region.top-region.bottom)/sy;

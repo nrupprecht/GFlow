@@ -138,6 +138,7 @@ class GFlowBase {
   void setVisBubbles(bool b)   { visBubbles = b; }
   void setWriteFields(bool b)  { writeFields = b; }
   void setWriteAnimation(bool b) { writeAnimation = b; }
+  void setWriteDirectory(string d) { writeDirectory = d; }
   void setRecBulk(bool b)      { recBulk = b; }
   void setRestrictBubbleDomain(bool b) { restrictBubbleDomain = b; }
   void setForceChoice(int c)   { forceChoice = c; }
@@ -167,7 +168,7 @@ class GFlowBase {
   vector<vector<vec2> >  statRecord;    // Save the data produced by the statistic functions
 
   // For printing data
-  string printRoot;
+  string writeDirectory;
 
   // For bacteria
   bool doFields;

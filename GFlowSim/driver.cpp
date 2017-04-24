@@ -81,6 +81,7 @@ int main(int argc, char** argv) {
   string loadFile = "";
   string loadBuoyancy = "";
   string saveFile = "";
+  string writeDirectory = "RunData";
   string updateBuoyancy = "";
 
   // Initialize MPI
@@ -162,6 +163,7 @@ int main(int argc, char** argv) {
   parser.get("loadFile", loadFile);
   parser.get("loadBuoyancy", loadBuoyancy);
   parser.get("saveFile", saveFile);
+  parser.get("writeDirectory", writeDirectory);
   parser.get("updateBuoyancy", updateBuoyancy);
   // Make sure we didn't enter any illegal tokens (ones not listed above) on the command line
   try {
@@ -253,6 +255,7 @@ int main(int argc, char** argv) {
   simulator.setVisBubbles(visBubbles);
   simulator.setWriteFields(writeFields);
   simulator.setWriteAnimation(writeAnimation);
+  simulator.setWriteDirectory(writeDirectory);
   simulator.setRecBulk(bulk);
   if (buoyancy || loadBuoyancy!="") simulator.setRestrictBubbleDomain(true);
 
