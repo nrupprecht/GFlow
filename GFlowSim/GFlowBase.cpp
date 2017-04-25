@@ -34,7 +34,7 @@ GFlowBase::GFlowBase() {
   restrictBubbleDomain = false;
   writeFields = false;
   writeFitness = false;
-  writeAnimation = false;
+  writeAnimation = true; // We animate by printing files by default
   forceChoice = 0;
   doFields = false;
   fieldUpdateDelay = 0.0005;
@@ -293,7 +293,7 @@ void GFlowBase::setUpSectorization(Sectorization &sectors, vec2 grav) {
 }
 
 void GFlowBase::setUp() {
-  if (writeFields || writeFitness || writeAnimation) {
+  if (writeFields || writeFitness || writeAnimation || writeCreation) {
     // Remove any previously existing file
     system(("rm -r "+writeDirectory).c_str());
     // Create the directory
@@ -304,6 +304,7 @@ void GFlowBase::setUp() {
     }
     if (writeFitness) mkdir((writeDirectory+"/Fitness").c_str(), 0777); // Fitness director
     if (writeAnimation) mkdir((writeDirectory+"/Pos").c_str(), 0777); // Position directory
+    if (writeCreation) mkdir((writeDirectory+"/Init").c_str(), 0777); // Initialization directory
   }
   resetVariables();
 }
@@ -745,7 +746,6 @@ void GFlowBase::createAndDistributeParticles(int number, const Bounds &b, Sector
       allParticles.push_back(p);
     }
   }
-  
   distributeParticles(allParticles, sectors);
 }
 
@@ -768,7 +768,6 @@ void GFlowBase::createAndDistributeParticles(const vector<double>& radii, const 
       allParticles.push_back(p);
     }
   }
-
   distributeParticles(allParticles, sectors);
 }
 
@@ -790,7 +789,6 @@ void GFlowBase::createAndDistributeParticles(const vector<vec2>& positions, cons
       allParticles.push_back(p);
     }
   }
-
   distributeParticles(allParticles, sectors);
 }
 
@@ -820,12 +818,34 @@ vector<vec2> GFlowBase::findPackedSolution(int number, double radius, Bounds b, 
   createAndDistributeParticles(number, b, packedSectors, radius, 0, ZeroV); //** START WITH INITIAL RADIUS, NOT RADIUS
   packedSectors.initialize();
   // Simulate motion and expansion
+  int printIter = 0;
+  double counter=0, delay=1./15.;
   for (int i=0; i<expandSteps; ++i) {
     for (auto &p : packedSectors.getParticles()) p.sigma += dr; //** DOESN'T DO ANYTHING
     packedSectors.update();
+    // For observation
+    if (writeCreation) {
+      counter+=epsilon;
+      if (delay<counter) {
+	printToCSV(writeDirectory+"Init/fps"+toStr(printIter)+".csv", packedSectors.getParticles());
+	++printIter;
+	counter=0;
+      }
+    }
   }
   // Simulate pure motion (relaxation)
-  for (int i=0; i<relaxSteps; ++i) packedSectors.update();
+  for (int i=0; i<relaxSteps; ++i) {
+    packedSectors.update();
+    // For observation
+    if (writeCreation) {
+      counter+=epsilon;
+      if (delay<counter) {
+        printToCSV(writeDirectory+"Init/fps"+toStr(printIter)+".csv", packedSectors.getParticles());
+        ++printIter;
+        counter=0;
+      }
+    }
+  }
   // Get positions
   auto sectorParticles = packedSectors.getParticles();
   if (numProc>1) {

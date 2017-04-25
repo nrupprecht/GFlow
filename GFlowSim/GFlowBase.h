@@ -139,6 +139,7 @@ class GFlowBase {
   void setWriteFields(bool b)  { writeFields = b; }
   void setWriteFitness(bool b) { writeFitness = b; }
   void setWriteAnimation(bool b) { writeAnimation = b; }
+  void setWriteCreation(bool b) { writeCreation = b; }
   void setWriteDirectory(string d) { writeDirectory = d; }
   void setRecBulk(bool b)      { recBulk = b; }
   void setRestrictBubbleDomain(bool b) { restrictBubbleDomain = b; }
@@ -164,6 +165,7 @@ class GFlowBase {
   bool writeFields;
   bool writeFitness;
   bool writeAnimation;
+  bool writeCreation;    // Whether to print the  
   int forceChoice;
 
   vector<pair<StatFunc,string> > statFunctions; // Statistic functions and a string to name them
