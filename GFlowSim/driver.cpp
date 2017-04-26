@@ -36,11 +36,12 @@ int main(int argc, char** argv) {
   int Tri = -1;
   bool interact = true;
   bool seedRand = true;
-  int quiet     = -1;
+  int quiet     = -1; // Quiet==-1 -> Normal, Quiet==1 -> Full quiet, Quiet==2 -> Quiet if label!=0
   int lattice   = 0;
 
   // Animation Paramaters
   int mode     = 0;     // Animation mode
+  bool noprint = false;
   bool animate = false;
   int center   = false;
   bool snapshot = false;
@@ -51,7 +52,7 @@ int main(int argc, char** argv) {
   bool visBubbles = false;
   bool writeFields = false;
   bool writeFitness = false;
-  bool writeAnimation = false;
+  bool writeAnimation = true;
   bool bulk    = false;
   bool omega   = false;
   bool KE      = false;
@@ -76,6 +77,7 @@ int main(int argc, char** argv) {
   // Simulation type
   bool square = true;
   bool buoyancy = false;
+  bool CV = false;
   bool bacteria = false;
 
   // Load and save
@@ -128,6 +130,7 @@ int main(int argc, char** argv) {
   parser.get("quiet", quiet);
   parser.get("lattice", lattice);
   parser.get("mode", mode);
+  parser.get("noprint", noprint);
   parser.get("animate", animate);
   parser.get("center", center);
   parser.get("snapshot", snapshot);
@@ -161,6 +164,7 @@ int main(int argc, char** argv) {
   parser.get("scale", scale);
   parser.get("square", square);
   parser.get("buoyancy", buoyancy);
+  parser.get("CV", CV);
   parser.get("bacteria", bacteria);
   parser.get("loadFile", loadFile);
   parser.get("loadBuoyancy", loadBuoyancy);
@@ -191,7 +195,7 @@ int main(int argc, char** argv) {
   }
 
   /// Print condition summary
-  if (rank==0 && quiet==-1) {
+  if ((rank==0 && quiet==-1) || (quiet==2 && label=="0")) {
     cout << "----------------------- RUN SUMMARY -----------------------\n";
     cout << "Command: ";
     for (int i=0; i<argc; i++) cout << argv[i] << " ";
@@ -225,7 +229,7 @@ int main(int argc, char** argv) {
     if (LJ!=-1) simulator.setInteractionType(1);
   }
   else if (loadBuoyancy!="") {
-    if (!simulator.loadBuoyancy(loadBuoyancy, bR, velocity, density)) {
+    if (!simulator.loadBuoyancy(loadBuoyancy, bR, velocity, density, CV)) {
       cout << "Failed to load [" << loadBuoyancy << "], exiting.\n";
       return 0;
     }
@@ -277,12 +281,10 @@ int main(int argc, char** argv) {
   if (maxVy) simulator.addStatFunction(Stat_Max_Velocity_Y, "maxvy");
   if (num) simulator.addStatFunction(Stat_Number_Particles, "num");
 
-  if (bacteria) simulator.addTerminationCondition(Stat_Number_Particles, allGone);
-
   // Get the actual number of particles in the simulation
   number = simulator.getSize();
   double filled = simulator.getFilledVolume(), vol = simulator.getVolume();
-  if (rank==0 && quiet==-1) {
+  if ((rank==0 && quiet==-1) || (quiet==2 && label=="0")) {
     cout << "Number: " << number << ", Packing fraction: " << filled/vol << endl;
     cout << "Dimensions: " << simulator.getWidth() << " x " << simulator.getHeight() << endl;
     cout << "Set up time: " << simulator.getSetUpTime() << endl;
@@ -295,7 +297,7 @@ int main(int argc, char** argv) {
   simulator.run(time);
 
   // Head node prints the run summary
-  if (rank==0 && quiet==-1) {
+  if ((rank==0 && quiet==-1) || (quiet==2 && label=="0")) {
     if (updateBuoyancy!="") {
       if (simulator.createConfigurationFile(updateBuoyancy)) cout << "Saved configuration to file [" << updateBuoyancy << "]" << endl;
     }
@@ -333,10 +335,12 @@ int main(int argc, char** argv) {
     if (bubbles || visBubbles) {
       cout << "num" << label << "=Table[Length[bsize" << label << "[[i]]],{i,1,Length[bsize" << label << "]}];\n";
       cout << "vol" << label << "=Table[Total[bsize" << label << "[[i]]],{i,1,Length[bsize" << label << "]}];\n";
-      cout << "Print [\"Number of bubbles\"]\n";
-      cout << "ListLinePlot[num" << label << ",PlotStyle->Black,ImageSize->Large,PlotRange -> All]\n";
-      cout << "Print[\"Total bubble volume\"]\n";
-      cout << "ListLinePlot[vol" << label << ",PlotStyle->Black,ImageSize->Large,PlotRange->All]\n";
+      if (!noprint) {
+	cout << "Print [\"Number of bubbles\"]\n";
+	cout << "ListLinePlot[num" << label << ",PlotStyle->Black,ImageSize->Large,PlotRange -> All]\n";
+	cout << "Print[\"Total bubble volume\"]\n";
+	cout << "ListLinePlot[vol" << label << ",PlotStyle->Black,ImageSize->Large,PlotRange->All]\n";
+      }
     }
     else if (bulk) cout << simulator.printBulkAnimationCommand(novid) << endl;
     string stats = simulator.printStatFunctions(label);

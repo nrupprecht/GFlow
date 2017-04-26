@@ -15,6 +15,7 @@ inline double ZeroOm(double) { return 0; }
 
 // "All gone" termination condition
 inline bool allGone(double num) { return num<=0; }
+inline bool belowZero(double y) { return y<0; }
 
 // Granular float base class
 class GFlowBase {
@@ -93,7 +94,7 @@ class GFlowBase {
 
   void createSquare(int, double, double=4., double=4., double=0.1, double=0., int=0);
   void createBuoyancyBox(double,double,double,double,double,double,double, int=0);
-  bool loadBuoyancy(string, double=0.5, double=5., double=10.);
+  bool loadBuoyancy(string, double=0.5, double=5., double=10., bool=false);
   void recordPositions();
 
   void addStatFunction(StatFunc, string);

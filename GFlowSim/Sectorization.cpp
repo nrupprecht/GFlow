@@ -54,7 +54,7 @@ void Sectorization::initialize() {
   if (sectors) delete [] sectors;
   sectors = new list<int>[nsx*nsy+1];
   // Remake particles
-  if (asize<1) asize = 4*plist.size(); //----  Ad hoc
+  if (asize<1) asize = 2*plist.size(); //----  Ad hoc
   if (asize<1) return;
   easize = asize; //---- Ad hoc
   // Set particle data in arrays
@@ -89,7 +89,7 @@ vector<Particle>& Sectorization::getParticles() {
 void Sectorization::setCoeff(double c) {
   if (cf!=0)
     for (int i=0; i<array_end; ++i) cf[i] = c;
-  for (auto &p :plist) p.coeff = c;
+  for (auto &p : plist) p.coeff = c;
 }
 
 void Sectorization::setBounds(double l, double r, double b, double t) {
@@ -102,6 +102,34 @@ void Sectorization::setBounds(Bounds b) {
 
 void Sectorization::setSimBounds(double l, double r, double b, double t) {
   simBounds = Bounds(l, r, b, t);
+}
+
+void Sectorization::setUseCharacteristics(bool use) {
+  useCharacteristics = use;
+  if (use) {
+    // Delete old characteristics
+    if (ch)
+      for (int i=0; i<asize; ++i)
+	if (ch[i]) {
+          delete ch[i];
+          ch[i] =0;
+        }
+    else { // Create ch array if neccessary
+      ch = (Characteristic**)aligned_alloc(64, asize*sizeof(Characteristic*));
+      memset(ch, 0, asize*sizeof(Characteristic*));
+    }
+  }
+  else {
+    // Clean up
+    // Delete old characteristics
+    if (ch)
+      for (int i=0; i<asize; ++i)
+        if (ch[i]) {
+          delete ch[i];
+          ch[i] =0;
+        }
+    ch = 0;
+  }
 }
 
 void Sectorization::setInteractionType(int inter) {
@@ -372,6 +400,11 @@ void Sectorization::insertParticle(Particle p) {
   ds[array_end] = p.dissipation;
   cf[array_end] = p.coeff;
   it[array_end] = p.interaction;
+  // Mark in position tracker
+  positionTracker[array_end] = p.position;
+  // Add to sectorization
+  int num_sec = getSec(p.position);
+  sectors[num_sec].push_back(array_end);
   // Create (potentially) wall neighbor lists
   list<Wall*> lst;
   for (auto &w : walls) {
@@ -410,19 +443,7 @@ void Sectorization::addWall(Wall w) {
 }
 
 void Sectorization::setCharacteristic(Characteristic *C) {
-  useCharacteristics = true;
-  // Delete old characteristics
-  if (ch) {
-    for (int i=0; i<asize; ++i)
-      if (ch[i]) {
-	delete ch[i];
-	ch[i] =0;
-      }
-  }
-  else { // Create ch array if neccessary
-    ch = (Characteristic**)aligned_alloc(64, asize*sizeof(Characteristic*));
-    memset(ch, 0, asize*sizeof(Characteristic*));
-  }
+  setUseCharacteristics(true);
   for (int i=0; i<array_end; ++i)
     if (it[i]!=-1) ch[i] = C->create();
 }

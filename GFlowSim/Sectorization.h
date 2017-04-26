@@ -73,11 +73,12 @@ class Sectorization {
   void setBounds(Bounds);
   void setSimBounds(double, double, double, double);
   void setSimBounds(Bounds);
+  void setUseCharacteristics(bool);
   void setInteractionType(int);
   void setASize(int i);
   void stopParticles();
   void setCommWork(MPI::Intercomm &comm) { CommWork = comm; }
-  void resetComm()                  { CommWork = MPI::COMM_WORLD; }
+  void resetComm()               { CommWork = MPI::COMM_WORLD; }
   void discard();
   void discardAll();
   void updatePList(); // Fill plist with the particles from the data buffers

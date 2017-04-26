@@ -1055,6 +1055,8 @@ void GFlowBase::setAsBacteria() {
   Waste.setWrap(true);
   Waste.setDiffusion(default_waste_diffusion);
   Waste.setLambda(default_waste_lambda);
+  // Set termination condition
+  addTerminationCondition(Stat_Number_Particles, allGone);
 }
 
 void GFlowBase::createSquare(int number, double radius, double width, double height, double vsgma, double dispersion, int interaction) {
@@ -1166,7 +1168,7 @@ void GFlowBase::createBuoyancyBox(double radius, double bR, double density, doub
   setUpTime = time_span(end, start);
 }
 
-bool GFlowBase::loadBuoyancy(string fileName, double radius, double velocity, double density) {
+bool GFlowBase::loadBuoyancy(string fileName, double radius, double velocity, double density, bool drag) {
   // Start the clock
   auto start = current_time();
   // Discard any old state
@@ -1186,24 +1188,28 @@ bool GFlowBase::loadBuoyancy(string fileName, double radius, double velocity, do
   double height = tp + 10*radius+0.5;
   Bounds bounds(left, right, bottom, height);
   setBounds(bounds);
+  // Set use characteristics
+  sectorization.setUseCharacteristics(drag);
   // Clear old walls, create new ones
   walls.clear();
   addWall(left, bottom, right, bottom);
   addWall(left,bottom,left,top);
   addWall(right,bottom,right,top);
   addWall(left,top,right,top);
-  // Add the intruding particle
-  if (0<radius) {
-    list<Particle> intruder;
-    Particle P((right-left)/2, tp+radius, radius);
-    P.velocity = vec2(0, -velocity);
-    P.setDensity(density);
-    intruder.push_back(P);
-    distributeParticles(intruder, sectorization);
-  }
   // Send out particles
   setUpSectorization();
   sectorization.initialize();
+  // Add the intruding particle
+  if (0<radius) {
+    Particle P((right-left)/2, tp+radius, radius);
+    vec2 V(0, -velocity);
+    P.velocity = V;
+    P.setDensity(density);
+    if (drag) sectorization.insertParticle(P, new ConstantVelocity(V));
+    else sectorization.insertParticle(P);
+  }
+  // Set a termination condition
+  addTerminationCondition(Stat_Large_Object_Height, belowZero);
   // End setup timing
   auto end = current_time();
   setUpTime = time_span(end, start);

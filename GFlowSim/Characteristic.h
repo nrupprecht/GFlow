@@ -36,4 +36,15 @@ class Bacteria : public Characteristic {
   double death;        // Probability of death
 };
 
+class ConstantVelocity : public Characteristic {
+ public:
+  ConstantVelocity(vec2);
+
+  virtual void modify(double**, Sectorization*, int);
+  virtual Characteristic* create();
+ private:
+  vec2 targetVelocity;
+  double strength;
+};
+
 #endif

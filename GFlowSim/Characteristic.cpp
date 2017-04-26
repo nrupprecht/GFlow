@@ -51,3 +51,16 @@ void Bacteria::modify(double **pdata, Sectorization *sectors, int id) {
 Characteristic* Bacteria::create() {
   return new Bacteria;
 }
+
+ConstantVelocity::ConstantVelocity(vec2 v) : targetVelocity(v), strength(10.) {};
+
+void ConstantVelocity::modify(double **pdata, Sectorization*, int id) {
+  double *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
+  // Apply a force to keep the object moving at a constant velocity
+  fx[id] += strength*(targetVelocity.x-vx[id])/im[id];
+  fy[id] += strength*(targetVelocity.y-vy[id])/im[id];
+}
+
+Characteristic* ConstantVelocity::create() {
+  return new ConstantVelocity(targetVelocity);
+}
