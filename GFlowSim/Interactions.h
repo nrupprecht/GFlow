@@ -88,7 +88,7 @@ inline bool hardDiskRepulsion_wall(double **pdata, int p, const Wall &w, int asi
     Fs = 0;
     if (coeff)
       Fs = fabs(coeff*Fn)*sign(Vs);
-    
+    // Add forces
     fx[p] -= Fn*norm.x+Fs*shear.x;
     fy[p] -= Fn*norm.y+Fs*shear.y;
     tq[p] -= Fs*sg[p];    

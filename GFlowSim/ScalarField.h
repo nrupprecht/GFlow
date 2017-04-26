@@ -60,6 +60,7 @@ class ScalarField {
   // Printing
   friend std::ostream& operator<<(std::ostream&, ScalarField &);
   bool printToCSV(string, int=50);
+  bool loadFromCSV(string);
   
   // Error class
   class FieldOutOfBounds {

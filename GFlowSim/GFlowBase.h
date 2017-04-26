@@ -122,7 +122,6 @@ class GFlowBase {
   // Record accessors
   auto getPositionRecord() { return positionRecord; }
   auto getSpecialRecord()  { return specialRecord; }
-  auto getForceRecord()    { return forceRecord; }
   auto getBubbleRecord()   { return bubbleRecord; }
   auto getBulkRecord()     { return bulkRecord; }
   string printPositionRecord(int);
@@ -151,7 +150,6 @@ class GFlowBase {
   vector<vector<PData> > positionRecord;
   vector<Bounds> animationBounds;
   vector<vector<Tri> > specialRecord;
-  vector<vector<Tri> > forceRecord;
   vector<vector<double> > bubbleRecord;
   vector<vector<VPair> > bulkRecord;
   vector<Bounds> bulkBounds;  // The bounds in which we did bubble analysis

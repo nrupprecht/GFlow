@@ -473,19 +473,21 @@ pair<double, int> Sectorization::doStatFunction(StatFunc func) {
   return pair<double, int>(data, count);
 }
 
-vector<Tri> Sectorization::forceAnimate(int choice, bool pressure) {
-  if (!doInteractions) return vector<Tri>();
+vector<PData> Sectorization::forceAnimate(int choice, bool pressure) {
+  if (!doInteractions) return vector<PData>();
   // Get rid of holes in the array
   compressArrays();
   // Create the neighborhood lists
   createNeighborLists();
   // Data array with an entry for every particle
-  vector<Tri> data(size); 
+  vector<PData> data(size); 
   // Set positions and radii
   for (int i=0; i<size; ++i) {
     std::get<0>(data.at(i)) = vec2(px[i], py[i]);
     std::get<1>(data.at(i)) = sg[i];
-    std::get<2>(data.at(i)) = 0;
+    std::get<2>(data.at(i)) = th[i];
+    std::get<3>(data.at(i)) = it[i];
+    std::get<4>(data.at(i)) = 0;
   }
   // Calculate forces
   for (auto &nl : neighborList) {
@@ -522,13 +524,13 @@ vector<Tri> Sectorization::forceAnimate(int choice, bool pressure) {
 	break;
       }
       // Store
-      std::get<2>(data.at(i)) += fabs(F);
-      std::get<2>(data.at(j)) += fabs(F);
+      std::get<4>(data.at(i)) += fabs(F);
+      std::get<4>(data.at(j)) += fabs(F);
     }
   }
   // Turn force into pressure
   if (pressure)
-    for (int i=0; i<size; ++i) std::get<2>(data.at(i)) /= (2*PI*sg[i]);
+    for (int i=0; i<size; ++i) std::get<4>(data.at(i)) /= (2*PI*sg[i]);
   // Return data
   return data;
 }

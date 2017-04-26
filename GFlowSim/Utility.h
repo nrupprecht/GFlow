@@ -323,6 +323,8 @@ vect(const vect<T>& V) : x(V.x), y(V.y) {};
 typedef vect<double> vec2;
 typedef pair<vec2, vec2> VPair;
 typedef std::tuple<vec2, double, double> Tri;
+// PData records all the data you need to print particles: 
+// { position, sigma, theta, interaction, 'color' }
 typedef std::tuple<vec2, double, double, double, double> PData;
 
 /// Some common vectors

@@ -40,6 +40,7 @@ void ScalarField::setResolution(double res) {
   nsy = (bounds.top - bounds.bottom)/res;
   dx = (bounds.right - bounds.left)/nsx;
   dy = (bounds.top - bounds.bottom)/nsy;
+  ++nsx; ++nsy;
   idx = 1./dx; idy = 1./dy;
 
   array = new double[nsx*nsy];
@@ -316,16 +317,84 @@ bool ScalarField::printToCSV(string filename, int resolution) {
   ofstream fout(filename);
   if(fout.fail()) return false;
   // Print data
-  double X, Y = bounds.bottom;
-  double DX = (bounds.right-bounds.left)/resolution, DY = (bounds.top-bounds.bottom)/resolution;
-  for (int y=0; y<resolution; ++y) {
-    X = bounds.left;
-    for (int x=0; x<resolution; ++x) {
-      fout << X << "," << Y << "," << get(X,Y) /*array[nsx*y+x]*/ << endl;
-      X += DX;
-    }
-    Y += DY;
+  double X, Y = bounds.bottom, DX, DY;
+  // Set step size
+  if (resolution>0) {
+    DX = (bounds.right-bounds.left)/resolution;
+    DY = (bounds.top-bounds.bottom)/resolution;
   }
+  else { 
+    DX = dx; 
+    DY = dy;
+  }
+  if (resolution>0) 
+    for (int y=0; y<resolution; ++y) {
+      X = bounds.left;
+      for (int x=0; x<resolution; ++x) {
+	fout << X << "," << Y << "," << get(X,Y) << endl;
+	X += DX;
+      }
+      Y += DY;
+    }
+  else // Use full resolution
+    for (int y=0; y<nsy; ++y) {
+      X = bounds.left;
+      for (int x=0; x<nsx; ++x) {
+        fout << X << "," << Y << "," << array[nsx*y+x] << endl;
+	X += DX;
+      }
+      Y += DY;
+    }
+  return true;
+}
+
+bool ScalarField::loadFromCSV(string filename) {
+  ifstream fin(filename);
+  if (fin.fail()) return false;
+  // Read in values - they should be in the form [x,y,v\n]
+  vector<Trio> values;
+  double x, y, v;
+  char c; // For the ','
+  while (!fin.eof()) {
+    fin >> x >> c >> y >> c >> v;
+    values.push_back(Trio(x,y,v));
+  }
+  if (values.empty()) {
+    discard(); // Empty field
+    return true; 
+  }
+  // Find bounds and resolution
+  double minX=1e9, maxX=-1e9, minY=1e9, maxY=1e-9;
+  double DX=1e9, DY=1e9;
+  Trio V = *values.begin();
+  for (auto t : values) {
+    // Look for bounds
+    if (t.x<minX) minX = t.x;
+    if (maxX<t.x) maxX = t.x;
+    if (t.y<minY) minY = t.y;
+    if (maxY<t.y) maxY = t.y;
+    // Look for resolution
+    double tdx = fabs(V.x-t.x), tdy = fabs(V.y-t.y);
+    if (tdx<DX && 0<tdx) DX = fabs(V.x-t.x);
+    if (tdy<DY && 0<tdy) DY = fabs(V.y-t.y);
+  }
+  
+  // Set values
+  bounds.left = minX; bounds.right = maxX;
+  bounds.bottom = minY; bounds.top = maxY;
+  dx = DX; dy = DY;
+  nsx = (bounds.right - bounds.left)/dx+1;
+  nsy = (bounds.top - bounds.bottom)/dy+1;
+  idx = 1./dx; idy = 1./dy;
+  array = new double[nsx*nsy];
+  lap_array = new double[nsx*nsy];
+  // Set values
+  for (const auto& v : values) {
+    int x = (v.x-bounds.left)*idx;
+    int y = (v.y-bounds.bottom)*idy;
+    array[nsx*y+x] = v.z;
+  }
+  // Return success
   return true;
 }
 

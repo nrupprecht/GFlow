@@ -410,19 +410,22 @@ void GFlowBase::record() {
 	d2.cut(R);
 	animationBounds.push_back(d2);
       }
-      for (const auto &p : allParticles) {
-	switch(animationCentering) {
-	case 0: {
-	  positions.push_back(PData(p.position, p.sigma, p.theta, p.interaction, 0));
-	  break;
-	}
-	case 1: {
-	  if (domain.contains(p.position))
+      if (!recForces) {
+	for (const auto &p : allParticles) {
+	  switch(animationCentering) {
+	  case 0: {
 	    positions.push_back(PData(p.position, p.sigma, p.theta, p.interaction, 0));
-	  break;
-	}
+	    break;
+	  }
+	  case 1: {
+	    if (domain.contains(p.position))
+	      positions.push_back(PData(p.position, p.sigma, p.theta, p.interaction, 0));
+	    break;
+	  }
+	  }
 	}
       }
+      else positions = sectorization.forceAnimate(forceChoice); //** Would have to do something different if using multiple processors
       if (writeAnimation) {
 	stringstream stream;
 	string filename;
@@ -482,12 +485,6 @@ void GFlowBase::record() {
     } 
     specialRecord.push_back(positions);
   }
-  // Force record
-  if (recForces) {
-    //** Would have to change this for multiprocessor use
-    forceRecord.push_back(sectorization.forceAnimate(forceChoice));
-  }
-  
   // Update display 
   lastDisp = time;
   ++recIter;
@@ -1390,14 +1387,14 @@ string GFlowBase::printForcesAnimationCommand(int mode, bool novid) {
   string command, strh, range, scl;
   // Find maximum force
   double maxF = 0;
-  for (const auto& v : forceRecord)
+  for (const auto& v : positionRecord)
     for (auto f : v) {
-      double force = std::get<2>(f);
+      double force = std::get<4>(f);
       if (force>maxF) maxF = force;
     }
   // Create command - do this as the mode switching for now
-  if (mode==0) stream << "pos=" << mmPreproc(forceRecord,3) << ";"; 
-  else stream << "pos=" << mmPreproc(forceRecord) << ";";
+  if (mode==0) stream << "pos=" << mmPreproc(positionRecord,3) << ";"; 
+  else stream << "pos=" << mmPreproc(positionRecord) << ";";
   stream >> command;
   stream.clear();
   command += "\n";
