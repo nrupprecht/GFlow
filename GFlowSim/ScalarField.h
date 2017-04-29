@@ -53,13 +53,14 @@ class ScalarField {
   void setWrap(bool w)  { wrapX = wrapY = w; }
   void setWrapX(bool w) { wrapX = w; }
   void setWrapY(bool w) { wrapY = w; }
+  void setPrintPoints(int p) { printPoints = p; }
 
   // Field evolution, pass in timestep
   void update(double);
 
   // Printing
-  friend std::ostream& operator<<(std::ostream&, ScalarField &);
-  bool printToCSV(string, int=50);
+  friend std::ostream& operator<<(std::ostream&, const ScalarField &);
+  bool printToCSV(string) const;
   bool loadFromCSV(string);
   
   // Error class
@@ -85,8 +86,22 @@ class ScalarField {
 
   double diffusion, lambda;
 
+  // The resolution to print at for ostream or .csv files
+  mutable int printPoints;
+
   std::map<int,double> propReduce; // For doing a proportional reduction (-lambda*n(x))
   double& cue(int, int); // Update the proportional reduce structure
 };
+
+inline bool printToCSV(string filename, const ScalarField& field, int iter) {
+  stringstream stream;
+  stream << filename << iter << ".csv";
+  stream >> filename;
+  if (!field.printToCSV(filename)) {
+    cout << "Write to [" << filename << "] failed.\n";
+    return false;
+  }
+  return true;
+}
 
 #endif

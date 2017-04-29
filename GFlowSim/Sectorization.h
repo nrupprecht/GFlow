@@ -98,7 +98,7 @@ class Sectorization {
   // Statistics
   string printSectors();
   pair<double, int> doStatFunction(StatFunc);
-  vector<PData> forceAnimate(int=0, bool=true);
+  vector<PData> forceAnimate(int=0, int=0, bool=true);
 
   // Exception classes
   class BadParticle {};
@@ -107,7 +107,8 @@ class Sectorization {
   /// Helper functions
   inline void firstHalfKick();
   inline void particleInteractions(); // Handle the interactions between pair of particles
-  inline void interactionHelper(int, int, int, double&, double&); // Switch statement for particle interaction
+  inline void interactionHelper(int, int, int, double&, double&, bool=true); // Switch statement for particle interaction
+  inline void forceChoice(int, const double, const double, double&);
   inline void wallInteractions(); // Handle the interactions between particles and walls
   inline void secondHalfKick();
   inline void wrap(double&, double&);
@@ -120,6 +121,7 @@ class Sectorization {
   inline void createWallNeighborList();
   inline vec2 getDisplacement(vec2, vec2);
   inline vec2 getDisplacement(double, double, double, double);
+  inline void makeSectors();
   inline void createArrays(); // Initialize the array and point the pointers to their propper sections
   inline void zeroPointers(); // Zero all pointers. Do not delete, just set them to zero
   inline void remakeParticles(); // Delete and reallocate particle data arrays
@@ -178,13 +180,14 @@ class Sectorization {
   bool redoLists;                    // True if we need to remake neighbor lists
   bool doWallNeighbors;              // Create and use wall Neighbor list
   bool remakeToUpdate;               // Totally remake sectors to update them
-  double cutoff, skinDepth;       // The particle interaction cutoff (for finding sector size), and the skin depth (for creating neighbor lists)
+  double cutoff, skinDepth;          // The particle interaction cutoff (for finding sector size), and the skin depth (for creating neighbor lists)
+  double maxCutR, secCutR;           // The first and second greatest cutoff radii
   int itersSinceBuild, buildDelay;   // How many iterations since we last rebuilt the neighbor list, and how many iterations we wait before rebuilding
 
   // MPI
-  int numProc, rank;         // The number of processors MPI is using and the rank of this processor
-  Bounds bounds, simBounds ; // The physical dimensions of this domain and of the entire simulation space
-  MPI::Intercomm CommWork;         // The communicator for the working processors
+  int numProc, rank;                 // The number of processors MPI is using and the rank of this processor
+  Bounds bounds, simBounds ;         // The physical dimensions of this domain and of the entire simulation space
+  MPI::Intercomm CommWork;           // The communicator for the working processors
 };
 
 #endif

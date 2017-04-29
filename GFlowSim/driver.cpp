@@ -48,12 +48,14 @@ int main(int argc, char** argv) {
   bool special = false;
   bool forces  = false;
   int forceChoice = 0;
+  int typeChoice = 0;
   bool bubbles = false;
   bool visBubbles = false;
   bool writeFields = false;
   bool writeFitness = false;
   bool writeAnimation = true;
   bool bulk    = false;
+  // Stat functions
   bool omega   = false;
   bool KE      = false;
   bool KEX     = false;
@@ -68,6 +70,10 @@ int main(int argc, char** argv) {
   bool maxV    = false;
   bool maxVy   = false;
   bool num     = false;
+  // Stat plots
+  bool velDist = false;
+  bool pressurePlot = false;
+  // Options
   bool novid   = false;
   bool printSectors = false;
   double fps = -1; // FPS
@@ -137,6 +143,7 @@ int main(int argc, char** argv) {
   parser.get("special", special);
   parser.get("forces", forces);
   parser.get("forceChoice", forceChoice);
+  parser.get("typeChoice", typeChoice);
   parser.get("bubbles", bubbles);
   parser.get("visBubbles", visBubbles);
   parser.get("writeFields", writeFields);
@@ -157,6 +164,8 @@ int main(int argc, char** argv) {
   parser.get("maxV", maxV);
   parser.get("maxVy", maxVy);
   parser.get("num", num);
+  parser.get("velDist", velDist);
+  parser.get("pressurePlot", pressurePlot);
   parser.get("novid", novid);
   parser.get("printSectors", printSectors);
   parser.get("fps", fps);
@@ -252,20 +261,22 @@ int main(int argc, char** argv) {
   simulator.setDoInteractions(interact);
   simulator.setStartRec(start);
 
-  simulator.setRecPositions(animate);
-  simulator.setAnimationCentering(center);
+  if (animate) simulator.setPositionsOption(1);
+  if (center)  simulator.setFollowBall(true);
   simulator.setRecSpecial(special);
-  simulator.setRecForces(forces);
+  if (forces)  simulator.setPositionsOption(2);
   simulator.setForceChoice(forceChoice);
+  simulator.setTypeChoice(typeChoice);
   simulator.setRecBubbles(bubbles);
   simulator.setVisBubbles(visBubbles);
+  // Directories
   simulator.setWriteFields(writeFields);
   simulator.setWriteFitness(writeFitness);
   simulator.setWriteAnimation(writeAnimation);
   simulator.setWriteDirectory(writeDirectory);
-  simulator.setRecBulk(bulk);
-  if (buoyancy || loadBuoyancy!="") simulator.setRestrictBubbleDomain(true);
-
+  // simulator.setRecBulk(bulk);
+  if (buoyancy || loadBuoyancy!="") simulator.setFollowBall(true);
+  // Stat functions
   if (omega) simulator.addStatFunction(Stat_Omega, "omega");
   if (KE) simulator.addStatFunction(Stat_KE, "ke");
   if (KEX) simulator.addStatFunction(Stat_KE_X, "kex");
@@ -280,6 +291,9 @@ int main(int argc, char** argv) {
   if (maxV) simulator.addStatFunction(Stat_Max_Velocity, "maxv");
   if (maxVy) simulator.addStatFunction(Stat_Max_Velocity_Y, "maxvy");
   if (num) simulator.addStatFunction(Stat_Number_Particles, "num");
+  // Stat plots
+  if (velDist) simulator.addStatPlot(Plot_Velocity, "velDist", 0, 3); //** 3 is a magic number
+  if (pressurePlot) simulator.addStatPlot(Plot_Force_Vs_Depth, "pressPlot", simulator.getBottom(), simulator.getTop());
 
   // Get the actual number of particles in the simulation
   number = simulator.getSize();
@@ -310,7 +324,7 @@ int main(int argc, char** argv) {
     int nsx = simulator.getNSX(), nsy = simulator.getNSY();
     cout << "Domains: " << ndx << " x " << ndy << ", Total: " << ndx*ndy << endl;
     cout << "Sectors: " << nsx << " x " << nsy << ", Per Domain: " << nsx*nsy << ", Total: " << nsx*nsy*ndx*ndy << endl;
-    cout << "Run Time: " << runTime << " (" << printAsTime(runTime) << "), Sim Time: " << time << endl;
+    cout << "Run Time: " << runTime << " (" << printAsTime(runTime) << "), Sim Time: " << simulator.getTime() << endl;
     cout << "Start Time: " << simulator.getStartRec() << ", Record Time: " << time - simulator.getStartRec() << endl;
     cout << "Iterations: " << iters << ", time per iter: " << (iters>0 ? toStr(runTime/iters) : "---") << endl;
     double transferPercent = transferTime/runTime*100;
@@ -326,11 +340,12 @@ int main(int argc, char** argv) {
     if (animate && !writeAnimation) cout << simulator.printAnimationCommand(mode, novid, label) << endl;
     if (snapshot) cout << simulator.printSnapshot() << endl;
     if (special) cout << simulator.printSpecialAnimationCommand(novid) << endl;
-    if (forces)  cout << simulator.printForcesAnimationCommand(mode, novid) << endl;
+    if (forces && !writeAnimation)  cout << simulator.printForcesAnimationCommand(mode, novid) << endl;
     if (bubbles) cout << "bsize" + label + "=" << simulator.getBubbleRecord() << ";\n";
     if (visBubbles) {
       if (!bubbles) cout << "bsize" << label << "=" << simulator.getBubbleRecord() << ";\n";
       cout << simulator.printBulkAnimationCommand(novid) << endl;
+      cout << "bubF=" << mmPreproc(simulator.getBubbleField()) << ";\n";
     }
     if (bubbles || visBubbles) {
       cout << "num" << label << "=Table[Length[bsize" << label << "[[i]]],{i,1,Length[bsize" << label << "]}];\n";
@@ -345,6 +360,8 @@ int main(int argc, char** argv) {
     else if (bulk) cout << simulator.printBulkAnimationCommand(novid) << endl;
     string stats = simulator.printStatFunctions(label);
     if (!stats.empty()) cout << stats;
+    string plots = simulator.printStatPlots(label);
+    if (!plots.empty()) cout << plots;
   }
   if (printSectors) simulator.printSectors();
 

@@ -2,6 +2,7 @@
 #define GFLOWBASE_H
 
 #include "Sectorization.h"
+#include "StatPlot.h"
 #include "ScalarField.h"
 #include <functional>
 #include <tuple> 
@@ -33,6 +34,10 @@ class GFlowBase {
 
   // Accessors
   Bounds getBounds()       { return Bounds(left, right, bottom, top); }
+  double getLeft()         { return left; }
+  double getRight()        { return right; }
+  double getBottom()       { return bottom; }
+  double getTop()          { return top; }
   int getNSX()             { return sectorization.getNSX(); }
   int getNSY()             { return sectorization.getNSY(); }
   int getNDX()             { return ndx; }
@@ -90,7 +95,6 @@ class GFlowBase {
   // -----  TO GO TO GFLOW.H  ------
   void setAsBacteria();
   void setScale(double s) { scale = s; }
-  void setAnimationCentering(int c) { animationCentering = c; }
 
   void createSquare(int, double, double=4., double=4., double=0.1, double=0., int=0);
   void createBuoyancyBox(double,double,double,double,double,double,double, int=0);
@@ -98,8 +102,10 @@ class GFlowBase {
   void recordPositions();
 
   void addStatFunction(StatFunc, string);
+  void addStatPlot(StatPlot, string, double, double);
   void addTerminationCondition(StatFunc, std::function<bool(double)>);
   string printStatFunctions(string="");
+  string printStatPlots(string="");
 
   string printWallsCommand();
   string printAnimationCommand(int=0, bool=false, string="");
@@ -124,6 +130,7 @@ class GFlowBase {
   auto getSpecialRecord()  { return specialRecord; }
   auto getBubbleRecord()   { return bubbleRecord; }
   auto getBulkRecord()     { return bulkRecord; }
+  ScalarField& getBubbleField() { return bubbleField; }
   string printPositionRecord(int);
   string printResource();
   string printWaste();
@@ -131,19 +138,22 @@ class GFlowBase {
 
   double getSetUpTime() { return setUpTime; }
 
-  void setRecPositions(bool b) { recPositions = b; }
-  void setRecSpecial(bool b)   { recSpecial = b; }
-  void setRecForces(bool b)    { recForces = b; }
-  void setRecBubbles(bool b)   { recBubbles = b; }
-  void setVisBubbles(bool b)   { visBubbles = b; }
-  void setWriteFields(bool b)  { writeFields = b; }
-  void setWriteFitness(bool b) { writeFitness = b; }
-  void setWriteAnimation(bool b) { writeAnimation = b; }
-  void setWriteCreation(bool b) { writeCreation = b; }
-  void setWriteDirectory(string d) { writeDirectory = d; }
-  void setRecBulk(bool b)      { recBulk = b; }
-  void setRestrictBubbleDomain(bool b) { restrictBubbleDomain = b; }
-  void setForceChoice(int c)   { forceChoice = c; }
+  void setPositionsOption(int op) { options[0] = op; }
+  void setRecSpecial(bool b)      { recSpecial = b; }
+  void setRecBubbles(bool b)      { options[1] = b?1:0; }
+  // void setRecBulk(bool b)         { recBulk = b; }
+  void setForceChoice(int c)      { forceChoice = c; }
+  void setTypeChoice(int c)       { typeChoice = c; }
+  void setStatPlotBins(int b)     { statPlotBins = b; }
+  void setVisBubbles(bool b)      { options[3] = b?1:0; if (b) options[1] = 1; }
+  void setFollowBall(bool b)      { followBall = b; }
+
+  void setWriteFields(bool b)     { writeFields = b; }
+  void setWriteFitness(bool b)    { writeFitness = b; }
+  void setWriteAnimation(bool b)  { writeAnimation = b; }
+  void setWriteCreation(bool b)   { writeCreation = b; }
+  void setWriteDirectory(string d){ writeDirectory = d; }
+
  protected:
   double setUpTime;
   // Data
@@ -153,22 +163,35 @@ class GFlowBase {
   vector<vector<double> > bubbleRecord;
   vector<vector<VPair> > bulkRecord;
   vector<Bounds> bulkBounds;  // The bounds in which we did bubble analysis
-  int animationCentering;
-  bool recPositions;
+  ScalarField bubbleField;
+
+  // VISUALIZATION OPTIONS
+  // [0] - Position animation options 1 -> Print positions, 2 -> Print pressures
+  // [1] - Record number of bubbles
+  // [2] - Record total bubble volume
+  // [3] - Visualize bubbles (bulk animation)
+  // [4] - Create bubble field
+  // [5] - Record waste field
+  // [6] - Record resource field
+  // [7] - Record fitness field
+  int options[8];
+  Bounds visBounds, bubbleBounds;
+  bool followBall;
+  inline Bounds followBallBounds();
+
   bool recSpecial;
-  bool recForces;
-  bool recBubbles;
-  bool visBubbles;
-  bool recBulk;
-  bool restrictBubbleDomain;
   bool writeFields;
   bool writeFitness;
   bool writeAnimation;
-  bool writeCreation;    // Whether to print the  
-  int forceChoice;
+  bool writeCreation;    // Whether to print the initialization
+  int forceChoice, typeChoice;
 
   vector<pair<StatFunc,string> > statFunctions; // Statistic functions and a string to name them
   vector<vector<vec2> >  statRecord;    // Save the data produced by the statistic functions
+  vector<pair<StatPlot,string> > statPlots;
+  vector<pair<double, double> > statPlotBounds;
+  vector<vector<double> > statPlotRecord;
+  int statPlotBins;
 
   // For printing data
   string writeDirectory;
@@ -176,6 +199,8 @@ class GFlowBase {
   // For bacteria
   bool doFields;
   ScalarField Resource, Waste;
+  ScalarField Fitness; // Auxilary field to compute fitness
+  inline void updateFitness();
   double fieldUpdateDelay, fieldUpdateCounter;
   double scale;
   double alphaR, alphaW, csatR, csatW, betaR;

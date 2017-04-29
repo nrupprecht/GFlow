@@ -407,6 +407,13 @@ template<typename T> bool printToCSV(string filename, const vector<T>& lst) {
   return true;
 }
 
+template<typename T> bool printToCSV(string filename, const vector<T>& lst, int iter) {
+  stringstream stream;
+  stream << filename << iter << ".csv";
+  stream >> filename;
+  return printToCSV(filename, lst);
+}
+
 inline std::ostream& operator<<(std::ostream& out, const Tri& tup) {
   out << "{" << std::get<0>(tup) << "," << std::get<1>(tup) << "," << std::get<2>(tup) << "}";
   return out;
@@ -531,8 +538,14 @@ struct Bounds {
     bottom = b.bottom; top = b.top;
     return *this;
   }
+  bool operator==(const Bounds& b) const {
+    return b.left==left && b.right==right && b.bottom==bottom && b.top==top;
+  }
   bool contains(const vec2 position) const {
     return position.x<right && left<position.x && position.y<top && bottom<position.y;
+  }
+  bool contains(const vec2 position, const double sigma) const {
+    return position.x-sigma<right && left<position.x+sigma && position.y-sigma<top && bottom<position.y+sigma;
   }
   bool contains(const double x, const double y) const {
     return x<right && left<x && y<top && bottom<y;

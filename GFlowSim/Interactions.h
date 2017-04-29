@@ -6,7 +6,7 @@
 /// Interaction functions --> First two arguments are the particles or walls effected
 //  Next two arguments are references used to extract the magnitude of the normal force and shear force
 
-inline bool hardDiskRepulsion(double **pdata, int p, int q, int asize, vec2& displacement, double &Fn, double &Fs) {
+inline bool hardDiskRepulsion(double **pdata, int p, int q, int asize, vec2& displacement, double &Fn, double &Fs, bool update=true) {
   // Set up convenience pointers
   double *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
   // Find out if the particles interact
@@ -41,20 +41,22 @@ inline bool hardDiskRepulsion(double **pdata, int p, int q, int asize, vec2& dis
     Fs = coeff ? -coeff*Fn*sign(Vs) : 0;
     // Update forces
     double FX = Fn*normal.x+Fs*shear.x, FY = Fn*normal.y+Fs*shear.y;
-    fx[p] += FX;
-    fy[p] += FY;
-    fx[q] -= FX;
-    fy[q] -= FY;
-    // Update torque
-    tq[p] -= (Fs*sg[p]);
-    tq[q] -= (Fs*sg[q]);
+    if (update) {
+      fx[p] += FX;
+      fy[p] += FY;
+      fx[q] -= FX;
+      fy[q] -= FY;
+      // Update torque
+      tq[p] -= (Fs*sg[p]);
+      tq[q] -= (Fs*sg[q]);
+    }
     // Particles interacted
     return true;
   }
   return false; // Particles did not interact
 }
 
-inline bool hardDiskRepulsion_wall(double **pdata, int p, const Wall &w, int asize, vec2& displacement, double &Fn, double &Fs) {
+inline bool hardDiskRepulsion_wall(double **pdata, int p, const Wall &w, int asize, vec2& displacement, double &Fn, double &Fs, bool update=true) {
   // Set up convenience pointers
   double *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
   // We are given displacement = p.position - w.left;
@@ -89,15 +91,17 @@ inline bool hardDiskRepulsion_wall(double **pdata, int p, const Wall &w, int asi
     if (coeff)
       Fs = fabs(coeff*Fn)*sign(Vs);
     // Add forces
-    fx[p] -= Fn*norm.x+Fs*shear.x;
-    fy[p] -= Fn*norm.y+Fs*shear.y;
-    tq[p] -= Fs*sg[p];    
+    if (update) {
+      fx[p] -= Fn*norm.x+Fs*shear.x;
+      fy[p] -= Fn*norm.y+Fs*shear.y;
+      tq[p] -= Fs*sg[p];    
+    }
     return true;
   }
   return false; 
 }
 
-inline bool LJinteraction(double **pdata, int p, int q, int asize, vec2& displacement, double &Fn, double &Fs) {
+inline bool LJinteraction(double **pdata, int p, int q, int asize, vec2& displacement, double &Fn, double &Fs, bool update=true) {
   // Set up convenience pointers
   double *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
   double distSqr = sqr(displacement);
@@ -141,21 +145,22 @@ inline bool LJinteraction(double **pdata, int p, int q, int asize, vec2& displac
     }
     // Update forces
     double FX = Fn*normal.x+Fs*shear.x, FY = Fn*normal.y+Fs*shear.y;
-    // double FX = Fn*normal.x, FY = Fn*normal.y;
-    fx[p] += FX;
-    fy[p] += FY;
-    fx[q] -= FX;
-    fy[q] -= FY;
-    // Update torque
-    tq[p] -= (Fs*sg[p]);
-    tq[q] -= (Fs*sg[q]);
+    if (update) {
+      fx[p] += FX;
+      fy[p] += FY;
+      fx[q] -= FX;
+      fy[q] -= FY;
+      // Update torque
+      tq[p] -= (Fs*sg[p]);
+      tq[q] -= (Fs*sg[q]);
+    }
     // Particles interacted
     return true;
   }
   return false; // Particles did not interact
 }
 
-inline bool TriTriInteraction(double **pdata, int p, int q, int asize, vec2& displacement, double &Fn, double &Fs) {
+inline bool TriTriInteraction(double **pdata, int p, int q, int asize, vec2& displacement, double &Fn, double &Fs, bool update=true) {
   // Set up convenience pointers
   double *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
   double distSqr = sqr(displacement);
@@ -210,13 +215,15 @@ inline bool TriTriInteraction(double **pdata, int p, int q, int asize, vec2& dis
     vec2 intersect = displacement + sg[q]*normQ;
     if (intersect*normP<sg[p] && intersect*shear<sgprime) {
       vec2 force = repulsion*(sgprime - intersect*shear)*shear;
-      fx[p] -= force.x;
-      fy[p] -= force.y;
-      fx[q] += force.x;
-      fy[q] += force.y;
-      // Update torque
-      tq[p] -= (intersect^force);
-      tq[q] += ((sg[q]*normQ)^force);
+      if (update) {
+	fx[p] -= force.x;
+	fy[p] -= force.y;
+	fx[q] += force.x;
+	fy[q] += force.y;
+	// Update torque
+	tq[p] -= (intersect^force);
+	tq[q] += ((sg[q]*normQ)^force);
+      }
       return true;
     }
     return false;
@@ -224,7 +231,7 @@ inline bool TriTriInteraction(double **pdata, int p, int q, int asize, vec2& dis
   return false;
 }
 
-inline bool Triangle_wall(double **pdata, int p, const Wall &w, int asize, vec2& displacement, double &Fn, double &Fs) {
+inline bool Triangle_wall(double **pdata, int p, const Wall &w, int asize, vec2& displacement, double &Fn, double &Fs, bool update=true) {
   // Set up convenience pointers
   double *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
   // We are given displacement = p.position - w.left;

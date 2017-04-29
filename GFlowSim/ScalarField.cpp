@@ -1,8 +1,8 @@
 #include "ScalarField.h"
 
-ScalarField::ScalarField() : nsx(0), nsy(0), dx(0), idx(0), dy(0), idy(0), wrapX(false), wrapY(false), array(0), lap_array(0), diffusion(default_diffusion), lambda(default_lambda) {};
+ScalarField::ScalarField() : nsx(0), nsy(0), dx(0), idx(0), dy(0), idy(0), wrapX(false), wrapY(false), array(0), lap_array(0), diffusion(default_diffusion), lambda(default_lambda), printPoints(50) {};
 
-ScalarField::ScalarField(double l, double r, double b, double t) : bounds(Bounds(l,r,b,t)), nsx(100), nsy(100), dx((r-l)/nsx), idx(1./dx), dy((t-b)/nsy), idy(1./dy), wrapX(false), wrapY(false), diffusion(default_diffusion), lambda(default_lambda) {
+ScalarField::ScalarField(double l, double r, double b, double t) : bounds(Bounds(l,r,b,t)), nsx(100), nsy(100), dx((r-l)/nsx), idx(1./dx), dy((t-b)/nsy), idy(1./dy), wrapX(false), wrapY(false), diffusion(default_diffusion), lambda(default_lambda), printPoints(50) {
     array = new double[nsx*nsy];
     lap_array = new double[nsx*nsy];
 }
@@ -42,9 +42,10 @@ void ScalarField::setResolution(double res) {
   dy = (bounds.top - bounds.bottom)/nsy;
   ++nsx; ++nsy;
   idx = 1./dx; idy = 1./dy;
-
   array = new double[nsx*nsy];
   lap_array = new double[nsx*nsy];
+  // Initialize values
+  for (int i=0; i<nsx*nsy; ++i) array[i] = lap_array[i] = 0;
 }
 
 void ScalarField::set(Bounds b, double res) {
@@ -75,7 +76,7 @@ double ScalarField::get(double x, double y) const {
     C = at(X,Y+1);
     D = at(X+1,Y+1);
   }
-  else return 0; //**
+  else return 0;
 
   V1 = (B-A)*DX*idx + A;
   V2 = (D-C)*DX*idx + C;
@@ -290,47 +291,72 @@ void ScalarField::update(double epsilon) {
   }
 }
 
-std::ostream& operator<<(std::ostream& out, ScalarField& field) {
-  if (field.array==0) return out;
+std::ostream& operator<<(std::ostream& out, const ScalarField& field) {
+  if (field.array==0) {
+    out << "{}";
+    return out;
+  }
+  Bounds bounds = field.bounds;
+  int printPoints = field.printPoints;
   out << "{";
-  int nsx = field.nsx, nsy = field.nsy;
-  double X, Y = field.bounds.bottom;
-  for (int y=0; y<nsy; ++y) {
-    X = field.bounds.left;
-    for (int x=0; x<nsx; ++x) {
-      out << "{" << X << "," << Y << "," << field.array[nsx*y+x] << "}";
-      if (x!=nsx-1) out << ",";
-      X += field.dx;
+  double X, Y = bounds.bottom, DX, DY;
+  // Set step size
+  if (printPoints>0) {
+    DX = (bounds.right-bounds.left)/printPoints;
+    DY = (bounds.top-bounds.bottom)/printPoints;
+  }
+  else {
+    DX = field.dx;
+    DY = field.dy;
+  }
+  if (printPoints>0) {
+    for (int y=0; y<printPoints; ++y) {
+      X = bounds.left;
+      for (int x=0; x<printPoints; ++x) {
+        out << "{" << X << "," << Y << "," << field.get(X,Y) << "}";
+        X += DX;
+	if (printPoints*y+x!=sqr(printPoints)-1) out << ',';
+      }
+      Y += DY;
     }
-    if (y!=nsy-1) out << ",";
-    Y += field.dy;
+  }
+  else { // Use full resolution
+    int nsx = field.nsx, nsy = field.nsy;
+    for (int y=0; y<nsy; ++y) {
+      X = bounds.left;
+      for (int x=0; x<nsx; ++x) {
+        out << "{" << X << "," << Y << "," << field.array[nsx*y+x] << "}";
+        X += DX;
+	if (nsx*y+x!=nsx*nsy-1) out << ',';
+      }
+      Y += DY;
+    }
   }
   out << "}";
   return out;
 }
 
-bool ScalarField::printToCSV(string filename, int resolution) {
+bool ScalarField::printToCSV(string filename) const {
   if (array==0) return true;
-  if (resolution==-1) resolution=min(nsx,nsy);
-  if (max(nsx,nsy)<resolution) resolution=max(nsx,nsy);
+  if (max(nsx,nsy)<printPoints) printPoints=max(nsx,nsy);
   // Open file
   ofstream fout(filename);
   if(fout.fail()) return false;
   // Print data
   double X, Y = bounds.bottom, DX, DY;
   // Set step size
-  if (resolution>0) {
-    DX = (bounds.right-bounds.left)/resolution;
-    DY = (bounds.top-bounds.bottom)/resolution;
+  if (printPoints>0) {
+    DX = (bounds.right-bounds.left)/printPoints;
+    DY = (bounds.top-bounds.bottom)/printPoints;
   }
   else { 
     DX = dx; 
     DY = dy;
   }
-  if (resolution>0) 
-    for (int y=0; y<resolution; ++y) {
+  if (printPoints>0) 
+    for (int y=0; y<printPoints; ++y) {
       X = bounds.left;
-      for (int x=0; x<resolution; ++x) {
+      for (int x=0; x<printPoints; ++x) {
 	fout << X << "," << Y << "," << get(X,Y) << endl;
 	X += DX;
       }

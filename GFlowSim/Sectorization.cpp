@@ -2,7 +2,7 @@
 
 using MPI::COMM_WORLD;
 
-Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), time(0), epsilon(1e-4), sqrtEpsilon(1e-4), transferTime(0), wrapX(false), wrapY(false), doInteractions(true), drag(false), gravity(0), temperature(0), viscosity(1.308e-3), tempDelay(5e-3), sqrtTempDelay(sqrt(5e-3)), lastTemp(0), size(0), array_end(0), asize(0), esize(0), earray_end(0), easize(0), useCharacteristics(false), redoLists(false), doWallNeighbors(true), remakeToUpdate(false), cutoff(0.1), skinDepth(0.025), itersSinceBuild(0), buildDelay(20), numProc(1), rank(0) {
+Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), time(0), epsilon(1e-4), sqrtEpsilon(1e-4), transferTime(0), wrapX(false), wrapY(false), doInteractions(true), drag(false), gravity(0), temperature(0), viscosity(1.308e-3), tempDelay(5e-3), sqrtTempDelay(sqrt(5e-3)), lastTemp(0), size(0), array_end(0), asize(0), esize(0), earray_end(0), easize(0), useCharacteristics(false), redoLists(false), doWallNeighbors(true), remakeToUpdate(false), cutoff(0.1), skinDepth(0.025), itersSinceBuild(0), buildDelay(20), numProc(1), rank(0), maxCutR(0), secCutR(0) {
   // Get our rank and the number of processors
   rank =    COMM_WORLD.Get_rank();
   numProc = COMM_WORLD.Get_size();  
@@ -34,26 +34,13 @@ void Sectorization::initialize() {
   lastTemp = 0;
   itersSinceBuild = 0;
   // Find out what the cutoff should be -- The sum of the largest two interaction radii
-  double mx=0, snd=0;
   for (auto &p : plist) {
     double r = particle_cutoff(p.sigma, p.interaction);
-    if (r>mx) mx = r;
-    else if (r>snd) snd = r;
+    if (r>maxCutR) maxCutR = r;
+    else if (r>secCutR) secCutR = r;
   }
-  cutoff = mx+snd;
-  // First estimate
-  secWidth = secHeight = (cutoff+skinDepth);
-  nsx = static_cast<int>( max(1., (bounds.right-bounds.left)/secWidth) ); 
-  nsy = static_cast<int>( max(1., (bounds.top-bounds.bottom)/secHeight) );
-  // Actual width and height
-  secWidth = (bounds.right-bounds.left)/nsx; 
-  secHeight = (bounds.top-bounds.bottom)/nsy; 
-  // Add for edge sectors
-  nsx += 2; nsy += 2;
-  // Remake sectors
-  if (sectors) delete [] sectors;
-  sectors = new list<int>[nsx*nsy+1];
-  // Remake particles
+  makeSectors();
+  // Remake particle arrays
   if (asize<1) asize = 2*plist.size(); //----  Ad hoc
   if (asize<1) return;
   easize = asize; //---- Ad hoc
@@ -114,14 +101,11 @@ void Sectorization::setUseCharacteristics(bool use) {
           delete ch[i];
           ch[i] =0;
         }
-    else { // Create ch array if neccessary
-      ch = (Characteristic**)aligned_alloc(64, asize*sizeof(Characteristic*));
-      memset(ch, 0, asize*sizeof(Characteristic*));
-    }
+    ch = (Characteristic**)aligned_alloc(64, asize*sizeof(Characteristic*));
+    memset(ch, 0, asize*sizeof(Characteristic*));
   }
   else {
-    // Clean up
-    // Delete old characteristics
+    // Clean up, delete old characteristics
     if (ch)
       for (int i=0; i<asize; ++i)
         if (ch[i]) {
@@ -227,42 +211,68 @@ inline void Sectorization::particleInteractions() {
   }
 }
 
-inline void Sectorization::interactionHelper(int i, int j, int ibase, double &Fn, double &Fs) {
+inline void Sectorization::interactionHelper(int i, int j, int ibase, double &Fn, double &Fs, bool update) {
   vec2 displacement = getDisplacement(vec2(px[j],py[j]), vec2(px[i],py[i]));
   int iType = ibase+it[j]; // Same as 4*it[i]+it[j]
   // Switch on interaction type
   switch(iType) {
     // Both are hard disks
   case 0:
-    hardDiskRepulsion(pdata, i, j, asize, displacement, Fn, Fs);
+    hardDiskRepulsion(pdata, i, j, asize, displacement, Fn, Fs, update);
     break;
   case 1: // Sphere - LJ --> LJ
-    LJinteraction(pdata, i, j, asize, displacement, Fn, Fs);
+    LJinteraction(pdata, i, j, asize, displacement, Fn, Fs, update);
     break;
   case 2: // Sphere - Triangle
     // UNIMPLEMENTED
     break;
   case 3: // UNIMPLEMENTED
-    hardDiskRepulsion(pdata, i, j, asize, displacement, Fn, Fs);
+    hardDiskRepulsion(pdata, i, j, asize, displacement, Fn, Fs, update);
     break;
   case 4: // LJ - Sphere --> LJ
   case 5: // LJ - LJ --> LJ
   case 6: // LJ - Triangle --> LJ
   case 7: // UNIMPLEMENTED
-    LJinteraction(pdata, i, j, asize, displacement, Fn, Fs);
+    LJinteraction(pdata, i, j, asize, displacement, Fn, Fs, update);
     break;
   case 8: // Triangle - Sphere
     // UNIMPLEMENTED
     break;
   case 9: // Triangle - LJ --> LJ
-    LJinteraction(pdata, i, j, asize, displacement, Fn, Fs);
+    LJinteraction(pdata, i, j, asize, displacement, Fn, Fs, update);
     break;
   case 10: // Triangle - Triangle
-    TriTriInteraction(pdata, i, j, asize, displacement, Fn, Fs);
+    TriTriInteraction(pdata, i, j, asize, displacement, Fn, Fs, update);
     break;
   default:
     break;
   } // End outer switch
+}
+
+inline void Sectorization::forceChoice(int choice, const double Fn, const double Fs, double& F) {
+  // 0 -- Total force/pressure
+  // 1 -- Normal force/pressure
+  // 2 -- Shear force/pressure
+  // 3 -- Inward force/pressure
+  // 4 -- Outward force/pressure
+  switch (choice) {
+  default:
+  case 0:
+    F = Fn+Fs;
+    break;
+  case 1:
+    F = Fn;
+    break;
+  case 2:
+    F = Fs;
+    break;
+  case 3:
+    F = clamp(Fn+Fs);
+    break;
+  case 4:
+    F = clamp(-Fn-Fs);
+    break;
+  }
 }
 
 inline void Sectorization::wallInteractions() {
@@ -383,7 +393,31 @@ void Sectorization::addParticle(Particle p) {
 }
 
 void Sectorization::insertParticle(Particle p) {
-  if (asize<=array_end) throw false; // To many particles
+  // Check if we need to change our sector size
+  double r = particle_cutoff(p.sigma, p.interaction);
+  bool redo = false;
+  if (r>maxCutR) {
+    secCutR = maxCutR;
+    maxCutR = r;
+    redo = true;
+  }
+  else if (r>secCutR) {
+    secCutR = r;
+    redo = true;
+  }
+  // If we need to redo the sector sizing
+  if (redo) {
+    updatePList();
+    plist.push_back(p);
+    makeSectors();
+    // Add the particles (except the new one - we add it below) to the proper sectors
+    for (int i=0; i<size; ++i) {
+      int sec = getSec(px[i], py[i]);
+      sectors[sec].push_back(i);
+    }
+  }
+  // Add particle to the arrays etc.
+  if (asize<=array_end) throw false; // To many particles - we should (well, could) actually resize everything in this case
   px[array_end] = p.position.x;
   py[array_end] = p.position.y;
   vx[array_end] = p.velocity.x;
@@ -402,7 +436,7 @@ void Sectorization::insertParticle(Particle p) {
   it[array_end] = p.interaction;
   // Mark in position tracker
   positionTracker[array_end] = p.position;
-  // Add to sectorization
+  // Add the new particle to the sectorization
   int num_sec = getSec(p.position);
   sectors[num_sec].push_back(array_end);
   // Create (potentially) wall neighbor lists
@@ -413,12 +447,12 @@ void Sectorization::insertParticle(Particle p) {
     if (sqr(displacement)<sqr(1.25*particle_cutoff(sg[array_end], it[array_end])))
       lst.push_back(&w);
   }
-  if (!lst.empty())
-    wallNeighbors.push_back(pair<int, list<Wall*> >(array_end, lst));
+  if (!lst.empty()) wallNeighbors.push_back(pair<int, list<Wall*> >(array_end, lst));
   //** Should redo neighbor lists now -- can just create a NL for the inserted particle
   
   // Increment array end
   ++array_end;
+  ++size;
 }
 
 void Sectorization::insertParticle(Particle p, Characteristic *c) {
@@ -473,14 +507,15 @@ pair<double, int> Sectorization::doStatFunction(StatFunc func) {
   return pair<double, int>(data, count);
 }
 
-vector<PData> Sectorization::forceAnimate(int choice, bool pressure) {
+// type : 0 - particles and walls, 1 - particles, 2 - walls
+vector<PData> Sectorization::forceAnimate(int choice, int type, bool pressure) {
   if (!doInteractions) return vector<PData>();
   // Get rid of holes in the array
   compressArrays();
   // Create the neighborhood lists
   createNeighborLists();
   // Data array with an entry for every particle
-  vector<PData> data(size); 
+  vector<PData> data(size); // There should be no holes in the array
   // Set positions and radii
   for (int i=0; i<size; ++i) {
     std::get<0>(data.at(i)) = vec2(px[i], py[i]);
@@ -489,45 +524,45 @@ vector<PData> Sectorization::forceAnimate(int choice, bool pressure) {
     std::get<3>(data.at(i)) = it[i];
     std::get<4>(data.at(i)) = 0;
   }
-  // Calculate forces
-  for (auto &nl : neighborList) {
-    auto p = nl.begin();       // The particle whose list this is
-    int i = *p;
-    if (it[i]<0) continue;     // This particle is gone
-    auto q = p; ++q;           // Start with the particle after the head particle
-    int ibase = it[i]<<2;      // Represents the interaction type of particle p
-    for (; q!=nl.end(); ++q) { // Try to interact with all other particles in the nl
-      int j = *q;
-      double Fn=0, Fs=0, F=0;
-      interactionHelper(i, j, ibase, Fn, Fs);
-      // 0 -- Total force/pressure
-      // 1 -- Normal force/pressure
-      // 2 -- Shear force/pressure
-      // 3 -- Inward force/pressure
-      // 4 -- Outward force/pressure
-      switch (choice) {
-      default:
-      case 0:
-	F = Fn+Fs;
-	break;
-      case 1:
-	F = Fn;
-	break;
-      case 2:
-	F = Fs;
-	break;
-      case 3:
-	F = clamp(Fn+Fs);
-	break;
-      case 4: 
-	F = clamp(-Fn-Fs);
-	break;
+  // Particle forces
+  if (type==0 || type==1)
+    for (auto &nl : neighborList) {
+      auto p = nl.begin();       // The particle whose list this is
+      int i = *p;
+      if (it[i]<0) continue;     // This particle is gone
+      auto q = p; ++q;           // Start with the particle after the head particle
+      int ibase = it[i]<<2;      // Represents the interaction type of particle p
+      for (; q!=nl.end(); ++q) { // Try to interact with all other particles in the nl
+	int j = *q;
+	double Fn=0, Fs=0, F=0;
+	interactionHelper(i, j, ibase, Fn, Fs, false);
+	forceChoice(choice, Fn, Fs, F);
+	// Store
+	std::get<4>(data.at(i)) += fabs(F);
+	std::get<4>(data.at(j)) += fabs(F);
       }
-      // Store
-      std::get<4>(data.at(i)) += fabs(F);
-      std::get<4>(data.at(j)) += fabs(F);
     }
-  }
+  // Wall interactions
+  if (type==0 || type==2)
+    for (auto& w : walls)
+      for (int i=0; i<array_end; ++i) {
+	if (it[i]<0) continue;
+	double Fn=0, Fs=0, F=0;
+	vec2 displacement = getDisplacement(px[i], py[i], w.left.x, w.left.y);
+	switch (it[i]) {
+	default:
+	case 0:
+	  hardDiskRepulsion_wall(pdata, i, w, asize, displacement, Fn, Fs);
+	  break;
+	case 1:
+	  hardDiskRepulsion_wall(pdata, i, w, asize, displacement, Fn, Fs); //**
+	  // LJinteraction_wall(p, w, displacement, Fn, Fs);
+	  break;
+	}
+	// Add to data
+	forceChoice(choice, Fn, Fs, F);    	
+	std::get<4>(data.at(i)) += fabs(F);
+      }
   // Turn force into pressure
   if (pressure)
     for (int i=0; i<size; ++i) std::get<4>(data.at(i)) /= (2*PI*sg[i]);
@@ -831,6 +866,22 @@ inline vec2 Sectorization::getDisplacement(double ax, double ay, double bx, doub
     if (dy<fabs(Y)) Y = Y>0 ? -dy : dy;
   }
   return vec2(X,Y);
+}
+
+inline void Sectorization::makeSectors() {
+  cutoff = maxCutR+secCutR;
+  // First estimate
+  secWidth = secHeight = (cutoff+skinDepth);
+  nsx = static_cast<int>( max(1., (bounds.right-bounds.left)/secWidth) );
+  nsy = static_cast<int>( max(1., (bounds.top-bounds.bottom)/secHeight) );
+  // Actual width and height
+  secWidth = (bounds.right-bounds.left)/nsx;
+  secHeight = (bounds.top-bounds.bottom)/nsy;
+  // Add for edge sectors
+  nsx += 2; nsy += 2;
+  // Remake sectors
+  if (sectors) delete [] sectors;
+  sectors = new list<int>[nsx*nsy+1];
 }
 
 void Sectorization::updatePList() {
