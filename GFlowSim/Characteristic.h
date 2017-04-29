@@ -22,7 +22,7 @@ class Bacteria : public Characteristic {
   virtual Characteristic* create();
 
   void setFitness(double f) { fitness = f; }
-  
+  double getFitness()       { return fitness; }
   //protected:
   vec2 orient;
   double reorient;  // Probability of reorientation

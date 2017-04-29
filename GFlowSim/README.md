@@ -1,1 +1,26 @@
-The readme file for the GFlow Simulator
+Options for the 'driver' program
+
+-number	    	The number of particles to start the program with.
+-width	    	The width of the simulation domain  (default 4).
+-height	    	The height of the simulation domain (default 4).
+-radius     	The radius (or max radius if there is dispersion) of the particle sigmas (default 0.05).
+-bR         	The radius of the intruding ball (for loaded buoyancy runs) (default 0.2) .
+-density    	The density of the intruding ball (for loaded buoyancy runs) (default 100).
+-velocity   	The target velocity of particles in normal simulations, or the velocity of the intruding ball for loaded buoyancy runs (default 0.25).
+-dispersion 	The radius dispersion for the particles. Denotes the max % deviation, e.g. if radius=1 and dispersion=0.15, the radii of the particles will be uniformly distributed over the interval [0.85, 1]. (Default 0.)
+-temperature	The temperature of the system, uses brownian perturbations and viscous drag. (Default 0.)
+-gravity       	The (y component of the) gravity of the system. (Default is -1.)
+-drag 		The drag coefficient of the system (default 0.).
+-coeff 		The coefficient of friction of the particles. The default value is whatever default value is set to in DefaultConstants.h.
+-time 		Simulation run time. (Default 1 'second.')
+-start 		When to start recording data (if applicable). (Default 0.)
+-epsilon 	Time step. (Default 1e-4.)
+-phi            The packing fraction, the simulation (when doing a normal run) calculates how many particles to use based off this and the simulation volume.
+-skinDepth      The skin depth to use in creating neighbor lists.
+-interaction	What kind of interaction the particles should have. 0 - Hard sphere, 1 - Lennard-Jones sphere, 2 - Hard triangle. Default is hard spheres (0).
+-LJ 		Sets the interaction to be Lennard-Jones (same as -interaction=1).
+-Tri 		Sets the interaction to be hard triangles (same as -interaction=2).
+-interact 	Whether the particles should interact with one another. (Default true.)
+-seedRand 	Whether the random number generators should be seeded before program execution (default true).
+-quiet     	Level of quiet. -1 - Normal, 1 - Full quiet, 2 - Quiet if label!=0
+-lattice   	What kind of lattice initialization to use for creating buoyancy simulations. 0 - None, use find packed solution, 1 - Hexagonal lattice, 2 - rectangular lattice. (Default 0)

@@ -352,6 +352,7 @@ void GFlowBase::objectUpdates() {
 	  double res = Resource.at(px[i],py[i]), wst = Waste.at(px[i],py[i]);
 	  double rSec = b->secretion;
 	  double fitness = alphaR*res/(res+csatR) - alphaW*wst/(wst+csatW) - betaR*rSec;
+	  //** There is a Heisenbug here. I don't know what it is.
 	  b->setFitness(fitness);
 	}
       }
@@ -401,7 +402,6 @@ void GFlowBase::record() {
     vector<VPair> vis;
     if (allParticles.empty()) recallParticles(allParticles);
     auto bubbleData = getBulkData(allParticles, vis, bubbleBounds);
-    bulkRecord.push_back(vis);
     bulkBounds.push_back(bubbleBounds);
     // Store required data
     if (options[1]) bubbleRecord.push_back(bubbleData);
@@ -418,94 +418,7 @@ void GFlowBase::record() {
     updateFitness();
     printToCSV(writeDirectory+"/Fitness/fit", Fitness, recIter);
   }
-
-  // -----------------
-
-  // Vector that can be used to store all the particles
-  /*
-  vector<Particle> allParticles;
-  if (doRecall) recallParticles(allParticles);
-  // Record data
-  if (writeFields) {
-    printToCSV(writeDirectory+"/Waste/wst", Waste, recIter);
-    printToCSV(writeDirectory+"/Resource/rsc", Resource, recIter);
-  }
-  if (writeFitness) {
-    ScalarField Fitness;
-    Fitness.setBounds(Resource.getBounds());
-    Fitness.setResolution(Resource.getResolution());
-    int nsx = Fitness.getNSX(), nsy = Fitness.getNSY();
-    for (int y=0; y<nsy; ++y)
-      for (int x=0; x<nsx; ++x) {
-	double res = Resource.at(x,y), wst = Waste.at(x,y);
-	double fitness = alphaR*res/(res+csatR) - alphaW*wst/(wst+csatW);
-	Fitness.at(x,y) = fitness;
-      }
-    printToCSV(writeDirectory+"/Fitness/fit", Fitness, recIter);
-  }
-  if (recPositions || recBubbles || visBubbles || recBulk) {
-    // Record positions
-    if (recPositions) {
-      vector<PData> positions;
-      Bounds domain = NullBounds;
-      if (animationCentering==1) {
-	double X = reduceStatFunction(Stat_Large_Object_X);
-        double Y = reduceStatFunction(Stat_Large_Object_Height);
-        static double R = reduceStatFunction(Stat_Large_Object_Radius, 1);
-        domain.bottom = Y-2*R; domain.top = Y+18*R;
-        domain.left = max(left,X-8*R); domain.right = min(right, X+8*R);
-	Bounds d2 = domain;
-	d2.cut(R);
-	animationBounds.push_back(d2);
-      }
-      if (!recForces) {
-	for (const auto &p : allParticles) {
-	  switch(animationCentering) {
-	  case 0: {
-	    positions.push_back(PData(p.position, p.sigma, p.theta, p.interaction, 0));
-	    break;
-	  }
-	  case 1: {
-	    if (domain.contains(p.position))
-	      positions.push_back(PData(p.position, p.sigma, p.theta, p.interaction, 0));
-	    break;
-	  }
-	  }
-	}
-      }
-      else positions = sectorization.forceAnimate(forceChoice, typeChoice); // Would have to do something different if using multiple processors
-      if (writeAnimation) printToCSV(writeDirectory+"/Pos/pos", positions, recIter);
-      else positionRecord.push_back(positions);
-    }
-    // Find bubble volumes
-    if (recBubbles || visBubbles || recBulk) {
-      Bounds domain = NullBounds;
-      if (restrictBubbleDomain) {
-	double X = reduceStatFunction(Stat_Large_Object_X);
-	double Y = reduceStatFunction(Stat_Large_Object_Height);
-	static double R = reduceStatFunction(Stat_Large_Object_Radius, 1);
-	domain.bottom = Y-R; domain.top = Y+18*R;
-	domain.left = left; domain.right = right;
-	// domain.left = max(left,X-8*R); domain.right = min(right, X+8*R);
-      }
-      // Just record sizes
-      if (recBubbles) bubbleRecord.push_back(getBulkData(allParticles, domain));
-      // Visualize bubbles and record sizes
-      if (visBubbles) {
-	vector<VPair> vis;
-	bubbleRecord.push_back(getBulkData(allParticles, vis, domain));
-	bulkRecord.push_back(vis);
-	bulkBounds.push_back(domain);
-      }
-      else if (recBulk) {
-	vector<VPair> vis;
-	getBulkData(vis);
-	bulkRecord.push_back(vis);
-	bulkBounds.push_back(Bounds(left,right,bottom,top));
-      }
-    }
-  }
-  */
+  
   // Record stat function statistics
   if (!statFunctions.empty()) sectorization.updatePList();
   int i=0;
