@@ -28,6 +28,7 @@ class Bacteria : public Characteristic {
   double reorient;  // Probability of reorientation
   double strength;  // Run strength
   double secretion; // Resource secretion
+  double velocity;  // Run velocity
 
   double delay, timer; // Reorientation delay and timer
 
@@ -39,12 +40,15 @@ class Bacteria : public Characteristic {
 class ConstantVelocity : public Characteristic {
  public:
   ConstantVelocity(vec2);
+  ConstantVelocity(vec2, double);
+  ConstantVelocity(vec2, bool, double, bool);
 
   virtual void modify(double**, Sectorization*, int);
   virtual Characteristic* create();
  private:
   vec2 targetVelocity;
-  double strength;
+  double targetOmega;
+  bool useV, useOm;
 };
 
 #endif

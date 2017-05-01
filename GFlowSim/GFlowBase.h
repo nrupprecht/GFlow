@@ -16,7 +16,10 @@ inline double ZeroOm(double) { return 0; }
 
 // "All gone" termination condition
 inline bool allGone(double num) { return num<=0; }
+// "To low" termination condition
 inline bool belowZero(double y) { return y<0; }
+// "Too small" termination condition
+inline bool tooSmall(double v) { return fabs(v)<0.05; }
 
 // Granular float base class
 class GFlowBase {
@@ -98,14 +101,14 @@ class GFlowBase {
 
   void createSquare(int, double, double=4., double=4., double=0.1, double=0., int=0);
   void createBuoyancyBox(double,double,double,double,double,double,double, int=0);
-  bool loadBuoyancy(string, double=0.5, double=5., double=10., bool=false);
+  bool loadBuoyancy(string, double=0.5, double=5., double=10., bool=false, double=0, bool=false);
   void recordPositions();
 
   void addStatFunction(StatFunc, string);
   void addStatPlot(StatPlot, string, double, double);
   void addTerminationCondition(StatFunc, std::function<bool(double)>);
-  string printStatFunctions(string="");
-  string printStatPlots(string="");
+  string printStatFunctions(string="", bool=false);
+  string printStatPlots(string="", bool=false);
 
   string printWallsCommand();
   string printAnimationCommand(int=0, bool=false, string="");
@@ -135,21 +138,22 @@ class GFlowBase {
   string printResource();
   string printWaste();
   vector<vpair> getWallsPositions();
+  string printOptions();
 
   double getSetUpTime() { return setUpTime; }
 
   void setPositionsOption(int op) { options[0] = op; }
   void setRecSpecial(bool b)      { recSpecial = b; }
   void setRecBubbles(bool b)      { options[1] = b?1:0; }
-  // void setRecBulk(bool b)         { recBulk = b; }
   void setForceChoice(int c)      { forceChoice = c; }
   void setTypeChoice(int c)       { typeChoice = c; }
   void setStatPlotBins(int b)     { statPlotBins = b; }
   void setVisBubbles(bool b)      { options[3] = b?1:0; if (b) options[1] = 1; }
+  void setBubbleField(bool b)     { options[4] = b?1:0; }
   void setFollowBall(bool b)      { followBall = b; }
 
-  void setWriteFields(bool b)     { writeFields = b; }
-  void setWriteFitness(bool b)    { writeFitness = b; }
+  void setWriteFields(bool b)     { options[5] = options[6] = b?1:0; }
+  void setWriteFitness(bool b)    { options[7] = b?1:0; }
   void setWriteAnimation(bool b)  { writeAnimation = b; }
   void setWriteCreation(bool b)   { writeCreation = b; }
   void setWriteDirectory(string d){ writeDirectory = d; }
@@ -180,8 +184,6 @@ class GFlowBase {
   inline Bounds followBallBounds();
 
   bool recSpecial;
-  bool writeFields;
-  bool writeFitness;
   bool writeAnimation;
   bool writeCreation;    // Whether to print the initialization
   int forceChoice, typeChoice;

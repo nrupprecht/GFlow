@@ -46,6 +46,7 @@ class Sectorization {
   Bounds getBounds()             { return bounds; }
   Bounds getSimBounds()          { return simBounds; }
   bool isFull()                  { return asize<=array_end; }
+  bool isValid(int i)            { return -1<it[i]; }
 
   // Pointer accessors
   double *getPX()                { return px; }

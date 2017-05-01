@@ -27,8 +27,6 @@ GFlowBase::GFlowBase() {
   setUpTime = 0;
   recSpecial = false;
   visBounds = bubbleBounds = NullBounds;
-  writeFields = false;
-  writeFitness = false;
   writeAnimation = true; // We animate by printing files by default
   writeCreation = false;
   forceChoice = 0;
@@ -292,16 +290,14 @@ void GFlowBase::setUpSectorization(Sectorization &sectors, vec2 grav) {
 }
 
 void GFlowBase::setUp() {
-  if (writeFields || writeFitness || writeAnimation || writeCreation) {
+  if (options[5] || options[6] || options[7] || writeAnimation || writeCreation) {
     // Remove any previously existing file
     system(("rm -r "+writeDirectory).c_str());
     // Create the directory
     mkdir(writeDirectory.c_str(), 0777);
-    if (writeFields) {
-      mkdir((writeDirectory+"/Waste").c_str(), 0777); // Waste director
-      mkdir((writeDirectory+"/Resource").c_str(), 0777); // Resource directory
-    }
-    if (writeFitness) mkdir((writeDirectory+"/Fitness").c_str(), 0777); // Fitness director
+    if (options[5]) mkdir((writeDirectory+"/Waste").c_str(), 0777); // Waste director
+    if (options[6]) mkdir((writeDirectory+"/Resource").c_str(), 0777); // Resource directory
+    if (options[7]) mkdir((writeDirectory+"/Fitness").c_str(), 0777); // Fitness director
     if (writeAnimation) mkdir((writeDirectory+"/Pos").c_str(), 0777); // Position directory
     if (writeCreation) mkdir((writeDirectory+"/Init").c_str(), 0777); // Initialization directory
   }
@@ -324,19 +320,17 @@ void GFlowBase::objectUpdates() {
     // Get the particle
     double *px = sectorization.getPX();
     double *py = sectorization.getPY();
-    int *it = sectorization.getIT();
     Characteristic **ch = sectorization.getCH();
     int array_end = sectorization.getArrayEnd();
     // Eat and produce waste
-    for (int i=0; i<array_end; ++i) 
-      if (-1<it[i]) {
-	Bacteria *b = reinterpret_cast<Bacteria*>(ch[i]);
-	if (b!=0) {
-	  double rSec = b->secretion;	  
-	  Resource.increase(px[i], py[i], rSec*epsilon);
-	  Waste.increase(px[i], py[i], default_bacteria_waste*epsilon);
-	}
+    for (int i=0; i<array_end; ++i) {
+      Bacteria *b = reinterpret_cast<Bacteria*>(ch[i]);
+      if (b!=0) {
+	double rSec = b->secretion;	  
+	Resource.increase(px[i], py[i], rSec*epsilon);
+	Waste.increase(px[i], py[i], default_bacteria_waste*epsilon);
       }
+    }
     // Update fields
     if (fieldUpdateDelay<fieldUpdateCounter) {
       Resource.update(epsilon);
@@ -345,17 +339,16 @@ void GFlowBase::objectUpdates() {
     }
     fieldUpdateCounter += epsilon;
     // Set fitnesses
-    for (int i=0; i<array_end; ++i)
-      if (-1<it[i]) {
-	Bacteria *b = reinterpret_cast<Bacteria*>(ch[i]);
-	if (b!=0) {
-	  double res = Resource.at(px[i],py[i]), wst = Waste.at(px[i],py[i]);
-	  double rSec = b->secretion;
-	  double fitness = alphaR*res/(res+csatR) - alphaW*wst/(wst+csatW) - betaR*rSec;
-	  //** There is a Heisenbug here. I don't know what it is.
-	  b->setFitness(fitness);
-	}
+    for (int i=0; i<array_end; ++i) {
+      Bacteria *b = reinterpret_cast<Bacteria*>(ch[i]);
+      if (b!=0) {
+	double res = Resource.at(px[i],py[i]), wst = Waste.at(px[i],py[i]);
+	double rSec = b->secretion;
+	double fitness = alphaR*res/(res+csatR) - alphaW*wst/(wst+csatW) - betaR*rSec;
+	// There is a Heisenbug here. I don't know what it is.
+	b->setFitness(fitness);
       }
+    }
   }
 }
 
@@ -459,7 +452,8 @@ void GFlowBase::checkTermination() {
   for (const auto& pr : terminationConditions) {
     int count = 0;
     double data = pr.first(allParticles, count);
-    if (pr.second(data)) {
+    double eval = pr.second(data);
+    if (eval) {
       running = false;
       break;
     }
@@ -475,7 +469,7 @@ void GFlowBase::gatherData() {
 }
 
 void GFlowBase::endOfRun() {
-  if ((writeAnimation || writeFields || writeFitness) && rank==0) {
+  if ((writeAnimation || options[5] || options[6] || options[7]) && rank==0) {
     // Print a master file
     printToCSV(writeDirectory+"/number.csv", vector<int>(1,recIter)); // Print how many files to expect
     // Print walls to file
@@ -1125,7 +1119,7 @@ void GFlowBase::createBuoyancyBox(double radius, double bR, double density, doub
   setUpTime = time_span(end, start);
 }
 
-bool GFlowBase::loadBuoyancy(string fileName, double radius, double velocity, double density, bool drag) {
+bool GFlowBase::loadBuoyancy(string fileName, double radius, double velocity, double density, bool constV, double omega, bool constOm) {
   // Start the clock
   auto start = current_time();
   // Discard any old state
@@ -1146,7 +1140,7 @@ bool GFlowBase::loadBuoyancy(string fileName, double radius, double velocity, do
   Bounds bounds(left, right, bottom, height);
   setBounds(bounds);
   // Set use characteristics
-  sectorization.setUseCharacteristics(drag);
+  sectorization.setUseCharacteristics(constV || constOm);
   // Clear old walls, create new ones
   walls.clear();
   addWall(left, bottom, right, bottom);
@@ -1162,11 +1156,12 @@ bool GFlowBase::loadBuoyancy(string fileName, double radius, double velocity, do
     vec2 V(0, -velocity);
     P.velocity = V;
     P.setDensity(density);
-    if (drag) sectorization.insertParticle(P, new ConstantVelocity(V));
+    if (constV) sectorization.insertParticle(P, new ConstantVelocity(V, constV, omega, constOm));
     else sectorization.insertParticle(P);
   }
   // Set a termination condition
-  addTerminationCondition(Stat_Large_Object_Height, belowZero);
+  addTerminationCondition(Stat_Large_Object_Height, belowZero); // If the large ball goes through the floor
+  addTerminationCondition(Stat_Large_Object_VY, tooSmall); // If the large ball starts moving up
   // End setup timing
   auto end = current_time();
   setUpTime = time_span(end, start);
@@ -1189,7 +1184,7 @@ void GFlowBase::addTerminationCondition(StatFunc sf, std::function<bool(double)>
   terminationConditions.push_back(pair<StatFunc, std::function<bool(double)> >(sf, tc));
 }
 
-string GFlowBase::printStatFunctions(string label) {
+string GFlowBase::printStatFunctions(string label, bool noplot) {
   if (statFunctions.empty() || rank!=0) return "";
   stringstream stream;
   string str, strh;
@@ -1197,13 +1192,14 @@ string GFlowBase::printStatFunctions(string label) {
     string name = statFunctions.at(i).second;
     stream << name << label << "=" << mmPreproc(statRecord.at(i));
     stream >> strh;
-    str += (strh+";\nPrint[\""+name+"\"]\nListLinePlot["+name+label+",PlotStyle->Black,ImageSize->Large,PlotRange->All]\n");
+    str += (strh+";\n");
+    if (!noplot) str += ("Print[\""+name+"\"]\nListLinePlot["+name+label+",PlotStyle->Black,ImageSize->Large,PlotRange->All]\n");
     stream.clear(); strh.clear();
   }
   return str;
 }
 
-string GFlowBase::printStatPlots(string label) {
+string GFlowBase::printStatPlots(string label, bool noplot) {
   if (statPlots.empty() || rank!=0) return "";
   stringstream stream;
   string str, strh;
@@ -1211,7 +1207,8 @@ string GFlowBase::printStatPlots(string label) {
     string name = statPlots.at(i).second;
     stream << name << label << "=" << mmPreproc(statPlotRecord.at(i));
     stream >> strh;
-    str += (strh+";\nPrint[\""+name+"\"]\nListLinePlot["+name+label+",PlotStyle->Black,ImageSize->Large,PlotRange->All]\n");
+    str += (strh+";\n");
+    if (!noplot) str += ("Print[\""+name+"\"]\nListLinePlot["+name+label+",PlotStyle->Black,ImageSize->Large,PlotRange->All]\n");
     stream.clear(); strh.clear();
   }
   return str;
@@ -1221,6 +1218,14 @@ vector<vpair> GFlowBase::getWallsPositions() {
   vector<vpair> positions;
   for (auto w : walls) positions.push_back(vpair(w.getLeft(), w.getRight()));
   return positions;
+}
+
+string GFlowBase::printOptions() {
+  stringstream stream;
+  string str;
+  for (int i=0; i<8; ++i) stream << options[i];
+  stream >> str;
+  return str;
 }
 
 string GFlowBase::printWallsCommand() {
@@ -1683,7 +1688,7 @@ vector<double> GFlowBase::getBulkData(vector<Particle> &allParticles, string &sh
       }
     }
   // Record data in scalar field
-  if (!bubbles.empty() && bubbleField.empty()) {
+  if (!bubbles.empty() && options[4]) {
     // Set up field
     if (bubbleField.empty()) {
       bubbleField.setBounds(region);

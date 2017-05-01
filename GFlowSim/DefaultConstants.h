@@ -28,12 +28,12 @@ const double default_diffusion          = 1.;
 const double default_lambda             = 1.;
 
 // Bacteria constants
-const double default_bacteria_reorient  = 0.1;
+const double default_bacteria_reorient  = 0.1; // The 'halflife' of reorientation
 const double default_bacteria_strength  = 0.1;
 const double default_bacteria_drag      = 10.;
 const double default_bacteria_target_velocity = 0.25;
 const double default_bacteria_target_velocity_sqr = sqr(default_bacteria_target_velocity);
-const double default_bacteria_reproduction_const = 5.;
+const double default_bacteria_reproduction_const = 5.; // The 'halflife' of reprodution
 const double default_bacteria_death_const = 10.;
 const double default_bacteria_eating    = 1.;
 const double default_bacteria_secretion = 1.;

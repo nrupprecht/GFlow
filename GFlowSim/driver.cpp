@@ -21,6 +21,7 @@ int main(int argc, char** argv) {
   double bR = 0.2;
   double density = 100;
   double velocity = 0.25;
+  double omega = 0;
   double dispersion = 0;
   double temperature = 0;
   double gravity = -1e9;
@@ -51,12 +52,13 @@ int main(int argc, char** argv) {
   int typeChoice = 0;
   bool bubbles = false;
   bool visBubbles = false;
+  bool bubbleField = false;
   bool writeFields = false;
   bool writeFitness = false;
   bool writeAnimation = true;
   bool bulk    = false;
   // Stat functions
-  bool omega   = false;
+  bool angular = false;
   bool KE      = false;
   bool KEX     = false;
   bool KEY     = false;
@@ -68,7 +70,9 @@ int main(int argc, char** argv) {
   bool trackX  = false;
   bool GPE     = false;
   bool maxV    = false;
-  bool maxVy   = false;
+  bool maxVY   = false;
+  bool largeVX = false;
+  bool largeVY = false;
   bool num     = false;
   // Stat plots
   bool velDist = false;
@@ -84,6 +88,7 @@ int main(int argc, char** argv) {
   bool square = true;
   bool buoyancy = false;
   bool CV = false;
+  bool CO = false;
   bool bacteria = false;
 
   // Load and save
@@ -118,6 +123,7 @@ int main(int argc, char** argv) {
   parser.get("bR", bR);
   parser.get("density", density);
   parser.get("velocity", velocity);
+  parser.get("omega", omega);
   parser.get("dispersion", dispersion);
   parser.get("temperature", temperature);
   parser.get("gravity", gravity);
@@ -146,11 +152,12 @@ int main(int argc, char** argv) {
   parser.get("typeChoice", typeChoice);
   parser.get("bubbles", bubbles);
   parser.get("visBubbles", visBubbles);
+  parser.get("bubbleField", bubbleField);
   parser.get("writeFields", writeFields);
   parser.get("writeFitness", writeFitness);
   parser.get("writeAnimation", writeAnimation);
   parser.get("bulk", bulk);
-  parser.get("omega", omega);
+  parser.get("angular", angular);
   parser.get("KE", KE);
   parser.get("KEX", KEX);
   parser.get("KEY", KEY);
@@ -162,7 +169,9 @@ int main(int argc, char** argv) {
   parser.get("trackX", trackX);
   parser.get("GPE", GPE);
   parser.get("maxV", maxV);
-  parser.get("maxVy", maxVy);
+  parser.get("maxVY", maxVY);
+  parser.get("largeVX", largeVX);
+  parser.get("largeVY", largeVY);
   parser.get("num", num);
   parser.get("velDist", velDist);
   parser.get("pressurePlot", pressurePlot);
@@ -174,6 +183,7 @@ int main(int argc, char** argv) {
   parser.get("square", square);
   parser.get("buoyancy", buoyancy);
   parser.get("CV", CV);
+  parser.get("CO", CO);
   parser.get("bacteria", bacteria);
   parser.get("loadFile", loadFile);
   parser.get("loadBuoyancy", loadBuoyancy);
@@ -238,7 +248,7 @@ int main(int argc, char** argv) {
     if (LJ!=-1) simulator.setInteractionType(1);
   }
   else if (loadBuoyancy!="") {
-    if (!simulator.loadBuoyancy(loadBuoyancy, bR, velocity, density, CV)) {
+    if (!simulator.loadBuoyancy(loadBuoyancy, bR, velocity, density, CV, omega, CO)) {
       cout << "Failed to load [" << loadBuoyancy << "], exiting.\n";
       return 0;
     }
@@ -269,6 +279,7 @@ int main(int argc, char** argv) {
   simulator.setTypeChoice(typeChoice);
   simulator.setRecBubbles(bubbles);
   simulator.setVisBubbles(visBubbles);
+  simulator.setBubbleField(bubbleField);
   // Directories
   simulator.setWriteFields(writeFields);
   simulator.setWriteFitness(writeFitness);
@@ -277,7 +288,7 @@ int main(int argc, char** argv) {
   // simulator.setRecBulk(bulk);
   if (buoyancy || loadBuoyancy!="") simulator.setFollowBall(true);
   // Stat functions
-  if (omega) simulator.addStatFunction(Stat_Omega, "omega");
+  if (angular) simulator.addStatFunction(Stat_Omega, "omega");
   if (KE) simulator.addStatFunction(Stat_KE, "ke");
   if (KEX) simulator.addStatFunction(Stat_KE_X, "kex");
   if (KEY) simulator.addStatFunction(Stat_KE_Y, "key");
@@ -289,7 +300,9 @@ int main(int argc, char** argv) {
   if (trackX) simulator.addStatFunction(Stat_Large_Object_X, "posx");
   if (GPE) simulator.addStatFunction(Stat_Gravitational_PE, "gpe");
   if (maxV) simulator.addStatFunction(Stat_Max_Velocity, "maxv");
-  if (maxVy) simulator.addStatFunction(Stat_Max_Velocity_Y, "maxvy");
+  if (maxVY) simulator.addStatFunction(Stat_Max_Velocity_Y, "maxvy");
+  if (largeVX) simulator.addStatFunction(Stat_Large_Object_VX, "largevx");
+  if (largeVY) simulator.addStatFunction(Stat_Large_Object_VY, "largevy");
   if (num) simulator.addStatFunction(Stat_Number_Particles, "num");
   // Stat plots
   if (velDist) simulator.addStatPlot(Plot_Velocity, "velDist", 0, 3); //** 3 is a magic number
@@ -341,26 +354,24 @@ int main(int argc, char** argv) {
     if (snapshot) cout << simulator.printSnapshot() << endl;
     if (special) cout << simulator.printSpecialAnimationCommand(novid) << endl;
     if (forces && !writeAnimation)  cout << simulator.printForcesAnimationCommand(mode, novid) << endl;
-    if (bubbles) cout << "bsize" + label + "=" << simulator.getBubbleRecord() << ";\n";
-    if (visBubbles) {
-      if (!bubbles) cout << "bsize" << label << "=" << simulator.getBubbleRecord() << ";\n";
-      cout << simulator.printBulkAnimationCommand(novid) << endl;
-      cout << "bubF=" << mmPreproc(simulator.getBubbleField()) << ";\n";
-    }
-    if (bubbles || visBubbles) {
+    // Print bubble data
+    if (bubbles) {
+      cout << "bsize" << label << "=" << simulator.getBubbleRecord() << ";\n";
       cout << "num" << label << "=Table[Length[bsize" << label << "[[i]]],{i,1,Length[bsize" << label << "]}];\n";
       cout << "vol" << label << "=Table[Total[bsize" << label << "[[i]]],{i,1,Length[bsize" << label << "]}];\n";
       if (!noprint) {
-	cout << "Print [\"Number of bubbles\"]\n";
-	cout << "ListLinePlot[num" << label << ",PlotStyle->Black,ImageSize->Large,PlotRange -> All]\n";
-	cout << "Print[\"Total bubble volume\"]\n";
-	cout << "ListLinePlot[vol" << label << ",PlotStyle->Black,ImageSize->Large,PlotRange->All]\n";
+        cout << "Print [\"Number of bubbles\"]\n";
+        cout << "ListLinePlot[num" << label << ",PlotStyle->Black,ImageSize->Large,PlotRange -> All]\n";
+        cout << "Print[\"Total bubble volume\"]\n";
+        cout << "ListLinePlot[vol" << label << ",PlotStyle->Black,ImageSize->Large,PlotRange->All]\n";
       }
     }
-    else if (bulk) cout << simulator.printBulkAnimationCommand(novid) << endl;
-    string stats = simulator.printStatFunctions(label);
+    if (visBubbles) cout << simulator.printBulkAnimationCommand(novid) << endl;
+    if (bubbleField) cout << "bubF=" << mmPreproc(simulator.getBubbleField()) << ";\n";
+    // Print statistics and plots
+    string stats = simulator.printStatFunctions(label, noprint);
     if (!stats.empty()) cout << stats;
-    string plots = simulator.printStatPlots(label);
+    string plots = simulator.printStatPlots(label, noprint);
     if (!plots.empty()) cout << plots;
   }
   if (printSectors) simulator.printSectors();

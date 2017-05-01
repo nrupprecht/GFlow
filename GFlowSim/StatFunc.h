@@ -141,6 +141,32 @@ inline double Stat_Large_Object_Radius(const vector<Particle> &particles, int &c
   return count>0 ? sigma/count : 0;
 }
 
+inline double Stat_Large_Object_VX(const vector<Particle> &particles, int &count) {
+  count = 0;
+  if (particles.empty()) return 0;
+  double vel = 0;
+  for (const auto &p : particles) {
+    if (0.1<p.sigma) {
+      vel += p.velocity.x;
+      count++;
+    }
+  }
+  return count>0 ? vel/count : 0;
+}
+
+inline double Stat_Large_Object_VY(const vector<Particle> &particles, int &count) {
+  count = 0;
+  if (particles.empty()) return 0;
+  double vel = 0;
+  for (const auto &p : particles) {
+    if (0.1<p.sigma) {
+      vel += p.velocity.y;
+      count++;
+    }
+  }
+  return count>0 ? vel/count : 0;
+}
+
 inline double Stat_Volume(const vector<Particle> &particles, int &count) {
   count = 0;
   if (particles.empty()) return 0;
