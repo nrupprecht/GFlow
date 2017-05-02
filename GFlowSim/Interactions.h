@@ -56,6 +56,58 @@ inline bool hardDiskRepulsion(double **pdata, int p, int q, int asize, vec2& dis
   return false; // Particles did not interact
 }
 
+inline bool invRRepulsion(double **pdata, int p, int q, int asize, vec2& displacement, double &Fn, double &Fs, bool update=true) {
+  // Set up convenience pointers
+  double *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
+  // Find out if the particles interact
+  double distSqr = sqr(displacement);
+  double cutoff = sg[p] + sg[q];
+  double cutoffsqr = sqr(cutoff);
+  /*
+              ^ normal
+              |
+              |
+              *------> shear
+  */
+  if (distSqr < cutoffsqr) { // Interaction
+    double dist = sqrt(distSqr);
+    double invDist = 1./dist;
+    // Compute interaction parameters ( ad hoc )
+    double dissipation = ds[p]+ds[q];
+    double repulsion = rp[p]+rp[q];
+    double coeff = cf[p]*cf[q];
+    // Compute force
+    vec2 normal = invDist * displacement;
+    vec2 shear = vec2(normal.y, -normal.x);
+    // Spring force strength
+    double overlap = cutoff-dist;
+    double strength = repulsion*(1./(1.-overlap)-1.);
+    // Velocities
+    vec2 dV(vx[q]-vx[p], vy[q]-vy[p]);
+    double Vn = dV*normal; // Normal velocity
+    double Vs = dV*shear + sg[p]*om[p] + sg[q]*om[q]; // Shear velocity
+    // Calculate the normal force
+    Fn = -strength-dissipation*clamp(-Vn); // Damped harmonic oscillator
+    // Calculate the Shear force
+    Fs = coeff ? -coeff*Fn*sign(Vs) : 0;
+    // Update forces
+    double FX = Fn*normal.x+Fs*shear.x, FY = Fn*normal.y+Fs*shear.y;
+    if (update) {
+      fx[p] += FX;
+      fy[p] += FY;
+      fx[q] -= FX;
+      fy[q] -= FY;
+      // Update torque
+      tq[p] -= (Fs*sg[p]);
+      tq[q] -= (Fs*sg[q]);
+    }
+    // Particles interacted
+    return true;
+  }
+  return false; // Particles did not interact
+}
+
+
 inline bool hardDiskRepulsion_wall(double **pdata, int p, const Wall &w, int asize, vec2& displacement, double &Fn, double &Fs, bool update=true) {
   // Set up convenience pointers
   double *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];

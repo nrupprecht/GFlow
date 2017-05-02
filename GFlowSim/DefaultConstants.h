@@ -5,8 +5,8 @@
 
 // Sphere (Disk) constants
 const double default_sphere_density     = 1.;
-const double default_sphere_repulsion   = 100.;
-const double default_sphere_dissipation = 7.5;  // If this is to big (compaired to epsilon, presumably), BAD things happen
+const double default_sphere_repulsion   = 150.; // Formerly 100
+const double default_sphere_dissipation = 15;  // If this is to big (compaired to epsilon, presumably), BAD things happen -- Formerly 7.5
 const double default_sphere_coeff       = sqrt(0.3);
 
 // Lenard Jones constants

@@ -41,8 +41,7 @@ void Bacteria::modify(double **pdata, Sectorization *sectors, int id) {
     // Reproduction
     static double pr = exp(-delay*reproduction);
     if (pr<drand48()) {
-      //--> THIS IS WHAT IS CAUSING THE HEISENBUG
-      // if (!sectors->isFull()) sectors->insertParticle(Particle(px[id], py[id], sg[id]), this->create());
+      if (!sectors->isFull()) sectors->insertParticle(Particle(px[id], py[id], sg[id]), this->create());
     }
   }
   // Run

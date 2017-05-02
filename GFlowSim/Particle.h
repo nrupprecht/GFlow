@@ -20,10 +20,10 @@ inline double particle_cutoff(double sigma, int interaction) {
   default:
   case 0:
     return sigma;
-  case 1:
+  case 1: // Lennard Jones particles
     return LJ_cutoff_factor*sigma;
-  case 3: // Charged particles
-    return sqr(sigma)*EF_cutoff_factor;
+  case 3: // Inverse R particles
+    return sigma;
   }
 }
 

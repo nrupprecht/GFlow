@@ -414,6 +414,21 @@ template<typename T> bool printToCSV(string filename, const vector<T>& lst, int 
   return printToCSV(filename, lst);
 }
 
+template<typename T> bool printToCSV(string filename, const vector<vector<T> >& lst) {
+  if (lst.empty()) return true;
+  ofstream fout(filename);
+  if (fout.fail()) return false;
+  for (int i=0; i<lst.size(); i++) {
+    for (int j=0; j<lst.at(i).size(); ++j) {
+      fout << lst.at(i).at(j);
+      if (j!=lst.at(i).size()-1) fout << ",";
+    }
+    fout << endl;
+  }
+  fout.close();
+  return true;
+}
+
 inline std::ostream& operator<<(std::ostream& out, const Tri& tup) {
   out << "{" << std::get<0>(tup) << "," << std::get<1>(tup) << "," << std::get<2>(tup) << "}";
   return out;

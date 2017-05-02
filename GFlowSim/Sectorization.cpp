@@ -216,8 +216,7 @@ inline void Sectorization::interactionHelper(int i, int j, int ibase, double &Fn
   int iType = ibase+it[j]; // Same as 4*it[i]+it[j]
   // Switch on interaction type
   switch(iType) {
-    // Both are hard disks
-  case 0:
+  case 0: // Sphere - Sphere
     hardDiskRepulsion(pdata, i, j, asize, displacement, Fn, Fs, update);
     break;
   case 1: // Sphere - LJ --> LJ
@@ -226,8 +225,8 @@ inline void Sectorization::interactionHelper(int i, int j, int ibase, double &Fn
   case 2: // Sphere - Triangle
     // UNIMPLEMENTED
     break;
-  case 3: // UNIMPLEMENTED
-    hardDiskRepulsion(pdata, i, j, asize, displacement, Fn, Fs, update);
+  case 3: // Sphere - Inv R --> Inv R
+    invRRepulsion(pdata, i, j, asize, displacement, Fn, Fs, update);
     break;
   case 4: // LJ - Sphere --> LJ
   case 5: // LJ - LJ --> LJ
@@ -243,6 +242,9 @@ inline void Sectorization::interactionHelper(int i, int j, int ibase, double &Fn
     break;
   case 10: // Triangle - Triangle
     TriTriInteraction(pdata, i, j, asize, displacement, Fn, Fs, update);
+    break;
+  case 15: // Inv R - Inv R
+    invRRepulsion(pdata, i, j, asize, displacement, Fn, Fs, update);
     break;
   default:
     break;
@@ -456,7 +458,10 @@ void Sectorization::insertParticle(Particle p) {
 }
 
 void Sectorization::insertParticle(Particle p, Characteristic *c) {
+  //--> THIS IS WHAT IS CAUSING THE HEISENBUG
+  if (array_end>=asize) throw false; //**
   if (ch) ch[array_end] = c;
+  //<--
   insertParticle(p);
 }
 
@@ -508,7 +513,7 @@ pair<double, int> Sectorization::doStatFunction(StatFunc func) {
 }
 
 // type : 0 - particles and walls, 1 - particles, 2 - walls
-vector<PData> Sectorization::forceAnimate(int choice, int type, bool pressure) {
+vector<PData> Sectorization::forceData(int choice, int type, bool pressure) {
   if (!doInteractions) return vector<PData>();
   // Get rid of holes in the array
   compressArrays();

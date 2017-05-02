@@ -133,35 +133,42 @@ class GFlowBase {
   auto getSpecialRecord()  { return specialRecord; }
   auto getBubbleRecord()   { return bubbleRecord; }
   auto getBulkRecord()     { return bulkRecord; }
+  auto getPressureRecord() { return pressureRecord; }
   ScalarField& getBubbleField() { return bubbleField; }
   string printPositionRecord(int);
   string printResource();
   string printWaste();
   vector<vpair> getWallsPositions();
   string printOptions();
+  // Record writers
+  void writeBubbleField(string filename) { bubbleField.printToCSV(filename); }
+  void writeBubbleRecord(string filename) { printToCSV(filename, bubbleRecord); }
 
   double getSetUpTime() { return setUpTime; }
 
+  void setCSV(bool b)             { csv = b; }
   void setPositionsOption(int op) { options[0] = op; }
   void setRecSpecial(bool b)      { recSpecial = b; }
-  void setRecBubbles(bool b)      { options[1] = b?1:0; }
+  void setRecPressure(bool b)     { options[1] = b?1:0; }
+  void setRecBubbles(bool b)      { options[2] = b?1:0; }
   void setForceChoice(int c)      { forceChoice = c; }
   void setTypeChoice(int c)       { typeChoice = c; }
   void setStatPlotBins(int b)     { statPlotBins = b; }
-  void setVisBubbles(bool b)      { options[3] = b?1:0; if (b) options[1] = 1; }
+  void setVisBubbles(bool b)      { options[3] = b?1:0; if (b) options[2] = 1; }
   void setBubbleField(bool b)     { options[4] = b?1:0; }
   void setFollowBall(bool b)      { followBall = b; }
 
   void setWriteFields(bool b)     { options[5] = options[6] = b?1:0; }
   void setWriteFitness(bool b)    { options[7] = b?1:0; }
   void setWriteAnimation(bool b)  { writeAnimation = b; }
-  void setWriteCreation(bool b)   { writeCreation = b; }
+  void setWriteCreation(bool b)   { options[8] = b?1:0; }
   void setWriteDirectory(string d){ writeDirectory = d; }
 
  protected:
   double setUpTime;
   // Data
   vector<vector<PData> > positionRecord;
+  vector<vector<PData> > initPositionRecord;
   vector<Bounds> animationBounds;
   vector<vector<Tri> > specialRecord;
   vector<vector<double> > bubbleRecord;
@@ -171,21 +178,23 @@ class GFlowBase {
 
   // VISUALIZATION OPTIONS
   // [0] - Position animation options 1 -> Print positions, 2 -> Print pressures
-  // [1] - Record number of bubbles
-  // [2] - Record total bubble volume
+  // [1] - Record pressure
+  // [2] - Record number and volume of bubbles
   // [3] - Visualize bubbles (bulk animation)
   // [4] - Create bubble field
   // [5] - Record waste field
   // [6] - Record resource field
   // [7] - Record fitness field
-  int options[8];
+  // [8] - Record initialization positions
+  int options[9], numOptions;
   Bounds visBounds, bubbleBounds;
   bool followBall;
   inline Bounds followBallBounds();
+  bool csv;
+  vector<double> pressureRecord;
 
   bool recSpecial;
   bool writeAnimation;
-  bool writeCreation;    // Whether to print the initialization
   int forceChoice, typeChoice;
 
   vector<pair<StatFunc,string> > statFunctions; // Statistic functions and a string to name them
@@ -220,8 +229,6 @@ class GFlowBase {
   virtual void logisticUpdates();    // Update times
   virtual void record();             // Record data
   virtual void checkTermination();   // Check whether we should terminate the program
-  virtual void resets();             // Reset objects as neccessary
-  virtual void gatherData();         // Gather data back to processor 0
   virtual void endOfRun();           // Do things at the end of the run
   virtual void discard();            // Discard and reset the simulation state
 

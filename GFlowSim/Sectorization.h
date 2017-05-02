@@ -99,7 +99,7 @@ class Sectorization {
   // Statistics
   string printSectors();
   pair<double, int> doStatFunction(StatFunc);
-  vector<PData> forceAnimate(int=0, int=0, bool=true);
+  vector<PData> forceData(int=0, int=0, bool=true);
 
   // Exception classes
   class BadParticle {};

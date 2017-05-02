@@ -48,14 +48,17 @@ int main(int argc, char** argv) {
   bool snapshot = false;
   bool special = false;
   bool forces  = false;
+  bool pressure = false;
   int forceChoice = 0;
   int typeChoice = 0;
   bool bubbles = false;
   bool visBubbles = false;
   bool bubbleField = false;
+  bool csv = false;
   bool writeFields = false;
   bool writeFitness = false;
   bool writeAnimation = true;
+  bool writeCreation = false;
   bool bulk    = false;
   // Stat functions
   bool angular = false;
@@ -148,14 +151,17 @@ int main(int argc, char** argv) {
   parser.get("snapshot", snapshot);
   parser.get("special", special);
   parser.get("forces", forces);
+  parser.get("pressure", pressure);
   parser.get("forceChoice", forceChoice);
   parser.get("typeChoice", typeChoice);
   parser.get("bubbles", bubbles);
   parser.get("visBubbles", visBubbles);
   parser.get("bubbleField", bubbleField);
+  parser.get("csv", csv);
   parser.get("writeFields", writeFields);
   parser.get("writeFitness", writeFitness);
   parser.get("writeAnimation", writeAnimation);
+  parser.get("writeCreation", writeCreation);
   parser.get("bulk", bulk);
   parser.get("angular", angular);
   parser.get("KE", KE);
@@ -226,6 +232,7 @@ int main(int argc, char** argv) {
 
   // Set up the simulation
   GFlowBase simulator;
+  simulator.setWriteCreation(writeCreation);
   simulator.setEpsilon(epsilon);
   simulator.setLatticeType(lattice);
   if (0<fps) simulator.setFrameRate(fps);
@@ -275,11 +282,13 @@ int main(int argc, char** argv) {
   if (center)  simulator.setFollowBall(true);
   simulator.setRecSpecial(special);
   if (forces)  simulator.setPositionsOption(2);
+  simulator.setRecPressure(pressure);
   simulator.setForceChoice(forceChoice);
   simulator.setTypeChoice(typeChoice);
   simulator.setRecBubbles(bubbles);
   simulator.setVisBubbles(visBubbles);
   simulator.setBubbleField(bubbleField);
+  simulator.setCSV(csv);
   // Directories
   simulator.setWriteFields(writeFields);
   simulator.setWriteFitness(writeFitness);
@@ -342,7 +351,7 @@ int main(int argc, char** argv) {
     cout << "Iterations: " << iters << ", time per iter: " << (iters>0 ? toStr(runTime/iters) : "---") << endl;
     double transferPercent = transferTime/runTime*100;
     cout << "Transfer Time: " << transferTime << " (" << (runTime>0 ? (transferPercent>0.01 ? toStr(transferPercent) : "~ 0") : "---") << "%)" << endl;
-    cout << "Ratio: " << (runTime>0 ? toStr(time/runTime) : "---") << " (" << (runTime>0 ? toStr(runTime/time) : "---") <<  "), Ratio x Particles: " << (runTime>0 ? toStr(time/runTime*number) : "---") << endl;
+    cout << "Ratio: " << (runTime>0 ? toStr(simulator.getTime()/runTime) : "---") << " (" << (runTime>0 ? toStr(runTime/time) : "---") <<  "), Ratio x Particles: " << (runTime>0 ? toStr(time/runTime*number) : "---") << endl;
     cout << " --- STATS ---\n";
     cout << "Neighbor list size: " << simulator.getNeighborListSize() << ", Ave per list: " << simulator.getAvePerNeighborList() << endl;
     cout << "----------------------- END SUMMARY -----------------------\n\n"; 
@@ -354,8 +363,9 @@ int main(int argc, char** argv) {
     if (snapshot) cout << simulator.printSnapshot() << endl;
     if (special) cout << simulator.printSpecialAnimationCommand(novid) << endl;
     if (forces && !writeAnimation)  cout << simulator.printForcesAnimationCommand(mode, novid) << endl;
+    if (pressure) cout << simulator.getPressureRecord() << ";\n";
     // Print bubble data
-    if (bubbles) {
+    if (bubbles && !csv) {
       cout << "bsize" << label << "=" << simulator.getBubbleRecord() << ";\n";
       cout << "num" << label << "=Table[Length[bsize" << label << "[[i]]],{i,1,Length[bsize" << label << "]}];\n";
       cout << "vol" << label << "=Table[Total[bsize" << label << "[[i]]],{i,1,Length[bsize" << label << "]}];\n";
@@ -367,7 +377,7 @@ int main(int argc, char** argv) {
       }
     }
     if (visBubbles) cout << simulator.printBulkAnimationCommand(novid) << endl;
-    if (bubbleField) cout << "bubF=" << mmPreproc(simulator.getBubbleField()) << ";\n";
+    if (bubbleField && !csv) cout << "bubF=" << mmPreproc(simulator.getBubbleField()) << ";\n";
     // Print statistics and plots
     string stats = simulator.printStatFunctions(label, noprint);
     if (!stats.empty()) cout << stats;

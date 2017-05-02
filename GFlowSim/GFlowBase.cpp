@@ -28,7 +28,6 @@ GFlowBase::GFlowBase() {
   recSpecial = false;
   visBounds = bubbleBounds = NullBounds;
   writeAnimation = true; // We animate by printing files by default
-  writeCreation = false;
   forceChoice = 0;
   typeChoice = 0;
   doFields = false;
@@ -42,7 +41,8 @@ GFlowBase::GFlowBase() {
   csatR = default_csatR;
   csatW = default_csatW;
   betaR = default_betaR;
-  for (int i=0; i<=7; ++i) options[i] = 0;
+  numOptions = 9;
+  for (int i=0; i<=numOptions; ++i) options[i] = 0;
   //---
 
   // Get MPI system data
@@ -290,16 +290,26 @@ void GFlowBase::setUpSectorization(Sectorization &sectors, vec2 grav) {
 }
 
 void GFlowBase::setUp() {
-  if (options[5] || options[6] || options[7] || writeAnimation || writeCreation) {
+  // VISUALIZATION OPTIONS
+  // [0] - Position animation options 1 -> Print positions, 2 -> Print pressures
+  // [1] - Record pressure
+  // [2] - Record number and volume of bubbles
+  // [3] - Visualize bubbles (bulk animation)
+  // [4] - Create bubble field
+  // [5] - Record waste field
+  // [6] - Record resource field
+  // [7] - Record fitness field
+  // [8] - Record initialization positions
+  if ( (options[0] && writeAnimation) || ((options[2] || options[3] || options[4]) && csv) || options[5] || options[6] || options[7] || options[8]) {
     // Remove any previously existing file
-    system(("rm -r "+writeDirectory).c_str());
+    system(("rm -rf "+writeDirectory).c_str());
     // Create the directory
     mkdir(writeDirectory.c_str(), 0777);
     if (options[5]) mkdir((writeDirectory+"/Waste").c_str(), 0777); // Waste director
     if (options[6]) mkdir((writeDirectory+"/Resource").c_str(), 0777); // Resource directory
     if (options[7]) mkdir((writeDirectory+"/Fitness").c_str(), 0777); // Fitness director
     if (writeAnimation) mkdir((writeDirectory+"/Pos").c_str(), 0777); // Position directory
-    if (writeCreation) mkdir((writeDirectory+"/Init").c_str(), 0777); // Initialization directory
+    if (options[8]) mkdir((writeDirectory+"/Init").c_str(), 0777); // Initialization directory
   }
   resetVariables();
 }
@@ -310,6 +320,7 @@ void GFlowBase::resetVariables () {
   recIter = 0;
   maxIter = 0;
   runTime = 0;
+  positionRecord.clear();
 }
 
 void GFlowBase::objectUpdates() {
@@ -361,13 +372,14 @@ void GFlowBase::record() {
   vector<Particle> allParticles;
   // VISUALIZATION OPTIONS
   // [0] - Position animation options 1 -> Print positions, 2 -> Print pressures
-  // [1] - Record number of bubbles
-  // [2] - Record total bubble volume
+  // [1] - Record pressure
+  // [2] - Record number and volume of bubbles
   // [3] - Visualize bubbles (bulk animation)
   // [4] - Create bubble field
   // [5] - Record waste field
   // [6] - Record resource field
   // [7] - Record fitness field
+  // [8] - Record initialization positions
   if (options[0]) {
     // Get the required data
     vector<PData> positions;
@@ -376,16 +388,27 @@ void GFlowBase::record() {
       for (const auto& p : allParticles) positions.push_back(PData(p.position, p.sigma, p.theta, p.interaction, 0)); 
     }
     else { // Force or pressure data - ** Would have to do something different if using multiple processors
-      positions = sectorization.forceAnimate(forceChoice, typeChoice);
+      positions = sectorization.forceData(forceChoice, typeChoice);
     }
-    // Write data
-    if (writeAnimation)
-      if (!printToCSV(writeDirectory+"/Pos/pos", positions, recIter))
-	cout << "Printing to [" << writeDirectory << "/Pos/pos." << recIter << ".csv] Failed.\n";
-    else positionRecord.push_back(positions);
+    positionRecord.push_back(positions); // We will write the data at the end
+  }
+  if (options[1]) {
+    vector<PData> positions = sectorization.forceData(forceChoice, typeChoice);
+    if (pressureRecord.empty()) pressureRecord = vector<double>(statPlotBins, 0);
+    double dpx = (top-bottom)/statPlotBins;
+    vector<double> pressBins(statPlotBins, 0);
+    vector<int> counts(statPlotBins, 0);
+    for (const auto& p : positions) {
+      vec2 pos = std::get<0>(p);
+      int b = (top-pos.y)/dpx;
+      pressBins.at(b) += std::get<4>(p);
+      ++counts.at(b);
+    }
+    // Update pressure
+    for (int i=0; i<statPlotBins; ++i) pressureRecord.at(i) += (counts.at(i)>0 ? pressBins.at(i)/counts.at(i) : 0);
   }
   // Bubble related options
-  if (options[1] || options[2] || options[3] || options[4]) {
+  if (options[2] || options[3] || options[4]) {
     // Find the proper bounds if neccessary
     if (followBall) bubbleBounds = followBallBounds();
     else if (bubbleBounds==NullBounds) bubbleBounds = Bounds(left, right, bottom, top);
@@ -397,8 +420,7 @@ void GFlowBase::record() {
     auto bubbleData = getBulkData(allParticles, vis, bubbleBounds);
     bulkBounds.push_back(bubbleBounds);
     // Store required data
-    if (options[1]) bubbleRecord.push_back(bubbleData);
-    if (options[2]); // Created from bubbleRecord
+    if (options[2]) bubbleRecord.push_back(bubbleData);
     if (options[3]) bulkRecord.push_back(vis);
     if (options[4]); // Created automatically
   }
@@ -460,15 +482,17 @@ void GFlowBase::checkTermination() {
   }
 }
 
-void GFlowBase::resets() {
-
-}
-
-void GFlowBase::gatherData() {
-  
-}
-
 void GFlowBase::endOfRun() {
+  if (options[0] && writeAnimation) {
+    for (int i=0; i<recIter; ++i)
+      if (!printToCSV(writeDirectory+"/Pos/pos", positionRecord.at(i), i))
+        cout << "Printing to [" << writeDirectory << "/Pos/pos." << recIter << ".csv] Failed.\n";
+  }
+  if (csv) {
+    if (options[2]) writeBubbleRecord(writeDirectory+"/bubbleRecord.csv");
+    if (options[3]) ;
+    if (options[4]) writeBubbleField(writeDirectory+"/bubbleField.csv");
+  }
   if ((writeAnimation || options[5] || options[6] || options[7]) && rank==0) {
     // Print a master file
     printToCSV(writeDirectory+"/number.csv", vector<int>(1,recIter)); // Print how many files to expect
@@ -477,6 +501,14 @@ void GFlowBase::endOfRun() {
     // Print bounds to file
     Bounds bounds(left,right,bottom,top);
     printToCSV(writeDirectory+"/bnds.csv", vector<Bounds>(1,bounds));
+  }
+  if (options[8]) {
+    int iter = 0;
+    for (const auto &pos : initPositionRecord) {
+      if (!printToCSV(writeDirectory+"/Init/init"+toStr(iter)+".csv", pos)) 
+	cout << "Failed to print [" << writeDirectory << "Init/init" << iter <<"].\n";
+      ++iter;
+    }
   }
 }
 
@@ -775,10 +807,11 @@ vector<vec2> GFlowBase::findPackedSolution(int number, double radius, Bounds b, 
     for (auto &p : packedSectors.getParticles()) p.sigma += dr; //** DOESN'T DO ANYTHING
     packedSectors.update();
     // For observation
-    if (writeCreation) {
+    if (options[8]) {
       counter+=epsilon;
       if (delay<counter) {
-	printToCSV(writeDirectory+"Init/fps"+toStr(printIter)+".csv", packedSectors.getParticles());
+	vector<PData> positions = packedSectors.forceData(forceChoice, typeChoice);
+	initPositionRecord.push_back(positions);
 	++printIter;
 	counter=0;
       }
@@ -788,10 +821,11 @@ vector<vec2> GFlowBase::findPackedSolution(int number, double radius, Bounds b, 
   for (int i=0; i<relaxSteps; ++i) {
     packedSectors.update();
     // For observation
-    if (writeCreation) {
+    if (options[8]) {
       counter+=epsilon;
       if (delay<counter) {
-        printToCSV(writeDirectory+"Init/fps"+toStr(printIter)+".csv", packedSectors.getParticles());
+	vector<PData> positions = packedSectors.forceData(forceChoice, typeChoice);
+	initPositionRecord.push_back(positions);
         ++printIter;
         counter=0;
       }
@@ -864,7 +898,7 @@ vector<vec2> GFlowBase::findPackedSolution(const vector<double>& radii, const ve
   double dr = (finalFraction-initialFraction)/static_cast<double>(expandSteps);
   double fraction = initialFraction;
   // Set up sectorization
-  packedSectors.setASize(number); //** AD HOC
+  // packedSectors.setASize(number); //** AD HOC
   packedSectors.setDoInteractions(doInteractions);
   setUpSectorization(packedSectors, force);
   packedSectors.setDrag(default_packed_drag);
@@ -872,6 +906,8 @@ vector<vec2> GFlowBase::findPackedSolution(const vector<double>& radii, const ve
   createAndDistributeParticles(radii, interactions, b, packedSectors);
   packedSectors.initialize();
   // Simulate motion and expansion
+  int printIter = 0;
+  double counter=0, delay=1./15.;
   for (int i=0; i<expandSteps; ++i) {
     int j=0;
     for (auto &p : packedSectors.getParticles()) {
@@ -880,9 +916,31 @@ vector<vec2> GFlowBase::findPackedSolution(const vector<double>& radii, const ve
     }
     fraction += dr;
     packedSectors.update();
+    // For observation
+    if (options[8]) {
+      counter+=epsilon;
+      if (delay<counter) {
+        vector<PData> positions = packedSectors.forceData(forceChoice, typeChoice);
+        initPositionRecord.push_back(positions);
+        ++printIter;
+        counter=0;
+      }
+    }
   }
   // Simulate pure motion (relaxation)
-  for (int i=0; i<relaxSteps; ++i) packedSectors.update();
+  for (int i=0; i<relaxSteps; ++i) {
+    packedSectors.update();
+    // For observation
+    if (options[8]) {
+      counter+=epsilon;
+      if (delay<counter) {
+        vector<PData> positions = packedSectors.forceData(forceChoice, typeChoice);
+        initPositionRecord.push_back(positions);
+        ++printIter;
+        counter=0;
+      }
+    }
+  }
   // Get positions
   auto sectorParticles = packedSectors.getParticles();
   if (numProc>1) {
@@ -1091,10 +1149,12 @@ void GFlowBase::createBuoyancyBox(double radius, double bR, double density, doub
   }
   else {
     // Not all particles have the same radius
-    double totalV = 0;
+    double totalV = 0, rmin = (1.-dispersion)*radius;
     // Get enough particles to fill the volume
     while (totalV<Vfill) {
-      double r = (1-drand48()*dispersion)*radius;
+      double p = 1./radius + (1./rmin+1./radius)*drand48();
+      double r = 1./p;
+      //double r = (1-drand48()*dispersion)*radius;
       totalV += PI*sqr(r);
       radii.push_back(r);
       interactions.push_back(interaction);
@@ -1156,7 +1216,7 @@ bool GFlowBase::loadBuoyancy(string fileName, double radius, double velocity, do
     vec2 V(0, -velocity);
     P.velocity = V;
     P.setDensity(density);
-    if (constV) sectorization.insertParticle(P, new ConstantVelocity(V, constV, omega, constOm));
+    if (constV || constOm) sectorization.insertParticle(P, new ConstantVelocity(V, constV, omega, constOm));
     else sectorization.insertParticle(P);
   }
   // Set a termination condition
@@ -1696,9 +1756,16 @@ vector<double> GFlowBase::getBulkData(vector<Particle> &allParticles, string &sh
       bubbleField.setPrintPoints(200);
     }
     // Update
-    for (int y=0; y<nsy; ++y)
-      for (int x=0; x<nsx; ++x)
-	bubbleField.at(x,y) += (array[nsx*y+x]>-1 ? 1 : 0);
+    try {
+      for (int y=0; y<bubbleField.getNSY(); ++y)
+	for (int x=0; x<bubbleField.getNSX(); ++x)
+	  bubbleField.at(x,y) += (array[nsx*y+x]>-1 ? 1 : 0);
+    }
+    catch (ScalarField::FieldOutOfBounds bnds) {
+      cout << "Current dims: " << nsx << ", " << nsy << endl;
+      cout << "Tried to access " << bnds.x << ", " << bnds.y << endl;
+      cout << "Field dims: " << bubbleField.getNSX() << ", " << bubbleField.getNSY() << endl;
+    }
   }
   // Create outline
   if (getOutline) createOutline(array, nsx, nsy, sx, sy, region, lines);
