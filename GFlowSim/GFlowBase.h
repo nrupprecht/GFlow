@@ -100,7 +100,9 @@ class GFlowBase {
   void setScale(double s) { scale = s; }
 
   void createSquare(int, double, double=4., double=4., double=0.1, double=0., int=0);
-  void createBuoyancyBox(double,double,double,double,double,double,double, int=0);
+  void createBuoyancyBox(double,double,double,double,int=0);
+  bool createTube(string);
+  bool loadTube(string, double=0.5, double=5., double=10., bool=false, double=0, bool=false);
   bool loadBuoyancy(string, double=0.5, double=5., double=10., bool=false, double=0, bool=false);
   void recordPositions();
 
@@ -191,7 +193,7 @@ class GFlowBase {
   bool followBall;
   inline Bounds followBallBounds();
   bool csv;
-  vector<double> pressureRecord;
+  vector<vec2> pressureRecord;
 
   bool recSpecial;
   bool writeAnimation;

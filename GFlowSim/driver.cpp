@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
   bool bubbles = false;
   bool visBubbles = false;
   bool bubbleField = false;
-  bool csv = false;
+  bool csv = true;
   bool writeFields = false;
   bool writeFitness = false;
   bool writeAnimation = true;
@@ -80,6 +80,7 @@ int main(int argc, char** argv) {
   // Stat plots
   bool velDist = false;
   bool pressurePlot = false;
+  bool densityPlot = false;
   // Options
   bool novid   = false;
   bool printSectors = false;
@@ -97,6 +98,8 @@ int main(int argc, char** argv) {
   // Load and save
   string loadFile = "";
   string loadBuoyancy = "";
+  string createTube = "";
+  string loadTube = "";
   string saveFile = "";
   string writeDirectory = "RunData";
   string updateBuoyancy = "";
@@ -181,6 +184,7 @@ int main(int argc, char** argv) {
   parser.get("num", num);
   parser.get("velDist", velDist);
   parser.get("pressurePlot", pressurePlot);
+  parser.get("densityPlot", densityPlot);
   parser.get("novid", novid);
   parser.get("printSectors", printSectors);
   parser.get("fps", fps);
@@ -193,6 +197,8 @@ int main(int argc, char** argv) {
   parser.get("bacteria", bacteria);
   parser.get("loadFile", loadFile);
   parser.get("loadBuoyancy", loadBuoyancy);
+  parser.get("createTube", createTube);
+  parser.get("loadTube", loadTube);
   parser.get("saveFile", saveFile);
   parser.get("writeDirectory", writeDirectory);
   parser.get("updateBuoyancy", updateBuoyancy);
@@ -241,8 +247,8 @@ int main(int argc, char** argv) {
   if (LJ!=-1) interaction = 1;
   else if (Tri!=-1) interaction = 2;
   // Create scenario
-  if (loadFile=="" && loadBuoyancy=="" && updateBuoyancy=="") {
-    if (buoyancy) simulator.createBuoyancyBox(radius, bR, density, width, height, velocity, dispersion, interaction);
+  if (loadFile=="" && loadBuoyancy=="" && updateBuoyancy=="" && createTube=="" && loadTube=="") {
+    if (buoyancy) simulator.createBuoyancyBox(radius, width, height, dispersion, interaction);
     else if (square) simulator.createSquare(number, radius, width, height, velocity, dispersion, interaction);
     else throw false; // No selection
   }
@@ -260,6 +266,18 @@ int main(int argc, char** argv) {
       return 0;
     }
     if (LJ!=-1) simulator.setInteractionType(1);
+  }
+  else if (createTube!="") {
+    if (!simulator.createTube(createTube)) {
+      cout << "Failed to load [" << createTube << "], exiting.\n";
+      return 0;
+    }
+  }
+  else if (loadTube!="") {
+    if (!simulator.loadTube(loadTube, bR, velocity, density, CV, omega, CO)) {
+      cout << "Failed to load [" << loadTube << "], exitiny.\n";
+      return 0;
+    }
   }
   else { // We must have that loadFile!=""
     if (!simulator.loadConfigurationFromFile(loadFile)) {
@@ -316,6 +334,7 @@ int main(int argc, char** argv) {
   // Stat plots
   if (velDist) simulator.addStatPlot(Plot_Velocity, "velDist", 0, 3); //** 3 is a magic number
   if (pressurePlot) simulator.addStatPlot(Plot_Force_Vs_Depth, "pressPlot", simulator.getBottom(), simulator.getTop());
+  if (densityPlot) simulator.addStatPlot(Plot_Particle_Density_Vs_Depth, "denPlot", simulator.getBottom(), simulator.getTop());
 
   // Get the actual number of particles in the simulation
   number = simulator.getSize();

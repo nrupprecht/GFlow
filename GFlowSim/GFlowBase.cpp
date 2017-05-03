@@ -27,20 +27,23 @@ GFlowBase::GFlowBase() {
   setUpTime = 0;
   recSpecial = false;
   visBounds = bubbleBounds = NullBounds;
-  writeAnimation = true; // We animate by printing files by default
   forceChoice = 0;
   typeChoice = 0;
   doFields = false;
   fieldUpdateDelay = 0.0005;
   fieldUpdateCounter = 0;
   scale = 100;
-  writeDirectory = "RunData";
   statPlotBins = 100;
+  // Bacteria
   alphaR = default_alphaR;
   alphaW = default_alphaW;
   csatR = default_csatR;
   csatW = default_csatW;
   betaR = default_betaR;
+  // Animation
+  writeDirectory = "RunData";
+  csv = true;
+  writeAnimation = true; // We animate by printing files by default
   numOptions = 9;
   for (int i=0; i<=numOptions; ++i) options[i] = 0;
   //---
@@ -60,6 +63,7 @@ GFlowBase::~GFlowBase() {}
 void GFlowBase::run(double runLength) {
   setUp();
   resetVariables();
+  if (getSize()==0) return;
   // Create work communicator
   //** int color = doWork ? 1 : 0;
   //** MPI::Intercomm CommWork = COMM_WORLD.Split(color, rank);
@@ -394,7 +398,11 @@ void GFlowBase::record() {
   }
   if (options[1]) {
     vector<PData> positions = sectorization.forceData(forceChoice, typeChoice);
-    if (pressureRecord.empty()) pressureRecord = vector<double>(statPlotBins, 0);
+    if (pressureRecord.empty()) {
+      pressureRecord = vector<vec2>(statPlotBins, Zero);
+      for (int i=0; i<pressureRecord.size(); ++i)
+	pressureRecord.at(i).x = i*(top-bottom)/statPlotBins;
+    }
     double dpx = (top-bottom)/statPlotBins;
     vector<double> pressBins(statPlotBins, 0);
     vector<int> counts(statPlotBins, 0);
@@ -405,7 +413,7 @@ void GFlowBase::record() {
       ++counts.at(b);
     }
     // Update pressure
-    for (int i=0; i<statPlotBins; ++i) pressureRecord.at(i) += (counts.at(i)>0 ? pressBins.at(i)/counts.at(i) : 0);
+    for (int i=0; i<statPlotBins; ++i) pressureRecord.at(i).y += (counts.at(i)>0 ? pressBins.at(i)/counts.at(i) : 0);
   }
   // Bubble related options
   if (options[2] || options[3] || options[4]) {
@@ -445,6 +453,7 @@ void GFlowBase::record() {
   // Record stat plot statistics
   i=0;
   for (auto &sp : statPlots) {
+    if (allParticles.empty()) recallParticles(allParticles);
     sp.first(allParticles, statPlotRecord.at(i), statPlotBounds.at(i).first,  statPlotBounds.at(i).second);
   }
   // Special record
@@ -1113,16 +1122,13 @@ void GFlowBase::createSquare(int number, double radius, double width, double hei
   setUpTime = time_span(end, start);
 }
 
-void GFlowBase::createBuoyancyBox(double radius, double bR, double density, double width, double depth, double velocity, double dispersion, int interaction) {
+void GFlowBase::createBuoyancyBox(double radius, double width, double height, double dispersion, int interaction) {
   // Start the clock
   auto start = current_time();
-  bR = fabs(bR); radius = fabs(radius);
   // Discard any old state
   discard();
   // Bounds
-  double height = depth+2*bR+10*radius;
   Bounds bounds(0, width, 0, height);
-  Bounds initialBounds(0, width, 0, depth);
   setBounds(bounds);
   // Everyone knows where the walls are
   addWall(left, bottom, right, bottom);
@@ -1144,39 +1150,104 @@ void GFlowBase::createBuoyancyBox(double radius, double bR, double density, doub
     double Vgrain = PI*sqr(radius);
     number = 0.85*maxPack*Vfill/Vgrain;
     // Create particles and distribute them to the processors
-    if (latticeType>-1) positions = findLatticeSolution(number, radius, initialBounds, latticeType);
-    else positions = findPackedSolution(number, radius, initialBounds, gravity);
+    radii = vector<double>(number, radius);
   }
   else {
     // Not all particles have the same radius
     double totalV = 0, rmin = (1.-dispersion)*radius;
     // Get enough particles to fill the volume
     while (totalV<Vfill) {
-      double p = 1./radius + (1./rmin+1./radius)*drand48();
-      double r = 1./p;
-      //double r = (1-drand48()*dispersion)*radius;
+      // double p = 1./radius + (1./rmin+1./radius)*drand48(), r = 1./p;
+      double r = (1-drand48()*dispersion)*radius;
       totalV += PI*sqr(r);
       radii.push_back(r);
-      interactions.push_back(interaction);
     }
     number = radii.size();
-    if (latticeType>-1) positions = findLatticeSolution(number, radius, initialBounds, latticeType);
-    else positions = findPackedSolution(radii, interactions, bounds, gravity);
   }
-  // Create particles at the given positions with - Radius, Dispersion, Velocity function, Angular velocity function, Coeff, Dissipation, Repulsion, Interaction
-  double coeff = default_sphere_coeff;
-  if (dispersion==0) {
-    particles = createParticles(positions, radius, dispersion, ZeroV, ZeroOm, coeff, default_sphere_dissipation, default_sphere_repulsion, interaction);
-    distributeParticles(particles, sectorization);
-  }
-  else createAndDistributeParticles(positions, radii, interactions, bounds, sectorization, ZeroV, coeff);
-  // Add the large ball
+  interactions = vector<int>(number, interaction);
+  // Create position
+  positions = findPackedSolution(radii, interactions, bounds, gravity);
+  // Create particles at the given positions with: Radius, Dispersion, Velocity function, Angular velocity function, Coeff, Dissipation, Repulsion, Interaction
+  createAndDistributeParticles(positions, radii, interactions, bounds, sectorization, ZeroV, default_sphere_coeff);
+  // Initialize
   sectorization.initialize();
-  // sectorization.setASize(number+1); //** AD HOC
   // End setup timing
   auto end = current_time();
   bubbleBounds = visBounds = NullBounds;
   setUpTime = time_span(end, start);
+}
+
+bool GFlowBase::createTube(string fileName) {
+  // Discard any old state
+  discard();
+  // Load data
+  if (!loadConfigurationFromFile(fileName)) return false;
+  // Lambda that finds the tops of the balls
+  StatFunc upperEdge = [&] (const vector<Particle> &particles, int&) {
+    double tp = -1e9;
+    for (const auto &p : particles)
+      if (tp<p.position.y+p.sigma) tp = p.position.y+p.sigma;
+    return tp;
+  };
+  // Find the tops of the balls
+  double tp = reduceStatFunction(upperEdge, 1);
+  // Set bounds
+  double height = tp - 1;
+  Bounds bounds(left, right, bottom, height);
+  setBounds(bounds);
+  // Clear old walls, create new ones
+  walls.clear();
+  addWall(left, bottom, right, bottom);
+  addWall(left,bottom,left,top);
+  addWall(right,bottom,right,height);
+  addWall(left,height,right,height);
+  // Set gravity to zero
+  gravity = Zero;
+  // Return
+  return true;
+}
+
+bool GFlowBase::loadTube(string fileName, double radius, double velocity, double density, bool constV, double omega, bool constOm) {
+  // Start the clock
+  auto start = current_time();
+  // Discard any old state
+  discard();
+  // Load data
+  if (!loadConfigurationFromFile(fileName)) return false;
+
+  Bounds bounds(left, right, bottom, top+2*radius);
+  setBounds(bounds);
+  // Set use characteristics
+  sectorization.setUseCharacteristics(constV || constOm);
+  // Clear old walls, create new ones
+  // Send out particles
+  setUpSectorization();
+  sectorization.initialize();
+
+  // Set use characteristics
+  sectorization.setUseCharacteristics(constV || constOm);
+  // Send out particles
+  setUpSectorization();
+  sectorization.initialize();
+  // Add the intruding particle
+  if (0<radius) {
+    Particle P((right-left)/2, top-radius, radius);
+    vec2 V(0, -velocity);
+    P.velocity = V;
+    P.setDensity(density);
+    if (constV || constOm) sectorization.insertParticle(P, new ConstantVelocity(V, constV, omega, constOm));
+    else sectorization.insertParticle(P);
+  }
+  // Set a termination condition
+  addTerminationCondition(Stat_Large_Object_Height, belowZero); // If the large ball goes through the floor
+  addTerminationCondition(Stat_Large_Object_VY, tooSmall); // If the large ball starts moving up
+  // End setup timing
+  auto end = current_time();
+ setUpTime = time_span(end, start);
+ bubbleBounds = visBounds = NullBounds;
+ return true;
+
+  return true;
 }
 
 bool GFlowBase::loadBuoyancy(string fileName, double radius, double velocity, double density, bool constV, double omega, bool constOm) {

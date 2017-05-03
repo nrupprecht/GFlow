@@ -460,6 +460,9 @@ void Sectorization::insertParticle(Particle p) {
 void Sectorization::insertParticle(Particle p, Characteristic *c) {
   //--> THIS IS WHAT IS CAUSING THE HEISENBUG
   if (array_end>=asize) throw false; //**
+
+  cout << ch << " " << array_end << endl; //**--
+
   if (ch) ch[array_end] = c;
   //<--
   insertParticle(p);
