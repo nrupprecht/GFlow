@@ -103,6 +103,7 @@ class Sectorization {
 
   // Exception classes
   class BadParticle {};
+  class OutOfBounds {};
 
  private:
   /// Helper functions

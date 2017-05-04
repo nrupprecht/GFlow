@@ -8,8 +8,8 @@ class Sectorization; // Forward declaration
 class Characteristic {
  public:
   // Apply a force or torque on the particle
-  virtual void modify(double**, Sectorization*, int) = 0;
-  virtual Characteristic* create() = 0;
+  virtual void modify(double**, Sectorization*, int) {};
+  virtual Characteristic* create() { return new Characteristic; }
  protected:
   
 };
@@ -17,6 +17,7 @@ class Characteristic {
 class Bacteria : public Characteristic {
  public:
   Bacteria();
+  Bacteria(const Bacteria&);
 
   virtual void modify(double**, Sectorization*, int);
   virtual Characteristic* create();
@@ -39,6 +40,8 @@ class Bacteria : public Characteristic {
 
 class ConstantVelocity : public Characteristic {
  public:
+  ConstantVelocity();
+  ConstantVelocity(const ConstantVelocity&);
   ConstantVelocity(vec2);
   ConstantVelocity(vec2, double);
   ConstantVelocity(vec2, bool, double, bool);

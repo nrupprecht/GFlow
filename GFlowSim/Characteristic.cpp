@@ -14,6 +14,19 @@ Bacteria::Bacteria() {
   death = 1./default_bacteria_death_const;
 }
 
+Bacteria::Bacteria(const Bacteria& b) {
+  orient = randV();
+  reorient = b.reorient;
+  strength = b.strength;
+  secretion = b.secretion;
+  velocity = b.velocity;
+  delay = 0.05;
+  timer = drand48()*delay;
+  fitness = b.fitness;
+  reproduction = b.reproduction;
+  death = b.death;
+}
+
 void Bacteria::modify(double **pdata, Sectorization *sectors, int id) {
   // Set up convenience pointers
   double *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
@@ -40,9 +53,8 @@ void Bacteria::modify(double **pdata, Sectorization *sectors, int id) {
     if (po<drand48()) orient = randV();
     // Reproduction
     static double pr = exp(-delay*reproduction);
-    if (pr<drand48()) {
-      if (!sectors->isFull()) sectors->insertParticle(Particle(px[id], py[id], sg[id]), this->create());
-    }
+    if (pr<drand48() && !sectors->isFull()) 
+      sectors->insertParticle(Particle(px[id], py[id], sg[id]), this->create());
   }
   // Run
   double dvx = velocity*orient.x-vx[id], dvy = velocity*orient.y-vy[id];
@@ -52,6 +64,19 @@ void Bacteria::modify(double **pdata, Sectorization *sectors, int id) {
 
 Characteristic* Bacteria::create() {
   return new Bacteria;
+}
+
+ConstantVelocity::ConstantVelocity() {
+  // Default as a stationary object
+  targetVelocity = 0;
+  targetOmega = 0;
+  useV = useOm = true;
+}
+
+ConstantVelocity::ConstantVelocity(const ConstantVelocity& cv) {
+  targetVelocity = cv.targetVelocity;
+  targetOmega    = cv.targetOmega;
+  useV = cv.useV; useOm = cv.useOm;
 }
 
 ConstantVelocity::ConstantVelocity(vec2 v) : targetVelocity(v), targetOmega(0), useV(true), useOm(false) {};

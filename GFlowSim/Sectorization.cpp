@@ -95,12 +95,14 @@ void Sectorization::setUseCharacteristics(bool use) {
   useCharacteristics = use;
   if (use) {
     // Delete old characteristics
-    if (ch)
+    if (ch) {
       for (int i=0; i<asize; ++i)
 	if (ch[i]) {
           delete ch[i];
-          ch[i] =0;
+          ch[i] = 0;
         }
+      free(ch);
+    }
     ch = (Characteristic**)aligned_alloc(64, asize*sizeof(Characteristic*));
     memset(ch, 0, asize*sizeof(Characteristic*));
   }
@@ -112,6 +114,7 @@ void Sectorization::setUseCharacteristics(bool use) {
           delete ch[i];
           ch[i] =0;
         }
+    free(ch);
     ch = 0;
   }
 }
@@ -164,12 +167,15 @@ void Sectorization::discard() {
 }
 
 void Sectorization::discardAll() {
+  // Discard the characteristics
   if (ch) {
     for (int i=0; i<array_end; ++i) 
       if (ch[i]) {
 	delete ch[i];
 	ch[i] = 0;
       }
+    delete [] ch;
+    ch = 0;
   }
   walls.clear();
   discard();
@@ -419,7 +425,7 @@ void Sectorization::insertParticle(Particle p) {
     }
   }
   // Add particle to the arrays etc.
-  if (asize<=array_end) throw false; // To many particles - we should (well, could) actually resize everything in this case
+  if (asize<=array_end) throw OutOfBounds(); // To many particles - we should (well, could) actually resize everything in this case
   px[array_end] = p.position.x;
   py[array_end] = p.position.y;
   vx[array_end] = p.velocity.x;
@@ -458,18 +464,13 @@ void Sectorization::insertParticle(Particle p) {
 }
 
 void Sectorization::insertParticle(Particle p, Characteristic *c) {
-  //--> THIS IS WHAT IS CAUSING THE HEISENBUG
-  if (array_end>=asize) throw false; //**
-
-  cout << "Inserting particle with characteristic: " << ch << "; " << array_end << ", " << asize << endl; //**--
-
+  if (array_end>=asize) throw OutOfBounds();
   if (ch) ch[array_end] = c;
-  //<--
   insertParticle(p);
 }
 
 void Sectorization::removeAt(int i) {
-  if (i<0 || asize-1<i) throw false; 
+  if (i<0 || asize-1<i) throw OutOfBounds(); 
   it[i] = -1;
   // If the particle had a characteristic, destroy it
   if (ch && ch[i]) {
