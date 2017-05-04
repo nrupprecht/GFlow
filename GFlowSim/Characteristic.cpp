@@ -58,8 +58,9 @@ void Bacteria::modify(double **pdata, Sectorization *sectors, int id) {
   }
   // Run
   double dvx = velocity*orient.x-vx[id], dvy = velocity*orient.y-vy[id];
-  fx[id] += strength*dvx*im[id];
-  fy[id] += strength*dvy*im[id];
+  double mass = 1./im[id];
+  fx[id] += strength*dvx*mass;
+  fy[id] += strength*dvy*mass;
 }
 
 Characteristic* Bacteria::create() {
