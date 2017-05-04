@@ -312,7 +312,7 @@ void GFlowBase::setUp() {
     if (options[5]) mkdir((writeDirectory+"/Waste").c_str(), 0777); // Waste director
     if (options[6]) mkdir((writeDirectory+"/Resource").c_str(), 0777); // Resource directory
     if (options[7]) mkdir((writeDirectory+"/Fitness").c_str(), 0777); // Fitness director
-    if (writeAnimation) mkdir((writeDirectory+"/Pos").c_str(), 0777); // Position directory
+    if (writeAnimation && options[0]) mkdir((writeDirectory+"/Pos").c_str(), 0777); // Position directory
     if (options[8]) mkdir((writeDirectory+"/Init").c_str(), 0777); // Initialization directory
   }
   resetVariables();

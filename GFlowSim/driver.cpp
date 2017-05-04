@@ -382,7 +382,7 @@ int main(int argc, char** argv) {
     if (snapshot) cout << simulator.printSnapshot() << endl;
     if (special) cout << simulator.printSpecialAnimationCommand(novid) << endl;
     if (forces && !writeAnimation)  cout << simulator.printForcesAnimationCommand(mode, novid) << endl;
-    if (pressure) cout << simulator.getPressureRecord() << ";\n";
+    if (pressure) cout << "press" << label << "=" << simulator.getPressureRecord() << ";\nListLinePlot[press,PlotStyle->Black,ImageSize->Large]\n";
     // Print bubble data
     if (bubbles && !csv) {
       cout << "bsize" << label << "=" << simulator.getBubbleRecord() << ";\n";
