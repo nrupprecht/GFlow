@@ -7,6 +7,12 @@
 #include <mpi.h>
 #include <stdlib.h> // For aligned_malloc
 
+// Safe free
+template<typename T> inline void zfree(T* &ptr) {
+  if (ptr) free(ptr);
+  ptr = 0;
+}
+
 // To use:
 // --- These steps can be done in any order ---
 // 1) Set domain and simulation bounds
@@ -68,6 +74,7 @@ class Sectorization {
   void setTemperature(double t)  { temperature = t; DT1 = t/(6*viscosity*PI); }
   void setViscosity(double h)    { viscosity = h; DT1 = temperature/(6*h*PI); }
   void setCoeff(double c);
+  void setSigma(double r);
   void setCutoff(double c)       { cutoff = c; }
   void setSkinDepth(double d)    { skinDepth = d; }
   void setBounds(double, double, double, double);
@@ -82,7 +89,7 @@ class Sectorization {
   void resetComm()               { CommWork = MPI::COMM_WORLD; }
   void discard();
   void discardAll();
-  void updatePList(); // Fill plist with the particles from the data buffers
+  void updateList(); // Fill plist with the particles from the data buffers
 
   // Functionality
   void update();                     // Do a timestep

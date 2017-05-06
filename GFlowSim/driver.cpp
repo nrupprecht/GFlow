@@ -262,8 +262,11 @@ int main(int argc, char** argv) {
   }
   else if (loadBuoyancy!="") {
     if (!simulator.loadBuoyancy(loadBuoyancy, bR, velocity, density, CV, omega, CO)) {
-      cout << "Failed to load [" << loadBuoyancy << "], exiting.\n";
-      return 0;
+      if (simulator.loadBuoyancy("Configs/"+loadBuoyancy, bR, velocity, density, CV, omega, CO));
+      else {
+	cout << "Failed to load [" << loadBuoyancy << "], exiting.\n";
+	return 0;
+      }
     }
     if (LJ!=-1) simulator.setInteractionType(1);
   }

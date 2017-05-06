@@ -53,8 +53,12 @@ void Bacteria::modify(double **pdata, Sectorization *sectors, int id) {
     if (po<drand48()) orient = randV();
     // Reproduction
     static double pr = exp(-delay*reproduction);
-    if (pr<drand48() && !sectors->isFull()) 
-      sectors->insertParticle(Particle(px[id], py[id], sg[id]), this->create());
+    if (pr<drand48() && !sectors->isFull()) {
+      vec2 displace = 2.05*sg[id]*randV();
+      Particle P(px[id]+displace.x, py[id]+displace.y, sg[id]);
+      P.velocity = vec2(vx[id], vy[id]);
+      sectors->insertParticle(P, this->create());
+    }
   }
   // Run
   double dvx = velocity*orient.x-vx[id], dvy = velocity*orient.y-vy[id];

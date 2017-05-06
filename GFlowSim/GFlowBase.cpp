@@ -443,7 +443,7 @@ void GFlowBase::record() {
   }
   
   // Record stat function statistics
-  if (!statFunctions.empty()) sectorization.updatePList();
+  if (!statFunctions.empty()) sectorization.updateList();
   int i=0;
   for (auto &sf : statFunctions) {
     double data = reduceStatFunction(sf.first);
@@ -1060,6 +1060,8 @@ void GFlowBase::setAsBacteria() {
   sectorization.setDrag(true);
   sectorization.stopParticles();
   sectorization.setASize(5000); //** AD HOC
+  sectorization.setSigma(0.01); // Give them all small radii
+  sectorization.setDoInteractions(false); //**
   doFields = true;
   Bounds bounds(left, right, bottom, top);
   Resource.setBounds(bounds);
@@ -1307,7 +1309,7 @@ void GFlowBase::addStatFunction(StatFunc sf, string str) {
 
 void GFlowBase::addStatPlot(StatPlot sp, string str, double lower, double upper) {
   statPlots.push_back(pair<StatPlot,string>(sp, str));
-  statPlotRecord.push_back(vector<double>(statPlotBins));
+  statPlotRecord.push_back(vector<vec2>(statPlotBins));
   statPlotBounds.push_back(pair<double,double>(lower,upper));
 }
 

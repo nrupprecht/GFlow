@@ -56,6 +56,7 @@ struct Particle {
   Particle();
   Particle(vec2, double);
   Particle(double, double, double);
+
   // Helper functions
   void setDensity(double);
   // Error class

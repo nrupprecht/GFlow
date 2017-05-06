@@ -17,12 +17,12 @@ Sectorization::Sectorization() : nsx(3), nsy(3), secWidth(0), secHeight(0), time
 Sectorization::~Sectorization() {
   if (sectors)   delete [] sectors;
   for (int i=0; i<15; ++i)
-    if (pdata[i]) delete [] pdata[i];
-  if (it) delete [] it;
+    zfree(pdata[i]);
+  if (it) zfree(it);
   if (ch) {
     for (int i=0; i<asize; ++i)
       if (ch[i]) delete ch[i];
-    delete [] ch;
+    zfree(ch);
   }
   sectors = 0;
 }
@@ -55,7 +55,7 @@ void Sectorization::initialize() {
     sectors[sec].push_back(i);
   }
   // Reallocate in a memory friendly way (using the sectorized data)
-  memory_rearrange();
+  // memory_rearrange();
   
   // Create the initial neighborlist
   createNeighborLists(true);
@@ -69,7 +69,7 @@ double Sectorization::getAvePerNeighborList() {
 }
 
 vector<Particle>& Sectorization::getParticles() {
-  updatePList();
+  updateList();
   return plist;
 }
 
@@ -77,6 +77,12 @@ void Sectorization::setCoeff(double c) {
   if (cf!=0)
     for (int i=0; i<array_end; ++i) cf[i] = c;
   for (auto &p : plist) p.coeff = c;
+}
+
+void Sectorization::setSigma(double r) {
+  if (sg!=0)
+    for (int i=0; i<array_end; ++i) sg[i] = r;
+  for (auto &p : plist) p.sigma = r;
 }
 
 void Sectorization::setBounds(double l, double r, double b, double t) {
@@ -101,7 +107,7 @@ void Sectorization::setUseCharacteristics(bool use) {
           delete ch[i];
           ch[i] = 0;
         }
-      free(ch);
+      zfree(ch);
     }
     ch = (Characteristic**)aligned_alloc(64, asize*sizeof(Characteristic*));
     memset(ch, 0, asize*sizeof(Characteristic*));
@@ -114,7 +120,7 @@ void Sectorization::setUseCharacteristics(bool use) {
           delete ch[i];
           ch[i] =0;
         }
-    free(ch);
+    zfree(ch);
     ch = 0;
   }
 }
@@ -124,7 +130,7 @@ void Sectorization::setInteractionType(int inter) {
 }
 
 void Sectorization::setASize(int s) {
-  updatePList();
+  updateList();
   discard();
   asize = s;
   easize = s; //-- AD HOC
@@ -139,28 +145,27 @@ void Sectorization::stopParticles() {
 
 void Sectorization::discard() {
   // Discard arrays only. Not plist or clist. Also, do not delete individual characteristics ( ch[i] )
-  if (px) delete [] px; px = 0;
-  if (py) delete [] py; py = 0;
-  if (vx) delete [] vx; vx = 0;
-  if (vy) delete [] vy; vy = 0;
-  if (fx) delete [] fx; fx = 0;
-  if (fy) delete [] fy; fy = 0;
-  if (om) delete [] om; om = 0;
-  if (tq) delete [] tq; tq = 0;
-  if (sg) delete [] sg; sg = 0;
-  if (im) delete [] im; im = 0;
-  if (iI) delete [] iI; iI = 0;
-  if (rp) delete [] rp; rp = 0;
-  if (ds) delete [] ds; ds = 0;
-  if (cf) delete [] cf; cf = 0;
-  if (th) delete [] th; th = 0;
-  if (it) delete [] it; it = 0;
-  if (ch) delete [] ch; ch = 0;
+  zfree(px);
+  zfree(py);
+  zfree(vx);
+  zfree(vy);
+  zfree(fx);
+  zfree(fy);
+  zfree(om);
+  zfree(tq);
+  zfree(sg);
+  zfree(im);
+  zfree(iI);
+  zfree(rp); 
+  zfree(ds);
+  zfree(cf);
+  zfree(ch); 
+  zfree(it); 
+  zfree(ch);
   for (int i=0; i<15; ++i) pdata[i] = 0;
   size = 0;
   array_end = 0;
-  if (positionTracker) delete [] positionTracker;
-  positionTracker = 0;
+  zfree(positionTracker);
   if (sectors) for (int i=0; i<nsx*nsy+1; ++i) sectors[i].clear();
   neighborList.clear();
   wallNeighbors.clear();
@@ -174,8 +179,7 @@ void Sectorization::discardAll() {
 	delete ch[i];
 	ch[i] = 0;
       }
-    delete [] ch;
-    ch = 0;
+    zfree(ch);
   }
   walls.clear();
   discard();
@@ -415,7 +419,7 @@ void Sectorization::insertParticle(Particle p) {
   }
   // If we need to redo the sector sizing
   if (redo) {
-    updatePList();
+    updateList();
     plist.push_back(p);
     makeSectors();
     // Add the particles (except the new one - we add it below) to the proper sectors
@@ -472,6 +476,7 @@ void Sectorization::insertParticle(Particle p, Characteristic *c) {
 void Sectorization::removeAt(int i) {
   if (i<0 || asize-1<i) throw OutOfBounds(); 
   it[i] = -1;
+
   // If the particle had a characteristic, destroy it
   if (ch && ch[i]) {
     delete ch[i];
@@ -893,7 +898,7 @@ inline void Sectorization::makeSectors() {
   sectors = new list<int>[nsx*nsy+1];
 }
 
-void Sectorization::updatePList() {
+void Sectorization::updateList() {
   plist.clear();
   clist.clear();
   // Create particles and push them into plist
@@ -921,24 +926,25 @@ void Sectorization::updatePList() {
 }
 
 inline void Sectorization::createArrays() {
+  zfree(px);
+  zfree(py);
+  zfree(vx);
+  zfree(vy);
+  zfree(fx);
+  zfree(fy);
+  zfree(om);
+  zfree(tq);
+  zfree(sg);
+  zfree(im);
+  zfree(iI);
+  zfree(rp);
+  zfree(ds);
+  zfree(cf);
+  zfree(ch);
+  zfree(it);
+  zfree(ch);
+  // Only use valid sizes
   if (asize<1) return;
-  if (px) delete [] px;
-  if (py) delete [] py;
-  if (vx) delete [] vx;
-  if (vy) delete [] vy;
-  if (fx) delete [] fx;
-  if (fy) delete [] fy;
-  if (th) delete [] th;
-  if (om) delete [] om;
-  if (tq) delete [] tq;
-  if (sg) delete [] sg;
-  if (im) delete [] im;
-  if (iI) delete [] iI;
-  if (rp) delete [] rp;
-  if (ds) delete [] ds;
-  if (cf) delete [] cf;
-  if (it) delete [] it;
-  if (useCharacteristics && ch) delete [] ch;
   // Reallocate
   int tsize = asize + easize;
   pdata[0]  = px = (double*)aligned_alloc(64, tsize*sizeof(double));
@@ -958,13 +964,12 @@ inline void Sectorization::createArrays() {
   pdata[14] = cf = (double*)aligned_alloc(64, tsize*sizeof(double));
   it             =    (int*)aligned_alloc(64, tsize*sizeof(int));
   memset(it, -1, tsize*sizeof(int)); // Each int is 4 bytes
-  if (useCharacteristics) {
+  if (useCharacteristics) { // Right now, ch = 0
     ch           = (Characteristic**)aligned_alloc(64, asize*sizeof(Characteristic*));
     memset(ch, 0, asize*sizeof(Characteristic*));
   }
-  else ch = 0;
   // Set position tracker array
-  if (positionTracker) delete [] positionTracker;
+  zfree(positionTracker);
   positionTracker = (vec2*)aligned_alloc(64, asize*sizeof(vec2));
   size = 0; esize = 0;
   array_end = 0; earray_end = asize;
@@ -1254,6 +1259,7 @@ inline void Sectorization::memory_rearrange() {
   // Create new arrays and put the particles in them in our new order
   double *pd[15]; // New pdata
   int *nit; // New interaction
+  Characteristic **nch=0; // New characteristics
   // Reallocate
   int tsize = asize + easize;
   pd[0]  = (double*)aligned_alloc(64, tsize*sizeof(double));
@@ -1272,8 +1278,10 @@ inline void Sectorization::memory_rearrange() {
   pd[13] = (double*)aligned_alloc(64, tsize*sizeof(double));
   pd[14] = (double*)aligned_alloc(64, tsize*sizeof(double));
   nit    =    (int*)   aligned_alloc(64, tsize*sizeof(int));
+  if (useCharacteristics && ch!=0)
+    nch    = (Characteristic**)aligned_alloc(64, asize*sizeof(Characteristic*));
   // Set
-  for (int i=0; i<size; ++i) {
+  for (int i=0; i<tsize; ++i) {
     int j     = order[i];
     pd[0][i]  = px[j];
     pd[1][i]  = py[j];
@@ -1291,10 +1299,12 @@ inline void Sectorization::memory_rearrange() {
     pd[13][i] = ds[j];
     pd[14][i] = cf[j];
     nit[i]    = it[j];
+    if (ch && i<asize) 
+      nch[i] = ch[j];
   }
   // Delete old arrays and set new data
   for (int i=0; i<15; ++i) {
-    delete [] pdata[i];
+    zfree(pdata[i]);
     pdata[i] = pd[i];
   }
   // Set new data arrays

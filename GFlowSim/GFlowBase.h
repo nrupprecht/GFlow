@@ -203,7 +203,7 @@ class GFlowBase {
   vector<vector<vec2> >  statRecord;    // Save the data produced by the statistic functions
   vector<pair<StatPlot,string> > statPlots;
   vector<pair<double, double> > statPlotBounds;
-  vector<vector<double> > statPlotRecord;
+  vector<vector<vec2> > statPlotRecord;
   int statPlotBins;
 
   // For printing data
