@@ -69,6 +69,9 @@ class Sectorization {
   void giveDomainInfo(int x, int y) { ndx=x; ndy=y; }
   void setEpsilon(double e)      { epsilon = e; sqrtEpsilon = sqrt(e); }
   void setDoInteractions(bool i) { doInteractions = i; }
+  void setWrapX(bool w)          { wrapX = w; }
+  void setWrapY(bool w)          { wrapY = w; }
+  void setWrap(bool w)           { wrapX = wrapY = w; }
   void setDrag(bool d)           { drag = d; }
   void setGravity(vec2 g)        { gravity = g; }
   void setTemperature(double t)  { temperature = t; DT1 = t/(6*viscosity*PI); }

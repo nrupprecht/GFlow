@@ -28,7 +28,7 @@ Wall::Wall(double lx, double ly, double rx, double ry) {
   coeff = default_wall_coeff;
 }
 
-Particle::Particle() : sigma(0), interaction(0) {
+Particle::Particle() : sigma(0), interaction(default_particle_interaction) {
   position = velocity = force = 0;
   theta = 2*drand48()*PI;
   omega = torque = 0;
@@ -41,7 +41,7 @@ Particle::Particle() : sigma(0), interaction(0) {
   coeff = default_sphere_coeff;
 }
 
-Particle::Particle(vec2 p, double r) : position(p), sigma(r), interaction(0) {
+Particle::Particle(vec2 p, double r) : position(p), sigma(r), interaction(default_particle_interaction) {
   velocity = force = 0;
   theta = 2*drand48()*PI;
   omega = torque = 0;
@@ -54,7 +54,7 @@ Particle::Particle(vec2 p, double r) : position(p), sigma(r), interaction(0) {
   coeff = default_sphere_coeff;
 }
 
-Particle::Particle(double x, double y, double r) : position(vec2(x,y)), sigma(r), interaction(0) {
+Particle::Particle(double x, double y, double r) : position(vec2(x,y)), sigma(r), interaction(default_particle_interaction) {
   velocity = force = 0;
   theta = 2*drand48()*PI;
   omega = torque = 0;

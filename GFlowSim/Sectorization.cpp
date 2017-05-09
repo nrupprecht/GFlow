@@ -241,7 +241,7 @@ inline void Sectorization::interactionHelper(int i, int j, int ibase, double &Fn
   case 4: // LJ - Sphere --> LJ
   case 5: // LJ - LJ --> LJ
   case 6: // LJ - Triangle --> LJ
-  case 7: // UNIMPLEMENTED
+  case 7: // LJ - Inv R --> LJ
     LJinteraction(pdata, i, j, asize, displacement, Fn, Fs, update);
     break;
   case 8: // Triangle - Sphere

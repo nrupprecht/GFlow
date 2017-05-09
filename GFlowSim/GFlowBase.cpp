@@ -357,10 +357,9 @@ void GFlowBase::objectUpdates() {
     for (int i=0; i<array_end; ++i) {
       Bacteria *b = reinterpret_cast<Bacteria*>(ch[i]);
       if (b!=0) {
-	double res = Resource.at(px[i],py[i]), wst = Waste.at(px[i],py[i]);
+	double res = Resource.get(px[i],py[i]), wst = Waste.get(px[i],py[i]);
 	double rSec = b->secretion;
 	double fitness = alphaR*res/(res+csatR) - alphaW*wst/(wst+csatW) - betaR*rSec;
-	// There is a Heisenbug here. I don't know what it is.
 	b->setFitness(fitness);
       }
     }
@@ -1060,8 +1059,6 @@ void GFlowBase::setAsBacteria() {
   sectorization.setDrag(true);
   sectorization.stopParticles();
   sectorization.setASize(5000); //** AD HOC
-  sectorization.setSigma(0.01); // Give them all small radii
-  sectorization.setDoInteractions(false); //**
   doFields = true;
   Bounds bounds(left, right, bottom, top);
   Resource.setBounds(bounds);
@@ -1077,6 +1074,9 @@ void GFlowBase::setAsBacteria() {
   Waste.setLambda(default_waste_lambda);
   // Set termination condition
   addTerminationCondition(Stat_Number_Particles, allGone);
+  // Set some initial resource at the positions of bacteria
+  auto &particles = sectorization.getParticles();
+  for (const auto &p : particles) Resource.increase(p.position, 1.);
 }
 
 void GFlowBase::createSquare(int number, double radius, double width, double height, double vsgma, double dispersion, int interaction) {
@@ -1118,6 +1118,47 @@ void GFlowBase::createSquare(int number, double radius, double width, double hei
   distributeParticles(particles, sectorization);
   sectorization.initialize();
   // sectorization.setASize(number); //**  AD HOC
+  // End setup timing
+  auto end = current_time();
+  bubbleBounds = visBounds = NullBounds;
+  setUpTime = time_span(end, start);
+}
+
+void GFlowBase::createClustered(int groups, int group_size, double radius, double width, double height, int interaction) {
+  auto start = current_time();
+  // Discard any old state
+  discard();
+  // Bounds
+  Bounds bounds(0, width, 0, height);
+  setBounds(bounds);
+  sectorization.setWrap(true);
+  // Set up sectorization
+  gravity = Zero;
+  setUpSectorization();
+  // Poisson distribution
+  vector<vec2> positions;
+  int number;
+  std::poisson_distribution<int> poisson_dist(group_size);
+  for (int i=0; i<groups; ++i) {
+    // Pick a group center
+    double gX = width*drand48(), gY = height*drand48();
+    int gsize = poisson_dist(generator);
+    for (int j=0; j<gsize; ++j) {
+      double R = 0; // 5*radius*drand48();
+      double th = 0; // drand48()*2*PI;
+      positions.push_back(vec2(gX+R*cos(th), gY+R*sin(th)));
+    }
+    number += gsize;
+  }
+  vector<double> radii(number, radius);
+  vector<int> interactions(number, interaction);
+  // Create particles at the given positions with: Radius, Dispersion, Velocity function, Angular velocity function, Coeff, Dissipation, Repulsion, Interaction
+  createAndDistributeParticles(positions, radii, interactions, bounds, sectorization, ZeroV, default_sphere_coeff);
+  // Initialize
+  sectorization.initialize();
+  // Set as bacteria
+  setAsBacteria();
+  sectorization.setDoInteractions(false);
   // End setup timing
   auto end = current_time();
   bubbleBounds = visBounds = NullBounds;
@@ -1309,7 +1350,9 @@ void GFlowBase::addStatFunction(StatFunc sf, string str) {
 
 void GFlowBase::addStatPlot(StatPlot sp, string str, double lower, double upper) {
   statPlots.push_back(pair<StatPlot,string>(sp, str));
-  statPlotRecord.push_back(vector<vec2>(statPlotBins));
+  vector<vec2> data(statPlotBins,Zero);
+  for (int i=0; i<statPlotBins; ++i) data.at(i).x = i*(upper-lower)/statPlotBins+lower;
+  statPlotRecord.push_back(data);
   statPlotBounds.push_back(pair<double,double>(lower,upper));
 }
 
@@ -1991,7 +2034,7 @@ inline void GFlowBase::updateFitness() {
   for (int y=0; y<nsy; ++y)
     for (int x=0; x<nsx; ++x) {
       double res = Resource.at(x,y), wst = Waste.at(x,y);
-      double fitness = alphaR*res/(res+csatR) - alphaW*wst/(wst+csatW);
+      double fitness = alphaR*res/(res+csatR) - alphaW*wst/(wst+csatW) - betaR*default_bacteria_secretion;
       Fitness.at(x,y) = fitness;
     }
 }

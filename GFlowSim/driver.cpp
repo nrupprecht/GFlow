@@ -15,6 +15,8 @@ using std::endl;
 int main(int argc, char** argv) {
   // Simulation parameters
   int number = -1;
+  int clusters = 50;
+  int perCluster = 15;
   double width = 4;
   double height = 4;
   double radius = 0.05;
@@ -123,6 +125,8 @@ int main(int argc, char** argv) {
     exit(1);
   }
   parser.get("number", number);
+  parser.get("clusters", clusters);
+  parser.get("perCluster", perCluster);
   parser.get("width", width);
   parser.get("height", height);
   parser.get("radius", radius);
@@ -216,7 +220,7 @@ int main(int argc, char** argv) {
   if (seedRand) {
     srand48( std::time(0) );
     srand( std::time(0) );
-    seedNormalDistribution();
+    seedRandomGenerator();
   }
 
   // Calculate number of particles given a packing fraction
@@ -249,6 +253,7 @@ int main(int argc, char** argv) {
   // Create scenario
   if (loadFile=="" && loadBuoyancy=="" && updateBuoyancy=="" && createTube=="" && loadTube=="") {
     if (buoyancy) simulator.createBuoyancyBox(radius, width, height, dispersion, interaction);
+    else if (bacteria) simulator.createClustered(clusters, perCluster, radius, width, height, interaction);
     else if (square) simulator.createSquare(number, radius, width, height, velocity, dispersion, interaction);
     else throw false; // No selection
   }
@@ -337,7 +342,7 @@ int main(int argc, char** argv) {
   // Stat plots
   if (velDist) simulator.addStatPlot(Plot_Velocity, "velDist", 0, 3); //** 3 is a magic number
   if (pressurePlot) simulator.addStatPlot(Plot_Force_Vs_Depth, "pressPlot", simulator.getBottom(), simulator.getTop());
-  if (densityPlot) simulator.addStatPlot(Plot_Particle_Density_Vs_Depth, "denPlot", simulator.getBottom(), simulator.getTop());
+  if (densityPlot) simulator.addStatPlot(Plot_Particle_Density_Vs_Depth, "denPlot", simulator.getTop(), simulator.getBottom());
 
   // Get the actual number of particles in the simulation
   number = simulator.getSize();

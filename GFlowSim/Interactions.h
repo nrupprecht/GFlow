@@ -11,6 +11,7 @@ inline bool hardDiskRepulsion(double **pdata, int p, int q, int asize, vec2& dis
   double *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
   // Find out if the particles interact
   double distSqr = sqr(displacement);
+  if (distSqr==0) return false;
   double cutoff = sg[p] + sg[q];
   double cutoffsqr = sqr(cutoff);
   /*
@@ -61,6 +62,7 @@ inline bool invRRepulsion(double **pdata, int p, int q, int asize, vec2& displac
   double *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
   // Find out if the particles interact
   double distSqr = sqr(displacement);
+  if (distSqr==0) return false;
   double cutoff = sg[p] + sg[q];
   double cutoffsqr = sqr(cutoff);
   /*
@@ -157,6 +159,7 @@ inline bool LJinteraction(double **pdata, int p, int q, int asize, vec2& displac
   // Set up convenience pointers
   double *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
   double distSqr = sqr(displacement);
+  if (distSqr==0) return false;
   double hardCut = sg[p]+sg[q];
   double cutoff = particle_cutoff(hardCut, 1);
   double cutoffsqr = sqr(cutoff);
@@ -216,6 +219,7 @@ inline bool TriTriInteraction(double **pdata, int p, int q, int asize, vec2& dis
   // Set up convenience pointers
   double *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
   double distSqr = sqr(displacement);
+  if (distSqr==0) return false;
   double cutoff = sg[p]+sg[q];
   double cutoffsqr = sqr(cutoff);
   // Check if the bounding circles touch
@@ -329,6 +333,7 @@ inline bool ChargedInteraction(double **pdata, int p, int q, int asize, vec2& di
   // Set up convenience pointers
   double *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];
   double distSqr = sqr(displacement);
+  if (distSqr==0) return false;
   double hardCut = sg[p]+sg[q];
   double cutoff = particle_cutoff(charge, 3); // Cutoff depends on charge
   cutoff = max(hardCut, cutoff);

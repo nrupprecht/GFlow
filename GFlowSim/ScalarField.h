@@ -3,7 +3,7 @@
 
 #include "DefaultConstants.h"
 
-inline double ConstantField(double, double) { return 0.05; }
+inline double ConstantField(double, double) { return default_field_initial_value; }
 
 class ScalarField {
  public:
@@ -11,7 +11,10 @@ class ScalarField {
   ScalarField(double, double, double, double);
 
   // Accessors
+  double get(vec2) const;
   double get(double, double) const; // Get the value of the field at a point, interpolates value
+  double& cget(vec2);               // Get the closest bin to the position
+  double& cget(double, double);
   double& at(int, int);
   double at(int, int)  const;
   double lap(int, int) const;
@@ -38,7 +41,10 @@ class ScalarField {
   bool empty() { return array==0; }
 
   // Mutators
+  void increase(vec2, double);
   void increase(double, double, double);
+  void increase(vec2, double, int);
+  void increase(double, double, double, int);
   void reduce(double, double, double);
   void propReduceCue(double, double, double); // Load proportional reductions
   void propReduceExec(); // Actually to the proportional reduction

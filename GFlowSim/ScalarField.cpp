@@ -62,6 +62,10 @@ void ScalarField::discard() {
   dx = dy = idx = idy = 0;
 }
 
+double ScalarField::get(vec2 pos) const {
+  return get(pos.x, pos.y);
+}
+
 double ScalarField::get(double x, double y) const {
   int X = (int)((x-bounds.left)*idx), Y = (int)((y-bounds.bottom)*idy);
   double cX = bounds.left + dx*X, cY = bounds.bottom +dy*Y;
@@ -81,6 +85,15 @@ double ScalarField::get(double x, double y) const {
   V1 = (B-A)*DX*idx + A;
   V2 = (D-C)*DX*idx + C;
   return (V2-V1)*DY*idy+V1;
+}
+
+double& ScalarField::cget(vec2 pos) {
+  return cget(pos.x, pos.y);
+}
+
+double& ScalarField::cget(double x, double y) {
+  int X = (int)((x-bounds.left)*idx), Y = (int)((y-bounds.bottom)*idy);
+  return at(X,Y);
 }
 
 double& ScalarField::at(int x, int y) {
@@ -228,20 +241,33 @@ void ScalarField::laplacian(ScalarField& sf) {
       sf.array[nsx*y+x] = d2XAt(x,y) + d2YAt(x,y);
 }
 
+void ScalarField::increase(vec2 pos, double c) {
+  increase(pos.x, pos.y, c);
+}
+
 void ScalarField::increase(double x, double y, double c) {
   if (!bounds.contains(x,y)) return;
   // Find field coordinates
-  int X = (x-bounds.left)*idx, Y = (y-bounds.bottom)*idy;
-  
+  int X = (x-bounds.left)*idx, Y = (y-bounds.bottom)*idy;  
   cinc(X,Y,c);
   return;
+}
+
+void ScalarField::increase(vec2 pos, double c, int choice) {
+  increase(pos.x, pos.y, c, choice);
+}
+
+void ScalarField::increase(double x, double y, double c, int choice) {
+  if (!bounds.contains(x,y)) return;
+  // Find field coordinates
+  int X = (x-bounds.left)*idx, Y = (y-bounds.bottom)*idy;
 
   // Two point gaussian
   cinc(X-2,Y+2,0.13*c); cinc(X-1,Y+2,0.22*c); cinc(X,Y+2,0.37*c); cinc(X+1,Y+2,0.22*c); cinc(X+2,Y+2,0.13*c);
   cinc(X-2,Y+1,0.23*c); cinc(X-1,Y+1,0.60*c); cinc(X,Y+1,0.78*c); cinc(X+1,Y+1,0.60*c); cinc(X+2,Y+1,0.23*c);
   cinc(X-2,Y,0.37*c);   cinc(X-1,Y,0.78*c);   cinc(X,Y,c);        cinc(X+1,Y,0.78*c);   cinc(X+2,Y,0.37*c);
   cinc(X-2,Y-1,0.23*c); cinc(X-1,Y-1,0.60*c); cinc(X,Y-1,0.78*c); cinc(X+1,Y-1,0.60*c); cinc(X+2,Y-1,0.23*c);
-  cinc(X-2,Y-2,0.13*c); cinc(X-1,Y-2,0.22*c); cinc(X,Y-2,0.37*c); cinc(X+1,Y-2,0.22*c);cinc(X+2,Y-2,0.13*c);
+  cinc(X-2,Y-2,0.13*c); cinc(X-1,Y-2,0.22*c); cinc(X,Y-2,0.37*c); cinc(X+1,Y-2,0.22*c); cinc(X+2,Y-2,0.13*c);
 }
 
 void ScalarField::reduce(double x, double y, double change) {

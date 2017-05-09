@@ -55,13 +55,14 @@ const double PI = 3.14159265;
 
 static std::mt19937 generator;
 static std::normal_distribution<double> normal_dist(0., 1.);
+std::poisson_distribution<int> poisson_dist();
 
 /// Random number function
 inline double getRand() { 
   return drand48(); 
 }
 
-inline void seedNormalDistribution() {
+inline void seedRandomGenerator() {
   unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
   generator = std::mt19937(seed);
 }
