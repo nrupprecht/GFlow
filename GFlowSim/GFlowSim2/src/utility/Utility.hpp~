@@ -1,8 +1,0 @@
-#ifndef __UTILITY_HPP__
-#define __UTILITY_HPP__
-
-namespace GFlow {
-
-}
-
-#endif // __UTILITY_HPP__
