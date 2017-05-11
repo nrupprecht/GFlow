@@ -1,0 +1,27 @@
+/*
+ * Author: Nathaniel Rupprecht
+ * Start Data: May 11, 2017
+ *
+ */
+
+#ifndef __DATA_RECORD_HPP__
+#define __DATA_RECORD_HPP__
+
+// Includes
+
+namespace GFlow {
+
+  /*
+   * @class DataRecord
+   * This class generates statistics from simulation data
+   *
+   */
+  class DataRecord {
+  public:
+
+  private:
+    
+  };
+
+}
+#endif // __DATA_RECORD_HPP__
