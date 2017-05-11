@@ -13,7 +13,7 @@ all: $(targets)
 
 # Executables
 driver : driver.o $(files)
-	$(MPICC) $^ -o $@ $(LDLIBS)
+	$(MPICC) $^ -o $@
 
 # Object files
 %.o : %.cpp

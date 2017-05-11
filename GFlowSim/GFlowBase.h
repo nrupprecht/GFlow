@@ -3,6 +3,7 @@
 
 #include "Sectorization.h"
 #include "StatPlot.h"
+#include "StatPlotF.h"
 #include "ScalarField.h"
 #include <functional>
 #include <tuple> 
@@ -109,9 +110,11 @@ class GFlowBase {
 
   void addStatFunction(StatFunc, string);
   void addStatPlot(StatPlot, string, double, double);
+  void addStatPlotF(StatPlotF, string, double, double);
   void addTerminationCondition(StatFunc, std::function<bool(double)>);
   string printStatFunctions(string="", bool=false);
   string printStatPlots(string="", bool=false);
+  string printStatPlotFs(string="", bool=false);
 
   string printWallsCommand();
   string printAnimationCommand(int=0, bool=false, string="");
@@ -136,7 +139,6 @@ class GFlowBase {
   auto getSpecialRecord()  { return specialRecord; }
   auto getBubbleRecord()   { return bubbleRecord; }
   auto getBulkRecord()     { return bulkRecord; }
-  auto getPressureRecord() { return pressureRecord; }
   ScalarField& getBubbleField() { return bubbleField; }
   string printPositionRecord(int);
   string printResource();
@@ -152,7 +154,6 @@ class GFlowBase {
   void setCSV(bool b)             { csv = b; }
   void setPositionsOption(int op) { options[0] = op; }
   void setRecSpecial(bool b)      { recSpecial = b; }
-  void setRecPressure(bool b)     { options[1] = b?1:0; }
   void setRecBubbles(bool b)      { options[2] = b?1:0; }
   void setForceChoice(int c)      { forceChoice = c; }
   void setTypeChoice(int c)       { typeChoice = c; }
@@ -166,6 +167,18 @@ class GFlowBase {
   void setWriteAnimation(bool b)  { writeAnimation = b; }
   void setWriteCreation(bool b)   { options[8] = b?1:0; }
   void setWriteDirectory(string d){ writeDirectory = d; }
+
+  void setResDiff(double r)       { resDiff = r; }
+  void setResLambda(double r)     { resLambda = r; }
+  void setWstDiff(double r)       { wstDiff = r; }
+  void setWstLambda(double r)     { wstLambda = r; }
+
+  void setBSec(double r)          { bSec = r; }
+  void setBWst(double r)          { bWst = r; }
+  void setBRep(double r)          { bRep = r; }
+  void setBDth(double r)          { bDth = r; }
+  void setBVel(double r)          { bVel = r; }
+  void setBReO(double r)          { bReO = r; }
 
  protected:
   double setUpTime;
@@ -181,7 +194,7 @@ class GFlowBase {
 
   // VISUALIZATION OPTIONS
   // [0] - Position animation options 1 -> Print positions, 2 -> Print pressures
-  // [1] - Record pressure
+  // [1] - (-----)
   // [2] - Record number and volume of bubbles
   // [3] - Visualize bubbles (bulk animation)
   // [4] - Create bubble field
@@ -194,18 +207,23 @@ class GFlowBase {
   bool followBall;
   inline Bounds followBallBounds();
   bool csv;
-  vector<vec2> pressureRecord;
 
   bool recSpecial;
   bool writeAnimation;
   int forceChoice, typeChoice;
 
+  // StatFunction
   vector<pair<StatFunc,string> > statFunctions; // Statistic functions and a string to name them
   vector<vector<vec2> >  statRecord;    // Save the data produced by the statistic functions
+  // StatPlot
   vector<pair<StatPlot,string> > statPlots;
   vector<pair<double, double> > statPlotBounds;
   vector<vector<vec2> > statPlotRecord;
   int statPlotBins;
+  // StatPlotF
+  vector<pair<StatPlotF,string> > statPlotFs;
+  vector<pair<double,double> > statPlotFBounds;
+  vector<vector<vec2> > statPlotFRecord;
 
   // For printing data
   string writeDirectory;
@@ -218,6 +236,8 @@ class GFlowBase {
   double fieldUpdateDelay, fieldUpdateCounter;
   double scale;
   double alphaR, alphaW, csatR, csatW, betaR;
+  double resDiff, resLambda, wstDiff, wstLambda;
+  double bSec, bWst, bRep, bDth, bVel, bReO;
 
  public:
   // -------------------------------

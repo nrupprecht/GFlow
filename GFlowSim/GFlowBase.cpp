@@ -40,6 +40,16 @@ GFlowBase::GFlowBase() {
   csatR = default_csatR;
   csatW = default_csatW;
   betaR = default_betaR;
+  resDiff = default_resource_diffusion;
+  resLambda = default_resource_lambda;
+  wstDiff = default_waste_diffusion;
+  wstLambda = default_waste_lambda;
+  bSec = default_bacteria_secretion;
+  bWst = default_bacteria_waste;
+  bRep = default_bacteria_reproduction_const;
+  bDth = default_bacteria_death_const;
+  bVel = default_bacteria_target_velocity;
+  bReO = default_bacteria_reorient;
   // Animation
   writeDirectory = "RunData";
   csv = true;
@@ -375,7 +385,7 @@ void GFlowBase::record() {
   vector<Particle> allParticles;
   // VISUALIZATION OPTIONS
   // [0] - Position animation options 1 -> Print positions, 2 -> Print pressures
-  // [1] - Record pressure
+  // [1] - (-----)
   // [2] - Record number and volume of bubbles
   // [3] - Visualize bubbles (bulk animation)
   // [4] - Create bubble field
@@ -395,25 +405,7 @@ void GFlowBase::record() {
     }
     positionRecord.push_back(positions); // We will write the data at the end
   }
-  if (options[1]) {
-    vector<PData> positions = sectorization.forceData(forceChoice, typeChoice);
-    if (pressureRecord.empty()) {
-      pressureRecord = vector<vec2>(statPlotBins, Zero);
-      for (int i=0; i<pressureRecord.size(); ++i)
-	pressureRecord.at(i).x = i*(top-bottom)/statPlotBins;
-    }
-    double dpx = (top-bottom)/statPlotBins;
-    vector<double> pressBins(statPlotBins, 0);
-    vector<int> counts(statPlotBins, 0);
-    for (const auto& p : positions) {
-      vec2 pos = std::get<0>(p);
-      int b = (top-pos.y)/dpx;
-      pressBins.at(b) += std::get<4>(p);
-      ++counts.at(b);
-    }
-    // Update pressure
-    for (int i=0; i<statPlotBins; ++i) pressureRecord.at(i).y += (counts.at(i)>0 ? pressBins.at(i)/counts.at(i) : 0);
-  }
+  if (options[1]) {};
   // Bubble related options
   if (options[2] || options[3] || options[4]) {
     // Find the proper bounds if neccessary
@@ -454,6 +446,16 @@ void GFlowBase::record() {
   for (auto &sp : statPlots) {
     if (allParticles.empty()) recallParticles(allParticles);
     sp.first(allParticles, statPlotRecord.at(i), statPlotBounds.at(i).first,  statPlotBounds.at(i).second);
+    ++i;
+  }
+  // Record stat plot force statistics
+  i=0; 
+  if (!statPlotFs.empty()) {
+    vector<PData> positions = sectorization.forceData(forceChoice, typeChoice);
+    for (auto &sp : statPlotFs) {
+      sp.first(positions, statPlotFRecord.at(i), statPlotFBounds.at(i).first, statPlotFBounds.at(i).second);
+      ++i;
+    }
   }
   // Special record
   if (recSpecial) {
@@ -1053,7 +1055,7 @@ vector<vec2> GFlowBase::findLatticeSolution(int number, double radius, Bounds bo
 // ----- TO GO TO GFLOW.CPP -----
   
 void GFlowBase::setAsBacteria() {
-  Characteristic *B = new Bacteria;
+  Characteristic *B = new Bacteria(bSec, bVel, bRep, bDth, bReO);
   sectorization.setCharacteristic(B);
   delete B;
   sectorization.setDrag(true);
@@ -1064,14 +1066,15 @@ void GFlowBase::setAsBacteria() {
   Resource.setBounds(bounds);
   Resource.setWrap(true);
   Resource.setResolution(0.025);
-  Resource.setDiffusion(default_resource_diffusion);
-  Resource.set(ConstantField); // Give some initial resource so we don't die immediately
-  Resource.setLambda(default_resource_lambda);
+  Resource.setDiffusion(resDiff);
+  Resource.setLambda(resLambda);
   Waste.setBounds(bounds);
   Waste.setResolution(0.025);
   Waste.setWrap(true);
-  Waste.setDiffusion(default_waste_diffusion);
-  Waste.setLambda(default_waste_lambda);
+  Waste.setDiffusion(wstDiff);
+  Waste.setLambda(wstLambda);
+  // (Potentially) Add some additional initial resource so we don't die immediately
+  Resource.set(ConstantField); 
   // Set termination condition
   addTerminationCondition(Stat_Number_Particles, allGone);
   // Set some initial resource at the positions of bacteria
@@ -1137,7 +1140,7 @@ void GFlowBase::createClustered(int groups, int group_size, double radius, doubl
   setUpSectorization();
   // Poisson distribution
   vector<vec2> positions;
-  int number;
+  int number = 0;
   std::poisson_distribution<int> poisson_dist(group_size);
   for (int i=0; i<groups; ++i) {
     // Pick a group center
@@ -1330,6 +1333,10 @@ bool GFlowBase::loadBuoyancy(string fileName, double radius, double velocity, do
     vec2 V(0, -velocity);
     P.velocity = V;
     P.setDensity(density);
+
+    P.interaction = 2; //**
+    P.theta = PI/3.; //**
+
     if (constV || constOm) sectorization.insertParticle(P, new ConstantVelocity(V, constV, omega, constOm));
     else sectorization.insertParticle(P);
   }
@@ -1354,6 +1361,14 @@ void GFlowBase::addStatPlot(StatPlot sp, string str, double lower, double upper)
   for (int i=0; i<statPlotBins; ++i) data.at(i).x = i*(upper-lower)/statPlotBins+lower;
   statPlotRecord.push_back(data);
   statPlotBounds.push_back(pair<double,double>(lower,upper));
+}
+
+void GFlowBase::addStatPlotF(StatPlotF sp, string str, double lower, double upper) {
+  statPlotFs.push_back(pair<StatPlotF,string>(sp, str));
+  vector<vec2> data(statPlotBins, Zero);
+  for (int i=0; i<statPlotBins; ++i) data.at(i).x = i*(upper-lower)/statPlotBins+lower;
+  statPlotFRecord.push_back(data);
+  statPlotFBounds.push_back(pair<double,double>(lower,upper));
 }
 
 void GFlowBase::addTerminationCondition(StatFunc sf, std::function<bool(double)> tc) {
@@ -1382,6 +1397,21 @@ string GFlowBase::printStatPlots(string label, bool noplot) {
   for (int i=0; i<statPlots.size(); ++i) {
     string name = statPlots.at(i).second;
     stream << name << label << "=" << mmPreproc(statPlotRecord.at(i));
+    stream >> strh;
+    str += (strh+";\n");
+    if (!noplot) str += ("Print[\""+name+"\"]\nListLinePlot["+name+label+",PlotStyle->Black,ImageSize->Large,PlotRange->All]\n");
+    stream.clear(); strh.clear();
+  }
+  return str;
+}
+
+string GFlowBase::printStatPlotFs(string label, bool noplot) {
+  if (statPlotFs.empty() || rank!=0) return "";
+  stringstream stream;
+  string str, strh;
+  for (int i=0; i<statPlotFs.size(); ++i) {
+    string name = statPlotFs.at(i).second;
+    stream << name << label << "=" << mmPreproc(statPlotFRecord.at(i));
     stream >> strh;
     str += (strh+";\n");
     if (!noplot) str += ("Print[\""+name+"\"]\nListLinePlot["+name+label+",PlotStyle->Black,ImageSize->Large,PlotRange->All]\n");

@@ -39,17 +39,15 @@ const double default_bacteria_reorient  = 0.1; // The 'halflife' of reorientatio
 const double default_bacteria_strength  = 10.;
 const double default_bacteria_drag      = 10.;
 const double default_bacteria_target_velocity = 0.25;
-const double default_bacteria_target_velocity_sqr = sqr(default_bacteria_target_velocity);
 const double default_bacteria_reproduction_const = 5.; // The 'halflife' of reprodution
 const double default_bacteria_death_const = 10.;
 const double default_field_initial_value= 0.;
-const double default_bacteria_eating    = 1.;
 const double default_bacteria_secretion = 1.;
 const double default_bacteria_waste     = 0.5;
 const double default_resource_diffusion = 0.5;
 const double default_resource_lambda    = -1.; // Increase (negative values for decay)
 const double default_waste_diffusion    = 1.;
-const double default_waste_lambda       = -5.;
+const double default_waste_lambda       = -5;
 
 // Simulation bacteria constants
 const double default_alphaR = 2.;

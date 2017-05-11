@@ -18,6 +18,7 @@ class Bacteria : public Characteristic {
  public:
   Bacteria();
   Bacteria(const Bacteria&);
+  Bacteria(double, double, double, double, double);
 
   virtual void modify(double**, Sectorization*, int);
   virtual Characteristic* create();

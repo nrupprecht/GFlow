@@ -27,6 +27,14 @@ Bacteria::Bacteria(const Bacteria& b) {
   death = b.death;
 }
 
+Bacteria::Bacteria(double bsec, double bvel, double brep, double bdth, double breo) : reorient(1./breo), secretion(bsec), velocity(bvel), reproduction(1./brep), death(1./bdth) {
+  orient = randV();
+  strength = default_bacteria_strength;
+  delay = 0.05;
+  timer = drand48()*delay;
+  fitness = 0.5;
+}
+
 void Bacteria::modify(double **pdata, Sectorization *sectors, int id) {
   // Set up convenience pointers
   double *px=pdata[0], *py=pdata[1], *vx=pdata[2], *vy=pdata[3], *fx=pdata[4], *fy=pdata[5], *th=pdata[6], *om=pdata[7], *tq=pdata[8], *sg=pdata[9], *im=pdata[10], *iI=pdata[11], *rp=pdata[12], *ds=pdata[13], *cf=pdata[14];

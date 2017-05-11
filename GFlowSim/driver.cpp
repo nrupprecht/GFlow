@@ -51,6 +51,7 @@ int main(int argc, char** argv) {
   bool special = false;
   bool forces  = false;
   bool pressure = false;
+  bool pressureSigma = false;
   int forceChoice = 0;
   int typeChoice = 0;
   bool bubbles = false;
@@ -81,7 +82,6 @@ int main(int argc, char** argv) {
   bool num     = false;
   // Stat plots
   bool velDist = false;
-  bool pressurePlot = false;
   bool densityPlot = false;
   // Options
   bool novid   = false;
@@ -105,6 +105,18 @@ int main(int argc, char** argv) {
   string saveFile = "";
   string writeDirectory = "RunData";
   string updateBuoyancy = "";
+
+  // Bacteria
+  double bReO = default_bacteria_reorient;
+  double bVel = default_bacteria_target_velocity;
+  double bRep = default_bacteria_reproduction_const;
+  double bDth = default_bacteria_death_const;
+  double bSec = default_bacteria_secretion;
+  double bWst = default_bacteria_waste;
+  double resD = default_resource_diffusion;
+  double resL = default_resource_lambda;
+  double wstD = default_waste_diffusion;
+  double wstL = default_waste_lambda;
 
   // Initialize MPI
   int rank, numProc;
@@ -159,6 +171,7 @@ int main(int argc, char** argv) {
   parser.get("special", special);
   parser.get("forces", forces);
   parser.get("pressure", pressure);
+  parser.get("pressureSigma", pressureSigma);
   parser.get("forceChoice", forceChoice);
   parser.get("typeChoice", typeChoice);
   parser.get("bubbles", bubbles);
@@ -187,7 +200,6 @@ int main(int argc, char** argv) {
   parser.get("largeVY", largeVY);
   parser.get("num", num);
   parser.get("velDist", velDist);
-  parser.get("pressurePlot", pressurePlot);
   parser.get("densityPlot", densityPlot);
   parser.get("novid", novid);
   parser.get("printSectors", printSectors);
@@ -206,6 +218,17 @@ int main(int argc, char** argv) {
   parser.get("saveFile", saveFile);
   parser.get("writeDirectory", writeDirectory);
   parser.get("updateBuoyancy", updateBuoyancy);
+  // Bacteria
+  parser.get("bReO", bReO);
+  parser.get("bVel", bVel);
+  parser.get("bRep", bRep);
+  parser.get("bDth", bDth);
+  parser.get("bSec", bSec);
+  parser.get("bWst", bWst);
+  parser.get("resD", resD);
+  parser.get("resL", resL);
+  parser.get("wstD", wstD);
+  parser.get("wstL", wstL);
   // Make sure we didn't enter any illegal tokens (ones not listed above) on the command line
   try {
     parser.check();
@@ -253,7 +276,13 @@ int main(int argc, char** argv) {
   // Create scenario
   if (loadFile=="" && loadBuoyancy=="" && updateBuoyancy=="" && createTube=="" && loadTube=="") {
     if (buoyancy) simulator.createBuoyancyBox(radius, width, height, dispersion, interaction);
-    else if (bacteria) simulator.createClustered(clusters, perCluster, radius, width, height, interaction);
+    else if (bacteria) {
+      simulator.createClustered(clusters, perCluster, radius, width, height, interaction);
+      simulator.setResDiff(resD);
+      simulator.setResLambda(resL);
+      simulator.setWstDiff(wstD);
+      simulator.setWstLambda(wstL);
+    }
     else if (square) simulator.createSquare(number, radius, width, height, velocity, dispersion, interaction);
     else throw false; // No selection
   }
@@ -295,8 +324,6 @@ int main(int argc, char** argv) {
     if (LJ!=-1) simulator.setInteractionType(1);
   }
 
-  if (bacteria) simulator.setAsBacteria();
-
   simulator.setTemperature(temperature);
   if (gravity!=-1e9) simulator.setGravity(vec2(0,gravity));
   simulator.setDrag(drag);
@@ -308,7 +335,6 @@ int main(int argc, char** argv) {
   if (center)  simulator.setFollowBall(true);
   simulator.setRecSpecial(special);
   if (forces)  simulator.setPositionsOption(2);
-  simulator.setRecPressure(pressure);
   simulator.setForceChoice(forceChoice);
   simulator.setTypeChoice(typeChoice);
   simulator.setRecBubbles(bubbles);
@@ -341,8 +367,10 @@ int main(int argc, char** argv) {
   if (num) simulator.addStatFunction(Stat_Number_Particles, "num");
   // Stat plots
   if (velDist) simulator.addStatPlot(Plot_Velocity, "velDist", 0, 3); //** 3 is a magic number
-  if (pressurePlot) simulator.addStatPlot(Plot_Force_Vs_Depth, "pressPlot", simulator.getBottom(), simulator.getTop());
   if (densityPlot) simulator.addStatPlot(Plot_Particle_Density_Vs_Depth, "denPlot", simulator.getTop(), simulator.getBottom());
+  // Stat plot forces
+  if (pressure) simulator.addStatPlotF(Plot_Force_Vs_Depth, "pressure", simulator.getTop(), simulator.getBottom());
+  if (pressureSigma) simulator.addStatPlotF(Plot_Force_Sigma_Vs_Depth, "pressSig", simulator.getTop(), simulator.getBottom());
 
   // Get the actual number of particles in the simulation
   number = simulator.getSize();
@@ -389,8 +417,7 @@ int main(int argc, char** argv) {
     if (animate && !writeAnimation) cout << simulator.printAnimationCommand(mode, novid, label) << endl;
     if (snapshot) cout << simulator.printSnapshot() << endl;
     if (special) cout << simulator.printSpecialAnimationCommand(novid) << endl;
-    if (forces && !writeAnimation)  cout << simulator.printForcesAnimationCommand(mode, novid) << endl;
-    if (pressure) cout << "press" << label << "=" << simulator.getPressureRecord() << ";\nListLinePlot[press,PlotStyle->Black,ImageSize->Large]\n";
+    if (forces && !writeAnimation)  cout << simulator.printForcesAnimationCommand(mode, novid) << endl; 
     // Print bubble data
     if (bubbles && !csv) {
       cout << "bsize" << label << "=" << simulator.getBubbleRecord() << ";\n";
@@ -410,6 +437,8 @@ int main(int argc, char** argv) {
     if (!stats.empty()) cout << stats;
     string plots = simulator.printStatPlots(label, noprint);
     if (!plots.empty()) cout << plots;
+    string plotfs = simulator.printStatPlotFs(label, noprint);
+    if (!plotfs.empty()) cout << plotfs;
   }
   if (printSectors) simulator.printSectors();
 
