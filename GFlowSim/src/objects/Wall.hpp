@@ -1,6 +1,10 @@
 #ifndef __WALL_HPP__
 #define __WALL_HPP__
 
+// Includes
+#include "../../include/vec2d.hpp"
+#include "../../include/DefaultConstants.hpp"
+
 namespace GFlow {
 
   /*
@@ -8,7 +12,8 @@ namespace GFlow {
    *
    */
   struct Wall {
-    Wall() {}; // STUB
+    Wall();
+    Wall(RealType, RealType, RealType, RealType);
 
     vec2 left;
     RealType length;

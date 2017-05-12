@@ -19,15 +19,25 @@ namespace GFlow {
    */
   class Sectorization {
   public:
+    // Default constructor
+    Sectorization();
+    
+    // Set the simulation data to manage
+    void setSim(SimData* sd);
     
     // Update sectorization
-    void sectorize(SimData*);
+    void sectorize();
+
+#ifdef USE_MPI
+    void atom_move();
+    void atom_copy();
+#endif
 
     // Create verlet lists
-    void createVerletLists(SimData*);
+    void createVerletLists();
 
     // Create wall lists
-    void createWallLists(SimData*);
+    void createWallLists();
 
     // Returns the particle verlet list
     auto& getVerletList() { return verletList; }
@@ -42,6 +52,11 @@ namespace GFlow {
     auto& getCopyList() { return copyList; }
 
   private:
+    // Private helper functions
+    int getSec(const RealType, const RealType);
+
+    // Pointer to the simulation data we manage
+    SimData *simData;
     
     // The sectors: a list of the id's of particles that are in these sectors
     list<int> *sectors;
@@ -53,16 +68,21 @@ namespace GFlow {
     list<list<int> > wallList;
 
     // List of particles that have migrated out of the simulation domain. List of { int, list<int> } specifies the processor to move to and the id's of the particles that need to move there.
-    list<pair<int, list<int> > moveList;
+    list<pair<int, list<int> > > moveList;
 
     // List of particles that are near the edge of the simulation domain and need to be copied to another processor. List of { int, list<int> } specifies the processor to move to and the id's of the particles that need to move there.
-    list<pair<int, list<int> > copyList;
+    list<pair<int, list<int> > > copyList;
 
     // Sectorization Data
-    RealType cutoff;   // The cutoff radius
-    int nsx, nsy;      // The number of sectors
-    RealType sdx, sdy; // Sector width and height
-    
+    RealType cutoff;     // The cutoff radius
+    int nsx, nsy;        // The number of sectors
+    RealType sdx, sdy;   // Sector width and height
+    RealType isdx, isdy; // The inverse of the sector widths and heights
+
+    Bounds bounds;       // Domain bounds
+
+    // Rank and number of processors - for MPI 
+    int rank, numProc;
 
   };
 

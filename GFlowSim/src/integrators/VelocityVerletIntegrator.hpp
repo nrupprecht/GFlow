@@ -22,14 +22,27 @@ namespace GFlow {
     // Default constructor
     VelocityVerletIntegrator();
 
+    // SimData initializing constructor
+    VelocityVerletIntegrator(SimData*);
+
+    // SimData and DataRecord initializing constructor
+    VelocityVerletIntegrator(SimData*, DataRecord*);
+
   private:
+    // Inherited private virtual functions
+    virtual void _integrate(); // Inherits from Integrator
     // Private virtual functions
-    virtual void _integrate();
     virtual void preStep();
     virtual void integrateStep();
     virtual void postStep();
     virtual void firstHalfKick();
     virtual void secondHalfKick();
+
+    // Delay between updating sectors
+    RealType updateDelay;
+
+    // How long it's been since we updated the sectors
+    RealType updateTimer;
 
   };
 

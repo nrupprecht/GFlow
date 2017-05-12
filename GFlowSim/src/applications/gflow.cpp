@@ -4,11 +4,7 @@
  *
  */
 
-// Includes
-#ifdef USE_MPI
-#include "mpi.h"
-#endif
-
+#include "../control/Creator.hpp"
 #include "../integrators/VelocityVerletIntegrator.hpp"
 
 using namespace GFlow;
@@ -24,13 +20,26 @@ int main (int argc, char** argv) {
 #endif
 
   // Create from file or command line args
-  VelocityVerletIntegrator integrator;
+  Creator simCreator;
+  SimData *simData = simCreator.create();
+  VelocityVerletIntegrator integrator(simData);
+  DataRecord *dataRecord = new DataRecord;
+  integrator.setDataRecord(dataRecord);
+  
+  // Set parameters
+  integrator.initialize(1.);
+
+  // Print initial message
+  cout << "Starting integration.\n";
 
   // Run here
   integrator.integrate();
 
   // Print a final message
   cout << "Integration ended.\n";
+
+  // Write data
+  dataRecord->writeData("RunDir");
   
 #ifdef USE_MPI
   MPI::Finalize();

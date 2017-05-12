@@ -8,7 +8,7 @@
 #define __DATA_RECORD_HPP__
 
 // Includes
-#include "../../include/Utility.hpp"
+#include "../../include/CSVUtility.hpp"
 #include "../control/SimData.hpp"
 
 namespace GFlow {
@@ -23,17 +23,24 @@ namespace GFlow {
     // Default constructor
     DataRecord();
     
-    // Update the data record's time
-    void update(RealType dt);
-
     // (Potentially) record data
-    void record(SimData*);
+    void record(SimData*, RealType);
+
+    // Write data
+    void writeData(string);
     
   private:
     // How long between recording data
     RealType delay;
-    // How long since data was last recorded
-    RealType delayTimer;
+
+    // What time we last recorded data
+    RealType lastRecord;
+
+    // How many iterations we have recorded
+    int recIter;
+
+    // Record data
+    vector<vector<PData> > positionRecord;
 
   };
 

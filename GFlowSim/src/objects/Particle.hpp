@@ -1,6 +1,10 @@
 #ifndef __PARTICLE_HPP__
 #define __PARTICLE_HPP__
 
+// Includes
+#include "../../include/vec2d.hpp"
+#include "../../include/DefaultConstants.hpp"
+
 namespace GFlow {
   
   /*
@@ -8,7 +12,14 @@ namespace GFlow {
    *
    */
   struct Particle {
-    Particle() {}; // STUBS
+    // Default constructor
+    Particle();
+
+    // Initialize position with vector and sigma
+    Particle(vec2, RealType);
+
+    // Initialize position with reals and sigma
+    Particle(RealType, RealType, RealType);
 
     vec2 position, velocity, force;
     RealType theta, omega, torque;
@@ -19,4 +30,4 @@ namespace GFlow {
   
 }
 
-#endif __PARTICLE_HPP__
+#endif // __PARTICLE_HPP__

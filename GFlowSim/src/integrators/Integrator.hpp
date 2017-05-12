@@ -9,6 +9,7 @@
 
 // Includes
 #include "../control/SimData.hpp"
+#include "../control/Sectorization.hpp"
 #include "../data/DataRecord.hpp"
  
 namespace GFlow {
@@ -19,11 +20,20 @@ namespace GFlow {
    */
   class Integrator {
   public:
-    // Constructor
+    // Default constructor
     Integrator();
 
-    // Initialization
-    void initialize();
+    // SimData initializing constructor
+    Integrator(SimData*);
+
+    // SimData and DataRecord initializing constructor
+    Integrator(SimData*, DataRecord*);
+
+    // Initialization -- Add the run time here for now
+    void initialize(double runTime);
+
+    // Give the integrator a data record object
+    void setDataRecord(DataRecord* dr);
 
     // Integrate function wraps protected virtual function
     void integrate() {
@@ -31,15 +41,15 @@ namespace GFlow {
     }
 
   protected:
-    // Private virtual functions
-    virtual void _integrate() {} ; // Should be purely abstract
+    // Private virtual functions, purely abstract
+    virtual void _integrate() = 0;
 
     // Time step
-    double dt;
+    RealType dt;
     // Current time
-    double time;
-    // Simulation time
-    double runTime;
+    RealType time;
+    // How much simulated time the simulation should run for
+    RealType runTime;
 
     // Current iteration
     int iter;
@@ -48,6 +58,9 @@ namespace GFlow {
     
     // Pointer to the simulation data
     SimData* simData;
+
+    // Pointer to sectorization
+    Sectorization* sectors;
 
     // Pointer to data recorder
     DataRecord* dataRecord;

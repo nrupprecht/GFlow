@@ -1,6 +1,8 @@
 #ifndef __CREATOR_HPP__
 #define __CREATOR_HPP__
 
+// Includes
+#include "../../include/vec2d.hpp"
 #include "SimData.hpp"
 #include "../objects/Particle.hpp"
 #include "../objects/Wall.hpp"

@@ -23,16 +23,21 @@ namespace GFlow {
 
     // Resize the array
     void reserve(int);
+
+    // Resize the array in two parts
+    void reserve2(int, int, int, int);
     
-    // Data acces
+    // Data access
     T& at(int);
     T  at(int) const;
-    T& operator() (int);
-    T  operator() (int) const;
+    T& operator[] (int);
+    T  operator[] (int) const;
     
+    // Get pointer
+    T* getPtr() { return data; }
+
     // Accessors
     int size() { return _size; }
-    int length() { return _length; }
 
     // Mutators
     void setAlignment(int);
@@ -53,7 +58,6 @@ namespace GFlow {
       
   private:
     int _size;
-    int _length;
     int _alignment;
     
     T* data;
