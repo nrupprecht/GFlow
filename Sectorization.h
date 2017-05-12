@@ -1,105 +1,205 @@
 #ifndef SECTORIZATION_H
 #define SECTORIZATION_H
 
-#include "Utility.h"
-#include "Object.h"
+#include "Interactions.h"
+#include "Characteristic.h"
+#include "StatFunc.h"
+#include <mpi.h>
+#include <stdlib.h> // For aligned_malloc
 
-typedef std::function<void(list<Particle*>)> sectorFunction;
-typedef pair<vect<>, vect<>> VPair;
+// Safe free
+template<typename T> inline void zfree(T* &ptr) {
+  if (ptr) free(ptr);
+  ptr = 0;
+}
 
+// To use:
+// --- These steps can be done in any order ---
+// 1) Set domain and simulation bounds
+// 2) Set characteristic length and cutoff
+// 3) Set parameters like gravity and whether to do interactions
+// 4) Add particles and walls
+// 5) Set expected number of particles
+// --- This step must be last ---
+// 6) Call "initialize"
+// --- Ready to run ---
 class Sectorization {
  public:
   Sectorization();
   ~Sectorization();
 
-  void sectorize();    // Put the particles into sectors
-  void interactions(); // Compute interactions
-  void wallInteractions(); // Compute wall - particle interactions
-  void sectorFunctionApplication(); // Apply sector functions
-  void update();       // Update sectors
-  void updateParticles(double);
+  void initialize();        // Initialize the sectors, can pass in a cutoff
 
   // Accessors
-  int getSecX() { return secX; }
-  int getSecY() { return secY; }
-  int getTotalSectors() { return secX*secY+1; }
-  int getInteractionFunctionChoice() { return interactionFunctionChoice; }
-  bool isEmpty(int, int);
-  bool isEdge(int, int);
-  bool wouldOverlap(vect<>, double);
-  bool wallOverlaps(int, int, Wall*); // Sector coordinates, wall (pointer to)
-  double pressureAt(int, int);
-  double dPdTAt(int, int, double);
-  Bounds sectorBounds(int, int);      // Get the bounds of the sector
+  int getNSX()                   { return nsx; }
+  int getNSY()                   { return nsy; }
+  int getSize()                  { return size; }
+  int getASize()                 { return asize; }
+  int getESize()                 { return esize; }
+  int getArrayEnd()              { return array_end; }
+  int getWallSize()              { return walls.size(); }
+  double getSecWidth()           { return secWidth; }
+  double getSecHeight()          { return secHeight; }
+  double getEpsilon()            { return epsilon; }
+  double getMaxNeighborDiff()    { return maxNLDiff; }
+  double getTransferTime()       { return transferTime; }
+  double getCutoff()             { return cutoff; }
+  bool getDoInteractions()       { return doInteractions; }
+  bool getWrapX()                { return wrapX; }
+  bool getWrapY()                { return wrapY; }
+  vec2 getGravity()              { return gravity; }
+  vector<Particle>& getParticles();
+  Bounds getBounds()             { return bounds; }
+  Bounds getSimBounds()          { return simBounds; }
+  bool isFull()                  { return asize<=array_end; }
+  bool isValid(int i)            { return -1<it[i]; }
 
-  // Performance related
-  double avePerSector();
-  double aveNeighbors();
-  double aveMemDiffOfNeighbors();
-  int maxMemDiffOfParticles();
+  // Pointer accessors
+  double *getPX()                { return px; }
+  double *getPY()                { return py; }
+  double *getSG()                { return sg; }
+  int *getIT()                   { return it; }
+  Characteristic** getCH()       { return ch; }
+
+  // Statistic accessors
+  int getNeighborListSize()      { return neighborList.size(); }
+  double getAvePerNeighborList();
 
   // Mutators
-  void addParticle(Particle*); // Add particle to particle list and sector
-  void add(Particle*); // Add a particle just to sectors, not to the particles list
-  void remove(Particle*);
-  void discard();
-  void addSectorFunction(sectorFunction, double, double, double, double);
-  void addSectorFunction(sectorFunction, Bounds);
-  void setParticleList(list<Particle*>* P) { particles = P; }
-  void setSSecInteract(bool s) { ssecInteract = s; }
-  void setDims(int, int);
+  void giveDomainInfo(int x, int y) { ndx=x; ndy=y; }
+  void setEpsilon(double e)      { epsilon = e; sqrtEpsilon = sqrt(e); }
+  void setDoInteractions(bool i) { doInteractions = i; }
+  void setWrapX(bool w)          { wrapX = w; }
+  void setWrapY(bool w)          { wrapY = w; }
+  void setWrap(bool w)           { wrapX = wrapY = w; }
+  void setDrag(bool d)           { drag = d; }
+  void setGravity(vec2 g)        { gravity = g; }
+  void setTemperature(double t)  { temperature = t; DT1 = t/(6*viscosity*PI); }
+  void setViscosity(double h)    { viscosity = h; DT1 = temperature/(6*h*PI); }
+  void setCoeff(double c);
+  void setSigma(double r);
+  void setCutoff(double c)       { cutoff = c; }
+  void setSkinDepth(double d)    { skinDepth = d; }
   void setBounds(double, double, double, double);
-  void setWrapX(bool w) { wrapX = w; }
-  void setWrapY(bool w) { wrapY = w; }
-  void setInteractionFunctionChoice(int c) { interactionFunctionChoice = c; }
-  void setRecordPressure(bool r) { recordPressure = r; }
+  void setBounds(Bounds);
+  void setSimBounds(double, double, double, double);
+  void setSimBounds(Bounds);
+  void setUseCharacteristics(bool);
+  void setInteractionType(int);
+  void setASize(int i);
+  void stopParticles();
+  void setCommWork(MPI::Intercomm &comm) { CommWork = comm; }
+  void resetComm()               { CommWork = MPI::COMM_WORLD; }
+  void discard();
+  void discardAll();
+  void updateList(); // Fill plist with the particles from the data buffers
 
-  // Special Animation
-  vector<VPair> bulkAnimation();
-  vector<Trio> getPressure();
-  vector<Trio> getDPDT(double);
+  // Functionality
+  void update();                     // Do a timestep
+  void updateSectors();              // Update the sectors, migrating particles to the correct sectors
+
+  // Addition
+  void addParticle(Particle);
+  void insertParticle(Particle);
+  void insertParticle(Particle, Characteristic*);
+  void removeAt(int);
+  void addWall(Wall);
+  void setCharacteristic(Characteristic*);
+
+  // Statistics
+  string printSectors();
+  pair<double, int> doStatFunction(StatFunc);
+  vector<PData> forceData(int=0, int=0, bool=true);
+
+  // Exception classes
+  class BadParticle {};
+  class OutOfBounds {};
 
  private:
-  // Private Helper functions
-  inline void add(sectorFunction, double, double, double, double);
-  inline void add(sectorFunction, Bounds);
-  inline void add(pair<Bounds, sectorFunction>);
-  inline bool overlaps(double, double, double, double, double, double, double, double);
-  inline bool boundX(int&);
-  inline bool boundY(int&);
+  /// Helper functions
+  inline void firstHalfKick();
+  inline void particleInteractions(); // Handle the interactions between pair of particles
+  inline void interactionHelper(int, int, int, double&, double&, bool=true); // Switch statement for particle interaction
+  inline void forceChoice(int, const double, const double, double&);
+  inline void wallInteractions(); // Handle the interactions between particles and walls
+  inline void secondHalfKick();
+  inline void wrap(double&, double&);
+  inline void wrap(vec2&);           // Keep a position in bounds by wrapping
+  inline void wrap(double&);         // Keep an angle between 0 and 2*PI
+  inline int  getSec(const vec2&);   // What sector does a position fall into
+  inline int  getSec(const double, const double);
+  inline void createNeighborLists(bool=false); // Create neighbor lists
+  inline void createEdgeNeighborLists();       // Create edge neighbor lists
+  inline void createWallNeighborList();
+  inline vec2 getDisplacement(vec2, vec2);
+  inline vec2 getDisplacement(double, double, double, double);
+  inline void makeSectors();
+  inline void createArrays(); // Initialize the array and point the pointers to their propper sections
+  inline void zeroPointers(); // Zero all pointers. Do not delete, just set them to zero
+  inline void remakeParticles(); // Delete and reallocate particle data arrays
+  inline void setParticles();       // Set particle data arrays from plist data
+  inline void atom_move();
+  inline void passParticles(int, int, const list<int>&, bool=false);
+  inline void passParticleSend(const int, const list<int>&, bool=false);
+  inline void passParticleRecv(const int, bool=false);
+  inline void compressArrays();
+  inline void atom_copy();
+  inline void memory_rearrange();
 
-  inline void updatePressure();
+  /// Data
+  int nsx, nsy;                      // Number of sectors in x and y, includes edge sectors
+  int ndx, ndy;                      // Number of domains in x and y
+  double secWidth, secHeight;        // The width and height of sectors
+  double time;                       // Simulation time
+  double epsilon, sqrtEpsilon;       // Timestep and its square root
+  double transferTime;               // How much time is spent transfering data
+  bool wrapX, wrapY;                 // Whether we wrap distances in the x and y directions
+  bool doInteractions;
+  bool drag;                         // A drag coefficient, useful for finding a packed solution
 
-  inline vect<> getDisplacement(vect<>, vect<>);
-  inline vect<> getDisplacement(Particle*, Particle*);
-  inline int getSec(vect<>);
-  inline vect<> getVect(int, int); // Get the position of the center of a sector
+  vec2 gravity;                      // Gravitational acceleration
+  double temperature, viscosity, DT1;
+  double tempDelay, sqrtTempDelay;// How long we wait between applying temperature perturbations
+  double lastTemp;                // Last time we applied temperature perturbations
 
-  // Interaction functions
-  inline void symmetricInteractions();
-  inline void asymmetricInteractions();
-  inline void asymmetricVariableSizeInteractions();
-  int interactionFunctionChoice;
+  // All the particles
+  vector<Particle> plist;
+  vector<Characteristic*> clist;
+  vec2 *positionTracker;           
+  int size, array_end, asize; // The number of particles, the index after the last particle, the amount of space allocated for domain particles
+  int esize, earray_end, easize; // The number of edge particles, the index after the last edge particle, the amount of space allocated for edge particles
 
-  /// System parameters
-  bool wrapX, wrapY;               // Wrapping
-  bool ssecInteract;               // Whether particles should interact with the special sector
-  int secX, secY;                  // Number of sectors
-  double left, right, bottom, top; // Bounds
+  // Particle data - position (2), velocity (2), force (2), theta, omega, torque, sigma, inverse mass, inverse moment of inertia, repulsion, dissipation, coeff of friction
+  double *px, *py, *vx, *vy, *fx, *fy, *th, *om, *tq, *sg, *im, *iI, *rp, *ds, *cf;
+  // Particle data - pointers to px, py, vx, vy, etc
+  double *pdata[15]; 
+  // Particle data - interaction type
+  int *it;
+  // Particle data - characteristics
+  Characteristic **ch;
+  bool useCharacteristics;
+  // Walls 
+  list<Wall> walls;
   
-  list<Particle*>* particles;      // A pointer to a list of particles
-  list<Particle*>* sectors;        // The actual sectors
+  // Sectors and neighbors
+  list<int> *sectors;
+  list<list<int> > neighborList;     // Neighbor list for domain particles
+  list<list<int> > edgeNeighborList; // Neighbor list for edge particles
+  double maxNLDiff; // The largest possible distance from the last time we checked
+  list<pair<int, list<Wall*> > > wallNeighbors;
+  list<int> holes;
+  
+  bool redoLists;                    // True if we need to remake neighbor lists
+  bool doWallNeighbors;              // Create and use wall Neighbor list
+  bool remakeToUpdate;               // Totally remake sectors to update them
+  double cutoff, skinDepth;          // The particle interaction cutoff (for finding sector size), and the skin depth (for creating neighbor lists)
+  double maxCutR, secCutR;           // The first and second greatest cutoff radii
+  int itersSinceBuild, buildDelay;   // How many iterations since we last rebuilt the neighbor list, and how many iterations we wait before rebuilding
 
-  // For special animation
-  bool *edgeDetect; // For detecting edges between regions with particles and regions without
-  double *pressure1, *pressure0; // Record the pressure as a function of position now and the last time we recorded it
-  bool recordPressure;
-
-  // Sector based functions
-  list<pair<Bounds, sectorFunction> > sectorFunctionRecord;
-  list<sectorFunction>* sfunctions; // Each sector has a list of function pointers
-  int numSecFunctions;
-  // list<Wall*> *wallSectors;         // A pointer to walls that particles in the sector might interact with --> UNIMPLEMENTED
+  // MPI
+  int numProc, rank;                 // The number of processors MPI is using and the rank of this processor
+  Bounds bounds, simBounds ;         // The physical dimensions of this domain and of the entire simulation space
+  MPI::Intercomm CommWork;           // The communicator for the working processors
 };
 
 #endif

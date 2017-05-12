@@ -1,96 +1,216 @@
-#ifndef STATFUNC_H
-#define STATFUNC_H
+#ifndef __STAT_FUNC_H__
+#define __STAT_FUNC_H__
 
-#include "Object.h"
+#include "Particle.h"
 
-typedef double (*statfunc)(list<Particle*>);
+typedef double (*StatFunc) (const vector<Particle> &, int&);
 
-inline double statKE(list<Particle*> particles) {
-  if (particles.empty()) return 0;
-  double ke = 0;
-  for (auto P : particles) ke += P->getKE();
-  return ke/particles.size();
-}
-
-inline double statPassiveKE(list<Particle*> particles) {
-  if (particles.empty()) return 0;
-  double ke = 0;
-  int p=0;
-  for (auto P : particles)
-    if (!P->isActive()) {
-      ke += P->getKE();
-      p++;
-    }
-  return p>0? ke/p : 0;
-}
-
-inline double statNetOmega(list<Particle*> particles){
+inline double Stat_Omega(const vector<Particle> &particles, int &count) {
+  count = 0;
   if (particles.empty()) return 0;
   double omega = 0;
-  for (auto P : particles) omega += P->getOmega();
+  for (const auto &p : particles) omega += p.omega;
+  count = particles.size();
   return omega;
 }
 
-inline double statFlow(list<Particle*> particles) {
+inline double Stat_KE(const vector<Particle> &particles, int &count) {
+  count = 0;
   if (particles.empty()) return 0;
-  double flow = 0;
-  for (auto P : particles) flow += (vect<>(1,0)*P->getVelocity());
-  return flow/particles.size();
+  double ke = 0;
+  for (const auto &p :particles) ke += (1./p.invMass * sqr(p.velocity) + 1/p.invII * sqr(p.omega));
+  ke *= 0.5*(1./particles.size());
+  count = particles.size();
+  return ke;
 }
 
-inline double statPassiveFlow(list<Particle*> particles) {
+inline double Stat_KE_X(const vector<Particle> &particles, int &count) {
+  count = 0;
   if (particles.empty()) return 0;
-  double flow = 0;
-  int p = 0;
-  for (auto P : particles)  {
-    flow += P->isActive() ? 0 : (E0*P->getVelocity());
-    if (!P->isActive()) p++;
+  double ke = 0;
+  for (const auto &p :particles) ke += (1./p.invMass * sqr(p.velocity.x));
+  ke *= 0.5*(1./particles.size());
+  count = particles.size();
+  return ke;
+}
+
+inline double Stat_KE_Y(const vector<Particle> &particles, int &count) {
+  count = 0;
+  if (particles.empty()) return 0;
+  double ke = 0;
+  for (const auto &p :particles) ke += (1./p.invMass * sqr(p.velocity.y));
+  ke *= 0.5*(1./particles.size());
+  count = particles.size();
+  return ke;
+}
+
+inline double Stat_L_KE(const vector<Particle> &particles, int &count) {
+  count = 0;
+  if (particles.empty()) return 0;
+  double ke = 0;
+  for (const auto &p : particles) ke += (1./p.invMass * sqr(p.velocity));
+  ke *= 0.5*(1./particles.size());
+  count = particles.size();
+  return ke;
+}
+
+inline double Stat_R_KE(const vector<Particle>&particles, int &count) {
+  count = 0;
+  if (particles.empty()) return 0;
+  double ke = 0;
+  for (const auto &p :particles) ke +=1/p.invII * sqr(p.omega);
+  ke *= 0.5*(1./particles.size());
+  count = particles.size();
+  return ke;
+}
+
+// Does not wrap boundaries
+inline double Stat_Clustering(const vector<Particle> &particles, int &count) {
+  count = 0;
+  if (particles.empty()) return 0;
+  double clustering = 0;
+  for (const auto &p : particles) {
+    double c = 0;
+    for (auto q : particles)
+      if (p.position!=q.position) 
+	clustering += 1./sqr(p.position-q.position);
+    clustering += c*sqr(p.sigma);
   }
-  return p>0 ? flow/p : 0;
+  clustering /= particles.size();
+  count = particles.size();
+  return clustering;
 }
 
-inline double statActiveFlow(list<Particle*> particles) {
+inline double Stat_Triangle_Align(const vector<Particle> &particles, int &count) {
+  count = 0;
   if (particles.empty()) return 0;
-  double flow = 0;
-  int a = 0;
-  for (auto P : particles) {
-    flow += P->isActive() ? (E0*P->getVelocity()) : 0;
-    if (P->isActive()) a++;
-  }
-  return a>0 ? flow/a : 0;
+  double align = 0;
+  for (auto q = particles.begin(); q!=particles.end(); ++q) {
+    if (q->interaction==2) {
+      auto p = q; ++p;
+      double angQ = 3*fmod(q->theta, 2.*PI/3.)*(3./2./PI);
+      vec2 qvec(cos(angQ), sin(angQ));
+      for (; p!=particles.end(); ++p)
+	if (p->interaction==2) {
+	  double angP = 3*fmod(p->theta, 2.*PI/3.);
+	  vec2 pvec(cos(angP), sin(angP));
+	  align += fabs(qvec*pvec/sqr(q->position-p->position));
+	  count++;
+	}
+    }
+  } 
+  return count>0 ? align/count : 0;
 }
 
-inline double statFlowRatio(list<Particle*> particles) {
-  double aFlow = statActiveFlow(particles);
-  double pFlow = statPassiveFlow(particles);
-  return aFlow>0 ? pFlow/aFlow : 0;
-}
-
-inline double statLargeBallPositionY(list<Particle*> particles) {
-  double height = 0, aveR = -1;
-  int count = 0;
-  //for (auto P : particles) aveR += P->getRadius();
-  //aveR /= particles.size();
-  for (auto P : particles) {
-    if (P->getRadius()>=0.25) { // This seems big enough
-      height += P->getPosition().y;
+inline double Stat_Large_Object_Height(const vector<Particle> &particles, int &count) {
+  count = 0;
+  if (particles.empty()) return 0;
+  double height = 0;
+  for (const auto &p : particles) {
+    if (0.1<p.sigma) {
+      height += p.position.y;
       count++;
     }
   }
   return count>0 ? height/count : 0;
 }
 
-inline double statLargeBallPositionX(list<Particle*> particles) {
-  double X = 0, aveR = -1;
-  int count = 0;
-  // Average X position
-  for (auto P : particles) {
-    if (P->getRadius()>=0.25) { // This seems big enough
-      X += P->getPosition().y;
+inline double Stat_Large_Object_X(const vector<Particle> &particles, int &count) {
+  count = 0;
+  if (particles.empty()) return 0;
+  double px = 0;
+  for (const auto &p : particles) {
+    if (0.1<p.sigma) {
+      px += p.position.x;
       count++;
     }
   }
-  return count>0 ? X/count : 0;
+  return count>0 ? px/count : 0;
 }
 
-#endif
+inline double Stat_Large_Object_Radius(const vector<Particle> &particles, int &count) {
+  count = 0;
+  if (particles.empty()) return 0;
+  double sigma = 0;
+  for (const auto &p : particles) {
+    if (0.1<p.sigma) {
+      sigma += p.sigma;
+      count++;
+    }
+  }
+  return count>0 ? sigma/count : 0;
+}
+
+inline double Stat_Large_Object_VX(const vector<Particle> &particles, int &count) {
+  count = 0;
+  if (particles.empty()) return 0;
+  double vel = 0;
+  for (const auto &p : particles) {
+    if (0.1<p.sigma) {
+      vel += p.velocity.x;
+      count++;
+    }
+  }
+  return count>0 ? vel/count : 0;
+}
+
+inline double Stat_Large_Object_VY(const vector<Particle> &particles, int &count) {
+  count = 0;
+  if (particles.empty()) return 0;
+  double vel = 0;
+  for (const auto &p : particles) {
+    if (0.1<p.sigma) {
+      vel += p.velocity.y;
+      count++;
+    }
+  }
+  return count>0 ? vel/count : 0;
+}
+
+inline double Stat_Volume(const vector<Particle> &particles, int &count) {
+  count = 0;
+  if (particles.empty()) return 0;
+  double vol = 0;
+  for (const auto &p : particles) vol += PI*sqr(p.sigma);
+  return vol;
+}
+
+inline double Stat_Gravitational_PE(const vector<Particle> &particles, int &count) {
+  count = 0;
+  if (particles.empty()) return 0;
+  double U = 0;
+  for (const auto &p : particles) U += p.position.y/p.invMass;
+  count = particles.size();
+  return count>0 ? U/count : 0;
+}
+
+inline double Stat_Max_Velocity(const vector<Particle> &particles, int &count) {
+  count = 0;
+  if (particles.empty()) return 0;
+  count = 1;
+  double maxV = 0;
+  for (const auto &p : particles) {
+    double v = sqrt(sqr(p.velocity));
+    if (maxV<v) maxV = v;
+  }
+  return maxV;
+}
+
+inline double Stat_Max_Velocity_Y(const vector<Particle> &particles, int &count) {
+  count = 0;
+  if (particles.empty()) return 0;
+  count = 1;
+  double maxV = 0;
+  for (const auto &p : particles) {
+    double v = p.velocity.y;
+    if (maxV<v) maxV = v;
+  }
+  return maxV;
+}
+
+inline double Stat_Number_Particles(const vector<Particle> &particles, int &count) {
+  count = particles.size();
+  return count;
+}
+
+#endif // __STAT_FUNC_H__

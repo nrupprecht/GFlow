@@ -9,6 +9,8 @@
 #ifndef Predictive1_Utility_h
 #define Predictive1_Utility_h
 
+#include "DefaultConstants.h"
+
 #include <chrono>
 #include <ctime>
 #include <functional>
@@ -23,8 +25,14 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <set>
+#include <map>
 #include <algorithm>
 #include <fstream>
+#include <tuple>
+#include <chrono>
+
+#include <sys/stat.h> // For linux
 
 using std::vector;
 using std::pair;
@@ -37,20 +45,22 @@ using std::time;
 using std::ostream;
 using std::ifstream;
 using std::ofstream;
-
-#include "ArgParse.h"
+using std::chrono::high_resolution_clock;
+using std::chrono::duration;
+using std::chrono::duration_cast;
 
 const double PI = 3.14159265;
 
 static std::mt19937 generator;
 static std::normal_distribution<double> normal_dist(0., 1.);
+std::poisson_distribution<int> poisson_dist();
 
 /// Random number function
 inline double getRand() { 
   return drand48(); 
 }
 
-inline void seedNormalDistribution() {
+inline void seedRandomGenerator() {
   unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
   generator = std::mt19937(seed);
 }
@@ -58,6 +68,17 @@ inline void seedNormalDistribution() {
 /// Random number, normal distribution
 inline double randNormal() {
   return normal_dist(generator);
+}
+
+/// Get the current time
+inline auto current_time() {
+  return high_resolution_clock::now();
+}
+
+// high_resolution_clock::time_point
+template<typename T> inline double time_span(T end, T start) {
+  duration<double> span = duration_cast<duration<double>>(end-start);
+  return span.count();
 }
 
 /// Precision clamp
@@ -230,6 +251,14 @@ vect(const vect<T>& V) : x(V.x), y(V.y) {};
     os << str;
     return os;
   }
+
+  string csv() {
+    stringstream stream;
+    string str;
+    stream << v.x << ',' << v.y;
+    stream >> str;
+    return str;
+  }
     
   T operator*(const vect<T>& B) const {
     return x*B.x + y*B.y;
@@ -239,9 +268,9 @@ vect(const vect<T>& V) : x(V.x), y(V.y) {};
     return vect<T>(A.x*B, A.y*B);
   }
 
-  // Hadamard product
-  vect<T> operator^(const vect<T>& B) const {
-    return vect<T>(x*B.x, y*B.y);
+  // Cross product
+  T operator^(const vect<T>& B) const {
+    return x*B.y-y*B.x;
   }
     
   vect<T> operator+(const vect<T>& B) const {
@@ -289,6 +318,14 @@ vect(const vect<T>& V) : x(V.x), y(V.y) {};
   T x, y;
 };
 
+// --- What type of vector we will use as our main vector type ---
+typedef vect<double> vec2;
+typedef pair<vec2, vec2> VPair;
+typedef std::tuple<vec2, double, double> Tri;
+// PData records all the data you need to print particles: 
+// { position, sigma, theta, interaction, 'color' }
+typedef std::tuple<vec2, double, double, double, double> PData;
+
 /// Some common vectors
 const vect<double> Zero(0,0);
 const vect<double> E0(1,0);
@@ -314,17 +351,15 @@ template<typename T> inline T distSqr(const vect<T>& A, const vect<T>& B) {
   return sqr(A.x-B.x)+sqr(A.y-B.y);
 }
 
-inline vect<> randV() {
+inline vec2 randV() {
   float a = drand48();
-  return vect<>(sinf(2*PI*a), cosf(2*PI*a));
+  return vec2(sinf(2*PI*a), cosf(2*PI*a));
 }
 
-/*
 template<typename S, typename T> inline std::ostream& operator<<(std::ostream& out, const pair<S,T>& p) {
   out << "{" << p.first << "," << p.second << "}";
   return out;
 }
-*/
 
 template<typename T> inline std::ostream& operator<<(std::ostream& out, const vector<T>& lst) {
   if (lst.empty()) {
@@ -344,6 +379,64 @@ template<typename T> inline std::ostream& operator<<(std::ostream& out, const ve
   return out;
 }
 
+inline string toCSV(const int n) { return toStr(n); }
+inline string toCSV(const double n) { return toStr(n); }
+inline string toCSV(const vec2& p) {
+  stringstream stream;
+  string str;
+  stream << p.x << "," << p.y;
+  stream >> str;
+  return str;
+}
+template<typename... T> string toCSV(const PData& pdata) {
+  stringstream stream;
+  string str;
+  int size = sizeof...(T);
+  stream << toCSV(std::get<0>(pdata)) << "," << std::get<1>(pdata) << "," << std::get<2>(pdata) << "," << std::get<3>(pdata) << "," << std::get<4>(pdata);
+  stream >> str;
+  return str;
+}
+
+template<typename T> bool printToCSV(string filename, const vector<T>& lst) {
+  if (lst.empty()) return true;
+  ofstream fout(filename);
+  if (fout.fail()) return false;
+  for (int i=0; i<lst.size(); i++) fout << toCSV(lst.at(i)) << endl;
+  fout.close();
+  return true;
+}
+
+template<typename T> bool printToCSV(string filename, const vector<T>& lst, int iter) {
+  stringstream stream;
+  stream << filename << iter << ".csv";
+  stream >> filename;
+  return printToCSV(filename, lst);
+}
+
+template<typename T> bool printToCSV(string filename, const vector<vector<T> >& lst) {
+  if (lst.empty()) return true;
+  ofstream fout(filename);
+  if (fout.fail()) return false;
+  for (int i=0; i<lst.size(); i++) {
+    for (int j=0; j<lst.at(i).size(); ++j) {
+      fout << lst.at(i).at(j);
+      if (j!=lst.at(i).size()-1) fout << ",";
+    }
+    fout << endl;
+  }
+  fout.close();
+  return true;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const Tri& tup) {
+  out << "{" << std::get<0>(tup) << "," << std::get<1>(tup) << "," << std::get<2>(tup) << "}";
+  return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const PData& pdata) {
+  out << "{" << std::get<0>(pdata) << "," << std::get<1>(pdata) << "," << std::get<2>(pdata) << "," << std::get<3>(pdata) << "," << std::get<4>(pdata) << "}";
+  return out;
+}
 
 inline void istream_get_whitespace(std::istream& in) {
   char c;
@@ -429,9 +522,9 @@ template<typename T> inline string bare_representation(const vector<T>& lst) {
 }
 
 /// Helper averaging function
-inline double average(vector<vect<>> lst) {
+template<typename T> inline T average(vector<vect<T>> lst) {
   if (lst.empty()) return 0;
-  double ave = 0;
+  T ave = 0;
   for (auto V : lst) ave += V.y;
   return ave/lst.size();
 }
@@ -451,30 +544,29 @@ struct Bounds {
     out << "{" << B.left << "," << B.right << "," << B.bottom << "," << B.top << "}";
     return out;
   }
-  bool contains(const vect<> position) const {
+  void cut(double c) {
+    left+=c; right-=c; bottom+=c; top-=c;
+  }
+  Bounds& operator=(const Bounds& b) {
+    left = b.left; right = b.right;
+    bottom = b.bottom; top = b.top;
+    return *this;
+  }
+  bool operator==(const Bounds& b) const {
+    return b.left==left && b.right==right && b.bottom==bottom && b.top==top;
+  }
+  bool contains(const vec2 position) const {
     return position.x<right && left<position.x && position.y<top && bottom<position.y;
+  }
+  bool contains(const vec2 position, const double sigma) const {
+    return position.x-sigma<right && left<position.x+sigma && position.y-sigma<top && bottom<position.y+sigma;
   }
   bool contains(const double x, const double y) const {
     return x<right && left<x && y<top && bottom<y;
   }
 };
 
-/// The Agent structure
-struct Agent {
-  Agent(vect<> pos)
-  : position(pos), initPos(pos) {};
-  Agent(vect<> pos, ipair sec, int ID)
-  : position(pos), initPos(pos), sector(sec), ID(ID) {};
-    
-  vect<> position;    // The "current" position of the agent
-  vect<> initPos;     // The initial position the agent started at
-  ipair sector;
-  int ID;
-  bool operator==(const Agent A) const { return ID==A.ID; }    
-  void reset() { position = initPos; }
-  
-  float __pad;
-};
+const Bounds NullBounds(0., -1., 0., -1.);
 
 struct Trio {
   Trio() : x(0), y(0), z(0) {};
@@ -487,5 +579,14 @@ struct Trio {
 
   double x,y,z;
 };
+
+inline string toCSV(const Bounds& b) {
+  stringstream stream;
+  string str;
+  stream << b.left << "," << b.right << "," << b.bottom << "," << b.top;
+  stream >> str;
+  return str;
+}
+
 
 #endif
