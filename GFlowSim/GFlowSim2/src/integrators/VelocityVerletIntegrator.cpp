@@ -22,7 +22,7 @@ namespace GFlow {
   
   void VelocityVerletIntegrator::integrateStep() {
     // First VV half kick
-    
+    firstHalfKick();
     // Calculate forces
     simData->doForces();
     // Exchange data with other processors
@@ -30,7 +30,7 @@ namespace GFlow {
     simData->doMPI();
 #endif
     // Second VV half kick
-    
+    secondHalfKick();
   }
   
   void VelocityVerletIntegrator::postStep() {
@@ -41,6 +41,14 @@ namespace GFlow {
     // Update data recorder
     dataRecord->update(dt);
     dataRecord->record(simData);
+  }
+
+  void VelocityVerletIntegrator::firstHalfKick() {
+    
+  }
+
+  void VelocityVerletIntegrator::secondHalfKick() {
+    
   }
   
 }

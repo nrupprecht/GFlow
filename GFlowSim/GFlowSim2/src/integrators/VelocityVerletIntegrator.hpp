@@ -25,12 +25,12 @@ namespace GFlow {
   private:
     // Private virtual functions
     virtual void _integrate();
+    virtual void preStep();
+    virtual void integrateStep();
+    virtual void postStep();
+    virtual void firstHalfKick();
+    virtual void secondHalfKick();
 
-    // Private functions
-    void preStep();
-    void integrateStep();
-    void postStep();
-    
   };
 
 }

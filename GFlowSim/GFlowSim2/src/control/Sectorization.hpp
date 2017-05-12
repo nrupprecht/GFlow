@@ -8,7 +8,7 @@
 #define __SECTORIZATION_HPP__
 
 // Includes
-#include "../utility/Utility.hpp"
+#include "../../include/Utility.hpp"
 
 namespace GFlow {
 

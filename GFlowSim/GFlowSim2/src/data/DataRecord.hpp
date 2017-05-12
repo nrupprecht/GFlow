@@ -8,6 +8,8 @@
 #define __DATA_RECORD_HPP__
 
 // Includes
+#include "../../include/Utility.hpp"
+#include "../control/SimData.hpp"
 
 namespace GFlow {
 
@@ -22,7 +24,7 @@ namespace GFlow {
     DataRecord();
     
     // Update the data record's time
-    void update(RealType dt) { delayTimer += dt; }
+    void update(RealType dt);
 
     // (Potentially) record data
     void record(SimData*);

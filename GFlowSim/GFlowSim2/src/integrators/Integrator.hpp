@@ -32,7 +32,7 @@ namespace GFlow {
 
   protected:
     // Private virtual functions
-    virtual void _integrate() = 0;
+    virtual void _integrate() {} ; // Should be purely abstract
 
     // Time step
     double dt;

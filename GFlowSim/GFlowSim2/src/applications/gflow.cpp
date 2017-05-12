@@ -28,6 +28,9 @@ int main (int argc, char** argv) {
 
   // Run here
   integrator.integrate();
+
+  // Print a final message
+  cout << "Integration ended.\n";
   
 #ifdef USE_MPI
   MPI::Finalize();

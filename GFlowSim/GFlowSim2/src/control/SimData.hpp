@@ -8,7 +8,7 @@
 #define __SIM_DATA_HPP__
 
 // Includes
-#include "../utility/Utility.hpp"
+#include "../../include/Utility.hpp"
 #include "../control/Sectorization.hpp"
 
 namespace GFlow {
