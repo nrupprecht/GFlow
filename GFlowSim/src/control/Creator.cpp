@@ -3,7 +3,6 @@
 namespace GFlow {
   
   SimData* Creator::create() {
-    
     // Create bounds and hand them to a sim data object
     Bounds simBounds(0,4,0,4);
     SimData* simData = new SimData(simBounds, simBounds);
@@ -20,13 +19,16 @@ namespace GFlow {
     
     RealType sigma = 0.05;
     for (int i=0; i<domain_size; ++i) {
+      // Random particle
       RealType X     = 4*drand48();
       RealType Y     = 4*drand48();
       RealType theta = 2*PI*drand48();
       RealType V     = normal_dist(generator);
+      // Set particle values
       Particle P(X, Y, sigma);
-
       P.velocity = V*vec2(cos(theta), sin(theta));
+      P.theta = theta;
+      // Add the particle
       simData->addParticle(P);
     }
 

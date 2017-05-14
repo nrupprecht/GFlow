@@ -23,9 +23,13 @@ namespace GFlow {
 
     // Resize the array
     void reserve(int);
+    // Set unused spots to have a specific value
+    void reserve(int, const T&);
 
     // Resize the array in two parts
     void reserve2(int, int, int, int);
+    // Set unused spots to have a specific value
+    void reserve2(int, int, int, int, const T&); 
     
     // Data access
     T& at(int);

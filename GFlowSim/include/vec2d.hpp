@@ -24,7 +24,7 @@ struct vec2 {
   vec2 operator-(const vec2&) const;
   vec2 operator+(const vec2&) const;
   RealType operator*(const vec2&) const;
-  friend vec2 operator*(RealType, const vec2&);
+  friend vec2 operator*(const RealType, const vec2&);
 
   friend std::ostream& operator<<(std::ostream&, const vec2&);
 };

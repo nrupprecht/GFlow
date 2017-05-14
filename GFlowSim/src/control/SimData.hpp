@@ -44,6 +44,10 @@ namespace GFlow {
     Bounds getBounds()    { return bounds; }
     Bounds getSimBounds() { return simBounds; } 
 
+    // Return wrapping
+    bool getWrapX()      { return wrapX; }
+    bool getWrapY()      { return wrapY; }
+
     // Pointer access to arrays
     RealType* getPxPtr() { return px.getPtr(); }
     RealType* getPyPtr() { return py.getPtr(); }
@@ -57,14 +61,22 @@ namespace GFlow {
     RealType* getTqPtr() { return tq.getPtr(); }
     RealType* getImPtr() { return im.getPtr(); }
     RealType* getIiPtr() { return iI.getPtr(); }
+    RealType* getRpPtr() { return rp.getPtr(); }
+    RealType* getDsPtr() { return ds.getPtr(); }
+    RealType* getCfPtr() { return cf.getPtr(); }
     int* getItPtr()      { return it.getPtr(); }
 
     // Get walls
     vector<Wall> getWalls() const { return walls; }
 
+    // Get a list of all the particles
+    list<Particle> getParticles();
+
     // Wrap positions and angles
     void wrap(RealType&, RealType&); // Position wrapping
     void wrap(RealType&);            // Angle wrapping
+
+    vec2 getDisplacement(const RealType, const RealType, const RealType, const RealType);
 
     // Get MPI data
     int getRank()    { return rank; }
@@ -102,7 +114,10 @@ namespace GFlow {
     aligned_array<RealType> sg;
     aligned_array<RealType> im;
     aligned_array<RealType> iI;
-    // ... Other data ...
+    aligned_array<RealType> rp;
+    aligned_array<RealType> ds;
+    aligned_array<RealType> cf;
+    // Interaction is -1 for empty array spaces
     aligned_array<int> it;
 
     // Wall data

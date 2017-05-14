@@ -21,9 +21,12 @@ namespace GFlow {
   public:
     // Default constructor
     Sectorization();
+
+    // Destructor
+    ~Sectorization();
     
-    // Set the simulation data to manage
-    void setSim(SimData* sd);
+    // Set the simulation data to manage, set up sectorization
+    void initialize(SimData* sd);
     
     // Update sectorization
     void sectorize();
@@ -51,9 +54,13 @@ namespace GFlow {
     // Returns the copy list
     auto& getCopyList() { return copyList; }
 
+    vec2 getDisplacement(const RealType, const RealType, const RealType, const RealType);
+
   private:
     // Private helper functions
-    int getSec(const RealType, const RealType);
+    inline int getSec(const RealType, const RealType);
+    inline void makeSectors();
+    inline list<int>& sec_at(int x, int y) { return sectors[nsx*y+x]; }
 
     // Pointer to the simulation data we manage
     SimData *simData;
@@ -62,10 +69,10 @@ namespace GFlow {
     list<int> *sectors;
 
     // Particle neighbor list. First int is the id of the main particle, the other ints are particles that are withing the cutoff region of the main particle.
-    list<list<int> > verletList;
+    VListType verletList;
 
     // Wall neighbor list. First int is the id of the wall, the other ints are the id's of the particles within the cutoff region.
-    list<list<int> > wallList;
+    WListType wallList;
 
     // List of particles that have migrated out of the simulation domain. List of { int, list<int> } specifies the processor to move to and the id's of the particles that need to move there.
     list<pair<int, list<int> > > moveList;
@@ -75,11 +82,16 @@ namespace GFlow {
 
     // Sectorization Data
     RealType cutoff;     // The cutoff radius
+    RealType skinDepth;  // The skin depth
+    RealType maxCutR, secCutR; // First and second largest particle cutoffs
     int nsx, nsy;        // The number of sectors
     RealType sdx, sdy;   // Sector width and height
     RealType isdx, isdy; // The inverse of the sector widths and heights
 
+    // Data from SimData
     Bounds bounds;       // Domain bounds
+    Bounds simBounds;    // Simulation bounds
+    bool wrapX, wrapY;
 
     // Rank and number of processors - for MPI 
     int rank, numProc;

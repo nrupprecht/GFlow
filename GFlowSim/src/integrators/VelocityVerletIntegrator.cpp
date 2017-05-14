@@ -8,15 +8,10 @@ namespace GFlow {
   VelocityVerletIntegrator::VelocityVerletIntegrator(SimData* sim, DataRecord* dat) : Integrator(sim, dat) {};
   
   void VelocityVerletIntegrator::_integrate() {
-
-    cout << "Velocity Verlet Integrator.\n";
-
     // Make sure we have a simulation to integrate
     if (simData==nullptr || sectors==nullptr) return;
     // Reset iter
     iter = 0;
-    // Give the sim data to the sectorization
-    sectors->setSim(simData);
     // Do the integration loop
     while (iter<maxIter) {
       preStep();
@@ -50,7 +45,10 @@ namespace GFlow {
     }
 
     // Calculate forces
-    
+    const auto& verletList = sectors->getVerletList();
+    const auto& wallList   = sectors->getWallList();
+    forceHandler->pForces(verletList, simData);
+    forceHandler->wForces(wallList, simData);
 
     // Second VV half kick
     secondHalfKick();

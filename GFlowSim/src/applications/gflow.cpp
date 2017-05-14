@@ -45,5 +45,9 @@ int main (int argc, char** argv) {
   MPI::Finalize();
 #endif
 
+  // Clean up
+  delete simData;
+  delete dataRecord;
+
   return 0;
 }

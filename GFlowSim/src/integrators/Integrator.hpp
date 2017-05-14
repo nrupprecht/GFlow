@@ -11,6 +11,7 @@
 #include "../control/SimData.hpp"
 #include "../control/Sectorization.hpp"
 #include "../data/DataRecord.hpp"
+#include "../control/ForceHandler.hpp"
  
 namespace GFlow {
 
@@ -28,6 +29,9 @@ namespace GFlow {
 
     // SimData and DataRecord initializing constructor
     Integrator(SimData*, DataRecord*);
+
+    // Destructor - cleans up sectors
+    ~Integrator();
 
     // Initialization -- Add the run time here for now
     void initialize(double runTime);
@@ -64,6 +68,9 @@ namespace GFlow {
 
     // Pointer to data recorder
     DataRecord* dataRecord;
+
+    // Force handler
+    ForceHandler* forceHandler;
     
   };
 

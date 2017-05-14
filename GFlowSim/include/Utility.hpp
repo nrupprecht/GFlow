@@ -50,6 +50,12 @@ namespace GFlow {
   // What type to use as our real type
   typedef double RealType;
 
+  // What to use for Verlet list
+  typedef list<list<int> > VListType;
+
+  // What to use for Wall list
+  typedef list<list<int> > WListType;
+
   // Constants
   const double PI = 3.14159265358979;
 
@@ -61,6 +67,20 @@ namespace GFlow {
   // Min function
   template<typename T> inline T min(const T& a, const T& b) {
     return a<b ? a : b;
+  }
+
+  // Max function
+  template<typename T> inline T max(const T& a, const T& b) {
+    return a<b ? b : a;
+  }
+
+  // Clamp function
+  inline RealType clamp(const RealType x) {
+    return x<0 ? 0 : x;
+  }
+
+  inline RealType sign(const RealType x) {
+    return x<0 ? -1. : 1.;
   }
 
   // PData records all the data you need to print particles:

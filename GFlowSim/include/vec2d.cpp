@@ -12,7 +12,7 @@ RealType vec2::operator*(const vec2& v) const {
   return x*v.x + y*v.y;
 }
 
-vec2 operator*(RealType c, const vec2& v) {
+vec2 operator*(const RealType c, const vec2& v) {
   return vec2(c*v.x, c*v.y);
 }
 

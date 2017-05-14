@@ -7,6 +7,11 @@ namespace GFlow {
 
   Integrator::Integrator(SimData *sim, DataRecord *dat) : dt(1e-4), time(0), runTime(0), iter(0), maxIter(0), simData(sim), sectors(nullptr), dataRecord(dat) {};
 
+  Integrator::~Integrator() {
+    delete sectors;
+    delete forceHandler;
+  }
+
   void Integrator::initialize(RealType rt) {
     // Set run time
     if (simData) runTime = rt;
@@ -14,6 +19,12 @@ namespace GFlow {
 
     // Create a sectorization
     sectors = new Sectorization;
+
+    // Set up the sectorization
+    if (simData) sectors->initialize(simData);
+
+    // Create force handler
+    forceHandler = new ForceHandler;
 
     // Set max iter
     if (dt>0) maxIter = runTime/dt;
