@@ -53,7 +53,7 @@ const double PI = 3.14159265;
 
 static std::mt19937 generator;
 static std::normal_distribution<double> normal_dist(0., 1.);
-std::poisson_distribution<int> poisson_dist();
+static std::poisson_distribution<int> poisson_dist();
 
 /// Random number function
 inline double getRand() { 

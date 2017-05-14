@@ -27,7 +27,7 @@ namespace GFlow {
     void record(SimData*, RealType);
 
     // Write data
-    void writeData(string);
+    void writeData(string, SimData* = nullptr);
     
   private:
     // How long between recording data

@@ -2,6 +2,7 @@
 #define __BOUNDS_HPP__
 
 #include "Utility.hpp"
+#include "CSVUtility.hpp"
 #include "vec2d.hpp"
 
 struct Bounds {
@@ -39,5 +40,13 @@ struct Bounds {
 };
 
 const Bounds NullBounds(0., -1., 0., -1.);
+
+inline string toCSV(const Bounds& b) {
+  stringstream stream;
+  string str;
+  stream << b.left << "," << b.right << "," << b.bottom << "," << b.top;
+  stream >> str;
+  return str;
+}
 
 #endif // __BOUNDS_HPP__

@@ -3,6 +3,7 @@
 
 // Includes
 #include "../../include/vec2d.hpp"
+#include "../../include/CSVUtility.hpp"
 #include "../../include/DefaultConstants.hpp"
 
 namespace GFlow {
@@ -26,7 +27,17 @@ namespace GFlow {
 
     RealType sigma, invMass, invII;
     RealType repulsion, dissipation, coeff;
+
+    int interaction;
   };
+
+  inline string toCSV(const Particle& p) {
+    stringstream stream;
+    string str;
+    stream << p.position.x << "," << p.position.y << "," << p.sigma << "," << p.theta << "," << p.interaction << ",0";
+    stream >> str;
+    return str;
+  }
   
 }
 

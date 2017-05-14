@@ -41,7 +41,8 @@ namespace GFlow {
     int getEdgeCapacity()   { return edge_capacity; }
 
     // Returns the bounds
-    Bounds& getBounds() { return bounds; }
+    Bounds getBounds()    { return bounds; }
+    Bounds getSimBounds() { return simBounds; } 
 
     // Pointer access to arrays
     RealType* getPxPtr() { return px.getPtr(); }
@@ -57,6 +58,9 @@ namespace GFlow {
     RealType* getImPtr() { return im.getPtr(); }
     RealType* getIiPtr() { return iI.getPtr(); }
     int* getItPtr()      { return it.getPtr(); }
+
+    // Get walls
+    vector<Wall> getWalls() const { return walls; }
 
     // Wrap positions and angles
     void wrap(RealType&, RealType&); // Position wrapping
@@ -94,8 +98,8 @@ namespace GFlow {
     aligned_array<RealType> fy;
     aligned_array<RealType> th;
     aligned_array<RealType> om;
-    aligned_array<RealType> sg;
     aligned_array<RealType> tq;
+    aligned_array<RealType> sg;
     aligned_array<RealType> im;
     aligned_array<RealType> iI;
     // ... Other data ...

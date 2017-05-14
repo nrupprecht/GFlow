@@ -39,7 +39,7 @@ int main (int argc, char** argv) {
   cout << "Integration ended.\n";
 
   // Write data
-  dataRecord->writeData("RunDir");
+  dataRecord->writeData("RunData", simData);
   
 #ifdef USE_MPI
   MPI::Finalize();

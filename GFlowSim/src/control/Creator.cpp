@@ -20,8 +20,14 @@ namespace GFlow {
     
     RealType sigma = 0.05;
     for (int i=0; i<domain_size; ++i) {
-      vec2 pos(4*drand48(), 4*drand48());
-      simData->addParticle(Particle(pos, sigma));
+      RealType X     = 4*drand48();
+      RealType Y     = 4*drand48();
+      RealType theta = 2*PI*drand48();
+      RealType V     = normal_dist(generator);
+      Particle P(X, Y, sigma);
+
+      P.velocity = V*vec2(cos(theta), sin(theta));
+      simData->addParticle(P);
     }
 
     return simData;

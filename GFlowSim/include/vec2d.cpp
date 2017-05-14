@@ -15,3 +15,8 @@ RealType vec2::operator*(const vec2& v) const {
 vec2 operator*(RealType c, const vec2& v) {
   return vec2(c*v.x, c*v.y);
 }
+
+std::ostream& operator<<(std::ostream& out, const vec2& v) {
+  out << "{" << v.x << "," << v.y << "}";
+  return out;
+}

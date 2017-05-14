@@ -23,13 +23,16 @@ template<typename T> aligned_array<T>::~aligned_array() {
 template<typename T> void aligned_array<T>::reserve(int ns) {
   T* new_data = (T*)aligned_alloc(_alignment, ns*sizeof(T));
   if (data) {
-    int end = size<ns ? size : ns;
+    int end = _size<ns ? _size : ns;
     int i;
     for (i=0; i<end; ++i) new_data[i] = data[i];
-    for (; i<ns; ++i)      new_data[i] = T();
+    for (; i<ns; ++i)     new_data[i] = T();
     // Free old data
     free(data);
   }
+  else 
+    for (int i=0; i<ns; ++i) new_data[i] = T();
+  // Set new array and size
   data = new_data;
   _size = ns;
 }

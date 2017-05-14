@@ -4,10 +4,13 @@ namespace GFlow {
   DataRecord::DataRecord() : delay(1./15.), lastRecord(-delay), recIter(0) {};
 
   void DataRecord::record(SimData* simData, RealType time) {
+    // Return if not enough time has gone by
     if (time-lastRecord<delay) return;
+
     // Record data
     lastRecord = time;
-    
+
+    // Get the arrays
     RealType *px = simData->getPxPtr();
     RealType *py = simData->getPyPtr();
     RealType *sg = simData->getSgPtr();
@@ -27,19 +30,32 @@ namespace GFlow {
     recIter++;
   }
 
-  void DataRecord::writeData(string writeDirectory) {
+  void DataRecord::writeData(string writeDirectory, SimData* simData) {
     // Remove previously existing files
     system(("rm -rf "+writeDirectory).c_str());
+
     // Create the directory
     mkdir(writeDirectory.c_str(), 0777);
+
     // Write number
     printToCSV(writeDirectory+"/number.csv", vector<int>(1,recIter));
+
+    // Write walls to file
+    if (simData) 
+      if (!printToCSV(writeDirectory+"/walls", simData->getWalls()))
+	cout << "Failed to print walls to [" << writeDirectory << "/walls].\n";
+
+    // Write bounds to file
+    if (simData)
+      if (!printToCSV(writeDirectory+"/bnds.csv", vector<Bounds>(1,simData->getSimBounds())))
+	cout << "Failed to print bounds to [" << writeDirectory << "/bnds.csv].\n";
+
     // Create Positions directory
     mkdir((writeDirectory+"/Pos").c_str(), 0777);
-    // Write data
+    // Write position data
     for (int i=0; i<positionRecord.size(); ++i)
-      printToCSV(writeDirectory+"Pos/pos", positionRecord.at(i), i);
-    
+      if (!printToCSV(writeDirectory+"/Pos/pos", positionRecord.at(i), i))
+	cout << "Failed to print to [" << writeDirectory << "/Pos/pos" << i << "].\n";
   }
   
 }

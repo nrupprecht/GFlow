@@ -2,7 +2,7 @@
 #define __UTILITY_HPP__
 
 // Use MPI
-#define USE_MPI 1
+// #define USE_MPI 1
 
 // Includes  
 #include <iostream>
@@ -66,6 +66,11 @@ namespace GFlow {
   // PData records all the data you need to print particles:
   // { pos x, pos y, sigma, theta, interaction, 'color' }
   typedef std::tuple<double, double, double, double, double, double> PData;
+
+  // Random number generators
+  static std::mt19937 generator;
+  static std::normal_distribution<double> normal_dist(0., 1.);
+  static std::poisson_distribution<int> poisson_dist();
 }
 
 #endif // __UTILITY_HPP__
