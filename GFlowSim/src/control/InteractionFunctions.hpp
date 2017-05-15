@@ -8,18 +8,21 @@
 #define __INTERACTION_FUNCTIONS_HPP__
 
 // Includes
+#include "SimData.hpp"
 
 namespace GFlow {
 
+  // Typedef for inter-particle interaction functions
   typedef bool (*InteractionFunction) (int, int, SimData*, RealType&, RealType&, bool);
 
+  // Hard disk - hard disk interaction function
   inline bool hardDiskInteraction(int i, int j, SimData* simData, RealType &Fn, RealType &Fs, bool update=true) {
     // Get data pointers
     RealType *px = simData->getPxPtr();
     RealType *py = simData->getPyPtr();
     RealType *sg = simData->getSgPtr();
     // Get displacement, test for overlap
-    vec2 displacement = simData->getDisplacement(px[i], py[i], px[j], py[j]);
+    vec2 displacement = simData->getDisplacement(px[j], py[j], px[i], py[i]); // j - i
     RealType distSqr = sqr(displacement);
     double cutoff = sg[i] + sg[j];
     if (distSqr < sqr(cutoff)) {

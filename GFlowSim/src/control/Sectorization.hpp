@@ -54,7 +54,9 @@ namespace GFlow {
     // Returns the copy list
     auto& getCopyList() { return copyList; }
 
+    // Displacement functions
     vec2 getDisplacement(const RealType, const RealType, const RealType, const RealType);
+    vec2 getDisplacement(const vec2, const vec2);
 
   private:
     // Private helper functions

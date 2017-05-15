@@ -132,7 +132,32 @@ namespace GFlow {
   }
 
   void Sectorization::createWallLists() {
-    // STUB
+    // Clear out lists
+    wallList.clear();
+
+    // Get data
+    auto& walls  = simData->getWalls();
+    RealType *px = simData->getPxPtr();
+    RealType *py = simData->getPyPtr();
+    RealType *sg = simData->getSgPtr();
+    int *it = simData->getItPtr();
+    
+    // Create wall list
+    int domain_size = simData->getDomainSize();
+    for (int i=0; i<walls.size(); ++i) {
+      WListSubType lst;
+      lst.push_back(i); // Wall is at the head of the list
+      for (int j=0; j<domain_size; ++j) {
+	if (it[j]<0) continue;
+	vec2 displacement = getDisplacement(vec2(px[j], py[j]), walls.at(i).left);
+	// Correct the displacement -- THIS DOESNT ALWAYS WORK CORRECTLY
+	wallDisplacement(displacement, sg[j], walls.at(i));
+	// USE A PARTICLE CUTOFF
+	if (sqr(displacement)<sqr(1.25*sg[j] + skinDepth)) lst.push_back(j);
+      }
+      
+      if (1<lst.size()) wallList.push_back(lst);
+    }
   }
 
   vec2 Sectorization::getDisplacement(const RealType ax, const RealType ay, const RealType bx, const RealType by) {
@@ -148,6 +173,10 @@ namespace GFlow {
       if (dy<fabs(Y)) Y = Y>0 ? -dy : dy;
     }
     return vec2(X,Y);
+  }
+
+  vec2 Sectorization::getDisplacement(const vec2 a, const vec2 b) {
+    return getDisplacement(a.x, a.y, b.x, b.y);
   }
 
   inline int Sectorization::getSec(const RealType x, const RealType y) {

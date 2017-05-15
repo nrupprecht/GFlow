@@ -34,6 +34,19 @@ namespace GFlow {
     stream >> str;
     return str;
   }
-
+  
+  // Adjust displacement to do the proper minimum displacement between a point and a wall
+  inline void wallDisplacement(vec2& displacement, const RealType sigma, const Wall &w) {
+    // We are given displacement = p.position - w.left;
+    double l_par = displacement*w.normal;
+    vec2 d_par = l_par*w.normal;
+    vec2 d_perp = displacement - d_par;
+    // Check whether the particle is between the start and end of the wall
+    if (l_par>=0) { // Located forward of the origin
+      if (w.length>l_par) displacement = d_perp;  // The particle is above the wall (in the perp. direction)
+      else displacement -= w.length*w.normal; // Displacement from the nearest end (the far end) of the wall
+    }
+  }
+  
 }
 #endif // __WALL_HPP__

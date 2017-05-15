@@ -41,9 +41,9 @@ namespace GFlow {
     printToCSV(writeDirectory+"/number.csv", vector<int>(1,recIter));
 
     // Write walls to file
-    if (simData) 
-      if (!printToCSV(writeDirectory+"/walls", simData->getWalls()))
-	cout << "Failed to print walls to [" << writeDirectory << "/walls].\n";
+    if (simData)
+      if (!printToCSV(writeDirectory+"/walls.csv", simData->getWalls()))
+	cout << "Failed to print walls to [" << writeDirectory << "/walls.csv].\n";
 
     // Write bounds to file
     if (simData)

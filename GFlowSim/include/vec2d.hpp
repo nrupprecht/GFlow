@@ -22,7 +22,9 @@ struct vec2 {
 
   // Operators
   vec2 operator-(const vec2&) const;
+  vec2& operator-=(const vec2&);
   vec2 operator+(const vec2&) const;
+  vec2& operator+=(const vec2&);
   RealType operator*(const vec2&) const;
   friend vec2 operator*(const RealType, const vec2&);
 

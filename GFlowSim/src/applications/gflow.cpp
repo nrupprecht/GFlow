@@ -27,7 +27,7 @@ int main (int argc, char** argv) {
   integrator.setDataRecord(dataRecord);
   
   // Set parameters
-  integrator.initialize(1.);
+  integrator.initialize(5.);
 
   // Print initial message
   cout << "Starting integration.\n";

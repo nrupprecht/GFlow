@@ -10,6 +10,7 @@
 // Includes
 #include "SimData.hpp"
 #include "InteractionFunctions.hpp"
+#include "WallInteractionFunctions.hpp"
 
 namespace GFlow {
 
@@ -29,9 +30,11 @@ namespace GFlow {
     void wForces(const WListType&, SimData*) const;
 
   private:
-    inline void interact(int, int, SimData*) const;
+    inline void interactP(int, int, SimData*) const;
+    inline void interactW(int, int, SimData*) const;
 
     InteractionFunction interactionFunctions[16];
+    WallInteractionFunction wallInteractionFunctions[4];
   };
 
 }

@@ -116,6 +116,10 @@ namespace GFlow {
     return vec2(X,Y);
   }
 
+  vec2 SimData::getDisplacement(const vec2 a, const vec2 b) {
+    return getDisplacement(a.x, a.y, b.x, b.y);
+  }
+
 #ifdef USE_MPI
   void SimData::atomMove() {
 

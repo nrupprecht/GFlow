@@ -67,7 +67,7 @@ namespace GFlow {
     int* getItPtr()      { return it.getPtr(); }
 
     // Get walls
-    vector<Wall> getWalls() const { return walls; }
+    vector<Wall>& getWalls() { return walls; }
 
     // Get a list of all the particles
     list<Particle> getParticles();
@@ -76,7 +76,9 @@ namespace GFlow {
     void wrap(RealType&, RealType&); // Position wrapping
     void wrap(RealType&);            // Angle wrapping
 
+    // Displacement functions
     vec2 getDisplacement(const RealType, const RealType, const RealType, const RealType);
+    vec2 getDisplacement(const vec2, const vec2);
 
     // Get MPI data
     int getRank()    { return rank; }
@@ -86,6 +88,13 @@ namespace GFlow {
     void atomMove();
     void atomCopy();
 #endif
+
+    /** Mutators **/
+
+    // Set wrapping boundary conditions
+    void setWrap(bool b)  { wrapX = wrapY = b; }
+    void setWrapX(bool b) { wrapX = b; }
+    void setWrapY(bool b) { wrapY = b; }
 
   private:
 
