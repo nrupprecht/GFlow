@@ -63,7 +63,7 @@ namespace GFlow {
 
 #endif
 
-  void Sectorization::createVerletLists() {
+  void Sectorization::createVerletLists(bool force) {
     // Clear out lists
     verletList.clear();
 
@@ -71,6 +71,22 @@ namespace GFlow {
     RealType *px = simData->getPxPtr();
     RealType *py = simData->getPyPtr();
     RealType *sg = simData->getSgPtr();
+    int *it = simData->getItPtr();
+
+    // Check how far the particles have moved 
+    if (!force) {
+      vec2 *positionRecord = simData->getPRPtr();
+      int domain_size = simData->getDomainSize();
+      RealType max_moved = 0, sec_moved = 0;
+      for (int i=0; i<domain_size; ++i) {
+	if (it[i]<0) continue;
+	RealType moved = sqr( getDisplacement(px[i], py[i], positionRecord[i].x, positionRecord[i].y) );
+	if (moved>max_moved) max_moved = moved;
+	else if (moved>sec_moved) sec_moved = moved;
+      }
+      // Check if a redo may be neccessary
+      if (sqrt(max_moved)+sqrt(sec_moved) < skinDepth) return; // No need to redo
+    }
 
     // Create symmetric neighbor lists, look in sectors ( * ) or the sector you are in ( <*> )
     // +---------+
@@ -85,7 +101,7 @@ namespace GFlow {
 	for (auto p=sec_at(x,y).begin(); p!=sec_at(x,y).end(); ++p) {
 	  // Get your data
 	  int i = *p;
-	  double sigma = sg[i];
+	  RealType sigma = sg[i];
 	  list<int> nlist;
 	  nlist.push_back(i); // You are at the head of the list
 	  vec2 r;
@@ -129,9 +145,14 @@ namespace GFlow {
 	  if (nlist.size()>1) verletList.push_back(nlist);
 	}
     
+    // Update position record
+    vec2 *positionRecord = simData->getPRPtr();
+    int domain_size = simData->getDomainSize();
+    for (int i=0; i<domain_size; ++i) positionRecord[i] = vec2(px[i], py[i]);
+    
   }
 
-  void Sectorization::createWallLists() {
+  void Sectorization::createWallLists(bool force) {
     // Clear out lists
     wallList.clear();
 
@@ -142,6 +163,19 @@ namespace GFlow {
     RealType *sg = simData->getSgPtr();
     int *it = simData->getItPtr();
     
+    if (!force) {
+      vec2 *positionRecord = simData->getPRPtr();
+      int domain_size = simData->getDomainSize();
+      RealType max_moved = 0, sec_moved = 0;
+      for (int i=0; i<domain_size; ++i) {
+        if (it[i]<0) continue;
+        RealType moved = sqr( getDisplacement(px[i], py[i], positionRecord[i].x, positionRecord[i].y) );
+        if (moved>max_moved) max_moved = moved;
+      }
+      // Check if a redo is neccessary
+      if (max_moved < sqr(skinDepth)) return; // No need to redo
+    }
+
     // Create wall list
     int domain_size = simData->getDomainSize();
     for (int i=0; i<walls.size(); ++i) {
@@ -153,7 +187,7 @@ namespace GFlow {
 	// Correct the displacement -- THIS DOESNT ALWAYS WORK CORRECTLY
 	wallDisplacement(displacement, sg[j], walls.at(i));
 	// USE A PARTICLE CUTOFF
-	if (sqr(displacement)<sqr(1.25*sg[j] + skinDepth)) lst.push_back(j);
+	if (sqr(displacement)<sqr(sg[j] + skinDepth)) lst.push_back(j);
       }
       
       if (1<lst.size()) wallList.push_back(lst);
@@ -189,7 +223,7 @@ namespace GFlow {
   }
 
   inline void Sectorization::makeSectors() {
-    cutoff = maxCutR + secCutR;
+    cutoff = maxCutR + secCutR + skinDepth;
     // First estimate
     sdx = sdy = (cutoff+skinDepth);
     nsx = static_cast<int>( max(1., (bounds.right-bounds.left)/sdx) );

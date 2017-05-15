@@ -2,7 +2,7 @@
 #define __UTILITY_HPP__
 
 // Use MPI
-// #define USE_MPI 1
+#define USE_MPI 1
 
 // Includes  
 #include <iostream>
@@ -45,6 +45,8 @@ using std::string;
 #include <mpi.h>
 #endif
 
+#include "PrintingUtility.hpp"
+
 namespace GFlow {
 
   // What type to use as our real type
@@ -83,6 +85,17 @@ namespace GFlow {
 
   inline RealType sign(const RealType x) {
     return x<0 ? -1. : 1.;
+  }
+
+  /// Get the current time
+  inline auto current_time() {
+    return high_resolution_clock::now();
+  }
+
+  // high_resolution_clock::time_point
+  template<typename T> inline double time_span(T end, T start) {
+    duration<double> span = duration_cast<duration<double>>(end-start);
+    return span.count();
   }
 
   // PData records all the data you need to print particles:

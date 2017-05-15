@@ -31,6 +31,12 @@ namespace GFlow {
     else maxIter = 0;
   }
 
+  void Integrator::integrate() {
+    if (dataRecord) dataRecord->startTiming();
+    _integrate();
+    if (dataRecord) dataRecord->endTiming();
+  }
+
   void Integrator::setDataRecord(DataRecord* dr) {
     dataRecord = dr;
   }

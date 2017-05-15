@@ -3,6 +3,18 @@
 namespace GFlow {
   DataRecord::DataRecord() : delay(1./15.), lastRecord(-delay), recIter(0) {};
 
+  void DataRecord::startTiming() {
+    start_time = high_resolution_clock::now();
+  }
+
+  void DataRecord::endTiming() {
+    end_time = high_resolution_clock::now();
+  }
+
+  double DataRecord::getElapsedTime() {
+    return time_span(end_time, start_time);
+  }
+
   void DataRecord::record(SimData* simData, RealType time) {
     // Return if not enough time has gone by
     if (time-lastRecord<delay) return;
@@ -25,6 +37,12 @@ namespace GFlow {
 	positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], 0));
     // Add to position record
     positionRecord.push_back(positions);
+
+    // Record stat functions
+    for (int i=0; i<statFunctions.size(); ++i) {
+      StatFunc sf = statFunctions.at(i);
+      statFunctionData.at(i).push_back(pair<RealType, RealType>(time,sf(simData)));
+    }
 
     // Increment record counter
     recIter++;
@@ -56,6 +74,27 @@ namespace GFlow {
     for (int i=0; i<positionRecord.size(); ++i)
       if (!printToCSV(writeDirectory+"/Pos/pos", positionRecord.at(i), i))
 	cout << "Failed to print to [" << writeDirectory << "/Pos/pos" << i << "].\n";
+  }
+
+  void DataRecord::addStatFunction(StatFunc sf, string name) {
+    // Add a place to store this function's data
+    statFunctionData.push_back(vector<pair<RealType,RealType> >());
+
+    // Add the stat function
+    statFunctions.push_back(sf);
+
+    // Add the stat function's name
+    statFunctionName.push_back(name);
+  }
+
+  vector<pair<RealType, RealType> > DataRecord::getStatFunctionData(int index) {
+    if (index<0 || statFunctionData.size()<=index) throw BadStatFunction(index);
+    return statFunctionData.at(index);
+  }
+
+  string DataRecord::getStatFunctionName(int index) {
+    if (index<0 || statFunctionData.size()<=index) throw BadStatFunction(index);
+    return statFunctionName.at(index);
   }
   
 }

@@ -36,11 +36,11 @@ namespace GFlow {
     void atom_copy();
 #endif
 
-    // Create verlet lists
-    void createVerletLists();
+    // Create verlet lists (bool is for force make list)
+    void createVerletLists(bool=false);
 
-    // Create wall lists
-    void createWallLists();
+    // Create wall lists (bool is for force make list)
+    void createWallLists(bool=false);
 
     // Returns the particle verlet list
     auto& getVerletList() { return verletList; }

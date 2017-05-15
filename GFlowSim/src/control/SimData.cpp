@@ -22,6 +22,8 @@ namespace GFlow {
     ds.reserve2(domain_capacity, dcap, edge_capacity, ecap);
     cf.reserve2(domain_capacity, dcap, edge_capacity, ecap);
     it.reserve2(domain_capacity, dcap, edge_capacity, ecap, -1);
+    // Reserve positions record
+    positionRecord.reserve2(domain_capacity, dcap, edge_capacity, ecap);
     // Set sizes
     domain_capacity = dcap;
     edge_capacity  = ecap;
@@ -54,6 +56,8 @@ namespace GFlow {
     ds[domain_size] = p.dissipation;
     cf[domain_size] = p.coeff;
     it[domain_size] = p.interaction;
+    // Set position record
+    positionRecord[domain_size] = p.position;
     // Increment domain_size
     ++domain_size;
   }

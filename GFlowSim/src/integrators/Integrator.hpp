@@ -40,9 +40,7 @@ namespace GFlow {
     void setDataRecord(DataRecord* dr);
 
     // Integrate function wraps protected virtual function
-    void integrate() {
-      _integrate();
-    }
+    void integrate();
 
   protected:
     // Private virtual functions, purely abstract

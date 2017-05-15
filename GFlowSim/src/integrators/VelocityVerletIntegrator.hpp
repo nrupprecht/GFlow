@@ -9,6 +9,7 @@
 
 // Includes
 #include "Integrator.hpp"
+#include "../forces/DragForce.hpp"
 
 namespace GFlow {
 
@@ -28,6 +29,9 @@ namespace GFlow {
     // SimData and DataRecord initializing constructor
     VelocityVerletIntegrator(SimData*, DataRecord*);
 
+    // Add a drag force
+    void addDragForce(DragForce*);
+
   private:
     // Inherited private virtual functions
     virtual void _integrate(); // Inherits from Integrator
@@ -43,6 +47,9 @@ namespace GFlow {
 
     // How long it's been since we updated the sectors
     RealType updateTimer;
+
+    // Drag force objects
+    vector<DragForce*> dragForces;
 
   };
 

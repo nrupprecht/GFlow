@@ -6,6 +6,10 @@ namespace GFlow {
   VelocityVerletIntegrator::VelocityVerletIntegrator(SimData* sim) : Integrator(sim), updateDelay(0.002), updateTimer(0) {};
 
   VelocityVerletIntegrator::VelocityVerletIntegrator(SimData* sim, DataRecord* dat) : Integrator(sim, dat) {};
+
+  void VelocityVerletIntegrator::addDragForce(DragForce* drag) {
+    dragForces.push_back(drag);
+  }
   
   void VelocityVerletIntegrator::_integrate() {
     // Make sure we have a simulation to integrate
@@ -41,7 +45,7 @@ namespace GFlow {
       // Update sectorization
       sectors->sectorize();
       sectors->createVerletLists();
-      sectors->createWallLists();
+      sectors->createWallLists(true);
     }
 
     // Calculate forces
@@ -77,7 +81,7 @@ namespace GFlow {
     RealType *tq = simData->getTqPtr();
     RealType *im = simData->getImPtr();
     RealType *iI = simData->getIiPtr();
-    
+
     // Get the number of particles we need to update
     int domain_size = simData->getDomainSize();
     double hdt = 0.5*dt;
@@ -101,6 +105,12 @@ namespace GFlow {
       simData->wrap(th[i]);
       // Zero torque
       tq[i] = 0;
+    }
+    
+    // Apply drag forces
+    for (const auto& force : dragForces) {
+      for (int i=0; i<domain_size; ++i)
+	force->applyForce(simData, i);
     }
   }
   

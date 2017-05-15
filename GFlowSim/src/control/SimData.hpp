@@ -66,6 +66,9 @@ namespace GFlow {
     RealType* getCfPtr() { return cf.getPtr(); }
     int* getItPtr()      { return it.getPtr(); }
 
+    // Get position record
+    vec2* getPRPtr()     { return positionRecord.getPtr(); }
+
     // Get walls
     vector<Wall>& getWalls() { return walls; }
 
@@ -128,6 +131,9 @@ namespace GFlow {
     aligned_array<RealType> cf;
     // Interaction is -1 for empty array spaces
     aligned_array<int> it;
+
+    // Positions at the last verlet list creation
+    aligned_array<vec2> positionRecord;
 
     // Wall data
     vector<Wall> walls;

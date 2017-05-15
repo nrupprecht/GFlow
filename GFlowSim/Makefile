@@ -2,7 +2,7 @@ CC = icpc
 MPICC = mpic++
 CFLAG = -std=c++14 -Wall
 OPTFLAGS = -xHost -O3 -no-prec-div -static -fp-model fast=2 -restrict -funroll-loops -no-inline-max-size #-qopt-report=5
-FLAGS = $(CFLAG) -g # $(OPTFLAGS)
+FLAGS = $(CFLAG) -g $(OPTFLAGS)
 
 # All object files needed
 CONTROL_OBJECTS = build/Creator.o build/Sectorization.o build/SimData.o build/ForceHandler.o
@@ -11,16 +11,21 @@ INT_OBJECTS     = build/VelocityVerletIntegrator.o build/Integrator.o
 OBJ_OBJECTS     = build/Particle.o build/Wall.o
 INC_OBJECTS     = build/vec2d.o
 TEST_OBJECTS    = build/test_aligned_array.o
+FORCE_OBJECTS   = build/ViscousDrag.o
 
-all: bin/gflow bin/test_aligned_array
+ALL_OBJECTS     = $(CONTROL_OBJECTS) $(DATA_OBJECTS) $(INT_OBJECTS) $(OBJ_OBJECTS) $(INC_OBJECTS) $(FORCE_OBJECTS)
 
-bin/gflow: build/gflow.o $(CONTROL_OBJECTS) $(DATA_OBJECTS) $(INT_OBJECTS) $(OBJ_OBJECTS) $(INC_OBJECTS)
+all: bin/gflow # bin/test_aligned_array
+
+###### Executables #####
+bin/gflow: build/gflow.o $(ALL_OBJECTS)
 	$(MPICC) $^ -o $@
 
 bin/test_aligned_array: build/test_aligned_array.o
 	$(MPICC) $^ -o $@
 
-# Objects
+#####   Objects   #####
+# In /src/
 build/%.o: src/applications/%.cpp
 	$(MPICC) $(FLAGS) -c -o $@ $<
 
@@ -36,12 +41,17 @@ build/%.o: src/data/%.cpp
 build/%.o: src/objects/%.cpp
 	$(MPICC) $(FLAGS) -c -o $@ $<
 
+build/%.o: src/forces/%.cpp
+	$(MPICC) $(FLAGS) -c -o $@ $<
+
+# Not in /src/
 build/%.o: include/%.cpp
 	$(MPICC) $(FLAGS) -c -o $@ $<
 
 build/%.o: test/%.cpp
 	$(MPICC) $(FLAGS) -c -o $@ $<
 
+#####   Clean    #####
 .PHONY : clean
 clean:
 	rm -f build/*.o build/*.optrpt *.o *.optrpt bin/*
