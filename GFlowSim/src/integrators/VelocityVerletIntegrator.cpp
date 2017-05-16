@@ -16,12 +16,19 @@ namespace GFlow {
     if (simData==nullptr || sectors==nullptr) return;
     // Reset iter
     iter = 0;
+    // Make sure we have initial verlet lists
+    sectors->createVerletLists(true);
+    sectors->createWallLists(true);
+    // Set initial record time
+    if (dataRecord) dataRecord->markTime();
     // Do the integration loop
     while (iter<maxIter) {
       preStep();
       integrateStep();
       postStep();
     }
+    // Get final sectors data
+    if (dataRecord) dataRecord->getSectorizationData(sectors);
   }
   
   void VelocityVerletIntegrator::preStep() {
@@ -43,7 +50,6 @@ namespace GFlow {
       simData->atomCopy();
 #endif
       // Update sectorization
-      sectors->sectorize();
       sectors->createVerletLists();
       sectors->createWallLists(true);
     }

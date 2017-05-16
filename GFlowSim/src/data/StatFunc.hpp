@@ -38,6 +38,25 @@ namespace GFlow {
     // Return KE
     return KE;
   }
+
+  inline RealType StatFunc_MaxVelocitySigmaRatio(SimData* simData) {
+    RealType MVSR = 0;
+    // Get data pointers
+    RealType *vx = simData->getVxPtr();
+    RealType *vy = simData->getVyPtr();
+    RealType *sg = simData->getSgPtr();
+    // Interaction pointer
+    int *it = simData->getItPtr();
+    // Gather data
+    int domain_size = simData->getDomainSize();
+    for (int i=0; i<domain_size; ++i) {
+      if (-1<it[i]) {
+	RealType ratio = sqrt(sqr(vx[i])+sqr(vy[i]))/sg[i];
+	if (ratio>MVSR) MVSR = ratio;
+      }
+    }
+    return MVSR;
+  }
   
 }
 #endif // __STAT_FUNC_HPP__

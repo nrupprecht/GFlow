@@ -48,13 +48,16 @@ namespace GFlow {
 
     // Time step
     RealType dt;
+
     // Current time
     RealType time;
+
     // How much simulated time the simulation should run for
     RealType runTime;
 
     // Current iteration
     int iter;
+
     // Max iteration
     int maxIter;
     

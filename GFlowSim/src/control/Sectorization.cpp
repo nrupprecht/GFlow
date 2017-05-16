@@ -2,7 +2,7 @@
 
 namespace GFlow {
 
-  Sectorization::Sectorization() : sectors(0), cutoff(0.), skinDepth(0.025), maxCutR(0), secCutR(0), nsx(0), nsy(0), sdx(0), sdy(0), isdx(0), isdy(0), bounds(NullBounds), simBounds(NullBounds), wrapX(true), wrapY(true) {    
+  Sectorization::Sectorization() : sectors(0), cutoff(0.), skinDepth(default_sectorization_skin_depth), maxCutR(0), secCutR(0), nsx(0), nsy(0), sdx(0), sdy(0), isdx(0), isdy(0), bounds(NullBounds), simBounds(NullBounds), wrapX(true), wrapY(true) {    
     rank = 0;
     numProc = 0;
   }
@@ -51,7 +51,8 @@ namespace GFlow {
     }
   }
 
-#ifdef USE_MPI
+  //******* MPI related functions ************//
+#ifdef USE_MPI 
 
   void Sectorization::atom_move() {
     cout << "Moving atoms.\n";
@@ -62,6 +63,7 @@ namespace GFlow {
   }
 
 #endif
+  //******* End MPI related functions ********//
 
   void Sectorization::createVerletLists(bool force) {
     // Clear out lists
@@ -87,6 +89,9 @@ namespace GFlow {
       // Check if a redo may be neccessary
       if (sqrt(max_moved)+sqrt(sec_moved) < skinDepth) return; // No need to redo
     }
+
+    // Redo the sectorization so we can make our verlet lists
+    sectorize();
 
     // Create symmetric neighbor lists, look in sectors ( * ) or the sector you are in ( <*> )
     // +---------+

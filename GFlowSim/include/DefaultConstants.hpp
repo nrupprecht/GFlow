@@ -16,5 +16,8 @@ namespace GFlow {
   const RealType default_wall_dissipation     = 0; // 50.;
   const RealType default_wall_coeff           = 0; // sqrt(0.5);
 
+  // Sectorization constants
+  const RealType default_sectorization_skin_depth = 0.025;
+
 }
 #endif // __DEFAULT_CONSTANTS_HPP__

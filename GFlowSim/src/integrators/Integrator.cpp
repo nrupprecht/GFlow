@@ -32,9 +32,18 @@ namespace GFlow {
   }
 
   void Integrator::integrate() {
-    if (dataRecord) dataRecord->startTiming();
+    // Beginning data record stuff
+    if (dataRecord) {
+      dataRecord->setRunTime(runTime);
+      dataRecord->startTiming();
+    }
+    // Do the integration
     _integrate();
-    if (dataRecord) dataRecord->endTiming();
+    // Ending data record stuff
+    if (dataRecord) {
+      dataRecord->endTiming();
+      dataRecord->setActualTime(time);
+    }
   }
 
   void Integrator::setDataRecord(DataRecord* dr) {

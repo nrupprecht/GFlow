@@ -9,14 +9,6 @@
 
 namespace GFlow {
 
-  template<typename T> inline string toStr(T d) {
-    stringstream stream;
-    string str;
-    stream << d;
-    stream >> str;
-    return str;
-  }
-
   inline string toCSV(const int n) { return toStr(n); }
 
   inline string toCSV(const double n) { return toStr(n); }

@@ -42,6 +42,8 @@ namespace GFlow {
     // Create wall lists (bool is for force make list)
     void createWallLists(bool=false);
 
+    /****** Accessors *****/
+
     // Returns the particle verlet list
     auto& getVerletList() { return verletList; }
 
@@ -57,6 +59,16 @@ namespace GFlow {
     // Displacement functions
     vec2 getDisplacement(const RealType, const RealType, const RealType, const RealType);
     vec2 getDisplacement(const vec2, const vec2);
+
+    // Data accessors
+    int getNSX()            { return nsx; }
+    int getNSY()            { return nsy; }
+    RealType getSDX()       { return sdx; }
+    RealType getSDY()       { return sdy; }
+    RealType getCutoff()    { return cutoff; }
+    RealType getSkinDepth() { return skinDepth; }
+    RealType getMaxCutR()   { return maxCutR; }
+    RealType getSecCutR()   { return secCutR; }
 
   private:
     // Private helper functions

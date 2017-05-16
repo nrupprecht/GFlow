@@ -21,13 +21,14 @@ namespace GFlow {
     simData->reserve(domain_size, edge_size);
     // Add some particles
     RealType sigma = 0.05;
-    RealType edge = 0.5;
+    RealType edge = 0.;
+    RealType baseVelocity = 0.1;
     for (int i=0; i<domain_size; ++i) {
       // Random particle
       RealType X     = (4-2*sigma-2*edge)*drand48()+sigma+edge;
       RealType Y     = (4-2*sigma-2*edge)*drand48()+sigma+edge;
       RealType theta = 2*PI*drand48();
-      RealType V     = normal_dist(generator);
+      RealType V     = baseVelocity*normal_dist(generator);
       // Set particle values
       Particle P(X, Y, sigma);
       P.velocity = V*vec2(cos(theta), sin(theta));

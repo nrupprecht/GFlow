@@ -14,6 +14,7 @@ using namespace GFlow;
 int main (int argc, char** argv) {
 
   int rank = 0, numProc = 0;
+
   // Set up MPI
 #ifdef USE_MPI
   MPI::Init();
@@ -29,7 +30,13 @@ int main (int argc, char** argv) {
   // Set up a data recorder
   DataRecord *dataRecord = new DataRecord;
   integrator.setDataRecord(dataRecord);
-  dataRecord->addStatFunction(StatFunc_AveKE, "KE");
+  if (dataRecord) {
+    // dataRecord->addStatFunction(StatFunc_AveKE, "KE");
+    // dataRecord->addStatFunction(StatFunc_MaxVelocitySigmaRatio, "ratio");
+
+    dataRecord->setRecPos(false);
+    dataRecord->setRecPerf(false);
+  }
 
   // Set parameters
   double time = 60.;
@@ -63,18 +70,33 @@ int main (int argc, char** argv) {
 
   // Print a final message
   cout << "Integration ended.\n";
-  double runTime = dataRecord->getElapsedTime();
-  cout << "Run time: " << runTime << endl;
-  cout << "Ratio: " << time / runTime << endl;
+  if (dataRecord) {
+    // Print out time and ratio
+    double runTime = dataRecord->getElapsedTime();
+    cout << "Run time: " << runTime << endl;
+    cout << "Ratio: " << time / runTime << endl;
 
-  // Get data from the data recorder
-  dataRecord->writeData("RunData", simData);
-  
-  int numStatFuncs = dataRecord->getNumberOfStatFunctions();
-  for (int i=0; i<numStatFuncs; ++i) {
-    auto data   = dataRecord->getStatFunctionData(i);
-    string name = dataRecord->getStatFunctionName(i);
-    cout << name << "=" << data << endl;
+    // Write animation data to files
+    dataRecord->writeData(simData);
+    
+    // Write sectorization data to file
+    dataRecord->writeRunSummary();
+
+    // Write out stat function data - for now
+    int numStatFuncs = dataRecord->getNumberOfStatFunctions();
+    for (int i=0; i<numStatFuncs; ++i) {
+      auto data   = dataRecord->getStatFunctionData(i);
+      string name = dataRecord->getStatFunctionName(i);
+      cout << name << "=" << mmPreproc(data,3) << ";\n";
+      cout << "ListLinePlot[" << name << ",ImageSize->Large,PlotStyle->Black]\n";
+    }
+
+    // Print performance
+    auto performanceRecord = dataRecord->getPerformanceRecord();
+    if (performanceRecord.size()>0) {
+      cout << "perf=" << mmPreproc(performanceRecord,3) << ";\n";
+      cout << "ListLinePlot[perf,ImageSize->Large,PlotStyle->Black]\n";
+    }
   }
       
   
@@ -83,8 +105,8 @@ int main (int argc, char** argv) {
 #endif
 
   // Clean up
-  delete simData;
-  delete dataRecord;
+  if (simData)    delete simData;
+  if (dataRecord) delete dataRecord;
 
   return 0;
 }
