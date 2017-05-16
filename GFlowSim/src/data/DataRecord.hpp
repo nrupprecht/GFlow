@@ -15,6 +15,9 @@
 
 namespace GFlow {
 
+  // Forward declaration to Integrator
+  class Integrator;
+
   /*
    * @class DataRecord
    * This class generates statistics from simulation data
@@ -45,7 +48,7 @@ namespace GFlow {
     void writeData(SimData* = nullptr);
 
     // Write run summary data
-    void writeRunSummary();
+    void writeRunSummary(SimData* = nullptr, Integrator* = nullptr);
 
     /*** Mutators ***/
 

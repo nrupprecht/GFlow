@@ -6,7 +6,8 @@ QOPT = # -qopt-report 5
 FLAGS = $(CFLAG) -g $(QOPT) $(OPTFLAGS)
 
 # All object files needed
-CONTROL_OBJECTS = build/Creator.o build/Sectorization.o build/SimData.o build/ForceHandler.o
+CONTROL_OBJECTS = build/Sectorization.o build/SimData.o build/ForceHandler.o
+CREATION_OBJECTS = build/Creator.o
 DATA_OBJECTS    = build/DataRecord.o
 INT_OBJECTS     = build/VelocityVerletIntegrator.o build/Integrator.o
 OBJ_OBJECTS     = build/Particle.o build/Wall.o
@@ -14,7 +15,7 @@ INC_OBJECTS     = build/vec2d.o
 TEST_OBJECTS    = build/test_aligned_array.o
 FORCE_OBJECTS   = build/ViscousDrag.o
 
-ALL_OBJECTS     = $(CONTROL_OBJECTS) $(DATA_OBJECTS) $(INT_OBJECTS) $(OBJ_OBJECTS) $(INC_OBJECTS) $(FORCE_OBJECTS)
+ALL_OBJECTS     = $(CONTROL_OBJECTS) $(CREATION_OBJECTS) $(DATA_OBJECTS) $(INT_OBJECTS) $(OBJ_OBJECTS) $(INC_OBJECTS) $(FORCE_OBJECTS)
 
 all: bin/gflow # bin/test_aligned_array
 
@@ -30,20 +31,24 @@ bin/test_aligned_array: build/test_aligned_array.o
 build/%.o: src/applications/%.cpp
 	$(MPICC) -c -o $@ $< $(FLAGS)
 
-build/%.o: src/integrators/%.cpp
+build/%.o: src/control/%.cpp
 	$(MPICC) -c -o $@ $< $(FLAGS)
 
-build/%.o: src/control/%.cpp
+build/%.o: src/creation/%.cpp
 	$(MPICC) -c -o $@ $< $(FLAGS)
 
 build/%.o: src/data/%.cpp
 	$(MPICC) -c -o $@ $< $(FLAGS)
 
+build/%.o: src/forces/%.cpp
+	$(MPICC) -c -o $@ $< $(FLAGS)
+
+build/%.o: src/integrators/%.cpp
+	$(MPICC) -c -o $@ $< $(FLAGS)
+
 build/%.o: src/objects/%.cpp
 	$(MPICC) -c -o $@ $< $(FLAGS)
 
-build/%.o: src/forces/%.cpp
-	$(MPICC) -c -o $@ $< $(FLAGS)
 
 # Not in /src/
 build/%.o: include/%.cpp

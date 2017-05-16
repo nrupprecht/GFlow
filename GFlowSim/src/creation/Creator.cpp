@@ -4,7 +4,8 @@ namespace GFlow {
   
   SimData* Creator::create() {
     // Create bounds and hand them to a sim data object
-    Bounds simBounds(0,4,0,4);
+    RealType width = 8, height = 8;
+    Bounds simBounds(0,width,0,height);
     SimData* simData = new SimData(simBounds, simBounds);
 
     // Set wrapping

@@ -9,13 +9,29 @@
 
 // Includes
 #include "../../include/vec2d.hpp"
-#include "SimData.hpp"
+#include "../control/SimData.hpp"
 #include "../integrators/VelocityVerletIntegrator.hpp"
 #include "../objects/Particle.hpp"
 #include "../objects/Wall.hpp"
 #include "../forces/ViscousDrag.hpp"
+// #include "../creation/DataCreator.hpp"
 
 namespace GFlow {
+
+  /*
+   * @class Region
+   * Contains the data for constructing a region full of particles
+   *
+   */
+  /*
+  struct Region {
+    RealType left, right, bottom, top;
+    int number;
+    
+    DataCreator *sigma, *position
+    
+  };
+  */
 
   /*
    * @class Creator
@@ -27,6 +43,8 @@ namespace GFlow {
     
     // In the future this will take argments
     SimData* create();
+
+    // void createRegion(Region, SimData*);
     
   private:
     

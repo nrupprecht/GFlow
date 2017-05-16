@@ -1,4 +1,5 @@
 #include "DataRecord.hpp"
+#include "../integrators/Integrator.hpp"
 
 namespace GFlow {
   DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-delay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), recPerf(false) {};
@@ -123,7 +124,7 @@ namespace GFlow {
 	cout << "Failed to print to [" << writeDirectory << "/Pos/pos" << i << "].\n";
   }
 
-  void DataRecord::writeRunSummary() {
+  void DataRecord::writeRunSummary(SimData* simData, Integrator* integrator) {
     std::ofstream fout(writeDirectory+"/run_summary.txt");
     if (fout.fail()) {
       // Write error message
@@ -143,8 +144,26 @@ namespace GFlow {
     fout << "\n";
     fout << "  - Actual run Time: " << elapsedTime << "\n";
     fout << "  - Ratio: " << runTime/elapsedTime << "\n";
+    fout << "  - Inverse Ratio: " << elapsedTime/runTime << "\n";
     fout << "\n";
 
+    if (simData) {
+      // Print simulation summary
+      fout << "Simulation and space:\n";
+      fout << "  - Dimensions: " << simData->simBounds << "\n";
+      fout << "  - Number of particles: " << simData->domain_size << "\n";
+      fout << "  - Ratio x Particles:   " << runTime/elapsedTime*simData->domain_size << "\n";
+      fout << "\n";
+    }
+
+    if (integrator) {
+      fout << "Integration:\n";
+      fout << "  - Iterations: " << integrator->iter << "\n";
+      fout << "  - Time step:  " << integrator->dt << "\n";
+      fout << "  - Time per iteration: " << elapsedTime/integrator->iter << "\n";
+      fout << "\n";
+    }
+    
     // Print the sectorization summary
     fout << "Sectorization summary (as of end of simulation):\n";
     fout << "  - Grid dimensions: " << nsx << " x " << nsy << "\n";

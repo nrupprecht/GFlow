@@ -15,6 +15,9 @@
  
 namespace GFlow {
 
+  // Forward declaration to DataRecord
+  class DataRecord;
+
   /*
    * @class SimData
    * Base class for integrators which use forces/torques to advance the simulation
@@ -41,6 +44,9 @@ namespace GFlow {
 
     // Integrate function wraps protected virtual function
     void integrate();
+
+    // DataRecord is a friend class
+    friend class DataRecord;
 
   protected:
     // Private virtual functions, purely abstract

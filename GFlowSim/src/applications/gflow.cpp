@@ -4,7 +4,7 @@
  *
  */
 
-#include "../control/Creator.hpp"
+#include "../creation/Creator.hpp"
 #include "../integrators/VelocityVerletIntegrator.hpp"
 
 #include "ArgParse.h"
@@ -87,7 +87,7 @@ int main (int argc, char** argv) {
     dataRecord->writeData(simData);
     
     // Write sectorization data to file
-    dataRecord->writeRunSummary();
+    dataRecord->writeRunSummary(simData, &integrator);
 
     // Write out stat function data - for now
     int numStatFuncs = dataRecord->getNumberOfStatFunctions();
