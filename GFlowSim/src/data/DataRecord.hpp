@@ -107,6 +107,8 @@ namespace GFlow {
     RealType cutoff, skinDepth;
     int numberOfVerletLists;
     RealType avePerVerletList;
+    int occupiedSectors;
+    RealType avePerOccupiedSector;
 
     // Record data
     vector<vector<PData> > positionRecord;

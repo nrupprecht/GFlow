@@ -13,6 +13,9 @@
 
 namespace GFlow {
 
+  // Forward declaration to DataRecord
+  class DataRecord;
+
   /*
    * @class Sectorization
    * Uses cell lists to create verlet lists so we can easily calculate forces
@@ -35,6 +38,9 @@ namespace GFlow {
     void atom_move();
     void atom_copy();
 #endif
+
+    // Check if we need to remake our lists
+    bool checkNeedRemake();
 
     // Create verlet lists (bool is for force make list)
     void createVerletLists(bool=false);
@@ -67,8 +73,12 @@ namespace GFlow {
     RealType getSDY()       { return sdy; }
     RealType getCutoff()    { return cutoff; }
     RealType getSkinDepth() { return skinDepth; }
+    RealType getMovement()  { return movement; }
     RealType getMaxCutR()   { return maxCutR; }
     RealType getSecCutR()   { return secCutR; }
+
+    // DataRecord is a friend class
+    friend class DataRecord;
 
   private:
     // Private helper functions
@@ -97,6 +107,7 @@ namespace GFlow {
     // Sectorization Data
     RealType cutoff;     // The cutoff radius
     RealType skinDepth;  // The skin depth
+    RealType movement;   // The max possible movement of particles relative to one another since the last verlet list construction
     RealType maxCutR, secCutR; // First and second largest particle cutoffs
     int nsx, nsy;        // The number of sectors
     RealType sdx, sdy;   // Sector width and height

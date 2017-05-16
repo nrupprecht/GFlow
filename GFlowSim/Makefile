@@ -1,8 +1,9 @@
 CC = icpc
 MPICC = mpic++
 CFLAG = -std=c++14 -Wall
-OPTFLAGS = -xHost -O3 -no-prec-div -static -fp-model fast=2 -restrict -funroll-loops -no-inline-max-size #-qopt-report=5
-FLAGS = $(CFLAG) -g $(OPTFLAGS)
+OPTFLAGS = -xHost -O3 -no-prec-div -static -fp-model fast=2 -restrict -funroll-loops -no-inline-max-size
+QOPT = # -qopt-report 5
+FLAGS = $(CFLAG) -g $(QOPT) $(OPTFLAGS)
 
 # All object files needed
 CONTROL_OBJECTS = build/Creator.o build/Sectorization.o build/SimData.o build/ForceHandler.o
@@ -27,22 +28,22 @@ bin/test_aligned_array: build/test_aligned_array.o
 #####   Objects   #####
 # In /src/
 build/%.o: src/applications/%.cpp
-	$(MPICC) $(FLAGS) -c -o $@ $<
+	$(MPICC) -c -o $@ $< $(FLAGS)
 
 build/%.o: src/integrators/%.cpp
-	$(MPICC) $(FLAGS) -c -o $@ $<
+	$(MPICC) -c -o $@ $< $(FLAGS)
 
 build/%.o: src/control/%.cpp
-	$(MPICC) $(FLAGS)-c -o $@ $<
+	$(MPICC) -c -o $@ $< $(FLAGS)
 
 build/%.o: src/data/%.cpp
-	$(MPICC) $(FLAGS) -c -o $@ $<
+	$(MPICC) -c -o $@ $< $(FLAGS)
 
 build/%.o: src/objects/%.cpp
-	$(MPICC) $(FLAGS) -c -o $@ $<
+	$(MPICC) -c -o $@ $< $(FLAGS)
 
 build/%.o: src/forces/%.cpp
-	$(MPICC) $(FLAGS) -c -o $@ $<
+	$(MPICC) -c -o $@ $< $(FLAGS)
 
 # Not in /src/
 build/%.o: include/%.cpp

@@ -9,8 +9,8 @@
 
 // Includes
 #include "SimData.hpp"
-#include "InteractionFunctions.hpp"
-#include "WallInteractionFunctions.hpp"
+#include "../forces/InteractionFunctions.hpp"
+#include "../forces/WallInteractionFunctions.hpp"
 
 namespace GFlow {
 

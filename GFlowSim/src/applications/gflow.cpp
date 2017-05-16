@@ -14,6 +14,34 @@ using namespace GFlow;
 int main (int argc, char** argv) {
 
   int rank = 0, numProc = 0;
+  RealType time = 10;
+  bool animate = false;
+  bool ratio = false;
+  bool KE = false;
+  bool perf = false;
+
+  // Can get options from the command line
+  ArgParse parser;
+  try {
+    parser.set(argc, argv);
+  }
+  catch (ArgParse::IllegalToken token) {
+    cout << "Illegal Token: " << token.c << ". Exiting.\n";
+    exit(1);
+  }
+  parser.get("time", time);
+  parser.get("animate", animate);
+  parser.get("ratio", ratio);
+  parser.get("KE", KE);
+  parser.get("perf", perf);
+  // Make sure we didn't enter any illegal tokens (ones not listed above) on the command line
+   try {
+     parser.check();
+   }
+   catch (ArgParse::UncheckedToken illegal) {
+     cout << "Illegal option: [" << illegal.token << "]. Exiting.\n";
+     exit(1);
+   }
 
   // Set up MPI
 #ifdef USE_MPI
@@ -31,35 +59,14 @@ int main (int argc, char** argv) {
   DataRecord *dataRecord = new DataRecord;
   integrator.setDataRecord(dataRecord);
   if (dataRecord) {
-    // dataRecord->addStatFunction(StatFunc_AveKE, "KE");
-    // dataRecord->addStatFunction(StatFunc_MaxVelocitySigmaRatio, "ratio");
+    if (KE) dataRecord->addStatFunction(StatFunc_AveKE, "KE");
+    if (ratio) dataRecord->addStatFunction(StatFunc_MaxVelocitySigmaRatio, "ratio");
 
-    dataRecord->setRecPos(false);
-    dataRecord->setRecPerf(false);
+    dataRecord->setRecPos(animate);
+    dataRecord->setRecPerf(perf);
   }
 
-  // Set parameters
-  double time = 60.;
-
-  // Can get the time from the command line
-  ArgParse parser;
-  try {
-    parser.set(argc, argv);
-  }
-  catch (ArgParse::IllegalToken token) {
-    cout << "Illegal Token: " << token.c << ". Exiting.\n";
-    exit(1);
-  }
-  parser.get("time", time);
-  // Make sure we didn't enter any illegal tokens (ones not listed above) on the command line
-   try {
-     parser.check();
-   }
-   catch (ArgParse::UncheckedToken illegal) {
-     cout << "Illegal option: [" << illegal.token << "]. Exiting.\n";
-     exit(1);
-   }
-
+  // Set run time
   integrator.initialize(time);
 
   // Print initial message

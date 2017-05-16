@@ -9,7 +9,7 @@
 
 // Includes
 #include "Integrator.hpp"
-#include "../forces/DragForce.hpp"
+#include "../forces/ExternalForce.hpp"
 
 namespace GFlow {
 
@@ -30,11 +30,12 @@ namespace GFlow {
     VelocityVerletIntegrator(SimData*, DataRecord*);
 
     // Add a drag force
-    void addDragForce(DragForce*);
+    void addExternalForce(ExternalForce*);
 
   private:
     // Inherited private virtual functions
     virtual void _integrate(); // Inherits from Integrator
+
     // Private virtual functions
     virtual void preStep();
     virtual void integrateStep();
@@ -45,11 +46,17 @@ namespace GFlow {
     // Delay between updating sectors
     RealType updateDelay;
 
+    // Delay multiplying factor
+    RealType delayFactor;
+
+    // Time since last verlet list creation
+    RealType verletListTimer;
+
     // How long it's been since we updated the sectors
     RealType updateTimer;
 
     // Drag force objects
-    vector<DragForce*> dragForces;
+    vector<ExternalForce*> externalForces;
 
   };
 

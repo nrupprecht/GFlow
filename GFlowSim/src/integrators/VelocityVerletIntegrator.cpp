@@ -1,14 +1,14 @@
 #include "VelocityVerletIntegrator.hpp"
 
 namespace GFlow {
-  VelocityVerletIntegrator::VelocityVerletIntegrator() : Integrator(), updateDelay(0.002), updateTimer(0) {};
+  VelocityVerletIntegrator::VelocityVerletIntegrator() : Integrator(), updateDelay(default_update_delay), delayFactor(default_delay_factor), verletListTimer(0), updateTimer(0) {};
 
-  VelocityVerletIntegrator::VelocityVerletIntegrator(SimData* sim) : Integrator(sim), updateDelay(0.002), updateTimer(0) {};
+  VelocityVerletIntegrator::VelocityVerletIntegrator(SimData* sim) : Integrator(sim), updateDelay(default_update_delay), delayFactor(default_delay_factor), verletListTimer(0), updateTimer(0) {};
 
-  VelocityVerletIntegrator::VelocityVerletIntegrator(SimData* sim, DataRecord* dat) : Integrator(sim, dat) {};
+  VelocityVerletIntegrator::VelocityVerletIntegrator(SimData* sim, DataRecord* dat) : Integrator(sim, dat), updateDelay(default_update_delay), delayFactor(default_delay_factor), verletListTimer(0), updateTimer(0) {};
 
-  void VelocityVerletIntegrator::addDragForce(DragForce* drag) {
-    dragForces.push_back(drag);
+  void VelocityVerletIntegrator::addExternalForce(ExternalForce* force) {
+    externalForces.push_back(force);
   }
   
   void VelocityVerletIntegrator::_integrate() {
@@ -27,8 +27,6 @@ namespace GFlow {
       integrateStep();
       postStep();
     }
-    // Get final sectors data
-    if (dataRecord) dataRecord->getSectorizationData(sectors);
   }
   
   void VelocityVerletIntegrator::preStep() {
@@ -43,15 +41,36 @@ namespace GFlow {
     if (updateDelay<updateTimer) {
       // Reset timer
       updateTimer = 0;
+
       // If using mpi
 #ifdef USE_MPI
       // Exchange data with other processors
       simData->atomMove();
       simData->atomCopy();
 #endif
+
+      // Update verlet list timer
+      verletListTimer += dt;      
+
       // Update sectorization
-      sectors->createVerletLists();
-      sectors->createWallLists(true);
+      if (sectors->checkNeedRemake()) {
+	sectors->createVerletLists();
+	sectors->createWallLists(true);
+
+	// Calculate new update delay
+	RealType movement = sectors->getMovement();
+	RealType skinDepth = sectors->getSkinDepth();
+	RealType ratio = delayFactor*skinDepth/movement; // Want movement to be slightly greater then skin depth after every update delay
+	
+	// Set the update delay
+	updateDelay = ratio*verletListTimer;
+
+	// If something suddenly starts moving, and the update delay is to long, there could be problems. For now, we deal with that by capping the update delay 
+	updateDelay = updateDelay>default_max_update_delay ? default_max_update_delay : updateDelay;	
+
+	// Reset verlet list timer
+	verletListTimer = 0;
+      }
     }
 
     // Calculate forces
@@ -113,8 +132,8 @@ namespace GFlow {
       tq[i] = 0;
     }
     
-    // Apply drag forces
-    for (const auto& force : dragForces) {
+    // Apply external forces
+    for (const auto& force : externalForces) {
       for (int i=0; i<domain_size; ++i)
 	force->applyForce(simData, i);
     }
@@ -122,13 +141,13 @@ namespace GFlow {
   
   void VelocityVerletIntegrator::secondHalfKick() {
     // Get the neccessary data
-    RealType *px = simData->getPxPtr();
-    RealType *py = simData->getPyPtr();
+    // RealType *px = simData->getPxPtr();
+    // RealType *py = simData->getPyPtr();
     RealType *vx = simData->getVxPtr();
     RealType *vy = simData->getVyPtr();
     RealType *fx = simData->getFxPtr();
     RealType *fy = simData->getFyPtr();
-    RealType *th = simData->getThPtr();
+    // RealType *th = simData->getThPtr();
     RealType *om = simData->getOmPtr();
     RealType *tq = simData->getTqPtr();
     RealType *im = simData->getImPtr();

@@ -2,7 +2,7 @@
 #define __VISCOUS_DRAG_HPP__
 
 // Includes
-#include "DragForce.hpp"
+#include "ExternalForce.hpp"
 
 namespace GFlow {
   
@@ -11,7 +11,7 @@ namespace GFlow {
    * A viscous force
    *
    */
-  class ViscousDrag : public DragForce {
+  class ViscousDrag : public ExternalForce {
   public:
     // Default constructor - sets the viscosity to that of water
     ViscousDrag();

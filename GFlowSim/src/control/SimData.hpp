@@ -16,6 +16,9 @@
 
 namespace GFlow {
 
+  // Forward declaration to DataRecord
+  class DataRecord;
+
   /*
    * @class SimData
    *
@@ -66,6 +69,14 @@ namespace GFlow {
     RealType* getCfPtr() { return cf.getPtr(); }
     int* getItPtr()      { return it.getPtr(); }
 
+    // Summary pointer
+    RealType** getPData();
+
+    // Array access (non-checking)
+    RealType& getPx(int i) { return px[i]; }
+    RealType& getPy(int i) { return py[i]; }
+    RealType& getSg(int i) { return sg[i]; }
+
     // Get position record
     vec2* getPRPtr()     { return positionRecord.getPtr(); }
 
@@ -99,6 +110,9 @@ namespace GFlow {
     void setWrapX(bool b) { wrapX = b; }
     void setWrapY(bool b) { wrapY = b; }
 
+    // DataRecord is a friend class
+    friend class DataRecord;
+    
   private:
 
     // Number of domain particles
@@ -131,6 +145,10 @@ namespace GFlow {
     aligned_array<RealType> cf;
     // Interaction is -1 for empty array spaces
     aligned_array<int> it;
+
+    // Data summary pointer
+    RealType *pdata[15];
+    void setPData();
 
     // Positions at the last verlet list creation
     aligned_array<vec2> positionRecord;

@@ -4,8 +4,8 @@
  *
  */
 
-#ifndef __DRAG_FORCE_HPP__
-#define __DRAG_FORCE_HPP__
+#ifndef __EXTERNAL_FORCE_HPP__
+#define __EXTERNAL_FORCE_HPP__
 
 // Includes
 #include "../control/SimData.hpp"
@@ -13,10 +13,10 @@
 namespace GFlow {
 
   /*
-   * @class DragForce
-   * Base class for drag forces
+   * @class ExternalForce
+   * Base class for external forces (e.g. gravity, drag, etc)
    */
-  class DragForce {
+  class ExternalForce {
   public:
     void applyForce(SimData* simData, int i) {
       _applyForce(simData, i);
@@ -28,4 +28,4 @@ namespace GFlow {
   };
 
 }
-#endif // __DRAG_FORCE_HPP__
+#endif // __EXTERNAL_FORCE_HPP__

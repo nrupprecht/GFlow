@@ -46,6 +46,10 @@ namespace GFlow {
     // Private virtual functions, purely abstract
     virtual void _integrate() = 0;
 
+    // Private virtual functions
+    virtual void preIntegrate();
+    virtual void postIntegrate();
+
     // Time step
     RealType dt;
 

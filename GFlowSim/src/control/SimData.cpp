@@ -1,8 +1,11 @@
 #include "SimData.hpp"
+#include "../data/DataRecord.hpp"
 
 namespace GFlow {
 
-  SimData::SimData(const Bounds& b, const Bounds& sb) : domain_size(0), domain_capacity(0), edge_size(0), edge_capacity(0), bounds(b), simBounds(sb), wrapX(true), wrapY(true) {};
+  SimData::SimData(const Bounds& b, const Bounds& sb) : domain_size(0), domain_capacity(0), edge_size(0), edge_capacity(0), bounds(b), simBounds(sb), wrapX(true), wrapY(true) {
+    for (int i=0; i<15; ++i) pdata[i] = 0;
+};
 
   void SimData::reserve(int dcap, int ecap) {
     // Reserve all data arrays
@@ -22,6 +25,8 @@ namespace GFlow {
     ds.reserve2(domain_capacity, dcap, edge_capacity, ecap);
     cf.reserve2(domain_capacity, dcap, edge_capacity, ecap);
     it.reserve2(domain_capacity, dcap, edge_capacity, ecap, -1);
+    // Set summary pointer
+    setPData();
     // Reserve positions record
     positionRecord.reserve2(domain_capacity, dcap, edge_capacity, ecap);
     // Set sizes
@@ -60,6 +65,10 @@ namespace GFlow {
     positionRecord[domain_size] = p.position;
     // Increment domain_size
     ++domain_size;
+  }
+
+  RealType** SimData::getPData() {
+    return pdata;
   }
 
   list<Particle> SimData::getParticles() {
@@ -126,12 +135,30 @@ namespace GFlow {
 
 #ifdef USE_MPI
   void SimData::atomMove() {
-
+    
   }
 
   void SimData::atomCopy() {
 
   }
 #endif
+
+  void SimData::setPData() {
+    pdata[0]  = px.getPtr();
+    pdata[1]  = py.getPtr();
+    pdata[2]  = vx.getPtr();
+    pdata[3]  = vy.getPtr();
+    pdata[4]  = fx.getPtr();
+    pdata[5]  = fy.getPtr();
+    pdata[6]  = th.getPtr();
+    pdata[7]  = om.getPtr();
+    pdata[8]  = tq.getPtr();
+    pdata[9]  = sg.getPtr();
+    pdata[10] = im.getPtr();
+    pdata[11] = iI.getPtr();
+    pdata[12] = rp.getPtr();
+    pdata[13] = ds.getPtr();
+    pdata[14] = cf.getPtr();
+  }
   
 }

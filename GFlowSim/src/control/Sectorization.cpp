@@ -1,4 +1,5 @@
 #include "Sectorization.hpp"
+#include "../data/DataRecord.hpp"
 
 namespace GFlow {
 
@@ -51,8 +52,7 @@ namespace GFlow {
     }
   }
 
-  //******* MPI related functions ************//
-#ifdef USE_MPI 
+#ifdef USE_MPI //******* MPI related functions ************//
 
   void Sectorization::atom_move() {
     cout << "Moving atoms.\n";
@@ -62,33 +62,43 @@ namespace GFlow {
     cout << "Copying atoms.\n";
   }
 
-#endif
-  //******* End MPI related functions ********//
+#endif //******* End MPI related functions ********//
 
-  void Sectorization::createVerletLists(bool force) {
-    // Clear out lists
-    verletList.clear();
-
+  bool Sectorization::checkNeedRemake() {
     // Get position data
     RealType *px = simData->getPxPtr();
     RealType *py = simData->getPyPtr();
     RealType *sg = simData->getSgPtr();
     int *it = simData->getItPtr();
 
-    // Check how far the particles have moved 
-    if (!force) {
-      vec2 *positionRecord = simData->getPRPtr();
-      int domain_size = simData->getDomainSize();
-      RealType max_moved = 0, sec_moved = 0;
-      for (int i=0; i<domain_size; ++i) {
-	if (it[i]<0) continue;
-	RealType moved = sqr( getDisplacement(px[i], py[i], positionRecord[i].x, positionRecord[i].y) );
-	if (moved>max_moved) max_moved = moved;
-	else if (moved>sec_moved) sec_moved = moved;
-      }
-      // Check if a redo may be neccessary
-      if (sqrt(max_moved)+sqrt(sec_moved) < skinDepth) return; // No need to redo
+    // Check how far the particles have moved
+    vec2 *positionRecord = simData->getPRPtr();
+    int domain_size = simData->getDomainSize();
+    RealType max_moved = 0, sec_moved = 0;
+    for (int i=0; i<domain_size; ++i) {
+      if (it[i]<0) continue;
+      RealType moved = sqr( getDisplacement(px[i], py[i], positionRecord[i].x, positionRecord[i].y) );
+      if (moved>max_moved) max_moved = moved;
+      else if (moved>sec_moved) sec_moved = moved;
     }
+    
+    // Calculate max possible movement of particles relative to one another
+    movement = sqrt(max_moved)+sqrt(sec_moved);
+
+    // Check if a redo may be neccessary
+    return (movement > skinDepth);
+    
+  }
+
+  void Sectorization::createVerletLists(bool force) {
+    // Get position data
+    RealType *px = simData->getPxPtr();
+    RealType *py = simData->getPyPtr();
+    RealType *sg = simData->getSgPtr();
+    int *it = simData->getItPtr();
+
+    // Clear out lists
+    verletList.clear();
 
     // Redo the sectorization so we can make our verlet lists
     sectorize();
@@ -114,7 +124,7 @@ namespace GFlow {
 	  auto q = p; ++q; // Check only particles ordered after you
 	  for (; q!=sec_at(x,y).end(); ++q) {
 	    r = getDisplacement(px[i], py[i], px[*q], py[*q]);
-	    if (sqr(r) < sqr(sigma + sg[*q] + skinDepth))
+	    if (sqr(r) < sqr(sigma + sg[*q] + skinDepth)) 
 	      nlist.push_back(*q);
 	  }
 	  // Bottom left
@@ -154,7 +164,6 @@ namespace GFlow {
     vec2 *positionRecord = simData->getPRPtr();
     int domain_size = simData->getDomainSize();
     for (int i=0; i<domain_size; ++i) positionRecord[i] = vec2(px[i], py[i]);
-    
   }
 
   void Sectorization::createWallLists(bool force) {

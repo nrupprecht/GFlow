@@ -10,19 +10,20 @@ namespace GFlow {
     // Set wrapping
     simData->setWrap(false);
 
+    RealType edge = 0.;
+
     // Add boundary walls
-    simData->addWall(Wall(0,0,0,4)); // Left   wall
-    simData->addWall(Wall(0,0,4,0)); // Bottom wall
-    simData->addWall(Wall(4,0,4,4)); // Right  wall
-    simData->addWall(Wall(0,4,4,4)); // Top    wall
+    simData->addWall(Wall(edge,edge,edge,4-edge)); // Left   wall
+    simData->addWall(Wall(edge,edge,4-edge,edge)); // Bottom wall
+    simData->addWall(Wall(4-edge,edge,4-edge,4-edge)); // Right  wall
+    simData->addWall(Wall(edge,4-edge,4-edge,4-edge)); // Top    wall
 
     // Make room for particles
     int domain_size = 1018, edge_size = 0;
     simData->reserve(domain_size, edge_size);
     // Add some particles
     RealType sigma = 0.05;
-    RealType edge = 0.;
-    RealType baseVelocity = 0.1;
+    RealType baseVelocity = 0.02;
     for (int i=0; i<domain_size; ++i) {
       // Random particle
       RealType X     = (4-2*sigma-2*edge)*drand48()+sigma+edge;
@@ -41,8 +42,8 @@ namespace GFlow {
 
     // Relax, so there is no overlap
     VelocityVerletIntegrator verlet(simData);
-    DragForce *largeDrag = new ViscousDrag(1.); // This is large enough
-    verlet.addDragForce(largeDrag);
+    ExternalForce *largeDrag = new ViscousDrag(1.); // This is large enough
+    verlet.addExternalForce(largeDrag);
     verlet.initialize(0.25);
     verlet.integrate();
     // Clean up drag force

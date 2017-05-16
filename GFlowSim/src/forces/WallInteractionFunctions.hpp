@@ -8,7 +8,7 @@
 #define __WALL_INTERACTION_FUNCTIONS_HPP__
 
 // Includes
-#include "SimData.hpp"
+#include "../control/SimData.hpp"
 
 namespace GFlow {
   

@@ -19,5 +19,11 @@ namespace GFlow {
   // Sectorization constants
   const RealType default_sectorization_skin_depth = 0.025;
 
+  // Integrator constants
+  const RealType default_epsilon              = 1e-4;
+  const RealType default_update_delay         = 0.002;
+  const RealType default_max_update_delay     = 0.01;
+  const RealType default_delay_factor         = 1.3;
+
 }
 #endif // __DEFAULT_CONSTANTS_HPP__

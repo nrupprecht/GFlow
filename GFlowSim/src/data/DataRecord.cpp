@@ -39,7 +39,7 @@ namespace GFlow {
     RealType *sg = simData->getSgPtr();
     RealType *th = simData->getThPtr();
     int *it = simData->getItPtr();
-    int domain_size = simData->getDomainSize();
+    int domain_size = simData->domain_size;
 
     // Record data
     if (recPos) {
@@ -62,23 +62,37 @@ namespace GFlow {
   }
 
   void DataRecord::getSectorizationData(Sectorization* sectors) {
+    if (sectors==nullptr) return;
     // Get width and height of sector grid
-    nsx = sectors->getNSX(); 
-    nsy = sectors->getNSY();
+    nsx = sectors->nsx; 
+    nsy = sectors->nsy;
     // Get sector's width and height
-    sdx = sectors->getSDX();
-    sdy = sectors->getSDY();
+    sdx = sectors->sdx;
+    sdy = sectors->sdy;
     // Get cutoff and skin depth
-    cutoff = sectors->getCutoff();
-    skinDepth = sectors->getSkinDepth();
+    cutoff = sectors->cutoff;
+    skinDepth = sectors->skinDepth;
     // Get the number of neighbor lists
-    auto verletList = sectors->getVerletList();
+    auto verletList = sectors->verletList;
     numberOfVerletLists = verletList.size();
     // Get the average neighbors per verlet list
     RealType ave = 0;
     for (const auto& vl : verletList) ave += vl.size();
-    ave /= static_cast<RealType>(numberOfVerletLists);
+    if (numberOfVerletLists>0) ave /= static_cast<RealType>(numberOfVerletLists);
+    else ave = -1;
     avePerVerletList = ave;
+    
+    // Get the number of occupied sectors
+    auto sec = sectors->sectors;
+    occupiedSectors = 0;
+    avePerOccupiedSector = 0;
+    for (int i=0; i<nsx*nsy; ++i) {
+      if (sec[i].size()>0) {
+	++occupiedSectors;
+	avePerOccupiedSector += sec[i].size();
+      }
+    }
+    avePerOccupiedSector /= (occupiedSectors>0 ? occupiedSectors : 1);
   }
 
   void DataRecord::writeData(SimData* simData) {
@@ -136,7 +150,11 @@ namespace GFlow {
     fout << "  - Grid dimensions: " << nsx << " x " << nsy << "\n";
     fout << "  - Grid lengths:    " << sdx << " x " << sdy << "\n";
     fout << "  - Number of verlet lists: " << numberOfVerletLists << "\n";
-    fout << "  - Average number per verlet list: " << avePerVerletList << "\n";
+    fout << "  - Average number per verlet list: " << (avePerVerletList>-1 ? toStr(avePerVerletList) : "---") << "\n";
+    fout << "  - Cutoff    : " << cutoff << "\n";
+    fout << "  - Skin depth: " << skinDepth << "\n";
+    fout << "  - Occupied sectors: " << occupiedSectors << "\n";
+    fout << "  - Ave per occupied sector: " << avePerOccupiedSector << "\n";
     // Close the stream
     fout.close();
   }

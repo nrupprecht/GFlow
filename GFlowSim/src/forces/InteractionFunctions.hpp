@@ -8,7 +8,7 @@
 #define __INTERACTION_FUNCTIONS_HPP__
 
 // Includes
-#include "SimData.hpp"
+#include "../control/SimData.hpp"
 
 namespace GFlow {
 
@@ -44,7 +44,7 @@ namespace GFlow {
       RealType coeff       = cf[i] * cf[j];
       // Compute force
       vec2 normal = invDist * displacement;
-      vec2 shear  = vec2(normal.y, -normal.y);
+      vec2 shear  = vec2(normal.y, -normal.x);
       // Spring force strength
       double strength = repulsion*(cutoff-dist);
       // Velocities
@@ -74,3 +74,4 @@ namespace GFlow {
 
 }
 #endif // __INTERACTION_FUNCTIONS_HPP__
+  

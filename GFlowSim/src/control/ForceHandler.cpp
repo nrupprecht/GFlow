@@ -49,7 +49,8 @@ namespace GFlow {
     
     // Do the interaction
     RealType Fn, Fs;
-    interactionFunctions[itA*4+itB](i, j, simData, Fn, Fs, true);
+    // interactionFunctions[itA*4+itB](i, j, simData, Fn, Fs, true);
+    hardDiskInteraction(i, j, simData, Fn, Fs, true);
   }
 
   inline void ForceHandler::interactW(int i, int j, SimData* simData) const {
@@ -57,7 +58,8 @@ namespace GFlow {
     
     // Do the interaction
     RealType Fn, Fs;
-    wallInteractionFunctions[interaction](i, j, simData, Fn, Fs, true);
+    //wallInteractionFunctions[interaction](i, j, simData, Fn, Fs, true);
+    hardDiskWallInteraction(i, j, simData, Fn, Fs, true);
   }
 
 }
