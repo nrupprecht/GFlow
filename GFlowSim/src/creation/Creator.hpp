@@ -14,25 +14,10 @@
 #include "../objects/Particle.hpp"
 #include "../objects/Wall.hpp"
 #include "../forces/ViscousDrag.hpp"
-// #include "../creation/DataCreator.hpp"
+#include "../creation/DataCreator.hpp"
 
 namespace GFlow {
-
-  /*
-   * @class Region
-   * Contains the data for constructing a region full of particles
-   *
-   */
-  /*
-  struct Region {
-    RealType left, right, bottom, top;
-    int number;
-    
-    DataCreator *sigma, *position
-    
-  };
-  */
-
+  
   /*
    * @class Creator
    * Creates simulation data
@@ -44,7 +29,7 @@ namespace GFlow {
     // In the future this will take argments
     SimData* create();
 
-    // void createRegion(Region, SimData*);
+    bool createRegion(Region&, SimData*);
     
   private:
     

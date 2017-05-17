@@ -21,8 +21,9 @@ namespace GFlow {
 
   protected:
     // Inherited private virtual functions
-    virtual void _applyForce(SimData*, int) const;
+    virtual void _applyForce(SimData*) const;
 
+    // The viscosity
     RealType viscosity;
   };
 

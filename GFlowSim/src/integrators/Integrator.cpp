@@ -1,11 +1,12 @@
 #include "Integrator.hpp"
 
 namespace GFlow {
-  Integrator::Integrator() : dt(default_epsilon), time(0), runTime(0), iter(0), maxIter(0), simData(nullptr), sectors(nullptr), dataRecord(nullptr) {};
+  
+  Integrator::Integrator() : running(false), dt(default_epsilon), time(0), runTime(0), iter(0), simData(nullptr), sectors(nullptr), dataRecord(nullptr) {};
 
-  Integrator::Integrator(SimData *sim) : dt(default_epsilon), time(0), runTime(0), iter(0), maxIter(0), simData(sim), sectors(nullptr), dataRecord(nullptr) {};
+  Integrator::Integrator(SimData *sim) : running(false), dt(default_epsilon), time(0), runTime(0), iter(0), simData(sim), sectors(nullptr), dataRecord(nullptr) {};
 
-  Integrator::Integrator(SimData *sim, DataRecord *dat) : dt(default_epsilon), time(0), runTime(0), iter(0), maxIter(0), simData(sim), sectors(nullptr), dataRecord(dat) {};
+  Integrator::Integrator(SimData *sim, DataRecord *dat) : running(false), dt(default_epsilon), time(0), runTime(0), iter(0), simData(sim), sectors(nullptr), dataRecord(dat) {};
 
   Integrator::~Integrator() {
     delete sectors;
@@ -18,6 +19,7 @@ namespace GFlow {
     else runTime = 0;
 
     // Create a sectorization
+    if (sectors) delete sectors;
     sectors = new Sectorization;
 
     // Set up the sectorization
@@ -26,16 +28,19 @@ namespace GFlow {
     // Create force handler
     forceHandler = new ForceHandler;
 
-    // Set max iter
-    if (dt>0) maxIter = runTime/dt;
-    else maxIter = 0;
   }
 
   void Integrator::integrate() {
     // Pre
     preIntegrate();
+
     // Do the integration
-    _integrate();
+    while (running) {
+      preStep();    // Before doing an integration update
+      _integrate(); // Integration update
+      postStep();   // After doing an integration update
+    }
+
     // Post
     postIntegrate();
   }
@@ -45,11 +50,34 @@ namespace GFlow {
   }
 
   void Integrator::preIntegrate() {
+    // Reset iter
+    iter = 0;
+    
+    // Reset time
+    time = 0;
+
+    // Set running to true
+    running = true;
+
     // Beginning data record stuff
     if (dataRecord) {
+      dataRecord->markTime();
       dataRecord->setRunTime(runTime);
       dataRecord->startTiming();
     }
+  }
+
+  void Integrator::preStep() {
+    // Increment times - do this here so if we change the timestep later on in integrators, we still have the correct time (without having to store a 'last dt' variable)
+    time += dt;
+  };
+
+  void Integrator::postStep() {
+    // Increment iter 
+    ++iter;
+
+    // Update data recorder
+    if (dataRecord) dataRecord->record(simData, time);
   }
 
   void Integrator::postIntegrate() {

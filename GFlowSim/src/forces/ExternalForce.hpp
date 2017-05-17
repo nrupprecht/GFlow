@@ -18,13 +18,13 @@ namespace GFlow {
    */
   class ExternalForce {
   public:
-    void applyForce(SimData* simData, int i) {
-      _applyForce(simData, i);
+    void applyForce(SimData* simData) {
+      _applyForce(simData);
     }
 
   protected:
     // Private virtual functions, purely abstract
-    virtual void _applyForce(SimData*, int) const = 0;
+    virtual void _applyForce(SimData*) const = 0;
   };
 
 }

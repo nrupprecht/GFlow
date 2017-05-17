@@ -49,12 +49,15 @@ namespace GFlow {
     friend class DataRecord;
 
   protected:
-    // Private virtual functions, purely abstract
-    virtual void _integrate() = 0;
-
     // Private virtual functions
     virtual void preIntegrate();
+    virtual inline void _integrate() = 0;
     virtual void postIntegrate();
+    virtual void preStep();
+    virtual void postStep();
+
+    // Whether the simulation is running or not
+    bool running;
 
     // Time step
     RealType dt;
@@ -62,14 +65,11 @@ namespace GFlow {
     // Current time
     RealType time;
 
-    // How much simulated time the simulation should run for
+    // How much simulated time the simulation should run for (barring some early termination condition)
     RealType runTime;
 
     // Current iteration
     int iter;
-
-    // Max iteration
-    int maxIter;
     
     // Pointer to the simulation data
     SimData* simData;

@@ -18,6 +18,8 @@ namespace GFlow {
 
   // Forward declaration to DataRecord
   class DataRecord;
+  // Forward declaration to ExternalForce
+  class ExternalForce;
 
   /*
    * @class SimData
@@ -28,8 +30,11 @@ namespace GFlow {
     // Constructor taking domain and simulation dimensions
     SimData(const Bounds&, const Bounds&);
 
+    // Destructor
+    ~SimData();
+
     // Reserve particle size
-    void reserve(int, int);
+    void reserve(int, int=-1);
 
     // Add walls
     void addWall(const Wall&);
@@ -110,6 +115,14 @@ namespace GFlow {
     void setWrapX(bool b) { wrapX = b; }
     void setWrapY(bool b) { wrapY = b; }
 
+    // Set bounds
+    void setBounds(const Bounds& b)    { bounds = b; }
+    void setSimBounds(const Bounds& b) { simBounds = b; }
+
+    // Add an external force or remove all of them
+    void addExternalForce(ExternalForce*);
+    void clearExternalForces();
+
     // DataRecord is a friend class
     friend class DataRecord;
     
@@ -160,11 +173,15 @@ namespace GFlow {
     Bounds bounds;
     Bounds simBounds;
 
+    // External forces
+    vector<ExternalForce*> externalForces;
+
     // Simulation boundary conditions
     bool wrapX, wrapY;
 
-    // Rank and number of processors - for MPI
+#ifdef USE_MPI // Rank and number of processors - for MPI
     int rank, numProc;
+#endif
     
   };
 

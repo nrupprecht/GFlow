@@ -7,13 +7,13 @@ FLAGS = $(CFLAG) -g $(QOPT) $(OPTFLAGS)
 
 # All object files needed
 CONTROL_OBJECTS = build/Sectorization.o build/SimData.o build/ForceHandler.o
-CREATION_OBJECTS = build/Creator.o
-DATA_OBJECTS    = build/DataRecord.o
+CREATION_OBJECTS = build/Creator.o build/FileParser.o build/DataCreator.o
+DATA_OBJECTS    = build/DataRecord.o 
 INT_OBJECTS     = build/VelocityVerletIntegrator.o build/Integrator.o
 OBJ_OBJECTS     = build/Particle.o build/Wall.o
 INC_OBJECTS     = build/vec2d.o
 TEST_OBJECTS    = build/test_aligned_array.o
-FORCE_OBJECTS   = build/ViscousDrag.o
+FORCE_OBJECTS   = build/ViscousDrag.o build/ConstantAcceleration.o
 
 ALL_OBJECTS     = $(CONTROL_OBJECTS) $(CREATION_OBJECTS) $(DATA_OBJECTS) $(INT_OBJECTS) $(OBJ_OBJECTS) $(INC_OBJECTS) $(FORCE_OBJECTS)
 

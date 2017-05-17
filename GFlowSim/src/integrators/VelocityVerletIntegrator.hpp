@@ -33,15 +33,17 @@ namespace GFlow {
     void addExternalForce(ExternalForce*);
 
   private:
-    // Inherited private virtual functions
-    virtual void _integrate(); // Inherits from Integrator
+    // Inherited private virtual functions (from Integrator)
+    virtual void preIntegrate();
+    virtual inline void _integrate();
+    virtual void preStep();
+    virtual void postStep();
 
     // Private virtual functions
-    virtual void preStep();
-    virtual void integrateStep();
-    virtual void postStep();
-    virtual void firstHalfKick();
-    virtual void secondHalfKick();
+    virtual inline void firstHalfKick();
+    virtual inline void updates();
+    virtual inline void forces();
+    virtual inline void secondHalfKick();
 
     // Delay between updating sectors
     RealType updateDelay;
@@ -55,7 +57,11 @@ namespace GFlow {
     // How long it's been since we updated the sectors
     RealType updateTimer;
 
-    // Drag force objects
+    // Number of updates and average delay
+    RealType aveUpdateDelay;
+    int sectorUpdates;
+
+    // External force objects - we are not responsible for cleaning these up, simData is
     vector<ExternalForce*> externalForces;
 
   };

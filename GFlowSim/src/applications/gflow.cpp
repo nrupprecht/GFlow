@@ -5,6 +5,7 @@
  */
 
 #include "../creation/Creator.hpp"
+#include "../creation/FileParser.hpp"
 #include "../integrators/VelocityVerletIntegrator.hpp"
 
 #include "ArgParse.h"
@@ -13,7 +14,7 @@ using namespace GFlow;
 
 int main (int argc, char** argv) {
 
-  int rank = 0, numProc = 0;
+  string config = "";
   RealType time = 10;
   bool animate = false;
   bool ratio = false;
@@ -29,6 +30,7 @@ int main (int argc, char** argv) {
     cout << "Illegal Token: " << token.c << ". Exiting.\n";
     exit(1);
   }
+  parser.get("config", config);
   parser.get("time", time);
   parser.get("animate", animate);
   parser.get("ratio", ratio);
@@ -46,13 +48,18 @@ int main (int argc, char** argv) {
   // Set up MPI
 #ifdef USE_MPI
   MPI::Init();
-  rank = MPI::COMM_WORLD.Get_rank();
-  numProc = MPI::COMM_WORLD.Get_size();
+  int rank = MPI::COMM_WORLD.Get_rank();
+  int numProc = MPI::COMM_WORLD.Get_size();
 #endif
 
   // Create from file or command line args
   Creator simCreator;
-  SimData *simData = simCreator.create();
+  SimData *simData = nullptr;
+  if (config!="") {
+    FileParser fileParser;
+    simData = fileParser.parse(config);  
+  }
+  else simData = simCreator.create();
   VelocityVerletIntegrator integrator(simData);
 
   // Set up a data recorder

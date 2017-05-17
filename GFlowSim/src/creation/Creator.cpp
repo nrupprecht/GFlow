@@ -4,7 +4,7 @@ namespace GFlow {
   
   SimData* Creator::create() {
     // Create bounds and hand them to a sim data object
-    RealType width = 8, height = 8;
+    RealType width = 4, height = 4;
     Bounds simBounds(0,width,0,height);
     SimData* simData = new SimData(simBounds, simBounds);
 
@@ -14,10 +14,10 @@ namespace GFlow {
     RealType edge = 0.;
 
     // Add boundary walls
-    simData->addWall(Wall(edge,edge,edge,4-edge)); // Left   wall
-    simData->addWall(Wall(edge,edge,4-edge,edge)); // Bottom wall
-    simData->addWall(Wall(4-edge,edge,4-edge,4-edge)); // Right  wall
-    simData->addWall(Wall(edge,4-edge,4-edge,4-edge)); // Top    wall
+    simData->addWall(Wall(edge,edge,edge,height-edge)); // Left   wall
+    simData->addWall(Wall(edge,edge,width-edge,edge)); // Bottom wall
+    simData->addWall(Wall(width-edge,edge,width-edge,height-edge)); // Right  wall
+    simData->addWall(Wall(edge,height-edge,height-edge,height-edge)); // Top    wall
 
     // Make room for particles
     int domain_size = 1018, edge_size = 0;
@@ -27,8 +27,8 @@ namespace GFlow {
     RealType baseVelocity = 0.02;
     for (int i=0; i<domain_size; ++i) {
       // Random particle
-      RealType X     = (4-2*sigma-2*edge)*drand48()+sigma+edge;
-      RealType Y     = (4-2*sigma-2*edge)*drand48()+sigma+edge;
+      RealType X     = (width-2*sigma-2*edge)*drand48()+sigma+edge;
+      RealType Y     = (height-2*sigma-2*edge)*drand48()+sigma+edge;
       RealType theta = 2*PI*drand48();
       RealType V     = baseVelocity*normal_dist(generator);
       // Set particle values
@@ -43,12 +43,11 @@ namespace GFlow {
 
     // Relax, so there is no overlap
     VelocityVerletIntegrator verlet(simData);
-    ExternalForce *largeDrag = new ViscousDrag(1.); // This is large enough
-    verlet.addExternalForce(largeDrag);
+    verlet.addExternalForce(new ViscousDrag(1.)); // This is large enough
     verlet.initialize(0.25);
     verlet.integrate();
-    // Clean up drag force
-    delete largeDrag;
+    // Remove drag force
+    simData->clearExternalForces();
 
     // Give random velocities
     RealType *vx = simData->getVxPtr();
@@ -68,6 +67,36 @@ namespace GFlow {
     }
 
     return simData;
+  }
+
+  bool Creator::createRegion(Region& region, SimData* simData) {
+    if (region.left<simData->getSimBounds().left || simData->getSimBounds().right<region.right || region.bottom<simData->getSimBounds().bottom || region.top<simData->getSimBounds().top) return false;
+
+    // List of particles we are creating
+    vector<Particle> particles;
+
+    // First create radii list (this also allocates the correct number of particles)
+    region.sigma->makeValues(region, particles);
+
+    // Assign interaction
+    region.interaction->makeValues(region, particles);
+
+    // Assign positions and velocities
+    region.position->makeValues(region, particles);
+    region.theta->makeValues(region, particles);
+    region.velocity->makeValues(region, particles);
+    region.omega->makeValues(region, particles);
+
+    // Assign inertias (masses and moments of inertia)
+    region.inertia->makeValues(region, particles);
+
+    // Assign repulsion, dissipation, coefficient of friction
+    region.repulsion->makeValues(region, particles);
+    region.dissipation->makeValues(region, particles);
+    region.coeff->makeValues(region, particles);
+
+
+    return true;
   }
   
 }

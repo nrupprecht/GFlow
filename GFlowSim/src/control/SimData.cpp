@@ -1,11 +1,22 @@
 #include "SimData.hpp"
 #include "../data/DataRecord.hpp"
+#include "../forces/ExternalForce.hpp"
 
 namespace GFlow {
 
   SimData::SimData(const Bounds& b, const Bounds& sb) : domain_size(0), domain_capacity(0), edge_size(0), edge_capacity(0), bounds(b), simBounds(sb), wrapX(true), wrapY(true) {
     for (int i=0; i<15; ++i) pdata[i] = 0;
-};
+    
+#ifdef USE_MPI // Set up MPI
+    rank = MPI::COMM_WORLD.Get_rank();
+    numProc = MPI::COMM_WORLD.Get_size();
+#endif
+  };
+  
+  SimData::~SimData() {
+    // We are responsible for cleaning up external forces
+    for (auto& f : externalForces) delete f;
+  }
 
   void SimData::reserve(int dcap, int ecap) {
     // Reserve all data arrays
@@ -142,6 +153,17 @@ namespace GFlow {
 
   }
 #endif
+
+  void SimData::addExternalForce(ExternalForce* force) {
+    externalForces.push_back(force);
+  }
+
+  void SimData::clearExternalForces() {
+    // Clean up the forces
+    for (auto& f : externalForces) delete f;
+    // Clear the list
+    externalForces.clear();
+  }
 
   void SimData::setPData() {
     pdata[0]  = px.getPtr();
