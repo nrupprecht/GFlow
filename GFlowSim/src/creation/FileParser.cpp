@@ -66,6 +66,12 @@ namespace GFlow {
 	fin >> lx >> ly >> rx >> ry;
 	walls.push_back(Wall(lx, ly, rx, ry));
       }
+
+      else if (tok=="gravity") {
+	RealType x,y;
+	fin >> x >> y;
+	gravity = vec2(x,y);
+      }
       
       // region 
       // [left] [right] [bottom] [top]
@@ -87,13 +93,12 @@ namespace GFlow {
     // Set wrapping
     simData->setWrapX(wrapX);
     simData->setWrapY(wrapY);
-    for (auto& w : walls) {
-      simData->addWall(w);
-    }
+    // Add walls
+    for (auto& w : walls) simData->addWall(w);
+    // Add individual particles
     simData->reserve(particles.size());
-    for (auto& p : particles) {
-      simData->addParticle(p);
-    }
+    for (auto& p : particles) simData->addParticle(p);
+    // Add particles from regions
     for (auto& r : regions) {
       // Set bounds to the entire region if the bounds are unspecified
       if (r.bounds==NullBounds) r.bounds = simBounds;
@@ -112,7 +117,7 @@ namespace GFlow {
     // end
 
     string tok("");
-    RealType sigma(-1), dispersion(0), phi(-1), coeff(-1), repulsion(-1), dissipation(-1);
+    RealType sigma(-1), dispersion(0), phi(-1), coeff(-1), repulsion(-1), dissipation(-1), velocity(-1);
     Bounds bounds = NullBounds;
     int number(-1), interaction(-1);
     Region region;
@@ -135,6 +140,9 @@ namespace GFlow {
       }
       else if (tok=="dispersion") {
 	fin >> dispersion;
+      }
+      else if (tok=="velocity") {
+	fin >> velocity;
       }
       else if (tok=="repulsion") {
 	fin >> repulsion;
@@ -169,6 +177,10 @@ namespace GFlow {
     // Dissipation
     if (0<=dissipation) {
       region.dissipation = new Uniform_Random_Dissipation(dissipation);
+    }
+    // Velocity
+    if (0<=velocity) {
+      region.velocity = new Normal_Random_Velocity(velocity);
     }
     // Repulsion
     if (0<=repulsion) {
