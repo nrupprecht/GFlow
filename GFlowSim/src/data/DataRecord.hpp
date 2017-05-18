@@ -56,6 +56,9 @@ namespace GFlow {
     void setRecPos(bool b)  { recPos = b; }
     void setRecPerf(bool b) { recPerf = b; }
 
+    // Set the write directory
+    void setWriteDirectory(string w) { writeDirectory = w; }
+
     // Set the (expected) run time
     void setRunTime(RealType t) { runTime = t; }
 

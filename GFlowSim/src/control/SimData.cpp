@@ -60,6 +60,14 @@ namespace GFlow {
     walls.push_back(w);
   }
 
+  void SimData::addWall(const Bounds& b) {
+    vec2 bl(b.left, b.bottom), br(b.right, b.bottom), tl(b.left, b.top), tr(b.right, b.top);
+    walls.push_back(Wall(bl, br));
+    walls.push_back(Wall(bl, tl));
+    walls.push_back(Wall(tl, tr));
+    walls.push_back(Wall(br, tr));
+  }
+
   void SimData::addParticle(const Particle& p) {
     // Check if we have enough room
     if (domain_size==domain_capacity) {
@@ -96,22 +104,22 @@ namespace GFlow {
   RealType** SimData::getPData() {
     return pdata;
   }
-
-  list<Particle> SimData::getParticles() {
-    list<Particle> plist;
+  
+  vector<Particle> SimData::getParticles() {
+    vector<Particle> plist;
     for (int i=0; i<domain_size; ++i) {
       if (it.at(i)>-1) {
 	Particle P(px.at(i), py.at(i), sg.at(i));
-	P.velocity = vec2(vx.at(i), vy.at(i));
-	P.force    = vec2(fx.at(i), fy.at(i));
-	P.theta    = th.at(i);
-	P.omega    = om.at(i);
-	P.torque   = tq.at(i);
-	P.invMass  = im.at(i);
-	P.invII    = iI.at(i);
-	P.repulsion = rp.at(i);
+	P.velocity    = vec2(vx.at(i), vy.at(i));
+	P.force       = vec2(fx.at(i), fy.at(i));
+	P.theta       = th.at(i);
+	P.omega       = om.at(i);
+	P.torque      = tq.at(i);
+	P.invMass     = im.at(i);
+	P.invII       = iI.at(i);
+	P.repulsion   = rp.at(i);
 	P.dissipation = ds.at(i);
-	P.coeff = cf.at(i);
+	P.coeff       = cf.at(i);
 	P.interaction = it.at(i);
 	// Push particle into list
 	plist.push_back(P);

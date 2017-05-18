@@ -22,7 +22,8 @@ namespace GFlow {
    *
    */
   struct Region {
-    Region() : position(nullptr), velocity(nullptr), theta(nullptr), omega(nullptr), sigma(nullptr), inertia(nullptr), dissipation(nullptr), coeff(nullptr), interaction(nullptr) {};
+    Region() : position(nullptr), velocity(nullptr), theta(nullptr), omega(nullptr), sigma(nullptr), inertia(nullptr), repulsion(nullptr), dissipation(nullptr), coeff(nullptr), interaction(nullptr) {};
+
     // Bounds
     Bounds bounds;
     // Create vec2 type data

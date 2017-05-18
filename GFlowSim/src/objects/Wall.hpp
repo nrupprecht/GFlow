@@ -14,6 +14,7 @@ namespace GFlow {
    */
   struct Wall {
     Wall();
+    Wall(vec2, vec2);
     Wall(RealType, RealType, RealType, RealType);
 
     // Get right and left

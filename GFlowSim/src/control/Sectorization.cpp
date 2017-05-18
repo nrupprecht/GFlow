@@ -168,28 +168,18 @@ namespace GFlow {
   }
 
   void Sectorization::createWallLists(bool force) {
-    // Clear out lists
-    wallList.clear();
-
     // Get data
     auto& walls  = simData->getWalls();
     RealType *px = simData->getPxPtr();
     RealType *py = simData->getPyPtr();
     RealType *sg = simData->getSgPtr();
     int *it = simData->getItPtr();
-    
-    if (!force) {
-      vec2 *positionRecord = simData->getPRPtr();
-      int domain_size = simData->getDomainSize();
-      RealType max_moved = 0, sec_moved = 0;
-      for (int i=0; i<domain_size; ++i) {
-        if (it[i]<0) continue;
-        RealType moved = sqr( getDisplacement(px[i], py[i], positionRecord[i].x, positionRecord[i].y) );
-        if (moved>max_moved) max_moved = moved;
-      }
-      // Check if a redo is neccessary
-      if (max_moved < sqr(skinDepth)) return; // No need to redo
-    }
+
+    // Only need to do this if there are actually walls
+    if (walls.empty()) return;
+
+    // Clear out lists
+    wallList.clear();
 
     // Create wall list
     int domain_size = simData->getDomainSize();
@@ -252,7 +242,7 @@ namespace GFlow {
     nsx += 2; nsy += 2;
     // Remake sectors
     if (sectors) delete [] sectors;
-    sectors = new list<int>[nsx*nsy+1];
+    sectors = new vector<int>[nsx*nsy+1];
   }
   
 }

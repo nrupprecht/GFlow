@@ -51,7 +51,7 @@ namespace GFlow {
   };
 
   // Theta
-  struct Uniformly_Random_Theta : public DataCreator {
+  struct Uniform_Random_Theta : public DataCreator {
     virtual void makeValues(Region&, vector<Particle>&);
   };
 
@@ -70,31 +70,42 @@ namespace GFlow {
   };
 
   // Dissipation
-  struct Uniformly_Random_Dissipation : public DataCreator {
-    Uniformly_Random_Dissipation() : value(default_particle_dissipation), dispersion(0) {};
-    Uniformly_Random_Dissipation(RealType v, RealType dis=0) : value(v), dispersion(dis) {};
+  struct Uniform_Random_Dissipation : public DataCreator {
+    Uniform_Random_Dissipation() : value(default_particle_dissipation), dispersion(0) {};
+    Uniform_Random_Dissipation(RealType v, RealType dis=0) : value(v), dispersion(dis) {};
     virtual void makeValues(Region&, vector<Particle>&);
   private:
     RealType value, dispersion;
   };
 
   // Repulsion
-  struct Uniformly_Random_Repulsion : public DataCreator {
-    Uniformly_Random_Repulsion() : value(default_particle_repulsion), dispersion(0) {};
-    Uniformly_Random_Repulsion(RealType v, RealType dis=0) : value(v), dispersion(dis) {};
+  struct Uniform_Random_Repulsion : public DataCreator {
+    Uniform_Random_Repulsion() : value(default_particle_repulsion), dispersion(0) {};
+    Uniform_Random_Repulsion(RealType v, RealType dis=0) : value(v), dispersion(dis) {};
     virtual void makeValues(Region&, vector<Particle>&);
   private:
     RealType value, dispersion;
   };
 
-  struct Uniformly_Random_Coeff : public DataCreator {
-    Uniformly_Random_Coeff() : value(default_particle_coeff), dispersion(0) {};
-    Uniformly_Random_Coeff(RealType v, RealType dis=0) : value(v), dispersion(0) {};
+  // Coeff
+  struct Uniform_Random_Coeff : public DataCreator {
+    Uniform_Random_Coeff() : value(default_particle_coeff), dispersion(0) {};
+    Uniform_Random_Coeff(RealType v, RealType dis=0) : value(v), dispersion(0) {};
     virtual void makeValues(Region&, vector<Particle>&);
   private:
     RealType value, dispersion;
   };
 
+  // Interaction
+  struct Homogeneous_Interaction : public DataCreator {
+    Homogeneous_Interaction() : interaction(0) {};
+    Homogeneous_Interaction(int inter) : interaction(inter) {};
+    virtual void makeValues(Region&, vector<Particle>&);
+  private:
+    int interaction;
+  };
+
+  // Inertia (mass and moment of inertia)
   struct Constant_Density : public DataCreator {
     Constant_Density() : density(1.), dispersion(0) {}
     Constant_Density(RealType den, RealType dis=0) : density(den), dispersion(dis) {};

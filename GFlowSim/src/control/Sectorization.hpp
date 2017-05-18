@@ -84,13 +84,13 @@ namespace GFlow {
     // Private helper functions
     inline int getSec(const RealType, const RealType);
     inline void makeSectors();
-    inline list<int>& sec_at(int x, int y) { return sectors[nsx*y+x]; }
+    inline vector<int>& sec_at(int x, int y) { return sectors[nsx*y+x]; }
 
     // Pointer to the simulation data we manage
     SimData *simData;
     
     // The sectors: a list of the id's of particles that are in these sectors
-    list<int> *sectors;
+    vector<int> *sectors;
 
     // Particle neighbor list. First int is the id of the main particle, the other ints are particles that are withing the cutoff region of the main particle.
     VListType verletList;

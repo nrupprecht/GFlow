@@ -81,40 +81,61 @@ namespace GFlow {
 
     // Assign interaction
     if (region.interaction) region.interaction->makeValues(region, particles);
-    else ;
+    else Homogeneous_Interaction().makeValues(region, particles);
 
     // Assign positions
     if (region.position) region.position->makeValues(region, particles);
     else Uniform_Space_Distribution().makeValues(region, particles);
-    // Assign theta
-    if (region.theta) region.theta->makeValues(region, particles);
-    else Uniformly_Random_Theta().makeValues(region, particles);
-    // Assign velocity
-    if (region.velocity) region.velocity->makeValues(region, particles);
-    else Normal_Random_Velocity().makeValues(region, particles);
-    // Assign angles
-    if (region.omega) region.omega->makeValues(region, particles);
-    else Normal_Random_Omega().makeValues(region, particles);
-
+    
     // Assign inertias (masses and moments of inertia)
     if (region.inertia) region.inertia->makeValues(region, particles);
     else Constant_Density().makeValues(region, particles);
 
     // Assign repulsion
     if (region.repulsion) region.repulsion->makeValues(region, particles);
-    else Uniformly_Random_Repulsion().makeValues(region, particles);
+    else Uniform_Random_Repulsion().makeValues(region, particles);
+
     // Assign dissipation
     if (region.dissipation) region.dissipation->makeValues(region, particles);
-    else Uniformly_Random_Dissipation().makeValues(region, particles);
+    else Uniform_Random_Dissipation().makeValues(region, particles);
+
     // Assign coefficient of friction
     if (region.coeff) region.coeff->makeValues(region, particles);
-    else Uniformly_Random_Coeff().makeValues(region, particles);
+    else Uniform_Random_Coeff().makeValues(region, particles);
+
+    // Let the simulation relax, using heavy viscous drag, so particles do not overlap with things
+    SimData *relax = new SimData(region.bounds, region.bounds);
+    relax->setWrap(false);
+    relax->reserve(particles.size());
+    relax->addParticle(particles);
+    relax->addWall(region.bounds);
+    VelocityVerletIntegrator verlet(relax);
+    verlet.addExternalForce(new ViscousDrag(1.)); // This is large enough
+    verlet.initialize(0.25);
+    verlet.integrate();
+    // Remove drag force
+    particles = relax->getParticles();
+    delete relax;
+    
+    // Set velocities and omegas
+    // Assign velocity
+    if (region.velocity) region.velocity->makeValues(region, particles);
+    else Normal_Random_Velocity().makeValues(region, particles);
+
+    // Assign theta
+    if (region.theta) region.theta->makeValues(region, particles);
+    else Uniform_Random_Theta().makeValues(region, particles);
+
+    // Assign omega
+    if (region.omega) region.omega->makeValues(region, particles);
+    else Normal_Random_Omega().makeValues(region, particles);    
     
     // Reserve more room for the new particles
     simData->reserveAdditional(particles.size(), 0);
     // Add the particles to simData
     simData->addParticle(particles);
 
+    // Return success
     return true;
   }
   

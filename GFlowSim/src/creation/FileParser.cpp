@@ -100,14 +100,6 @@ namespace GFlow {
       creator->createRegion(r, simData);
     }
 
-    // Let the simulation relax, using heavy viscous drag, so particles do not overlap with things
-    VelocityVerletIntegrator verlet(simData);
-    verlet.addExternalForce(new ViscousDrag(1.)); // This is large enough
-    verlet.initialize(0.25);
-    verlet.integrate();
-    // Remove drag force
-    simData->clearExternalForces();
-
     return simData;
   }
   
@@ -120,9 +112,9 @@ namespace GFlow {
     // end
 
     string tok("");
-    RealType r_value(0), sigma(-1), dispersion(0), phi(-1);
+    RealType sigma(-1), dispersion(0), phi(-1), coeff(-1), repulsion(-1), dissipation(-1);
     Bounds bounds = NullBounds;
-    int i_value(0), number(-1);
+    int number(-1), interaction(-1);
     Region region;
 
     bool end = false;
@@ -135,14 +127,26 @@ namespace GFlow {
       else if (tok=="number") {
 	fin >> number;
       }
+      else if (tok=="phi") {
+	fin >> phi;
+      }
       else if (tok=="sigma" || tok=="radius") {
 	fin >> sigma;
       }
       else if (tok=="dispersion") {
 	fin >> dispersion;
       }
-      else if (tok=="phi") {
-	fin >> phi;
+      else if (tok=="repulsion") {
+	fin >> repulsion;
+      }
+      else if (tok=="dissipation") {
+	fin >> dissipation;
+      }
+      else if (tok=="coeff") {
+	fin >> coeff;
+      }
+      else if (tok=="interaction") {
+	fin >> interaction;
       }
       else if (tok=="bounds") {
 	RealType left, right, bottom, top;
@@ -155,14 +159,30 @@ namespace GFlow {
       fin >> tok;
     }
 
+    // Sigma function
     if (number!=-1) {
-      if (region.sigma) delete region.sigma;
       region.sigma = new Fixed_Number_Uniform_Radii(number, sigma, dispersion);
     }
     else if (phi!=-1) {
-      if (region.sigma) delete region.sigma;
       region.sigma = new Fixed_Phi_Uniform_Radii(phi, sigma, dispersion);
     }
+    // Dissipation
+    if (0<=dissipation) {
+      region.dissipation = new Uniform_Random_Dissipation(dissipation);
+    }
+    // Repulsion
+    if (0<=repulsion) {
+      region.repulsion = new Uniform_Random_Repulsion(repulsion);
+    }
+    // Coefficient of friction
+    if (0<=coeff) {
+      region.coeff = new Uniform_Random_Coeff(coeff);
+    }
+    // Interaction
+    if (-1<interaction) {
+      region.interaction = new Homogeneous_Interaction(interaction);
+    }
+    
     // Bounds will be NullBounds (whole space) if no bounds were specified
     region.bounds = bounds;
 

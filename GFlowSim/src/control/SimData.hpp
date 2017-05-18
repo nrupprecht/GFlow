@@ -43,6 +43,7 @@ namespace GFlow {
 
     // Add walls
     void addWall(const Wall&);
+    void addWall(const Bounds&);
 
     // Add particles
     void addParticle(const Particle&);
@@ -95,7 +96,7 @@ namespace GFlow {
     vector<Wall>& getWalls() { return walls; }
 
     // Get a list of all the particles
-    list<Particle> getParticles();
+    vector<Particle> getParticles();
 
     // Wrap positions and angles
     void wrap(RealType&, RealType&); // Position wrapping

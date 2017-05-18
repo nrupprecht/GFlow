@@ -30,7 +30,7 @@ namespace GFlow {
     RealType bottom = region.bounds.bottom, height = region.bounds.top - bottom;
 
     // Distribute positions uniformly
-    for (auto& p : particles) p.position = vec2(left+width*drand48(), bottom+height*drand48());
+    for (auto& p : particles) p.position = vec2(left+p.sigma+(width-2*p.sigma)*drand48(), bottom+p.sigma+(height-2*p.sigma)*drand48());
   }
 
   void Normal_Random_Velocity::makeValues(Region& region, vector<Particle>& particles) {
@@ -38,12 +38,13 @@ namespace GFlow {
       for (auto& p : particles) {
 	RealType theta = 2*PI*drand48();
 	RealType vel = velocity*normal_dist(generator);
-	p.velocity = vec2(velocity*cos(theta), velocity*sin(theta));
+	p.velocity = vec2(vel*cos(theta), vel*sin(theta));
       }
-    else for (auto& p : particles) p.velocity = Zero;
+    else 
+      for (auto& p : particles) p.velocity = Zero;
   }
 
-  void Uniformly_Random_Theta::makeValues(Region& region, vector<Particle>& particles) {
+  void Uniform_Random_Theta::makeValues(Region& region, vector<Particle>& particles) {
     for (auto& p : particles) p.theta = 2*PI*drand48();
   }
 
@@ -54,19 +55,24 @@ namespace GFlow {
   void Normal_Random_Omega::makeValues(Region& region, vector<Particle>& particles) {
     if (omega!=0)
       for (auto& p : particles) p.omega = omega*normal_dist(generator);
-    else for (auto& p : particles) p.omega = 0;
+    else
+      for (auto& p : particles) p.omega = 0;
   }
 
-  void Uniformly_Random_Dissipation::makeValues(Region& region, vector<Particle>& particles) {
+  void Uniform_Random_Dissipation::makeValues(Region& region, vector<Particle>& particles) {
     for (auto& p : particles) p.dissipation = value*(1-dispersion*drand48());
   }
 
-  void Uniformly_Random_Repulsion::makeValues(Region& region, vector<Particle>& particles) {
+  void Uniform_Random_Repulsion::makeValues(Region& region, vector<Particle>& particles) {
     for (auto& p : particles) p.repulsion = value*(1-dispersion*drand48());
   }
 
-  void Uniformly_Random_Coeff::makeValues(Region& region, vector<Particle>& particles) {
+  void Uniform_Random_Coeff::makeValues(Region& region, vector<Particle>& particles) {
     for (auto& p : particles) p.coeff = value*(1-dispersion*drand48());
+  }
+
+  void Homogeneous_Interaction::makeValues(Region& region, vector<Particle>& particles) {
+    for (auto& p : particles) p.interaction = interaction;
   }
 
   void Constant_Density::makeValues(Region& region, vector<Particle>& particles) {
