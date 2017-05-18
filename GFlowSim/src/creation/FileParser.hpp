@@ -28,6 +28,12 @@ namespace GFlow {
     // Parse a set up file and create a simulation based on it
     SimData* parse(string);
 
+    // Exception classes
+    struct FileDoesNotExist {
+      FileDoesNotExist(string n) : name(n) {};
+      string name;
+    };
+
   private:
     // Private helper functions
     inline void make_region(std::ifstream&);

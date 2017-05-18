@@ -1,8 +1,12 @@
 #include "DataRecord.hpp"
 #include "../integrators/Integrator.hpp"
+#include "../integrators/VelocityVerletIntegrator.hpp"
+#include "../forces/ExternalForce.hpp"
 
 namespace GFlow {
-  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-delay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), recPerf(false) {};
+  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-delay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), recPerf(false) {
+    start_time = end_time = high_resolution_clock::now();
+  };
 
   void DataRecord::startTiming() {
     start_time = high_resolution_clock::now();
@@ -16,7 +20,7 @@ namespace GFlow {
     last_record = high_resolution_clock::now();
   }
 
-  double DataRecord::getElapsedTime() {
+  double DataRecord::getElapsedTime() const {
     return time_span(end_time, start_time);
   }
 
@@ -96,7 +100,7 @@ namespace GFlow {
     avePerOccupiedSector /= (occupiedSectors>0 ? occupiedSectors : 1);
   }
 
-  void DataRecord::writeData(SimData* simData) {
+  void DataRecord::writeData(SimData* simData) const {
     // Remove previously existing files
     system(("rm -rf "+writeDirectory).c_str());
 
@@ -124,7 +128,7 @@ namespace GFlow {
 	cout << "Failed to print to [" << writeDirectory << "/Pos/pos" << i << "].\n";
   }
 
-  void DataRecord::writeRunSummary(SimData* simData, Integrator* integrator) {
+  void DataRecord::writeRunSummary(SimData* simData, Integrator* integrator) const {
     std::ofstream fout(writeDirectory+"/run_summary.txt");
     if (fout.fail()) {
       // Write error message
@@ -139,41 +143,60 @@ namespace GFlow {
     // Print timing summary
     RealType elapsedTime = time_span(end_time, start_time);
     fout << "Timing and performance:\n";
-    fout << "  - Simulated Time:  " << runTime;
-    if (fabs(runTime-actualTime)>0.1) fout << ", actually simulated " << actualTime;
+    fout << "  - Simulated Time:           " << runTime << "\n";
+    if (runTime!=actualTime) fout << "  - Actual time simulated:    " << actualTime;
     fout << "\n";
-    fout << "  - Actual run Time: " << elapsedTime << "\n";
-    fout << "  - Ratio: " << runTime/elapsedTime << "\n";
-    fout << "  - Inverse Ratio: " << elapsedTime/runTime << "\n";
+    fout << "  - Actual run Time:          " << elapsedTime << "\n";
+    fout << "  - Ratio:                    " << runTime/elapsedTime << "\n";
+    fout << "  - Inverse Ratio:            " << elapsedTime/runTime << "\n";
     fout << "\n";
 
     if (simData) {
       // Print simulation summary
       fout << "Simulation and space:\n";
-      fout << "  - Dimensions: " << simData->simBounds << "\n";
-      fout << "  - Number of particles: " << simData->domain_size << "\n";
-      fout << "  - Ratio x Particles:   " << runTime/elapsedTime*simData->domain_size << "\n";
+      fout << "  - Dimensions:               " << simData->simBounds << "\n";
+      fout << "  - Number of particles:      " << simData->domain_size << "\n";
+      fout << "  - Ratio x Particles:        " << runTime/elapsedTime*simData->domain_size << "\n";
       fout << "\n";
+
+      // Print forces
+      if (!simData->externalForces.empty()) {
+	fout << "External forces:\n";
+	int i=1;
+	for (const auto& f : simData->externalForces) {
+	  fout << "  (" << i << ")\t" << f->summary() << "\n";
+	  ++i;
+	}
+	fout << "\n";
+      }
+
+      // Print particle data
+      if (0<simData->domain_size) writeParticleData(fout, simData);
     }
 
     if (integrator) {
       fout << "Integration:\n";
-      fout << "  - Iterations: " << integrator->iter << "\n";
-      fout << "  - Time step:  " << integrator->dt << "\n";
-      fout << "  - Time per iteration: " << elapsedTime/integrator->iter << "\n";
+      fout << "  - Iterations:               " << integrator->iter << "\n";
+      fout << "  - Time step (at end):       " << integrator->dt << "\n";
+      auto vvint = reinterpret_cast<VelocityVerletIntegrator*>(integrator);
+      if (vvint!=nullptr) {
+	fout << "  - Average time step:        " << vvint->getAveTimeStep() << "\n";
+	fout << "  - Average update delay:     " << vvint->getAveUpdateDelay() << "\n";
+      }
+      fout << "  - Time per iteration:       " << elapsedTime/integrator->iter << "\n";
       fout << "\n";
     }
     
     // Print the sectorization summary
     fout << "Sectorization summary (as of end of simulation):\n";
-    fout << "  - Grid dimensions: " << nsx << " x " << nsy << "\n";
-    fout << "  - Grid lengths:    " << sdx << " x " << sdy << "\n";
-    fout << "  - Number of verlet lists: " << numberOfVerletLists << "\n";
-    fout << "  - Average number per verlet list: " << (avePerVerletList>-1 ? toStr(avePerVerletList) : "---") << "\n";
-    fout << "  - Cutoff    : " << cutoff << "\n";
-    fout << "  - Skin depth: " << skinDepth << "\n";
-    fout << "  - Occupied sectors: " << occupiedSectors << "\n";
-    fout << "  - Ave per occupied sector: " << avePerOccupiedSector << "\n";
+    fout << "  - Grid dimensions:          " << nsx << " x " << nsy << "\n";
+    fout << "  - Grid lengths:             " << sdx << " x " << sdy << "\n";
+    fout << "  - Number of verlet lists:   " << numberOfVerletLists << "\n";
+    fout << "  - Average per verlet list:  " << (avePerVerletList>-1 ? toStr(avePerVerletList) : "---") << "\n";
+    fout << "  - Cutoff:                   " << cutoff << "\n";
+    fout << "  - Skin depth:               " << skinDepth << "\n";
+    fout << "  - Occupied sectors:         " << occupiedSectors << "\n";
+    fout << "  - Ave per occupied sector:  " << avePerOccupiedSector << "\n";
     // Close the stream
     fout.close();
   }
@@ -189,18 +212,55 @@ namespace GFlow {
     statFunctionName.push_back(name);
   }
 
-  vector<pair<RealType, RealType> > DataRecord::getStatFunctionData(int index) {
+  vector<pair<RealType, RealType> > DataRecord::getStatFunctionData(int index) const {
     if (index<0 || statFunctionData.size()<=index) throw BadStatFunction(index);
     return statFunctionData.at(index);
   }
 
-  string DataRecord::getStatFunctionName(int index) {
+  string DataRecord::getStatFunctionName(int index) const {
     if (index<0 || statFunctionData.size()<=index) throw BadStatFunction(index);
     return statFunctionName.at(index);
   }
 
-  vector<pair<RealType, RealType> > DataRecord::getPerformanceRecord() {
+  vector<pair<RealType, RealType> > DataRecord::getPerformanceRecord() const{
     return performanceRecord;
   }
   
+  void DataRecord::writeParticleData(std::ofstream& fout, SimData *simData) const {
+    // We are here only if 0 < domain_size
+
+    fout << "Particle Average Data:\n";
+
+    // Find average sigma
+    RealType sigma = 0;
+    for (int i=0; i<simData->domain_size; ++i)
+      if (-1<simData->it[i]) sigma += simData->sg[i];
+    sigma /= simData->domain_size;
+    fout << "  - Average sigma:            " << sigma << "\n";
+
+    // Find average repulsion
+    RealType repulsion = 0;
+    for(int i=0; i<simData->domain_size; ++i)
+      if (-1<simData->it[i]) repulsion += simData->rp[i];
+    repulsion /= simData->domain_size;
+    fout << "  - Average repulsion:        " << repulsion << "\n";
+
+    // Find average dissipation
+    RealType dissipation = 0;
+    for(int i=0; i<simData->domain_size; ++i)
+      if (-1<simData->it[i]) dissipation += simData->ds[i];
+    dissipation /= simData->domain_size;
+    fout << "  - Average dissipation:      " << dissipation << "\n";
+
+    // Find average coefficient
+    RealType coeff = 0;
+    for(int i=0; i<simData->domain_size; ++i)
+      if (-1<simData->it[i]) coeff += simData->cf[i];
+    coeff /= simData->domain_size;
+    fout << "  - Average coeff:            " << coeff << "\n";
+
+    // Section divide new line
+    fout << "\n";
+  }
+
 }

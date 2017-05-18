@@ -1,16 +1,24 @@
 #include "VelocityVerletIntegrator.hpp"
 
 namespace GFlow {
-  VelocityVerletIntegrator::VelocityVerletIntegrator() : Integrator(), updateDelay(default_update_delay), delayFactor(default_delay_factor), verletListTimer(0), updateTimer(0), aveUpdateDelay(0), sectorUpdates(0) {};
+  VelocityVerletIntegrator::VelocityVerletIntegrator() : Integrator(), updateDelay(default_update_delay), delayFactor(default_delay_factor), verletListTimer(0), updateTimer(0), adjustUpdateDelay(true), adjustTimeStep(true), periodIterations(default_period_iterations), aveUpdateDelay(0), sectorUpdates(0) {};
 
-  VelocityVerletIntegrator::VelocityVerletIntegrator(SimData* sim) : Integrator(sim), updateDelay(default_update_delay), delayFactor(default_delay_factor), verletListTimer(0), updateTimer(0), aveUpdateDelay(0), sectorUpdates(0) {};
+  VelocityVerletIntegrator::VelocityVerletIntegrator(SimData* sim) : Integrator(sim), updateDelay(default_update_delay), delayFactor(default_delay_factor), verletListTimer(0), updateTimer(0), adjustUpdateDelay(true), adjustTimeStep(true), periodIterations(default_period_iterations), aveUpdateDelay(0), sectorUpdates(0) {};
 
-  VelocityVerletIntegrator::VelocityVerletIntegrator(SimData* sim, DataRecord* dat) : Integrator(sim, dat), updateDelay(default_update_delay), delayFactor(default_delay_factor), verletListTimer(0), updateTimer(0), aveUpdateDelay(0), sectorUpdates(0) {};
+  VelocityVerletIntegrator::VelocityVerletIntegrator(SimData* sim, DataRecord* dat) : Integrator(sim, dat), updateDelay(default_update_delay), delayFactor(default_delay_factor), verletListTimer(0), updateTimer(0), adjustUpdateDelay(true), adjustTimeStep(true), periodIterations(default_period_iterations), aveUpdateDelay(0), sectorUpdates(0) {};
 
   void VelocityVerletIntegrator::addExternalForce(ExternalForce* force) {
     if (simData==nullptr) return;
-    externalForces.push_back(force);
     simData->addExternalForce(force);
+  }
+
+  RealType VelocityVerletIntegrator::getAveUpdateDelay() { 
+    return sectorUpdates>0 && adjustUpdateDelay ? aveUpdateDelay/sectorUpdates :updateDelay; 
+  }
+
+  // Get the average timestep
+  RealType VelocityVerletIntegrator::getAveTimeStep() {
+    return sectorUpdates>0 && adjustTimeStep ? aveDt/sectorUpdates : dt; 
   }
 
   void VelocityVerletIntegrator::preIntegrate() {
@@ -97,10 +105,6 @@ namespace GFlow {
       // Zero torque
       tq[i] = 0;
     }
-    
-    // Apply external forces
-    for (const auto& force : externalForces)
-      force->applyForce(simData);
   }
 
   inline void VelocityVerletIntegrator::updates() {
@@ -121,28 +125,57 @@ namespace GFlow {
         sectors->createVerletLists();
         sectors->createWallLists(true);
 
-        // Calculate new update delay
-        RealType movement = sectors->getMovement();
-        RealType skinDepth = sectors->getSkinDepth();
-        RealType ratio = delayFactor*skinDepth/movement; // Want movement to be slightly greater then skin depth after every update delay
-	
-	// Set the update delay
-	updateDelay = ratio*verletListTimer;
+	if (adjustUpdateDelay) {
+	  // Calculate new update delay
+	  RealType movement = sectors->getMovement();
+	  RealType skinDepth = sectors->getSkinDepth();
+	  RealType ratio = delayFactor*skinDepth/movement; // Want movement to be slightly greater then skin depth after every update delay
+	  
+	  // Set the update delay
+	  updateDelay = ratio*verletListTimer;
+	  
+	  // If something suddenly starts moving, and the update delay is to long, there could be problems. For now, we deal with that by capping the update delay
+	  updateDelay = updateDelay>default_max_update_delay ? default_max_update_delay : updateDelay;
+	  
+	  // Record data for average update delay
+	  ++sectorUpdates;
+	  aveUpdateDelay += updateDelay;
+	}
 
-	// If something suddenly starts moving, and the update delay is to long, there could be problems. For now, we deal with that by capping the update delay
-	updateDelay = updateDelay>default_max_update_delay ? default_max_update_delay : updateDelay;
-	
-	// Record data for average update delay
-	++sectorUpdates;
-	aveUpdateDelay += updateDelay;
-	
+	// Update time step
+	if (adjustTimeStep) {
+	  // Find the minimum amount of time it takes for one particle to traverse its own radius
+	  RealType minPeriod = 1.;
+	  int domain_size = simData->getDomainSize();
+	  for (int i=0; i<domain_size; ++i) {
+	    if (-1<simData->getIt(i)) {
+	      RealType period = sqr(simData->getSg(i))/(sqr(simData->getVx(i))+sqr(simData->getVy(i)));
+	      if (period<minPeriod) minPeriod = period;
+	    }
+	  }
+	  minPeriod = sqrt(minPeriod);
+	  
+	  // Set the time step
+	  dt = minPeriod/periodIterations;
+	  // If something suddenly starts moving, and the update delay is to long, there could be problems. For now, we deal with that by capping the time step
+	  dt = dt>default_max_timestep ? default_max_timestep : dt;
+
+	  // Record data for average timestep data
+	  aveDt += dt;
+	}
+
 	// Reset verlet list timer
 	verletListTimer = 0;
+	
       }
     }
   }
   
   inline void VelocityVerletIntegrator::forces() {
+    // Apply external forces
+    for (const auto& force : simData->getExternalForces())
+      force->applyForce(simData);
+
     // Do particle and wall forces
     const auto& verletList = sectors->getVerletList();
     const auto& wallList   = sectors->getWallList();

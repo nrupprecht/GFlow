@@ -20,6 +20,8 @@ int main (int argc, char** argv) {
   bool ratio = false;
   bool KE = false;
   bool perf = false;
+  bool adjust = true;       // Whether to auto-adjust the time step
+  bool updateAdjust = true; // Whether to auto-adjust the update delay
 
   // Can get options from the command line
   ArgParse parser;
@@ -36,6 +38,8 @@ int main (int argc, char** argv) {
   parser.get("ratio", ratio);
   parser.get("KE", KE);
   parser.get("perf", perf);
+  parser.get("adjust", adjust);
+  parser.get("updateAdjust", updateAdjust);
   // Make sure we didn't enter any illegal tokens (ones not listed above) on the command line
    try {
      parser.check();
@@ -57,14 +61,33 @@ int main (int argc, char** argv) {
   SimData *simData = nullptr;
   if (config!="") {
     FileParser fileParser;
-    simData = fileParser.parse(config);  
+    try {
+      simData = fileParser.parse(config);  
+    }
+    catch (FileParser::FileDoesNotExist file) {
+      cout << "File [" << file.name << "] does not exist. Exiting.\n";
+      exit(0);
+    }
+    if (simData==nullptr) {
+      cout << "Error occured while parsing. Exiting.\n";
+      exit(0);
+    }
   }
   else simData = simCreator.create();
+
+  // Make sure simData is non-null
+  if (simData==nullptr) {
+    cout << "SimData is null. Exiting." << endl;
+    exit(0);
+  }
+
+  // Create an integrator
   VelocityVerletIntegrator integrator(simData);
 
   // Set up a data recorder
   DataRecord *dataRecord = new DataRecord;
   integrator.setDataRecord(dataRecord);
+  // Set record options
   if (dataRecord) {
     if (KE) dataRecord->addStatFunction(StatFunc_AveKE, "KE");
     if (ratio) dataRecord->addStatFunction(StatFunc_MaxVelocitySigmaRatio, "ratio");
@@ -75,11 +98,13 @@ int main (int argc, char** argv) {
 
   // Set run time
   integrator.initialize(time);
+  integrator.setAdjustTimeStep(adjust);
+  integrator.setAdjustUpdateDelay(updateAdjust);
 
   // Print initial message
   cout << "Starting integration.\n";
 
-  // Run here
+  // Run the integrator
   integrator.integrate();
 
   // Print a final message

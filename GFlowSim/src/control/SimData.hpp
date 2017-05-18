@@ -79,7 +79,7 @@ namespace GFlow {
     RealType* getRpPtr() { return rp.getPtr(); }
     RealType* getDsPtr() { return ds.getPtr(); }
     RealType* getCfPtr() { return cf.getPtr(); }
-    int* getItPtr()      { return it.getPtr(); }
+    int*      getItPtr() { return it.getPtr(); }
 
     // Summary pointer
     RealType** getPData();
@@ -87,7 +87,10 @@ namespace GFlow {
     // Array access (non-checking)
     RealType& getPx(int i) { return px[i]; }
     RealType& getPy(int i) { return py[i]; }
+    RealType& getVx(int i) { return vx[i]; }
+    RealType& getVy(int i) { return vy[i]; }
     RealType& getSg(int i) { return sg[i]; }
+    int&      getIt(int i) { return it[i]; }
 
     // Get position record
     vec2* getPRPtr()     { return positionRecord.getPtr(); }
@@ -97,6 +100,9 @@ namespace GFlow {
 
     // Get a list of all the particles
     vector<Particle> getParticles();
+
+    // Get the external forces
+    vector<ExternalForce*>& getExternalForces() { return externalForces; }
 
     // Wrap positions and angles
     void wrap(RealType&, RealType&); // Position wrapping
@@ -134,7 +140,7 @@ namespace GFlow {
     friend class DataRecord;
     // Creator is a friend class
     friend class Creator;
-
+    
   private:
 
     // Number of domain particles

@@ -22,9 +22,14 @@ namespace GFlow {
       _applyForce(simData);
     }
 
+    string summary() const {
+      return _summary();
+    }
+
   protected:
     // Private virtual functions, purely abstract
     virtual void _applyForce(SimData*) const = 0;
+    virtual string _summary()          const = 0;
   };
 
 }

@@ -18,7 +18,7 @@ namespace GFlow {
   SimData* FileParser::parse(string filename) {
     ifstream fin(filename);
     if (fin.fail()) {
-      return nullptr;
+      throw FileDoesNotExist(filename);
     }
 
     // Helper data
@@ -67,6 +67,7 @@ namespace GFlow {
 	walls.push_back(Wall(lx, ly, rx, ry));
       }
 
+      // gravity [ax] [ay]
       else if (tok=="gravity") {
 	RealType x,y;
 	fin >> x >> y;
@@ -88,8 +89,7 @@ namespace GFlow {
     // Set simulation bounds
     simData = new SimData(simBounds, simBounds);
     // Set "gravity"
-    if (gravity!=Zero) 
-      simData->addExternalForce(new ConstantAcceleration(gravity));
+    if (gravity!=Zero) simData->addExternalForce(new ConstantAcceleration(gravity));
     // Set wrapping
     simData->setWrapX(wrapX);
     simData->setWrapY(wrapY);
@@ -108,24 +108,31 @@ namespace GFlow {
     return simData;
   }
   
-  inline void FileParser::make_region(std::ifstream& fin) {
-    // Make a region data structure and store it
-    
+  // Make a region data structure and store it
+  inline void FileParser::make_region(std::ifstream& fin) {    
     // region
     // [left] [right] [bottom] [top]
     // (options) number [number] | disp [dispersion] | disp_type [dispersion type] | it [interaction] | ...
     // end
 
+    // For recording data
     string tok("");
     RealType sigma(-1), dispersion(0), phi(-1), coeff(-1), repulsion(-1), dissipation(-1), velocity(-1);
     Bounds bounds = NullBounds;
     int number(-1), interaction(-1);
     Region region;
 
+    // For getting comments
+    const int max_comment_size = 512;
+    char comment[max_comment_size];
+
     bool end = false;
     fin >> tok;
     while (!fin.eof() && !end) {
-      if (tok=="end") {
+      if (tok.at(0)=='/') {
+        fin.getline(comment, max_comment_size);
+      }
+      else if (tok=="end") {
 	end = true;
 	continue;
       }

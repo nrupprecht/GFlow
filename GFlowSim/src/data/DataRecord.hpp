@@ -36,7 +36,7 @@ namespace GFlow {
     void markTime();
 
     // Get the elapsed time
-    double getElapsedTime();
+    double getElapsedTime() const;
 
     // (Potentially) record data related to simulation data
     void record(SimData*, RealType);
@@ -45,10 +45,10 @@ namespace GFlow {
     void getSectorizationData(Sectorization*);
 
     // Write data
-    void writeData(SimData* = nullptr);
+    void writeData(SimData* = nullptr) const;
 
     // Write run summary data
-    void writeRunSummary(SimData* = nullptr, Integrator* = nullptr);
+    void writeRunSummary(SimData* = nullptr, Integrator* = nullptr) const;
 
     /*** Mutators ***/
 
@@ -71,19 +71,19 @@ namespace GFlow {
     /*** Accessors ***/
 
     // Get the simulation run time
-    RealType getRunTime() { return runTime; }
+    RealType getRunTime() const { return runTime; }
 
     // Get the number of stat functions
-    int getNumberOfStatFunctions() { return statFunctionData.size(); }
+    int getNumberOfStatFunctions() const { return statFunctionData.size(); }
 
     // Get the data recorded by the stat function
-    vector<pair<RealType, RealType> > getStatFunctionData(int);
+    vector<pair<RealType, RealType> > getStatFunctionData(int) const;
     
     // Get the name of the stat function
-    string getStatFunctionName(int);
+    string getStatFunctionName(int) const;
 
     // Get the performance record
-    vector<pair<RealType, RealType> > getPerformanceRecord();
+    vector<pair<RealType, RealType> > getPerformanceRecord() const;
 
     /*** Exception classes ***/
     struct BadStatFunction {
@@ -92,6 +92,9 @@ namespace GFlow {
     };
 
   private:
+    // Private helper functions
+    void writeParticleData(std::ofstream&, SimData*) const;
+
     // The name of the directory we should write to 
     string writeDirectory;
 

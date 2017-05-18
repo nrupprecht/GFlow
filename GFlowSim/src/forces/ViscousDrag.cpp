@@ -7,7 +7,6 @@ namespace GFlow {
   ViscousDrag::ViscousDrag(RealType vis) : viscosity(vis) {};
 
   void ViscousDrag::_applyForce(SimData* simData) const {
-
     // Get data pointers
     RealType *fx = simData->getFxPtr();
     RealType *fy = simData->getFyPtr();
@@ -21,6 +20,10 @@ namespace GFlow {
       fx[i] -= 6*PI*viscosity*sg[i]*vx[i];
       fy[i] -= 6*PI*viscosity*sg[i]*vy[i];
     }
+  }
+
+  string ViscousDrag::_summary() const {
+    return ("Viscous drag: eta = " + toStr(viscosity));
   }
 
 }

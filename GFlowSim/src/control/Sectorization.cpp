@@ -228,7 +228,7 @@ namespace GFlow {
   }
 
   inline void Sectorization::makeSectors() {
-    cutoff = maxCutR + secCutR + skinDepth;
+    cutoff = maxCutR + secCutR;
     // First estimate
     sdx = sdy = (cutoff+skinDepth);
     nsx = static_cast<int>( max(1., (bounds.right-bounds.left)/sdx) );
