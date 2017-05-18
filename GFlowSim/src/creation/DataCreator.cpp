@@ -13,7 +13,7 @@ namespace GFlow {
 
   void Fixed_Phi_Uniform_Radii::makeValues(Region& region, vector<Particle>& particles) {
     // Get parameters
-    RealType volume = (region.right - region.left)*(region.top - region.bottom);
+    RealType volume = region.bounds.volume();
     RealType aim = phi*volume, vol = 0;
 
     // Add more radii until we have the desired packing ratio
@@ -26,11 +26,35 @@ namespace GFlow {
 
   void Uniform_Space_Distribution::makeValues(Region& region, vector<Particle>& particles) {
     // Get parameters
-    RealType left = region.left, width = region.right - left;
-    RealType bottom = region.bottom, height = region.top - bottom;
+    RealType left = region.bounds.left, width = region.bounds.right - left;
+    RealType bottom = region.bounds.bottom, height = region.bounds.top - bottom;
 
     // Distribute positions uniformly
     for (auto& p : particles) p.position = vec2(left+width*drand48(), bottom+height*drand48());
+  }
+
+  void Normal_Random_Velocity::makeValues(Region& region, vector<Particle>& particles) {
+    if (velocity!=0)
+      for (auto& p : particles) {
+	RealType theta = 2*PI*drand48();
+	RealType vel = velocity*normal_dist(generator);
+	p.velocity = vec2(velocity*cos(theta), velocity*sin(theta));
+      }
+    else for (auto& p : particles) p.velocity = Zero;
+  }
+
+  void Uniformly_Random_Theta::makeValues(Region& region, vector<Particle>& particles) {
+    for (auto& p : particles) p.theta = 2*PI*drand48();
+  }
+
+  void Align_Velocity_Theta::makeValues(Region& region, vector<Particle>& particles) {
+    for (auto& p : particles) p.theta = atan2(p.velocity.y, p.velocity.x);
+  }
+
+  void Normal_Random_Omega::makeValues(Region& region, vector<Particle>& particles) {
+    if (omega!=0)
+      for (auto& p : particles) p.omega = omega*normal_dist(generator);
+    else for (auto& p : particles) p.omega = 0;
   }
 
   void Uniformly_Random_Dissipation::makeValues(Region& region, vector<Particle>& particles) {
@@ -43,6 +67,14 @@ namespace GFlow {
 
   void Uniformly_Random_Coeff::makeValues(Region& region, vector<Particle>& particles) {
     for (auto& p : particles) p.coeff = value*(1-dispersion*drand48());
+  }
+
+  void Constant_Density::makeValues(Region& region, vector<Particle>& particles) {
+    for (auto& p : particles) {
+      RealType mass = PI*sqr(p.sigma)*density*(1-dispersion*drand48());
+      p.invMass = 1./mass;
+      p.invII = 1./(0.5*mass*sqr(p.sigma));
+    }
   }
   
 }

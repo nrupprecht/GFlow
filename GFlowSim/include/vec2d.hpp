@@ -29,6 +29,9 @@ struct vec2 {
   friend vec2 operator*(const RealType, const vec2&);
 
   friend std::ostream& operator<<(std::ostream&, const vec2&);
+
+  bool operator==(const vec2&) const;
+  bool operator!=(const vec2&) const;
 };
 
 const vec2 Zero(0,0);

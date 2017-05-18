@@ -9,6 +9,7 @@
 
 // Includes
 #include "../../include/Utility.hpp"
+#include "../../include/Bounds.hpp"
 
 namespace GFlow {
 
@@ -21,8 +22,9 @@ namespace GFlow {
    *
    */
   struct Region {
+    Region() : position(nullptr), velocity(nullptr), theta(nullptr), omega(nullptr), sigma(nullptr), inertia(nullptr), dissipation(nullptr), coeff(nullptr), interaction(nullptr) {};
     // Bounds
-    RealType left, right, bottom, top;
+    Bounds bounds;
     // Create vec2 type data
     DataCreator *position, *velocity;
     // Create RealType data

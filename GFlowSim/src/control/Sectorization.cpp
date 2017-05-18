@@ -30,6 +30,7 @@ namespace GFlow {
     }
     // Set up sector array
     makeSectors();
+    
     // Get mpi data
     rank = simData->getRank();
     numProc = simData->getNumProc();
@@ -55,11 +56,11 @@ namespace GFlow {
 #ifdef USE_MPI //******* MPI related functions ************//
 
   void Sectorization::atom_move() {
-    cout << "Moving atoms.\n";
+
   }
 
   void Sectorization::atom_copy() {
-    cout << "Copying atoms.\n";
+    
   }
 
 #endif //******* End MPI related functions ********//

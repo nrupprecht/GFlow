@@ -20,7 +20,9 @@ namespace GFlow {
   class DataRecord;
   // Forward declaration to ExternalForce
   class ExternalForce;
-
+  // Forward declaration to Creator
+  class Creator;
+  
   /*
    * @class SimData
    *
@@ -36,11 +38,15 @@ namespace GFlow {
     // Reserve particle size
     void reserve(int, int=-1);
 
+    // Reserve additional space for particles
+    void reserveAdditional(int, int=-1);
+
     // Add walls
     void addWall(const Wall&);
 
     // Add particles
     void addParticle(const Particle&);
+    void addParticle(const vector<Particle>&);
 
     // Access sizes and capacities
     int getDomainSize()     { return domain_size; }
@@ -125,7 +131,9 @@ namespace GFlow {
 
     // DataRecord is a friend class
     friend class DataRecord;
-    
+    // Creator is a friend class
+    friend class Creator;
+
   private:
 
     // Number of domain particles

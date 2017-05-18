@@ -19,6 +19,8 @@ namespace GFlow {
   }
 
   void SimData::reserve(int dcap, int ecap) {
+    // Check if ecap should be changed
+    if (ecap<0) ecap = edge_capacity;
     // Reserve all data arrays
     px.reserve2(domain_capacity, dcap, edge_capacity, ecap);
     py.reserve2(domain_capacity, dcap, edge_capacity, ecap);
@@ -43,6 +45,15 @@ namespace GFlow {
     // Set sizes
     domain_capacity = dcap;
     edge_capacity  = ecap;
+  }
+
+  void SimData::reserveAdditional(int d_additional, int e_additional) {
+    // Check if ecap should be changed
+    if (e_additional<0) e_additional = 0;
+    // Total room we will need
+    int dcap = domain_capacity + d_additional;
+    int ecap = edge_capacity + e_additional;
+    reserve(dcap, ecap);
   }
 
   void SimData::addWall(const Wall& w) {
@@ -76,6 +87,10 @@ namespace GFlow {
     positionRecord[domain_size] = p.position;
     // Increment domain_size
     ++domain_size;
+  }
+
+  void SimData::addParticle(const vector<Particle>& particles) {
+    for (const auto& p : particles) addParticle(p);
   }
 
   RealType** SimData::getPData() {

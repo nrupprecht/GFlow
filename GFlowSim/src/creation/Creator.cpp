@@ -70,31 +70,50 @@ namespace GFlow {
   }
 
   bool Creator::createRegion(Region& region, SimData* simData) {
-    if (region.left<simData->getSimBounds().left || simData->getSimBounds().right<region.right || region.bottom<simData->getSimBounds().bottom || region.top<simData->getSimBounds().top) return false;
+    if (!simData->simBounds.contains(region.bounds)) return false;
 
     // List of particles we are creating
     vector<Particle> particles;
 
     // First create radii list (this also allocates the correct number of particles)
-    region.sigma->makeValues(region, particles);
+    if (region.sigma) region.sigma->makeValues(region, particles);
+    else return false; // We require a sigma function
 
     // Assign interaction
-    region.interaction->makeValues(region, particles);
+    if (region.interaction) region.interaction->makeValues(region, particles);
+    else ;
 
-    // Assign positions and velocities
-    region.position->makeValues(region, particles);
-    region.theta->makeValues(region, particles);
-    region.velocity->makeValues(region, particles);
-    region.omega->makeValues(region, particles);
+    // Assign positions
+    if (region.position) region.position->makeValues(region, particles);
+    else Uniform_Space_Distribution().makeValues(region, particles);
+    // Assign theta
+    if (region.theta) region.theta->makeValues(region, particles);
+    else Uniformly_Random_Theta().makeValues(region, particles);
+    // Assign velocity
+    if (region.velocity) region.velocity->makeValues(region, particles);
+    else Normal_Random_Velocity().makeValues(region, particles);
+    // Assign angles
+    if (region.omega) region.omega->makeValues(region, particles);
+    else Normal_Random_Omega().makeValues(region, particles);
 
     // Assign inertias (masses and moments of inertia)
-    region.inertia->makeValues(region, particles);
+    if (region.inertia) region.inertia->makeValues(region, particles);
+    else Constant_Density().makeValues(region, particles);
 
-    // Assign repulsion, dissipation, coefficient of friction
-    region.repulsion->makeValues(region, particles);
-    region.dissipation->makeValues(region, particles);
-    region.coeff->makeValues(region, particles);
-
+    // Assign repulsion
+    if (region.repulsion) region.repulsion->makeValues(region, particles);
+    else Uniformly_Random_Repulsion().makeValues(region, particles);
+    // Assign dissipation
+    if (region.dissipation) region.dissipation->makeValues(region, particles);
+    else Uniformly_Random_Dissipation().makeValues(region, particles);
+    // Assign coefficient of friction
+    if (region.coeff) region.coeff->makeValues(region, particles);
+    else Uniformly_Random_Coeff().makeValues(region, particles);
+    
+    // Reserve more room for the new particles
+    simData->reserveAdditional(particles.size(), 0);
+    // Add the particles to simData
+    simData->addParticle(particles);
 
     return true;
   }

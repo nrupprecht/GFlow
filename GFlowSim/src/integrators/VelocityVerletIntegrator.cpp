@@ -46,7 +46,7 @@ namespace GFlow {
 
     // Calculate forces
     forces();
-
+    
     // Second VV half kick
     secondHalfKick();
   }

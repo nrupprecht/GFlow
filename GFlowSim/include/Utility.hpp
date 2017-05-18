@@ -93,18 +93,18 @@ namespace GFlow {
   }
 
   // high_resolution_clock::time_point
-  template<typename T> inline double time_span(T end, T start) {
-    duration<double> span = duration_cast<duration<double>>(end-start);
+  template<typename T> inline RealType time_span(T end, T start) {
+    duration<RealType> span = duration_cast<duration<double>>(end-start);
     return span.count();
   }
 
   // PData records all the data you need to print particles:
   // { pos x, pos y, sigma, theta, interaction, 'color' }
-  typedef std::tuple<double, double, double, double, double, double> PData;
+  typedef std::tuple<RealType, RealType, RealType, RealType, RealType, RealType> PData;
 
   // Random number generators
   static std::mt19937 generator;
-  static std::normal_distribution<double> normal_dist(0., 1.);
+  static std::normal_distribution<RealType> normal_dist(0., 1.);
   static std::poisson_distribution<int> poisson_dist();
 }
 

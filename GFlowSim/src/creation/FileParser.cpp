@@ -26,25 +26,19 @@ namespace GFlow {
     char c;
     char comment[max_comment_size];
     string tok, opt;
-    fin >> c;
-
+    // Get the first token
+    fin >> tok;
     while (!fin.eof()) {      
       // (comment) // 
-      if (c=='/') {
+      if (tok.at(0)=='/') {
 	fin.getline(comment, max_comment_size);
-	fin.get(c);
+	fin >> tok;
 	continue;
       }
       
       // Otherwise
-      if (isalpha(c)) {
-	fin.putback(c);
-	fin >> tok;
-      }
-      else { // Error
-	
-      }
-      
+      if (!isalpha(tok.at(0))) return nullptr; // Error
+
       // wrapX [true/false]
       if (tok=="wrapX" || tok=="wrapY") {
 	fin >> opt;
@@ -56,9 +50,14 @@ namespace GFlow {
 	  if (tok=="wrapX") wrapX = false;
           else              wrapY = false;
 	}
-	else { // Error
-	  
-	}
+	else return nullptr;
+      }
+
+      // bounds [lf] [rt] [bt] [tp]
+      else if (tok=="bounds") {
+	RealType lf, rg, bt, tp;
+	fin >> lf >> rg >> bt >> tp;
+	simBounds = Bounds(lf, rg, bt, tp);
       }
       
       // wall [lx] [ly] [rx] [ry]
@@ -75,13 +74,17 @@ namespace GFlow {
       else if (tok=="region") make_region(fin);
       
       // Get the next character
-      fin >> c;
+      fin >> tok;
     }
 
     // Create simulation data
     if (simBounds==NullBounds) return nullptr;
-    simData->setBounds(simBounds);
-    simData->addExternalForce(new ConstantAcceleration(gravity));
+    // Set simulation bounds
+    simData = new SimData(simBounds, simBounds);
+    // Set "gravity"
+    if (gravity!=Zero) 
+      simData->addExternalForce(new ConstantAcceleration(gravity));
+    // Set wrapping
     simData->setWrapX(wrapX);
     simData->setWrapY(wrapY);
     for (auto& w : walls) {
@@ -92,8 +95,18 @@ namespace GFlow {
       simData->addParticle(p);
     }
     for (auto& r : regions) {
+      // Set bounds to the entire region if the bounds are unspecified
+      if (r.bounds==NullBounds) r.bounds = simBounds;
       creator->createRegion(r, simData);
     }
+
+    // Let the simulation relax, using heavy viscous drag, so particles do not overlap with things
+    VelocityVerletIntegrator verlet(simData);
+    verlet.addExternalForce(new ViscousDrag(1.)); // This is large enough
+    verlet.initialize(0.25);
+    verlet.integrate();
+    // Remove drag force
+    simData->clearExternalForces();
 
     return simData;
   }
@@ -108,6 +121,7 @@ namespace GFlow {
 
     string tok("");
     RealType r_value(0), sigma(-1), dispersion(0), phi(-1);
+    Bounds bounds = NullBounds;
     int i_value(0), number(-1);
     Region region;
 
@@ -130,6 +144,12 @@ namespace GFlow {
       else if (tok=="phi") {
 	fin >> phi;
       }
+      else if (tok=="bounds") {
+	RealType left, right, bottom, top;
+	fin >> left >> right >> bottom >> top;
+	bounds = Bounds(left, right, bottom, top);
+      }
+      else throw false; // Invalid option
 
       // Get next token
       fin >> tok;
@@ -143,6 +163,8 @@ namespace GFlow {
       if (region.sigma) delete region.sigma;
       region.sigma = new Fixed_Phi_Uniform_Radii(phi, sigma, dispersion);
     }
+    // Bounds will be NullBounds (whole space) if no bounds were specified
+    region.bounds = bounds;
 
     // Feed the Region to the creator
     regions.push_back(region);
