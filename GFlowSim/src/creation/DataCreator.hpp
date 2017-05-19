@@ -1,3 +1,9 @@
+/*
+ * Author: Nathaniel Rupprecht
+ * Start Data: May 16, 2017
+ *
+ */
+
 #ifndef __DATA_CREATOR_HPP__
 #define __DATA_CREATOR_HPP__
 

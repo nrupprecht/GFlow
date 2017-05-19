@@ -1,3 +1,9 @@
+/*
+ * Author: Nathaniel Rupprecht
+ * Start Data: May 16, 2017
+ *
+ */
+
 #ifndef __FILE_PARSER_HPP__
 #define __FILE_PARSER_HPP__
 

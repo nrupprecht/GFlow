@@ -1,3 +1,9 @@
+/*
+ * Author: Nathaniel Rupprecht
+ * Start Data: May 15, 2017
+ *
+ */
+
 #ifndef __VISCOUS_DRAG_HPP__
 #define __VISCOUS_DRAG_HPP__
 

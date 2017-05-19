@@ -1,3 +1,9 @@
+/*
+ * Author: Nathaniel Rupprecht
+ * Start Data: May 17, 2017
+ *
+ */
+
 #ifndef __CONSTANT_ACCELERATION_HPP__
 #define __CONSTANT_ACCELERATION_HPP__
 

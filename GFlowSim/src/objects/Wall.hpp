@@ -1,4 +1,8 @@
-
+/*
+ * Author: Nathaniel Rupprecht
+ * Start Data: May 12, 2017
+ *
+ */
 
 #ifndef __WALL_HPP__
 #define __WALL_HPP__
