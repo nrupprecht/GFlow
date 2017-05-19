@@ -15,11 +15,17 @@ using namespace GFlow;
 int main (int argc, char** argv) {
 
   string config = "";
+  string writeDirectory = "";
   RealType time = 10;
   bool animate = false;
+  bool maxRatio = false;
   bool ratio = false;
   bool KE = false;
   bool perf = false;
+  bool maxV = false;
+
+  bool print = false;       // Whether we should print stat data to the screen
+
   bool adjust = true;       // Whether to auto-adjust the time step
   bool updateAdjust = true; // Whether to auto-adjust the update delay
 
@@ -32,12 +38,18 @@ int main (int argc, char** argv) {
     cout << "Illegal Token: " << token.c << ". Exiting.\n";
     exit(1);
   }
+  // Logistics options
   parser.get("config", config);
+  parser.get("writeDirectory", writeDirectory);
   parser.get("time", time);
+  // Animation options
   parser.get("animate", animate);
+  parser.get("maxRatio", maxRatio);
   parser.get("ratio", ratio);
   parser.get("KE", KE);
   parser.get("perf", perf);
+  parser.get("maxV", maxV);
+  // Performance options
   parser.get("adjust", adjust);
   parser.get("updateAdjust", updateAdjust);
   // Make sure we didn't enter any illegal tokens (ones not listed above) on the command line
@@ -86,12 +98,14 @@ int main (int argc, char** argv) {
 
   // Set up a data recorder
   DataRecord *dataRecord = new DataRecord;
+  if (writeDirectory!="") dataRecord->setWriteDirectory(writeDirectory);
   integrator.setDataRecord(dataRecord);
   // Set record options
   if (dataRecord) {
-    if (KE) dataRecord->addStatFunction(StatFunc_AveKE, "KE");
-    if (ratio) dataRecord->addStatFunction(StatFunc_MaxVelocitySigmaRatio, "ratio");
-
+    if (KE)       dataRecord->addStatFunction(StatFunc_AveKE, "KE");
+    if (maxRatio) dataRecord->addStatFunction(StatFunc_MaxVelocitySigmaRatio, "maxRatio");
+    if (ratio)    dataRecord->addStatFunction(StatFunc_MinSigmaVelocityRatio, "ratio");
+    if (maxV)     dataRecord->addStatFunction(StatFunc_MaxVelocity, "maxV");
     dataRecord->setRecPos(animate);
     dataRecord->setRecPerf(perf);
   }
@@ -122,18 +136,20 @@ int main (int argc, char** argv) {
     dataRecord->writeRunSummary(simData, &integrator);
 
     // Write out stat function data - for now
-    int numStatFuncs = dataRecord->getNumberOfStatFunctions();
-    for (int i=0; i<numStatFuncs; ++i) {
-      auto data   = dataRecord->getStatFunctionData(i);
-      string name = dataRecord->getStatFunctionName(i);
-      cout << name << "=" << mmPreproc(data,3) << ";\n";
-      cout << "ListLinePlot[" << name << ",ImageSize->Large,PlotStyle->Black]\n";
+    if (print) {
+      int numStatFuncs = dataRecord->getNumberOfStatFunctions();
+      for (int i=0; i<numStatFuncs; ++i) {
+	auto data   = dataRecord->getStatFunctionData(i);
+	string name = dataRecord->getStatFunctionName(i);
+	cout << name << "=" << mmPreproc(data) << ";\n";
+	cout << "ListLinePlot[" << name << ",ImageSize->Large,PlotStyle->Black]\n";
+      }
     }
 
     // Print performance
     auto performanceRecord = dataRecord->getPerformanceRecord();
     if (performanceRecord.size()>0) {
-      cout << "perf=" << mmPreproc(performanceRecord,3) << ";\n";
+      cout << "perf=" << mmPreproc(performanceRecord) << ";\n";
       cout << "ListLinePlot[perf,ImageSize->Large,PlotStyle->Black]\n";
     }
   }

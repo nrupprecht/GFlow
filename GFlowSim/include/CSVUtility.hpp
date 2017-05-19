@@ -21,6 +21,19 @@ namespace GFlow {
     return str;
   }
 
+  template<typename S, typename T> inline string toCSV(const std::pair<S,T>& p) {
+    string first, second;
+    stringstream stream;
+    stream << p.first;
+    stream >> first;
+    stream.clear();
+    stream << p.second;
+    stream >> second;
+
+    return (first+","+second);
+
+  }
+
   template<typename... T> string toCSV(const PData& pdata) {
     stringstream stream;
     string str;

@@ -44,6 +44,23 @@ namespace GFlow {
       for (auto& p : particles) p.velocity = Zero;
   }
 
+  void Normal_Random_KE::makeValues(Region& region, vector<Particle>& particles) {
+    if (vsgma!=0)
+      for (auto& p : particles) {
+        RealType theta = 2*PI*drand48();
+        vec2 v(cos(theta), sin(theta));
+	double ke = fabs(vsgma*normal_dist(generator));
+	double velocity = sqrt(2*p.invMass*ke/127.324);
+        p.velocity = velocity*v;
+      }
+    else
+      for (auto& p : particles) p.velocity = Zero;
+  }
+
+  void Constant_Velocity::makeValues(Region& region, vector<Particle>& particles) {
+    for (auto& p : particles) p.velocity = velocity;
+  }
+
   void Uniform_Random_Theta::makeValues(Region& region, vector<Particle>& particles) {
     for (auto& p : particles) p.theta = 2*PI*drand48();
   }

@@ -121,11 +121,28 @@ namespace GFlow {
 	cout << "Failed to print bounds to [" << writeDirectory << "/bnds.csv].\n";
     
     // Create Positions directory
-    mkdir((writeDirectory+"/Pos").c_str(), 0777);
-    // Write position data
-    for (int i=0; i<positionRecord.size(); ++i)
-      if (!printToCSV(writeDirectory+"/Pos/pos", positionRecord.at(i), i))
-	cout << "Failed to print to [" << writeDirectory << "/Pos/pos" << i << "].\n";
+    if (recPos) {
+      mkdir((writeDirectory+"/Pos").c_str(), 0777);
+      // Write position data
+      for (int i=0; i<positionRecord.size(); ++i)
+	if (!printToCSV(writeDirectory+"/Pos/pos", positionRecord.at(i), i))
+	  cout << "Failed to print to [" << writeDirectory << "/Pos/pos" << i << "].\n";
+    }
+
+    // Write stat function data to files
+    if (!statFunctions.empty()) {
+      mkdir((writeDirectory+"/StatData").c_str(), 0777);
+      // Write the names of all the files that will be generated
+      ofstream fout(writeDirectory+"/StatData/statNames.csv");
+      if (fout.fail()) cout << "Failed to open [" << writeDirectory << "/StatData/statNames.txt].\n";
+      for (auto& name : statFunctionName) fout << name << "\n";
+      fout.close();
+      // Write stat data
+      for (int i=0; i<statFunctionData.size(); ++i) {
+	if (!printToCSV(writeDirectory+"/StatData/"+statFunctionName.at(i)+".csv", statFunctionData.at(i)))
+	  cout << "Failed to print to [" << writeDirectory << "/StatData/" << statFunctionName.at(i) << "].\n";
+      }
+    }
   }
 
   void DataRecord::writeRunSummary(SimData* simData, Integrator* integrator) const {
@@ -258,6 +275,34 @@ namespace GFlow {
       if (-1<simData->it[i]) coeff += simData->cf[i];
     coeff /= simData->domain_size;
     fout << "  - Average coeff:            " << coeff << "\n";
+
+    // Find average mass
+    RealType mass = 0;
+    for(int i=0; i<simData->domain_size; ++i)
+      if (-1<simData->it[i]) mass += 1./simData->im[i];
+    mass /= simData->domain_size;
+    fout << "  - Average mass:             " << mass << "\n";
+
+    // Find average density
+    RealType density = 0;
+    for(int i=0; i<simData->domain_size; ++i)
+      if (-1<simData->it[i]) density += 1./simData->im[i]/(PI*sqr(simData->sg[i]));
+    density /= simData->domain_size;
+    fout << "  - Average density:          " << density << "\n";
+
+    // Find average speed
+    RealType speed = 0;
+    for(int i=0; i<simData->domain_size; ++i)
+      if (-1<simData->it[i]) speed += sqrt(sqr(simData->vx[i]) + sqr(simData->vy[i]));
+    speed /= simData->domain_size;
+    fout << "  - Average speed:            " << speed << "\n";
+    
+    // Find average omega
+    RealType omega = 0;
+    for(int i=0; i<simData->domain_size; ++i)
+      if (-1<simData->it[i]) omega += simData->om[i];
+    omega /= simData->domain_size;
+    fout << "  - Average omega:            " << omega << "\n";
 
     // Section divide new line
     fout << "\n";

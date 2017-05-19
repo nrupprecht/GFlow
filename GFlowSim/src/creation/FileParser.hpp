@@ -2,6 +2,7 @@
 #define __FILE_PARSER_HPP__
 
 // Includes
+#include "ParsingTokens.hpp"
 #include "../control/SimData.hpp"
 #include "../forces/ConstantAcceleration.hpp"
 
@@ -26,7 +27,10 @@ namespace GFlow {
     ~FileParser();
 
     // Parse a set up file and create a simulation based on it
-    SimData* parse(string);
+    SimData* parse(string, unsigned = 0);
+
+    // Get the random seed used
+    unsigned getSeed() { return randomSeed; }
 
     // Exception classes
     struct FileDoesNotExist {
@@ -37,6 +41,10 @@ namespace GFlow {
   private:
     // Private helper functions
     inline void make_region(std::ifstream&);
+    inline void make_wall(std::ifstream&);
+    inline void make_particle(std::ifstream&);
+    inline void seed_rand();
+    inline void seed_rand(unsigned);
 
     // List of regions to make
     vector<Region> regions;
@@ -55,6 +63,9 @@ namespace GFlow {
 
     // The creator we use to set up the simulation
     Creator* creator;
+
+    // What random seed we used
+    unsigned randomSeed;
   };
   
 }

@@ -14,10 +14,25 @@ namespace GFlow {
     RealType edge = 0.;
 
     // Add boundary walls
-    simData->addWall(Wall(edge,edge,edge,height-edge)); // Left   wall
-    simData->addWall(Wall(edge,edge,width-edge,edge)); // Bottom wall
-    simData->addWall(Wall(width-edge,edge,width-edge,height-edge)); // Right  wall
-    simData->addWall(Wall(edge,height-edge,height-edge,height-edge)); // Top    wall
+    Wall w(edge,edge,edge,height-edge);  // Left wall
+    w.dissipation = 0;
+    w.coeff = 0;
+    simData->addWall(w);
+
+    w = Wall(edge,edge,width-edge,edge); // Bottom wall
+    w.dissipation = 0;
+    w.coeff = 0;
+    simData->addWall(w);
+
+    w = Wall(width-edge,edge,width-edge,height-edge); // Right wall
+    w.dissipation = 0;
+    w.coeff = 0;
+    simData->addWall(w);
+
+    w = Wall(edge,height-edge,height-edge,height-edge); // Top wall
+    w.dissipation = 0;
+    w.coeff = 0;
+    simData->addWall(w);
 
     // Make room for particles
     int domain_size = 1018, edge_size = 0;

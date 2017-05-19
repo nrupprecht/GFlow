@@ -57,6 +57,10 @@ namespace GFlow {
     virtual inline void forces();
     virtual inline void secondHalfKick();
 
+    // Adjustment functions
+    inline void doAdjustDelay();
+    inline void doAdjustTimeStep();
+
     // Delay between updating sectors
     RealType updateDelay;
 

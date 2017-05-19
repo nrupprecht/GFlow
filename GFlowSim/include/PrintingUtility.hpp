@@ -82,5 +82,16 @@ namespace GFlow {
     return str;
   }
 
+  template<typename S, typename T> inline string toStr(const std::pair<S,T>& p) {
+    string first, second;
+    stringstream stream;
+    stream << p.first;
+    stream >> first;
+    stream.clear();
+    stream << p.second;
+    stream >> second;
+    return ("{"+first+","+second+"}");
+  }
+
 }
 #endif // __PRINTING_UTILITY_HPP__

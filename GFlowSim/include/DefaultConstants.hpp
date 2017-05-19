@@ -13,8 +13,8 @@ namespace GFlow {
   
   // Wall constants
   const RealType default_wall_repulsion       = 150.;
-  const RealType default_wall_dissipation     = 0; // 50.;
-  const RealType default_wall_coeff           = 0; // sqrt(0.5);
+  const RealType default_wall_dissipation     = 50.;
+  const RealType default_wall_coeff           = sqrt(0.5);
 
   // Sectorization constants
   const RealType default_sectorization_skin_depth = 0.025;

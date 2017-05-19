@@ -50,6 +50,24 @@ namespace GFlow {
     RealType velocity;
   };
 
+  // Velocity 
+  struct Normal_Random_KE : public DataCreator {
+    Normal_Random_KE() : vsgma(0.25) {};
+    Normal_Random_KE(RealType s) : vsgma(s) {};
+    virtual void makeValues(Region&, vector<Particle>&);
+  private:
+    RealType vsgma;
+  };
+
+  // Velocity
+  struct Constant_Velocity : public DataCreator {
+    Constant_Velocity() : velocity(Zero) {};
+    Constant_Velocity(RealType vx, RealType vy) : velocity(vec2(vx,vy)) {};
+    virtual void makeValues(Region&, vector<Particle>&);
+  private:
+    vec2 velocity;
+  };
+
   // Theta
   struct Uniform_Random_Theta : public DataCreator {
     virtual void makeValues(Region&, vector<Particle>&);

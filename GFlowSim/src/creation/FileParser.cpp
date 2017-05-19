@@ -3,7 +3,7 @@
 
 namespace GFlow {
 
-  FileParser::FileParser() : creator(new Creator), simData(nullptr) {
+  FileParser::FileParser() : creator(new Creator), simData(nullptr), randomSeed(0) {
     // Default values
     gravity   = Zero;
     wrapX     = false;
@@ -15,11 +15,15 @@ namespace GFlow {
     if (creator) delete creator;
   }
   
-  SimData* FileParser::parse(string filename) {
+  SimData* FileParser::parse(string filename, unsigned seed) {
     ifstream fin(filename);
     if (fin.fail()) {
       throw FileDoesNotExist(filename);
     }
+
+    // Seed random number generator
+    if (seed==0) seed_rand();
+    else seed_rand(seed);
 
     // Helper data
     const int max_comment_size = 512;
@@ -30,7 +34,7 @@ namespace GFlow {
     fin >> tok;
     while (!fin.eof()) {      
       // (comment) // 
-      if (tok.at(0)=='/') {
+      if (tok.at(0)==Comment_Tok) {
 	fin.getline(comment, max_comment_size);
 	fin >> tok;
 	continue;
@@ -40,35 +44,34 @@ namespace GFlow {
       if (!isalpha(tok.at(0))) return nullptr; // Error
 
       // wrapX [true/false]
-      if (tok=="wrapX" || tok=="wrapY") {
+      if (tok==WrapX_Tok || tok==WrapY_Tok) {
 	fin >> opt;
-	if (opt=="true") {
-	  if (tok=="wrapX") wrapX = true;
+	if (opt==Bool_True) {
+	  if (tok==WrapX_Tok) wrapX = true;
 	  else              wrapY = true;
 	}
-	else if (opt=="false") {
-	  if (tok=="wrapX") wrapX = false;
+	else if (opt==Bool_False) {
+	  if (tok==WrapX_Tok) wrapX = false;
           else              wrapY = false;
 	}
 	else return nullptr;
       }
 
       // bounds [lf] [rt] [bt] [tp]
-      else if (tok=="bounds") {
+      else if (tok==Bounds_Tok) {
 	RealType lf, rg, bt, tp;
 	fin >> lf >> rg >> bt >> tp;
 	simBounds = Bounds(lf, rg, bt, tp);
       }
       
-      // wall [lx] [ly] [rx] [ry]
-      else if (tok=="wall") {
-	RealType lx, ly, rx, ry;
-	fin >> lx >> ly >> rx >> ry;
-	walls.push_back(Wall(lx, ly, rx, ry));
-      }
+      // wall
+      else if (tok==Wall_Tok) make_wall(fin);
+
+      // particle
+      else if (tok==Particle_Tok) make_particle(fin);
 
       // gravity [ax] [ay]
-      else if (tok=="gravity") {
+      else if (tok==Gravity_Tok) {
 	RealType x,y;
 	fin >> x >> y;
 	gravity = vec2(x,y);
@@ -78,7 +81,7 @@ namespace GFlow {
       // [left] [right] [bottom] [top]
       // (options) N [number] | disp [dispersion] | disp_type [dispersion type] | it [interaction] | ...
       // end
-      else if (tok=="region") make_region(fin);
+      else if (tok==Region_Tok) make_region(fin);
       
       // Get the next character
       fin >> tok;
@@ -111,59 +114,73 @@ namespace GFlow {
   // Make a region data structure and store it
   inline void FileParser::make_region(std::ifstream& fin) {    
     // region
-    // [left] [right] [bottom] [top]
-    // (options) number [number] | disp [dispersion] | disp_type [dispersion type] | it [interaction] | ...
+    // bounds [left] [right] [bottom] [top] | number [number] | disp [dispersion] | disp_type [dispersion type] | it [interaction] | ...
+    // ...
     // end
 
     // For recording data
     string tok("");
-    RealType sigma(-1), dispersion(0), phi(-1), coeff(-1), repulsion(-1), dissipation(-1), velocity(-1);
+    RealType sigma(-1), dispersion(0), phi(-1), coeff(-1), repulsion(-1), dissipation(-1), velocity(-1), vy(-1);
     Bounds bounds = NullBounds;
     int number(-1), interaction(-1);
     Region region;
+    
+    // Choice of how we choose velocities
+    bool randomVChoice[3]; 
+    for(int i=0; i<3; ++i) randomVChoice[i] = false;
 
     // For getting comments
     const int max_comment_size = 512;
     char comment[max_comment_size];
 
+    // Loop
     bool end = false;
     fin >> tok;
     while (!fin.eof() && !end) {
-      if (tok.at(0)=='/') {
+      if (tok.at(0)==Comment_Tok) {
         fin.getline(comment, max_comment_size);
       }
-      else if (tok=="end") {
+      else if (tok==End_Tok) {
 	end = true;
 	continue;
       }
-      else if (tok=="number") {
+      else if (tok==Number_Tok) {
 	fin >> number;
       }
-      else if (tok=="phi") {
+      else if (tok==Phi_Tok) {
 	fin >> phi;
       }
-      else if (tok=="sigma" || tok=="radius") {
+      else if (tok==Sigma_Tok) {
 	fin >> sigma;
       }
-      else if (tok=="dispersion") {
+      else if (tok==Dispersion_Tok) {
 	fin >> dispersion;
       }
-      else if (tok=="velocity") {
+      else if (tok==Normal_Velocity_Tok) {
 	fin >> velocity;
+	randomVChoice[0] = true;
       }
-      else if (tok=="repulsion") {
+      else if (tok==Normal_KE_Tok) {
+	fin >> velocity;
+	randomVChoice[1] = true;
+      }
+      else if (tok==Velocity_Tok) {
+	fin >> velocity >> vy;
+	randomVChoice[2] = true;
+      }
+      else if (tok==Repulsion_Tok) {
 	fin >> repulsion;
       }
-      else if (tok=="dissipation") {
+      else if (tok==Dissipation_Tok) {
 	fin >> dissipation;
       }
-      else if (tok=="coeff") {
+      else if (tok==Coeff_Tok) {
 	fin >> coeff;
       }
-      else if (tok=="interaction") {
+      else if (tok==Interaction_Tok) {
 	fin >> interaction;
       }
-      else if (tok=="bounds") {
+      else if (tok==Bounds_Tok) {
 	RealType left, right, bottom, top;
 	fin >> left >> right >> bottom >> top;
 	bounds = Bounds(left, right, bottom, top);
@@ -187,7 +204,9 @@ namespace GFlow {
     }
     // Velocity
     if (0<=velocity) {
-      region.velocity = new Normal_Random_Velocity(velocity);
+      if (randomVChoice[0])      region.velocity = new Normal_Random_Velocity(velocity);
+      else if (randomVChoice[1]) region.velocity = new Normal_Random_KE(velocity);
+      else if (randomVChoice[2]) region.velocity = new Constant_Velocity(velocity, vy);
     }
     // Repulsion
     if (0<=repulsion) {
@@ -207,6 +226,125 @@ namespace GFlow {
 
     // Feed the Region to the creator
     regions.push_back(region);
+  }
+
+  inline void FileParser::make_wall(std::ifstream& fin) {
+
+    // wall
+    // pos [lx] [ly] [rx] [ry] | repulsion [repulsion] | dissipation [dissipation] | coeff [coeff]
+    // ...
+    // end    
+
+    // For recording data
+    string tok("");
+    RealType lx(0), ly(0), rx(0), ry(0);
+    RealType repulsion(default_wall_repulsion), dissipation(default_wall_dissipation), coeff(default_wall_coeff);
+
+    // For getting comments
+    const int max_comment_size = 512;
+    char comment[max_comment_size];
+
+    // Loop
+    bool end = false;
+    fin >> tok;
+    while (!fin.eof() && !end) {
+      if (tok.at(0)==Comment_Tok) {
+        fin.getline(comment, max_comment_size);
+      }
+      else if (tok==End_Tok) {
+	end = true;
+	continue;
+      }
+      else if (tok==Position_Tok) {
+	fin >> lx >> ly >> rx >> ry;
+      }
+      else if (tok==Repulsion_Tok) {
+	fin >> repulsion;
+      }
+      else if (tok==Dissipation_Tok) {
+	fin >> dissipation;
+      }
+      else if (tok==Coeff_Tok) {
+	fin >> coeff;
+      }
+
+      fin >> tok;
+    }
+
+    // Make the wall from the gathered values
+    if (!(lx==0 && ly==0 && rx==0 && ry==0)) {
+      Wall w(lx, ly, rx, ry);
+      w.repulsion = repulsion;
+      w.dissipation = dissipation;
+      w.coeff = coeff;
+      walls.push_back(w);
+    }
+  }
+
+  void FileParser::make_particle(std::ifstream& fin) {
+    // wall
+    // pos [lx] [ly] [rx] [ry] | repulsion [repulsion] | dissipation [dissipation] | coeff [coeff]
+    // ...
+    // end
+    
+    // For recording data
+    string tok("");
+    RealType X(0), Y(0), R(-1);
+    bool gotPos = false;
+    RealType repulsion(default_particle_repulsion), dissipation(default_particle_dissipation), coeff(default_particle_coeff);
+    
+    // For getting comments
+    const int max_comment_size = 512;
+    char comment[max_comment_size];
+    
+    // Loop
+    bool end = false;
+    fin >> tok;
+    while (!fin.eof() && !end) {
+      if (tok.at(0)==Comment_Tok) {
+	fin.getline(comment, max_comment_size);
+      }
+      else if (tok==End_Tok) {
+	end = true;
+	continue;
+      }
+      else if (tok==Position_Tok) {
+	fin >> X >> Y;
+	gotPos = true;
+      }
+      else if (tok==Repulsion_Tok) {
+	fin >> repulsion;
+      }
+      else if (tok==Dissipation_Tok) {
+	fin >> dissipation;
+      }
+      else if (tok==Coeff_Tok) {
+	fin >> coeff;
+      }
+    }
+    
+    // Create and add the particle to the list
+    if (gotPos && 0<R) {
+      Particle P(X,Y,R);
+      P.repulsion = repulsion;
+      P.dissipation = dissipation;
+      P.coeff = coeff;
+      particles.push_back(P);
+    }
+  }
+  
+  inline void FileParser::seed_rand() {
+    randomSeed = std::chrono::system_clock::now().time_since_epoch().count();
+    srand48( randomSeed );
+    srand  ( randomSeed );
+    generator = std::mt19937(randomSeed);
+  }
+  
+  inline void FileParser::seed_rand(unsigned seed) {
+    randomSeed = seed;
+    srand48( randomSeed );
+    srand  ( randomSeed );
+    generator =std::mt19937(randomSeed);
   }
 
 }

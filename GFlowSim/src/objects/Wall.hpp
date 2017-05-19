@@ -1,3 +1,5 @@
+
+
 #ifndef __WALL_HPP__
 #define __WALL_HPP__
 
@@ -10,6 +12,7 @@ namespace GFlow {
 
   /*
    * @class Wall
+   * Defines a stationary wall
    *
    */
   struct Wall {
