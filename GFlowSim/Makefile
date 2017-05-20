@@ -2,7 +2,9 @@ CC = icpc
 MPICC = mpic++
 CFLAG = -std=c++14 -Wall
 OPTFLAGS = -xHost -O3 -no-prec-div -static -fp-model fast=2 -restrict -funroll-loops -no-inline-max-size
-QOPT = # -qopt-report 5
+#QOPT = # -qopt-report 5
+#OPTFLAGS = -O3 -static -funroll-loops -mllvm -vectorize-slp -mllvm -bb-vectorize-aligned-only -ffast-math -ffinite-math-only -freciprocal-math -ftree-vectorize -fslp-vectorize-aggressive -fstrict-vtable-pointers -fwhole-program-vtables -flto
+#QOPT = # -Rpass=loop-vectorize -Rpass-analysis=loop-vectorize
 FLAGS = $(CFLAG) -g $(QOPT) $(OPTFLAGS)
 
 # All object files needed

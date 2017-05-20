@@ -32,7 +32,7 @@ namespace GFlow {
     makeSectors();
     
     // Get mpi data
-#ifdef USE_MPI
+#if USE_MPI == 1
     rank = simData->getRank();
     numProc = simData->getNumProc();
 #endif
@@ -229,8 +229,9 @@ namespace GFlow {
     cutoff = maxCutR + secCutR;
     // First estimate
     sdx = sdy = (cutoff+skinDepth);
-    nsx = static_cast<int>( max(1., (bounds.right-bounds.left)/sdx) );
-    nsy = static_cast<int>( max(1., (bounds.top-bounds.bottom)/sdy) );
+    RealType minSec = 1.;
+    nsx = static_cast<int>( max(minSec, (bounds.right-bounds.left)/sdx) );
+    nsy = static_cast<int>( max(minSec, (bounds.top-bounds.bottom)/sdy) );
     // Actual width and height
     sdx = (bounds.right-bounds.left)/nsx;
     sdy = (bounds.top-bounds.bottom)/nsy;

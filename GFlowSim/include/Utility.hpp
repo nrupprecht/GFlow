@@ -7,8 +7,7 @@
 #ifndef __UTILITY_HPP__
 #define __UTILITY_HPP__
 
-// Use MPI
-// #define USE_MPI 1
+#include "Settings.hpp"
 
 // Includes  
 #include <iostream>

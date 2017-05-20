@@ -7,7 +7,7 @@ namespace GFlow {
   SimData::SimData(const Bounds& b, const Bounds& sb) : domain_size(0), domain_capacity(0), edge_size(0), edge_capacity(0), bounds(b), simBounds(sb), wrapX(true), wrapY(true) {
     for (int i=0; i<15; ++i) pdata[i] = 0;
     
-#ifdef USE_MPI // Set up MPI
+#if USE_MPI == 1 // Set up MPI
     rank = MPI::COMM_WORLD.Get_rank();
     numProc = MPI::COMM_WORLD.Get_size();
 #endif
@@ -167,7 +167,7 @@ namespace GFlow {
     return getDisplacement(a.x, a.y, b.x, b.y);
   }
 
-#ifdef USE_MPI
+#if USE_MPI == 1
   void SimData::atomMove() {
     
   }

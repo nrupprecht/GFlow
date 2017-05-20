@@ -66,7 +66,7 @@ int main (int argc, char** argv) {
    }
 
   // Set up MPI
-#ifdef USE_MPI
+#if USE_MPI == 1
   MPI::Init();
   int rank = MPI::COMM_WORLD.Get_rank();
   int numProc = MPI::COMM_WORLD.Get_size();
@@ -178,7 +178,7 @@ int main (int argc, char** argv) {
   }
       
   
-#ifdef USE_MPI
+#if USE_MPI == 1
   MPI::Finalize();
 #endif
 

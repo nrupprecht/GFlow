@@ -84,8 +84,14 @@ namespace GFlow {
     // Get the number of particles we need to update
     int domain_size = simData->getDomainSize();
     double hdt = 0.5*dt;
+#if _INTEL_ == 1
 #pragma vector aligned
 #pragma simd
+#endif
+#if _CLANG_ == 1
+#pragma clang loop vectorize(enable)
+#pragma clang loop interleave(enable)
+#endif
     for (int i=0; i<domain_size; ++i) {
       // Update linear variables
       vx[i] += hdt*im[i]*fx[i];
@@ -111,7 +117,7 @@ namespace GFlow {
     // Update sectors
     if (updateDelay<updateTimer) {
       
-#ifdef USE_MPI // If using mpi, exchange data with other processors
+#if USE_MPI == 1 // If using mpi, exchange data with other processors
       simData->atomMove();
       simData->atomCopy();
 #endif
@@ -158,8 +164,15 @@ namespace GFlow {
     int domain_size = simData->getDomainSize();
     // Do second half-kick
     RealType hdt = 0.5*dt;
+    
+#if _INTEL_ == 1
 #pragma vector aligned
 #pragma simd
+#endif
+#if _CLANG_ == 1
+#pragma clang loop vectorize(enable)
+#pragma clang loop interleave(enable)
+#endif
     for (int i=0; i<domain_size; ++i) {
       vx[i] += hdt*im[i]*fx[i];
       vy[i] += hdt*im[i]*fy[i];

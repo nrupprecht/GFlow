@@ -107,26 +107,21 @@ namespace GFlow {
     // Create the directory
     mkdir(writeDirectory.c_str(), 0777);
 
-    // Write number
-    printToCSV(writeDirectory+"/number.csv", vector<int>(1,recIter));
-
-    // Write walls to file
-    if (simData)
-      if (!printToCSV(writeDirectory+"/walls.csv", simData->getWalls()))
-	cout << "Failed to print walls to [" << writeDirectory << "/walls.csv].\n";
-
-    // Write bounds to file
-    if (simData)
-      if (!printToCSV(writeDirectory+"/bnds.csv", vector<Bounds>(1,simData->getSimBounds())))
-	cout << "Failed to print bounds to [" << writeDirectory << "/bnds.csv].\n";
-    
     // Create Positions directory
     if (recPos) {
       mkdir((writeDirectory+"/Pos").c_str(), 0777);
+      // Write number
+      printToCSV(writeDirectory+"/number.csv", vector<int>(1,recIter));
       // Write position data
       for (int i=0; i<positionRecord.size(); ++i)
 	if (!printToCSV(writeDirectory+"/Pos/pos", positionRecord.at(i), i))
 	  cout << "Failed to print to [" << writeDirectory << "/Pos/pos" << i << "].\n";
+      // Write wall data
+      if (!printToCSV(writeDirectory+"/walls.csv", simData->getWalls()))
+        cout << "Failed to print walls to [" << writeDirectory << "/walls.csv].\n";
+      // Write bounds data
+      if (!printToCSV(writeDirectory+"/bnds.csv", vector<Bounds>(1,simData->getSimBounds())))
+        cout << "Failed to print bounds to [" << writeDirectory << "/bnds.csv].\n";
     }
 
     // Write stat function data to files

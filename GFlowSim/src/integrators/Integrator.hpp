@@ -37,7 +37,7 @@ namespace GFlow {
     ~Integrator();
 
     // Initialization -- Add the run time here for now
-    void initialize(double runTime);
+    void initialize(RealType runTime);
 
     // Give the integrator a data record object
     void setDataRecord(DataRecord* dr);

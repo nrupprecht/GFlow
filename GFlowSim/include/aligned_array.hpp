@@ -9,7 +9,8 @@
 
 #include <cstdlib>
 
-#define _POSIX_ 1
+// For definition of _POSIX_
+#include "Settings.hpp"
 
 namespace GFlow {
 
