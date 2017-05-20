@@ -8,7 +8,7 @@ OPTFLAGS = -xHost -O3 -no-prec-div -static -fp-model fast=2 -restrict -funroll-l
 FLAGS = $(CFLAG) -g $(QOPT) $(OPTFLAGS)
 
 # All object files needed
-CONTROL_OBJECTS = build/Sectorization.o build/SimData.o build/ForceHandler.o
+CONTROL_OBJECTS = build/Sectorization.o build/SimData.o build/ForceHandler.o build/StatusObject.o
 CREATION_OBJECTS = build/Creator.o build/FileParser.o build/DataCreator.o
 DATA_OBJECTS    = build/DataRecord.o 
 INT_OBJECTS     = build/VelocityVerletIntegrator.o build/Integrator.o
@@ -19,13 +19,10 @@ FORCE_OBJECTS   = build/ViscousDrag.o build/ConstantAcceleration.o
 
 ALL_OBJECTS     = $(CONTROL_OBJECTS) $(CREATION_OBJECTS) $(DATA_OBJECTS) $(INT_OBJECTS) $(OBJ_OBJECTS) $(INC_OBJECTS) $(FORCE_OBJECTS)
 
-all: bin/gflow # bin/test_aligned_array
+all: bin/gflow
 
 ###### Executables #####
 bin/gflow: build/gflow.o $(ALL_OBJECTS)
-	$(MPICC) $^ -o $@
-
-bin/test_aligned_array: build/test_aligned_array.o
 	$(MPICC) $^ -o $@
 
 #####   Objects   #####

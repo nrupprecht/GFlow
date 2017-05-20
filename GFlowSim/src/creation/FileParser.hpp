@@ -10,6 +10,7 @@
 // Includes
 #include "ParsingTokens.hpp"
 #include "../control/SimData.hpp"
+#include "../control/StatusObject.hpp"
 #include "../forces/ConstantAcceleration.hpp"
 #include "../../include/PrintingUtility.hpp"
 #include "../../include/ReadingUtility.hpp"
@@ -46,6 +47,9 @@ namespace GFlow {
     // Get the random seed used
     unsigned getSeed() { return randomSeed; }
 
+    // Give a status object
+    void setStatusObject(StatusObject *so) { status = so; }
+
     // Exception classes
     struct FileDoesNotExist {
       FileDoesNotExist(string n) : name(n) {};
@@ -77,11 +81,15 @@ namespace GFlow {
     bool wrapX, wrapY;
     // Bounds
     Bounds simBounds;
+
     // The simulation data we are creating - we are not responsible for deleting this since we always create it for (and return it at the end of) the parse function
     SimData* simData;   
 
     // The creator we use to set up the simulation
     Creator* creator;
+
+    // Status object
+    StatusObject* status;
 
     // What random seed we used
     unsigned randomSeed;

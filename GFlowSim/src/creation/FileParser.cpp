@@ -3,7 +3,7 @@
 
 namespace GFlow {
 
-  FileParser::FileParser() : simData(nullptr), creator(new Creator), randomSeed(0) {
+  FileParser::FileParser() : simData(nullptr), creator(new Creator), status(nullptr), randomSeed(0) {
     // Default values
     gravity   = Zero;
     wrapX     = false;
@@ -18,8 +18,10 @@ namespace GFlow {
   SimData* FileParser::parse(string filename, unsigned seed) {
     ifstream fin(filename);
     if (fin.fail()) {
+      if (status) status->writeError("File ["+filename+"] cannot be opened by file parser.");
       throw FileDoesNotExist(filename);
     }
+    if (status) status->writeMessage("File ["+filename+"] opened by file parser. Will attempt to construct configuration from file.");
 
     // Seed random number generator
     if (seed==0) seed_rand();
@@ -114,8 +116,10 @@ namespace GFlow {
     // Open stream, check if failed
     ifstream fin(filename);
     if (fin.fail()) {
+      if (status) status->writeError("File ["+filename+"] cannot be opened by file parser.");
       throw FileDoesNotExist(filename);
     }
+    if (status) status->writeMessage("File ["+filename+"] opened by file parser. Will attempt to load saved state from file.");
 
     // Data to look for
     RealType left, right, bottom, top;

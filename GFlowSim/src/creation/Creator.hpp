@@ -10,6 +10,7 @@
 // Includes
 #include "../../include/vec2d.hpp"
 #include "../control/SimData.hpp"
+#include "../control/StatusObject.hpp"
 #include "../integrators/VelocityVerletIntegrator.hpp"
 #include "../objects/Particle.hpp"
 #include "../objects/Wall.hpp"
