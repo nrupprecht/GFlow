@@ -163,7 +163,6 @@ int main (int argc, char** argv) {
 #if USE_MPI == 1
   if (rank==0) {
 #endif
-  
     if (dataRecord) {
       // Print out time and ratio
       double runTime = dataRecord->getElapsedTime();

@@ -9,26 +9,29 @@
 
 // Includes
 #include <vector>
-using std::vector;
-using std::pair;
 #include <list>
-using std::list;
 #include <ostream>
-using std::ostream;
+#include <string>
+#include <sstream>
 
 namespace GFlow {
 
-  template<typename T> inline ostream& operator<<(ostream& out, const std::vector<T>& vec) {
+  template<typename S, typename T> inline std::ostream& operator<<(std::ostream& out, const std::pair<S,T> pr) {
+    out << "{" << pr.first << "," << pr.second << "}";
+    return out;
+  }
+
+  template<typename T> inline std::ostream& operator<<(std::ostream& out, const std::vector<T>& vec) {
     out << "{";
     for (int i=0; i<vec.size(); ++i) {
-      //** out << vec.at(i);
+      out << vec.at(i);
       if (i!=vec.size()-1) out << ",";
     }
     out << "}";
     return out;
   }
 
-  template<typename T> inline ostream& operator<<(ostream& out, const std::list<T>& lst) {
+  template<typename T> inline std::ostream& operator<<(std::ostream& out, const std::list<T>& lst) {
     out << "{";
     int i=0;
     for (const auto v : lst) {
@@ -39,20 +42,20 @@ namespace GFlow {
     return out;
   }
 
-  template<typename T, typename U> inline ostream& operator<<(ostream& out, const std::pair<T,U>& vec) {
+  template<typename T, typename U> inline std::ostream& operator<<(std::ostream& out, const std::pair<T,U>& vec) {
     out << "{" << vec.first << "," << vec.second << "}";
     return out;
   }
 
   // Get rid of all the "e-"s for mathematica, truncate doubles after <precision> decimal places
-  inline string mmPreproc(string s, int precision=-1) {
+  inline std::string mmPreproc(std::string s, int precision=-1) {
     int size = s.size();
-    string out;
+    std::string out;
     out.reserve(size);
     for (int i=0; i<size; i++) {
       // Get numbers
       if (precision>=0 && isdigit(s.at(i))) {
-	string number;
+	std::string number;
 	number.push_back(s.at(i));
 	i++;
 	int count = 0, decimal = 0; // decimal == 1 when we detect a '.'
@@ -78,25 +81,25 @@ namespace GFlow {
     return out;
   }
   
-  template<typename T> inline string mmPreproc(T s, int precision=-1) {
-    stringstream stream;
-    string str;
+  template<typename T> inline std::string mmPreproc(T s, int precision=-1) {
+    std::stringstream stream;
+    std::string str;
     stream << s;
     stream >> str;
     return mmPreproc(str, precision);
   }
 
-  template<typename T> inline string toStr(T x) {
-    stringstream stream;
-    string str;
+  template<typename T> inline std::string toStr(T x) {
+    std::stringstream stream;
+    std::string str;
     stream << x;
     stream >> str;
     return str;
   }
 
-  template<typename S, typename T> inline string toStr(const std::pair<S,T>& p) {
-    string first, second;
-    stringstream stream;
+  template<typename S, typename T> inline std::string toStr(const std::pair<S,T>& p) {
+    std::string first, second;
+    std::stringstream stream;
     stream << p.first;
     stream >> first;
     stream.clear();
