@@ -110,6 +110,57 @@ namespace GFlow {
 
     return simData;
   }
+
+  SimData* FileParser::loadFromFile(string filename) {
+    // Open stream, check if failed
+    ifstream fin(filename);
+    if (fin.fail()) {
+      throw FileDoesNotExist(filename);
+    }
+
+    // Data to look for
+    RealType left, right, bottom, top;
+    vec2 gravity;
+    vector<RealType> radii;
+    vector<vec2> wallLeft, wallRight, positions;
+    vector<int> interactions;
+
+    // Get simulation bounds
+    fin >> left >> right >> bottom >> top;
+    Bounds bounds(left, right, bottom, top);
+    SimData *simData = new SimData(bounds, bounds);
+
+    // Get gravity
+    fin >> gravity;
+    if (gravity!=Zero) 
+      simData->addExternalForce(new ConstantAcceleration(gravity));
+
+    // Get walls
+    fin >> wallLeft;
+    fin >> wallRight;
+
+    // Get radii and positions
+    fin >> radii;
+    fin >> positions;
+    fin >> interactions;
+    fin.close();
+
+    // Create walls and particles
+    int size = positions.size(), rsize = radii.size(), wsize = min(wallLeft.size(), wallRight.size()), isize = interactions.size();
+    for (int i=0; i<wsize; ++i)
+      simData->addWall(Wall(wallLeft[i], wallRight[i]));
+    for (int i=0; i<size; ++i) {
+      Particle p(positions.at(i), radii.at(i%rsize));
+      p.interaction = interactions.at(i%isize);
+      simData->addParticle(p);
+    }
+    // Return the sim data object
+    return simData;
+  }
+
+  void FileParser::saveToFile(SimData* simData, string filename) {
+    
+  }
   
   // Make a region data structure and store it
   inline void FileParser::make_region(std::ifstream& fin) {    
@@ -185,7 +236,7 @@ namespace GFlow {
 	fin >> left >> right >> bottom >> top;
 	bounds = Bounds(left, right, bottom, top);
       }
-      else throw false; // Invalid option
+      else throw UnrecognizedToken(tok);
 
       // Get next token
       fin >> tok;
@@ -267,6 +318,7 @@ namespace GFlow {
       else if (tok==Coeff_Tok) {
 	fin >> coeff;
       }
+      else throw UnrecognizedToken(tok);
 
       fin >> tok;
     }
@@ -289,7 +341,7 @@ namespace GFlow {
     
     // For recording data
     string tok("");
-    RealType X(0), Y(0), R(-1);
+    RealType X(0), Y(0), R(-1), vx(0), vy(0), omega(0);
     bool gotPos = false;
     RealType repulsion(default_particle_repulsion), dissipation(default_particle_dissipation), coeff(default_particle_coeff);
     
@@ -312,6 +364,9 @@ namespace GFlow {
 	fin >> X >> Y;
 	gotPos = true;
       }
+      else if (tok==Sigma_Tok) {
+	fin >> R;
+      }
       else if (tok==Repulsion_Tok) {
 	fin >> repulsion;
       }
@@ -321,11 +376,22 @@ namespace GFlow {
       else if (tok==Coeff_Tok) {
 	fin >> coeff;
       }
+      else if (tok==Velocity_Tok) {
+	fin >> vx >> vy;
+      }
+      else if (tok==Omega_Tok) {
+	fin >> omega;
+      }
+      else throw UnrecognizedToken(tok);
+      
+      fin >> tok;
     }
     
     // Create and add the particle to the list
     if (gotPos && 0<R) {
       Particle P(X,Y,R);
+      P.velocity = vec2(vx, vy);
+      P.omega = omega;
       P.repulsion = repulsion;
       P.dissipation = dissipation;
       P.coeff = coeff;

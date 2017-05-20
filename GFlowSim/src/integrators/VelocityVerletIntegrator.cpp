@@ -110,30 +110,24 @@ namespace GFlow {
   inline void VelocityVerletIntegrator::updates() {
     // Update sectors
     if (updateDelay<updateTimer) {
-      // Reset timer
-      updateTimer = 0;
-
-      // If using mpi
-#ifdef USE_MPI
-      // Exchange data with other processors
+      
+#ifdef USE_MPI // If using mpi, exchange data with other processors
       simData->atomMove();
       simData->atomCopy();
 #endif
 
-      // Update sectorization
-      if (sectors->checkNeedRemake()) {
-        sectors->createVerletLists();
-        sectors->createWallLists(true);
+      // Adjust update delay
+      if (adjustUpdateDelay) doAdjustDelay();
+      // Update time step
+      if (adjustTimeStep) doAdjustTimeStep();
+      
+      // Update lists and reset list timer
+      sectors->createVerletLists();
+      sectors->createWallLists(true);
+      verletListTimer = 0;
 
-	if (adjustUpdateDelay) doAdjustDelay();
-
-	// Update time step
-	if (adjustTimeStep) doAdjustTimeStep();
-
-	// Reset verlet list timer
-	verletListTimer = 0;
-	
-      }
+      // Reset update timer
+      updateTimer = 0;
     }
   }
   
@@ -175,12 +169,11 @@ namespace GFlow {
   
   inline void VelocityVerletIntegrator::doAdjustDelay() {
     // Calculate new update delay
-    RealType movement = sectors->getMovement();
-    RealType skinDepth = sectors->getSkinDepth();
-    RealType ratio = delayFactor*skinDepth/movement; // Want movement to be slightly greater then skin depth after every update delay
+    RealType ratio = sectors->checkNeedRemake(); // Want movement to be slightly greater then skin depth after every update delay
+    if (ratio==0) return;
 
     // Set the update delay
-    updateDelay = ratio*verletListTimer;
+    updateDelay = delayFactor*verletListTimer/ratio;
     
     // If something suddenly starts moving, and the update delay is to long, there could be problems. For now, we deal with that by capping the update delay
     updateDelay = updateDelay>default_max_update_delay ? default_max_update_delay : updateDelay;
@@ -188,12 +181,14 @@ namespace GFlow {
     // Record data for average update delay
     ++sectorUpdates;
     aveUpdateDelay += updateDelay;
+
+    // Tell data recorder about this
+    if (dataRecord) dataRecord->push_mvRatio(ratio);
   }
 
   inline void VelocityVerletIntegrator::doAdjustTimeStep() {
-    // Find the minimum amount of time it takes for one particle to traverse its o \
-    wn radius
-      RealType minPeriod = 1.;
+    // Find the minimum amount of time it takes for one particle to traverse its own radius
+    RealType minPeriod = 1.;
     int domain_size = simData->getDomainSize();
     for (int i=0; i<domain_size; ++i) {
       if (-1<simData->getIt(i)) {

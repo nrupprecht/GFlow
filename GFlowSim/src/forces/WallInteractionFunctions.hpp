@@ -31,7 +31,7 @@ namespace GFlow {
     vec2 d_par = l_par*w.normal;
     vec2 d_perp = displacement - d_par;
     // Check whether the particle is between the start and end of the wall
-    double radSqr = sqr(sg[j]);
+    double radSqr = sqr(sg[j]+default_wall_width);
     if (l_par>=0) { // Located forward of the origin
       if (w.length>l_par) displacement = d_perp;  // The particle is above the wall (in the perp. direction)
       else displacement -= w.length*w.normal; // Displacement from the nearest end (the far end) of the wall
@@ -39,7 +39,7 @@ namespace GFlow {
     double distSqr = sqr(displacement);   // Located behind the origin
     /// We now have the correct displacement vector and distSqr value
     if (distSqr<=radSqr) {
-      double dist = sqrt(distSqr);
+      double dist = sqrt(distSqr) - default_wall_width;
       RealType invDist = 1./dist;
       // Get the other pointers
       RealType *vx = simData->getVxPtr();

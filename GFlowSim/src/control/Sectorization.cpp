@@ -65,7 +65,7 @@ namespace GFlow {
 
 #endif //******* End MPI related functions ********//
 
-  bool Sectorization::checkNeedRemake() {
+  RealType Sectorization::checkNeedRemake() {
     // Get position data
     RealType *px = simData->getPxPtr();
     RealType *py = simData->getPyPtr();
@@ -85,10 +85,8 @@ namespace GFlow {
     
     // Calculate max possible movement of particles relative to one another
     movement = sqrt(max_moved)+sqrt(sec_moved);
-
-    // Check if a redo may be neccessary
-    return (movement > skinDepth);
-    
+    // How far have we moved compaired to how far we should move    
+    return movement/skinDepth;    
   }
 
   void Sectorization::createVerletLists(bool force) {
@@ -192,7 +190,7 @@ namespace GFlow {
 	// Correct the displacement -- THIS DOESNT ALWAYS WORK CORRECTLY
 	wallDisplacement(displacement, sg[j], walls.at(i));
 	// USE A PARTICLE CUTOFF
-	if (sqr(displacement)<sqr(sg[j] + skinDepth)) lst.push_back(j);
+	if (sqr(displacement)<sqr(sg[j] + skinDepth + default_wall_width)) lst.push_back(j);
       }
       
       if (1<lst.size()) wallList.push_back(lst);

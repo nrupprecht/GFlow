@@ -7,8 +7,7 @@
 #include "../creation/Creator.hpp"
 #include "../creation/FileParser.hpp"
 #include "../integrators/VelocityVerletIntegrator.hpp"
-
-#include "ArgParse.h"
+#include "../../include/ArgParse.h"
 
 using namespace GFlow;
 
@@ -21,13 +20,15 @@ int main (int argc, char** argv) {
   bool maxRatio = false;
   bool ratio = false;
   bool KE = false;
-  bool perf = false;
   bool maxV = false;
+  bool aveV = false;
+  bool perf = false;
+  bool mvRatio = false;
 
   bool print = false;       // Whether we should print stat data to the screen
 
   bool adjust = true;       // Whether to auto-adjust the time step
-  bool updateAdjust = true; // Whether to auto-adjust the update delay
+  bool adjustDelay = true; // Whether to auto-adjust the update delay
 
   // Can get options from the command line
   ArgParse parser;
@@ -35,7 +36,7 @@ int main (int argc, char** argv) {
     parser.set(argc, argv);
   }
   catch (ArgParse::IllegalToken token) {
-    cout << "Illegal Token: " << token.c << ". Exiting.\n";
+    cout << "Illegal Argument: " << token.c << ". Exiting.\n";
     exit(1);
   }
   // Logistics options
@@ -49,9 +50,12 @@ int main (int argc, char** argv) {
   parser.get("KE", KE);
   parser.get("perf", perf);
   parser.get("maxV", maxV);
+  parser.get("aveV", aveV);
+  parser.get("print", print);
+  parser.get("mvRatio", mvRatio);
   // Performance options
   parser.get("adjust", adjust);
-  parser.get("updateAdjust", updateAdjust);
+  parser.get("adjustDelay", adjustDelay);
   // Make sure we didn't enter any illegal tokens (ones not listed above) on the command line
    try {
      parser.check();
@@ -77,7 +81,18 @@ int main (int argc, char** argv) {
       simData = fileParser.parse(config);  
     }
     catch (FileParser::FileDoesNotExist file) {
-      cout << "File [" << file.name << "] does not exist. Exiting.\n";
+      cout << "File [" << file.name << "] does not exist. Trying [samples/" << file.name << "].\n";
+      try {
+	simData = fileParser.parse("samples/"+config);
+      }
+      catch (FileParser::FileDoesNotExist file) {
+	cout << "File [" << file.name << "] also does not exist. Exiting.\n";
+	exit(0);
+      }
+      cout << "You're lucky. [samples/" << file.name << "] does exist. Assuming you meant that file.\n";
+    }
+    catch (FileParser::UnrecognizedToken token) {
+      cout << "Unrecognized token [" << token.token << "]. Exiting.\n";
       exit(0);
     }
     if (simData==nullptr) {
@@ -105,7 +120,9 @@ int main (int argc, char** argv) {
     if (KE)       dataRecord->addStatFunction(StatFunc_AveKE, "KE");
     if (maxRatio) dataRecord->addStatFunction(StatFunc_MaxVelocitySigmaRatio, "maxRatio");
     if (ratio)    dataRecord->addStatFunction(StatFunc_MinSigmaVelocityRatio, "ratio");
-    if (maxV)     dataRecord->addStatFunction(StatFunc_MaxVelocity, "maxV");
+    if (maxV)     dataRecord->addStatFunction(StatFunc_MaxSpeed, "maxV");
+    if (aveV)     dataRecord->addStatFunction(StatFunc_AveSpeed, "aveV");
+    if (mvRatio)  dataRecord->setRecMoveRatio(true);
     dataRecord->setRecPos(animate);
     dataRecord->setRecPerf(perf);
   }
@@ -113,7 +130,7 @@ int main (int argc, char** argv) {
   // Set run time
   integrator.initialize(time);
   integrator.setAdjustTimeStep(adjust);
-  integrator.setAdjustUpdateDelay(updateAdjust);
+  integrator.setAdjustUpdateDelay(adjustDelay);
 
   // Print initial message
   cout << "Starting integration.\n";
@@ -151,6 +168,12 @@ int main (int argc, char** argv) {
     if (performanceRecord.size()>0) {
       cout << "perf=" << mmPreproc(performanceRecord) << ";\n";
       cout << "ListLinePlot[perf,ImageSize->Large,PlotStyle->Black]\n";
+    }
+
+    if (mvRatio) {
+      auto moveRatioRecord = dataRecord->getMoveRatioRecord();
+      cout << "mvRatio=" << mmPreproc(moveRatioRecord) << ";\n";
+      cout << "Histogram[mvRatio,200,ImageSize->Large]\n";
     }
   }
       

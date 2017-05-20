@@ -1,10 +1,16 @@
+/*
+ * Author: Nathaniel Rupprecht
+ * Start Data: May 12, 2017
+ *
+ */
+
 #ifndef __CSV_UTILITY_HPP__
 #define __CSV_UTILITY_HPP__
 
 // Includes
 #include "Utility.hpp"
 #include "vec2d.hpp"
-
+#include "PrintingUtility.hpp"
 #include <sys/stat.h> // For linux
 
 namespace GFlow {

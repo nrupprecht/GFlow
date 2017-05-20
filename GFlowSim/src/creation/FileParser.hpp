@@ -11,6 +11,8 @@
 #include "ParsingTokens.hpp"
 #include "../control/SimData.hpp"
 #include "../forces/ConstantAcceleration.hpp"
+#include "../../include/PrintingUtility.hpp"
+#include "../../include/ReadingUtility.hpp"
 
 namespace GFlow {
  
@@ -35,6 +37,12 @@ namespace GFlow {
     // Parse a set up file and create a simulation based on it
     SimData* parse(string, unsigned = 0);
 
+    // Load a stored configuration from a file
+    SimData* loadFromFile(string);
+
+    // Save sim data to a file
+    void saveToFile(SimData*, string);
+
     // Get the random seed used
     unsigned getSeed() { return randomSeed; }
 
@@ -42,6 +50,11 @@ namespace GFlow {
     struct FileDoesNotExist {
       FileDoesNotExist(string n) : name(n) {};
       string name;
+    };
+
+    struct UnrecognizedToken {
+      UnrecognizedToken(string tok) : token(tok) {};
+      string token;
     };
 
   private:

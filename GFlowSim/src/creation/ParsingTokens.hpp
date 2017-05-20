@@ -31,6 +31,8 @@ const string Normal_Velocity_Tok = "normal_velocity";
 const string Normal_KE_Tok = "normal_ke";
 const string Velocity_Tok = "velocity";
 
+const string Omega_Tok = "omega";
+
 const string Repulsion_Tok = "repulsion";
 const string Dissipation_Tok = "dissipation";
 const string Coeff_Tok = "coeff";

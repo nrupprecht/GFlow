@@ -1,3 +1,9 @@
+/*
+ * Author: Nathaniel Rupprecht
+ * Start Data: May 12, 2017
+ *
+ */
+
 #ifndef __ALIGNED_ARRAY_HPP__
 #define __ALIGNED_ARRAY_HPP__
 

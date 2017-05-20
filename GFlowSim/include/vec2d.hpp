@@ -1,3 +1,9 @@
+/*
+ * Author: Nathaniel Rupprecht
+ * Start Data: May 12, 2017
+ *
+ */
+
 #ifndef __VEC_2D_HPP__
 #define __VEC_2D_HPP__
 

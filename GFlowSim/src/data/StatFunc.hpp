@@ -16,7 +16,9 @@ namespace GFlow {
  
   inline RealType StatFunc_AveKE(SimData* simData) {
     RealType KE = 0;
-    int number = 0;
+    int domain_size = simData->getDomainSize();
+    // Check if there are no particles
+    if (domain_size==0) return 0;
     // Get data pointers
     RealType *vx = simData->getVxPtr();
     RealType *vy = simData->getVyPtr();
@@ -26,16 +28,14 @@ namespace GFlow {
     // Interaction pointer
     int *it = simData->getItPtr();
     // Gather data
-    int domain_size = simData->getDomainSize();
     for (int i=0; i<domain_size; ++i) {
       if (-1<it[i]) {
 	RealType mass = 1./im[i], II = 1./iI[i];
 	KE += mass*(sqr(vx[i]) + sqr(vy[i])) + II*sqr(om[i]);
-	++number;
       }
     }
     // Compute average
-    KE *= 0.5/static_cast<double>((number>0 ? number : 1));
+    KE *= (1./static_cast<double>(2*domain_size));
     // Return KE
     return KE;
   }
@@ -102,7 +102,7 @@ namespace GFlow {
     return sqrt(MVSR);
   }
 
-  inline RealType StatFunc_MaxVelocity(SimData* simData) {
+  inline RealType StatFunc_MaxSpeed(SimData* simData) {
     RealType maxV = 0;
     // Get data pointers
     RealType *vx = simData->getVxPtr();
@@ -118,6 +118,25 @@ namespace GFlow {
       }
     }
     return sqrt(maxV);
+  }
+
+  inline RealType StatFunc_AveSpeed(SimData* simData) {
+    RealType aveV = 0;
+    int domain_size = simData->getDomainSize();
+    // Check if there are no particles
+    if (domain_size==0) return 0;
+    // Get data pointers
+    RealType *vx = simData->getVxPtr();
+    RealType *vy = simData->getVyPtr();
+    // Interaction pointer
+    int *it = simData->getItPtr();
+    // Gather data
+    for (int i=0; i<domain_size; ++i) {
+      if (-1<it[i]) {
+	aveV += sqrt(sqr(vx[i])+sqr(vy[i]));
+      }
+    }
+    return aveV/static_cast<RealType>(domain_size);
   }
 
 }

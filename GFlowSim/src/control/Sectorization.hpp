@@ -40,7 +40,7 @@ namespace GFlow {
 #endif
 
     // Check if we need to remake our lists
-    bool checkNeedRemake();
+    RealType checkNeedRemake();
 
     // Create verlet lists (bool is for force make list)
     void createVerletLists(bool=false);

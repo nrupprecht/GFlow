@@ -4,7 +4,7 @@
 #include "../forces/ExternalForce.hpp"
 
 namespace GFlow {
-  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-delay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), recPerf(false) {
+  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-delay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), recPerf(false), recMvRatio(false) {
     start_time = end_time = high_resolution_clock::now();
   };
 
@@ -229,6 +229,10 @@ namespace GFlow {
     statFunctionName.push_back(name);
   }
 
+  void DataRecord::push_mvRatio(RealType mv) {
+    if (recMvRatio) movementRatioRecord.push_back(mv);
+  }
+
   vector<pair<RealType, RealType> > DataRecord::getStatFunctionData(int index) const {
     if (index<0 || statFunctionData.size()<=index) throw BadStatFunction(index);
     return statFunctionData.at(index);
@@ -242,10 +246,13 @@ namespace GFlow {
   vector<pair<RealType, RealType> > DataRecord::getPerformanceRecord() const{
     return performanceRecord;
   }
+
+  vector<RealType> DataRecord::getMoveRatioRecord() const {
+    return movementRatioRecord;
+  }
   
   void DataRecord::writeParticleData(std::ofstream& fout, SimData *simData) const {
     // We are here only if 0 < domain_size
-
     fout << "Particle Average Data:\n";
 
     // Find average sigma

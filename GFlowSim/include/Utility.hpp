@@ -1,3 +1,9 @@
+/*
+ * Author: Nathaniel Rupprecht
+ * Start Data: May 12, 2017
+ *
+ */
+
 #ifndef __UTILITY_HPP__
 #define __UTILITY_HPP__
 
@@ -44,8 +50,6 @@ using std::string;
 #ifdef USE_MPI
 #include <mpi.h>
 #endif
-
-#include "PrintingUtility.hpp"
 
 namespace GFlow {
 

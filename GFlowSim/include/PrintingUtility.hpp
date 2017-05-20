@@ -1,8 +1,20 @@
+/*
+ * Author: Nathaniel Rupprecht
+ * Start Data: May 15, 2017
+ *
+ */
+
 #ifndef __PRINTING_UTILITY_HPP__
 #define __PRINTING_UTILITY_HPP__
 
+// Includes
 #include <vector>
+using std::vector;
+using std::pair;
 #include <list>
+using std::list;
+#include <ostream>
+using std::ostream;
 
 namespace GFlow {
 

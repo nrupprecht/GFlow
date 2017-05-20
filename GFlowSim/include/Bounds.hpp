@@ -1,3 +1,9 @@
+/*
+ * Author: Nathaniel Rupprecht
+ * Start Data: May 12, 2017
+ *
+ */
+
 #ifndef __BOUNDS_HPP__
 #define __BOUNDS_HPP__
 

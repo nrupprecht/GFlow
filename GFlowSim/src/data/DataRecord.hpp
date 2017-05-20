@@ -68,6 +68,12 @@ namespace GFlow {
     // Add a stat function
     void addStatFunction(StatFunc, string);
 
+    // Set whether to record the movement ratio
+    void setRecMoveRatio(bool b) { recMvRatio = b; }
+    
+    // Add a move ratio data point
+    void push_mvRatio(RealType);
+
     /*** Accessors ***/
 
     // Get the simulation run time
@@ -84,6 +90,8 @@ namespace GFlow {
 
     // Get the performance record
     vector<pair<RealType, RealType> > getPerformanceRecord() const;
+
+    vector<RealType> getMoveRatioRecord() const;
 
     /*** Exception classes ***/
     struct BadStatFunction {
@@ -135,7 +143,8 @@ namespace GFlow {
     vector<pair<RealType,RealType> > performanceRecord;
     bool recPerf;
     high_resolution_clock::time_point last_record;
-
+    vector<RealType> movementRatioRecord;
+    bool recMvRatio;
   };
 
 }
