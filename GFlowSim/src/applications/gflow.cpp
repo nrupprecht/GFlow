@@ -12,7 +12,7 @@
 using namespace GFlow;
 
 int main (int argc, char** argv) {
-
+  
   string config = "";
   string writeDirectory = "";
   RealType time = 10;
@@ -24,12 +24,12 @@ int main (int argc, char** argv) {
   bool aveV = false;
   bool perf = false;
   bool mvRatio = false;
-
+  
   bool print = false;       // Whether we should print stat data to the screen
-
+  
   bool adjust = true;       // Whether to auto-adjust the time step
   bool adjustDelay = true; // Whether to auto-adjust the update delay
-
+  
   // Can get options from the command line
   ArgParse parser;
   try {
@@ -57,21 +57,28 @@ int main (int argc, char** argv) {
   parser.get("adjust", adjust);
   parser.get("adjustDelay", adjustDelay);
   // Make sure we didn't enter any illegal tokens (ones not listed above) on the command line
-   try {
-     parser.check();
-   }
-   catch (ArgParse::UncheckedToken illegal) {
-     cout << "Illegal option: [" << illegal.token << "]. Exiting.\n";
-     exit(1);
-   }
-
+  try {
+    parser.check();
+  }
+  catch (ArgParse::UncheckedToken illegal) {
+    cout << "Illegal option: [" << illegal.token << "]. Exiting.\n";
+    exit(1);
+  }
+  
   // Set up MPI
 #if USE_MPI == 1
-  MPI::Init();
+#if _CLANG_ == 1
+  int rank, numProc;
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &numProc);
+#else
+  MPI::Init(argc, argv);
   int rank = MPI::COMM_WORLD.Get_rank();
   int numProc = MPI::COMM_WORLD.Get_size();
 #endif
-
+#endif
+  
   // Create from file or command line args
   Creator simCreator;
   SimData *simData = nullptr;
@@ -133,58 +140,83 @@ int main (int argc, char** argv) {
   integrator.setAdjustUpdateDelay(adjustDelay);
 
   // Print initial message
-  cout << "Starting integration.\n";
+#if USE_MPI == 1
+  if (rank==0) {
+#endif
+    cout << "Starting integration.\n";
+#if USE_MPI == 1
+  }
+#endif
 
   // Run the integrator
   integrator.integrate();
 
   // Print a final message
-  cout << "Integration ended.\n";
-  if (dataRecord) {
-    // Print out time and ratio
-    double runTime = dataRecord->getElapsedTime();
-    cout << "Run time: " << runTime << endl;
-    cout << "Ratio: " << time / runTime << endl;
+  #if USE_MPI == 1
+  if (rank==0) {
+#endif
+    cout << "Integration ended.\n";
+#if USE_MPI == 1
+  }
+#endif
 
-    // Write animation data to files
-    dataRecord->writeData(simData);
-    
-    // Write sectorization data to file
-    dataRecord->writeRunSummary(simData, &integrator);
-
-    // Write out stat function data - for now
-    if (print) {
-      int numStatFuncs = dataRecord->getNumberOfStatFunctions();
-      for (int i=0; i<numStatFuncs; ++i) {
-	auto data   = dataRecord->getStatFunctionData(i);
-	string name = dataRecord->getStatFunctionName(i);
-	cout << name << "=" << mmPreproc(data) << ";\n";
-	cout << "ListLinePlot[" << name << ",ImageSize->Large,PlotStyle->Black]\n";
+#if USE_MPI == 1
+  if (rank==0) {
+#endif
+  
+    if (dataRecord) {
+      // Print out time and ratio
+      double runTime = dataRecord->getElapsedTime();
+      cout << "Run time: " << runTime << endl;
+      cout << "Ratio: " << time / runTime << endl;
+      
+      // Write animation data to files
+      dataRecord->writeData(simData);
+      
+      // Write sectorization data to file
+      dataRecord->writeRunSummary(simData, &integrator);
+      
+      // Write out stat function data - for now
+      if (print) {
+	int numStatFuncs = dataRecord->getNumberOfStatFunctions();
+	for (int i=0; i<numStatFuncs; ++i) {
+	  auto data   = dataRecord->getStatFunctionData(i);
+	  string name = dataRecord->getStatFunctionName(i);
+	  cout << name << "=" << mmPreproc(data) << ";\n";
+	  cout << "ListLinePlot[" << name << ",ImageSize->Large,PlotStyle->Black]\n";
+	}
+      }
+      
+      // Print performance
+      auto performanceRecord = dataRecord->getPerformanceRecord();
+      if (performanceRecord.size()>0) {
+	cout << "perf=" << mmPreproc(performanceRecord) << ";\n";
+	cout << "ListLinePlot[perf,ImageSize->Large,PlotStyle->Black]\n";
+      }
+      
+      if (mvRatio) {
+	auto moveRatioRecord = dataRecord->getMoveRatioRecord();
+	cout << "mvRatio=" << mmPreproc(moveRatioRecord) << ";\n";
+	cout << "Histogram[mvRatio,200,ImageSize->Large]\n";
       }
     }
-
-    // Print performance
-    auto performanceRecord = dataRecord->getPerformanceRecord();
-    if (performanceRecord.size()>0) {
-      cout << "perf=" << mmPreproc(performanceRecord) << ";\n";
-      cout << "ListLinePlot[perf,ImageSize->Large,PlotStyle->Black]\n";
-    }
-
-    if (mvRatio) {
-      auto moveRatioRecord = dataRecord->getMoveRatioRecord();
-      cout << "mvRatio=" << mmPreproc(moveRatioRecord) << ";\n";
-      cout << "Histogram[mvRatio,200,ImageSize->Large]\n";
-    }
-  }
-      
-  
 #if USE_MPI == 1
+  }
+#endif
+  
+  // Finalize mpi
+#if USE_MPI == 1
+#if _CLANG_ == 1
+  MPI_Finalize();
+#else
   MPI::Finalize();
+#endif
 #endif
 
   // Clean up
   if (simData)    delete simData;
   if (dataRecord) delete dataRecord;
 
+  // The program is done. Return.
   return 0;
 }
