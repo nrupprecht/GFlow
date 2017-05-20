@@ -32,8 +32,10 @@ namespace GFlow {
     makeSectors();
     
     // Get mpi data
+#ifdef USE_MPI
     rank = simData->getRank();
     numProc = simData->getNumProc();
+#endif
   }
 
   void Sectorization::sectorize() {
@@ -69,7 +71,6 @@ namespace GFlow {
     // Get position data
     RealType *px = simData->getPxPtr();
     RealType *py = simData->getPyPtr();
-    RealType *sg = simData->getSgPtr();
     int *it = simData->getItPtr();
 
     // Check how far the particles have moved
@@ -94,7 +95,6 @@ namespace GFlow {
     RealType *px = simData->getPxPtr();
     RealType *py = simData->getPyPtr();
     RealType *sg = simData->getSgPtr();
-    int *it = simData->getItPtr();
 
     // Clear out lists
     verletList.clear();

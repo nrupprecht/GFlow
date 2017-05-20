@@ -21,7 +21,7 @@ namespace GFlow {
   template<typename T> inline ostream& operator<<(ostream& out, const std::vector<T>& vec) {
     out << "{";
     for (int i=0; i<vec.size(); ++i) {
-      out << vec.at(i);
+      //** out << vec.at(i);
       if (i!=vec.size()-1) out << ",";
     }
     out << "}";

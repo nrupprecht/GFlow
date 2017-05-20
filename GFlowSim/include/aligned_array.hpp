@@ -7,7 +7,23 @@
 #ifndef __ALIGNED_ARRAY_HPP__
 #define __ALIGNED_ARRAY_HPP__
 
+#include <cstdlib>
+
+#define _POSIX_ 1
+
 namespace GFlow {
+
+  /*
+   * Define if this way mainly because my mac doesn't do aligned_alloc, but can do posix_memalign
+   */
+  template<typename T> inline void alignedAlloc(T *& pointer, size_t alignment, size_t size) {
+    //#ifdef _POSIX_
+#if _POSIX_ == 1
+    posix_memalign((void**)(&pointer), static_cast<size_t>(alignment), static_cast<size_t>(size*sizeof(T)));
+#else
+    pointer = (T*) aligned_alloc(alignment, size*sizeof(T));
+#endif
+  }
   
   /*
    * @class aligned_array
@@ -68,7 +84,7 @@ namespace GFlow {
       
   private:
     int _size;
-    int _alignment;
+    unsigned int _alignment;
     
     T* data;
   };

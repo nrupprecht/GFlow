@@ -14,8 +14,8 @@
 namespace GFlow {
 
   // Forward declaration to DataCreator
-  class DataCreator;
-
+  struct DataCreator;
+  
   /*
    * @class Region
    * Contains the data for constructing a region full of particles

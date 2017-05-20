@@ -45,7 +45,7 @@ namespace GFlow {
 
   inline void ForceHandler::interactP(int i, int j, SimData* simData) const {
     // Get the individual interactions
-    int itA = simData->getItPtr()[i], itB = simData->getItPtr()[j];
+    //int itA = simData->getItPtr()[i], itB = simData->getItPtr()[j];
     
     // Do the interaction
     RealType Fn, Fs;
@@ -54,7 +54,7 @@ namespace GFlow {
   }
 
   inline void ForceHandler::interactW(int i, int j, SimData* simData) const {
-    int interaction = simData->getItPtr()[j];
+    //int interaction = simData->getItPtr()[j];
     
     // Do the interaction
     RealType Fn, Fs;

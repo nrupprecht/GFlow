@@ -3,7 +3,7 @@
 
 namespace GFlow {
 
-  FileParser::FileParser() : creator(new Creator), simData(nullptr), randomSeed(0) {
+  FileParser::FileParser() : simData(nullptr), creator(new Creator), randomSeed(0) {
     // Default values
     gravity   = Zero;
     wrapX     = false;
@@ -27,7 +27,6 @@ namespace GFlow {
 
     // Helper data
     const int max_comment_size = 512;
-    char c;
     char comment[max_comment_size];
     string tok, opt;
     // Get the first token
@@ -41,7 +40,7 @@ namespace GFlow {
       }
       
       // Otherwise
-      if (!isalpha(tok.at(0))) return nullptr; // Error
+      if (!isalpha(tok.at(0))) throw UnrecognizedToken(tok);
 
       // wrapX [true/false]
       if (tok==WrapX_Tok || tok==WrapY_Tok) {

@@ -8,7 +8,7 @@
 #define __UTILITY_HPP__
 
 // Use MPI
-#define USE_MPI 1
+// #define USE_MPI 1
 
 // Includes  
 #include <iostream>
@@ -109,7 +109,7 @@ namespace GFlow {
   // Random number generators
   static std::mt19937 generator;
   static std::normal_distribution<RealType> normal_dist(0., 1.);
-  static std::poisson_distribution<int> poisson_dist();
+  // static std::poisson_distribution<int> poisson_dist();
 }
 
 #endif // __UTILITY_HPP__

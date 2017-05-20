@@ -43,7 +43,6 @@ namespace GFlow {
   template<typename... T> string toCSV(const PData& pdata) {
     stringstream stream;
     string str;
-    int size = sizeof...(T);
     stream << toCSV(std::get<0>(pdata)) << "," << std::get<1>(pdata) << "," << std::get<2>(pdata) << "," << std::get<3>(pdata) << "," << std::get<4>(pdata) << "," << std::get<5>(pdata);
     stream >> str;
     return str;

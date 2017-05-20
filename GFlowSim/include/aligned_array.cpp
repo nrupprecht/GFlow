@@ -1,15 +1,21 @@
 // To be included in aligned_array.h
   
+#include <cstdio>
+#include <cstdlib>
+#include <stdlib.h>
+
 template<typename T> aligned_array<T>::aligned_array() : _size(0), _alignment(64), data(0) {};
 
 template<typename T> aligned_array<T>::aligned_array(int s) : _size(s), _alignment(64) {
-  data = (T*)aligned_alloc(_alignment, s*sizeof(T));
+  //data = alignedAlloc(_alignment, _size);
+  alignedAlloc(data, _alignment, _size);
   // Initialize the entries to default values
   for (int i=0; i<s; ++i) data[i] = T();
 }
 
 template<typename T> aligned_array<T>::aligned_array(int s, const T& d) : _size(s), _alignment(64) {
-  data = (T*)aligned_alloc(_alignment, s*sizeof(T));
+  //data = alignedAlloc(_alignment, _size);
+  alignedAlloc(data, _alignment, _size);
   int i;
   // Set the first s entries to the requested value
   for (i=0; i<s; ++i)   data[i] = d;
@@ -21,7 +27,9 @@ template<typename T> aligned_array<T>::~aligned_array() {
 }
 
 template<typename T> void aligned_array<T>::reserve(int ns) {
-  T* new_data = (T*)aligned_alloc(_alignment, ns*sizeof(T));
+  //T* new_data = alignedAlloc(_alignment, ns);
+  T *new_data;
+  alignedAlloc(new_data, _alignment, ns);
   if (data) {
     int end = _size<ns ? _size : ns;
     int i;
@@ -38,7 +46,9 @@ template<typename T> void aligned_array<T>::reserve(int ns) {
 }
 
 template<typename T> void aligned_array<T>::reserve(int ns, const T& value) {
-  T* new_data = (T*)aligned_alloc(_alignment, ns*sizeof(T));
+  //T* new_data = alignedAlloc(_alignment, ns);
+  T *new_data;
+  alignedAlloc(new_data, _alignment, ns);
   if (data) {
     int end = _size<ns ? _size : ns;
     int i;
@@ -55,8 +65,10 @@ template<typename T> void aligned_array<T>::reserve(int ns, const T& value) {
 }
 
 template<typename T> void aligned_array<T>::reserve2(int oldFirst, int newFirst, int oldSecond, int newSecond) {
-  int ns = newFirst + newSecond;
-  T* new_data = (T*)aligned_alloc(_alignment, ns*sizeof(T));
+  unsigned int ns = newFirst + newSecond;
+  //T* new_data = alignedAlloc(_alignment, ns);
+  T *new_data;
+  alignedAlloc(new_data, _alignment, ns);
   if (data) {
     int i;
     int index1 = min(min(oldFirst,  newFirst),  _size);
@@ -75,7 +87,9 @@ template<typename T> void aligned_array<T>::reserve2(int oldFirst, int newFirst,
 
 template<typename T> void aligned_array<T>::reserve2(int oldFirst, int newFirst, int oldSecond, int newSecond, const T& value) {
   int ns = newFirst + newSecond;
-  T* new_data = (T*)aligned_alloc(_alignment, ns*sizeof(T));
+  // T* new_data = alignedAlloc(_alignment, ns);
+  T *new_data;
+  alignedAlloc(new_data, _alignment, ns);
   if (data) {
     int i;
     int index1 = min(min(oldFirst,  newFirst),  _size);

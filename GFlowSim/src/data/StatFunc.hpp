@@ -42,7 +42,6 @@ namespace GFlow {
 
   inline RealType StatFunc_TotalKE(SimData* simData) {
     RealType KE = 0;
-    int number;
     // Get data pointers
     RealType *vx = simData->getVxPtr();
     RealType *vy = simData->getVyPtr();

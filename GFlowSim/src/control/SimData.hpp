@@ -112,11 +112,10 @@ namespace GFlow {
     vec2 getDisplacement(const RealType, const RealType, const RealType, const RealType);
     vec2 getDisplacement(const vec2, const vec2);
 
-    // Get MPI data
+#ifdef USE_MPI // Get MPI data
     int getRank()    { return rank; }
     int getNumProc() { return numProc; }
 
-#ifdef USE_MPI
     void atomMove();
     void atomCopy();
 #endif

@@ -18,6 +18,8 @@ namespace GFlow {
    */
   class ExternalForce {
   public:
+    virtual ~ExternalForce() {};
+
     void applyForce(SimData* simData) {
       _applyForce(simData);
     }
