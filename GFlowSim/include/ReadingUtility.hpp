@@ -19,8 +19,9 @@ namespace GFlow {
 
   // Exception class
   struct BadIstreamRead {
-    BadIstreamRead(string t) : type(t) {};
+    BadIstreamRead(string t, char b, char g) : type(t), unexpected(b), expected(g) {};
     string type;
+    char unexpected, expected;
   };
 
   inline int getWhiteSpace(istream& in) {
@@ -43,15 +44,15 @@ namespace GFlow {
     // Get the vector data
     in.get(c);
     getWhiteSpace(in);
-    if (c!='{') throw BadIstreamRead("vec2");
+    if (c!='{') throw BadIstreamRead("vec2", c, '{');
     getWhiteSpace(in);
     in >> X;
     in >> c; 
-    if (c!=',') throw BadIstreamRead("vec2");
+    if (c!=',') throw BadIstreamRead("vec2", c, ',');
     in >> Y;
     getWhiteSpace(in);
     in.get(c);
-    if (c!='}') throw BadIstreamRead("vec2");
+    if (c!='}') throw BadIstreamRead("vec2", c, '}');
     // Set vec
     vec.x = X; vec.y = Y;
     // Return the istream
@@ -79,11 +80,21 @@ namespace GFlow {
 	reading = false;
 	continue;
       }
+      else throw BadIstreamRead("vec2", c, '*')
       in.get(c);
     }
     // Return the istream
     return in;
   }  
   
+  inline string printChar(char c) {
+    if (c=='\n') return "\\n";
+    if (c=='\r') return "\\r";
+    if (c=='\t') return "\\t";
+    string str;
+    str.push_back(c);
+    return str;
+  }
+
 }
 #endif // __READING_UTILITIES_HPP__

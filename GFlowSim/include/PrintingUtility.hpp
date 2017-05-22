@@ -16,7 +16,7 @@
 
 namespace GFlow {
 
-  template<typename S, typename T> inline std::ostream& operator<<(std::ostream& out, const std::pair<S,T> pr) {
+  template<typename S, typename T> inline std::ostream& operator<<(std::ostream& out, const std::pair<S,T>& pr) {
     out << "{" << pr.first << "," << pr.second << "}";
     return out;
   }
@@ -39,11 +39,6 @@ namespace GFlow {
       if (i!=lst.size()-1) out << ",";
     }
     out << "}";
-    return out;
-  }
-
-  template<typename T, typename U> inline std::ostream& operator<<(std::ostream& out, const std::pair<T,U>& vec) {
-    out << "{" << vec.first << "," << vec.second << "}";
     return out;
   }
 

@@ -19,6 +19,9 @@
 
 namespace GFlow {
   
+  // Forward reference to FileParser
+  class FileParser;
+
   /*
    * @class Creator
    * Creates simulation data
@@ -30,10 +33,10 @@ namespace GFlow {
     // In the future this will take argments
     SimData* create();
 
-    bool createRegion(Region&, SimData*);
-    
+    // FileParser is a friend class
+    friend class FileParser;
   private:
-    
+    bool createRegion(Region&, SimData*);    
   };
 
 }

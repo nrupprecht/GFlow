@@ -15,6 +15,7 @@ int main (int argc, char** argv) {
   
   string config = "";
   string writeDirectory = "";
+  string loadFile = "";
   RealType time = 10;
   bool animate = false;
   bool maxRatio = false;
@@ -41,7 +42,8 @@ int main (int argc, char** argv) {
   }
   // Logistics options
   parser.get("config", config);
-  parser.get("writeDirectory", writeDirectory);
+  parser.get("writeDirectory", writeDirectory); 
+  parser.get("loadFile", loadFile); 
   parser.get("time", time);
   // Animation options
   parser.get("animate", animate);
@@ -80,7 +82,7 @@ int main (int argc, char** argv) {
 #endif
   
   // Create from file or command line args
-  Creator simCreator;
+
   SimData *simData = nullptr;
   if (config!="") {
     FileParser fileParser;
@@ -107,7 +109,24 @@ int main (int argc, char** argv) {
       exit(0);
     }
   }
-  else simData = simCreator.create();
+  else if (loadFile!="") {
+    FileParser fileParser;
+    try {
+      simData = fileParser.loadFromFile(loadFile);
+    }
+    catch (FileParser::FileDoesNotExist file) {
+      cout << "File [" << file.name << "] does not exist. Trying [samples/" << file.name << "]. Exiting.\n";
+      exit(0);
+    }
+    catch (GFlow::BadIstreamRead read) {
+      cout << "Parsing failed when it attempted to read in a [" << read.type << "], expected [" << printChar(read.expected) << "], found [" << printChar(read.unexpected) << "]. Exiting.\n";
+      exit(0);
+    }
+  }
+  else {
+    Creator creator;
+    simData = creator.create();
+  }
 
   // Make sure simData is non-null
   if (simData==nullptr) {

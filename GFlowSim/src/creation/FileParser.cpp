@@ -162,7 +162,10 @@ namespace GFlow {
   }
 
   void FileParser::saveToFile(SimData* simData, string filename) {
-    
+    //-----------------------------------//
+    cout << "UNIMPLEMENTED. EXITING.\n";
+    exit(0);
+    //-----------------------------------//
   }
   
   // Make a region data structure and store it
