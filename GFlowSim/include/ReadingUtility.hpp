@@ -11,8 +11,10 @@
 using std::vector;
 #include <list>
 using std::list;
+#include <map>
 #include <istream>
 using std::istream;
+
 #include "vec2d.hpp"
 
 namespace GFlow {
@@ -24,17 +26,16 @@ namespace GFlow {
     char unexpected, expected;
   };
 
-  inline int getWhiteSpace(istream& in) {
-    int count = 1;
+  inline void getWhiteSpace(istream& in) {
     char c;
     in.get(c);
-    while(c==' ') {
-      in.get(c);
-      ++count;
-    }
+    while(!in.eof() && (c==' ' || c=='\n' || c=='\r')) in.get(c);
     in.putback(c);
-    --count;
-    return count;
+  }
+
+  inline void getNext(istream& in, char& c) {
+    getWhiteSpace(in);
+    in.get(c);
   }
 
   inline istream& operator>>(istream& in, vec2& vec) {
@@ -42,16 +43,15 @@ namespace GFlow {
     char c;
     RealType X, Y;
     // Get the vector data
-    in.get(c);
-    getWhiteSpace(in);
+    getNext(in, c);
     if (c!='{') throw BadIstreamRead("vec2", c, '{');
     getWhiteSpace(in);
     in >> X;
-    in >> c; 
+    getNext(in,c);
     if (c!=',') throw BadIstreamRead("vec2", c, ',');
-    in >> Y;
     getWhiteSpace(in);
-    in.get(c);
+    in >> Y;
+    getNext(in,c);
     if (c!='}') throw BadIstreamRead("vec2", c, '}');
     // Set vec
     vec.x = X; vec.y = Y;
@@ -67,20 +67,22 @@ namespace GFlow {
     T data;
     bool reading = true;
     // Get the vector data    
-    in.get(c);
+    getNext(in,c);
+    // Get opening '{'
+    if (c!='{') throw BadIstreamRead("vec2", c, '{');
+    getNext(in,c);
     while (!in.eof() && reading) {
       if (c==' ');
       else if (c==',');
-      else if (isdigit(c)) {
-	in.putback(c);
-	in >> data;
-	vec.push_back(data);
-      }
       else if (c=='}') {
 	reading = false;
 	continue;
       }
-      else throw BadIstreamRead("vec2", c, '*')
+      else {
+	in.putback(c);
+	in >> data;
+	vec.push_back(data);
+      }
       in.get(c);
     }
     // Return the istream
@@ -94,6 +96,22 @@ namespace GFlow {
     string str;
     str.push_back(c);
     return str;
+  }
+
+  template<typename T> void getValue(istream& in, T& data, const std::map<string, string> variables) {
+    string str;
+    in >> str;
+    auto var = variables.find(str);
+    if (var!=variables.end()) { // This is the keyword for a variable
+      stringstream stream;
+      stream << var->second;
+      stream >> data;
+    }
+    else {
+      stringstream stream;
+      stream << str;
+      stream >> data;
+    }
   }
 
 }

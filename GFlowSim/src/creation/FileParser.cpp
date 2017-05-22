@@ -3,13 +3,7 @@
 
 namespace GFlow {
 
-  FileParser::FileParser() : simData(nullptr), creator(new Creator), status(nullptr), randomSeed(0) {
-    // Default values
-    gravity   = Zero;
-    wrapX     = false;
-    wrapY     = false;
-    simBounds = NullBounds;
-  };
+  FileParser::FileParser() : creator(new Creator), status(nullptr), randomSeed(0) {};
 
   FileParser::~FileParser() {
     if (creator) delete creator;
@@ -27,6 +21,20 @@ namespace GFlow {
     if (seed==0) seed_rand();
     else seed_rand(seed);
 
+    // Data to save
+    Bounds bounds(NullBounds);
+    vector<Particle> particles;
+    vector<Region> regions;
+    vector<Wall> walls;
+    vec2 gravity;
+    bool wrapX(false), wrapY(false);
+
+    // For user defined variables
+    std::map<string, string> variables;
+    // Define true as 1 and false as 0
+    variables.emplace(Bool_True,  "1");
+    variables.emplace(Bool_False, "0");
+
     // Helper data
     const int max_comment_size = 512;
     char comment[max_comment_size];
@@ -35,46 +43,36 @@ namespace GFlow {
     fin >> tok;
     while (!fin.eof()) {      
       // (comment) // 
-      if (tok.at(0)==Comment_Tok) {
-	fin.getline(comment, max_comment_size);
-	fin >> tok;
-	continue;
+      if (tok.at(0)==Comment_Tok) fin.getline(comment, max_comment_size);
+      else if (tok==Variable_Tok) { // let [name] [value]
+	string name, val;
+	fin >> name >> val;
+	variables.emplace(name, val);
       }
-      
-      // Otherwise
-      if (!isalpha(tok.at(0))) throw UnrecognizedToken(tok);
-
-      // wrapX [true/false]
-      if (tok==WrapX_Tok || tok==WrapY_Tok) {
-	fin >> opt;
-	if (opt==Bool_True) {
-	  if (tok==WrapX_Tok) wrapX = true;
-	  else              wrapY = true;
-	}
-	else if (opt==Bool_False) {
-	  if (tok==WrapX_Tok) wrapX = false;
-          else              wrapY = false;
-	}
-	else return nullptr;
+      else if (tok==WrapX_Tok) { // wrapX [true/false]
+	bool wrap;
+	getValue(fin, wrap, variables);
+	wrapX = wrap;
       }
-
-      // bounds [lf] [rt] [bt] [tp]
-      else if (tok==Bounds_Tok) {
+      else if (tok==WrapY_Tok) { // wrapY [true/false]
+	bool wrap;
+	getValue(fin, wrap, variables);
+        wrapY = wrap;
+      }
+      else if (tok==Bounds_Tok) { // bounds [lf] [rt] [bt] [tp]
 	RealType lf, rg, bt, tp;
-	fin >> lf >> rg >> bt >> tp;
-	simBounds = Bounds(lf, rg, bt, tp);
+	getValue(fin, lf, variables);
+	getValue(fin, rg, variables);
+	getValue(fin, bt, variables);
+	getValue(fin, tp, variables);
+	bounds = Bounds(lf, rg, bt, tp);
       }
-      
-      // wall
-      else if (tok==Wall_Tok) make_wall(fin);
-
-      // particle
-      else if (tok==Particle_Tok) make_particle(fin);
-
-      // gravity [ax] [ay]
-      else if (tok==Gravity_Tok) {
+      else if (tok==Wall_Tok) make_wall(fin, walls, variables); // wall
+      else if (tok==Particle_Tok) make_particle(fin, particles, variables); // particle
+      else if (tok==Gravity_Tok) { // gravity [ax] [ay]
 	RealType x,y;
-	fin >> x >> y;
+	getValue(fin, x, variables);
+	getValue(fin, y, variables);
 	gravity = vec2(x,y);
       }
       
@@ -82,16 +80,18 @@ namespace GFlow {
       // [left] [right] [bottom] [top]
       // (options) N [number] | disp [dispersion] | disp_type [dispersion type] | it [interaction] | ...
       // end
-      else if (tok==Region_Tok) make_region(fin);
-      
+      else if (tok==Region_Tok) make_region(fin, regions, variables);
+      // Unrecognized
+      else throw UnrecognizedToken(tok);      
+
       // Get the next character
       fin >> tok;
     }
-
+    
     // Create simulation data
-    if (simBounds==NullBounds) return nullptr;
+    if (bounds==NullBounds) return nullptr;
     // Set simulation bounds
-    simData = new SimData(simBounds, simBounds);
+    SimData* simData = new SimData(bounds, bounds);
     // Set "gravity"
     if (gravity!=Zero) simData->addExternalForce(new ConstantAcceleration(gravity));
     // Set wrapping
@@ -105,14 +105,14 @@ namespace GFlow {
     // Add particles from regions
     for (auto& r : regions) {
       // Set bounds to the entire region if the bounds are unspecified
-      if (r.bounds==NullBounds) r.bounds = simBounds;
+      if (r.bounds==NullBounds) r.bounds = bounds;
       creator->createRegion(r, simData);
     }
-
+    
     return simData;
   }
 
-  SimData* FileParser::loadFromFile(string filename) {
+  SimData* FileParser::loadLegacyFromFile(string filename) {
     // Open stream, check if failed
     ifstream fin(filename);
     if (fin.fail()) {
@@ -130,6 +130,7 @@ namespace GFlow {
 
     // Get simulation bounds
     fin >> left >> right >> bottom >> top;
+
     Bounds bounds(left, right, bottom, top);
     SimData *simData = new SimData(bounds, bounds);
 
@@ -137,7 +138,7 @@ namespace GFlow {
     fin >> gravity;
     if (gravity!=Zero) 
       simData->addExternalForce(new ConstantAcceleration(gravity));
-
+    
     // Get walls
     fin >> wallLeft;
     fin >> wallRight;
@@ -152,6 +153,8 @@ namespace GFlow {
     int size = positions.size(), rsize = radii.size(), wsize = min(wallLeft.size(), wallRight.size()), isize = interactions.size();
     for (int i=0; i<wsize; ++i)
       simData->addWall(Wall(wallLeft[i], wallRight[i]));
+    // Reserve space
+    simData->reserveAdditional(size);
     for (int i=0; i<size; ++i) {
       Particle p(positions.at(i), radii.at(i%rsize));
       p.interaction = interactions.at(i%isize);
@@ -161,15 +164,127 @@ namespace GFlow {
     return simData;
   }
 
+  SimData* FileParser::loadFromFile(string filename) {
+    ifstream fin(filename);
+    if (fin.fail()) {
+      if (status) status->writeError("File ["+filename+"] cannot be opened by file parser when attempting to load arrangement.");
+      throw FileDoesNotExist(filename);
+    }
+    
+    // Data to save
+    Bounds bounds(NullBounds);
+    vector<Particle> particles;
+    vector<Wall> walls;
+    vector<ExternalForce*> externalForces;
+    bool wrapX(false), wrapY(false);
+    // Get tokens and data
+    string tok;
+    fin >> tok;
+    while (!fin.eof()) {
+      if (tok=="B") {
+	RealType l, r, b, t;
+	fin >> l >> r >> b >> t;
+	bounds = Bounds(l,r,b,t);
+      }
+      else if (tok=="wx") {
+	fin >> wrapX;
+      }
+      else if (tok=="wy") {
+	fin >> wrapY;
+      }
+      else if (tok=="ef") {
+	fin >> tok; // Get the type of external force
+	if (tok=="ca") {
+	  vec2 acc;
+	  fin >> acc;
+	  externalForces.push_back(new ConstantAcceleration(acc));
+	}
+      }
+      else if (tok=="W") {
+	vec2 left, right;
+	RealType rp, ds, cf;
+	// Get the wall data
+	fin >> left >> right >> rp >> ds >> cf;
+	Wall w(left, right);
+	w.repulsion   = rp;
+	w.dissipation = ds;
+	w.coeff       = cf;
+	// Push back the wall
+	walls.push_back(w);
+      }
+      else if (tok=="P") {
+	vec2 pos, velocity;
+	RealType th, om, sg, rp, ds, cf;
+	int it;
+	fin >> pos >> velocity >> th >> om >> sg >> rp >> ds >> cf >> it;
+	// Set the particle data
+	Particle P(pos, sg);
+	P.velocity    = velocity;
+	P.theta       = th;
+	P.omega       = om;
+	P.repulsion   = rp;
+	P.dissipation = ds;
+	P.coeff       = cf;
+	P.interaction = it;
+	// Push back the particle
+	particles.push_back(P);
+      }
+      // Get the next token
+      fin >> tok;
+    }
+    fin.close();
+
+    // Create the simulation data
+    if (bounds==NullBounds) return nullptr;
+    // Set simulation bounds
+    SimData* simData = new SimData(bounds, bounds);
+    // Set forces
+    for (auto ef : externalForces)
+      simData->addExternalForce(ef);
+    // Set wrapping
+    simData->setWrapX(wrapX);
+    simData->setWrapY(wrapY);
+    // Add walls
+    for (auto& w : walls) simData->addWall(w);
+    // Add individual particles
+    simData->reserve(particles.size());
+    for (auto& p : particles) simData->addParticle(p);
+
+    return simData;
+  }
+
   void FileParser::saveToFile(SimData* simData, string filename) {
-    //-----------------------------------//
-    cout << "UNIMPLEMENTED. EXITING.\n";
-    exit(0);
-    //-----------------------------------//
+    ofstream fout(filename);
+    if (fout.fail()) {
+      if (status) status->writeError("File ["+filename+"] cannot be opened by file parser when attempting to save arrangement.");
+      throw FileDoesNotExist(filename);
+    }
+
+    // Write bounds
+    Bounds simBounds = simData->simBounds;
+    fout << "B " << simBounds.left << " " << simBounds.right << " " << simBounds.bottom << " " << simBounds.top << endl;
+    // Write wrapping
+    fout << "wx " << (simData->wrapX ? "1" : "0") << "\nwy " << (simData->wrapY ? "1" : "0") << "\n";
+    // Write walls
+    for (const auto& w : simData->walls) {
+      fout << "W " << w.left << " " << w.getRight() << " " << w.repulsion << " " << w.dissipation << " " << w.coeff << "\n";
+    }
+    // Write external forces
+    for (const auto& f : simData->externalForces) {
+      auto ca = reinterpret_cast<ConstantAcceleration*>(f);
+      if (ca) fout << "ef ca " << ca->getAcceleration() << "\n";
+      // Allow for other forces here
+    }
+    // Write particles
+    for (const auto& p : simData->getParticles()) {
+      fout << "P " << p.position << " " << p.velocity << " " << p.theta << " " << p.omega << " " << p.sigma << " " << p.repulsion << " " << p.dissipation << " " << p.coeff << " " << p.interaction << "\n";
+    }
+    // Nothing else to write. Close stream.
+    fout.close();
   }
   
-  // Make a region data structure and store it
-  inline void FileParser::make_region(std::ifstream& fin) {    
+  // Make a region data structure
+  inline void FileParser::make_region(std::ifstream& fin, vector<Region>& regions, const std::map<string,string>& variables) {    
     // region
     // bounds [left] [right] [bottom] [top] | number [number] | disp [dispersion] | disp_type [dispersion type] | it [interaction] | ...
     // ...
@@ -201,49 +316,34 @@ namespace GFlow {
 	end = true;
 	continue;
       }
-      else if (tok==Number_Tok) {
-	fin >> number;
-      }
-      else if (tok==Phi_Tok) {
-	fin >> phi;
-      }
-      else if (tok==Sigma_Tok) {
-	fin >> sigma;
-      }
-      else if (tok==Dispersion_Tok) {
-	fin >> dispersion;
-      }
+      else if (tok==Number_Tok) getValue(fin, number, variables);
+      else if (tok==Phi_Tok) getValue(fin, phi, variables);
+      else if (tok==Sigma_Tok) getValue(fin, sigma, variables);
+      else if (tok==Dispersion_Tok) getValue(fin, dispersion, variables);
       else if (tok==Normal_Velocity_Tok) {
-	fin >> velocity;
+	getValue(fin, velocity, variables);
 	randomVChoice[0] = true;
       }
       else if (tok==Normal_KE_Tok) {
-	fin >> velocity;
+	getValue(fin, velocity, variables);
 	randomVChoice[1] = true;
       }
       else if (tok==Velocity_Tok) {
-	fin >> velocity >> vy;
+	getValue(fin, velocity, variables);
+	getValue(fin, vy, variables);
 	randomVChoice[2] = true;
       }
-      else if (tok==Repulsion_Tok) {
-	fin >> repulsion;
-      }
-      else if (tok==Dissipation_Tok) {
-	fin >> dissipation;
-      }
-      else if (tok==Coeff_Tok) {
-	fin >> coeff;
-      }
-      else if (tok==Interaction_Tok) {
-	fin >> interaction;
-      }
+      else if (tok==Repulsion_Tok) getValue(fin, repulsion, variables);
+      else if (tok==Dissipation_Tok) getValue(fin, dissipation, variables);
+      else if (tok==Coeff_Tok) getValue(fin, coeff, variables);
+      else if (tok==Interaction_Tok) getValue(fin, interaction, variables);
       else if (tok==Bounds_Tok) {
 	RealType left, right, bottom, top;
 	fin >> left >> right >> bottom >> top;
 	bounds = Bounds(left, right, bottom, top);
       }
       else throw UnrecognizedToken(tok);
-
+      
       // Get next token
       fin >> tok;
     }
@@ -281,11 +381,11 @@ namespace GFlow {
     // Bounds will be NullBounds (whole space) if no bounds were specified
     region.bounds = bounds;
 
-    // Feed the Region to the creator
+    // Add the region
     regions.push_back(region);
   }
 
-  inline void FileParser::make_wall(std::ifstream& fin) {
+  void FileParser::make_wall(std::ifstream& fin, vector<Wall>& walls, const std::map<string,string>& variables) {
 
     // wall
     // pos [lx] [ly] [rx] [ry] | repulsion [repulsion] | dissipation [dissipation] | coeff [coeff]
@@ -313,17 +413,14 @@ namespace GFlow {
 	continue;
       }
       else if (tok==Position_Tok) {
-	fin >> lx >> ly >> rx >> ry;
+	getValue(fin, lx, variables);
+	getValue(fin, ly, variables);
+	getValue(fin, rx, variables);
+	getValue(fin, ry, variables);
       }
-      else if (tok==Repulsion_Tok) {
-	fin >> repulsion;
-      }
-      else if (tok==Dissipation_Tok) {
-	fin >> dissipation;
-      }
-      else if (tok==Coeff_Tok) {
-	fin >> coeff;
-      }
+      else if (tok==Repulsion_Tok) getValue(fin, repulsion, variables);
+      else if (tok==Dissipation_Tok) getValue(fin, dissipation, variables);
+      else if (tok==Coeff_Tok) getValue(fin, coeff, variables);
       else throw UnrecognizedToken(tok);
 
       fin >> tok;
@@ -339,7 +436,7 @@ namespace GFlow {
     }
   }
 
-  void FileParser::make_particle(std::ifstream& fin) {
+  void FileParser::make_particle(std::ifstream& fin, vector<Particle>& particles, const std::map<string, string>& variables) {
     // wall
     // pos [lx] [ly] [rx] [ry] | repulsion [repulsion] | dissipation [dissipation] | coeff [coeff]
     // ...
@@ -367,27 +464,19 @@ namespace GFlow {
 	continue;
       }
       else if (tok==Position_Tok) {
-	fin >> X >> Y;
+	getValue(fin, X, variables);
+	getValue(fin, Y, variables);
 	gotPos = true;
       }
-      else if (tok==Sigma_Tok) {
-	fin >> R;
-      }
-      else if (tok==Repulsion_Tok) {
-	fin >> repulsion;
-      }
-      else if (tok==Dissipation_Tok) {
-	fin >> dissipation;
-      }
-      else if (tok==Coeff_Tok) {
-	fin >> coeff;
-      }
+      else if (tok==Sigma_Tok) getValue(fin, R, variables);
+      else if (tok==Repulsion_Tok) getValue(fin, repulsion, variables);
+      else if (tok==Dissipation_Tok) getValue(fin, dissipation, variables);
+      else if (tok==Coeff_Tok) getValue(fin, coeff, variables);
       else if (tok==Velocity_Tok) {
-	fin >> vx >> vy;
+	getValue(fin, vx, variables);
+	getValue(fin, vy, variables);
       }
-      else if (tok==Omega_Tok) {
-	fin >> omega;
-      }
+      else if (tok==Omega_Tok) getValue(fin, omega, variables);
       else throw UnrecognizedToken(tok);
       
       fin >> tok;

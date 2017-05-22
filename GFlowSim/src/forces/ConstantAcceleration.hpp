@@ -24,6 +24,9 @@ namespace GFlow {
     // Acceleration setting constructor
     ConstantAcceleration(vec2);
 
+    // Get the acceleration
+    vec2 getAcceleration() { return acceleration; }
+
   protected:
     // Inherited private virtual functions
     virtual void _applyForce(SimData*) const;

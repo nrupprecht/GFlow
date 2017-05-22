@@ -84,6 +84,27 @@ namespace GFlow {
     return simData;
   }
 
+  void Creator::createBuoyancy(SimData* simData, RealType radius, RealType density, vec2 velocity) {
+    Bounds simBounds = simData->getSimBounds();
+    // Change the bounds for the addition of the new particle
+    RealType height = 1; //** Height of the tops of the balls
+    Bounds nb = simBounds; //**
+    // Get rid of the old walls
+    simData->getWalls().clear();
+    // Create new walls
+    simData->addWall(Wall(nb.left, nb.bottom, nb.right, nb.bottom)); // Bottom
+    simData->addWall(Wall(nb.left, nb.bottom, nb.left, nb.top));     // Left
+    simData->addWall(Wall(nb.right, nb.bottom, nb.right, nb.top));   // Right
+    simData->addWall(Wall(nb.left, nb.top, nb.right, nb.top));       // Top
+
+    // Insert the intruding particle
+    if (radius>0) {
+      Particle P(0.5*(nb.right-nb.left), height + radius, radius);
+      P.setDensity(density);
+      P.velocity = velocity;
+    }
+  }
+
   bool Creator::createRegion(Region& region, SimData* simData) {
     if (!simData->simBounds.contains(region.bounds)) return false;
 

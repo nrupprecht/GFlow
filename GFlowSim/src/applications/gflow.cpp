@@ -16,6 +16,7 @@ int main (int argc, char** argv) {
   string config = "";
   string writeDirectory = "";
   string loadFile = "";
+  string saveFile = "";
   RealType time = 10;
   bool animate = false;
   bool maxRatio = false;
@@ -27,6 +28,7 @@ int main (int argc, char** argv) {
   bool mvRatio = false;
   
   bool print = false;       // Whether we should print stat data to the screen
+  bool quiet = false;
   
   bool adjust = true;       // Whether to auto-adjust the time step
   bool adjustDelay = true; // Whether to auto-adjust the update delay
@@ -44,6 +46,7 @@ int main (int argc, char** argv) {
   parser.get("config", config);
   parser.get("writeDirectory", writeDirectory); 
   parser.get("loadFile", loadFile); 
+  parser.get("saveFile", saveFile);
   parser.get("time", time);
   // Animation options
   parser.get("animate", animate);
@@ -54,6 +57,7 @@ int main (int argc, char** argv) {
   parser.get("maxV", maxV);
   parser.get("aveV", aveV);
   parser.get("print", print);
+  parser.get("quiet", quiet);
   parser.get("mvRatio", mvRatio);
   // Performance options
   parser.get("adjust", adjust);
@@ -162,7 +166,7 @@ int main (int argc, char** argv) {
 #if USE_MPI == 1
   if (rank==0) {
 #endif
-    cout << "Starting integration.\n";
+    if (!quiet) cout << "Starting integration.\n";
 #if USE_MPI == 1
   }
 #endif
@@ -174,7 +178,7 @@ int main (int argc, char** argv) {
   #if USE_MPI == 1
   if (rank==0) {
 #endif
-    cout << "Integration ended.\n";
+    if (!quiet) cout << "Integration ended.\n";
 #if USE_MPI == 1
   }
 #endif
@@ -185,8 +189,10 @@ int main (int argc, char** argv) {
     if (dataRecord) {
       // Print out time and ratio
       double runTime = dataRecord->getElapsedTime();
-      cout << "Run time: " << runTime << endl;
-      cout << "Ratio: " << time / runTime << endl;
+      if (!quiet) {
+	cout << "Run time: " << runTime << endl;
+	cout << "Ratio: " << time / runTime << endl;
+      }
       
       // Write animation data to files
       dataRecord->writeData(simData);
@@ -217,6 +223,18 @@ int main (int argc, char** argv) {
 	cout << "mvRatio=" << mmPreproc(moveRatioRecord) << ";\n";
 	cout << "Histogram[mvRatio,200,ImageSize->Large]\n";
       }
+    }
+#if USE_MPI == 1
+  }
+#endif
+
+  // Save arrangement if requested
+#if USE_MPI == 1
+  if (rank==0) {
+#endif
+    if (saveFile!="") {
+      FileParser fileParser;
+      fileParser.saveToFile(simData, saveFile);
     }
 #if USE_MPI == 1
   }

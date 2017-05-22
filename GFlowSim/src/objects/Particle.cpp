@@ -27,4 +27,11 @@ namespace GFlow {
     // Start with a random angle
     theta = 2*PI*drand48();
   }
+
+  void Particle::setDensity(RealType den) {
+    RealType mass = PI*sqr(sigma)*den;
+    invMass = 1./mass;
+    invII = 1./(0.5*mass*sqr(sigma));
+  }
+
 }

@@ -34,6 +34,8 @@ using std::list;
 #include <tuple>
 using std::tuple;
 
+#include <map>
+
 #include <chrono>
 using std::chrono::high_resolution_clock;
 using std::chrono::duration;

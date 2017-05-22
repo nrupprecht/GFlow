@@ -28,6 +28,9 @@ namespace GFlow {
     // Initialize position with reals and sigma
     Particle(RealType, RealType, RealType);
 
+    // Density setter
+    void setDensity(RealType);
+
     vec2 position, velocity, force;
     RealType theta, omega, torque;
 

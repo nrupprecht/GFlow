@@ -22,6 +22,8 @@ namespace GFlow {
   class ExternalForce;
   // Forward declaration to Creator
   class Creator;
+  // Forward declaration to 
+  class FileParser;
   
   /*
    * @class SimData
@@ -139,6 +141,8 @@ namespace GFlow {
     friend class DataRecord;
     // Creator is a friend class
     friend class Creator;
+    // FileParser is a friend class
+    friend class FileParser;
     
   private:
 

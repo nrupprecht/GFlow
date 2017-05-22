@@ -77,8 +77,7 @@ namespace GFlow {
   void SimData::addParticle(const Particle& p) {
     // Check if we have enough room
     if (domain_size==domain_capacity) {
-      cout << "Sim data full.\n";
-      throw false; // Eventually resize
+      reserveAdditional(10); // HOW MUCH TO RESERVE?
     }
     // Set arrays
     px[domain_size] = p.position.x;
