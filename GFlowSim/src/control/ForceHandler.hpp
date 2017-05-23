@@ -25,13 +25,15 @@ namespace GFlow {
 
     // Do inter-particle forces
     void pForces(const VListType&, SimData*) const;
+    void pForcesRec(const VListType&, SimData*, vector<PData>&) const;
     
     // Do particle-wall forces
     void wForces(const WListType&, SimData*) const;
+    void wForcesRec(const WListType&, SimData*, vector<PData>&) const;
 
   private:
-    inline void interactP(int, int, SimData*) const;
-    inline void interactW(int, int, SimData*) const;
+    inline void interactP(int, int, SimData*, RealType&, RealType&, bool = true) const;
+    inline void interactW(int, int, SimData*, RealType&, RealType&, bool = true) const;
 
     InteractionFunction interactionFunctions[16];
     WallInteractionFunction wallInteractionFunctions[4];

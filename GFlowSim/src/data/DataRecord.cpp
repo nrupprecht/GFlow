@@ -4,7 +4,7 @@
 #include "../forces/ExternalForce.hpp"
 
 namespace GFlow {
-  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-delay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), recPerf(false), recMvRatio(false) {
+  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-delay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), recOption(1), recPerf(false), recMvRatio(false) {
     start_time = end_time = high_resolution_clock::now();
   };
 
@@ -46,13 +46,19 @@ namespace GFlow {
     int *it = simData->getItPtr();
     int domain_size = simData->domain_size;
 
-    // Record data
+    // Record position data
     if (recPos) {
       vector<PData> positions;
-      for (int i=0; i<domain_size; ++i)
-	if (it[i]>-1) 
-	  positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], 0));
-      // Add to position record
+      if (recOption==1) // Record pressure
+	recordPressureData(simData, positions);
+      else if (recOption==2) // Record by particle id
+	recordByNumber(simData, positions);
+      else if (recOption==3) // Record by number of verlet lists the particle is in
+	recordByVerletList(simData, positions);
+      else { // recOption==0 or default. Record nothing extra
+	for (int i=0; i<domain_size; ++i)
+	  if (it[i]>-1) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], 0));
+      }
       positionRecord.push_back(positions);
     }
 
@@ -115,13 +121,13 @@ namespace GFlow {
       // Write position data
       for (int i=0; i<positionRecord.size(); ++i)
 	if (!printToCSV(writeDirectory+"/Pos/pos", positionRecord.at(i), i))
-	  cout << "Failed to print to [" << writeDirectory << "/Pos/pos" << i << "].\n";
+	  std::cerr << "Failed to print to [" << writeDirectory << "/Pos/pos" << i << "].\n";
       // Write wall data
       if (!printToCSV(writeDirectory+"/walls.csv", simData->getWalls()))
-        cout << "Failed to print walls to [" << writeDirectory << "/walls.csv].\n";
+	std::cerr << "Failed to print walls to [" << writeDirectory << "/walls.csv].\n";
       // Write bounds data
       if (!printToCSV(writeDirectory+"/bnds.csv", vector<Bounds>(1,simData->getSimBounds())))
-        cout << "Failed to print bounds to [" << writeDirectory << "/bnds.csv].\n";
+	std::cerr << "Failed to print bounds to [" << writeDirectory << "/bnds.csv].\n";
     }
 
     // Write stat function data to files
@@ -129,13 +135,13 @@ namespace GFlow {
       mkdir((writeDirectory+"/StatData").c_str(), 0777);
       // Write the names of all the files that will be generated
       ofstream fout(writeDirectory+"/StatData/statNames.csv");
-      if (fout.fail()) cout << "Failed to open [" << writeDirectory << "/StatData/statNames.txt].\n";
+      if (fout.fail()) std::cerr << "Failed to open [" << writeDirectory << "/StatData/statNames.txt].\n";
       for (auto& name : statFunctionName) fout << name << "\n";
       fout.close();
       // Write stat data
       for (int i=0; i<statFunctionData.size(); ++i) {
 	if (!printToCSV(writeDirectory+"/StatData/"+statFunctionName.at(i)+".csv", statFunctionData.at(i)))
-	  cout << "Failed to print to [" << writeDirectory << "/StatData/" << statFunctionName.at(i) << "].\n";
+	  std::cerr << "Failed to print to [" << writeDirectory << "/StatData/" << statFunctionName.at(i) << "].\n";
       }
     }
   }
@@ -144,7 +150,7 @@ namespace GFlow {
     std::ofstream fout(writeDirectory+"/run_summary.txt");
     if (fout.fail()) {
       // Write error message
-      cout << "Failed to open file [" << writeDirectory << "/run_summary.txt]." << endl;
+      std::cerr << "Failed to open file [" << writeDirectory << "/run_summary.txt]." << endl;
       return;
     }
     // Print Header
@@ -308,6 +314,79 @@ namespace GFlow {
 
     // Section divide new line
     fout << "\n";
+  }
+
+  void DataRecord::recordPressureData(SimData* simData, vector<PData>& positions) const {
+    // Get the arrays
+    RealType *px = simData->getPxPtr();
+    RealType *py = simData->getPyPtr();
+    RealType *sg = simData->getSgPtr();
+    RealType *th = simData->getThPtr();
+    int *it = simData->getItPtr();
+    int domain_size = simData->domain_size;
+
+    // We will sort out particles with it<0 at the end
+    vector<PData> pos;
+    for (int i=0; i<domain_size; ++i) 
+      pos.push_back(PData(px[i], py[i], sg[i], th[i], it[i], 0));
+  
+    // Get the force data
+    ForceHandler *force = simData->getForceHandler();
+    if (force && simData && simData->sectors) {
+      // Get lists      
+      const auto& verletList = simData->sectors->getVerletList();
+      const auto& wallList   = simData->sectors->getWallList();
+      // Get data
+      force->pForcesRec(verletList, simData, pos);
+      force->wForcesRec(wallList, simData, pos);
+    }
+
+    // Make sure we only have "real" particles (it>-1)
+    for (int i=0; i<domain_size; ++i) 
+      if (it[i]>-1) {
+	PData pdata = pos.at(i);
+	std::get<5>(pdata) /= 2*PI*sg[i]; // Convert to pressure
+	positions.push_back(pdata);
+      }
+  }
+
+  void DataRecord::recordByNumber(SimData* simData, vector<PData>& positions) const {
+    // Get the arrays
+    RealType *px = simData->getPxPtr();
+    RealType *py = simData->getPyPtr();
+    RealType *sg = simData->getSgPtr();
+    RealType *th = simData->getThPtr();
+    int *it = simData->getItPtr();
+    int domain_size = simData->domain_size;
+
+    for (int i=0; i<domain_size; ++i)
+      if (it[i]>-1) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], i));
+  }
+
+  void DataRecord::recordByVerletList(SimData* simData, vector<PData>& positions) const {
+    // Get the arrays
+    RealType *px = simData->getPxPtr();
+    RealType *py = simData->getPyPtr();
+    RealType *sg = simData->getSgPtr();
+    RealType *th = simData->getThPtr();
+    int *it = simData->getItPtr();
+    int domain_size = simData->domain_size;
+
+    // We will sort out particles with it<0 at the end
+    vector<PData> pos;
+    for (int i=0; i<domain_size; ++i)
+      pos.push_back(PData(px[i], py[i], sg[i], th[i], it[i], 0));
+    
+    if (simData && simData->sectors) {
+      const auto& verletList = simData->sectors->getVerletList();
+      for (auto vl : verletList)
+	for (auto id : vl)
+	  ++std::get<5>(pos.at(id));
+    }
+    
+    // Make sure we only have "real" particles (it>-1)
+    for (int i=0; i<domain_size; ++i)
+      if (it[i]>-1) positions.push_back(pos.at(i));
   }
 
 }

@@ -50,6 +50,8 @@ namespace GFlow {
 
   protected:
     // Private virtual functions
+    virtual void initializeSectors();
+    virtual void initializeForceHandler();
     virtual void preIntegrate();
     virtual inline void _integrate() = 0;
     virtual void postIntegrate();
@@ -74,8 +76,8 @@ namespace GFlow {
     // Pointer to the simulation data
     SimData* simData;
 
-    // Pointer to sectorization
-    Sectorization* sectors;
+    // Sectorization object
+    Sectorization *sectors;
 
     // Pointer to data recorder
     DataRecord* dataRecord;

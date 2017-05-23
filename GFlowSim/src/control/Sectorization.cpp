@@ -18,9 +18,11 @@ namespace GFlow {
     simData = sd;
     bounds = simData->getBounds();
     simBounds = simData->getSimBounds();
+
     // Set wrapping
     wrapX = simData->getWrapX();
     wrapY = simData->getWrapY();
+
     // Find appropriate cutoff radii
     auto plist = simData->getParticles();
     for (const auto &p : plist) {
@@ -28,9 +30,13 @@ namespace GFlow {
       if (r>maxCutR) maxCutR = r;
       else if (r>secCutR) secCutR = r;
     }
+
     // Set up sector array
     makeSectors();
     
+    // Set this as the sectorization for the sim data
+    sd->setSectors(this);
+
     // Get mpi data
 #if USE_MPI == 1
     rank = simData->getRank();

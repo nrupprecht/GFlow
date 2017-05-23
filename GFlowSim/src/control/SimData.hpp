@@ -22,9 +22,13 @@ namespace GFlow {
   class ExternalForce;
   // Forward declaration to Creator
   class Creator;
-  // Forward declaration to 
+  // Forward declaration to FileParser
   class FileParser;
-  
+  // Forward declaration to Sectorization
+  class Sectorization;
+  // Forward declaration to ForceHandler
+  class ForceHandler;
+
   /*
    * @class SimData
    *
@@ -103,6 +107,9 @@ namespace GFlow {
     // Get a list of all the particles
     vector<Particle> getParticles();
 
+    // Get the force handler
+    ForceHandler* getForceHandler() { return forceHandler; }
+
     // Get the external forces
     vector<ExternalForce*>& getExternalForces() { return externalForces; }
 
@@ -132,6 +139,12 @@ namespace GFlow {
     // Set bounds
     void setBounds(const Bounds& b)    { bounds = b; }
     void setSimBounds(const Bounds& b) { simBounds = b; }
+
+    // Set sectorization
+    void setSectors(Sectorization *sec) { sectors = sec; }
+
+    // Set force handler
+    void setForceHandler(ForceHandler* frc) { forceHandler = frc; }
 
     // Add an external force or remove all of them
     void addExternalForce(ExternalForce*);
@@ -196,6 +209,12 @@ namespace GFlow {
 
     // Simulation boundary conditions
     bool wrapX, wrapY;
+
+    // The sectorization that handles this data
+    Sectorization *sectors;
+
+    // The force handler that handles our forces
+    ForceHandler *forceHandler;
 
 #ifdef USE_MPI // Rank and number of processors - for MPI
     int rank, numProc;

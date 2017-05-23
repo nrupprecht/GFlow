@@ -4,10 +4,11 @@
 
 namespace GFlow {
 
-  SimData::SimData(const Bounds& b, const Bounds& sb) : domain_size(0), domain_capacity(0), edge_size(0), edge_capacity(0), bounds(b), simBounds(sb), wrapX(true), wrapY(true) {
+  SimData::SimData(const Bounds& b, const Bounds& sb) : domain_size(0), domain_capacity(0), edge_size(0), edge_capacity(0), bounds(b), simBounds(sb), wrapX(true), wrapY(true), sectors(nullptr), forceHandler(nullptr) {
+    // Set easy access array
     for (int i=0; i<15; ++i) pdata[i] = 0;
 
-    // Set up MPI
+    // Set up MPI (possibly)
 #if USE_MPI == 1
 #if _CLANG_ == 1
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);

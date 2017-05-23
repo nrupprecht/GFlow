@@ -39,7 +39,7 @@ namespace GFlow {
     double getElapsedTime() const;
 
     // (Potentially) record data related to simulation data
-    void record(SimData*, RealType);
+    void record(SimData*, RealType); 
 
     // Get sectorization data at the end
     void getSectorizationData(Sectorization*);
@@ -55,6 +55,7 @@ namespace GFlow {
     // Set options
     void setRecPos(bool b)  { recPos = b; }
     void setRecPerf(bool b) { recPerf = b; }
+    void setRecOption(int i) { recOption = i; }
 
     // Set the write directory
     void setWriteDirectory(string w) { writeDirectory = w; }
@@ -102,6 +103,9 @@ namespace GFlow {
   private:
     // Private helper functions
     void writeParticleData(std::ofstream&, SimData*) const;
+    void recordPressureData(SimData*, vector<PData>&) const;
+    void recordByNumber(SimData*, vector<PData>&) const;
+    void recordByVerletList(SimData*, vector<PData>&) const;
 
     // The name of the directory we should write to 
     string writeDirectory;
@@ -130,6 +134,7 @@ namespace GFlow {
     // Record data
     vector<vector<PData> > positionRecord;
     bool recPos;
+    int recOption; // Color particles according to what
 
     // Timing data
     high_resolution_clock::time_point start_time, end_time;

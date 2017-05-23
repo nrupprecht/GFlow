@@ -2,11 +2,11 @@
 
 namespace GFlow {
   
-  Integrator::Integrator() : running(false), dt(default_epsilon), time(0), runTime(0), iter(0), simData(nullptr), sectors(nullptr), dataRecord(nullptr) {};
+  Integrator::Integrator() : running(false), dt(default_epsilon), time(0), runTime(0), iter(0), simData(nullptr), sectors(nullptr), dataRecord(nullptr), forceHandler(nullptr) {};
 
-  Integrator::Integrator(SimData *sim) : running(false), dt(default_epsilon), time(0), runTime(0), iter(0), simData(sim), sectors(nullptr), dataRecord(nullptr) {};
+  Integrator::Integrator(SimData *sim) : running(false), dt(default_epsilon), time(0), runTime(0), iter(0), simData(sim), sectors(nullptr), dataRecord(nullptr), forceHandler(nullptr) {};
 
-  Integrator::Integrator(SimData *sim, DataRecord *dat) : running(false), dt(default_epsilon), time(0), runTime(0), iter(0), simData(sim), sectors(nullptr), dataRecord(dat) {};
+  Integrator::Integrator(SimData *sim, DataRecord *dat) : running(false), dt(default_epsilon), time(0), runTime(0), iter(0), simData(sim), sectors(nullptr), dataRecord(dat), forceHandler(nullptr) {};
 
   Integrator::~Integrator() {
     delete sectors;
@@ -18,16 +18,15 @@ namespace GFlow {
     if (simData) runTime = rt;
     else runTime = 0;
 
-    // Create a sectorization
-    if (sectors) delete sectors;
-    sectors = new Sectorization;
+    // Create and set up a sectorization
+    initializeSectors();
 
-    // Set up the sectorization
-    if (simData) sectors->initialize(simData);
+    // Create and set up a force handler
+    initializeForceHandler();
+  }
 
-    // Create force handler
-    forceHandler = new ForceHandler;
-
+  void Integrator::setDataRecord(DataRecord* dr) {
+    dataRecord = dr;
   }
 
   void Integrator::integrate() {
@@ -45,8 +44,21 @@ namespace GFlow {
     postIntegrate();
   }
 
-  void Integrator::setDataRecord(DataRecord* dr) {
-    dataRecord = dr;
+  void Integrator::initializeSectors() {
+    // Create a sectorization
+    if (sectors) delete sectors;
+    sectors = new Sectorization;
+
+    // Set up the sectorization
+    if (simData) sectors->initialize(simData);
+  }
+
+  void Integrator::initializeForceHandler() {
+    // Create force handler
+    forceHandler = new ForceHandler;
+
+    // Give the force handler to the simulation data
+    if (simData) simData->setForceHandler(forceHandler);
   }
 
   void Integrator::preIntegrate() {

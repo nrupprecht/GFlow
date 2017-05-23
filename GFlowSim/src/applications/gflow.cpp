@@ -19,6 +19,7 @@ int main (int argc, char** argv) {
   string saveFile = "";
   RealType time = 10;
   bool animate = false;
+  int recOption = 0;
   bool maxRatio = false;
   bool ratio = false;
   bool KE = false;
@@ -50,6 +51,7 @@ int main (int argc, char** argv) {
   parser.get("time", time);
   // Animation options
   parser.get("animate", animate);
+  parser.get("recOption", recOption);
   parser.get("maxRatio", maxRatio);
   parser.get("ratio", ratio);
   parser.get("KE", KE);
@@ -154,6 +156,7 @@ int main (int argc, char** argv) {
     if (aveV)     dataRecord->addStatFunction(StatFunc_AveSpeed, "aveV");
     if (mvRatio)  dataRecord->setRecMoveRatio(true);
     dataRecord->setRecPos(animate);
+    dataRecord->setRecOption(recOption);
     dataRecord->setRecPerf(perf);
   }
 
