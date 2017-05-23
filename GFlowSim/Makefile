@@ -5,14 +5,14 @@ OPTFLAGS = -xHost -O3 -no-prec-div -static -fp-model fast=2 -restrict -funroll-l
 #QOPT = # -qopt-report 5
 #OPTFLAGS = -O3 -static -funroll-loops -mllvm -vectorize-slp -mllvm -bb-vectorize-aligned-only -ffast-math -ffinite-math-only -freciprocal-math -ftree-vectorize -fslp-vectorize-aggressive -fstrict-vtable-pointers -fwhole-program-vtables -flto
 #QOPT = # -Rpass=loop-vectorize -Rpass-analysis=loop-vectorize
-FLAGS = $(CFLAG) -g $(QOPT) $(OPTFLAGS)
+FLAGS = $(CFLAG) -g $(OPTFLAGS) $(QOPT)
 
 # All object files needed
 CONTROL_OBJECTS = build/Sectorization.o build/SimData.o build/ForceHandler.o build/StatusObject.o
 CREATION_OBJECTS = build/Creator.o build/FileParser.o build/DataCreator.o
 DATA_OBJECTS    = build/DataRecord.o 
 INT_OBJECTS     = build/VelocityVerletIntegrator.o build/Integrator.o
-OBJ_OBJECTS     = build/Particle.o build/Wall.o
+OBJ_OBJECTS     = build/Particle.o build/Wall.o build/ScalarField.o
 INC_OBJECTS     = build/vec2d.o
 TEST_OBJECTS    = build/test_aligned_array.o
 FORCE_OBJECTS   = build/ViscousDrag.o build/ConstantAcceleration.o

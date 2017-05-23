@@ -73,6 +73,9 @@ namespace GFlow {
     // How long it's been since we updated the sectors
     RealType updateTimer;
 
+    // How long it's been since we updated the time step
+    RealType adjustTimer;
+    
     // Whether to auto adjust update delay
     bool adjustUpdateDelay;
 

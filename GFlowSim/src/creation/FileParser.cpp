@@ -10,6 +10,10 @@ namespace GFlow {
   }
   
   SimData* FileParser::parse(string filename, unsigned seed) {
+    // Timing
+    if (dataRecord) dataRecord->startTiming();
+
+    // Open file
     ifstream fin(filename);
     if (fin.fail()) {
       if (status) status->writeError("File ["+filename+"] cannot be opened by file parser.");
@@ -108,11 +112,22 @@ namespace GFlow {
       if (r.bounds==NullBounds) r.bounds = bounds;
       creator->createRegion(r, simData);
     }
+
+    // Timing
+    if (dataRecord) {
+      dataRecord->endTiming();
+      RealType time = dataRecord->getElapsedTime();
+      dataRecord->setSetupTime(time);
+    }
     
+    // Return the simulation data
     return simData;
   }
 
   SimData* FileParser::loadLegacyFromFile(string filename) {
+    // Timing
+    if (dataRecord) dataRecord->startTiming();
+
     // Open stream, check if failed
     ifstream fin(filename);
     if (fin.fail()) {
@@ -160,11 +175,22 @@ namespace GFlow {
       p.interaction = interactions.at(i%isize);
       simData->addParticle(p);
     }
+
+    // Timing
+    if (dataRecord) {
+      dataRecord->endTiming();
+      RealType time = dataRecord->getElapsedTime();
+      dataRecord->setSetupTime(time);
+    }
+
     // Return the sim data object
     return simData;
   }
 
   SimData* FileParser::loadFromFile(string filename) {
+    // Timing
+    if (dataRecord) dataRecord->startTiming();
+    // Open the file
     ifstream fin(filename);
     if (fin.fail()) {
       if (status) status->writeError("File ["+filename+"] cannot be opened by file parser when attempting to load arrangement.");
@@ -250,6 +276,14 @@ namespace GFlow {
     simData->reserve(particles.size());
     for (auto& p : particles) simData->addParticle(p);
 
+    // Timing
+    if (dataRecord) {
+      dataRecord->endTiming();
+      RealType time = dataRecord->getElapsedTime();
+      dataRecord->setSetupTime(time);
+    }
+
+    // Return 
     return simData;
   }
 
@@ -339,7 +373,10 @@ namespace GFlow {
       else if (tok==Interaction_Tok) getValue(fin, interaction, variables);
       else if (tok==Bounds_Tok) {
 	RealType left, right, bottom, top;
-	fin >> left >> right >> bottom >> top;
+	getValue(fin, left, variables);
+	getValue(fin, right, variables);
+	getValue(fin, bottom, variables);
+	getValue(fin, top, variables);
 	bounds = Bounds(left, right, bottom, top);
       }
       else throw UnrecognizedToken(tok);

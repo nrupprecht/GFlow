@@ -1,11 +1,11 @@
 #include "VelocityVerletIntegrator.hpp"
 
 namespace GFlow {
-  VelocityVerletIntegrator::VelocityVerletIntegrator() : Integrator(), updateDelay(default_update_delay), delayFactor(default_delay_factor), verletListTimer(0), updateTimer(0), adjustUpdateDelay(true), adjustTimeStep(true), periodIterations(default_period_iterations), aveUpdateDelay(0), sectorUpdates(0) {};
+  VelocityVerletIntegrator::VelocityVerletIntegrator() : Integrator(), updateDelay(default_update_delay), delayFactor(default_delay_factor), verletListTimer(0), updateTimer(0), adjustTimer(0), adjustUpdateDelay(true), adjustTimeStep(true), periodIterations(default_period_iterations), aveUpdateDelay(0), sectorUpdates(0) {};
 
-  VelocityVerletIntegrator::VelocityVerletIntegrator(SimData* sim) : Integrator(sim), updateDelay(default_update_delay), delayFactor(default_delay_factor), verletListTimer(0), updateTimer(0), adjustUpdateDelay(true), adjustTimeStep(true), periodIterations(default_period_iterations), aveUpdateDelay(0), sectorUpdates(0) {};
+  VelocityVerletIntegrator::VelocityVerletIntegrator(SimData* sim) : Integrator(sim), updateDelay(default_update_delay), delayFactor(default_delay_factor), verletListTimer(0), updateTimer(0), adjustTimer(0), adjustUpdateDelay(true), adjustTimeStep(true), periodIterations(default_period_iterations), aveUpdateDelay(0), sectorUpdates(0) {};
 
-  VelocityVerletIntegrator::VelocityVerletIntegrator(SimData* sim, DataRecord* dat) : Integrator(sim, dat), updateDelay(default_update_delay), delayFactor(default_delay_factor), verletListTimer(0), updateTimer(0), adjustUpdateDelay(true), adjustTimeStep(true), periodIterations(default_period_iterations), aveUpdateDelay(0), sectorUpdates(0) {};
+  VelocityVerletIntegrator::VelocityVerletIntegrator(SimData* sim, DataRecord* dat) : Integrator(sim, dat), updateDelay(default_update_delay), delayFactor(default_delay_factor), verletListTimer(0), updateTimer(0), adjustTimer(0), adjustUpdateDelay(true), adjustTimeStep(true), periodIterations(default_period_iterations), aveUpdateDelay(0), sectorUpdates(0) {};
 
   void VelocityVerletIntegrator::addExternalForce(ExternalForce* force) {
     if (simData==nullptr) return;
@@ -40,6 +40,7 @@ namespace GFlow {
     // Update timers
     updateTimer += dt;
     verletListTimer += dt;
+    adjustTimer += dt;
 
     // Do the normal pre-step
     Integrator::preStep();
@@ -60,11 +61,16 @@ namespace GFlow {
   }
   
   void VelocityVerletIntegrator::postStep() {
-    // End if we have simulated for enough time
-    if (runTime < time) running = false;
-
     // Do the normal post-step
     Integrator::postStep();
+
+    // Update adjustments 
+    if (updateDelay < adjustTimer) {
+      // Rest timer
+      adjustTimer = 0;
+      // Update time step
+      if (adjustTimeStep) doAdjustTimeStep();
+    }
   }
 
   inline void VelocityVerletIntegrator::firstHalfKick() {
@@ -115,7 +121,7 @@ namespace GFlow {
 
   inline void VelocityVerletIntegrator::updates() {
     // Update sectors
-    if (updateDelay<updateTimer) {
+    if (updateDelay < updateTimer) {
       
 #if USE_MPI == 1 // If using mpi, exchange data with other processors
       simData->atomMove();
@@ -124,8 +130,6 @@ namespace GFlow {
 
       // Adjust update delay
       if (adjustUpdateDelay) doAdjustDelay();
-      // Update time step
-      if (adjustTimeStep) doAdjustTimeStep();
       
       // Update lists and reset list timer
       sectors->createVerletLists();
@@ -210,12 +214,12 @@ namespace GFlow {
       }
     }
     minPeriod = sqrt(minPeriod);
-    
+
     // Set the time step
     dt = minPeriod/periodIterations;
     // If something suddenly starts moving, and the update delay is to long, there could be problems. For now, we deal with that by capping the time step
     dt = dt>default_max_timestep ? default_max_timestep : dt;
-    
+    dt = dt<default_min_timestep ? default_min_timestep : dt;
     // Record data for average timestep data
     aveDt += dt;
   }

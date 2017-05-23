@@ -11,6 +11,7 @@
 #include "../../include/CSVUtility.hpp"
 #include "../control/SimData.hpp"
 #include "../control/Sectorization.hpp"
+#include "../objects/ScalarField.hpp"
 #include "StatFunc.hpp"
 
 namespace GFlow {
@@ -34,6 +35,9 @@ namespace GFlow {
    
     // Set lastRecord time for performance timing
     void markTime();
+
+    // Set the setup time
+    void setSetupTime(RealType t) { setupTime = t; }
 
     // Get the elapsed time
     double getElapsedTime() const;
@@ -106,6 +110,10 @@ namespace GFlow {
     void recordPressureData(SimData*, vector<PData>&) const;
     void recordByNumber(SimData*, vector<PData>&) const;
     void recordByVerletList(SimData*, vector<PData>&) const;
+    void getBulkData(SimData*, const Bounds&, vector<RealType>&, ScalarField&, RealType=0.025, RealType=0.01, RealType=0.01, RealType=1.) const;
+    
+    inline void unite(int*, int, int) const;
+    inline int getHead(int*, int) const;
 
     // The name of the directory we should write to 
     string writeDirectory;
@@ -115,6 +123,9 @@ namespace GFlow {
 
     // What time we last recorded data
     RealType lastRecord;
+
+    // How long it took to parse
+    RealType setupTime;
 
     // How many iterations we have recorded
     int recIter;
@@ -135,6 +146,7 @@ namespace GFlow {
     vector<vector<PData> > positionRecord;
     bool recPos;
     int recOption; // Color particles according to what
+    bool recBulk;
 
     // Timing data
     high_resolution_clock::time_point start_time, end_time;

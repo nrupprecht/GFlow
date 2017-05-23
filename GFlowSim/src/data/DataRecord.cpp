@@ -4,7 +4,7 @@
 #include "../forces/ExternalForce.hpp"
 
 namespace GFlow {
-  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-delay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), recOption(1), recPerf(false), recMvRatio(false) {
+  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-delay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), recOption(1), recBulk(0), recPerf(false), recMvRatio(false) {
     start_time = end_time = high_resolution_clock::now();
   };
 
@@ -60,6 +60,13 @@ namespace GFlow {
 	  if (it[i]>-1) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], 0));
       }
       positionRecord.push_back(positions);
+    }
+
+    if (recBulk) {
+      Bounds region = simData->getSimBounds();
+      vector<RealType> volumes;
+      ScalarField bulkField;
+      getBulkData(simData, region, volumes, bulkField);
     }
 
     // Record stat functions
@@ -387,6 +394,211 @@ namespace GFlow {
     // Make sure we only have "real" particles (it>-1)
     for (int i=0; i<domain_size; ++i)
       if (it[i]>-1) positions.push_back(pos.at(i));
+  }
+
+  void DataRecord::getBulkData(SimData* simData, const Bounds& region, vector<RealType>& volumes, ScalarField& bulkField, RealType resolution, RealType dr, RealType lowerVCut, RealType upperVCut) const {
+    int nsx = (region.right - region.left)/resolution, nsy = (region.top - region.bottom)/resolution;
+    RealType sx = (region.right - region.left)/nsx, sy = (region.top - region.bottom)/nsy;
+    ++nsx; 
+    ++nsy;
+    list<int> *sectors = new list<int>[nsx*nsy];
+    // Fill sectors
+    int i=0;
+    auto allParticles = simData->getParticles();
+    for (const auto &p : allParticles) {
+      int sec_x = (p.position.x - region.left)/sx;
+      int sec_y = (p.position.y - region.bottom)/sy;
+      if (-1<sec_x && sec_x<nsx && -1<sec_y && sec_y<nsy)
+	sectors[nsx*sec_y+sec_x].push_back(i);
+      // If part of the particle sticks into the region, place the particle in the closest sector. This ignores particles "diagonal" to the region that stick into the region
+      else if (region.left<p.position.x+p.sigma   && -1<sec_y && sec_y<nsy)
+	sectors[nsx*sec_y+0].push_back(i); // Left
+      else if (p.position.x-p.sigma<region.right  && -1<sec_y && sec_y<nsy)
+	sectors[nsx*sec_y+(nsx-1)].push_back(i); // Right
+      else if (region.bottom<p.position.y+p.sigma && -1<sec_x && sec_x<nsx)
+	sectors[sec_x].push_back(i); // Bottom
+      else if (p.position.y-p.sigma<region.top    && -1<sec_x && sec_x<nsx)
+	sectors[nsx*(nsy-1)+sec_x].push_back(i); // Top
+      ++i;
+    }
+    // Find the particle of maximum radius
+    double maxR = 0;
+    for (const auto &p : allParticles)
+      if (p.sigma>maxR) maxR = p.sigma;
+    // Check which sector centers are covered by particles
+    int *array = new int[nsx*nsy];
+    int sweepX = (maxR+dr)/sx, sweepY = (maxR+dr)/sy;
+    for (int y=0; y<nsy; ++y)
+      for (int x=0; x<nsx; ++x) {
+	// Check whether center of sector is covered by any particles
+	array[nsx*y+x] = nsx*y+x;
+	bool done = false;
+	vec2 pos((x+0.5)*sx+region.left, (y+0.5)*sy+region.bottom);
+	// If outside the simulation bounds, there are no bubbles here
+	if (!simData->simBounds.contains(pos)) {
+	  array[nsx*y+x] = -1;
+	  continue;
+	}
+	// Sweep through sectors
+	int startX = max(0, x-sweepX), endX = min(nsx-1, x+sweepX);
+	int startY = max(0, y-sweepY), endY = min(nsy-1, y+sweepY);
+	// Check your own sector first for speed's sake
+	for (const auto index : sectors[nsx*y+x]) {
+	  vec2 dR = pos-allParticles.at(index).position;
+	  RealType R = dr+allParticles.at(index).sigma;
+	  if (sqr(dR)<sqr(R)) {
+	    done = true;
+	    array[nsx*y+x] = -1;
+	    break;
+	  }
+	}
+	// Search the other sectors
+	for (int Y=startY; Y<endY && !done; ++Y) {
+	  for (int X=startX; X<endX && !done; ++X) {
+	    if (X!=x || Y!=y)
+	      for (const auto index : sectors[nsx*Y+X]) {
+		vec2 dR= pos-allParticles.at(index).position;
+		RealType R = dr+allParticles.at(index).sigma;
+		if (sqr(dR)<sqr(R)) {
+		  done = true;
+		  array[nsx*y+x] = -1;
+		  break;
+		}
+	      }
+	    if (done) break;
+	  }
+	  if (done) break;
+	}
+      }
+    // Unite bubbles
+    unite(array, nsx, nsy);
+    // Find all bubbles that border an edge
+    std::set<int> edgeBubbles;
+    auto contains = [&] (int i) { return edgeBubbles.find(i)!=edgeBubbles.end(); };
+    auto add = [&] (int i) {
+      int h = getHead(array, i);
+      if (h<0 || contains(h));
+      else edgeBubbles.insert(h);
+    };
+    for (int x=0; x<nsx; ++x) add(x); // Bottom
+    for (int x=0; x<nsx; ++x) add(nsx*nsy-x-1); // Top
+    for (int y=0; y<nsy; ++y) add(nsx*y); // Left
+    for (int y=0; y<nsy; ++y) add(nsx*y+nsx-1); // Right
+    // Point all sectors to their head
+    for (int k=0; k<nsx*nsy; ++k) array[k] = getHead(array,k);
+    // "Erase" bubbles that touch the bounds
+    for (int k=0; k<nsx*nsy; ++k)
+      if (contains(array[k])) array[k] = -1;
+    // Collect all head nodes
+    std::map<int, int> labels; // Maps old label to new label
+    std::map<int, int> volCount; // Maps (new) label to number of cells in the bubble
+    int lab = 0;
+    for (int k=0; k<nsx*nsy; ++k)
+      if (array[k]!=-1)
+	// If we have not already recorded this head
+	if (labels.find(array[k])==labels.end()) {
+	  labels.insert(pair<int, int>(array[k], lab));
+	  volCount.insert(pair<int, int>(lab, 0));
+	  ++lab;
+	}
+    // If there are no empty volumes
+    if (labels.empty()) {
+      delete [] sectors;
+      delete [] array;
+      return;
+    }
+    // Count volumes
+    for (int k=0; k<nsx*nsy; ++k) {
+      if (array[k]!=-1) { // Search for the proper index
+	int j=0;
+	// Increment volume counter
+	auto it = volCount.find(array[k]);
+	if (it!=volCount.end())
+	  ++it->second;
+      }
+    }
+    // Record volume sizes
+    i=0;
+    volumes.clear();
+    for (const auto c : volCount) {
+      double vol = sx*sy*c.second;
+      if (lowerVCut<vol && vol<upperVCut) volumes.push_back(vol);
+    }
+    // Remove volumes that are to small
+    for (int y=0; y<nsy; ++y)
+      for (int x=0; x<nsx; ++x) {
+	int j = array[nsx*y+x];
+	if (-1<j) {
+	  auto it = volCount.find(j);
+	  if (sx*sy*it->second<upperVCut) array[nsx*y+x] = -1;
+	}
+      }
+    // Record data in scalar field
+    if (!volumes.empty()) {
+      // Set up field
+      if (bulkField.empty()) {
+	bulkField.setBounds(region);
+	bulkField.setResolution(sx);
+	bulkField.setPrintPoints(200);
+      }
+      // Update
+      try {
+	for (int y=0; y<bulkField.getNSY(); ++y)
+	  for (int x=0; x<bulkField.getNSX(); ++x)
+	    bulkField.at(x,y) += (array[nsx*y+x]>-1 ? 1 : 0);
+      }
+      catch (ScalarField::FieldOutOfBounds bnds) {
+	cout << "Current dims: " << nsx << ", " << nsy << endl;
+	cout << "Tried to access " << bnds.x << ", " << bnds.y << endl;
+	cout << "Field dims: " << bulkField.getNSX() << ", " << bulkField.getNSY() << endl;
+      }
+    }
+
+    // Sort sizes
+    std::sort(volumes.begin(), volumes.end());
+    // Clean up and return
+    delete [] sectors;
+    delete [] array;
+  }
+
+  inline void DataRecord::unite(int *array, int nsx, int nsy) const {
+    // Find out which volumes are connected
+    for (int y=0; y<nsy; ++y)
+      for (int x=0; x<nsx; ++x) {
+	// Check the sectors around you, point yourself to the largest head
+	int h0=-1, h1=-1, h2=-1, h3=-1;
+	if (array[nsx*y+x]!=-1) {
+	  int head = getHead(array, nsx*y+x);
+	  if (0<x && -1<array[nsx*y+x-1]) { // Left
+	    h0 = getHead(array, nsx*y+(x-1));
+	    if (h0<head) head = h0;
+	  }
+	  if (x+1<nsx && -1<array[nsx*y+x+1]) { // Right
+	    h1 = getHead(array, nsx*y+(x+1));
+	    if (h1<head) head = h1;
+	  }
+	  if (0<y && -1<array[nsx*(y-1)+x]) { // Bottom
+	    h2 = getHead(array, nsx*(y-1)+x);
+	    if (h2<head) head = h2;
+	  }
+	  if (y+1<nsy && -1<array[nsx*(y+1)+x]) { // Top
+	    h3 = getHead(array, nsx*(y+1)+x);
+	    if (h3<head) head = h3;
+	  }
+	  // Set your head and the heads of all your neighbors as well
+	  array[nsx*y+x] = head;
+	  if (-1<h0) array[h0] = head;
+	  if (-1<h1) array[h1] = head;
+	  if (-1<h2) array[h2] = head;
+	  if (-1<h3) array[h3] = head;
+	}
+      }
+  }
+
+  inline int DataRecord::getHead(int* array, int index) const {
+    if (index<0) return -1;
+    while (array[index]!=index && -1<array[index]) index = array[index];
+    return index;
   }
 
 }

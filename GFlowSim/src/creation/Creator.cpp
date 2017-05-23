@@ -106,6 +106,7 @@ namespace GFlow {
   }
 
   bool Creator::createRegion(Region& region, SimData* simData) {
+    // Make sure the region is within the bounds
     if (!simData->simBounds.contains(region.bounds)) return false;
 
     // List of particles we are creating
@@ -146,6 +147,7 @@ namespace GFlow {
     relax->addParticle(particles);
     relax->addWall(region.bounds);
     VelocityVerletIntegrator verlet(relax);
+    verlet.setAdjustTimeStep(false);
     verlet.addExternalForce(new ViscousDrag(1.)); // This is large enough
     verlet.initialize(0.25);
     verlet.integrate();

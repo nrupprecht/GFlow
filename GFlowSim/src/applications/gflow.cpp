@@ -86,12 +86,15 @@ int main (int argc, char** argv) {
   int numProc = MPI::COMM_WORLD.Get_size();
 #endif
 #endif
+
+  // Create a data record
+  DataRecord *dataRecord = new DataRecord;
   
   // Create from file or command line args
-
   SimData *simData = nullptr;
   if (config!="") {
     FileParser fileParser;
+    fileParser.setDataRecord(dataRecord);
     try {
       simData = fileParser.parse(config);  
     }
@@ -117,6 +120,7 @@ int main (int argc, char** argv) {
   }
   else if (loadFile!="") {
     FileParser fileParser;
+    fileParser.setDataRecord(dataRecord);
     try {
       simData = fileParser.loadFromFile(loadFile);
     }
@@ -143,8 +147,7 @@ int main (int argc, char** argv) {
   // Create an integrator
   VelocityVerletIntegrator integrator(simData);
 
-  // Set up a data recorder
-  DataRecord *dataRecord = new DataRecord;
+  // Set up the data recorder
   if (writeDirectory!="") dataRecord->setWriteDirectory(writeDirectory);
   integrator.setDataRecord(dataRecord);
   // Set record options

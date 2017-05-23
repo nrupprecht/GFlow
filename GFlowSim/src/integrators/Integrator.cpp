@@ -79,14 +79,17 @@ namespace GFlow {
     }
   }
 
-  void Integrator::preStep() {
-    // Increment times - do this here so if we change the timestep later on in integrators, we still have the correct time (without having to store a 'last dt' variable)
-    time += dt;
-  };
+  void Integrator::preStep() {};
 
   void Integrator::postStep() {
     // Increment iter 
     ++iter;
+
+    // Update time
+    time += dt;
+
+    // End if we have simulated for enough time
+    if (runTime < time) running = false;
 
     // Update data recorder
     if (dataRecord) dataRecord->record(simData, time);

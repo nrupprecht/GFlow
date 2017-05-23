@@ -53,6 +53,9 @@ namespace GFlow {
     // Give a status object
     void setStatusObject(StatusObject *so) { status = so; }
 
+    // Give a data recorder
+    void setDataRecord(DataRecord* dr) { dataRecord = dr; }
+
     // Exception classes
     struct FileDoesNotExist {
       FileDoesNotExist(string n) : name(n) {};
@@ -79,6 +82,9 @@ namespace GFlow {
 
     // Status object
     StatusObject* status;
+
+    // Data record
+    DataRecord* dataRecord;
 
     // What random seed we used
     unsigned randomSeed;

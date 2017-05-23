@@ -43,19 +43,19 @@ struct Bounds {
   }
 
   bool contains(const vec2 position) const {
-    return position.x<right && left<position.x && position.y<top && bottom<position.y;
+    return position.x<=right && left<=position.x && position.y<=top && bottom<=position.y;
   }
 
   bool contains(const vec2 position, const RealType sigma) const {
-    return position.x-sigma<right && left<position.x+sigma && position.y-sigma<top && bottom<position.y+sigma;
+    return position.x-sigma<=right && left<=position.x+sigma && position.y-sigma<=top && bottom<=position.y+sigma;
   }
 
   bool contains(const RealType x, const RealType y) const {
-    return x<right && left<x && y<top && bottom<y;
+    return x<=right && left<=x && y<=top && bottom<=y;
   }
 
   bool contains(const Bounds& b) {
-    return left<=b.left && b.right<=right && b.bottom<=bottom && top<=b.top;
+    return left<=b.left && b.right<=right && bottom<=b.bottom && b.top<=top;
   }
 };
 
