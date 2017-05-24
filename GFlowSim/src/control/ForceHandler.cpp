@@ -15,6 +15,7 @@ namespace GFlow {
     int *it = simData->getItPtr();
     
     // Do the forces using the verlet list
+    // -- It is faster to use iterators then to use direct indexing --
     for (const auto& vl : verletList) {
       auto p = vl.begin(); 
       auto q = p; ++q;
@@ -23,7 +24,8 @@ namespace GFlow {
       for (; q!=vl.end(); ++q) {
 	j = *q;
 	RealType Fn, Fs;
-	if (it[j]>-1) interactP(i, j, simData, Fn, Fs);
+	if (it[j]<0) continue;
+	interactP(i, j, simData, Fn, Fs);
       }
     }
   }
@@ -63,7 +65,8 @@ namespace GFlow {
       for (; q!=wl.end(); ++q) {
 	j = *q;
 	RealType Fn, Fs;
-	if (it[j]>-1) interactW(i, j, simData, Fn, Fs);
+	if (it[j]<0) continue;
+	interactW(i, j, simData, Fn, Fs);
       }
     }
   }

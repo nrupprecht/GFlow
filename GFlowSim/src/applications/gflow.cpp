@@ -19,6 +19,7 @@ int main (int argc, char** argv) {
   string saveFile = "";
   RealType time = 10;
   // Record options
+  bool nowrite = false;
   bool animate = false;
   int recOption = 0;
   bool recPerf = false;
@@ -44,53 +45,6 @@ int main (int argc, char** argv) {
   RealType minDt = -1;
   RealType dt = -1;
 
-  // Can get options from the command line
-  ArgParse parser;
-  try {
-    parser.set(argc, argv);
-  }
-  catch (ArgParse::IllegalToken token) {
-    cout << "Illegal Argument: " << token.c << ". Exiting.\n";
-    exit(1);
-  }
-  // Logistics options
-  parser.get("config", config);
-  parser.get("writeDirectory", writeDirectory); 
-  parser.get("loadFile", loadFile); 
-  parser.get("saveFile", saveFile);
-  parser.get("time", time);
-  // Animation options
-  parser.get("animate", animate);
-  parser.get("recOption", recOption);
-  parser.get("recPerf", recPerf);
-  parser.get("recMvRatio", recMvRatio);
-  parser.get("recDt", recDt);
-  parser.get("recDelay", recDelay);
-  parser.get("fps", fps);
-  parser.get("maxRatio", maxRatio);
-  parser.get("ratio", ratio);
-  parser.get("KE", KE);
-  parser.get("maxV", maxV);
-  parser.get("aveV", aveV);
-  parser.get("maxF", maxF);
-  parser.get("aveF", aveF);
-  parser.get("print", print);
-  parser.get("quiet", quiet);
-  // Performance options
-  parser.get("adjust", adjust);
-  parser.get("adjustDelay", adjustDelay);
-  parser.get("maxDt", maxDt);
-  parser.get("minDt", minDt);
-  parser.get("dt", dt);
-  // Make sure we didn't enter any illegal tokens (ones not listed above) on the command line
-  try {
-    parser.check();
-  }
-  catch (ArgParse::UncheckedToken illegal) {
-    cout << "Illegal option: [" << illegal.token << "]. Exiting.\n";
-    exit(1);
-  }
-  
   // Set up MPI
 #if USE_MPI == 1
 #if _CLANG_ == 1
@@ -107,14 +61,21 @@ int main (int argc, char** argv) {
 
   // Create a data record
   DataRecord *dataRecord = new DataRecord;
-  
-  // Integrator
-  Integrator *integrator = nullptr;
+
+  // Create a file parser and command line parser
+  FileParser fileParser(argc, argv);
+  ArgParse parser(argc, argv);
+  fileParser.setArgParse(&parser);
+
+  // Check if we need to load a file
+  parser.get("config", config);
+  parser.get("loadFile", loadFile);
   
   // Create from file or command line args
   SimData *simData = nullptr;
+  Integrator *integrator = nullptr;
+
   if (config!="") {
-    FileParser fileParser;
     fileParser.setDataRecord(dataRecord);
     try {
       fileParser.parse(config, simData, integrator);
@@ -140,7 +101,6 @@ int main (int argc, char** argv) {
     }
   }
   else if (loadFile!="") {
-    FileParser fileParser;
     fileParser.setDataRecord(dataRecord);
     try {
       fileParser.loadFromFile(loadFile, simData, integrator);
@@ -158,19 +118,63 @@ int main (int argc, char** argv) {
     Creator creator;
     creator.create(simData, integrator);
   }
-
+  
   // Make sure simData is non-null
   if (simData==nullptr) {
     cout << "SimData is null. Exiting." << endl;
     exit(0);
   }
-
-  // Create an integrator
-  // VelocityVerletIntegrator integrator(simData);
-  if (maxDt>0) reinterpret_cast<VelocityVerletIntegrator*>(integrator)->setMaxTimeStep(maxDt);
-  if (minDt>0) reinterpret_cast<VelocityVerletIntegrator*>(integrator)->setMinTimeStep(minDt);
-  if (dt>0)    integrator->setDt(dt);
-
+  
+  // Check for options
+  parser.get("writeDirectory", writeDirectory);
+  parser.get("saveFile", saveFile);
+  parser.get("time", time);
+  // Animation options
+  parser.get("nowrite", nowrite);
+  parser.get("animate", animate);
+  parser.get("recOption", recOption);
+  parser.get("recPerf", recPerf);
+  parser.get("recMvRatio", recMvRatio);
+  parser.get("recDt", recDt);
+  parser.get("recDelay", recDelay);
+  parser.get("fps", fps);
+  parser.get("maxRatio", maxRatio);
+  parser.get("ratio", ratio);
+  parser.get("KE", KE);
+  parser.get("maxV", maxV);
+  parser.get("aveV", aveV);
+  parser.get("maxF", maxF);
+  parser.get("aveF", aveF);
+  parser.get("print", print);
+  parser.get("quiet", quiet);
+  // Performance options
+  parser.get("adjust", adjust);
+  parser.get("adjustDelay", adjustDelay);
+  parser.get("maxDt", maxDt);
+  parser.get("minDt", minDt);
+  parser.get("dt", dt);
+  // Make sure we didn't enter any illegal tokens (ones not listed above) on the commandline
+  try {
+    parser.check();
+  }
+  catch (ArgParse::UncheckedToken illegal) {
+    cout << "Illegal option: [" << illegal.token << "]. Exiting.\n";
+    exit(1);
+  }
+  
+  // Set integrator options
+  if (maxDt>0) {
+    VelocityVerletIntegrator* integ = nullptr;
+    integ = reinterpret_cast<VelocityVerletIntegrator*>(integrator);
+    if (integ) integ->setMaxTimeStep(maxDt);
+  }
+  if (minDt>0) {
+    VelocityVerletIntegrator* integ = nullptr;
+    integ = reinterpret_cast<VelocityVerletIntegrator*>(integrator);
+    if (integ) integ->setMinTimeStep(minDt);
+  }
+  if (dt>0) integrator->setDt(dt);
+  
   // Set up the data recorder
   if (writeDirectory!="") dataRecord->setWriteDirectory(writeDirectory);
   integrator->setDataRecord(dataRecord);
@@ -231,11 +235,12 @@ int main (int argc, char** argv) {
 	cout << "Ratio: " << time / runTime << endl;
       }
       
-      // Write animation data to files
-      dataRecord->writeData(simData);
-      
-      // Write sectorization data to file
-      dataRecord->writeRunSummary(simData, integrator);
+      if (!nowrite) {
+	// Write animation data to files
+	dataRecord->writeData(simData);	
+	// Write sectorization data to file
+	dataRecord->writeRunSummary(simData, integrator);
+      }
       
       // Write out stat function data - for now
       if (print) {
@@ -257,7 +262,6 @@ int main (int argc, char** argv) {
   if (rank==0) {
 #endif
     if (saveFile!="") {
-      FileParser fileParser;
       fileParser.saveToFile(simData, saveFile);
     }
 #if USE_MPI == 1
@@ -276,6 +280,7 @@ int main (int argc, char** argv) {
   // Clean up
   if (simData)    delete simData;
   if (dataRecord) delete dataRecord;
+  if (integrator) delete integrator;
 
   // The program is done. Return.
   return 0;

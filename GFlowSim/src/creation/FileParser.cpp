@@ -4,7 +4,7 @@
 
 namespace GFlow {
 
-  FileParser::FileParser() : creator(new Creator), status(nullptr), randomSeed(0) {};
+  FileParser::FileParser(int argc, char** argv) : creator(new Creator), status(nullptr), randomSeed(0), argc(argc), argv(argv), parser(nullptr) {};
 
   FileParser::~FileParser() {
     if (creator) delete creator;
@@ -21,7 +21,7 @@ namespace GFlow {
       throw FileDoesNotExist(filename);
     }
     if (status) status->writeMessage("File ["+filename+"] opened by file parser. Will attempt to construct configuration from file.");
-
+    
     // Seed random number generator
     if (seed==0) seed_rand();
     else seed_rand(seed);
@@ -38,11 +38,38 @@ namespace GFlow {
     RealType dt(-1), minDt(-1), maxDt(-1);
     bool adjustDt(true), adjustDelay(true);
 
-    // For user defined variables
+    // For user defined variables and options
     std::map<string, string> variables;
+    std::map<string, string> options;
     // Define true as 1 and false as 0
     variables.emplace(Bool_True,  "1");
     variables.emplace(Bool_False, "0");
+
+    // First look for options
+    find_options(filename, options);
+
+    // Check if the options have been passed in through the command line
+    bool createdParser = false;
+    if (parser==nullptr) {
+      parser = new ArgParse;
+      createdParser = true;
+      try {
+	parser->set(argc, argv);
+      }
+      catch (ArgParse::IllegalToken token) {
+	std::cerr << "Illegal Argument: " << token.c << ". Exiting.\n";
+	exit(1);
+      }
+    }
+    for (const auto &p : options) {
+      string value;
+      parser->get(p.first, value);
+      // If a value is supplied from the command line
+      if (value!="") variables.emplace(p.first, value);
+      // Else, use the default value
+      else variables.emplace(p.first, p.second);
+    }
+    if (createdParser) delete parser;
 
     // Helper data
     const int max_comment_size = 512;
@@ -58,6 +85,11 @@ namespace GFlow {
 	fin >> name;
 	getValue(fin, val, variables);
 	variables.emplace(name, val);
+      }
+      else if (tok==Option_Tok) {
+	string name, val;
+	fin >> name >> val;
+	// We already got all the options, so we can ignore it here
       }
       else if (tok==Dt_Tok) {
 	getValue(fin, dt, variables);
@@ -564,6 +596,25 @@ namespace GFlow {
       P.dissipation = dissipation;
       P.coeff = coeff;
       particles.push_back(P);
+    }
+  }
+
+  inline void FileParser::find_options(string filename, std::map<string, string>& options) {
+    std::ifstream fin(filename);
+    if (fin.fail()) {
+      std::cerr << "Failure.\n";
+      exit(0);
+    }
+    // Get all options
+    string tok;
+    fin >> tok;
+    while (!fin.eof()) {
+      if (tok==Option_Tok) {
+	string value;
+	fin >> tok >> value;
+	options.emplace(tok, value);
+      }
+      fin >> tok;
     }
   }
   

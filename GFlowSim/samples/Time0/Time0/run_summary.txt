@@ -1,0 +1,47 @@
+**********          SUMMARY          **********
+**********  GFlow Granular Simulator **********
+********** 2017, Nathaniel Rupprecht **********
+***********************************************
+
+Timing and performance:
+  - Simulated Time:           120
+  - Actual time simulated:    120
+  - Actual run Time:          24.1131
+  - Ratio:                    4.97654
+  - Inverse Ratio:            0.200943
+
+Simulation and space:
+  - Dimensions:               {0,4,0,4}
+  - Number of particles:      1019
+  - Ratio x Particles:        5071.1
+
+Particle Average Data:
+  - Average sigma:            0.05
+  - Average repulsion:        150
+  - Average dissipation:      0
+  - Average coeff:            0
+  - Average mass:             0.00785398
+  - Average density:          1
+  - Average speed:            0.534194
+  - Average omega:            0
+
+Particle Checks:
+  - (Min x, Max x):    0.0462772, 3.95188
+  - (Min y, Max y):    0.0506204, 3.95163
+
+Integration:
+  - Iterations:               594209
+  - Time step (at end):       0.000212926
+  - Average time step:        0.000201949
+  - Average update delay:     0.00732467
+  - Time per iteration:       4.05802e-05
+
+Sectorization summary (as of end of simulation):
+  - Grid dimensions:          34 x 34
+  - Grid lengths:             0.125 x 0.125
+  - Number of verlet lists:   778
+  - Average per verlet list:  2.58355
+  - Cutoff:                   0.1
+  - Skin depth:               0.025
+  - Occupied sectors:         872
+  - Ave per occupied sector:  1.16858

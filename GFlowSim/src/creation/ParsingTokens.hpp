@@ -12,6 +12,7 @@ using std::string;
 
 const char Comment_Tok   = '/';
 const string Variable_Tok= "let";
+const string Option_Tok  = "option";
 const string Bool_True   = "true";
 const string Bool_False  = "false";
 

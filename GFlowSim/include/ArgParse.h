@@ -11,6 +11,10 @@ using std::stringstream;
 using std::pair;
 using std::vector;
 
+#include <iostream>
+using std::cout;
+using std::endl;
+
 /// Command line argument parsing class
 class ArgParse {
 public:

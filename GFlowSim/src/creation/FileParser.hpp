@@ -9,6 +9,7 @@
 
 // Includes
 #include "ParsingTokens.hpp"
+#include "../../include/ArgParse.h"
 #include "../control/SimData.hpp"
 #include "../control/StatusObject.hpp"
 #include "../forces/ConstantAcceleration.hpp"
@@ -32,7 +33,7 @@ namespace GFlow {
   class FileParser {
   public:
     // Default constructor
-    FileParser();
+    FileParser(int, char**);
 
     // Destructor
     ~FileParser();
@@ -58,6 +59,9 @@ namespace GFlow {
     // Give a data recorder
     void setDataRecord(DataRecord* dr) { dataRecord = dr; }
 
+    // Give and argument parser
+    void setArgParse(ArgParse* p) { parser = p; }
+
     // Exception classes
     struct FileDoesNotExist {
       FileDoesNotExist(string n) : name(n) {};
@@ -74,6 +78,7 @@ namespace GFlow {
     inline void make_region(std::ifstream&, vector<Region>&, const std::map<string,string>&);
     inline void make_wall(std::ifstream&, vector<Wall>&, const std::map<string,string>&);
     inline void make_particle(std::ifstream&, vector<Particle>&, const std::map<string,string>&);
+    inline void find_options(string, std::map<string,string>&);
     inline void seed_rand();
     inline void seed_rand(unsigned);
     
@@ -90,6 +95,11 @@ namespace GFlow {
 
     // What random seed we used
     unsigned randomSeed;
+
+    // Command line functions and parsing
+    int argc;
+    char** argv;
+    ArgParse *parser;
   };
   
 }

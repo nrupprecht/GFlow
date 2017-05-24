@@ -233,20 +233,31 @@ namespace GFlow {
 
   inline void VelocityVerletIntegrator::doAdjustTimeStep() {
     // Find the minimum amount of time it takes for one particle to traverse its own radius
-    RealType minPeriod = 1.;
+    RealType minPeriod = 1., dt1=1, dt2=1;
     int domain_size = simData->getDomainSize();
 
-    // Linear period finding
+    // Find max force
     /*
+    RealType *fx = simData->getFxPtr(), *fy = simData->getFyPtr();
+    RealType amax = 0;
+    for (int i=0; i<domain_size; ++i) {
+      RealType acc = (sqr(fx[i])+sqr(fy[i]))*sqr(simData->getIm(i));
+      if (amax<acc) amax = acc;
+    }
+    dt1 = default_max_delta_v/sqrt(amax);
+    */
+
+    // Linear period finding
     for (int i=0; i<domain_size; ++i) {
       if (-1<simData->getIt(i)) {
 	RealType period = sqr(simData->getSg(i))/(sqr(simData->getVx(i))+sqr(simData->getVy(i)));
 	if (period<minPeriod) minPeriod = period;
       }
     }
-    */
+    dt2 = sqrt(minPeriod)/periodIterations;
     
     // Nonlinear period finding
+    /*
     for (int i=0; i<domain_size; ++i) {
       if (-1<simData->getIt(i)) {
 	RealType v = sqrt(sqr(simData->getVx(i))+sqr(simData->getVy(i)));
@@ -256,9 +267,12 @@ namespace GFlow {
 	if (period<minPeriod) minPeriod = period;
       }
     }
+    */
 
     // Set the time step
-    dt = minPeriod/periodIterations;
+    //dt = minPeriod/periodIterations;
+    dt = min(dt1, dt2);
+    
     // If something suddenly starts moving, and the update delay is to long, there could be problems. For now, we deal with that by capping the time step
     dt = dt>maxTimestep ? maxTimestep : dt;
     dt = dt<minTimestep ? minTimestep : dt;

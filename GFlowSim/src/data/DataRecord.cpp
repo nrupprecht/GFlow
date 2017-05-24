@@ -116,6 +116,7 @@ namespace GFlow {
 
     // Record time step
     if (recDt && statRecDt>-1) statFunctionData.at(statRecDt).push_back(RPair(time, integrator->getDt()));
+
     // Record update delay
     if (recDelay && statRecDelay>-1) statFunctionData.at(statRecDelay).push_back(RPair(time, integrator->getUpdateDelay()));
  }
@@ -179,7 +180,7 @@ namespace GFlow {
     }
 
     // Write stat function data to files
-    if (!statFunctions.empty()) {
+    if (!statFunctionData.empty()) {
       mkdir((writeDirectory+"/StatData").c_str(), 0777);
       // Write the names of all the files that will be generated
       ofstream fout(writeDirectory+"/StatData/statNames.csv");

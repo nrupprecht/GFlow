@@ -65,12 +65,12 @@ namespace GFlow {
   typedef pair<RealType, RealType> RPair;
 
   // What to use for Verlet list
-  typedef list<int>          VListSubType;
-  typedef list<VListSubType> VListType;
+  typedef vector<int>          VListSubType;
+  typedef vector<VListSubType> VListType;
 
   // What to use for Wall list
-  typedef list<int>          WListSubType;
-  typedef list<WListSubType> WListType;
+  typedef vector<int>          WListSubType;
+  typedef vector<WListSubType> WListType;
 
   // Constants
   const double PI = 3.14159265358979;

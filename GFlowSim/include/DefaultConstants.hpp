@@ -30,6 +30,7 @@ namespace GFlow {
   const RealType default_epsilon              = 1e-4;
   const RealType default_max_timestep         = 5e-3;
   const RealType default_min_timestep         = 5e-6;
+  const RealType default_max_delta_v          = 1.;
   const RealType default_update_delay         = 0.002;
   const RealType default_max_update_delay     = 0.01;
   const RealType default_delay_factor         = 0.9;

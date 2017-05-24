@@ -101,7 +101,8 @@ namespace GFlow {
     RealType *px = simData->getPxPtr();
     RealType *py = simData->getPyPtr();
     RealType *sg = simData->getSgPtr();
-
+    int *it      = simData->getItPtr();
+    
     // Clear out lists
     verletList.clear();
 
@@ -121,20 +122,24 @@ namespace GFlow {
 	for (auto p=sec_at(x,y).begin(); p!=sec_at(x,y).end(); ++p) {
 	  // Get your data
 	  int i = *p;
+	  if (it[i]<0) continue;
 	  RealType sigma = sg[i];
-	  list<int> nlist;
+	  VListSubType nlist;
 	  nlist.push_back(i); // You are at the head of the list
 	  vec2 r;
 	  // Sector you are in
 	  auto q = p; ++q; // Check only particles ordered after you
 	  for (; q!=sec_at(x,y).end(); ++q) {
-	    r = getDisplacement(px[i], py[i], px[*q], py[*q]);
-	    if (sqr(r) < sqr(sigma + sg[*q] + skinDepth)) 
-	      nlist.push_back(*q);
+	    int j = *q;
+	    if (it[j]<0) continue;
+	    r = getDisplacement(px[i], py[i], px[j], py[j]);
+	    if (sqr(r) < sqr(sigma + sg[j] + skinDepth)) 
+	      nlist.push_back(j);
 	  }
 	  // Bottom left
 	  int sx = x-1, sy = y-1;
 	  for (const auto &j : sec_at(sx, sy)) {
+	    if (it[j]<0) continue;
 	    r = getDisplacement(px[i], py[i], px[j], py[j]);
 	    if (sqr(r) < sqr(sigma + sg[j] + skinDepth))
 	      nlist.push_back(j);
@@ -142,6 +147,7 @@ namespace GFlow {
 	  // Bottom
 	  sx = x;
 	  for (const auto &j : sec_at(sx, sy)) {
+	    if (it[j]<0) continue;
             r = getDisplacement(px[i], py[i], px[j], py[j]);
             if (sqr(r) < sqr(sigma + sg[j] + skinDepth))
               nlist.push_back(j);
@@ -149,6 +155,7 @@ namespace GFlow {
 	  // Left
 	  sx = x-1; sy = y;
 	  for (const auto &j : sec_at(sx, sy)) {
+	    if (it[j]<0) continue;
             r = getDisplacement(px[i], py[i], px[j], py[j]);
             if (sqr(r) < sqr(sigma + sg[j] + skinDepth))
               nlist.push_back(j);
@@ -156,6 +163,7 @@ namespace GFlow {
 	  // Top left
 	  sy = y+1;
 	  for (const auto &j : sec_at(sx, sy)) {
+	    if (it[j]<0) continue;
             r = getDisplacement(px[i], py[i], px[j], py[j]);
             if (sqr(r) < sqr(sigma + sg[j] + skinDepth))
               nlist.push_back(j);

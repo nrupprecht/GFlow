@@ -12,6 +12,6 @@
 #define _POSIX_MEMALIGN_ 0
 
 // Whether to use mpi or not
-#define USE_MPI 1
+#define USE_MPI 0
 
 #endif // __SETTINGS_HPP__
