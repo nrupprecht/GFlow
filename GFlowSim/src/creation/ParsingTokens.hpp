@@ -44,4 +44,10 @@ const string Wall_Tok = "wall";
 const string Particle_Tok = "particle";
 const string End_Tok     = "end";
 
+const string Dt_Tok    = "Dt";
+const string MinDt_Tok = "MinDt";
+const string MaxDt_Tok = "MaxDt";
+const string AdjustDt_Tok = "AdjustDt";
+const string AdjustDelay_Tok = "AdjustDelay";
+
 #endif // __PARSING_TOKENS_HPP__

@@ -18,6 +18,8 @@ namespace GFlow {
 
   // Forward declaration to Integrator
   class Integrator;
+  // Forward declaration to VelocityVerletIntegrator
+  class VelocityVerletIntegrator;
 
   /*
    * @class DataRecord
@@ -28,6 +30,9 @@ namespace GFlow {
   public:
     // Default constructor
     DataRecord();
+
+    // Initialize
+    void initialize();
 
     // Start and end timing
     void startTiming();
@@ -44,6 +49,7 @@ namespace GFlow {
 
     // (Potentially) record data related to simulation data
     void record(SimData*, RealType); 
+    void record(VelocityVerletIntegrator*, RealType);
 
     // Get sectorization data at the end
     void getSectorizationData(Sectorization*);
@@ -56,10 +62,16 @@ namespace GFlow {
 
     /*** Mutators ***/
 
+    // Set delay
+    void setDelay(RealType d) { delay = d; }
+
     // Set options
-    void setRecPos(bool b)  { recPos = b; }
-    void setRecPerf(bool b) { recPerf = b; }
-    void setRecOption(int i) { recOption = i; }
+    void setRecPos(bool b)     { recPos = b; }
+    void setRecOption(int i)   { recOption = i; }
+    void setRecPerf(bool b)    { recPerf = b; }
+    void setRecMvRatio(bool b) { recMvRatio = b; }
+    void setRecDt(bool b)      { recDt = b; }
+    void setRecDelay(bool b)   { recDelay = b; }
 
     // Set the write directory
     void setWriteDirectory(string w) { writeDirectory = w; }
@@ -75,9 +87,6 @@ namespace GFlow {
 
     // Set whether to record the movement ratio
     void setRecMoveRatio(bool b) { recMvRatio = b; }
-    
-    // Add a move ratio data point
-    void push_mvRatio(RealType);
 
     /*** Accessors ***/
 
@@ -93,11 +102,6 @@ namespace GFlow {
     // Get the name of the stat function
     string getStatFunctionName(int) const;
 
-    // Get the performance record
-    vector<pair<RealType, RealType> > getPerformanceRecord() const;
-
-    vector<RealType> getMoveRatioRecord() const;
-
     /*** Exception classes ***/
     struct BadStatFunction {
       BadStatFunction(int i) : value(i) {};
@@ -107,9 +111,11 @@ namespace GFlow {
   private:
     // Private helper functions
     void writeParticleData(std::ofstream&, SimData*) const;
+    void writeParticleChecks(std::ofstream&, SimData*) const;
     void recordPressureData(SimData*, vector<PData>&) const;
     void recordByNumber(SimData*, vector<PData>&) const;
     void recordByVerletList(SimData*, vector<PData>&) const;
+    void recordByVelocity(SimData*, vector<PData>&) const;
     void getBulkData(SimData*, const Bounds&, vector<RealType>&, ScalarField&, RealType=0.025, RealType=0.01, RealType=0.01, RealType=1.) const;
     
     inline void unite(int*, int, int) const;
@@ -153,15 +159,22 @@ namespace GFlow {
 
     // List of stat functions to use
     vector<StatFunc> statFunctions;
-    vector<vector<pair<RealType,RealType> > > statFunctionData;
+    vector<vector<RPair> > statFunctionData;
     vector<string> statFunctionName;
 
     // Performance tracking
-    vector<pair<RealType,RealType> > performanceRecord;
     bool recPerf;
     high_resolution_clock::time_point last_record;
-    vector<RealType> movementRatioRecord;
+    int statRecPerf; // Which entry in statFunctionData refers to performance record
+
     bool recMvRatio;
+    int statRecMvRatio;
+
+    bool recDt;
+    int statRecDt;
+
+    bool recDelay;
+    int statRecDelay;
   };
 
 }

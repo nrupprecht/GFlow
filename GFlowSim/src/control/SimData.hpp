@@ -95,7 +95,10 @@ namespace GFlow {
     RealType& getPy(int i) { return py[i]; }
     RealType& getVx(int i) { return vx[i]; }
     RealType& getVy(int i) { return vy[i]; }
+    RealType& getFx(int i) { return fx[i]; }
+    RealType& getFy(int i) { return fy[i]; }
     RealType& getSg(int i) { return sg[i]; }
+    RealType& getIm(int i) { return im[i]; }
     int&      getIt(int i) { return it[i]; }
 
     // Get position record

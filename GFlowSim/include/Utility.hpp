@@ -62,6 +62,7 @@ namespace GFlow {
 
   // What type to use as our real type
   typedef double RealType;
+  typedef pair<RealType, RealType> RPair;
 
   // What to use for Verlet list
   typedef list<int>          VListSubType;

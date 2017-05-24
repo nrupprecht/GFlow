@@ -131,11 +131,46 @@ namespace GFlow {
     int *it = simData->getItPtr();
     // Gather data
     for (int i=0; i<domain_size; ++i) {
-      if (-1<it[i]) {
-	aveV += sqrt(sqr(vx[i])+sqr(vy[i]));
-      }
+      if (-1<it[i]) aveV += sqrt(sqr(vx[i])+sqr(vy[i]));
     }
     return aveV/static_cast<RealType>(domain_size);
+  }
+
+  inline RealType StatFunc_MaxForce(SimData* simData) {
+    RealType maxF = 0;
+    int domain_size = simData->getDomainSize();
+    // Check for zero size
+    if (domain_size==0) return 0;
+    // Get data pointers
+    RealType *fx = simData->getFxPtr();
+    RealType *fy = simData->getFyPtr();
+    // Interaction pointer
+    int *it = simData->getItPtr();
+    // Gather data
+    for (int i=0; i<domain_size; ++i) {
+      if (-1<it[i]) {
+        RealType fsqr = sqr(fx[i])+sqr(fy[i]);
+        if (maxF<fsqr) maxF = fsqr;
+      }
+    }
+    return sqrt(maxF);
+  }
+
+  inline RealType StatFunc_AveForce(SimData* simData) {
+    RealType aveF = 0;
+    int domain_size = simData->getDomainSize();
+    // Check for zero size
+    if (domain_size==0) return 0;
+    // Get data pointers
+    RealType *fx = simData->getFxPtr();
+    RealType *fy = simData->getFyPtr();
+    // Interaction pointer
+    int *it = simData->getItPtr();
+    // Gather data
+    for (int i=0; i<domain_size; ++i) {
+      if (-1<it[i]) aveF += sqrt(sqr(fx[i])+sqr(fy[i]));
+    }
+    return aveF/static_cast<RealType>(domain_size);
   }
 
 }

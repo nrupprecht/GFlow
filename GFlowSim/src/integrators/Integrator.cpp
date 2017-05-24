@@ -73,6 +73,7 @@ namespace GFlow {
 
     // Beginning data record stuff
     if (dataRecord) {
+      dataRecord->initialize();
       dataRecord->markTime();
       dataRecord->setRunTime(runTime);
       dataRecord->startTiming();

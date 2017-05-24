@@ -45,6 +45,12 @@ namespace GFlow {
     // Integrate function wraps protected virtual function
     void integrate();
 
+    // Get the timestep
+    RealType getDt() { return dt; }
+
+    // Set the timestep
+    void setDt(RealType t) { dt = t; }
+
     // DataRecord is a friend class
     friend class DataRecord;
 

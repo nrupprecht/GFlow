@@ -21,6 +21,8 @@ namespace GFlow {
   class Creator;
   // Forward declaration to region
   struct Region;
+  // Forward declaration to Integrator
+  class Integrator;
 
   /*
    * @class FileParser
@@ -36,7 +38,7 @@ namespace GFlow {
     ~FileParser();
 
     // Parse a set up file and create a simulation based on it
-    SimData* parse(string, unsigned = 0);
+    void parse(string, SimData *&, Integrator *&, unsigned = 0);
 
     // Load a stored configuration (old format) from a file
     SimData* loadLegacyFromFile(string);

@@ -1,5 +1,6 @@
 #include "FileParser.hpp"
 #include "Creator.hpp"
+#include "../integrators/VelocityVerletIntegrator.hpp"
 
 namespace GFlow {
 
@@ -9,7 +10,7 @@ namespace GFlow {
     if (creator) delete creator;
   }
   
-  SimData* FileParser::parse(string filename, unsigned seed) {
+  void FileParser::parse(string filename, SimData *& simData, Integrator *& integrator, unsigned seed) {
     // Timing
     if (dataRecord) dataRecord->startTiming();
 
@@ -33,6 +34,10 @@ namespace GFlow {
     vec2 gravity;
     bool wrapX(false), wrapY(false);
 
+    // Integrator data to save
+    RealType dt(-1), minDt(-1), maxDt(-1);
+    bool adjustDt(true), adjustDelay(true);
+
     // For user defined variables
     std::map<string, string> variables;
     // Define true as 1 and false as 0
@@ -50,8 +55,24 @@ namespace GFlow {
       if (tok.at(0)==Comment_Tok) fin.getline(comment, max_comment_size);
       else if (tok==Variable_Tok) { // let [name] [value]
 	string name, val;
-	fin >> name >> val;
+	fin >> name;
+	getValue(fin, val, variables);
 	variables.emplace(name, val);
+      }
+      else if (tok==Dt_Tok) {
+	getValue(fin, dt, variables);
+      }
+      else if (tok==MinDt_Tok) {
+	getValue(fin, minDt, variables);
+      }
+      else if (tok==MaxDt_Tok) {
+	getValue(fin, maxDt, variables);
+      }
+      else if (tok==AdjustDt_Tok) {
+	getValue(fin, adjustDt, variables);
+      }
+      else if (tok==AdjustDelay_Tok) {
+	getValue(fin, adjustDelay, variables);
       }
       else if (tok==WrapX_Tok) { // wrapX [true/false]
 	bool wrap;
@@ -93,9 +114,14 @@ namespace GFlow {
     }
     
     // Create simulation data
-    if (bounds==NullBounds) return nullptr;
+    if (bounds==NullBounds) {
+      simData = nullptr;
+      integrator = nullptr;
+      return;
+    }
+    
     // Set simulation bounds
-    SimData* simData = new SimData(bounds, bounds);
+    simData = new SimData(bounds, bounds);
     // Set "gravity"
     if (gravity!=Zero) simData->addExternalForce(new ConstantAcceleration(gravity));
     // Set wrapping
@@ -113,15 +139,21 @@ namespace GFlow {
       creator->createRegion(r, simData);
     }
 
+    // Create integrator
+    VelocityVerletIntegrator* integ = new VelocityVerletIntegrator(simData);
+    integrator = integ;
+    if (dt>0)    integ->setDt(dt);
+    integ->setAdjustTimeStep(adjustDt);
+    integ->setAdjustUpdateDelay(adjustDelay);
+    if (minDt>0) integ->setMinTimeStep(minDt);
+    if (maxDt>0) integ->setMaxTimeStep(maxDt);
+
     // Timing
     if (dataRecord) {
       dataRecord->endTiming();
       RealType time = dataRecord->getElapsedTime();
       dataRecord->setSetupTime(time);
     }
-    
-    // Return the simulation data
-    return simData;
   }
 
   SimData* FileParser::loadLegacyFromFile(string filename) {
@@ -136,7 +168,7 @@ namespace GFlow {
     }
     if (status) status->writeMessage("File ["+filename+"] opened by file parser. Will attempt to load saved state from file.");
 
-    // Data to look for
+    // Simulation data to look for
     RealType left, right, bottom, top;
     vec2 gravity;
     vector<RealType> radii;

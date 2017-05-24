@@ -4,9 +4,38 @@
 #include "../forces/ExternalForce.hpp"
 
 namespace GFlow {
-  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-delay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), recOption(1), recBulk(0), recPerf(false), recMvRatio(false) {
+  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-delay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), recOption(1), recBulk(0), recPerf(false), statRecPerf(-1), recMvRatio(false), statRecMvRatio(-1), recDt(false), statRecDt(-1), recDelay(false), statRecDelay(-1) {
     start_time = end_time = high_resolution_clock::now();
   };
+
+  void DataRecord::initialize() {
+    int end = statFunctions.size();
+    // Put in other statistics (not from normal stat functions) after the normal stat functions
+    if (recPerf) {
+      statFunctionData.push_back(vector<RPair>());
+      statFunctionName.push_back("perf");
+      statRecPerf = end;
+      ++end;
+    }
+    if (recMvRatio) {
+      statFunctionData.push_back(vector<RPair>());
+      statFunctionName.push_back("mvRatio");
+      statRecMvRatio = end;
+      ++end;
+    }
+    if (recDt) {
+      statFunctionData.push_back(vector<RPair>());
+      statFunctionName.push_back("dt");
+      statRecDt = end;
+      ++end;
+    }
+    if (recDelay) {
+      statFunctionData.push_back(vector<RPair>());
+      statFunctionName.push_back("delay");
+      statRecDelay = end;
+      ++end;
+    }
+  }
 
   void DataRecord::startTiming() {
     start_time = high_resolution_clock::now();
@@ -31,7 +60,7 @@ namespace GFlow {
     // Record performance
     if (recPerf) {
       high_resolution_clock::time_point current_time = high_resolution_clock::now();
-      performanceRecord.push_back(pair<RealType,RealType>(time,time_span(current_time, last_record)));
+      statFunctionData.at(statRecPerf).push_back(RPair(time,time_span(current_time, last_record)));
       last_record = current_time;
     }
 
@@ -55,6 +84,8 @@ namespace GFlow {
 	recordByNumber(simData, positions);
       else if (recOption==3) // Record by number of verlet lists the particle is in
 	recordByVerletList(simData, positions);
+      else if (recOption==4) // Record by velocity
+	recordByVelocity(simData, positions);
       else { // recOption==0 or default. Record nothing extra
 	for (int i=0; i<domain_size; ++i)
 	  if (it[i]>-1) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], 0));
@@ -78,6 +109,16 @@ namespace GFlow {
     // Increment record counter
     recIter++;
   }
+
+  void DataRecord::record(VelocityVerletIntegrator* integrator, RealType time) {
+    // Record move ratio
+    if (recMvRatio && statRecMvRatio>-1) statFunctionData.at(statRecMvRatio).push_back(RPair(time, integrator->getMvRatio()));
+
+    // Record time step
+    if (recDt && statRecDt>-1) statFunctionData.at(statRecDt).push_back(RPair(time, integrator->getDt()));
+    // Record update delay
+    if (recDelay && statRecDelay>-1) statFunctionData.at(statRecDelay).push_back(RPair(time, integrator->getUpdateDelay()));
+ }
 
   void DataRecord::getSectorizationData(Sectorization* sectors) {
     if (sectors==nullptr) return;
@@ -197,6 +238,9 @@ namespace GFlow {
 
       // Print particle data
       if (0<simData->domain_size) writeParticleData(fout, simData);
+
+      // Print checks
+      if (0<simData->domain_size) writeParticleChecks(fout, simData);
     }
 
     if (integrator) {
@@ -237,10 +281,6 @@ namespace GFlow {
     statFunctionName.push_back(name);
   }
 
-  void DataRecord::push_mvRatio(RealType mv) {
-    if (recMvRatio) movementRatioRecord.push_back(mv);
-  }
-
   vector<pair<RealType, RealType> > DataRecord::getStatFunctionData(int index) const {
     if (index<0 || statFunctionData.size()<=index) throw BadStatFunction(index);
     return statFunctionData.at(index);
@@ -251,14 +291,6 @@ namespace GFlow {
     return statFunctionName.at(index);
   }
 
-  vector<pair<RealType, RealType> > DataRecord::getPerformanceRecord() const{
-    return performanceRecord;
-  }
-
-  vector<RealType> DataRecord::getMoveRatioRecord() const {
-    return movementRatioRecord;
-  }
-  
   void DataRecord::writeParticleData(std::ofstream& fout, SimData *simData) const {
     // We are here only if 0 < domain_size
     fout << "Particle Average Data:\n";
@@ -320,6 +352,25 @@ namespace GFlow {
     fout << "  - Average omega:            " << omega << "\n";
 
     // Section divide new line
+    fout << "\n";
+  }
+
+  void DataRecord::writeParticleChecks(std::ofstream& fout, SimData* simData) const {
+    // We are here only if 0 < domain_size
+    fout << "Particle Checks:\n";
+    
+    // Find max and min particle positions
+    RealType minX(1e9), maxX(-1e9), minY(1e9), maxY(-1e9);
+    for (int i=0; i<simData->domain_size; ++i) {
+      if (simData->it[i]>-1) {
+	if (maxX < simData->px[i]) maxX = simData->px[i];
+	if (simData->px[i]<minX)   minX = simData->px[i];
+	if (maxY < simData->py[i]) maxY = simData->py[i];
+	if (simData->py[i]<minY)   minY = simData->py[i];
+      }
+    }
+    fout << "  - (Min x, Max x):    " << minX << ", " << maxX << "\n";
+    fout << "  - (Min y, Max y):    " << minY << ", " << maxY << "\n";
     fout << "\n";
   }
 
@@ -394,6 +445,22 @@ namespace GFlow {
     // Make sure we only have "real" particles (it>-1)
     for (int i=0; i<domain_size; ++i)
       if (it[i]>-1) positions.push_back(pos.at(i));
+  }
+
+  void DataRecord::recordByVelocity(SimData* simData, vector<PData>& positions) const {
+    // Get the arrays
+    RealType *px = simData->getPxPtr();
+    RealType *py = simData->getPyPtr();
+    RealType *sg = simData->getSgPtr();
+    RealType *th = simData->getThPtr();
+    RealType *vx = simData->getVxPtr();
+    RealType *vy = simData->getVyPtr();
+    int *it = simData->getItPtr();
+    int domain_size = simData->domain_size;
+
+    // We will sort out particles with it<0 at the end
+    for (int i=0; i<domain_size; ++i)
+      if (it[i]>-1) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], sqrt(sqr(vx[i])+sqr(vy[i]))));
   }
 
   void DataRecord::getBulkData(SimData* simData, const Bounds& region, vector<RealType>& volumes, ScalarField& bulkField, RealType resolution, RealType dr, RealType lowerVCut, RealType upperVCut) const {
