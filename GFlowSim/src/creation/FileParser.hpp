@@ -44,7 +44,7 @@ namespace GFlow {
     SimData* loadLegacyFromFile(string);
 
     // Load a stored configuration from a file
-    SimData* loadFromFile(string);
+    void loadFromFile(string, SimData *&, Integrator *&);
 
     // Save sim data to a file
     void saveToFile(SimData*, string);

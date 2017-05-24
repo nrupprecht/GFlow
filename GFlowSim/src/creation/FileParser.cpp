@@ -219,7 +219,7 @@ namespace GFlow {
     return simData;
   }
 
-  SimData* FileParser::loadFromFile(string filename) {
+  void FileParser::loadFromFile(string filename, SimData *& simData, Integrator *& integrator) {
     // Timing
     if (dataRecord) dataRecord->startTiming();
     // Open the file
@@ -293,9 +293,13 @@ namespace GFlow {
     fin.close();
 
     // Create the simulation data
-    if (bounds==NullBounds) return nullptr;
+    if (bounds==NullBounds) {
+      simData = nullptr;
+      integrator = nullptr;
+      return;
+    }
     // Set simulation bounds
-    SimData* simData = new SimData(bounds, bounds);
+    simData = new SimData(bounds, bounds);
     // Set forces
     for (auto ef : externalForces)
       simData->addExternalForce(ef);
@@ -308,15 +312,15 @@ namespace GFlow {
     simData->reserve(particles.size());
     for (auto& p : particles) simData->addParticle(p);
 
+    // Create integrator
+    integrator = new VelocityVerletIntegrator(simData);
+
     // Timing
     if (dataRecord) {
       dataRecord->endTiming();
       RealType time = dataRecord->getElapsedTime();
       dataRecord->setSetupTime(time);
     }
-
-    // Return 
-    return simData;
   }
 
   void FileParser::saveToFile(SimData* simData, string filename) {

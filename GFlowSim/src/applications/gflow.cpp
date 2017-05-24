@@ -143,7 +143,7 @@ int main (int argc, char** argv) {
     FileParser fileParser;
     fileParser.setDataRecord(dataRecord);
     try {
-      simData = fileParser.loadFromFile(loadFile);
+      fileParser.loadFromFile(loadFile, simData, integrator);
     }
     catch (FileParser::FileDoesNotExist file) {
       cout << "File [" << file.name << "] does not exist. Trying [samples/" << file.name << "]. Exiting.\n";
@@ -156,7 +156,7 @@ int main (int argc, char** argv) {
   }
   else {
     Creator creator;
-    simData = creator.create();
+    creator.create(simData, integrator);
   }
 
   // Make sure simData is non-null

@@ -31,10 +31,10 @@ namespace GFlow {
   public:
     
     // In the future this will take argments
-    SimData* create();
+    void create(SimData *&, Integrator *&);
 
     // Modify the simdata for a buoyancy study
-    void createBuoyancy(SimData*, RealType, RealType, vec2);
+    void createBuoyancy(SimData *&, RealType, RealType, vec2);
 
     // FileParser is a friend class
     friend class FileParser;

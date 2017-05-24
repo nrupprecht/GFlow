@@ -2,11 +2,11 @@
 
 namespace GFlow {
   
-  SimData* Creator::create() {
+  void Creator::create(SimData *& simData, Integrator *& integrator) {
     // Create bounds and hand them to a sim data object
     RealType width = 4, height = 4;
     Bounds simBounds(0,width,0,height);
-    SimData* simData = new SimData(simBounds, simBounds);
+    simData = new SimData(simBounds, simBounds);
 
     // Set wrapping
     simData->setWrap(false);
@@ -81,10 +81,11 @@ namespace GFlow {
       cf[i] = 0;
     }
 
-    return simData;
+    // Create integrator
+    integrator = new VelocityVerletIntegrator(simData);
   }
 
-  void Creator::createBuoyancy(SimData* simData, RealType radius, RealType density, vec2 velocity) {
+  void Creator::createBuoyancy(SimData *& simData, RealType radius, RealType density, vec2 velocity) {
     Bounds simBounds = simData->getSimBounds();
     // Change the bounds for the addition of the new particle
     RealType height = 1; //** Height of the tops of the balls
