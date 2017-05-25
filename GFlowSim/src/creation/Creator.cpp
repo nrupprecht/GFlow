@@ -88,8 +88,10 @@ namespace GFlow {
   void Creator::createBuoyancy(SimData *& simData, Integrator *& integrator, RealType radius, RealType density, vec2 velocity) {
     Bounds sb = simData->getSimBounds();
     // Change the bounds for the addition of the new particle
-    RealType height = 1; //** Height of the tops of the balls
-    Bounds nb(sb.left, sb.right, sb.bottom, sb.top+2*radius);
+    
+    RealType height = StatFunc_HighestBall(simData); //** Height of the tops of the balls
+    Bounds nb(sb.left, sb.right, sb.bottom, height+2*radius);
+
     // Set new bounds
     simData->setSimBounds(nb);
     simData->setBounds(nb);
@@ -106,10 +108,11 @@ namespace GFlow {
       Particle P(0.5*(nb.right-nb.left), height + radius, radius);
       P.setDensity(density);
       P.velocity = velocity;
+      simData->addParticle(P);
     }
 
     // Make sure we use a small time step
-    reinterpret_cast<VelocityVerletIntegrator*>(integrator)->setMinTimeStep(1e-4);
+    reinterpret_cast<VelocityVerletIntegrator*>(integrator)->setMaxTimeStep(1e-4);
   }
 
   bool Creator::createRegion(Region& region, SimData* simData) {

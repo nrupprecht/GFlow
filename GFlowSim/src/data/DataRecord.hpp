@@ -13,6 +13,7 @@
 #include "../control/Sectorization.hpp"
 #include "../objects/ScalarField.hpp"
 #include "StatFunc.hpp"
+#include "StatPlot.hpp"
 
 namespace GFlow {
 
@@ -47,6 +48,9 @@ namespace GFlow {
     // Get the elapsed time
     double getElapsedTime() const;
 
+    // Get the ratio of simulated time to real time
+    RealType getRatio() const;
+
     // (Potentially) record data related to simulation data
     void record(SimData*, RealType); 
     void record(VelocityVerletIntegrator*, RealType);
@@ -72,6 +76,9 @@ namespace GFlow {
     void setRecMvRatio(bool b) { recMvRatio = b; }
     void setRecDt(bool b)      { recDt = b; }
     void setRecDelay(bool b)   { recDelay = b; }
+    void setRecBulk(bool b)    { recBulk = b; }
+    void setRecPressField(bool b) { recPressField = b; }
+    void setTrackDisplacement(bool b) { trackDisplacement = b; }
 
     // Set the write directory
     void setWriteDirectory(string w) { writeDirectory = w; }
@@ -84,6 +91,9 @@ namespace GFlow {
 
     // Add a stat function
     void addStatFunction(StatFunc, string);
+
+    // Add a stat plo
+    void addStatPlot(StatPlot, RPair, int, string);
 
     // Set whether to record the movement ratio
     void setRecMoveRatio(bool b) { recMvRatio = b; }
@@ -102,6 +112,11 @@ namespace GFlow {
     // Get the name of the stat function
     string getStatFunctionName(int) const;
 
+    // Get the number of stat plots
+    int getNumberOfStatPlots() const { return statPlotData.size(); }
+
+    // --- Could have the other matching functions for stat plot here ---
+
     /*** Exception classes ***/
     struct BadStatFunction {
       BadStatFunction(int i) : value(i) {};
@@ -116,10 +131,11 @@ namespace GFlow {
     void recordByNumber(SimData*, vector<PData>&) const;
     void recordByVerletList(SimData*, vector<PData>&) const;
     void recordByVelocity(SimData*, vector<PData>&) const;
-    void getBulkData(SimData*, const Bounds&, vector<RealType>&, ScalarField&, RealType=0.025, RealType=0.01, RealType=0.01, RealType=1.) const;
-    
+    void getBulkData(SimData*, const Bounds&, vector<RealType>&, ScalarField&, RealType=0.025, RealType=0.01, RealType=0.01, RealType=1.) const;    
     inline void unite(int*, int, int) const;
     inline int getHead(int*, int) const;
+    inline void writeDisplacementData(SimData*) const;
+    inline void getPressureData(SimData*, const Bounds&, ScalarField&, RealType=0.1) const;
 
     // The name of the directory we should write to 
     string writeDirectory;
@@ -152,7 +168,11 @@ namespace GFlow {
     vector<vector<PData> > positionRecord;
     bool recPos;
     int recOption; // Color particles according to what
+
+    // Bulk data
     bool recBulk;
+    ScalarField bulkField;
+    vector<vector<RealType> > bulkVolumes;
 
     // Timing data
     high_resolution_clock::time_point start_time, end_time;
@@ -161,6 +181,20 @@ namespace GFlow {
     vector<StatFunc> statFunctions;
     vector<vector<RPair> > statFunctionData;
     vector<string> statFunctionName;
+
+    // List of stat plots to use
+    vector<StatPlot> statPlots;
+    vector<vector<vec2> > statPlotData;
+    vector<RPair> statPlotBounds;
+    vector<string> statPlotName;
+
+    // Displacement tracking
+    bool trackDisplacement;
+    vector<vec2> initialPositions;
+
+    // Pressure field tracking
+    bool recPressField;
+    ScalarField pressField;
 
     // Performance tracking
     bool recPerf;

@@ -27,8 +27,11 @@ int main (int argc, char** argv) {
   bool recMvRatio = false;
   bool recDt = false;
   bool recDelay = false;
+  bool recBulk = false;
+  bool recPressField = false;
+  bool trackDisplacement = false;
   int fps = 15;
-  // Stat options
+  // Stat function options
   bool maxRatio = false;
   bool ratio = false;
   bool KE = false;
@@ -36,6 +39,9 @@ int main (int argc, char** argv) {
   bool aveV = false;
   bool aveF = false;
   bool maxF = false;
+  // Stat plot options
+  bool plotVelocity = false;
+  bool plotCorrelation = false;
   // Print options
   bool print = false;       // Whether we should print stat data to the screen
   bool quiet = false;
@@ -118,7 +124,7 @@ int main (int argc, char** argv) {
   else if (buoyancy!="") {
     Creator creator;
     // Get options
-    RealType density, velocity, radius;
+    RealType density(100), velocity(10), radius(0.5);
     parser.get("density", density);
     parser.get("velocity", velocity);
     parser.get("radius", radius);
@@ -135,7 +141,7 @@ int main (int argc, char** argv) {
       exit(0);
     }
     // Create buoyancy scenario from the data
-    creator.createBuoyancy(simData, integrator, radius, density, vec2(velocity, 0));
+    creator.createBuoyancy(simData, integrator, radius, density, vec2(0, -velocity));
   }
   else {
     Creator creator;
@@ -160,6 +166,9 @@ int main (int argc, char** argv) {
   parser.get("recMvRatio", recMvRatio);
   parser.get("recDt", recDt);
   parser.get("recDelay", recDelay);
+  parser.get("recBulk", recBulk);
+  parser.get("recPressField", recPressField);
+  parser.get("trackDisplacement", trackDisplacement);
   parser.get("fps", fps);
   parser.get("maxRatio", maxRatio);
   parser.get("ratio", ratio);
@@ -168,6 +177,8 @@ int main (int argc, char** argv) {
   parser.get("aveV", aveV);
   parser.get("maxF", maxF);
   parser.get("aveF", aveF);
+  parser.get("plotVelocity", plotVelocity);
+  parser.get("plotCorrelation", plotCorrelation);
   parser.get("print", print);
   parser.get("quiet", quiet);
   // Performance options
@@ -203,7 +214,7 @@ int main (int argc, char** argv) {
   integrator->setDataRecord(dataRecord);
   // Set record options
   if (dataRecord) {
-    // Set statistic options
+    // Set stat function options
     if (KE)       dataRecord->addStatFunction(StatFunc_AveKE, "KE");
     if (maxRatio) dataRecord->addStatFunction(StatFunc_MaxVelocitySigmaRatio, "maxRatio");
     if (ratio)    dataRecord->addStatFunction(StatFunc_MinSigmaVelocityRatio, "ratio");
@@ -211,6 +222,9 @@ int main (int argc, char** argv) {
     if (aveV)     dataRecord->addStatFunction(StatFunc_AveSpeed, "aveV");
     if (maxF)     dataRecord->addStatFunction(StatFunc_MaxForce, "maxF");
     if (aveF)     dataRecord->addStatFunction(StatFunc_AveForce, "aveF");
+    // Set stat plot options
+    if (plotVelocity) dataRecord->addStatPlot(StatPlot_Velocity, RPair(0,3), 100, "velocityPlot");
+    if (plotCorrelation) dataRecord->addStatPlot(StatPlot_RadialCorrelation, RPair(0,1), 100, "correlation");
     // Set recording options
     dataRecord->setRecPos(animate);
     dataRecord->setRecOption(recOption);
@@ -218,6 +232,9 @@ int main (int argc, char** argv) {
     dataRecord->setRecMvRatio(recMvRatio);
     dataRecord->setRecDt(recDt);
     dataRecord->setRecDelay(recDelay);
+    dataRecord->setRecBulk(recBulk);
+    dataRecord->setRecPressField(recPressField);
+    dataRecord->setTrackDisplacement(trackDisplacement);
     dataRecord->setDelay(1./static_cast<RealType>(fps));
   }
 
@@ -255,7 +272,7 @@ int main (int argc, char** argv) {
       double runTime = dataRecord->getElapsedTime();
       if (!quiet) {
 	cout << "Run time: " << runTime << endl;
-	cout << "Ratio: " << time / runTime << endl;
+	cout << "Ratio: " << dataRecord->getRatio() << endl;
       }
       
       if (!nowrite) {

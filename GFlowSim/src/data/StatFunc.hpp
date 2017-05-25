@@ -147,12 +147,11 @@ namespace GFlow {
     // Interaction pointer
     int *it = simData->getItPtr();
     // Gather data
-    for (int i=0; i<domain_size; ++i) {
+    for (int i=0; i<domain_size; ++i)
       if (-1<it[i]) {
         RealType fsqr = sqr(fx[i])+sqr(fy[i]);
         if (maxF<fsqr) maxF = fsqr;
       }
-    }
     return sqrt(maxF);
   }
 
@@ -167,10 +166,26 @@ namespace GFlow {
     // Interaction pointer
     int *it = simData->getItPtr();
     // Gather data
-    for (int i=0; i<domain_size; ++i) {
+    for (int i=0; i<domain_size; ++i) 
       if (-1<it[i]) aveF += sqrt(sqr(fx[i])+sqr(fy[i]));
-    }
+    // Return
     return aveF/static_cast<RealType>(domain_size);
+  }
+
+  inline RealType StatFunc_HighestBall(SimData* simData) {
+    RealType max = simData->getSimBounds().bottom;
+    int domain_size = simData->getDomainSize();
+    // Check for zero size
+    if (domain_size==0) return max;
+    // Get data pointers
+    RealType *py = simData->getPyPtr();
+    RealType *sg = simData->getSgPtr();
+    // Interaction pointer
+    int *it = simData->getItPtr();
+    // Gather data
+    for (int i=0; i<domain_size; ++i)
+      if (-1<it[i] && max<py[i]+sg[i]) max = py[i]+sg[i];
+    return max;
   }
 
 }

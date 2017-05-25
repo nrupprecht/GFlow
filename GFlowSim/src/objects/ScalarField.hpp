@@ -42,6 +42,9 @@ class ScalarField {
   void laplacian(ScalarField&);
   bool empty() { return array==0; }
 
+  RealType getDx() { return dx; }
+  RealType getDy() { return dy; }
+
   // Mutators
   void increase(vec2, double);
   void increase(double, double, double);
@@ -68,7 +71,7 @@ class ScalarField {
 
   // Printing
   friend std::ostream& operator<<(std::ostream&, const ScalarField &);
-  bool printToCSV(string) const;
+  bool printToCSV(string, RealType normalize=1.) const;
   bool loadFromCSV(string);
   
   // Error class

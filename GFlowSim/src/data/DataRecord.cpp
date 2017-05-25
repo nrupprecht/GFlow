@@ -4,7 +4,7 @@
 #include "../forces/ExternalForce.hpp"
 
 namespace GFlow {
-  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-delay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), recOption(1), recBulk(0), recPerf(false), statRecPerf(-1), recMvRatio(false), statRecMvRatio(-1), recDt(false), statRecDt(-1), recDelay(false), statRecDelay(-1) {
+  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-delay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), recOption(1), recBulk(0), recPressField(false), recPerf(false), statRecPerf(-1), recMvRatio(false), statRecMvRatio(-1), recDt(false), statRecDt(-1), recDelay(false), statRecDelay(-1) {
     start_time = end_time = high_resolution_clock::now();
   };
 
@@ -53,6 +53,10 @@ namespace GFlow {
     return time_span(end_time, start_time);
   }
 
+  RealType DataRecord::getRatio() const {
+    return actualTime/getElapsedTime();
+  }
+
   void DataRecord::record(SimData* simData, RealType time) {
     // Return if not enough time has gone by
     if (time-lastRecord<delay) return;
@@ -75,6 +79,12 @@ namespace GFlow {
     int *it = simData->getItPtr();
     int domain_size = simData->domain_size;
 
+    // Initialize displacement tracking, if neccessary
+    if (recIter==0) {
+      initialPositions = vector<vec2>(domain_size);
+      for (int i=0; i<domain_size; ++i) initialPositions.at(i) = vec2(px[i], py[i]);
+    }
+
     // Record position data
     if (recPos) {
       vector<PData> positions;
@@ -93,17 +103,30 @@ namespace GFlow {
       positionRecord.push_back(positions);
     }
 
+    // Record bulk data
     if (recBulk) {
       Bounds region = simData->getSimBounds();
       vector<RealType> volumes;
-      ScalarField bulkField;
       getBulkData(simData, region, volumes, bulkField);
+      bulkVolumes.push_back(volumes);
+    }
+
+    // Record pressure data 
+    if (recPressField) {
+      Bounds region = simData->getSimBounds();
+      getPressureData(simData, region, pressField);
     }
 
     // Record stat functions
     for (int i=0; i<statFunctions.size(); ++i) {
       StatFunc sf = statFunctions.at(i);
       statFunctionData.at(i).push_back(pair<RealType, RealType>(time, sf(simData)));
+    }
+
+    // Record stat plots
+    for (int i=0; i<statPlots.size(); ++i) {
+      StatPlot sp = statPlots.at(i);
+      sp(simData, statPlotData.at(i), statPlotBounds.at(i));
     }
 
     // Increment record counter
@@ -187,12 +210,39 @@ namespace GFlow {
       if (fout.fail()) std::cerr << "Failed to open [" << writeDirectory << "/StatData/statNames.txt].\n";
       for (auto& name : statFunctionName) fout << name << "\n";
       fout.close();
-      // Write stat data
+      // Write stat function data
       for (int i=0; i<statFunctionData.size(); ++i) {
 	if (!printToCSV(writeDirectory+"/StatData/"+statFunctionName.at(i)+".csv", statFunctionData.at(i)))
-	  std::cerr << "Failed to print to [" << writeDirectory << "/StatData/" << statFunctionName.at(i) << "].\n";
+	  std::cerr << "Failed to print to [" << writeDirectory << "/StatData/" << statFunctionName.at(i) << ".csv].\n";
       }
     }
+
+    // Write stat plot data to files
+    if (!statPlotData.empty()) {
+      mkdir((writeDirectory+"/StatPlotData").c_str(), 0777);
+      // Write the names of all the files that will be generated
+      ofstream fout(writeDirectory+"/StatPlotData/statNames.csv");
+      if (fout.fail()) std::cerr << "Failed to open [" << writeDirectory << "/StatPlotData/statNames.txt].\n";
+      for (auto& name : statPlotName) fout << name << "\n";
+      fout.close();
+      // Write stat plot data
+      for (int i=0; i<statPlotData.size(); ++i) {
+	if (!printToCSV(writeDirectory+"/StatPlotData/"+statPlotName.at(i)+".csv", statPlotData.at(i)))
+	  std::cerr << "Failed to print to [" << writeDirectory << "/StatPlotData/" << statPlotName.at(i) << ".csv].\n";
+      }
+    }
+
+    // Write displacement data
+    if (simData && trackDisplacement) writeDisplacementData(simData);
+
+    // Write bulk data
+    if (recBulk) {
+      bulkField.printToCSV(writeDirectory+"/bulkField.csv");
+      printToCSV(writeDirectory+"/bulkVolumes.csv", bulkVolumes);
+    }
+
+    // Write pressure data
+    if (recPressField) pressField.printToCSV(writeDirectory+"/pressField.csv", 1./static_cast<RealType>(recIter));
   }
 
   void DataRecord::writeRunSummary(SimData* simData, Integrator* integrator) const {
@@ -211,12 +261,13 @@ namespace GFlow {
     RealType elapsedTime = time_span(end_time, start_time);
     fout << "Timing and performance:\n";
     fout << "  - Set up time:              " << setupTime << "\n";
-    fout << "  - Simulated Time:           " << runTime << "\n";
-    if (runTime!=actualTime) fout << "  - Actual time simulated:    " << actualTime;
+    fout << "  - Time simulated:           " << actualTime << "\n";
+    fout << "  - Requested Time:           " << runTime << "\n";
+    fout << "  - Run Time:                 " << elapsedTime;
+    if (elapsedTime>60) fout << printAsTime(elapsedTime);
     fout << "\n";
-    fout << "  - Actual run Time:          " << elapsedTime << "\n";
-    fout << "  - Ratio:                    " << runTime/elapsedTime << "\n";
-    fout << "  - Inverse Ratio:            " << elapsedTime/runTime << "\n";
+    fout << "  - Ratio:                    " << actualTime/elapsedTime << "\n";
+    fout << "  - Inverse Ratio:            " << elapsedTime/actualTime << "\n";
     fout << "\n";
 
     if (simData) {
@@ -273,14 +324,34 @@ namespace GFlow {
   }
 
   void DataRecord::addStatFunction(StatFunc sf, string name) {
-    // Add a place to store this function's data
-    statFunctionData.push_back(vector<pair<RealType,RealType> >());
-
     // Add the stat function
     statFunctions.push_back(sf);
 
+    // Add a place to store this function's data
+    statFunctionData.push_back(vector<pair<RealType,RealType> >());
+
     // Add the stat function's name
     statFunctionName.push_back(name);
+  }
+
+  void DataRecord::addStatPlot(StatPlot sp, RPair bounds, int bins, string name) {
+    // Add the stat plot
+    statPlots.push_back(sp);
+
+    // Add a place to store this plot's data
+    vector<vec2> plot(bins);
+    RealType dr = (bounds.second-bounds.first)/static_cast<RealType>(bins);
+    for (int i=0; i<bins; ++i) {
+      plot.at(i).x = bounds.first + i*dr;
+      plot.at(i).y = 0;
+    }
+    statPlotData.push_back(plot);
+
+    // Add the stat plot's bounds
+    statPlotBounds.push_back(bounds);
+
+    // Add the stat plot's name
+    statPlotName.push_back(name);
   }
 
   vector<pair<RealType, RealType> > DataRecord::getStatFunctionData(int index) const {
@@ -468,7 +539,7 @@ namespace GFlow {
   void DataRecord::getBulkData(SimData* simData, const Bounds& region, vector<RealType>& volumes, ScalarField& bulkField, RealType resolution, RealType dr, RealType lowerVCut, RealType upperVCut) const {
     int nsx = (region.right - region.left)/resolution, nsy = (region.top - region.bottom)/resolution;
     RealType sx = (region.right - region.left)/nsx, sy = (region.top - region.bottom)/nsy;
-    ++nsx; 
+    ++nsx;
     ++nsy;
     list<int> *sectors = new list<int>[nsx*nsy];
     // Fill sectors
@@ -668,6 +739,50 @@ namespace GFlow {
     if (index<0) return -1;
     while (array[index]!=index && -1<array[index]) index = array[index];
     return index;
+  }
+
+  inline void DataRecord::writeDisplacementData(SimData* simData) const {
+    // Get data
+    int domain_size = simData->getDomainSize();
+    RealType *px = simData->getPxPtr();
+    RealType *py = simData->getPyPtr();
+    RealType *sg = simData->getSgPtr();
+    RealType *th = simData->getThPtr();
+    int *it      = simData->getItPtr();
+    // Collect data
+    vector<PData> displacement;
+    for (int i=0; i<domain_size; ++i) {
+      RealType disp = sqrt(sqr(initialPositions.at(i) - vec2(px[i], py[i])));
+      PData data(initialPositions.at(i).x, initialPositions.at(i).y, sg[i], th[i], it[i], disp);
+      displacement.push_back(data);
+    }
+    // Write displacement to file
+    if (!printToCSV(writeDirectory+"/displacement.csv", displacement))
+      std::cerr << "Failed to print to [" << writeDirectory << "/displacement.csv].\n";
+  }
+
+  inline void DataRecord::getPressureData(SimData* simData, const Bounds& region, ScalarField& field, RealType resolution) const {
+    // Get the particle pressure data
+    vector<PData> positions;
+    recordPressureData(simData, positions);
+    // Set up field
+
+    if (field.empty()) {
+      int nsx = (region.right - region.left)/resolution, nsy = (region.top - region.bottom)/resolution;
+      RealType sx = (region.right - region.left)/nsx, sy = (region.top - region.bottom)/nsy;
+      field.setBounds(region);
+      field.setResolution(sx);
+      field.setPrintPoints(200);
+    }
+    RealType dx = field.getDx(), dy = field.getDy();
+    int nsx = field.getNSX(), nsy = field.getNSY();
+    // Update field
+    for (const auto &p : positions) {
+      int sec_x = (std::get<0>(p) - region.left)/dx;
+      int sec_y = (std::get<1>(p) - region.bottom)/dy;
+      if (-1<sec_x && sec_x<nsx && -1<sec_y && sec_y<nsy)
+	field.at(sec_x, sec_y) += std::get<5>(p);
+    }
   }
 
 }

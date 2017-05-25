@@ -110,6 +110,24 @@ namespace GFlow {
     return span.count();
   }
 
+  // Print as (hrs):(mins):(sec)
+  inline string printAsTime(double seconds) {
+    stringstream stream;
+    string str;
+    int hours = floor(seconds/3600.);
+    seconds -= 3600*hours;
+    int minutes = floor(seconds/60.);
+    seconds -= 60*minutes;
+    if (hours<10) stream << "0" << hours << ":";
+    else stream << hours << ":";
+    if (minutes<10) stream << "0" << minutes << ":";
+    else stream << minutes << ":";
+    if (seconds<10) stream << "0" << seconds;
+    else stream << seconds;
+    stream >> str;
+    return str;
+  }
+
   // PData records all the data you need to print particles:
   // { pos x, pos y, sigma, theta, interaction, 'color' }
   typedef std::tuple<RealType, RealType, RealType, RealType, RealType, RealType> PData;

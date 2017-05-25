@@ -12,6 +12,8 @@
 #include "../control/Sectorization.hpp"
 #include "../data/DataRecord.hpp"
 #include "../control/ForceHandler.hpp"
+#include "../control/StatusObject.hpp"
+#include "../control/TerminationCondition.hpp"
  
 namespace GFlow {
 
@@ -50,6 +52,9 @@ namespace GFlow {
 
     // Set the timestep
     void setDt(RealType t) { dt = t; }
+
+    // Add a termination condition - Integrator is responsible for managing them
+    void addTerminationCondition(TerminationCondition *t) { termination.push_back(t); }
 
     // DataRecord is a friend class
     friend class DataRecord;
@@ -90,7 +95,9 @@ namespace GFlow {
 
     // Force handler
     ForceHandler* forceHandler;
-    
+
+    // List of terminal conditions - Integrator is responsible for managing them
+    vector<TerminationCondition*> termination;
   };
 
 }

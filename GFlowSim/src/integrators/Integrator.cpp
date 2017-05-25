@@ -11,6 +11,8 @@ namespace GFlow {
   Integrator::~Integrator() {
     delete sectors;
     delete forceHandler;
+    // We are responsible for deleting these
+    for (auto& t : termination) delete t;
   }
 
   void Integrator::initialize(RealType rt) {

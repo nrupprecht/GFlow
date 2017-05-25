@@ -362,7 +362,7 @@ std::ostream& operator<<(std::ostream& out, const ScalarField& field) {
   return out;
 }
 
-bool ScalarField::printToCSV(string filename) const {
+bool ScalarField::printToCSV(string filename, RealType normalize) const {
   if (array==0) return true;
   if (max(nsx,nsy)<printPoints) printPoints=max(nsx,nsy);
   // Open file
@@ -383,7 +383,7 @@ bool ScalarField::printToCSV(string filename) const {
     for (int y=0; y<printPoints; ++y) {
       X = bounds.left;
       for (int x=0; x<printPoints; ++x) {
-	fout << X << "," << Y << "," << get(X,Y) << endl;
+	fout << X << "," << Y << "," << normalize*get(X,Y) << endl;
 	X += DX;
       }
       Y += DY;
@@ -392,7 +392,7 @@ bool ScalarField::printToCSV(string filename) const {
     for (int y=0; y<nsy; ++y) {
       X = bounds.left;
       for (int x=0; x<nsx; ++x) {
-        fout << X << "," << Y << "," << array[nsx*y+x] << endl;
+        fout << X << "," << Y << "," << normalize*array[nsx*y+x] << endl;
 	X += DX;
       }
       Y += DY;

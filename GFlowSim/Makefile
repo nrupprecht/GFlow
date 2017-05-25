@@ -8,7 +8,7 @@ OPTFLAGS = -xHost -O3 -no-prec-div -static -fp-model fast=2 -restrict -funroll-l
 FLAGS = $(CFLAG) -g $(OPTFLAGS) $(QOPT)
 
 # All object files needed
-CONTROL_OBJECTS = build/Sectorization.o build/SimData.o build/ForceHandler.o build/StatusObject.o
+CONTROL_OBJECTS = build/Sectorization.o build/SimData.o build/ForceHandler.o build/StatusObject.o build/TerminationCondition.o
 CREATION_OBJECTS = build/Creator.o build/FileParser.o build/DataCreator.o
 DATA_OBJECTS    = build/DataRecord.o 
 INT_OBJECTS     = build/VelocityVerletIntegrator.o build/Integrator.o

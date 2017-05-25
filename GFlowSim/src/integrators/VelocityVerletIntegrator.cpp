@@ -102,6 +102,9 @@ namespace GFlow {
     aveUpdateDelay = 0;
     sectorUpdates = 0;
     mvRatio = 0;
+
+    // Add a termination condition
+    termination.push_back(new OutsideRegion);
   }
 
   inline void VelocityVerletIntegrator::firstHalfKick() {
@@ -154,6 +157,14 @@ namespace GFlow {
     // Update sectors
     if (updateDelay < updateTimer) {
       
+      for (auto & t : termination)
+	if (t->check(simData)) {
+	  running = false;
+	  // Say why we ended
+	  t->getMessage();
+	  return;
+	}
+
 #if USE_MPI == 1 // If using mpi, exchange data with other processors
       simData->atomMove();
       simData->atomCopy();
