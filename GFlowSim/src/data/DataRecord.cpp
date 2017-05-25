@@ -210,6 +210,7 @@ namespace GFlow {
     // Print timing summary
     RealType elapsedTime = time_span(end_time, start_time);
     fout << "Timing and performance:\n";
+    fout << "  - Set up time:              " << setupTime << "\n";
     fout << "  - Simulated Time:           " << runTime << "\n";
     if (runTime!=actualTime) fout << "  - Actual time simulated:    " << actualTime;
     fout << "\n";

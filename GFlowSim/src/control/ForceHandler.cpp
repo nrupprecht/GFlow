@@ -2,13 +2,7 @@
 
 namespace GFlow {
 
-  ForceHandler::ForceHandler() {
-    // Set particle interaction functions
-    for (int i=0; i<16; ++i) interactionFunctions[i] = hardDiskInteraction;
-
-    // Set wall interaction functions
-    for (int i=0; i<4; ++i) wallInteractionFunctions[i] = hardDiskWallInteraction;
-  }
+  ForceHandler::ForceHandler() {}
 
   void ForceHandler::pForces(const VListType& verletList, SimData* simData) const {
     // Get the interaction array
@@ -93,19 +87,12 @@ namespace GFlow {
   }
 
   inline void ForceHandler::interactP(int i, int j, SimData* simData, RealType& Fn, RealType& Fs, bool update) const {
-    // Get the individual interactions
-    //int itA = simData->getItPtr()[i], itB = simData->getItPtr()[j];
-    
     // Do the interaction
-    // interactionFunctions[itA*4+itB](i, j, simData, Fn, Fs, true);
     hardDiskInteraction(i, j, simData, Fn, Fs, update);
   }
 
   inline void ForceHandler::interactW(int i, int j, SimData* simData, RealType& Fn, RealType& Fs, bool update) const {
-    //int interaction = simData->getItPtr()[j];
-    
     // Do the interaction
-    //wallInteractionFunctions[interaction](i, j, simData, Fn, Fs, true);
     hardDiskWallInteraction(i, j, simData, Fn, Fs, update);
   }
 

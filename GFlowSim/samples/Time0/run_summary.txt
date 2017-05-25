@@ -6,14 +6,14 @@
 Timing and performance:
   - Simulated Time:           120
   - Actual time simulated:    120
-  - Actual run Time:          24.3644
-  - Ratio:                    4.92523
-  - Inverse Ratio:            0.203036
+  - Actual run Time:          23.4486
+  - Ratio:                    5.11758
+  - Inverse Ratio:            0.195405
 
 Simulation and space:
   - Dimensions:               {0,4,0,4}
   - Number of particles:      1019
-  - Ratio x Particles:        5018.81
+  - Ratio x Particles:        5214.82
 
 Particle Average Data:
   - Average sigma:            0.05
@@ -22,26 +22,26 @@ Particle Average Data:
   - Average coeff:            0
   - Average mass:             0.00785398
   - Average density:          1
-  - Average speed:            0.53073
+  - Average speed:            0.536683
   - Average omega:            0
 
 Particle Checks:
-  - (Min x, Max x):    0.049021, 3.95158
-  - (Min y, Max y):    0.0484323, 3.95209
+  - (Min x, Max x):    0.0489296, 3.95155
+  - (Min y, Max y):    0.0481636, 3.95495
 
 Integration:
-  - Iterations:               593395
-  - Time step (at end):       0.000202425
-  - Average time step:        0.000202226
-  - Average update delay:     0.00733093
-  - Time per iteration:       4.10592e-05
+  - Iterations:               592458
+  - Time step (at end):       0.00022148
+  - Average time step:        0.000202546
+  - Average update delay:     0.00733452
+  - Time per iteration:       3.95785e-05
 
 Sectorization summary (as of end of simulation):
   - Grid dimensions:          34 x 34
   - Grid lengths:             0.125 x 0.125
-  - Number of verlet lists:   796
-  - Average per verlet list:  2.56281
+  - Number of verlet lists:   781
+  - Average per verlet list:  2.58131
   - Cutoff:                   0.1
   - Skin depth:               0.025
-  - Occupied sectors:         865
-  - Ave per occupied sector:  1.17803
+  - Occupied sectors:         867
+  - Ave per occupied sector:  1.17532

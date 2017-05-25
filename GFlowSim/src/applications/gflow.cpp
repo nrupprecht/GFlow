@@ -14,6 +14,7 @@ using namespace GFlow;
 int main (int argc, char** argv) {
   
   string config = "";
+  string buoyancy = "";
   string writeDirectory = "";
   string loadFile = "";
   string saveFile = "";
@@ -35,7 +36,7 @@ int main (int argc, char** argv) {
   bool aveV = false;
   bool aveF = false;
   bool maxF = false;
-  
+  // Print options
   bool print = false;       // Whether we should print stat data to the screen
   bool quiet = false;
   // Performance options
@@ -66,9 +67,11 @@ int main (int argc, char** argv) {
   FileParser fileParser(argc, argv);
   ArgParse parser(argc, argv);
   fileParser.setArgParse(&parser);
-
+  fileParser.setDataRecord(dataRecord);
+    
   // Check if we need to load a file
   parser.get("config", config);
+  parser.get("buoyancy", buoyancy);
   parser.get("loadFile", loadFile);
   
   // Create from file or command line args
@@ -76,12 +79,11 @@ int main (int argc, char** argv) {
   Integrator *integrator = nullptr;
 
   if (config!="") {
-    fileParser.setDataRecord(dataRecord);
     try {
       fileParser.parse(config, simData, integrator);
     }
     catch (FileParser::FileDoesNotExist file) {
-      cout << "File [" << file.name << "] does not exist. Trying [samples/" << file.name << "].\n";
+      if (!quiet) cout << "File [" << file.name << "] does not exist. Trying [samples/" << file.name << "].\n";
       try {
 	fileParser.parse("samples/"+config, simData, integrator);
       }
@@ -89,7 +91,7 @@ int main (int argc, char** argv) {
 	cout << "File [" << file.name << "] also does not exist. Exiting.\n";
 	exit(0);
       }
-      cout << "You're lucky, [samples/" << file.name << "] does exist. Assuming you meant that file.\n";
+      if (!quiet) cout << "You're lucky, [samples/" << file.name << "] does exist. Assuming you meant that file.\n";
     }
     catch (FileParser::UnrecognizedToken token) {
       cout << "Unrecognized token [" << token.token << "]. Exiting.\n";
@@ -101,7 +103,6 @@ int main (int argc, char** argv) {
     }
   }
   else if (loadFile!="") {
-    fileParser.setDataRecord(dataRecord);
     try {
       fileParser.loadFromFile(loadFile, simData, integrator);
     }
@@ -113,6 +114,28 @@ int main (int argc, char** argv) {
       cout << "Parsing failed when it attempted to read in a [" << read.type << "], expected [" << printChar(read.expected) << "], found [" << printChar(read.unexpected) << "]. Exiting.\n";
       exit(0);
     }
+  }
+  else if (buoyancy!="") {
+    Creator creator;
+    // Get options
+    RealType density, velocity, radius;
+    parser.get("density", density);
+    parser.get("velocity", velocity);
+    parser.get("radius", radius);
+    // Load from file
+    try {
+      fileParser.loadFromFile(buoyancy, simData, integrator);
+    }
+    catch (FileParser::FileDoesNotExist file) {
+      cout << "File [" << file.name << "] does not exist.";
+      exit(0);
+    }
+    catch (GFlow::BadIstreamRead read) {
+      cout << "Parsing failed when it attempted to read in a [" << read.type << "], expected [" << printChar(read.expected) << "], found [" << printChar(read.unexpected) << "]. Exiting.\n";
+      exit(0);
+    }
+    // Create buoyancy scenario from the data
+    creator.createBuoyancy(simData, integrator, radius, density, vec2(velocity, 0));
   }
   else {
     Creator creator;

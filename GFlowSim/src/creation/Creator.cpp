@@ -85,11 +85,14 @@ namespace GFlow {
     integrator = new VelocityVerletIntegrator(simData);
   }
 
-  void Creator::createBuoyancy(SimData *& simData, RealType radius, RealType density, vec2 velocity) {
-    Bounds simBounds = simData->getSimBounds();
+  void Creator::createBuoyancy(SimData *& simData, Integrator *& integrator, RealType radius, RealType density, vec2 velocity) {
+    Bounds sb = simData->getSimBounds();
     // Change the bounds for the addition of the new particle
     RealType height = 1; //** Height of the tops of the balls
-    Bounds nb = simBounds; //**
+    Bounds nb(sb.left, sb.right, sb.bottom, sb.top+2*radius);
+    // Set new bounds
+    simData->setSimBounds(nb);
+    simData->setBounds(nb);
     // Get rid of the old walls
     simData->getWalls().clear();
     // Create new walls
@@ -104,6 +107,9 @@ namespace GFlow {
       P.setDensity(density);
       P.velocity = velocity;
     }
+
+    // Make sure we use a small time step
+    reinterpret_cast<VelocityVerletIntegrator*>(integrator)->setMinTimeStep(1e-4);
   }
 
   bool Creator::createRegion(Region& region, SimData* simData) {
