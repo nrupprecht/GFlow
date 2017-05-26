@@ -107,9 +107,9 @@ namespace GFlow {
     if (recBulk) {
       Bounds region;
       if (center) {
-	RealType max_posx =StatFunc_MaxPosX(simData);
-	RealType max_posy = StatFunc_MaxPosY(simData);
-	RealType maxSigma(0);
+	RealType max_posx =StatFunc_MaxR_PosX(simData);
+	RealType max_posy = StatFunc_MaxR_PosY(simData);
+	RealType maxSigma = StatFunc_MaxR_Sigma(simData);
 	region = Bounds(max_posx-3*maxSigma, max_posx+3*maxSigma, max_posy-maxSigma, max_posy+8*maxSigma);
       }
       else region = simData->getSimBounds();
@@ -122,9 +122,9 @@ namespace GFlow {
     if (recPressField) {
       Bounds region;
       if (center) {
-	RealType max_posx = StatFunc_MaxPosX(simData);
-	RealType max_posy = StatFunc_MaxPosY(simData);
-	RealType maxSigma(0);
+	RealType max_posx = StatFunc_MaxR_PosX(simData);
+	RealType max_posy = StatFunc_MaxR_PosY(simData);
+	RealType maxSigma = StatFunc_MaxR_Sigma(simData);
 	region = Bounds(max_posx-3*maxSigma, max_posx+3*maxSigma, max_posy-maxSigma, max_posy+8*maxSigma);
       }
       else region = simData->getSimBounds();
@@ -208,13 +208,15 @@ namespace GFlow {
       for (int i=0; i<positionRecord.size(); ++i)
 	if (!printToCSV(writeDirectory+"/Pos/pos", positionRecord.at(i), i))
 	  std::cerr << "Failed to print to [" << writeDirectory << "/Pos/pos" << i << "].\n";
+
       // Write wall data
       if (!printToCSV(writeDirectory+"/walls.csv", simData->getWalls()))
 	std::cerr << "Failed to print walls to [" << writeDirectory << "/walls.csv].\n";
-      // Write bounds data
-      if (!printToCSV(writeDirectory+"/bnds.csv", vector<Bounds>(1,simData->getSimBounds())))
-	std::cerr << "Failed to print bounds to [" << writeDirectory << "/bnds.csv].\n";
     }
+     
+    // Write bounds data
+    if (!printToCSV(writeDirectory+"/bnds.csv", vector<Bounds>(1,simData->getSimBounds())))
+      std::cerr << "Failed to print bounds to [" << writeDirectory << "/bnds.csv].\n";
 
     // Write stat function data to files
     if (!statFunctionData.empty()) {
@@ -271,6 +273,12 @@ namespace GFlow {
     fout << "**********  GFlow Granular Simulator **********\n";
     fout << "********** 2017, Nathaniel Rupprecht **********\n";
     fout << "***********************************************\n\n";
+    // Print command
+    if (!command.empty()) {
+      fout << "Command:\n  ";
+      for (auto& c : command) fout << c << " ";
+      fout << "\n\n";
+    }
     // Print timing summary
     RealType elapsedTime = time_span(end_time, start_time);
     fout << "Timing and performance:\n";
@@ -278,7 +286,7 @@ namespace GFlow {
     fout << "  - Time simulated:           " << actualTime << "\n";
     fout << "  - Requested Time:           " << runTime << "\n";
     fout << "  - Run Time:                 " << elapsedTime;
-    if (elapsedTime>60) fout << printAsTime(elapsedTime);
+    if (elapsedTime>60) fout << " ( h:m:s - " <<printAsTime(elapsedTime) << " )";
     fout << "\n";
     fout << "  - Ratio:                    " << actualTime/elapsedTime << "\n";
     fout << "  - Inverse Ratio:            " << elapsedTime/actualTime << "\n";
@@ -326,6 +334,7 @@ namespace GFlow {
     // Print the sectorization summary
     fout << "Sectorization summary (as of end of simulation):\n";
     fout << "  - Grid dimensions:          " << nsx << " x " << nsy << "\n";
+    fout << "  - Total sectors:            " << nsx * nsy << "\n";
     fout << "  - Grid lengths:             " << sdx << " x " << sdy << "\n";
     fout << "  - Number of verlet lists:   " << numberOfVerletLists << "\n";
     fout << "  - Average per verlet list:  " << (avePerVerletList>-1 ? toStr(avePerVerletList) : "---") << "\n";
@@ -335,6 +344,11 @@ namespace GFlow {
     fout << "  - Ave per occupied sector:  " << avePerOccupiedSector << "\n";
     // Close the stream
     fout.close();
+  }
+
+  void DataRecord::setCommand(int argc, char** argv) {
+    command.clear();
+    for (int i=0; i<argc; ++i) command.push_back(argv[i]);
   }
 
   void DataRecord::addStatFunction(StatFunc sf, string name) {
@@ -550,7 +564,7 @@ namespace GFlow {
       if (it[i]>-1) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], sqrt(sqr(vx[i])+sqr(vy[i]))));
   }
 
-  void DataRecord::getBulkData(SimData* simData, const Bounds& region, vector<RealType>& volumes, ScalarField& bulkField, RealType resolution, RealType dr, RealType lowerVCut, RealType upperVCut) const {
+  void DataRecord::getBulkData(SimData* simData, const Bounds& region, vector<RealType>& volumes, ScalarField& field, RealType resolution, RealType dr, RealType lowerVCut, RealType upperVCut) const {
     int nsx = (region.right - region.left)/resolution, nsy = (region.top - region.bottom)/resolution;
     RealType sx = (region.right - region.left)/nsx, sy = (region.top - region.bottom)/nsy;
     ++nsx;
@@ -690,21 +704,21 @@ namespace GFlow {
     // Record data in scalar field
     if (!volumes.empty()) {
       // Set up field
-      if (bulkField.empty()) {
-	bulkField.setBounds(region);
-	bulkField.setResolution(sx);
-	bulkField.setPrintPoints(200);
+      if (field.empty()) {
+	field.setBounds(region);
+	field.setResolution(sx);
+	field.setPrintPoints(200);
       }
       // Update
       try {
-	for (int y=0; y<bulkField.getNSY(); ++y)
-	  for (int x=0; x<bulkField.getNSX(); ++x)
-	    bulkField.at(x,y) += (array[nsx*y+x]>-1 ? 1 : 0);
+	for (int y=0; y<field.getNSY(); ++y)
+	  for (int x=0; x<field.getNSX(); ++x)
+	    field.at(x,y) += (array[nsx*y+x]>-1 ? 1 : 0);
       }
       catch (ScalarField::FieldOutOfBounds bnds) {
 	cout << "Current dims: " << nsx << ", " << nsy << endl;
 	cout << "Tried to access " << bnds.x << ", " << bnds.y << endl;
-	cout << "Field dims: " << bulkField.getNSX() << ", " << bulkField.getNSY() << endl;
+	cout << "Field dims: " << field.getNSX() << ", " << field.getNSY() << endl;
       }
     }
 
@@ -763,12 +777,16 @@ namespace GFlow {
     RealType *sg = simData->getSgPtr();
     RealType *th = simData->getThPtr();
     int *it      = simData->getItPtr();
+    // We may omit the largest particle
+    RealType maxSg = StatFunc_MaxR_Sigma(simData);
     // Collect data
     vector<PData> displacement;
     for (int i=0; i<domain_size; ++i) {
       RealType disp = sqrt(sqr(initialPositions.at(i) - vec2(px[i], py[i])));
-      PData data(initialPositions.at(i).x, initialPositions.at(i).y, sg[i], th[i], it[i], disp);
-      displacement.push_back(data);
+      if (sg[i]!=maxSg) { // ALWAYS EXCLUDES THE LARGEST PARTICLE
+	PData data(initialPositions.at(i).x, initialPositions.at(i).y, sg[i], th[i], it[i], disp);
+	displacement.push_back(data);
+      }
     }
     // Write displacement to file
     if (!printToCSV(writeDirectory+"/displacement.csv", displacement))

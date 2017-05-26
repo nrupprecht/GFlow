@@ -69,6 +69,9 @@ namespace GFlow {
     // Set delay
     void setDelay(RealType d) { delay = d; }
 
+    // Set command line options
+    void setCommand(int, char**);
+
     // Set options
     void setRecPos(bool b)     { recPos = b; }
     void setRecOption(int i)   { recOption = i; }
@@ -134,11 +137,14 @@ namespace GFlow {
     void recordByNumber(SimData*, vector<PData>&) const;
     void recordByVerletList(SimData*, vector<PData>&) const;
     void recordByVelocity(SimData*, vector<PData>&) const;
-    void getBulkData(SimData*, const Bounds&, vector<RealType>&, ScalarField&, RealType=0.025, RealType=0.01, RealType=0.01, RealType=1.) const;    
+    void getBulkData(SimData*, const Bounds&, vector<RealType>&, ScalarField&, RealType=0.015, RealType=0.015, RealType=0.01, RealType=1.) const;    
     inline void unite(int*, int, int) const;
     inline int getHead(int*, int) const;
     inline void writeDisplacementData(SimData*) const;
     inline void getPressureData(SimData*, const Bounds&, ScalarField&, RealType=0.1) const;
+
+    // The command that was used
+    vector<string> command;
 
     // The name of the directory we should write to 
     string writeDirectory;

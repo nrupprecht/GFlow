@@ -13,6 +13,7 @@
 #include "../../include/aligned_array.hpp"
 #include "../objects/Particle.hpp"
 #include "../objects/Wall.hpp"
+#include "../objects/Characteristic.hpp"
 
 namespace GFlow {
 
@@ -54,6 +55,7 @@ namespace GFlow {
     // Add particles
     void addParticle(const Particle&);
     void addParticle(const vector<Particle>&);
+    void addParticle(const Particle&, Characteristic*);
 
     // Access sizes and capacities
     int getDomainSize()     { return domain_size; }
@@ -97,6 +99,7 @@ namespace GFlow {
     RealType& getVy(int i) { return vy[i]; }
     RealType& getFx(int i) { return fx[i]; }
     RealType& getFy(int i) { return fy[i]; }
+    RealType& getOm(int i) { return om[i]; }
     RealType& getSg(int i) { return sg[i]; }
     RealType& getIm(int i) { return im[i]; }
     int&      getIt(int i) { return it[i]; }
@@ -109,6 +112,9 @@ namespace GFlow {
 
     // Get a list of all the particles
     vector<Particle> getParticles();
+
+    // Get the characteristics
+    auto& getCharacteristics() { return characteristics; }
 
     // Get the force handler
     ForceHandler* getForceHandler() { return forceHandler; }
@@ -205,6 +211,9 @@ namespace GFlow {
 
     // Wall data
     vector<Wall> walls;
+
+    // Characteristics - we are in charge of managing (deleting) these
+    std::map<int, Characteristic*> characteristics;
 
     // Domain and Simulation bounds
     Bounds bounds;

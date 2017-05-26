@@ -23,6 +23,8 @@ namespace GFlow {
   SimData::~SimData() {
     // We are responsible for cleaning up external forces
     for (auto& f : externalForces) delete f;
+    // We are responsible for cleaning up characteristics
+    for (auto& c : characteristics) delete c.second;
   }
 
   void SimData::reserve(int dcap, int ecap) {
@@ -105,6 +107,11 @@ namespace GFlow {
 
   void SimData::addParticle(const vector<Particle>& particles) {
     for (const auto& p : particles) addParticle(p);
+  }
+
+  void SimData::addParticle(const Particle& p, Characteristic *c) {
+    characteristics.emplace(domain_size, c);
+    addParticle(p);
   }
 
   RealType** SimData::getPData() {

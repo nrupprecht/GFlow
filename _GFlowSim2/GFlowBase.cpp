@@ -1843,7 +1843,7 @@ vector<double> GFlowBase::getBulkData(vector<Particle> &allParticles, string &sh
   for (int x=0; x<nsx; ++x) add(x); // Bottom
   for (int x=0; x<nsx; ++x) add(nsx*nsy-x-1); // Top
   for (int y=0; y<nsy; ++y) add(nsx*y); // Left
-  for (int y=0; y<nsy; ++y) add(nsx*y+nsx-1); // Right
+  for (int y=0; y<nsy;l ++y) add(nsx*y+nsx-1); // Right
   // Point all sectors to their head
   for (int k=0; k<nsx*nsy; ++k) array[k] = getHead(array,k);
   // "Erase" bubbles that touch the bounds

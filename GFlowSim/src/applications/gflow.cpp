@@ -39,12 +39,15 @@ int main (int argc, char** argv) {
   bool aveV = false;
   bool aveF = false;
   bool maxF = false;
-  // Stat plot options
+  bool trackX = false;
+  bool trackY = false;
+ // Stat plot options
   bool plotVelocity = false;
   bool plotCorrelation = false;
   bool plotDensity = false;
   // Centering 
   bool center = false; 
+  bool cv = false;
   // Print options
   bool print = false;       // Whether we should print stat data to the screen
   bool quiet = false;
@@ -71,6 +74,7 @@ int main (int argc, char** argv) {
 
   // Create a data record
   DataRecord *dataRecord = new DataRecord;
+  dataRecord->setCommand(argc, argv);
 
   // Create a file parser and command line parser
   FileParser fileParser(argc, argv);
@@ -131,6 +135,7 @@ int main (int argc, char** argv) {
     parser.get("density", density);
     parser.get("velocity", velocity);
     parser.get("radius", radius);
+    parser.get("cv", cv);
     // Load from file
     try {
       fileParser.loadFromFile(buoyancy, simData, integrator);
@@ -144,7 +149,7 @@ int main (int argc, char** argv) {
       exit(0);
     }
     // Create buoyancy scenario from the data
-    creator.createBuoyancy(simData, integrator, radius, density, vec2(0, -velocity));
+    creator.createBuoyancy(simData, integrator, radius, density, vec2(0, -velocity), cv);
   }
   else {
     Creator creator;
@@ -180,6 +185,8 @@ int main (int argc, char** argv) {
   parser.get("aveV", aveV);
   parser.get("maxF", maxF);
   parser.get("aveF", aveF);
+  parser.get("trackX", trackX);
+  parser.get("trackY", trackY);
   parser.get("plotVelocity", plotVelocity);
   parser.get("plotCorrelation", plotCorrelation);
   parser.get("plotDensity", plotDensity);
@@ -227,6 +234,8 @@ int main (int argc, char** argv) {
     if (aveV)     dataRecord->addStatFunction(StatFunc_AveSpeed, "aveV");
     if (maxF)     dataRecord->addStatFunction(StatFunc_MaxForce, "maxF");
     if (aveF)     dataRecord->addStatFunction(StatFunc_AveForce, "aveF");
+    if (trackX)   dataRecord->addStatFunction(StatFunc_MaxR_PosX, "trackX");
+    if (trackY)   dataRecord->addStatFunction(StatFunc_MaxR_PosY, "trackY");
     // Set stat plot options
     if (plotVelocity) dataRecord->addStatPlot(StatPlot_Velocity, RPair(0,3), 100, "velocityPlot");
     if (plotCorrelation) dataRecord->addStatPlot(StatPlot_RadialCorrelation, RPair(0,1), 100, "correlation");

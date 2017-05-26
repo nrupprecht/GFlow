@@ -4,17 +4,17 @@
 ***********************************************
 
 Timing and performance:
-  - Set up time:              0.107587
+  - Set up time:              0.114824
   - Time simulated:           120
   - Requested Time:           120
-  - Run Time:                 20.566
-  - Ratio:                    5.83488
-  - Inverse Ratio:            0.171383
+  - Run Time:                 20.032
+  - Ratio:                    5.9904
+  - Inverse Ratio:            0.166934
 
 Simulation and space:
   - Dimensions:               {0,4,0,4}
   - Number of particles:      1019
-  - Ratio x Particles:        5945.74
+  - Ratio x Particles:        6104.22
 
 Particle Average Data:
   - Average sigma:            0.05
@@ -23,26 +23,27 @@ Particle Average Data:
   - Average coeff:            0
   - Average mass:             0.00785398
   - Average density:          1
-  - Average speed:            0.528541
+  - Average speed:            0.53192
   - Average omega:            0
 
 Particle Checks:
-  - (Min x, Max x):    0.0493374, 3.95154
-  - (Min y, Max y):    0.0514998, 3.95048
+  - (Min x, Max x):    0.0524823, 3.9492
+  - (Min y, Max y):    0.0480765, 3.95081
 
 Integration:
-  - Iterations:               591578
-  - Time step (at end):       0.000215471
-  - Average time step:        0.000202847
-  - Average update delay:     0.0073426
-  - Time per iteration:       3.47646e-05
+  - Iterations:               591587
+  - Time step (at end):       0.000210195
+  - Average time step:        0.000202844
+  - Average update delay:     0.00734619
+  - Time per iteration:       3.38615e-05
 
 Sectorization summary (as of end of simulation):
   - Grid dimensions:          34 x 34
+  - Total sectors:            1156
   - Grid lengths:             0.125 x 0.125
-  - Number of verlet lists:   781
-  - Average per verlet list:  2.58643
+  - Number of verlet lists:   782
+  - Average per verlet list:  2.57417
   - Cutoff:                   0.1
   - Skin depth:               0.025
-  - Occupied sectors:         862
-  - Ave per occupied sector:  1.18213
+  - Occupied sectors:         859
+  - Ave per occupied sector:  1.18626

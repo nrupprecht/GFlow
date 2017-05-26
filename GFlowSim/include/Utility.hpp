@@ -114,16 +114,30 @@ namespace GFlow {
   inline string printAsTime(double seconds) {
     stringstream stream;
     string str;
+    // Just print seconds as usual
+    if (seconds<60) {
+      stream << seconds;
+      stream >> str;
+      return str;
+    }
+    // Print full
     int hours = floor(seconds/3600.);
     seconds -= 3600*hours;
     int minutes = floor(seconds/60.);
     seconds -= 60*minutes;
-    if (hours<10) stream << "0" << hours << ":";
+    // Round seconds
+    int sec = seconds;
+    // Print hours
+    if (hours==0);
+    else if (hours<10) stream << "0" << hours << ":";
     else stream << hours << ":";
-    if (minutes<10) stream << "0" << minutes << ":";
+    // Print minutes
+    if (minutes<10 && hours>0) stream << "0" << minutes << ":";
+    else if (minutes<10) stream << minutes << ":";
     else stream << minutes << ":";
-    if (seconds<10) stream << "0" << seconds;
-    else stream << seconds;
+    // Print seconds
+    if (seconds<10) stream << "0" << sec;
+    else stream << sec;
     stream >> str;
     return str;
   }

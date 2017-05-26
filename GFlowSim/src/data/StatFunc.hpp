@@ -188,8 +188,8 @@ namespace GFlow {
     return max;
   }
 
-  inline RealType StatFunc_MaxPosX(SimData* simData) {
-    RealType max = 0;
+  inline RealType StatFunc_MaxR_PosX(SimData* simData) {
+    RealType max = -1e9, maxSigma = 0;
     int domain_size = simData->getDomainSize();
     // Check for zero size
     if (domain_size==0) return 0;
@@ -200,12 +200,15 @@ namespace GFlow {
     int *it = simData->getItPtr();
     // Gather data
     for (int i=0; i<domain_size; ++i)
-      if (-1<it[i] && max<sg[i]) max = px[i];
+      if (-1<it[i] && maxSigma<sg[i]) {
+        max = px[i];
+	maxSigma = sg[i];
+      }
     return max;
   }
 
-  inline RealType StatFunc_MaxPosY(SimData* simData) {
-    RealType max = 0;
+  inline RealType StatFunc_MaxR_PosY(SimData* simData) {
+    RealType max = -1e9, maxSigma = 0;
     int domain_size = simData->getDomainSize();
     // Check for zero size
     if (domain_size==0) return 0;
@@ -216,11 +219,14 @@ namespace GFlow {
     int *it = simData->getItPtr();
     // Gather data
     for (int i=0; i<domain_size; ++i)
-      if (-1<it[i] && max<sg[i]) max = py[i];
+      if (-1<it[i] && maxSigma<sg[i]) {
+	max = py[i];
+	maxSigma = sg[i];
+      }
     return max;
   }
 
-  inline RealType StatFunc_MaxSigma(SimData* simData) {
+  inline RealType StatFunc_MaxR_Sigma(SimData* simData) {
     RealType max = 0;
     int domain_size = simData->getDomainSize();
     // Check for zero size

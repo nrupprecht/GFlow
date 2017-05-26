@@ -85,7 +85,7 @@ namespace GFlow {
     integrator = new VelocityVerletIntegrator(simData);
   }
 
-  void Creator::createBuoyancy(SimData *& simData, Integrator *& integrator, RealType radius, RealType density, vec2 velocity) {
+  void Creator::createBuoyancy(SimData *& simData, Integrator *& integrator, RealType radius, RealType density, vec2 velocity, bool constant) {
     Bounds sb = simData->getSimBounds();
     // Change the bounds for the addition of the new particle
     
@@ -98,17 +98,16 @@ namespace GFlow {
     // Get rid of the old walls
     simData->getWalls().clear();
     // Create new walls
-    simData->addWall(Wall(nb.left, nb.bottom, nb.right, nb.bottom)); // Bottom
-    simData->addWall(Wall(nb.left, nb.bottom, nb.left, nb.top));     // Left
-    simData->addWall(Wall(nb.right, nb.bottom, nb.right, nb.top));   // Right
-    simData->addWall(Wall(nb.left, nb.top, nb.right, nb.top));       // Top
+    simData->addWall(nb);
 
     // Insert the intruding particle
     if (radius>0) {
       Particle P(0.5*(nb.right-nb.left), height + radius, radius);
       P.setDensity(density);
       P.velocity = velocity;
-      simData->addParticle(P);
+      // Add either with constant velocity, or as normal
+      if (constant) simData->addParticle(P, new ConstantVelocity(velocity));
+      else simData->addParticle(P);
     }
 
     // Make sure we use a small time step

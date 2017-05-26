@@ -109,7 +109,6 @@ namespace GFlow {
     
     // External force objects - we are not responsible for cleaning these up, simData is
     vector<ExternalForce*> externalForces;
-    
   };
 
 }
