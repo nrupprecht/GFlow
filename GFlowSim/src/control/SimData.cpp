@@ -194,6 +194,12 @@ namespace GFlow {
     externalForces.clear();
   }
 
+  void SimData::clearForceTorque() {
+    fx.clearValues();
+    fy.clearValues();
+    tq.clearValues();
+  }
+
   void SimData::setPData() {
     pdata[0]  = px.getPtr();
     pdata[1]  = py.getPtr();

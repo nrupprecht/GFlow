@@ -42,6 +42,9 @@ int main (int argc, char** argv) {
   // Stat plot options
   bool plotVelocity = false;
   bool plotCorrelation = false;
+  bool plotDensity = false;
+  // Centering 
+  bool center = false; 
   // Print options
   bool print = false;       // Whether we should print stat data to the screen
   bool quiet = false;
@@ -179,6 +182,8 @@ int main (int argc, char** argv) {
   parser.get("aveF", aveF);
   parser.get("plotVelocity", plotVelocity);
   parser.get("plotCorrelation", plotCorrelation);
+  parser.get("plotDensity", plotDensity);
+  parser.get("center", center);
   parser.get("print", print);
   parser.get("quiet", quiet);
   // Performance options
@@ -225,6 +230,7 @@ int main (int argc, char** argv) {
     // Set stat plot options
     if (plotVelocity) dataRecord->addStatPlot(StatPlot_Velocity, RPair(0,3), 100, "velocityPlot");
     if (plotCorrelation) dataRecord->addStatPlot(StatPlot_RadialCorrelation, RPair(0,1), 100, "correlation");
+    if (plotDensity) dataRecord->addStatPlot(StatPlot_DensityVsDepth, RPair(0,0), 100, "densityVsDepth");
     // Set recording options
     dataRecord->setRecPos(animate);
     dataRecord->setRecOption(recOption);
@@ -236,6 +242,7 @@ int main (int argc, char** argv) {
     dataRecord->setRecPressField(recPressField);
     dataRecord->setTrackDisplacement(trackDisplacement);
     dataRecord->setDelay(1./static_cast<RealType>(fps));
+    dataRecord->setCenter(center);
   }
 
   // Set run time

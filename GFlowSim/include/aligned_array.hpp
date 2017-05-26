@@ -8,6 +8,10 @@
 #define __ALIGNED_ARRAY_HPP__
 
 #include <cstdlib>
+#include <cstdio>
+#include <stdlib.h>
+
+#include "Utility.hpp"
 
 // For definition of _POSIX_
 #include "Settings.hpp"
@@ -65,8 +69,11 @@ namespace GFlow {
     // Accessors
     int size() { return _size; }
 
-    // Mutators
+    // *** Mutators
     void setAlignment(int);
+
+    // Set all values to zero
+    void clearValues();
 
     // Exception classes: Out of bounds
     class aligned_array_out_of_bounds {

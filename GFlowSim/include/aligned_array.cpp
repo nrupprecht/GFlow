@@ -1,8 +1,4 @@
 // To be included in aligned_array.h
-  
-#include <cstdio>
-#include <cstdlib>
-#include <stdlib.h>
 
 template<typename T> aligned_array<T>::aligned_array() : _size(0), _alignment(64), data(0) {};
 
@@ -128,4 +124,9 @@ template<typename T> void aligned_array<T>::setAlignment(int a) {
   if (a<0) throw bad_alignment(a);
   _alignment = a;
   reserve(_size);
+}
+
+template<typename T> void aligned_array<T>::clearValues() {
+  unsigned int num = _size*sizeof(T);
+  memset(data, 0, num);
 }

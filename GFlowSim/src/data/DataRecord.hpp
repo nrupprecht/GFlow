@@ -80,6 +80,9 @@ namespace GFlow {
     void setRecPressField(bool b) { recPressField = b; }
     void setTrackDisplacement(bool b) { trackDisplacement = b; }
 
+    // Whether to center the data
+    void setCenter(bool c) { center = c; }
+
     // Set the write directory
     void setWriteDirectory(string w) { writeDirectory = w; }
 
@@ -209,6 +212,8 @@ namespace GFlow {
 
     bool recDelay;
     int statRecDelay;
+
+    bool center; // Whether to center on the largest object
   };
 
 }

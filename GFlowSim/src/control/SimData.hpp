@@ -153,6 +153,9 @@ namespace GFlow {
     void addExternalForce(ExternalForce*);
     void clearExternalForces();
 
+    // Clear forces and torques
+    void clearForceTorque();
+
     // DataRecord is a friend class
     friend class DataRecord;
     // Creator is a friend class

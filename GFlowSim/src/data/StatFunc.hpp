@@ -188,5 +188,52 @@ namespace GFlow {
     return max;
   }
 
+  inline RealType StatFunc_MaxPosX(SimData* simData) {
+    RealType max = 0;
+    int domain_size = simData->getDomainSize();
+    // Check for zero size
+    if (domain_size==0) return 0;
+    // Get data pointers
+    RealType *px = simData->getPxPtr();
+    RealType *sg = simData->getSgPtr();
+    // Interaction pointer
+    int *it = simData->getItPtr();
+    // Gather data
+    for (int i=0; i<domain_size; ++i)
+      if (-1<it[i] && max<sg[i]) max = px[i];
+    return max;
+  }
+
+  inline RealType StatFunc_MaxPosY(SimData* simData) {
+    RealType max = 0;
+    int domain_size = simData->getDomainSize();
+    // Check for zero size
+    if (domain_size==0) return 0;
+    // Get data pointers
+    RealType *py = simData->getPyPtr();
+    RealType *sg = simData->getSgPtr();
+    // Interaction pointer
+    int *it = simData->getItPtr();
+    // Gather data
+    for (int i=0; i<domain_size; ++i)
+      if (-1<it[i] && max<sg[i]) max = py[i];
+    return max;
+  }
+
+  inline RealType StatFunc_MaxSigma(SimData* simData) {
+    RealType max = 0;
+    int domain_size = simData->getDomainSize();
+    // Check for zero size
+    if (domain_size==0) return 0;
+    // Get data pointers
+    RealType *sg = simData->getSgPtr();
+    // Interaction pointer
+    int *it = simData->getItPtr();
+    // Gather data
+    for (int i=0; i<domain_size; ++i)
+      if (-1<it[i] && max<sg[i]) max = sg[i];
+    return max;
+  }
+
 }
 #endif // __STAT_FUNC_HPP__

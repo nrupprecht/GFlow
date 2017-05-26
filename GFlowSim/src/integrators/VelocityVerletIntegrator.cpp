@@ -124,6 +124,7 @@ namespace GFlow {
     // Get the number of particles we need to update
     int domain_size = simData->getDomainSize();
     double hdt = 0.5*dt;
+    if (simData->getWrapX() || simData->getWrapY()) {
 #if _INTEL_ == 1
 #pragma vector aligned
 #pragma simd
@@ -132,25 +133,43 @@ namespace GFlow {
 #pragma clang loop vectorize(enable)
 #pragma clang loop interleave(enable)
 #endif
-    for (int i=0; i<domain_size; ++i) {
-      // Update linear variables
-      vx[i] += hdt*im[i]*fx[i];
-      vy[i] += hdt*im[i]*fy[i];
-      px[i] += dt*vx[i];
-      py[i] += dt*vy[i];
-      // Wrap position
-      simData->wrap(px[i], py[i]);
-      // Zero force
-      fx[i] = 0;
-      fy[i] = 0;
-      // Update angular variables
-      om[i] += hdt*iI[i]*tq[i];
-      th[i] += dt*om[i];
-      // Wrap theta
-      simData->wrap(th[i]);
-      // Zero torque
-      tq[i] = 0;
+      for (int i=0; i<domain_size; ++i) {
+        // Update linear variables
+        vx[i] += hdt*im[i]*fx[i];
+	vy[i] += hdt*im[i]*fy[i];
+	px[i] += dt*vx[i];
+        py[i] += dt*vy[i];
+        // Wrap position
+	simData->wrap(px[i], py[i]);
+        // Update angular variables
+	om[i] += hdt*iI[i]*tq[i];
+	th[i] += dt*om[i];
+        // Wrap theta
+	simData->wrap(th[i]);
+      }
     }
+    else {
+#if _INTEL_ == 1
+#pragma vector aligned
+#pragma simd
+#endif
+#if _CLANG_ == 1
+#pragma clang loop vectorize(enable)
+#pragma clang loop interleave(enable)
+#endif
+      for (int i=0; i<domain_size; ++i) {
+	// Update linear variables
+	vx[i] += hdt*im[i]*fx[i];
+	vy[i] += hdt*im[i]*fy[i];
+	px[i] += dt*vx[i];
+	py[i] += dt*vy[i];
+	// Update angular variables
+	om[i] += hdt*iI[i]*tq[i];
+	th[i] += dt*om[i];
+      }
+    }
+    // Clear force and torque
+    simData->clearForceTorque();
   }
 
   inline void VelocityVerletIntegrator::updates() {

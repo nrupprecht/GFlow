@@ -4,7 +4,7 @@
 #include "../forces/ExternalForce.hpp"
 
 namespace GFlow {
-  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-delay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), recOption(1), recBulk(0), recPressField(false), recPerf(false), statRecPerf(-1), recMvRatio(false), statRecMvRatio(-1), recDt(false), statRecDt(-1), recDelay(false), statRecDelay(-1) {
+  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-delay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), recOption(1), recBulk(0), recPressField(false), recPerf(false), statRecPerf(-1), recMvRatio(false), statRecMvRatio(-1), recDt(false), statRecDt(-1), recDelay(false), statRecDelay(-1), center(false) {
     start_time = end_time = high_resolution_clock::now();
   };
 
@@ -105,7 +105,14 @@ namespace GFlow {
 
     // Record bulk data
     if (recBulk) {
-      Bounds region = simData->getSimBounds();
+      Bounds region;
+      if (center) {
+	RealType max_posx =StatFunc_MaxPosX(simData);
+	RealType max_posy = StatFunc_MaxPosY(simData);
+	RealType maxSigma(0);
+	region = Bounds(max_posx-3*maxSigma, max_posx+3*maxSigma, max_posy-maxSigma, max_posy+8*maxSigma);
+      }
+      else region = simData->getSimBounds();
       vector<RealType> volumes;
       getBulkData(simData, region, volumes, bulkField);
       bulkVolumes.push_back(volumes);
@@ -113,7 +120,14 @@ namespace GFlow {
 
     // Record pressure data 
     if (recPressField) {
-      Bounds region = simData->getSimBounds();
+      Bounds region;
+      if (center) {
+	RealType max_posx = StatFunc_MaxPosX(simData);
+	RealType max_posy = StatFunc_MaxPosY(simData);
+	RealType maxSigma(0);
+	region = Bounds(max_posx-3*maxSigma, max_posx+3*maxSigma, max_posy-maxSigma, max_posy+8*maxSigma);
+      }
+      else region = simData->getSimBounds();
       getPressureData(simData, region, pressField);
     }
 
