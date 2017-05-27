@@ -8,18 +8,18 @@
 #define __INTEGRATOR_HPP__
 
 // Includes
+#include "../data/DataRecord.hpp"
 #include "../control/SimData.hpp"
 #include "../control/Sectorization.hpp"
-#include "../data/DataRecord.hpp"
 #include "../control/ForceHandler.hpp"
 #include "../control/StatusObject.hpp"
 #include "../control/TerminationCondition.hpp"
- 
+
 namespace GFlow {
 
   // Forward declaration to DataRecord
   class DataRecord;
-
+  
   /*
    * @class SimData
    * Base class for integrators which use forces/torques to advance the simulation

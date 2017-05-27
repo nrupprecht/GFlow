@@ -25,15 +25,17 @@ namespace GFlow {
    */
   class ConstantVelocity : public Characteristic {
   public:
-    ConstantVelocity(vec2 v) : velocity(v), omega(0), useV(true), useOm(false) {};
-    ConstantVelocity(RealType om) : velocity(Zero), omega(om), useV(false), useOm(true) {};
-    ConstantVelocity(vec2 v, RealType om) : velocity(v), omega(om), useV(true), useOm(true) {};
+    ConstantVelocity(vec2 v) : velocity(v), omega(0), useV(true), useOm(false), active(true) {};
+    ConstantVelocity(RealType om) : velocity(Zero), omega(om), useV(false), useOm(true), active(true) {};
+    ConstantVelocity(vec2 v, RealType om) : velocity(v), omega(om), useV(true), useOm(true), active(true) {};
 
     virtual void modify(SimData*, int, RealType);
   private:
     vec2 velocity;
     RealType omega;
     bool useV, useOm;
+
+    bool active;
   };
 
 }

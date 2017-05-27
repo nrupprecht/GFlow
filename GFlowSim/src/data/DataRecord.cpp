@@ -125,7 +125,7 @@ namespace GFlow {
 	RealType max_posx = StatFunc_MaxR_PosX(simData);
 	RealType max_posy = StatFunc_MaxR_PosY(simData);
 	RealType maxSigma = StatFunc_MaxR_Sigma(simData);
-	region = Bounds(max_posx-3*maxSigma, max_posx+3*maxSigma, max_posy-maxSigma, max_posy+8*maxSigma);
+	region = Bounds(max_posx-4*maxSigma, max_posx+4*maxSigma, max_posy-5*maxSigma, max_posy+7*maxSigma);
       }
       else region = simData->getSimBounds();
       getPressureData(simData, region, pressField);
@@ -797,24 +797,108 @@ namespace GFlow {
     // Get the particle pressure data
     vector<PData> positions;
     recordPressureData(simData, positions);
-    // Set up field
+    // Find which particles cover which parts of the field
+    int nsx = (region.right - region.left)/resolution, nsy = (region.top - region.bottom)/resolution;
+    RealType sx = (region.right - region.left)/nsx, sy = (region.top - region.bottom)/nsy;
+    ++nsx;
+    ++nsy;
+    vector<int> *sectors = new vector<int>[nsx*nsy];
+    // Fill sectors
+    int i=0;
+    auto allParticles = simData->getParticles();
+    for (const auto &p : allParticles) {
+      int sec_x = (p.position.x - region.left)/sx;
+      int sec_y = (p.position.y - region.bottom)/sy;
+      if (-1<sec_x && sec_x<nsx && -1<sec_y && sec_y<nsy)
+        sectors[nsx*sec_y+sec_x].push_back(i);
+      // If part of the particle sticks into the region, place the particle in the closest sector. This ignores particles "diagonal" to the region that stick into the region
+      else if (region.left<p.position.x+p.sigma   && -1<sec_y && sec_y<nsy)
+        sectors[nsx*sec_y+0].push_back(i); // Left
+      else if (p.position.x-p.sigma<region.right  && -1<sec_y && sec_y<nsy)
+        sectors[nsx*sec_y+(nsx-1)].push_back(i); // Right
+      else if (region.bottom<p.position.y+p.sigma && -1<sec_x && sec_x<nsx)
+        sectors[sec_x].push_back(i); // Bottom
+      else if (p.position.y-p.sigma<region.top    && -1<sec_x && sec_x<nsx)
+        sectors[nsx*(nsy-1)+sec_x].push_back(i); // Top
+      ++i;
+    }
+    // Find the particle of maximum radius
+    double maxR = 0;
+    for (const auto &p : allParticles)
+      if (p.sigma>maxR) maxR = p.sigma;
+    // Check which sector centers are covered by particles
+    int *array = new int[nsx*nsy];
+    int sweepX = maxR/sx, sweepY = maxR/sy;
+    for (int y=0; y<nsy; ++y)
+      for (int x=0; x<nsx; ++x) {
+        // Check whether center of sector is covered by any particles
+        array[nsx*y+x] = nsx*y+x;
+        bool done = false;
+        vec2 pos((x+0.5)*sx+region.left, (y+0.5)*sy+region.bottom);
+        // If outside the simulation bounds, there are no bubbles here
+        if (!simData->simBounds.contains(pos)) {
+          array[nsx*y+x] = -1;
+          continue;
+        }
+        // Sweep through sectors
+        int startX = max(0, x-sweepX), endX = min(nsx-1, x+sweepX);
+        int startY = max(0, y-sweepY), endY = min(nsy-1, y+sweepY);
+        // Check your own sector first for speed's sake
+        for (const auto index : sectors[nsx*y+x]) {
+          vec2 dR = pos-allParticles.at(index).position;
+          RealType R = allParticles.at(index).sigma;
+          if (sqr(dR)<sqr(R)) {
+            done = true;
+            array[nsx*y+x] = -1;
+            break;
+          }
+        }
+	// Search the other sectors
+        for (int Y=startY; Y<endY && !done; ++Y) {
+          for (int X=startX; X<endX && !done; ++X) {
+            if (X!=x || Y!=y)
+              for (const auto index : sectors[nsx*Y+X]) {
+                vec2 dR= pos-allParticles.at(index).position;
+                RealType R = allParticles.at(index).sigma;
+                if (sqr(dR)<sqr(R)) {
+                  done = true;
+                  array[nsx*y+x] = -1;
+                  break;
+                }
+              }
+            if (done) break;
+          }
+          if (done) break;
+        }
+      }
 
+    // Set up field if that hasn't already been done
     if (field.empty()) {
-      int nsx = (region.right - region.left)/resolution, nsy = (region.top - region.bottom)/resolution;
       RealType sx = (region.right - region.left)/nsx, sy = (region.top - region.bottom)/nsy;
       field.setBounds(region);
       field.setResolution(sx);
       field.setPrintPoints(200);
     }
     RealType dx = field.getDx(), dy = field.getDy();
-    int nsx = field.getNSX(), nsy = field.getNSY();
     // Update field
+    for (int y=0; y<nsy; ++y)
+      for (int x=0; x<nsx; ++x) {
+	RealType p(0);
+	int c(0);
+	for (auto i : sectors[nsx*y+x]) {
+	  p += std::get<5>(positions.at(i));
+	  ++c;
+	}
+	if (c>0) field.at(x,y) += p/c;
+      }
+    /*
     for (const auto &p : positions) {
       int sec_x = (std::get<0>(p) - region.left)/dx;
       int sec_y = (std::get<1>(p) - region.bottom)/dy;
       if (-1<sec_x && sec_x<nsx && -1<sec_y && sec_y<nsy)
 	field.at(sec_x, sec_y) += std::get<5>(p);
     }
+    */
   }
 
 }

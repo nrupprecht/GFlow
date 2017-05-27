@@ -141,7 +141,7 @@ namespace GFlow {
     inline void unite(int*, int, int) const;
     inline int getHead(int*, int) const;
     inline void writeDisplacementData(SimData*) const;
-    inline void getPressureData(SimData*, const Bounds&, ScalarField&, RealType=0.1) const;
+    inline void getPressureData(SimData*, const Bounds&, ScalarField&, RealType=0.015) const;
 
     // The command that was used
     vector<string> command;

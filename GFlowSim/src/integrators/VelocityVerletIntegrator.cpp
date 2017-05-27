@@ -173,6 +173,10 @@ namespace GFlow {
   }
 
   inline void VelocityVerletIntegrator::updates() {
+    // Do characteristics
+    for (auto &c : simData->getCharacteristics())
+      c.second->modify(simData, c.first, dt);
+
     // Update sectors
     if (updateDelay < updateTimer) {
       
