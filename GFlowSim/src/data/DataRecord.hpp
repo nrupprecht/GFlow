@@ -133,7 +133,6 @@ namespace GFlow {
     // Private helper functions
     void writeParticleData(std::ofstream&, SimData*) const;
     void writeParticleChecks(std::ofstream&, SimData*) const;
-    void recordPressureData(SimData*, vector<PData>&) const;
     void recordByNumber(SimData*, vector<PData>&) const;
     void recordByVerletList(SimData*, vector<PData>&) const;
     void recordByVelocity(SimData*, vector<PData>&) const;
@@ -141,7 +140,7 @@ namespace GFlow {
     inline void unite(int*, int, int) const;
     inline int getHead(int*, int) const;
     inline void writeDisplacementData(SimData*) const;
-    inline void getPressureData(SimData*, const Bounds&, ScalarField&, RealType=0.015) const;
+    inline void getPressureData(SimData*, const Bounds&, ScalarField&, RealType=0.03) const;
 
     // The command that was used
     vector<string> command;
@@ -193,7 +192,7 @@ namespace GFlow {
 
     // List of stat plots to use
     vector<StatPlot> statPlots;
-    vector<vector<vec2> > statPlotData;
+    vector<vector<RPair> > statPlotData;
     vector<RPair> statPlotBounds;
     vector<string> statPlotName;
 

@@ -1,6 +1,7 @@
 #include "SimData.hpp"
 #include "../data/DataRecord.hpp"
 #include "../forces/ExternalForce.hpp"
+#include "ForceHandler.hpp"
 
 namespace GFlow {
 
@@ -139,6 +140,28 @@ namespace GFlow {
       }
     }
     return plist;
+  }
+
+  void SimData::getPressureData(vector<PData>& positions) {
+    // We will sort out particles with it<0 at the end
+    vector<PData> pos;
+    for (int i=0; i<domain_size; ++i)
+      pos.push_back(PData(px[i], py[i], sg[i], th[i], it[i], 0));
+
+    const auto& verletList = sectors->getVerletList();
+    const auto& wallList   = sectors->getWallList();
+
+    // Get data
+    forceHandler->pForcesRec(verletList, this, pos);
+    forceHandler->wForcesRec(wallList, this, pos);
+
+    // Make sure we only have "real" particles (it>-1)
+    for (int i=0; i<domain_size; ++i)
+      if (it[i]>-1) {
+        PData pdata = pos.at(i);
+	std::get<5>(pdata) /= 2*PI*sg[i]; // Convert to pressure
+        positions.push_back(pdata);
+      }
   }
 
   void SimData::wrap(RealType& x, RealType& y) {

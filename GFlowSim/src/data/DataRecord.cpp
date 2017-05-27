@@ -89,7 +89,7 @@ namespace GFlow {
     if (recPos) {
       vector<PData> positions;
       if (recOption==1) // Record pressure
-	recordPressureData(simData, positions);
+	simData->getPressureData(positions);
       else if (recOption==2) // Record by particle id
 	recordByNumber(simData, positions);
       else if (recOption==3) // Record by number of verlet lists the particle is in
@@ -125,7 +125,7 @@ namespace GFlow {
 	RealType max_posx = StatFunc_MaxR_PosX(simData);
 	RealType max_posy = StatFunc_MaxR_PosY(simData);
 	RealType maxSigma = StatFunc_MaxR_Sigma(simData);
-	region = Bounds(max_posx-4*maxSigma, max_posx+4*maxSigma, max_posy-5*maxSigma, max_posy+7*maxSigma);
+	region = Bounds(max_posx-6*maxSigma, max_posx+6*maxSigma, max_posy-6*maxSigma, max_posy+18*maxSigma);
       }
       else region = simData->getSimBounds();
       getPressureData(simData, region, pressField);
@@ -367,11 +367,11 @@ namespace GFlow {
     statPlots.push_back(sp);
 
     // Add a place to store this plot's data
-    vector<vec2> plot(bins);
+    vector<RPair> plot(bins);
     RealType dr = (bounds.second-bounds.first)/static_cast<RealType>(bins);
     for (int i=0; i<bins; ++i) {
-      plot.at(i).x = bounds.first + i*dr;
-      plot.at(i).y = 0;
+      plot.at(i).first  = bounds.first + i*dr;
+      plot.at(i).second = 0;
     }
     statPlotData.push_back(plot);
 
@@ -473,40 +473,6 @@ namespace GFlow {
     fout << "  - (Min x, Max x):    " << minX << ", " << maxX << "\n";
     fout << "  - (Min y, Max y):    " << minY << ", " << maxY << "\n";
     fout << "\n";
-  }
-
-  void DataRecord::recordPressureData(SimData* simData, vector<PData>& positions) const {
-    // Get the arrays
-    RealType *px = simData->getPxPtr();
-    RealType *py = simData->getPyPtr();
-    RealType *sg = simData->getSgPtr();
-    RealType *th = simData->getThPtr();
-    int *it = simData->getItPtr();
-    int domain_size = simData->domain_size;
-
-    // We will sort out particles with it<0 at the end
-    vector<PData> pos;
-    for (int i=0; i<domain_size; ++i) 
-      pos.push_back(PData(px[i], py[i], sg[i], th[i], it[i], 0));
-  
-    // Get the force data
-    ForceHandler *force = simData->getForceHandler();
-    if (force && simData && simData->sectors) {
-      // Get lists      
-      const auto& verletList = simData->sectors->getVerletList();
-      const auto& wallList   = simData->sectors->getWallList();
-      // Get data
-      force->pForcesRec(verletList, simData, pos);
-      force->wForcesRec(wallList, simData, pos);
-    }
-
-    // Make sure we only have "real" particles (it>-1)
-    for (int i=0; i<domain_size; ++i) 
-      if (it[i]>-1) {
-	PData pdata = pos.at(i);
-	std::get<5>(pdata) /= 2*PI*sg[i]; // Convert to pressure
-	positions.push_back(pdata);
-      }
   }
 
   void DataRecord::recordByNumber(SimData* simData, vector<PData>& positions) const {
@@ -796,7 +762,7 @@ namespace GFlow {
   inline void DataRecord::getPressureData(SimData* simData, const Bounds& region, ScalarField& field, RealType resolution) const {
     // Get the particle pressure data
     vector<PData> positions;
-    recordPressureData(simData, positions);
+    simData->getPressureData(positions); 
     // Find which particles cover which parts of the field
     int nsx = (region.right - region.left)/resolution, nsy = (region.top - region.bottom)/resolution;
     RealType sx = (region.right - region.left)/nsx, sy = (region.top - region.bottom)/nsy;

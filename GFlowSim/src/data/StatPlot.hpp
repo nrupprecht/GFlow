@@ -12,14 +12,13 @@
 
 namespace GFlow {
 
-  typedef void (*StatPlot) (SimData*, vector<vec2>&, const RPair);
+  typedef void (*StatPlot) (SimData*, vector<RPair>&, const RPair);
 
-  inline void StatPlot_Velocity(SimData* simData, vector<vec2>& statVector, const RPair bounds) { 
+  inline void StatPlot_Velocity(SimData* simData, vector<RPair>& statVector, const RPair bounds) { 
     int bins = statVector.size();
     if (bins==0) return;
     // Bin data
     double dq = (bounds.second-bounds.first)/bins;
-
     // Get data pointers
     RealType *vx = simData->getVxPtr();
     RealType *vy = simData->getVyPtr();
@@ -32,11 +31,11 @@ namespace GFlow {
       RealType data = sqrt(sqr(vx[i])+sqr(vy[i]));
       int b = (data-bounds.first)/dq;
       if (b<0 || bins<=b) continue; // Keep in bounds
-      ++statVector.at(b).y;
+      ++statVector.at(b).second;
     }    
   }
 
-  inline void StatPlot_RadialCorrelation(SimData* simData, vector<vec2>& statVector, const RPair bounds) { 
+  inline void StatPlot_RadialCorrelation(SimData* simData, vector<RPair>& statVector, const RPair bounds) { 
     int bins = statVector.size();
     if (bins==0) return;
     // Bin data
@@ -57,19 +56,19 @@ namespace GFlow {
       if (data==0) continue;
       int b = (data-bounds.first)/dq;
       if (b<0 || bins<=b) continue; // Keep in bounds
-      statVector.at(b).y += 1./(2*PI*sqr(data));
+      statVector.at(b).second += 1./(2*PI*sqr(data));
     }
   }
 
-  inline void StatPlot_DensityVsDepth(SimData* simData, vector<vec2>& statVector, const RPair bounds) {
+  inline void StatPlot_DensityVsDepth(SimData* simData, vector<RPair>& statVector, const RPair bounds) {
     int bins = statVector.size();
     if (bins==0) return;
     // Reset bounds
     RealType bottom = simData->getSimBounds().bottom;
     RealType top   = simData->getSimBounds().top;
-    if (statVector.at(0).x==statVector.at(1).x) { // Heights haven't been initialized
+    if (statVector.at(0).first==statVector.at(1).first) { // Heights haven't been initialized
       RealType dr = (top-bottom)/bins;
-      for (int i=0; i<bins; ++i) statVector.at(i).x = bottom + i*dr;
+      for (int i=0; i<bins; ++i) statVector.at(i).first = bottom + i*dr;
     }
     // Get data pointers
     RealType *py = simData->getPyPtr();
@@ -82,8 +81,37 @@ namespace GFlow {
       if (it[i]<0) continue;
       int b = (py[i]-bottom)/dq;
       if (b<0 || bins<=b) continue; // Keep in bounds
-      ++statVector.at(b).y;
+      ++statVector.at(b).second;
     }
+  }
+
+  inline void StatPlot_PressureVsDepth(SimData* simData, vector<RPair>& statVector, const RPair bounds) {    
+    // Get bins
+    int bins = statVector.size();
+    if (bins==0) return;
+    // Reset bounds
+    RealType top   = simData->getSimBounds().top;
+    RealType bottom = simData->getSimBounds().bottom;
+    if (statVector.at(0).first==statVector.at(1).first) { // Heights haven't been initialized
+      RealType dr = (top-bottom)/bins;
+      for (int i=0; i<bins; ++i) statVector.at(i).first = bottom + i*dr;
+    }
+    // Gather data
+    vector<PData> pos;
+    simData->getPressureData(pos);
+    // Bin data
+    vector<RealType> press(bins, 0);
+    vector<int> count(bins, 0);
+    double dq = (top-bottom)/bins;
+    for (auto& p : pos) {
+      int b = (std::get<1>(p)-bottom)/dq;
+      if (b<0 || bins<=b) continue;
+      press.at(b) += std::get<5>(p);
+      ++count.at(b);
+    }
+    // Combine data
+    for (int i=0; i<bins; ++i)
+      if (count.at(i)>0) statVector.at(i).second += press.at(i)/count.at(i);
   }
   
 }

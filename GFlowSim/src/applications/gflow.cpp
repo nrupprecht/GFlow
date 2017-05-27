@@ -45,6 +45,7 @@ int main (int argc, char** argv) {
   bool plotVelocity = false;
   bool plotCorrelation = false;
   bool plotDensity = false;
+  bool plotPressureVDepth = false;
   // Centering 
   bool center = false; 
   bool cv = false;
@@ -96,22 +97,22 @@ int main (int argc, char** argv) {
       fileParser.parse(config, simData, integrator);
     }
     catch (FileParser::FileDoesNotExist file) {
-      if (!quiet) cout << "File [" << file.name << "] does not exist. Trying [samples/" << file.name << "].\n";
+      if (!quiet) std::cerr << "File [" << file.name << "] does not exist. Trying [samples/" << file.name << "].\n";
       try {
 	fileParser.parse("samples/"+config, simData, integrator);
       }
       catch (FileParser::FileDoesNotExist file) {
-	cout << "File [" << file.name << "] also does not exist. Exiting.\n";
+	std::cerr << "File [" << file.name << "] also does not exist. Exiting.\n";
 	exit(0);
       }
       if (!quiet) cout << "You're lucky, [samples/" << file.name << "] does exist. Assuming you meant that file.\n";
     }
     catch (FileParser::UnrecognizedToken token) {
-      cout << "Unrecognized token [" << token.token << "]. Exiting.\n";
+      std::cerr << "Unrecognized token [" << token.token << "]. Exiting.\n";
       exit(0);
     }
     if (simData==nullptr) {
-      cout << "Error occured while parsing, sim data is null. Exiting.\n";
+      std::cerr << "Error occured while parsing, sim data is null. Exiting.\n";
       exit(0);
     }
   }
@@ -120,11 +121,11 @@ int main (int argc, char** argv) {
       fileParser.loadFromFile(loadFile, simData, integrator);
     }
     catch (FileParser::FileDoesNotExist file) {
-      cout << "File [" << file.name << "] does not exist. Trying [samples/" << file.name << "]. Exiting.\n";
+      std::cerr << "File [" << file.name << "] does not exist. Trying [samples/" << file.name << "]. Exiting.\n";
       exit(0);
     }
     catch (GFlow::BadIstreamRead read) {
-      cout << "Parsing failed when it attempted to read in a [" << read.type << "], expected [" << printChar(read.expected) << "], found [" << printChar(read.unexpected) << "]. Exiting.\n";
+      std::cerr << "Parsing failed when it attempted to read in a [" << read.type << "], expected [" << printChar(read.expected) << "], found [" << printChar(read.unexpected) << "]. Exiting.\n";
       exit(0);
     }
   }
@@ -141,24 +142,33 @@ int main (int argc, char** argv) {
       fileParser.loadFromFile(buoyancy, simData, integrator);
     }
     catch (FileParser::FileDoesNotExist file) {
-      cout << "File [" << file.name << "] does not exist.";
+      std::cerr << "File [" << file.name << "] does not exist.";
       exit(0);
     }
     catch (GFlow::BadIstreamRead read) {
-      cout << "Parsing failed when it attempted to read in a [" << read.type << "], expected [" << printChar(read.expected) << "], found [" << printChar(read.unexpected) << "]. Exiting.\n";
+      std::cerr << "Parsing failed when it attempted to read in a [" << read.type << "], expected [" << printChar(read.expected) << "], found [" << printChar(read.unexpected) << "]. Exiting.\n";
       exit(0);
     }
     // Create buoyancy scenario from the data
     creator.createBuoyancy(simData, integrator, radius, density, vec2(0, -velocity), cv);
   }
   else {
-    Creator creator;
-    creator.create(simData, integrator);
+    try {
+      fileParser.parse("samples/box.cfg", simData, integrator);
+    }
+    catch (FileParser::FileDoesNotExist file) {
+      std::cerr << "Default file [samples/box.cfg] does not exist. Try loading a specific configuration file. Exiting.\n";
+      exit(0);
+    }
+    catch (FileParser::UnrecognizedToken token) {
+      std::cerr << "Unrecognized token [" << token.token << "]. Exiting.\n";
+      exit(0);
+    }
   }
   
   // Make sure simData is non-null
   if (simData==nullptr) {
-    cout << "SimData is null. Exiting." << endl;
+    std::cerr << "SimData is null. Exiting." << endl;
     exit(0);
   }
   
@@ -190,6 +200,7 @@ int main (int argc, char** argv) {
   parser.get("plotVelocity", plotVelocity);
   parser.get("plotCorrelation", plotCorrelation);
   parser.get("plotDensity", plotDensity);
+  parser.get("plotPressureVDepth", plotPressureVDepth);
   parser.get("center", center);
   parser.get("print", print);
   parser.get("quiet", quiet);
@@ -240,6 +251,7 @@ int main (int argc, char** argv) {
     if (plotVelocity) dataRecord->addStatPlot(StatPlot_Velocity, RPair(0,3), 100, "velocityPlot");
     if (plotCorrelation) dataRecord->addStatPlot(StatPlot_RadialCorrelation, RPair(0,1), 100, "correlation");
     if (plotDensity) dataRecord->addStatPlot(StatPlot_DensityVsDepth, RPair(0,0), 100, "densityVsDepth");
+    if (plotPressureVDepth) dataRecord->addStatPlot(StatPlot_PressureVsDepth, RPair(0,0), 100, "pressureVsDepth");
     // Set recording options
     dataRecord->setRecPos(animate);
     dataRecord->setRecOption(recOption);
