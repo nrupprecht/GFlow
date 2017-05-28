@@ -31,7 +31,10 @@ namespace GFlow {
     dataRecord = dr;
   }
 
-  void Integrator::integrate() {
+  void Integrator::integrate(RealType time) {
+    // Initialize
+    initialize(time);
+
     // Pre
     preIntegrate();
 
@@ -49,7 +52,7 @@ namespace GFlow {
   void Integrator::initializeSectors() {
     // Create a sectorization
     if (sectors) delete sectors;
-    sectors = new Sectorization;
+    sectors = new StandardSectorization;
 
     // Set up the sectorization
     if (simData) sectors->initialize(simData);
@@ -80,6 +83,10 @@ namespace GFlow {
       dataRecord->setRunTime(runTime);
       dataRecord->startTiming();
     }
+
+    // Make sure we have initial verlet lists
+    sectors->createVerletLists();
+    sectors->createWallLists();
   }
 
   void Integrator::preStep() {};

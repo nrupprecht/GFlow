@@ -3,18 +3,21 @@
 ********** 2017, Nathaniel Rupprecht **********
 ***********************************************
 
+Command:
+  ./bin/gflow -time=120 
+
 Timing and performance:
-  - Set up time:              0.114824
+  - Set up time:              0.113929
   - Time simulated:           120
   - Requested Time:           120
-  - Run Time:                 20.032
-  - Ratio:                    5.9904
-  - Inverse Ratio:            0.166934
+  - Run Time:                 19.9206
+  - Ratio:                    6.02393
+  - Inverse Ratio:            0.166005
 
 Simulation and space:
   - Dimensions:               {0,4,0,4}
   - Number of particles:      1019
-  - Ratio x Particles:        6104.22
+  - Ratio x Particles:        6138.38
 
 Particle Average Data:
   - Average sigma:            0.05
@@ -23,27 +26,27 @@ Particle Average Data:
   - Average coeff:            0
   - Average mass:             0.00785398
   - Average density:          1
-  - Average speed:            0.53192
+  - Average speed:            0.530814
   - Average omega:            0
 
 Particle Checks:
-  - (Min x, Max x):    0.0524823, 3.9492
-  - (Min y, Max y):    0.0480765, 3.95081
+  - (Min x, Max x):    0.0482174, 3.95265
+  - (Min y, Max y):    0.0489764, 3.95407
 
 Integration:
-  - Iterations:               591587
-  - Time step (at end):       0.000210195
-  - Average time step:        0.000202844
-  - Average update delay:     0.00734619
-  - Time per iteration:       3.38615e-05
+  - Iterations:               590607
+  - Time step (at end):       0.000183808
+  - Average time step:        0.000203181
+  - Average update delay:     0.00735655
+  - Time per iteration:       3.3729e-05
 
 Sectorization summary (as of end of simulation):
   - Grid dimensions:          34 x 34
   - Total sectors:            1156
   - Grid lengths:             0.125 x 0.125
-  - Number of verlet lists:   782
-  - Average per verlet list:  2.57417
+  - Number of verlet lists:   793
+  - Average per verlet list:  2.59269
   - Cutoff:                   0.1
   - Skin depth:               0.025
-  - Occupied sectors:         859
-  - Ave per occupied sector:  1.18626
+  - Occupied sectors:         861
+  - Ave per occupied sector:  1.18351

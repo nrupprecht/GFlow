@@ -31,22 +31,17 @@ namespace GFlow {
     // Set the simulation data to manage, set up sectorization
     void initialize(SimData* sd);
     
-    // Update sectorization
+    // Update sectorization - calls the virtual function _sectorize()
     void sectorize();
-
-#ifdef USE_MPI
-    void atom_move();
-    void atom_copy();
-#endif
 
     // Check if we need to remake our lists
     RealType checkNeedRemake();
 
     // Create verlet lists (bool is for force make list)
-    void createVerletLists(bool=false);
+    void createVerletLists();
 
     // Create wall lists (bool is for force make list)
-    void createWallLists(bool=false);
+    void createWallLists();
 
     /****** Accessors *****/
 
@@ -55,12 +50,6 @@ namespace GFlow {
 
     // Returns the wall neighbor list
     auto& getWallList() { return wallList; }
-
-    // Returns the move list
-    auto& getMoveList() { return moveList; }
-
-    // Returns the copy list
-    auto& getCopyList() { return copyList; }
 
     // Displacement functions
     vec2 getDisplacement(const RealType, const RealType, const RealType, const RealType);
@@ -80,10 +69,14 @@ namespace GFlow {
     // DataRecord is a friend class
     friend class DataRecord;
 
-  private:
+  protected:
+    virtual void _sectorize();
+    virtual void _createVerletLists();
+    virtual void _createWallLists();
+    virtual void _makeSectors();
+
     // Private helper functions
     inline int getSec(const RealType, const RealType);
-    inline void makeSectors();
     inline vector<int>& sec_at(int x, int y) { return sectors[nsx*y+x]; }
 
     // Pointer to the simulation data we manage
@@ -98,12 +91,6 @@ namespace GFlow {
     // Wall neighbor list. First int is the id of the wall, the other ints are the id's of the particles within the cutoff region.
     WListType wallList;
 
-    // List of particles that have migrated out of the simulation domain. List of { int, list<int> } specifies the processor to move to and the id's of the particles that need to move there.
-    list<pair<int, list<int> > > moveList;
-
-    // List of particles that are near the edge of the simulation domain and need to be copied to another processor. List of { int, list<int> } specifies the processor to move to and the id's of the particles that need to move there.
-    list<pair<int, list<int> > > copyList;
-
     // Sectorization Data
     RealType cutoff;     // The cutoff radius
     RealType skinDepth;  // The skin depth
@@ -116,11 +103,10 @@ namespace GFlow {
     // Data from SimData
     Bounds bounds;       // Domain bounds
     Bounds simBounds;    // Simulation bounds
-    bool wrapX, wrapY;
+    bool wrapX, wrapY;   // Boundary conditions
 
     // Rank and number of processors - for MPI 
     int rank, numProc;
-
   };
 
 }

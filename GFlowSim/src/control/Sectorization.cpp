@@ -23,16 +23,8 @@ namespace GFlow {
     wrapX = simData->getWrapX();
     wrapY = simData->getWrapY();
 
-    // Find appropriate cutoff radii
-    auto plist = simData->getParticles();
-    for (const auto &p : plist) {
-      double r = p.sigma; // CHANGE THIS TO INCORPORATE INTERACTION TYPE
-      if (r>maxCutR) maxCutR = r;
-      else if (r>secCutR) secCutR = r;
-    }
-
     // Set up sector array
-    makeSectors();
+    _makeSectors();
     
     // Set this as the sectorization for the sim data
     sd->setSectors(this);
@@ -45,6 +37,11 @@ namespace GFlow {
   }
 
   void Sectorization::sectorize() {
+    // Avoid public virtual functions
+    _sectorize();
+  }
+
+  void Sectorization::_sectorize() {
     // Check if there are sectors    
     if (sectors==0) return;
     // Set bounds
@@ -60,18 +57,6 @@ namespace GFlow {
       sectors[sec_num].push_back(i);
     }
   }
-
-#ifdef USE_MPI //******* MPI related functions ************//
-
-  void Sectorization::atom_move() {
-
-  }
-
-  void Sectorization::atom_copy() {
-    
-  }
-
-#endif //******* End MPI related functions ********//
 
   RealType Sectorization::checkNeedRemake() {
     // Get position data
@@ -96,7 +81,11 @@ namespace GFlow {
     return movement/skinDepth;    
   }
 
-  void Sectorization::createVerletLists(bool force) {
+  void Sectorization::createVerletLists() {
+    _createVerletLists();
+  }
+
+  void Sectorization::_createVerletLists() {
     // Get position data
     RealType *px = simData->getPxPtr();
     RealType *py = simData->getPyPtr();
@@ -107,7 +96,7 @@ namespace GFlow {
     verletList.clear();
 
     // Redo the sectorization so we can make our verlet lists
-    sectorize();
+    _sectorize();
 
     // Create symmetric neighbor lists, look in sectors ( * ) or the sector you are in ( <*> )
     // +---------+
@@ -136,38 +125,28 @@ namespace GFlow {
 	    if (sqr(r) < sqr(sigma + sg[j] + skinDepth)) 
 	      nlist.push_back(j);
 	  }
+
+	  auto check = [&] (int sx, int sy) {
+            for (const auto &j : sec_at(sx, sy)) {
+              if (it[j]<0) continue;
+              r = getDisplacement(px[i], py[i], px[j], py[j]);
+              if (sqr(r) < sqr(sigma + sg[j] + skinDepth))
+                nlist.push_back(j);
+            }
+          };
+
 	  // Bottom left
-	  int sx = x-1, sy = y-1;
-	  for (const auto &j : sec_at(sx, sy)) {
-	    if (it[j]<0) continue;
-	    r = getDisplacement(px[i], py[i], px[j], py[j]);
-	    if (sqr(r) < sqr(sigma + sg[j] + skinDepth))
-	      nlist.push_back(j);
-	  }
-	  // Bottom
-	  sx = x;
-	  for (const auto &j : sec_at(sx, sy)) {
-	    if (it[j]<0) continue;
-            r = getDisplacement(px[i], py[i], px[j], py[j]);
-            if (sqr(r) < sqr(sigma + sg[j] + skinDepth))
-              nlist.push_back(j);
-          }
-	  // Left
-	  sx = x-1; sy = y;
-	  for (const auto &j : sec_at(sx, sy)) {
-	    if (it[j]<0) continue;
-            r = getDisplacement(px[i], py[i], px[j], py[j]);
-            if (sqr(r) < sqr(sigma + sg[j] + skinDepth))
-              nlist.push_back(j);
-          }
-	  // Top left
-	  sy = y+1;
-	  for (const auto &j : sec_at(sx, sy)) {
-	    if (it[j]<0) continue;
-            r = getDisplacement(px[i], py[i], px[j], py[j]);
-            if (sqr(r) < sqr(sigma + sg[j] + skinDepth))
-              nlist.push_back(j);
-          }
+          int sx = x-1, sy = y-1;
+          check(sx, sy);
+          // Bottom
+          sx = x;
+          check(sx, sy);
+          // Left
+          sx = x-1; sy = y;
+          check(sx, sy);
+          // Top left
+          sy = y+1;
+          check(sx, sy);
 
 	  // Add the neighbor list to the collection if you have neighbors
 	  if (nlist.size()>1) verletList.push_back(nlist);
@@ -179,7 +158,11 @@ namespace GFlow {
     for (int i=0; i<domain_size; ++i) positionRecord[i] = vec2(px[i], py[i]);
   }
 
-  void Sectorization::createWallLists(bool force) {
+  void Sectorization::createWallLists() {
+    _createWallLists();
+  }
+
+  void Sectorization::_createWallLists() {
     // Get data
     auto& walls  = simData->getWalls();
     RealType *px = simData->getPxPtr();
@@ -239,20 +222,33 @@ namespace GFlow {
     return SY*nsx+SX;
   }
 
-  inline void Sectorization::makeSectors() {
-    cutoff = maxCutR + secCutR;
-    // First estimate
-    sdx = sdy = (cutoff+skinDepth);
+  void Sectorization::_makeSectors() {
+    // Find appropriate cutoff radii
+    auto plist = simData->getParticles();
+    for (const auto &p : plist) {
+      double r = p.sigma; // CHANGE THIS TO INCORPORATE INTERACTION TYPE
+      if (r>maxCutR) maxCutR = r;
+      else if (r>secCutR) secCutR = r;
+    }
+
+    // Cutoff radius
+    cutoff = maxCutR + secCutR + skinDepth;
+
+    // First estimate of sdx, sdy
+    sdx = sdy = cutoff;
     RealType minSec = 1.;
     nsx = static_cast<int>( max(minSec, (bounds.right-bounds.left)/sdx) );
     nsy = static_cast<int>( max(minSec, (bounds.top-bounds.bottom)/sdy) );
+
     // Actual width and height
     sdx = (bounds.right-bounds.left)/nsx;
     sdy = (bounds.top-bounds.bottom)/nsy;
     isdx = 1./sdx;
     isdy = 1./sdy;
+
     // Add for edge sectors
     nsx += 2; nsy += 2;
+
     // Remake sectors
     if (sectors) delete [] sectors;
     sectors = new vector<int>[nsx*nsy+1];

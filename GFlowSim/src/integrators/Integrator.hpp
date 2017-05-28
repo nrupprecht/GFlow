@@ -15,6 +15,8 @@
 #include "../control/StatusObject.hpp"
 #include "../control/TerminationCondition.hpp"
 
+#include "../control/StandardSectorization.hpp"
+
 namespace GFlow {
 
   // Forward declaration to DataRecord
@@ -38,14 +40,11 @@ namespace GFlow {
     // Destructor - cleans up sectors
     ~Integrator();
 
-    // Initialization -- Add the run time here for now
-    void initialize(RealType runTime);
-
     // Give the integrator a data record object
     void setDataRecord(DataRecord* dr);
 
     // Integrate function wraps protected virtual function
-    void integrate();
+    void integrate(RealType);
 
     // Get the timestep
     RealType getDt() { return dt; }
@@ -61,6 +60,7 @@ namespace GFlow {
 
   protected:
     // Private virtual functions
+    virtual void initialize(RealType runTime);
     virtual void initializeSectors();
     virtual void initializeForceHandler();
     virtual void preIntegrate();

@@ -40,10 +40,6 @@ namespace GFlow {
       return;
     }
 
-    // Make sure we have initial verlet lists
-    sectors->createVerletLists(true);
-    sectors->createWallLists(true);
-
     // Do the normal pre-integration
     Integrator::preIntegrate();
   }
@@ -198,7 +194,7 @@ namespace GFlow {
       
       // Update lists and reset list timer
       sectors->createVerletLists();
-      sectors->createWallLists(true);
+      sectors->createWallLists();
       verletListTimer = 0;
 
       // Reset update timer

@@ -165,6 +165,9 @@ namespace GFlow {
     // Clear forces and torques
     void clearForceTorque();
 
+    // Update position record
+    void updatePositionRecord();
+
     // DataRecord is a friend class
     friend class DataRecord;
     // Creator is a friend class

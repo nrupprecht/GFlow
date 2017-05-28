@@ -22,7 +22,7 @@ int main (int argc, char** argv) {
   // Record options
   bool nowrite = false;
   bool animate = false;
-  int recOption = 0;
+  int recOption = 1;
   bool recPerf = false;
   bool recMvRatio = false;
   bool recDt = false;
@@ -267,7 +267,6 @@ int main (int argc, char** argv) {
   }
 
   // Set run time
-  integrator->initialize(time);
   if (adjust>-1) reinterpret_cast<VelocityVerletIntegrator*>(integrator)->setAdjustTimeStep(adjust);
   if (adjustDelay>-1) reinterpret_cast<VelocityVerletIntegrator*>(integrator)->setAdjustUpdateDelay(adjustDelay);
 
@@ -281,7 +280,7 @@ int main (int argc, char** argv) {
 #endif
 
   // Run the integrator
-  integrator->integrate();
+  integrator->integrate(time);
 
   // Print a final message
   #if USE_MPI == 1

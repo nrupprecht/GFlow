@@ -332,18 +332,22 @@ namespace GFlow {
     }
     
     // Print the sectorization summary
-    fout << "Sectorization summary (as of end of simulation):\n";
-    fout << "  - Grid dimensions:          " << nsx << " x " << nsy << "\n";
-    fout << "  - Total sectors:            " << nsx * nsy << "\n";
-    fout << "  - Grid lengths:             " << sdx << " x " << sdy << "\n";
-    fout << "  - Number of verlet lists:   " << numberOfVerletLists << "\n";
-    fout << "  - Average per verlet list:  " << (avePerVerletList>-1 ? toStr(avePerVerletList) : "---") << "\n";
-    fout << "  - Cutoff:                   " << cutoff << "\n";
-    fout << "  - Skin depth:               " << skinDepth << "\n";
-    fout << "  - Occupied sectors:         " << occupiedSectors << "\n";
-    fout << "  - Ave per occupied sector:  " << avePerOccupiedSector << "\n";
-    // Close the stream
-    fout.close();
+    if (simData->sectors) {
+      fout << "Sectorization summary (as of end of simulation):\n";
+      int nsx = simData->sectors->getNSX(), nsy = simData->sectors->getNSY();
+      
+      fout << "  - Grid dimensions:          " << nsx << " x " << nsy << "\n";
+      fout << "  - Total sectors:            " << nsx * nsy << "\n";
+      fout << "  - Grid lengths:             " << sdx << " x " << sdy << "\n";
+      fout << "  - Number of verlet lists:   " << numberOfVerletLists << "\n";
+      fout << "  - Average per verlet list:  " << (avePerVerletList>-1 ? toStr(avePerVerletList) : "---") << "\n";
+      fout << "  - Cutoff:                   " << cutoff << "\n";
+      fout << "  - Skin depth:               " << skinDepth << "\n";
+      fout << "  - Occupied sectors:         " << occupiedSectors << "\n";
+      fout << "  - Ave per occupied sector:  " << avePerOccupiedSector << "\n";
+      // Close the stream
+      fout.close();
+    }
   }
 
   void DataRecord::setCommand(int argc, char** argv) {

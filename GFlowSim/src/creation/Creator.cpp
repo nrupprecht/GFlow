@@ -59,8 +59,7 @@ namespace GFlow {
     // Relax, so there is no overlap
     VelocityVerletIntegrator verlet(simData);
     verlet.addExternalForce(new ViscousDrag(1.)); // This is large enough
-    verlet.initialize(0.25);
-    verlet.integrate();
+    verlet.integrate(0.25);
     // Remove drag force
     simData->clearExternalForces();
 
@@ -158,8 +157,7 @@ namespace GFlow {
     VelocityVerletIntegrator verlet(relax);
     verlet.setAdjustTimeStep(false);
     verlet.addExternalForce(new ViscousDrag(1.)); // This is large enough
-    verlet.initialize(0.25);
-    verlet.integrate();
+    verlet.integrate(0.25);
     // Remove drag force
     particles = relax->getParticles();
     delete relax;

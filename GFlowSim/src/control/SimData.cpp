@@ -230,6 +230,10 @@ namespace GFlow {
     tq.clearValues();
   }
 
+  void SimData::updatePositionRecord() {
+    for (int i=0; i<domain_size; ++i) positionRecord[i] = vec2(px[i], py[i]);
+  }
+
   void SimData::setPData() {
     pdata[0]  = px.getPtr();
     pdata[1]  = py.getPtr();
