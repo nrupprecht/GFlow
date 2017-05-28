@@ -57,6 +57,9 @@ namespace GFlow {
     void addParticle(const vector<Particle>&);
     void addParticle(const Particle&, Characteristic*);
 
+    // Remove particles
+    void removeAt(int);
+
     // Access sizes and capacities
     int getDomainSize()     { return domain_size; }
     int getDomainCapacity() { return domain_capacity; }
@@ -179,6 +182,9 @@ namespace GFlow {
 
     // Number of domain particles
     int domain_size;
+
+    // Position after the last valid particle in the domain
+    int domain_end;
 
     // Storage allocated for main particles
     int domain_capacity;

@@ -253,5 +253,38 @@ namespace GFlow {
     if (sectors) delete [] sectors;
     sectors = new vector<int>[nsx*nsy+1];
   }
+
+  // @variable maxOverlap - the overlap threshold
+  inline void Sectorization::removeOverlapping(RealType maxOverlap) {
+    _createVerletLists();
+    // Get pointers
+    RealType *px = simData->getPxPtr();
+    RealType *py = simData->getPyPtr();
+    RealType *sg = simData->getSgPtr();
+    
+    // Set of particles to remove
+    std::set<int> remove;
+    // Look for overlapping particles
+    for (const auto vl : verletList) {
+      auto p = vl.begin();
+      auto q = p; ++q;
+      int i = *p;
+      if (remove.find(i)!=remove.end()) continue;
+      for (; q!=vl.end(); ++q) {
+	int j = *q;
+	if (remove.find(j)!=remove.end()) continue;
+	vec2 r = simData->getDisplacement(px[i], py[i], px[j], py[j]);
+	RealType overlap = sg[i] + sg[j] - sqrt(sqr(r)); // > 0 -> overlap
+	RealType over = max(overlap/sg[i], overlap/sg[j]);
+	if (overlap>maxOverlap) {
+	  if (sg[i]>sg[j]) remove.emplace(j);
+	  else             remove.emplace(i);
+	}
+      }
+    }
+    
+    // Found all the particles to remove
+    for (auto p : remove) simData->removeAt(p);
+  }
   
 }

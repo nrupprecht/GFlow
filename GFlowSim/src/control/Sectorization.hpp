@@ -78,6 +78,7 @@ namespace GFlow {
     // Private helper functions
     inline int getSec(const RealType, const RealType);
     inline vector<int>& sec_at(int x, int y) { return sectors[nsx*y+x]; }
+    inline void removeOverlapping(RealType=0.03);
 
     // Pointer to the simulation data we manage
     SimData *simData;

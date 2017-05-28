@@ -80,6 +80,8 @@ namespace GFlow {
     void setRecDt(bool b)      { recDt = b; }
     void setRecDelay(bool b)   { recDelay = b; }
     void setRecBulk(bool b)    { recBulk = b; }
+    void setRecBulkOutline(bool b) { recBulkOutline = b; }
+    void setRecDisplacementField(bool b) { recDisplacementField = b; }
     void setRecPressField(bool b) { recPressField = b; }
     void setTrackDisplacement(bool b) { trackDisplacement = b; }
 
@@ -136,11 +138,13 @@ namespace GFlow {
     void recordByNumber(SimData*, vector<PData>&) const;
     void recordByVerletList(SimData*, vector<PData>&) const;
     void recordByVelocity(SimData*, vector<PData>&) const;
-    void getBulkData(SimData*, const Bounds&, vector<RealType>&, ScalarField&, RealType=0.015, RealType=0.015, RealType=0.01, RealType=1.) const;    
+    void getBulkData(SimData*, const Bounds&, vector<RealType>&, ScalarField&, vector<pair<vec2,vec2> >&, RealType=0.015, RealType=0.015, RealType=0.01, RealType=1.) const;    
     inline void unite(int*, int, int) const;
+    inline void createOutline(int*, int, int, RealType, RealType, Bounds, vector<pair<vec2,vec2> >&) const;
     inline int getHead(int*, int) const;
     inline void writeDisplacementData(SimData*) const;
-    inline void getPressureData(SimData*, const Bounds&, ScalarField&, RealType=0.03) const;
+    inline void writeDisplacementField(SimData*) const;
+    inline void getPressureData(SimData*, const Bounds&, ScalarField&, RealType=0.1) const;
 
     // The command that was used
     vector<string> command;
@@ -178,10 +182,14 @@ namespace GFlow {
     int recOption; // Color particles according to what
 
     // Bulk data
-    bool recBulk;
+    bool recBulk, recBulkOutline;
     ScalarField bulkField;
+    vector<vector<pair<vec2,vec2> > > bulkOutline;
     vector<vector<RealType> > bulkVolumes;
 
+    // Displacement field
+    bool recDisplacementField;
+    
     // Timing data
     high_resolution_clock::time_point start_time, end_time;
 

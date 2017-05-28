@@ -30,9 +30,6 @@ namespace GFlow {
   class Creator {
   public:
     
-    // In the future this will take argments
-    void create(SimData *&, Integrator *&);
-
     // Modify the simdata for a buoyancy study
     void createBuoyancy(SimData *&, Integrator *&, RealType, RealType, vec2, bool=false);
 

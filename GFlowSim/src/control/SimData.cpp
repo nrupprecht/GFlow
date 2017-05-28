@@ -115,6 +115,18 @@ namespace GFlow {
     addParticle(p);
   }
 
+  void SimData::removeAt(int index) {
+    if (it[index]<0) return;
+    it[index] = -1;
+    auto c = characteristics.find(index);
+    if (c!=characteristics.end()) {
+      delete c->second;
+      characteristics.erase(index);
+    }
+    --domain_size;
+    if (index==domain_end-1) --domain_end;
+  }
+
   RealType** SimData::getPData() {
     return pdata;
   }
