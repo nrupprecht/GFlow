@@ -21,7 +21,9 @@ namespace GFlow {
     virtual void _createVerletLists();
     virtual void _makeSectors();
 
-    inline void check(int, int, int, int*, RealType*, RealType*, RealType*, RealType,vector<int>&);
+    inline void check(int, int, int, int*, RealType*, RealType*, RealType*, RealType, vector<int>&);
+
+    inline void checkTH(int, int, int, int*, RealType*, RealType*, RealType*, RealType, vector<int>&);
 
     RealType threshold;
   };

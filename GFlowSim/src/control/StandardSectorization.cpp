@@ -33,17 +33,16 @@ namespace GFlow {
 	    auto q = p; ++q; // Check only particles ordered after you
 	    for (; q!=sec_at(x,y).end(); ++q) {
 	      int j = *q;
-	      if (it[j]<0) continue;
+	      RealType R = sg[j];
+	      if (it[j]<0 || threshold<R) continue;
 	      vec2 r = getDisplacement(px[i], py[i], px[j], py[j]);
-	      if (sqr(r) < sqr(sigma + sg[j] + skinDepth))
-		nlist.push_back(j);
+	      if (sqr(r) < sqr(sigma + R + skinDepth)) nlist.push_back(j);
 	    }
 
 	    // Checking lambda
 	    auto check = [&] (int sx, int sy) {
 	      for (const auto &j : sec_at(sx, sy)) {
-		if (it[j]<0) continue;
-		if (threshold<sg[j]) continue;
+		if (it[j]<0 || threshold<sg[j]) continue;
 		vec2 r = getDisplacement(px[i], py[i], px[j], py[j]);
 		if (sqr(r) < sqr(sigma + sg[j] + skinDepth))
 		  nlist.push_back(j);
@@ -52,15 +51,19 @@ namespace GFlow {
 
 	    // Bottom left
 	    int sx = x-1, sy = y-1;
+	    //checkTH(sx,sy,i,it,px,py,sg,sigma,nlist);
 	    check(sx, sy);
 	    // Bottom
 	    sx = x;
+	    //checkTH(sx,sy,i,it,px,py,sg,sigma,nlist);
 	    check(sx, sy);
 	    // Left
 	    sx = x-1; sy = y;
+	    //checkTH(sx,sy,i,it,px,py,sg,sigma,nlist);
 	    check(sx, sy);
 	    // Top left
 	    sy = y+1;
+	    //checkTH(sx,sy,i,it,px,py,sg,sigma,nlist);
 	    check(sx, sy);
 	  }
 
@@ -77,7 +80,7 @@ namespace GFlow {
 		check(sx,sy,i,it,px,py,sg,sigma,nlist);
 	      }
 	  }
-
+	  
           // Add the neighbor list to the collection if you have neighbors
           if (nlist.size()>1) verletList.push_back(nlist);
         }
@@ -100,7 +103,10 @@ namespace GFlow {
       for (const auto& p : plist) vol += sqr(p.sigma);
       vol /= plist.size();
       // Find a radius from that volume
-      cutoff = 2*sqrt(vol) + skinDepth;
+      RealType normalRadius = sqrt(vol), maxR(0);
+      for (const auto& p : plist)
+	if (p.sigma<=normalRadius && maxR<p.sigma) maxR = p.sigma;
+      cutoff = 2*maxR + skinDepth;
       
       // First estimate of sdx, sdy
       sdx = sdy = cutoff;
@@ -115,6 +121,7 @@ namespace GFlow {
     isdx = 1./sdx;
     isdy = 1./sdy;
     // Threshold radius
+    
     threshold = 0.5*min(sdy-skinDepth, sdy-skinDepth);
 
     // Add for edge sectors
@@ -126,14 +133,23 @@ namespace GFlow {
   }
 
   inline void StandardSectorization::check(int sx, int sy, int i, int* it, RealType* px, RealType *py, RealType *sg, RealType sigma, vector<int>& nlist) {
-    for (const auto &j : sec_at(sx, sy)) {
-      if (it[j]<0) continue;
-      if (sg[j]<sigma || px[j]<px[i]) {
+    for (const auto j : sec_at(sx, sy)) {
+      RealType R = sg[j];
+      if (it[j]<0 || i==j) continue;
+      if (R<sigma || (R==sigma && (px[j]<px[i] || (px[j]==px[i] && py[j]<py[i])))) {
 	vec2 r = getDisplacement(px[i], py[i], px[j], py[j]);
-	if (sqr(r) < sqr(sigma + sg[j] + skinDepth))
-	  nlist.push_back(j);
+	if (sqr(r) < sqr(sigma + R + skinDepth)) nlist.push_back(j);
       }
     }
-  };
+  }
+
+  inline void StandardSectorization::checkTH(int sx, int sy, int i, int* it, RealType* px, RealType *py, RealType *sg, RealType sigma, vector<int>& nlist) {
+    for (const auto j : sec_at(sx, sy)) {
+      RealType R = sg[j];
+      if (it[j]<0 || threshold<R) continue;
+      vec2 r = getDisplacement(px[i], py[i], px[j], py[j]);
+      if (sqr(r) < sqr(sigma + R + skinDepth)) nlist.push_back(j);
+    }
+  }
 
 }
