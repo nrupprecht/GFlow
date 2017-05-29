@@ -118,7 +118,7 @@ namespace GFlow {
     RealType *iI = simData->getIiPtr();
 
     // Get the number of particles we need to update
-    int domain_size = simData->getDomainSize();
+    int domain_end = simData->getDomainEnd();
     double hdt = 0.5*dt;
     if (simData->getWrapX() || simData->getWrapY()) {
 #if _INTEL_ == 1
@@ -129,7 +129,7 @@ namespace GFlow {
 #pragma clang loop vectorize(enable)
 #pragma clang loop interleave(enable)
 #endif
-      for (int i=0; i<domain_size; ++i) {
+      for (int i=0; i<domain_end; ++i) {
         // Update linear variables
         vx[i] += hdt*im[i]*fx[i];
 	vy[i] += hdt*im[i]*fy[i];
@@ -153,7 +153,7 @@ namespace GFlow {
 #pragma clang loop vectorize(enable)
 #pragma clang loop interleave(enable)
 #endif
-      for (int i=0; i<domain_size; ++i) {
+      for (int i=0; i<domain_end; ++i) {
 	// Update linear variables
 	vx[i] += hdt*im[i]*fx[i];
 	vy[i] += hdt*im[i]*fy[i];
@@ -180,7 +180,7 @@ namespace GFlow {
 	if (t->check(simData)) {
 	  running = false;
 	  // Say why we ended
-	  t->getMessage();
+	  std::cerr << t->getMessage() << endl;
 	  return;
 	}
 
@@ -226,7 +226,7 @@ namespace GFlow {
     RealType *iI = simData->getIiPtr();
     
     // Get the number of particles we need to update
-    int domain_size = simData->getDomainSize();
+    int domain_end = simData->getDomainEnd();
     // Do second half-kick
     RealType hdt = 0.5*dt;
     
@@ -238,7 +238,7 @@ namespace GFlow {
 #pragma clang loop vectorize(enable)
 #pragma clang loop interleave(enable)
 #endif
-    for (int i=0; i<domain_size; ++i) {
+    for (int i=0; i<domain_end; ++i) {
       vx[i] += hdt*im[i]*fx[i];
       vy[i] += hdt*im[i]*fy[i];
       om[i] += hdt*iI[i]*tq[i];
@@ -264,40 +264,16 @@ namespace GFlow {
   inline void VelocityVerletIntegrator::doAdjustTimeStep() {
     // Find the minimum amount of time it takes for one particle to traverse its own radius
     RealType minPeriod = 1., dt1=1, dt2=1;
-    int domain_size = simData->getDomainSize();
-
-    // Find max force
-    /*
-    RealType *fx = simData->getFxPtr(), *fy = simData->getFyPtr();
-    RealType amax = 0;
-    for (int i=0; i<domain_size; ++i) {
-      RealType acc = (sqr(fx[i])+sqr(fy[i]))*sqr(simData->getIm(i));
-      if (amax<acc) amax = acc;
-    }
-    dt1 = default_max_delta_v/sqrt(amax);
-    */
+    int domain_end = simData->getDomainEnd();
 
     // Linear period finding
-    for (int i=0; i<domain_size; ++i) {
+    for (int i=0; i<domain_end; ++i) {
       if (-1<simData->getIt(i)) {
 	RealType period = sqr(simData->getSg(i))/(sqr(simData->getVx(i))+sqr(simData->getVy(i)));
 	if (period<minPeriod) minPeriod = period;
       }
     }
     dt2 = sqrt(minPeriod)/periodIterations;
-    
-    // Nonlinear period finding
-    /*
-    for (int i=0; i<domain_size; ++i) {
-      if (-1<simData->getIt(i)) {
-	RealType v = sqrt(sqr(simData->getVx(i))+sqr(simData->getVy(i)));
-	RealType a = sqrt(sqr(simData->getFx(i))+sqr(simData->getFy(i)))*simData->getIm(i);
-	RealType sigma = simData->getSg(i);
-	RealType period = v/a*(sqrt(1+2*a*sigma/sqr(v)) - 1);
-	if (period<minPeriod) minPeriod = period;
-      }
-    }
-    */
 
     // Set the time step
     //dt = minPeriod/periodIterations;

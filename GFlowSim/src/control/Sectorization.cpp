@@ -3,9 +3,15 @@
 
 namespace GFlow {
 
-  Sectorization::Sectorization() : sectors(0), cutoff(0.), skinDepth(default_sectorization_skin_depth), maxCutR(0), secCutR(0), nsx(0), nsy(0), sdx(0), sdy(0), isdx(0), isdy(0), bounds(NullBounds), simBounds(NullBounds), wrapX(true), wrapY(true) {    
+  Sectorization::Sectorization() : simData(nullptr), sectors(nullptr), cutoff(0.), skinDepth(default_sectorization_skin_depth), maxCutR(0), secCutR(0), nsx(0), nsy(0), sdx(0), sdy(0), isdx(0), isdy(0), bounds(NullBounds), simBounds(NullBounds), wrapX(true), wrapY(true) {    
     rank = 0;
     numProc = 0;
+  }
+
+  Sectorization::Sectorization(SimData* sd) : simData(nullptr), sectors(nullptr), cutoff(0.), skinDepth(default_sectorization_skin_depth), maxCutR(0), secCutR(0), nsx(0), nsy(0), sdx(0), sdy(0), isdx(0), isdy(0), bounds(NullBounds), simBounds(NullBounds), wrapX(true), wrapY(true) {
+    rank = 0;
+    numProc = 0;
+    initialize(sd);
   }
 
   Sectorization::~Sectorization() {
@@ -45,14 +51,14 @@ namespace GFlow {
     // Check if there are sectors    
     if (sectors==0) return;
     // Set bounds
-    int domain_size = simData->getDomainSize();
+    int domain_end = simData->getDomainEnd();
     // Get Data
     RealType *px = simData->getPxPtr();
     RealType *py = simData->getPyPtr();
     // Clear out old sectors
     for (int i=0; i<nsx*nsy; ++i) sectors[i].clear();
     // Place in sector 
-    for (int i=0; i<domain_size; ++i) {
+    for (int i=0; i<domain_end; ++i) {
       int sec_num = getSec(px[i], py[i]);
       sectors[sec_num].push_back(i);
     }
@@ -66,9 +72,9 @@ namespace GFlow {
 
     // Check how far the particles have moved
     vec2 *positionRecord = simData->getPRPtr();
-    int domain_size = simData->getDomainSize();
+    int domain_end = simData->getDomainEnd();
     RealType max_moved = 0, sec_moved = 0;
-    for (int i=0; i<domain_size; ++i) {
+    for (int i=0; i<domain_end; ++i) {
       if (it[i]<0) continue;
       RealType moved = sqr( getDisplacement(px[i], py[i], positionRecord[i].x, positionRecord[i].y) );
       if (moved>max_moved) max_moved = moved;
@@ -154,8 +160,8 @@ namespace GFlow {
     
     // Update position record
     vec2 *positionRecord = simData->getPRPtr();
-    int domain_size = simData->getDomainSize();
-    for (int i=0; i<domain_size; ++i) positionRecord[i] = vec2(px[i], py[i]);
+    int domain_end = simData->getDomainEnd();
+    for (int i=0; i<domain_end; ++i) positionRecord[i] = vec2(px[i], py[i]);
   }
 
   void Sectorization::createWallLists() {
@@ -177,11 +183,11 @@ namespace GFlow {
     wallList.clear();
 
     // Create wall list
-    int domain_size = simData->getDomainSize();
+    int domain_end = simData->getDomainEnd();
     for (int i=0; i<walls.size(); ++i) {
       WListSubType lst;
       lst.push_back(i); // Wall is at the head of the list
-      for (int j=0; j<domain_size; ++j) {
+      for (int j=0; j<domain_end; ++j) {
 	if (it[j]<0) continue;
 	vec2 displacement = getDisplacement(vec2(px[j], py[j]), walls.at(i).left);
 	// Correct the displacement -- THIS DOESNT ALWAYS WORK CORRECTLY
@@ -255,7 +261,8 @@ namespace GFlow {
   }
 
   // @variable maxOverlap - the overlap threshold
-  inline void Sectorization::removeOverlapping(RealType maxOverlap) {
+  void Sectorization::removeOverlapping(RealType maxOverlap) {
+    // Create verlet lists
     _createVerletLists();
     // Get pointers
     RealType *px = simData->getPxPtr();
@@ -276,13 +283,14 @@ namespace GFlow {
 	vec2 r = simData->getDisplacement(px[i], py[i], px[j], py[j]);
 	RealType overlap = sg[i] + sg[j] - sqrt(sqr(r)); // > 0 -> overlap
 	RealType over = max(overlap/sg[i], overlap/sg[j]);
-	if (overlap>maxOverlap) {
+	// Mark for removal if neccessary
+	if (over>maxOverlap) {
 	  if (sg[i]>sg[j]) remove.emplace(j);
 	  else             remove.emplace(i);
 	}
       }
     }
-    
+
     // Found all the particles to remove
     for (auto p : remove) simData->removeAt(p);
   }

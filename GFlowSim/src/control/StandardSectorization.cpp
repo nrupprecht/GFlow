@@ -4,6 +4,8 @@ namespace GFlow {
 
   StandardSectorization::StandardSectorization() : Sectorization(), threshold(0) {};
 
+  StandardSectorization::StandardSectorization(SimData* simData) : Sectorization(simData), threshold(0) {};
+
   void StandardSectorization::_createVerletLists() {
 
     // Get position data
@@ -18,6 +20,7 @@ namespace GFlow {
     // Redo the sectorization so we can make our verlet lists
     _sectorize();
 
+    // Create lists
     for (int y=1; y<nsy-1; ++y)
       for (int x=1; x<nsx-1; ++x)
         for (auto p=sec_at(x,y).begin(); p!=sec_at(x,y).end(); ++p) {
@@ -50,21 +53,13 @@ namespace GFlow {
 	    };
 
 	    // Bottom left
-	    int sx = x-1, sy = y-1;
-	    //checkTH(sx,sy,i,it,px,py,sg,sigma,nlist);
-	    check(sx, sy);
+	    check(x-1, y-1);
 	    // Bottom
-	    sx = x;
-	    //checkTH(sx,sy,i,it,px,py,sg,sigma,nlist);
-	    check(sx, sy);
+	    check(x, y-1);
 	    // Left
-	    sx = x-1; sy = y;
-	    //checkTH(sx,sy,i,it,px,py,sg,sigma,nlist);
-	    check(sx, sy);
+	    check(x-1, y);
 	    // Top left
-	    sy = y+1;
-	    //checkTH(sx,sy,i,it,px,py,sg,sigma,nlist);
-	    check(sx, sy);
+	    check(x-1, y+1);
 	  }
 
 	  else { // Scan more than 1 sector around us
@@ -76,9 +71,8 @@ namespace GFlow {
 	    int minY = max(1,y-scanBinsY), maxY = min(nsy-2,y+scanBinsY);
 	    // Sweep
 	    for (int sy=minY; sy<=maxY; ++sy)
-	      for (int sx=minX; sx<=maxX; ++sx) {
+	      for (int sx=minX; sx<=maxX; ++sx)
 		check(sx,sy,i,it,px,py,sg,sigma,nlist);
-	      }
 	  }
 	  
           // Add the neighbor list to the collection if you have neighbors
@@ -140,15 +134,6 @@ namespace GFlow {
 	vec2 r = getDisplacement(px[i], py[i], px[j], py[j]);
 	if (sqr(r) < sqr(sigma + R + skinDepth)) nlist.push_back(j);
       }
-    }
-  }
-
-  inline void StandardSectorization::checkTH(int sx, int sy, int i, int* it, RealType* px, RealType *py, RealType *sg, RealType sigma, vector<int>& nlist) {
-    for (const auto j : sec_at(sx, sy)) {
-      RealType R = sg[j];
-      if (it[j]<0 || threshold<R) continue;
-      vec2 r = getDisplacement(px[i], py[i], px[j], py[j]);
-      if (sqr(r) < sqr(sigma + R + skinDepth)) nlist.push_back(j);
     }
   }
 

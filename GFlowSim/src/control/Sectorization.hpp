@@ -25,6 +25,9 @@ namespace GFlow {
     // Default constructor
     Sectorization();
 
+    // Sim data constructor
+    Sectorization(SimData*);
+
     // Destructor
     ~Sectorization();
     
@@ -42,6 +45,9 @@ namespace GFlow {
 
     // Create wall lists (bool is for force make list)
     void createWallLists();
+
+    // Remove particles that overlap by to much
+    void removeOverlapping(RealType=0.03);
 
     /****** Accessors *****/
 
@@ -78,7 +84,6 @@ namespace GFlow {
     // Private helper functions
     inline int getSec(const RealType, const RealType);
     inline vector<int>& sec_at(int x, int y) { return sectors[nsx*y+x]; }
-    inline void removeOverlapping(RealType=0.03);
 
     // Pointer to the simulation data we manage
     SimData *simData;

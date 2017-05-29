@@ -24,9 +24,9 @@ namespace GFlow {
     RealType *vy = simData->getVyPtr();
     // Interaction pointer
     int *it = simData->getItPtr();
-    int domain_size = simData->getDomainSize();
+    int domain_end = simData->getDomainEnd();
     // Gather data
-    for (int i=0; i<domain_size; ++i) {
+    for (int i=0; i<domain_end; ++i) {
       if (it[i]<0) continue;
       RealType data = sqrt(sqr(vx[i])+sqr(vy[i]));
       int b = (data-bounds.first)/dq;
@@ -46,11 +46,11 @@ namespace GFlow {
     // Interaction pointer
     int *it = simData->getItPtr();
     // Choose an origin particle
-    int domain_size = simData->getDomainSize();
-    int origin = domain_size/2;
+    int domain_end = simData->getDomainEnd();
+    int origin = domain_end/2;
     vec2 pos(px[origin], py[origin]);
     // Gather data
-    for (int i=0; i<domain_size; ++i) {
+    for (int i=0; i<domain_end; ++i) {
       if (it[i]<0) continue;
       RealType data = sqrt(sqr(simData->getDisplacement(pos.x, pos.y, px[i], py[i])));
       if (data==0) continue;
@@ -74,10 +74,10 @@ namespace GFlow {
     RealType *py = simData->getPyPtr();
     // Interaction pointer
     int *it = simData->getItPtr();
-    int domain_size = simData->getDomainSize();
+    int domain_end = simData->getDomainEnd();
     RealType dq = (top-bottom)/bins;
     // Bin data
-    for (int i=0; i<domain_size; ++i) {
+    for (int i=0; i<domain_end; ++i) {
       if (it[i]<0) continue;
       int b = (py[i]-bottom)/dq;
       if (b<0 || bins<=b) continue; // Keep in bounds

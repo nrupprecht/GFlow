@@ -16,6 +16,7 @@ namespace GFlow {
  
   inline RealType StatFunc_AveKE(SimData* simData) {
     RealType KE = 0;
+    int domain_end = simData->getDomainEnd();
     int domain_size = simData->getDomainSize();
     // Check if there are no particles
     if (domain_size==0) return 0;
@@ -28,7 +29,7 @@ namespace GFlow {
     // Interaction pointer
     int *it = simData->getItPtr();
     // Gather data
-    for (int i=0; i<domain_size; ++i) {
+    for (int i=0; i<domain_end; ++i) {
       if (-1<it[i]) {
 	RealType mass = 1./im[i], II = 1./iI[i];
 	KE += mass*(sqr(vx[i]) + sqr(vy[i])) + II*sqr(om[i]);
@@ -51,11 +52,10 @@ namespace GFlow {
     // Interaction pointer
     int *it = simData->getItPtr();
     // Gather data
-    int domain_size = simData->getDomainSize();
-    for (int i=0; i<domain_size; ++i) {
+    int domain_end = simData->getDomainEnd();
+    for (int i=0; i<domain_end; ++i) {
       if (-1<it[i]) KE += 1./im[i]*(sqr(vx[i]) + sqr(vy[i])) + 1./iI[i]*sqr(om[i]);
     }
-    // Compute average
     KE *= 0.5;
     // Return KE
     return KE;
@@ -71,8 +71,8 @@ namespace GFlow {
     // Interaction pointer
     int *it = simData->getItPtr();
     // Gather data
-    int domain_size = simData->getDomainSize();
-    for (int i=0; i<domain_size; ++i) {
+    int domain_end = simData->getDomainEnd();
+    for (int i=0; i<domain_end; ++i) {
       if (-1<it[i]) {
 	RealType ratio = (sqr(vx[i])+sqr(vy[i]))/sqr(sg[i]);
 	if (ratio>MVSR) MVSR = ratio;
@@ -91,8 +91,8 @@ namespace GFlow {
     // Interaction pointer
     int *it = simData->getItPtr();
     // Gather data
-    int domain_size = simData->getDomainSize();
-    for (int i=0; i<domain_size; ++i) {
+    int domain_end = simData->getDomainEnd();
+    for (int i=0; i<domain_end; ++i) {
       if (-1<it[i]) {
         RealType ratio = sqr(sg[i])/(sqr(vx[i])+sqr(vy[i]));
         if (ratio<MVSR) MVSR = ratio;
@@ -109,8 +109,8 @@ namespace GFlow {
     // Interaction pointer
     int *it = simData->getItPtr();
     // Gather data
-    int domain_size = simData->getDomainSize();
-    for (int i=0; i<domain_size; ++i) {
+    int domain_end = simData->getDomainEnd();
+    for (int i=0; i<domain_end; ++i) {
       if (-1<it[i]) {
 	RealType vsqr = sqr(vx[i])+sqr(vy[i]);
         if (maxV<vsqr) maxV = vsqr;
@@ -121,6 +121,7 @@ namespace GFlow {
 
   inline RealType StatFunc_AveSpeed(SimData* simData) {
     RealType aveV = 0;
+    int domain_end  = simData->getDomainEnd();
     int domain_size = simData->getDomainSize();
     // Check if there are no particles
     if (domain_size==0) return 0;
@@ -130,7 +131,7 @@ namespace GFlow {
     // Interaction pointer
     int *it = simData->getItPtr();
     // Gather data
-    for (int i=0; i<domain_size; ++i) {
+    for (int i=0; i<domain_end; ++i) {
       if (-1<it[i]) aveV += sqrt(sqr(vx[i])+sqr(vy[i]));
     }
     return aveV/static_cast<RealType>(domain_size);
@@ -138,6 +139,7 @@ namespace GFlow {
 
   inline RealType StatFunc_MaxForce(SimData* simData) {
     RealType maxF = 0;
+    int domain_end = simData->getDomainEnd();
     int domain_size = simData->getDomainSize();
     // Check for zero size
     if (domain_size==0) return 0;
@@ -147,7 +149,7 @@ namespace GFlow {
     // Interaction pointer
     int *it = simData->getItPtr();
     // Gather data
-    for (int i=0; i<domain_size; ++i)
+    for (int i=0; i<domain_end; ++i)
       if (-1<it[i]) {
         RealType fsqr = sqr(fx[i])+sqr(fy[i]);
         if (maxF<fsqr) maxF = fsqr;
@@ -157,6 +159,7 @@ namespace GFlow {
 
   inline RealType StatFunc_AveForce(SimData* simData) {
     RealType aveF = 0;
+    int domain_end =  simData->getDomainEnd();
     int domain_size = simData->getDomainSize();
     // Check for zero size
     if (domain_size==0) return 0;
@@ -166,7 +169,7 @@ namespace GFlow {
     // Interaction pointer
     int *it = simData->getItPtr();
     // Gather data
-    for (int i=0; i<domain_size; ++i) 
+    for (int i=0; i<domain_end; ++i) 
       if (-1<it[i]) aveF += sqrt(sqr(fx[i])+sqr(fy[i]));
     // Return
     return aveF/static_cast<RealType>(domain_size);
@@ -174,6 +177,7 @@ namespace GFlow {
 
   inline RealType StatFunc_HighestBall(SimData* simData) {
     RealType max = simData->getSimBounds().bottom;
+    int domain_end = simData->getDomainEnd();
     int domain_size = simData->getDomainSize();
     // Check for zero size
     if (domain_size==0) return max;
@@ -183,13 +187,14 @@ namespace GFlow {
     // Interaction pointer
     int *it = simData->getItPtr();
     // Gather data
-    for (int i=0; i<domain_size; ++i)
+    for (int i=0; i<domain_end; ++i)
       if (-1<it[i] && max<py[i]+sg[i]) max = py[i]+sg[i];
     return max;
   }
 
   inline RealType StatFunc_MaxR_PosX(SimData* simData) {
     RealType max = -1e9, maxSigma = 0;
+    int domain_end = simData->getDomainEnd();
     int domain_size = simData->getDomainSize();
     // Check for zero size
     if (domain_size==0) return 0;
@@ -199,7 +204,7 @@ namespace GFlow {
     // Interaction pointer
     int *it = simData->getItPtr();
     // Gather data
-    for (int i=0; i<domain_size; ++i)
+    for (int i=0; i<domain_end; ++i)
       if (-1<it[i] && maxSigma<sg[i]) {
         max = px[i];
 	maxSigma = sg[i];
@@ -209,6 +214,7 @@ namespace GFlow {
 
   inline RealType StatFunc_MaxR_PosY(SimData* simData) {
     RealType max = -1e9, maxSigma = 0;
+    int domain_end  = simData->getDomainEnd();
     int domain_size = simData->getDomainSize();
     // Check for zero size
     if (domain_size==0) return 0;
@@ -218,7 +224,7 @@ namespace GFlow {
     // Interaction pointer
     int *it = simData->getItPtr();
     // Gather data
-    for (int i=0; i<domain_size; ++i)
+    for (int i=0; i<domain_end; ++i)
       if (-1<it[i] && maxSigma<sg[i]) {
 	max = py[i];
 	maxSigma = sg[i];
@@ -228,6 +234,7 @@ namespace GFlow {
 
   inline RealType StatFunc_MaxR_Sigma(SimData* simData) {
     RealType max = 0;
+    int domain_end  = simData->getDomainEnd();
     int domain_size = simData->getDomainSize();
     // Check for zero size
     if (domain_size==0) return 0;
@@ -236,7 +243,7 @@ namespace GFlow {
     // Interaction pointer
     int *it = simData->getItPtr();
     // Gather data
-    for (int i=0; i<domain_size; ++i)
+    for (int i=0; i<domain_end; ++i)
       if (-1<it[i] && max<sg[i]) max = sg[i];
     return max;
   }

@@ -42,6 +42,15 @@ namespace GFlow {
     RealType phi, sigma, dispersion;
   };
 
+  // Radius (and number)
+  struct Fixed_Phi_Scale_Free_Radii : public DataCreator {
+  public:
+    Fixed_Phi_Scale_Free_Radii(RealType ph, RealType smin, RealType smax) : phi(ph), sigMin(smin), sigMax(smax) {};
+    virtual void makeValues(Region&, vector<Particle>&);
+  private:
+    RealType phi, sigma, dispersion;
+  }
+
   // Position
   struct Uniform_Space_Distribution : public DataCreator {
     virtual void makeValues(Region&, vector<Particle>&);

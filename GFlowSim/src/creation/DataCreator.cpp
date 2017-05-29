@@ -24,6 +24,19 @@ namespace GFlow {
     }
   }
 
+  void Fixed_Phi_Uniform_Radii::makeValues(Region& region, vector<Particle>& particles)  {
+    // Get parameters
+    RealType volume = region.bounds.volume();
+    RealType aim = phi*volume, vol = 0;
+
+    // Add more radii until we have the desired packing ratio
+    while (vol<aim) {
+      RealType s = sigma*(1-dispersion*drand48());
+      particles.push_back(Particle(0,0,s));
+      vol += PI*sqr(s);
+    }
+  }
+
   void Uniform_Space_Distribution::makeValues(Region& region, vector<Particle>& particles) {
     // Get parameters
     RealType left = region.bounds.left, width = region.bounds.right - left;

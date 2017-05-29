@@ -17,6 +17,9 @@ namespace GFlow {
     // Default constructor
     StandardSectorization();
 
+    // Sim data constructor
+    StandardSectorization(SimData*);
+
   protected:
     virtual void _createVerletLists();
     virtual void _makeSectors();

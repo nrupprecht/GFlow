@@ -180,6 +180,10 @@ namespace GFlow {
     if (minDt>0) integ->setMinTimeStep(minDt);
     if (maxDt>0) integ->setMaxTimeStep(maxDt);
 
+    // Make sure there is no serious overlap
+    StandardSectorization remover(simData);
+    remover.removeOverlapping();
+
     // Timing
     if (dataRecord) {
       dataRecord->endTiming();

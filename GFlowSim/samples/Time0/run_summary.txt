@@ -7,17 +7,17 @@ Command:
   ./bin/gflow -time=120 
 
 Timing and performance:
-  - Set up time:              0.12389
+  - Set up time:              0.119499
   - Time simulated:           120
   - Requested Time:           120
-  - Run Time:                 19.9087
-  - Ratio:                    6.02752
-  - Inverse Ratio:            0.165906
+  - Run Time:                 18.3243
+  - Ratio:                    6.54869
+  - Inverse Ratio:            0.152702
 
 Simulation and space:
   - Dimensions:               {0,4,0,4}
   - Number of particles:      1019
-  - Ratio x Particles:        6142.04
+  - Ratio x Particles:        6673.1
 
 Particle Average Data:
   - Average sigma:            0.05
@@ -26,27 +26,27 @@ Particle Average Data:
   - Average coeff:            0
   - Average mass:             0.00785398
   - Average density:          1
-  - Average speed:            0.523817
+  - Average speed:            0.531156
   - Average omega:            0
 
 Particle Checks:
-  - (Min x, Max x):    0.0484921, 3.95375
-  - (Min y, Max y):    0.0497341, 3.95118
+  - (Min x, Max x):    0.047133, 3.95099
+  - (Min y, Max y):    0.0476103, 3.95224
 
 Integration:
-  - Iterations:               591731
-  - Time step (at end):       0.000217662
-  - Average time step:        0.000202795
-  - Average update delay:     0.00735069
-  - Time per iteration:       3.36448e-05
+  - Iterations:               592334
+  - Time step (at end):       0.000193111
+  - Average time step:        0.000202589
+  - Average update delay:     0.00733811
+  - Time per iteration:       3.09358e-05
 
 Sectorization summary (as of end of simulation):
   - Grid dimensions:          34 x 34
   - Total sectors:            1156
   - Grid lengths:             0.125 x 0.125
-  - Number of verlet lists:   790
-  - Average per verlet list:  2.57215
+  - Number of verlet lists:   806
+  - Average per verlet list:  2.56576
   - Cutoff:                   0.125
   - Skin depth:               0.025
-  - Occupied sectors:         848
-  - Ave per occupied sector:  1.20165
+  - Occupied sectors:         864
+  - Ave per occupied sector:  1.1794

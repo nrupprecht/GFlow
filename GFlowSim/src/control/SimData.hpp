@@ -53,15 +53,16 @@ namespace GFlow {
     void addWall(const Bounds&);
 
     // Add particles
-    void addParticle(const Particle&);
+    int addParticle(const Particle&);
     void addParticle(const vector<Particle>&);
-    void addParticle(const Particle&, Characteristic*);
+    int addParticle(const Particle&, Characteristic*);
 
     // Remove particles
     void removeAt(int);
 
     // Access sizes and capacities
     int getDomainSize()     { return domain_size; }
+    int getDomainEnd()      { return domain_end; }
     int getDomainCapacity() { return domain_capacity; }
     int getEdgeSize()       { return edge_size; }
     int getEdgeCapacity()   { return edge_capacity; }
@@ -91,9 +92,6 @@ namespace GFlow {
     RealType* getDsPtr() { return ds.getPtr(); }
     RealType* getCfPtr() { return cf.getPtr(); }
     int*      getItPtr() { return it.getPtr(); }
-
-    // Summary pointer
-    RealType** getPData();
 
     // Array access (non-checking)
     RealType& getPx(int i) { return px[i]; }
@@ -171,6 +169,9 @@ namespace GFlow {
     // Update position record
     void updatePositionRecord();
 
+    // Remove particles that overlap too much
+    void removeOverlapping(RealType=0.03);
+
     // DataRecord is a friend class
     friend class DataRecord;
     // Creator is a friend class
@@ -179,6 +180,8 @@ namespace GFlow {
     friend class FileParser;
     
   private:
+    // Private helper functions
+    inline void compressArrays();
 
     // Number of domain particles
     int domain_size;
@@ -214,15 +217,14 @@ namespace GFlow {
     // Interaction is -1 for empty array spaces
     aligned_array<int> it;
 
-    // Data summary pointer
-    RealType *pdata[15];
-    void setPData();
-
     // Positions at the last verlet list creation
     aligned_array<vec2> positionRecord;
 
     // Wall data
     vector<Wall> walls;
+
+    // Holes in the arrays
+    list<int> holes;
 
     // Characteristics - we are in charge of managing (deleting) these
     std::map<int, Characteristic*> characteristics;

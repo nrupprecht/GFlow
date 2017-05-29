@@ -5,10 +5,7 @@
 
 namespace GFlow {
 
-  SimData::SimData(const Bounds& b, const Bounds& sb) : domain_size(0), domain_capacity(0), edge_size(0), edge_capacity(0), bounds(b), simBounds(sb), wrapX(true), wrapY(true), sectors(nullptr), forceHandler(nullptr) {
-    // Set easy access array
-    for (int i=0; i<15; ++i) pdata[i] = 0;
-
+  SimData::SimData(const Bounds& b, const Bounds& sb) : domain_size(0), domain_end(0), domain_capacity(0), edge_size(0), edge_capacity(0), bounds(b), simBounds(sb), wrapX(true), wrapY(true), sectors(nullptr), forceHandler(nullptr) {
     // Set up MPI (possibly)
 #if USE_MPI == 1
 #if _CLANG_ == 1
@@ -48,8 +45,6 @@ namespace GFlow {
     ds.reserve2(domain_capacity, dcap, edge_capacity, ecap);
     cf.reserve2(domain_capacity, dcap, edge_capacity, ecap);
     it.reserve2(domain_capacity, dcap, edge_capacity, ecap, -1);
-    // Set summary pointer
-    setPData();
     // Reserve positions record
     positionRecord.reserve2(domain_capacity, dcap, edge_capacity, ecap);
     // Set sizes
@@ -78,41 +73,44 @@ namespace GFlow {
     walls.push_back(Wall(br, tr));
   }
 
-  void SimData::addParticle(const Particle& p) {
+  int SimData::addParticle(const Particle& p) {
     // Check if we have enough room
-    if (domain_size==domain_capacity) {
+    if (domain_end==domain_capacity) {
       reserveAdditional(10); // HOW MUCH TO RESERVE?
     }
     // Set arrays
-    px[domain_size] = p.position.x;
-    py[domain_size] = p.position.y;
-    vx[domain_size] = p.velocity.x;
-    vy[domain_size] = p.velocity.y;
-    fx[domain_size] = p.force.x;
-    fy[domain_size] = p.force.y;
-    th[domain_size] = p.theta;
-    om[domain_size] = p.omega;
-    tq[domain_size] = p.torque;
-    sg[domain_size] = p.sigma;
-    im[domain_size] = p.invMass;
-    iI[domain_size] = p.invII;
-    rp[domain_size] = p.repulsion;
-    ds[domain_size] = p.dissipation;
-    cf[domain_size] = p.coeff;
-    it[domain_size] = p.interaction;
+    px[domain_end] = p.position.x;
+    py[domain_end] = p.position.y;
+    vx[domain_end] = p.velocity.x;
+    vy[domain_end] = p.velocity.y;
+    fx[domain_end] = p.force.x;
+    fy[domain_end] = p.force.y;
+    th[domain_end] = p.theta;
+    om[domain_end] = p.omega;
+    tq[domain_end] = p.torque;
+    sg[domain_end] = p.sigma;
+    im[domain_end] = p.invMass;
+    iI[domain_end] = p.invII;
+    rp[domain_end] = p.repulsion;
+    ds[domain_end] = p.dissipation;
+    cf[domain_end] = p.coeff;
+    it[domain_end] = p.interaction;
     // Set position record
-    positionRecord[domain_size] = p.position;
+    positionRecord[domain_end] = p.position;
     // Increment domain_size
     ++domain_size;
+    ++domain_end;
+    // Return where we placed the particle
+    return domain_end-1;
   }
 
   void SimData::addParticle(const vector<Particle>& particles) {
     for (const auto& p : particles) addParticle(p);
   }
 
-  void SimData::addParticle(const Particle& p, Characteristic *c) {
-    characteristics.emplace(domain_size, c);
-    addParticle(p);
+  int SimData::addParticle(const Particle& p, Characteristic *c) {
+    characteristics.emplace(domain_end, c);
+    return addParticle(p);
   }
 
   void SimData::removeAt(int index) {
@@ -125,15 +123,12 @@ namespace GFlow {
     }
     --domain_size;
     if (index==domain_end-1) --domain_end;
-  }
-
-  RealType** SimData::getPData() {
-    return pdata;
+    holes.push_back(index);
   }
   
   vector<Particle> SimData::getParticles() {
     vector<Particle> plist;
-    for (int i=0; i<domain_size; ++i) {
+    for (int i=0; i<domain_end; ++i) {
       if (it.at(i)>-1) {
 	Particle P(px.at(i), py.at(i), sg.at(i));
 	P.velocity    = vec2(vx.at(i), vy.at(i));
@@ -157,7 +152,7 @@ namespace GFlow {
   void SimData::getPressureData(vector<PData>& positions) {
     // We will sort out particles with it<0 at the end
     vector<PData> pos;
-    for (int i=0; i<domain_size; ++i)
+    for (int i=0; i<domain_end; ++i)
       pos.push_back(PData(px[i], py[i], sg[i], th[i], it[i], 0));
 
     const auto& verletList = sectors->getVerletList();
@@ -168,7 +163,7 @@ namespace GFlow {
     forceHandler->wForcesRec(wallList, this, pos);
 
     // Make sure we only have "real" particles (it>-1)
-    for (int i=0; i<domain_size; ++i)
+    for (int i=0; i<domain_end; ++i)
       if (it[i]>-1) {
         PData pdata = pos.at(i);
 	std::get<5>(pdata) /= 2*PI*sg[i]; // Convert to pressure
@@ -243,25 +238,46 @@ namespace GFlow {
   }
 
   void SimData::updatePositionRecord() {
-    for (int i=0; i<domain_size; ++i) positionRecord[i] = vec2(px[i], py[i]);
+    for (int i=0; i<domain_end; ++i) positionRecord[i] = vec2(px[i], py[i]);
   }
 
-  void SimData::setPData() {
-    pdata[0]  = px.getPtr();
-    pdata[1]  = py.getPtr();
-    pdata[2]  = vx.getPtr();
-    pdata[3]  = vy.getPtr();
-    pdata[4]  = fx.getPtr();
-    pdata[5]  = fy.getPtr();
-    pdata[6]  = th.getPtr();
-    pdata[7]  = om.getPtr();
-    pdata[8]  = tq.getPtr();
-    pdata[9]  = sg.getPtr();
-    pdata[10] = im.getPtr();
-    pdata[11] = iI.getPtr();
-    pdata[12] = rp.getPtr();
-    pdata[13] = ds.getPtr();
-    pdata[14] = cf.getPtr();
+  void SimData::removeOverlapping(RealType maxOverlap) {
+    if (sectors) sectors->removeOverlapping(maxOverlap);
+  }
+
+  inline void SimData::compressArrays() {
+    // Holes will not in general be in order
+    if (holes.empty()) return;
+    holes.sort();
+    for (auto J=holes.begin(); J!=holes.end(); ++J) {
+      int j = *J;
+      while (it[domain_end-1]<0) domain_end--;
+      if (domain_end-1<=j) break; // No further holes need to be filled
+      px[j] = px[domain_end-1];
+      py[j] = py[domain_end-1];
+      vx[j] = vx[domain_end-1];
+      vy[j] = vy[domain_end-1];
+      fx[j] = fx[domain_end-1];
+      fy[j] = fy[domain_end-1];
+      th[j] = th[domain_end-1];
+      om[j] = om[domain_end-1];
+      tq[j] = tq[domain_end-1];
+      sg[j] = sg[domain_end-1];
+      im[j] = im[domain_end-1];
+      iI[j] = iI[domain_end-1];
+      rp[j] = rp[domain_end-1];
+      ds[j] = ds[domain_end-1];
+      cf[j] = cf[domain_end-1];
+      it[j] = it[domain_end-1];
+      
+      auto c = characteristics.find(domain_end-1);
+      if (c!=characteristics.end()) characteristics.emplace(j, c->second);
+      // This entry is now empty
+      it[domain_end-1] = -1;    
+      // Increment array end
+      --domain_end;
+    }
+    holes.clear();
   }
   
 }
