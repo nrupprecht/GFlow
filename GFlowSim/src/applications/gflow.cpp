@@ -22,6 +22,7 @@ int main (int argc, char** argv) {
   // Record options
   bool nowrite = false;
   bool animate = false;
+  RealType lowerSizeLimit = 0;
   int recOption = 1;
   bool recPerf = false;
   bool recMvRatio = false;
@@ -181,6 +182,7 @@ int main (int argc, char** argv) {
   // Animation options
   parser.get("nowrite", nowrite);
   parser.get("animate", animate);
+  parser.get("lowerSizeLimit", lowerSizeLimit);
   parser.get("recOption", recOption);
   parser.get("recPerf", recPerf);
   parser.get("recMvRatio", recMvRatio);
@@ -258,6 +260,7 @@ int main (int argc, char** argv) {
     if (plotPressureVDepth) dataRecord->addStatPlot(StatPlot_PressureVsDepth, RPair(0,0), 100, "pressureVsDepth");
     // Set recording options
     dataRecord->setRecPos(animate);
+    dataRecord->setLowerSizeLimit(lowerSizeLimit);
     dataRecord->setRecOption(recOption);
     dataRecord->setRecPerf(recPerf);
     dataRecord->setRecMvRatio(recMvRatio);

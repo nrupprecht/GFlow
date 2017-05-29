@@ -4,7 +4,7 @@
 #include "../forces/ExternalForce.hpp"
 
 namespace GFlow {
-  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-delay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), recOption(1), recBulk(false), recBulkOutline(false), recDisplacementField(false), trackDisplacement(false), recPressField(false), recPerf(false), statRecPerf(-1), recMvRatio(false), statRecMvRatio(-1), recDt(false), statRecDt(-1), recDelay(false), statRecDelay(-1), center(false) {
+  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-delay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), lowerSizeLimit(0), recOption(1), recBulk(false), recBulkOutline(false), recDisplacementField(false), trackDisplacement(false), recPressField(false), recPerf(false), statRecPerf(-1), recMvRatio(false), statRecMvRatio(-1), recDt(false), statRecDt(-1), recDelay(false), statRecDelay(-1), center(false) {
     start_time = end_time = high_resolution_clock::now();
   };
 
@@ -89,7 +89,7 @@ namespace GFlow {
     if (recPos) {
       vector<PData> positions;
       if (recOption==1) // Record pressure
-	simData->getPressureData(positions);
+	simData->getPressureData(positions, lowerSizeLimit);
       else if (recOption==2) // Record by particle id
 	recordByNumber(simData, positions);
       else if (recOption==3) // Record by number of verlet lists the particle is in
@@ -98,7 +98,7 @@ namespace GFlow {
 	recordByVelocity(simData, positions);
       else { // recOption==0 or default. Record nothing extra
 	for (int i=0; i<domain_size; ++i)
-	  if (it[i]>-1) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], 0));
+	  if (it[i]>-1 && lowerSizeLimit<sg[i]) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], 0));
       }
       positionRecord.push_back(positions);
     }
@@ -492,7 +492,7 @@ namespace GFlow {
     int domain_size = simData->domain_size;
 
     for (int i=0; i<domain_size; ++i)
-      if (it[i]>-1) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], i));
+      if (it[i]>-1 && lowerSizeLimit<sg[i]) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], i));
   }
 
   void DataRecord::recordByVerletList(SimData* simData, vector<PData>& positions) const {
@@ -518,7 +518,7 @@ namespace GFlow {
     
     // Make sure we only have "real" particles (it>-1)
     for (int i=0; i<domain_size; ++i)
-      if (it[i]>-1) positions.push_back(pos.at(i));
+      if (it[i]>-1 && lowerSizeLimit<sg[i]) positions.push_back(pos.at(i));
   }
 
   void DataRecord::recordByVelocity(SimData* simData, vector<PData>& positions) const {
@@ -534,7 +534,7 @@ namespace GFlow {
 
     // We will sort out particles with it<0 at the end
     for (int i=0; i<domain_size; ++i)
-      if (it[i]>-1) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], sqrt(sqr(vx[i])+sqr(vy[i]))));
+      if (it[i]>-1 && lowerSizeLimit<sg[i]) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], sqrt(sqr(vx[i])+sqr(vy[i]))));
   }
 
   void DataRecord::getBulkData(SimData* simData, const Bounds& region, vector<RealType>& volumes, ScalarField& field, vector<pair<vec2,vec2> >& lines, RealType resolution, RealType dr, RealType lowerVCut, RealType upperVCut) const {

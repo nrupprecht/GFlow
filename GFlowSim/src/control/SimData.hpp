@@ -109,7 +109,7 @@ namespace GFlow {
     vec2* getPRPtr()     { return positionRecord.getPtr(); }
 
     // Get pressure data
-    void getPressureData(vector<PData>&);
+    void getPressureData(vector<PData>&, RealType=0.);
 
     // Get walls
     vector<Wall>& getWalls() { return walls; }

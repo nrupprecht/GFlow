@@ -74,6 +74,7 @@ namespace GFlow {
 
     // Set options
     void setRecPos(bool b)     { recPos = b; }
+    void setLowerSizeLimit(RealType s) { lowerSizeLimit = s; }
     void setRecOption(int i)   { recOption = i; }
     void setRecPerf(bool b)    { recPerf = b; }
     void setRecMvRatio(bool b) { recMvRatio = b; }
@@ -179,6 +180,7 @@ namespace GFlow {
     // Record data
     vector<vector<PData> > positionRecord;
     bool recPos;
+    RealType lowerSizeLimit; // Particles smaller than this will not be animated
     int recOption; // Color particles according to what
 
     // Bulk data

@@ -149,7 +149,7 @@ namespace GFlow {
     return plist;
   }
 
-  void SimData::getPressureData(vector<PData>& positions) {
+  void SimData::getPressureData(vector<PData>& positions, RealType lowerSizeLimit) {
     // We will sort out particles with it<0 at the end
     vector<PData> pos;
     for (int i=0; i<domain_end; ++i)
@@ -164,7 +164,7 @@ namespace GFlow {
 
     // Make sure we only have "real" particles (it>-1)
     for (int i=0; i<domain_end; ++i)
-      if (it[i]>-1) {
+      if (it[i]>-1 && lowerSizeLimit<sg[i]) {
         PData pdata = pos.at(i);
 	std::get<5>(pdata) /= 2*PI*sg[i]; // Convert to pressure
         positions.push_back(pdata);

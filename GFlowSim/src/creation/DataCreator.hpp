@@ -48,8 +48,8 @@ namespace GFlow {
     Fixed_Phi_Scale_Free_Radii(RealType ph, RealType smin, RealType smax) : phi(ph), sigMin(smin), sigMax(smax) {};
     virtual void makeValues(Region&, vector<Particle>&);
   private:
-    RealType phi, sigma, dispersion;
-  }
+    RealType phi, sigMin, sigMax;
+  };
 
   // Position
   struct Uniform_Space_Distribution : public DataCreator {
