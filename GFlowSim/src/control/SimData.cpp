@@ -210,6 +210,13 @@ namespace GFlow {
     return getDisplacement(a.x, a.y, b.x, b.y);
   }
 
+  RealType SimData::getPhi() {
+    RealType vol = 0;
+    for (int i=0; i<domain_end; ++i)
+      if (-1<it[i]) vol += sqr(sg[i]);
+    return PI*vol/simBounds.volume();
+  }
+
 #if USE_MPI == 1
   void SimData::atomMove() {
     

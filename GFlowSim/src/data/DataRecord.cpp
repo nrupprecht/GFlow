@@ -4,7 +4,7 @@
 #include "../forces/ExternalForce.hpp"
 
 namespace GFlow {
-  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-delay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), lowerSizeLimit(0), recOption(1), recBulk(false), recBulkOutline(false), recDisplacementField(false), trackDisplacement(false), recPressField(false), recPerf(false), statRecPerf(-1), recMvRatio(false), statRecMvRatio(-1), recDt(false), statRecDt(-1), recDelay(false), statRecDelay(-1), center(false) {
+  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-delay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), lowerSizeLimit(0), recOption(1), recBulk(false), recBulkOutline(false), recDisplacementField(false), displacementSnapshot(false), trackDisplacement(false), recPressField(false), recPerf(false), statRecPerf(-1), recMvRatio(false), statRecMvRatio(-1), recDt(false), statRecDt(-1), recDelay(false), statRecDelay(-1), center(false) {
     start_time = end_time = high_resolution_clock::now();
   };
 
@@ -77,12 +77,12 @@ namespace GFlow {
     RealType *sg = simData->getSgPtr();
     RealType *th = simData->getThPtr();
     int *it = simData->getItPtr();
-    int domain_size = simData->domain_size;
+    int domain_end = simData->domain_end;
 
     // Initialize displacement tracking, if neccessary
     if (recIter==0) {
-      initialPositions = vector<vec2>(domain_size);
-      for (int i=0; i<domain_size; ++i) initialPositions.at(i) = vec2(px[i], py[i]);
+      initialPositions = vector<vec2>(domain_end);
+      for (int i=0; i<domain_end; ++i) initialPositions.at(i) = vec2(px[i], py[i]);
     }
 
     // Record position data
@@ -97,7 +97,7 @@ namespace GFlow {
       else if (recOption==4) // Record by velocity
 	recordByVelocity(simData, positions);
       else { // recOption==0 or default. Record nothing extra
-	for (int i=0; i<domain_size; ++i)
+	for (int i=0; i<domain_end; ++i)
 	  if (it[i]>-1 && lowerSizeLimit<sg[i]) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], 0));
       }
       positionRecord.push_back(positions);
@@ -203,13 +203,8 @@ namespace GFlow {
 
     // Create Positions directory
     if (recPos) {
-      mkdir((writeDirectory+"/Pos").c_str(), 0777);
-      // Write number
-      printToCSV(writeDirectory+"/Pos/number.csv", vector<int>(1,recIter));
-      // Write position data
-      for (int i=0; i<positionRecord.size(); ++i)
-	if (!printToCSV(writeDirectory+"/Pos/pos", positionRecord.at(i), i))
-	  std::cerr << "Failed to print to [" << writeDirectory << "/Pos/pos" << i << "].\n";
+      // Print position data
+      printToDirectory(writeDirectory+"/Pos", "pos", positionRecord);
 
       // Write wall data
       if (!printToCSV(writeDirectory+"/walls.csv", simData->getWalls()))
@@ -252,13 +247,24 @@ namespace GFlow {
 
     // Write displacement data
     if (simData && trackDisplacement) writeDisplacementData(simData);
-    if (simData && recDisplacementField) writeDisplacementField(simData);
+    if (simData && displacementSnapshot) writeDisplacementField(simData);
+    if (simData && recDisplacementField) {
+      // Create a directory for the field frames
+      mkdir((writeDirectory+"/DisplacementField").c_str(), 0777);
+      // Write the fields
+      for (int i=0; i<displacementFieldRecord.size(); ++i) {
+	displacementFieldRecord.at(i).printToCSV(writeDirectory+"/displacementField"+toStr(i)+".csv");
+      }
+    }
 
     // Write bulk data
     if (recBulk) {
       bulkField.printToCSV(writeDirectory+"/bulkField.csv");
       printToCSV(writeDirectory+"/bulkVolumes.csv", bulkVolumes);
     }
+
+    // Writebulk outlines
+    if (recBulkOutline) printToDirectory(writeDirectory+"/bulkOutline", "bulk", bulkOutline);
 
     // Write pressure data
     if (recPressField) pressField.printToCSV(writeDirectory+"/pressField.csv", 1./static_cast<RealType>(recIter));
@@ -301,6 +307,12 @@ namespace GFlow {
       fout << "  - Dimensions:               " << simData->simBounds << "\n";
       fout << "  - Number of particles:      " << simData->domain_size << "\n";
       fout << "  - Ratio x Particles:        " << runTime/elapsedTime*simData->domain_size << "\n";
+      RealType vol = 0;
+      auto particles = simData->getParticles();
+      for (const auto& p : particles) vol += sqr(p.sigma);
+      vol *= PI;
+      RealType phi = vol/simData->getSimBounds().volume();
+      fout << "  - Packing fraction:         " << phi << "\n";
       fout << "\n";
 
       // Print forces
@@ -773,18 +785,18 @@ namespace GFlow {
 
   inline void DataRecord::writeDisplacementData(SimData* simData) const {
     // Get data
-    int domain_size = simData->getDomainSize();
+    int domain_end = simData->getDomainEnd();
     RealType *px = simData->getPxPtr();
     RealType *py = simData->getPyPtr();
     RealType *sg = simData->getSgPtr();
     RealType *th = simData->getThPtr();
     int *it      = simData->getItPtr();
-    // We may omit the largest particle
+    // We omit the largest particle
     RealType maxSg = StatFunc_MaxR_Sigma(simData);
     // Collect data
     vector<PData> displacementI;
     vector<PData> displacementF;
-    for (int i=0; i<domain_size; ++i) {
+    for (int i=0; i<domain_end; ++i) {
       RealType disp = sqrt(sqr(initialPositions.at(i) - vec2(px[i], py[i])));
       if (sg[i]!=maxSg) { // ALWAYS EXCLUDES THE LARGEST PARTICLE
 	PData dataI(initialPositions.at(i).x, initialPositions.at(i).y, sg[i], th[i], it[i], disp);
@@ -800,9 +812,9 @@ namespace GFlow {
       std::cerr << "Failed to print to [" << writeDirectory << "/displacementF.csv].\n";
   }
 
-  inline void DataRecord::writeDisplacementField(SimData* simData) const {
+  inline ScalarField DataRecord::createDisplacementField(SimData* simData, bool finalPos) const {
     // Get data
-    int domain_size = simData->getDomainSize();
+    int domain_end = simData->getDomainEnd();
     RealType *px = simData->getPxPtr();
     RealType *py = simData->getPyPtr();
     RealType *sg = simData->getSgPtr();
@@ -821,7 +833,8 @@ namespace GFlow {
     int *count = new int[nsx*nsy];
     memset(count, 0, nsx*nsy*sizeof(int)); // Zero count array
     // Collect data
-    for (int i=0; i<domain_size; ++i) {
+    for (int i=0; i<domain_end; ++i) {
+      if (sg[i]==maxSg) continue;
       RealType disp = sqrt(sqr(initialPositions.at(i) - vec2(px[i], py[i])));
       // Bin data
       int sec_x = (initialPositions.at(i).x-bounds.left)*idx;
@@ -832,7 +845,12 @@ namespace GFlow {
     for (int y=0; y<nsy; ++y)
       for (int x=0; x<nsx; ++x)
 	if (count[y*nsx+x]>0) field.at(x,y) /= (RealType)count[y*nsx+x];
-    // Write displacement to file
+    // Return field
+    return field;
+  }
+
+  inline void DataRecord::writeDisplacementField(SimData* simData) const {
+    ScalarField field = createDisplacementField(simData, true);
     field.printToCSV(writeDirectory+"/displacementField.csv");
   }
 

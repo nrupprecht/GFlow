@@ -7,7 +7,7 @@ namespace GFlow {
     // Change the bounds for the addition of the new particle
     
     RealType height = StatFunc_HighestBall(simData); //** Height of the tops of the balls
-    Bounds nb(sb.left, sb.right, sb.bottom, height+2*radius);
+    Bounds nb(sb.left, sb.right, sb.bottom, height+6*radius);
 
     // Set new bounds
     simData->setSimBounds(nb);
@@ -75,7 +75,11 @@ namespace GFlow {
     VelocityVerletIntegrator verlet(relax);
     verlet.setAdjustTimeStep(false);
     verlet.addExternalForce(new ViscousDrag(1.)); // This is large enough
-    verlet.integrate(0.25);
+    RealType phi = relax->getPhi();
+
+    cout << "Time: " << 2*sqr(phi) << endl; //**
+
+    verlet.integrate(2*sqr(phi));
     // Remove drag force
     particles = relax->getParticles();
     delete relax;

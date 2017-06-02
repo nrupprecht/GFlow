@@ -31,6 +31,7 @@ int main (int argc, char** argv) {
   bool recBulk = false;
   bool recBulkOutline = false;
   bool recDisplacementField = false;
+  bool displacementSnapshot = false;
   bool recPressField = false;
   bool trackDisplacement = false;
   int fps = 15;
@@ -191,6 +192,7 @@ int main (int argc, char** argv) {
   parser.get("recBulk", recBulk);
   parser.get("recBulkOutline", recBulkOutline);
   parser.get("recDisplacementField", recDisplacementField);
+  parser.get("displacementSnapshot", displacementSnapshot);
   parser.get("recPressField", recPressField);
   parser.get("trackDisplacement", trackDisplacement);
   parser.get("fps", fps);
@@ -269,6 +271,7 @@ int main (int argc, char** argv) {
     dataRecord->setRecBulk(recBulk);
     dataRecord->setRecBulkOutline(recBulkOutline);
     dataRecord->setRecDisplacementField(recDisplacementField);
+    dataRecord->setDisplacementSnapshot(displacementSnapshot);
     dataRecord->setRecPressField(recPressField);
     dataRecord->setTrackDisplacement(trackDisplacement);
     dataRecord->setDelay(1./static_cast<RealType>(fps));

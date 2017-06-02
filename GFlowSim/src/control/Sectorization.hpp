@@ -47,7 +47,7 @@ namespace GFlow {
     void createWallLists();
 
     // Remove particles that overlap by to much
-    void removeOverlapping(RealType=0.03);
+    void removeOverlapping(RealType=0.25);
 
     /****** Accessors *****/
 

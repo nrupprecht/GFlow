@@ -83,6 +83,7 @@ namespace GFlow {
     void setRecBulk(bool b)    { recBulk = b; }
     void setRecBulkOutline(bool b) { recBulkOutline = b; }
     void setRecDisplacementField(bool b) { recDisplacementField = b; }
+    void setDisplacementSnapshot(bool b) { displacementSnapshot = b; }
     void setRecPressField(bool b) { recPressField = b; }
     void setTrackDisplacement(bool b) { trackDisplacement = b; }
 
@@ -144,6 +145,7 @@ namespace GFlow {
     inline void createOutline(int*, int, int, RealType, RealType, Bounds, vector<pair<vec2,vec2> >&) const;
     inline int getHead(int*, int) const;
     inline void writeDisplacementData(SimData*) const;
+    inline ScalarField createDisplacementField(SimData*, bool=true) const;
     inline void writeDisplacementField(SimData*) const;
     inline void getPressureData(SimData*, const Bounds&, ScalarField&, RealType=0.1) const;
 
@@ -190,8 +192,9 @@ namespace GFlow {
     vector<vector<RealType> > bulkVolumes;
 
     // Displacement field
-    bool recDisplacementField;
-    
+    bool recDisplacementField, displacementSnapshot;
+    vector<ScalarField> displacementFieldRecord;
+
     // Timing data
     high_resolution_clock::time_point start_time, end_time;
 

@@ -324,39 +324,32 @@ std::ostream& operator<<(std::ostream& out, const ScalarField& field) {
   }
   Bounds bounds = field.bounds;
   int printPoints = field.printPoints;
-  out << "{";
+  if (min(field.nsx,field.nsy)<printPoints) printPoints=min(field.nsx,field.nsy);
+  // Print data
   double X, Y = bounds.bottom, DX, DY;
   // Set step size
-  if (printPoints>0) {
-    DX = (bounds.right-bounds.left)/printPoints;
-    DY = (bounds.top-bounds.bottom)/printPoints;
+  int printX, printY;
+  RealType width = bounds.right-bounds.left, height = bounds.top-bounds.bottom;
+  // Print points is at least min(nsx, nsy)
+  if (width<height) {
+    printX = min(printPoints, field.nsx);
+    printY = min(static_cast<int>(printX*height/width), field.nsy);
   }
   else {
-    DX = field.dx;
-    DY = field.dy;
+    printY = min(printPoints, field.nsx);
+    printX = min(static_cast<int>(printY*width/height), field.nsy);
   }
-  if (printPoints>0) {
-    for (int y=0; y<printPoints; ++y) {
-      X = bounds.left;
-      for (int x=0; x<printPoints; ++x) {
-        out << "{" << X << "," << Y << "," << field.get(X,Y) << "}";
-        X += DX;
-	if (printPoints*y+x!=sqr(printPoints)-1) out << ',';
-      }
-      Y += DY;
+  DX = width/printX;
+  DY = height/printY;
+  out << "{";
+  for (int y=0; y<printPoints; ++y) {
+    X = bounds.left;
+    for (int x=0; x<printPoints; ++x) {
+      out << "{" << X << "," << Y << "," << field.get(X,Y) << "}";
+      X += DX;
+      if (printPoints*y+x!=sqr(printPoints)-1) out << ',';
     }
-  }
-  else { // Use full resolution
-    int nsx = field.nsx, nsy = field.nsy;
-    for (int y=0; y<nsy; ++y) {
-      X = bounds.left;
-      for (int x=0; x<nsx; ++x) {
-        out << "{" << X << "," << Y << "," << field.array[nsx*y+x] << "}";
-        X += DX;
-	if (nsx*y+x!=nsx*nsy-1) out << ',';
-      }
-      Y += DY;
-    }
+    Y += DY;
   }
   out << "}";
   return out;
@@ -364,39 +357,34 @@ std::ostream& operator<<(std::ostream& out, const ScalarField& field) {
 
 bool ScalarField::printToCSV(string filename, RealType normalize) const {
   if (array==0) return true;
-  if (max(nsx,nsy)<printPoints) printPoints=max(nsx,nsy);
+  if (min(nsx,nsy)<printPoints) printPoints=min(nsx,nsy);
   // Open file
   ofstream fout(filename);
   if(fout.fail()) return false;
   // Print data
   double X, Y = bounds.bottom, DX, DY;
   // Set step size
-  if (printPoints>0) {
-    DX = (bounds.right-bounds.left)/printPoints;
-    DY = (bounds.top-bounds.bottom)/printPoints;
+  int printX, printY;
+  RealType width = bounds.right-bounds.left, height = bounds.top-bounds.bottom;
+  // Print points is at least min(nsx, nsy)
+  if (width<height) {
+    printX = min(printPoints, nsx);
+    printY = min(static_cast<int>(printX*height/width), nsy);
   }
-  else { 
-    DX = dx; 
-    DY = dy;
+  else {
+    printY = min(printPoints, nsx);
+    printX = min(static_cast<int>(printY*width/height), nsy);
   }
-  if (printPoints>0) 
-    for (int y=0; y<printPoints; ++y) {
-      X = bounds.left;
-      for (int x=0; x<printPoints; ++x) {
-	fout << X << "," << Y << "," << normalize*get(X,Y) << endl;
+  DX = width/printX;
+  DY = height/printY;
+  for (int y=0; y<printY; ++y) {
+    X = bounds.left;
+    for (int x=0; x<printX; ++x) {
+      fout << X << "," << Y << "," << normalize*get(X,Y) << endl;
 	X += DX;
-      }
-      Y += DY;
     }
-  else // Use full resolution
-    for (int y=0; y<nsy; ++y) {
-      X = bounds.left;
-      for (int x=0; x<nsx; ++x) {
-        fout << X << "," << Y << "," << normalize*array[nsx*y+x] << endl;
-	X += DX;
-      }
-      Y += DY;
-    }
+    Y += DY;
+  }
   return true;
 }
 

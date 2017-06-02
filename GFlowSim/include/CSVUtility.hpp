@@ -27,6 +27,14 @@ namespace GFlow {
     return str;
   }
 
+  inline string toCSV(const pair<vec2, vec2> p) {
+    stringstream stream;
+    string str;
+    stream << p.first.x << "," << p.first.y << "," << p.second.x << "," << p.second.y;
+    stream >> str;
+    return str;
+  }
+
   template<typename S, typename T> inline string toCSV(const std::pair<S,T>& p) {
     string first, second;
     stringstream stream;
@@ -79,6 +87,27 @@ namespace GFlow {
     return true;
   }
   
+  template<typename T> bool printToDirectory(string directory, string file, const vector<vector<T> >& lst) {
+    // Whether everything went smoothly
+    bool success = true;
+    // Create the directory
+    mkdir(directory.c_str(), 0777);
+
+    // Write the number of files to expect
+    if (!printToCSV(directory+"/number.csv", vector<int>(1, lst.size())))
+      success = false;
+
+    // Make the individual csv files
+
+    for (int i=0; i<lst.size(); ++i) {
+      if (!printToCSV(directory+"/"+file, lst.at(i), i)) {
+	std::cerr << "Failed to print to [" << directory << "/" << file << i << ".csv].\n";
+	success = false;
+      }
+    }
+    return success;
+  }
+
 }
 
 #endif // __CSV_UTILITY_HPP__

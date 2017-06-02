@@ -271,6 +271,9 @@ namespace GFlow {
     
     // Set of particles to remove
     std::set<int> remove;
+
+    RealType maxover = 0;
+
     // Look for overlapping particles
     for (const auto vl : verletList) {
       auto p = vl.begin();
@@ -290,7 +293,6 @@ namespace GFlow {
 	}
       }
     }
-
     // Found all the particles to remove
     for (auto p : remove) simData->removeAt(p);
   }
