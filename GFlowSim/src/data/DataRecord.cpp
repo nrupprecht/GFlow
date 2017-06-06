@@ -133,6 +133,9 @@ namespace GFlow {
       getPressureData(simData, region, pressField);
     }
 
+    // Record displacement field
+    if (recDisplacementField) displacementFieldRecord.push_back(createDisplacementField(simData, true));
+
     // Record stat functions
     for (int i=0; i<statFunctions.size(); ++i) {
       StatFunc sf = statFunctions.at(i);
@@ -253,7 +256,7 @@ namespace GFlow {
       mkdir((writeDirectory+"/DisplacementField").c_str(), 0777);
       // Write the fields
       for (int i=0; i<displacementFieldRecord.size(); ++i) {
-	displacementFieldRecord.at(i).printToCSV(writeDirectory+"/displacementField"+toStr(i)+".csv");
+	displacementFieldRecord.at(i).printToCSV(writeDirectory+"/DisplacementField/dispField"+toStr(i)+".csv");
       }
     }
 

@@ -82,6 +82,8 @@ namespace GFlow {
       dataRecord->markTime();
       dataRecord->setRunTime(runTime);
       dataRecord->startTiming();
+      // Initial record
+      dataRecord->record(simData, time);
     }
 
     // Make sure we have initial verlet lists

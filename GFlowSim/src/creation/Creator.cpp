@@ -76,9 +76,6 @@ namespace GFlow {
     verlet.setAdjustTimeStep(false);
     verlet.addExternalForce(new ViscousDrag(1.)); // This is large enough
     RealType phi = relax->getPhi();
-
-    cout << "Time: " << 2*sqr(phi) << endl; //**
-
     verlet.integrate(2*sqr(phi));
     // Remove drag force
     particles = relax->getParticles();

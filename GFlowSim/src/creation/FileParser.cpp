@@ -271,10 +271,18 @@ namespace GFlow {
     vector<Wall> walls;
     vector<ExternalForce*> externalForces;
     bool wrapX(false), wrapY(false);
+
+    // For getting comments
+    const int max_comment_size = 512;
+    char comment[max_comment_size];
+
     // Get tokens and data
     string tok;
     fin >> tok;
     while (!fin.eof()) {
+      if (tok.at(0)=='#') { // Comment
+	fin.getline(comment, max_comment_size);
+      }
       if (tok=="B") {
 	RealType l, r, b, t;
 	fin >> l >> r >> b >> t;
@@ -365,7 +373,8 @@ namespace GFlow {
       if (status) status->writeError("File ["+filename+"] cannot be opened by file parser when attempting to save arrangement.");
       throw FileDoesNotExist(filename);
     }
-
+    // Write number of balls and walls in a comment
+    fout << "# There are " << simData->domain_size << " particles and " << simData->walls.size() << ".\n";
     // Write bounds
     Bounds simBounds = simData->simBounds;
     fout << "B " << simBounds.left << " " << simBounds.right << " " << simBounds.bottom << " " << simBounds.top << endl;

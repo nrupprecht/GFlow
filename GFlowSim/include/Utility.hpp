@@ -54,7 +54,9 @@ using std::string;
 
 #include <math.h>
 
-#ifdef USE_MPI
+#include <cstring> // For memset it mpi.h is not defined
+
+#if USE_MPI == 1
 #include <mpi.h>
 #endif
 
