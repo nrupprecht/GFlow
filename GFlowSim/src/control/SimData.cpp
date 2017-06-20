@@ -62,7 +62,37 @@ namespace GFlow {
   }
 
   void SimData::addWall(const Wall& w) {
-    walls.push_back(w);
+    vec2 left = w.left, right = w.getRight();
+    RealType EPS = 0.001;
+    // Clip walls so they are always within the proper region if we are wrapping
+    if (wrapX || wrapY) {
+      if (left.x==right.x) { // Verticle wall - cannot parameterize by x
+	// Only need to add (at most) one wall
+	if (wrapY) {
+	  if (right.y<simBounds.bottom || simBounds.top<left.y) return; // Wall is out of bounds
+	  else {
+	    left.y = max(left.y, simBounds.bottom+EPS);
+	    right.y = min(right.y, simBounds.top-EPS);
+	  }
+	}
+	// Make sure we are not on an edge if we are wrapping
+	if (wrapX && left.x==simBounds.left) {
+	  left.x += EPS; right.x += EPS;
+	}
+	if (wrapX && left.x==simBounds.right) {
+	  left.x -= EPS; right.x -= EPS;
+	}
+	// Add the wall
+	walls.push_back(Wall(left, right)); // No need to clip
+      }
+      else { // Parameterize by x
+	// SIMPLE CLIP
+	// Wall slope
+	RealType slope = (right.y-left.y)/(right.x-left.x);
+	// Find first x value where the wall is right of the left wall
+      }
+    }
+    else walls.push_back(w);
   }
 
   void SimData::addWall(const Bounds& b) {
@@ -208,6 +238,26 @@ namespace GFlow {
 
   vec2 SimData::getDisplacement(const vec2 a, const vec2 b) {
     return getDisplacement(a.x, a.y, b.x, b.y);
+  }
+
+  vec2 SimData::getWallDisplacement(const Wall& w, const vec2 p, RealType sigma) {
+    if (wrapX || wrapY) {
+      // Displacement
+      vec2 d1 = p-w.left;
+      wallDisplacement(d1, sigma, w);
+      RealType dsqr1 = sqr(d1);
+      // Wrapped displacement
+      vec2 d2 = getDisplacement(p, w.left);
+      wallDisplacement(d2, sigma, w);
+      RealType dsqr2 = sqr(d2);
+      // Which is smaller?
+      return dsqr1<dsqr2 ? d1 : d2;
+    }
+    else {
+      vec2 d = p-w.left;
+      wallDisplacement(d, sigma, w);
+      return d;
+    }
   }
 
   RealType SimData::getPhi() {

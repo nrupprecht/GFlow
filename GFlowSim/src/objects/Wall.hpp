@@ -28,6 +28,9 @@ namespace GFlow {
     vec2 getLeft()  const { return left; }
     vec2 getRight() const { return left+length*normal; }
 
+    // Set right (given a correct left)
+    void setRight(vec2);
+
     // Wall data
     vec2 left;
     RealType length;

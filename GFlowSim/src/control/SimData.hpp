@@ -133,6 +133,7 @@ namespace GFlow {
     // Displacement functions
     vec2 getDisplacement(const RealType, const RealType, const RealType, const RealType);
     vec2 getDisplacement(const vec2, const vec2);
+    vec2 getWallDisplacement(const Wall&, const vec2, RealType);
 
     // Calculate packing fraction
     RealType getPhi();

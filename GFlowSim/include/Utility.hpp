@@ -101,6 +101,11 @@ namespace GFlow {
     return x<0 ? -1. : 1.;
   }
 
+  template<typename T> inline void swap(T& a, T& b) {
+    T temp = a;
+    a = b; b = temp;
+  }
+
   /// Get the current time
   inline auto current_time() {
     return high_resolution_clock::now();
