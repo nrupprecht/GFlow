@@ -11,9 +11,9 @@ namespace GFlow {
     RealType *fx = simData->getFxPtr();
     RealType *fy = simData->getFyPtr();
     RealType *im = simData->getImPtr();
-    int domain_size = simData->getDomainSize();
+    int domain_end = simData->getDomainEnd();
     // Apply force to all particles - we don't check it they are "real" (it > -1) since it doesn't matter
-    for(int i=0; i<domain_size; ++i) {
+    for(int i=0; i<domain_end; ++i) {
       // Cause a constant acceleration
       fx[i] += acceleration.x/im[i];
       fy[i] += acceleration.y/im[i];
