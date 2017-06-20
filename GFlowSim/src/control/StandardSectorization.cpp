@@ -44,6 +44,13 @@ namespace GFlow {
 
 	    // Checking lambda
 	    auto check = [&] (int sx, int sy) {
+	      // Wrapping logic
+	      if (wrapX && sx==0) sx = nsx-2;
+	      if (wrapY) {
+		if (sy==0) sy = nsy-2;
+		if (sy==nsx-1) sy = 1;
+	      }
+	      // Measuring
 	      for (const auto &j : sec_at(sx, sy)) {
 		if (it[j]<0 || threshold<sg[j]) continue;
 		vec2 r = getDisplacement(px[i], py[i], px[j], py[j]);
@@ -63,16 +70,31 @@ namespace GFlow {
 	  }
 
 	  else { // Scan more than 1 sector around us
-	    // Sector sweep
+	    // Sector sweep -- works if 2*scanBins# + 1 < ns#
 	    RealType scanDist = 2*sigma + skinDepth;
 	    int scanBinsX = ceil(scanDist/sdx);
 	    int scanBinsY = ceil(scanDist/sdy);
-	    int minX = max(1,x-scanBinsX), maxX = min(nsx-2,x+scanBinsX);
-	    int minY = max(1,y-scanBinsY), maxY = min(nsy-2,y+scanBinsY);
+	    int minX = x-scanBinsX, maxX = x+scanBinsX;
+	    int minY = y-scanBinsY, maxY = y+scanBinsY;
+	    // int minX = max(1,x-scanBinsX), maxX = min(nsx-2,x+scanBinsX);
+	    // int minY = max(1,y-scanBinsY), maxY = min(nsy-2,y+scanBinsY);
+
+	    // ----> THIS IS UNTESTED. WE SHOULD TEST IT //**
+
+	    if (minX<1) minX = (wrapX ? minX+nsx-2 : 1);
+	    if (nsx-2<maxX) maxX = (wrapX ? maxX-nsx+2 : nsx-2);
+
+	    if (minY<1) minY = (wrapY ? minY+nsy-2 : 1);
+	    if (nsy-2<maxY) maxY = (wrapY ? maxY-nsy+2 : nsy-2);
+	    
 	    // Sweep
-	    for (int sy=minY; sy<=maxY; ++sy)
-	      for (int sx=minX; sx<=maxX; ++sx)
+	    for (int sy=minY; sy!=maxY+1; ++sy) {
+	      for (int sx=minX; sx!=maxX+1; ++sx) {
 		check(sx,sy,i,it,px,py,sg,sigma,nlist);
+		if (nsx-1==sx) sx = 1;
+	      }
+	      if (nsy-1==sy) sy = 1;
+	    }
 	  }
 	  
           // Add the neighbor list to the collection if you have neighbors

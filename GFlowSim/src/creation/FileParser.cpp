@@ -78,8 +78,17 @@ namespace GFlow {
     // Get the first token
     fin >> tok;
     while (!fin.eof()) {      
-      // (comment) // 
-      if (tok.at(0)==Comment_Tok) fin.getline(comment, max_comment_size);
+      // (// ... \ncomment) // 
+      if (tok.at(0)==Comment_Tok && tok.at(1)==Comment_Tok) fin.getline(comment, max_comment_size);
+      else if (tok.at(0)=='/' && tok.at(1)=='*') {
+	char f, s;
+	fin.get(f); fin.get(s);
+	while (!fin.eof()) {
+	  if (tok.at(0)=='*' && tok.at(1)=='/') break;
+	  f = s;
+	  fin.get(s);
+	}
+      }
       else if (tok==Variable_Tok) { // let [name] [value]
 	string name, val;
 	fin >> name;
