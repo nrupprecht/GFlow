@@ -2,7 +2,7 @@
 
 namespace GFlow {
   
-  void Creator::createBuoyancy(SimData *& simData, Integrator *& integrator, RealType radius, RealType density, vec2 velocity, bool constant) {
+  void Creator::createBuoyancy(SimData *& simData, Integrator *& integrator, RealType radius, RealType density, vec2 velocity, bool constant, bool insert) {
     Bounds sb = simData->getSimBounds();
     // Change the bounds for the addition of the new particle
     
@@ -23,7 +23,9 @@ namespace GFlow {
       P.setDensity(density);
       P.velocity = velocity;
       // Add either with constant velocity, or as normal
-      if (constant) simData->addParticle(P, new ConstantVelocity(velocity));
+      if (insert) simData->addParticle(P, new Insertion(velocity, 0));
+      else if (constant) simData->addParticle(P, new ConstantVelocity(velocity, 0));
+
       else simData->addParticle(P);
     }
 

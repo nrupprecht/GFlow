@@ -5,7 +5,7 @@
 
 namespace GFlow {
 
-  SimData::SimData(const Bounds& b, const Bounds& sb) : domain_size(0), domain_end(0), domain_capacity(0), edge_size(0), edge_capacity(0), bounds(b), simBounds(sb), wrapX(true), wrapY(true), sectors(nullptr), forceHandler(nullptr) {
+  SimData::SimData(const Bounds& b, const Bounds& sb) : domain_size(0), domain_end(0), domain_capacity(0), edge_size(0), edge_capacity(0), bounds(b), simBounds(sb), wrapX(true), wrapY(true), sectors(nullptr), forceHandler(nullptr), terminate(false) {
     // Set up MPI (possibly)
 #if USE_MPI == 1
 #if _CLANG_ == 1

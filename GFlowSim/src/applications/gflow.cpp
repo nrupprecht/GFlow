@@ -53,6 +53,7 @@ int main (int argc, char** argv) {
   // Centering 
   bool center = false; 
   bool cv = false;
+  bool insert = false;
   // Print options
   bool print = false;    // Whether we should print stat data to the screen
   bool quiet = false;
@@ -141,6 +142,7 @@ int main (int argc, char** argv) {
     parser.get("velocity", velocity);
     parser.get("radius", radius);
     parser.get("cv", cv);
+    parser.get("insert", insert);
     // Load from file
     try {
       fileParser.loadFromFile(buoyancy, simData, integrator);
@@ -154,7 +156,7 @@ int main (int argc, char** argv) {
       exit(0);
     }
     // Create buoyancy scenario from the data
-    creator.createBuoyancy(simData, integrator, radius, density, vec2(0, -velocity), cv);
+    creator.createBuoyancy(simData, integrator, radius, density, vec2(0, -velocity), cv, insert);
   }
   else {
     try {

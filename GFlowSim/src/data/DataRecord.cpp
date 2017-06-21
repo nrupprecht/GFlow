@@ -96,6 +96,8 @@ namespace GFlow {
 	recordByVerletList(simData, positions);
       else if (recOption==4) // Record by velocity
 	recordByVelocity(simData, positions);
+      else if (recOption==5) // Record by displacement
+	recordByDisplacement(simData, positions);
       else { // recOption==0 or default. Record nothing extra
 	for (int i=0; i<domain_end; ++i)
 	  if (it[i]>-1 && lowerSizeLimit<sg[i]) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], 0));
@@ -545,11 +547,27 @@ namespace GFlow {
     RealType *vx = simData->getVxPtr();
     RealType *vy = simData->getVyPtr();
     int *it = simData->getItPtr();
-    int domain_size = simData->domain_size;
+    int domain_end = simData->domain_end;
 
     // We will sort out particles with it<0 at the end
-    for (int i=0; i<domain_size; ++i)
+    for (int i=0; i<domain_end; ++i)
       if (it[i]>-1 && lowerSizeLimit<sg[i]) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], sqrt(sqr(vx[i])+sqr(vy[i]))));
+  }
+
+  void DataRecord::recordByDisplacement(SimData* simData, vector<PData>& positions) const {
+    // Get the arrays
+    RealType *px = simData->getPxPtr();
+    RealType *py = simData->getPyPtr();
+    RealType *sg = simData->getSgPtr();
+    RealType *th = simData->getThPtr();
+    RealType *vx = simData->getVxPtr();
+    RealType *vy = simData->getVyPtr();
+    int *it = simData->getItPtr();
+    int domain_end = simData->domain_end;
+
+    // We will sort out particles with it<0 at the end
+    for (int i=0; i<domain_end; ++i)
+      if (it[i]>-1) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], sqrt(sqr(initialPositions.at(i)-vec2(px[i],py[i])))));
   }
 
   void DataRecord::getBulkData(SimData* simData, const Bounds& region, vector<RealType>& volumes, ScalarField& field, vector<pair<vec2,vec2> >& lines, RealType resolution, RealType dr, RealType lowerVCut, RealType upperVCut) const {

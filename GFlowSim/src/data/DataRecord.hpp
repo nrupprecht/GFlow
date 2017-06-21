@@ -140,6 +140,7 @@ namespace GFlow {
     void recordByNumber(SimData*, vector<PData>&) const;
     void recordByVerletList(SimData*, vector<PData>&) const;
     void recordByVelocity(SimData*, vector<PData>&) const;
+    void recordByDisplacement(SimData*, vector<PData>&) const;
     void getBulkData(SimData*, const Bounds&, vector<RealType>&, ScalarField&, vector<pair<vec2,vec2> >&, RealType=0.015, RealType=0.015, RealType=0.01, RealType=1.) const;    
     inline void unite(int*, int, int) const;
     inline void createOutline(int*, int, int, RealType, RealType, Bounds, vector<pair<vec2,vec2> >&) const;

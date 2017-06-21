@@ -126,6 +126,9 @@ namespace GFlow {
     // Get the external forces
     vector<ExternalForce*>& getExternalForces() { return externalForces; }
 
+    // Get termination indicator
+    bool getTerminate() { return terminate; }
+
     // Wrap positions and angles
     void wrap(RealType&, RealType&); // Position wrapping
     void wrap(RealType&);            // Angle wrapping
@@ -175,6 +178,9 @@ namespace GFlow {
 
     // Remove particles that overlap too much
     void removeOverlapping(RealType=0.03);
+
+    // Set termination indicator
+    void setTerminate(bool s) { terminate = s; }
 
     // DataRecord is a friend class
     friend class DataRecord;
@@ -248,6 +254,9 @@ namespace GFlow {
 
     // The force handler that handles our forces
     ForceHandler *forceHandler;
+
+    // A termination indicator
+    bool terminate;
 
 #ifdef USE_MPI // Rank and number of processors - for MPI
     int rank, numProc;

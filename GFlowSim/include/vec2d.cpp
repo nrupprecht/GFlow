@@ -1,5 +1,9 @@
 #include "vec2d.hpp"
 
+vec2 vec2::operator-() const {
+  return vec2(-x, -y);
+}
+
 vec2 vec2::operator-(const vec2& v) const {
   return vec2(x-v.x, y-v.y);
 }

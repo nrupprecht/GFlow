@@ -25,17 +25,20 @@ namespace GFlow {
     // Get the wall
     Wall& w = simData->getWalls()[i];
     // Get displacement, test for overlap
-    vec2 displacement = simData->getDisplacement(px[j], py[j], w.left.x, w.left.y); // particle - wall
+    //vec2 displacement = simData->getDisplacement(px[j], py[j], w.left.x, w.left.y); // particle - wall
+    vec2 displacement = simData->getWallDisplacement(w, vec2(px[j], py[j]), sg[j]);
+    double radSqr = sqr(sg[j]+default_wall_width);
     // Displacement is p.position - w.left
+    /*
     RealType l_par = displacement*w.normal;
     vec2 d_par = l_par*w.normal;
     vec2 d_perp = displacement - d_par;
     // Check whether the particle is between the start and end of the wall
-    double radSqr = sqr(sg[j]+default_wall_width);
     if (l_par>=0) { // Located forward of the origin
       if (w.length>l_par) displacement = d_perp;  // The particle is above the wall (in the perp. direction)
       else displacement -= w.length*w.normal; // Displacement from the nearest end (the far end) of the wall
     }
+    */
     double distSqr = sqr(displacement);   // Located behind the origin
     /// We now have the correct displacement vector and distSqr value
     if (distSqr<=radSqr) {

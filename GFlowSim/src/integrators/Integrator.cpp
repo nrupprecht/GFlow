@@ -103,6 +103,9 @@ namespace GFlow {
     // End if we have simulated for enough time
     if (runTime < time) running = false;
 
+    // End if the terminate flag has been set in our simulation data
+    if (simData->getTerminate()) running = false;
+
     // Update data recorder
     if (dataRecord) dataRecord->record(simData, time);
   }

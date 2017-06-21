@@ -189,9 +189,10 @@ namespace GFlow {
       lst.push_back(i); // Wall is at the head of the list
       for (int j=0; j<domain_end; ++j) {
 	if (it[j]<0) continue;
-	vec2 displacement = getDisplacement(vec2(px[j], py[j]), walls.at(i).left);
+	// vec2 displacement = getDisplacement(vec2(px[j], py[j]), walls.at(i).left);
 	// Correct the displacement -- THIS DOESNT ALWAYS WORK CORRECTLY
-	wallDisplacement(displacement, sg[j], walls.at(i));
+	// wallDisplacement(displacement, sg[j], walls.at(i));
+	vec2 displacement = simData->getWallDisplacement(walls.at(i), vec2(px[j], py[j]), sg[j]);
 	// USE A PARTICLE CUTOFF
 	if (sqr(displacement)<sqr(sg[j] + skinDepth + default_wall_width)) lst.push_back(j);
       }
