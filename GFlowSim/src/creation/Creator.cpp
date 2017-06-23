@@ -19,18 +19,43 @@ namespace GFlow {
 
     // Insert the intruding particle
     if (radius>0) {
-      Particle P(0.5*(nb.right-nb.left), height + radius, radius);
+      Particle P(0.5*(nb.right+nb.left), height + radius, radius);
       P.setDensity(density);
       P.velocity = velocity;
-      // Add either with constant velocity, or as normal
+      // Add either with inserter, constant velocity, or as normal
       if (insert) simData->addParticle(P, new Insertion(velocity, 0));
       else if (constant) simData->addParticle(P, new ConstantVelocity(velocity, 0));
-
       else simData->addParticle(P);
     }
 
     // Make sure we use a small time step
     reinterpret_cast<VelocityVerletIntegrator*>(integrator)->setMaxTimeStep(1e-4);
+  }
+
+  void Creator::createAero(SimData *& simData, Integrator *& integrator, RealType radius, RealType density, vec2 velocity, bool constant) {
+    // Get rid of the old walls
+    simData->getWalls().clear();
+    // Set wrapping in the y-direction
+    simData->setWrapY(true);
+    // Remove external forces
+    simData->clearExternalForces();
+    // Create new walls
+    Bounds sb = simData->getSimBounds();
+    Wall lw(sb.left, sb.bottom, sb.left, sb.top);
+    Wall rw(sb.right, sb.bottom, sb.right, sb.top);
+    simData->addWall(lw); simData->addWall(rw);
+    // Insert the intruding particle
+    if (radius>0) {
+      Particle P(0.5*(sb.right+sb.left), 0.5*(sb.top+sb.bottom), radius);
+      P.setDensity(density);
+      P.velocity = velocity;
+      // Add either with constant velocity, or as normal
+      if (constant) simData->addParticle(P, new ConstantVelocity(velocity, 0));
+      else simData->addParticle(P);
+      // Make sure there is no serious overlap
+      StandardSectorization remover(simData);
+      remover.removeOverlapping();
+    }
   }
 
   bool Creator::createRegion(Region& region, SimData* simData) {
@@ -73,7 +98,11 @@ namespace GFlow {
     relax->setWrap(false);
     relax->reserve(particles.size());
     relax->addParticle(particles);
+    // Add containment walls
     relax->addWall(region.bounds);
+    // Add all walls from the simulation
+    relax->addWall(simData->getWalls());
+    // Create the relaxation integrator
     VelocityVerletIntegrator verlet(relax);
     verlet.setAdjustTimeStep(false);
     verlet.addExternalForce(new ViscousDrag(1.)); // This is large enough

@@ -31,6 +31,7 @@ namespace GFlow {
           VListSubType nlist;
           nlist.push_back(i); // You are at the head of the list
 
+	  // If you are a "small" particle (only need to check adjacent sectors)
 	  if (sigma<=threshold) {
 	    // Sector you are in
 	    auto q = p; ++q; // Check only particles ordered after you
@@ -41,14 +42,17 @@ namespace GFlow {
 	      vec2 r = getDisplacement(px[i], py[i], px[j], py[j]);
 	      if (sqr(r) < sqr(sigma + R + skinDepth)) nlist.push_back(j);
 	    }
-
+	    
 	    // Checking lambda
 	    auto check = [&] (int sx, int sy) {
 	      // Wrapping logic
-	      if (wrapX && sx==0) sx = nsx-2;
+	      if (wrapX) {
+		if (sx==0)     sx = nsx-2;
+		if (sx==nsx-1) sx = 1;
+	      }
 	      if (wrapY) {
-		if (sy==0) sy = nsy-2;
-		if (sy==nsx-1) sy = 1;
+		if (sy==0)     sy = nsy-2;
+		if (sy==nsy-1) sy = 1;
 	      }
 	      // Measuring
 	      for (const auto &j : sec_at(sx, sy)) {
@@ -120,10 +124,11 @@ namespace GFlow {
       vol /= plist.size();
       // Find a radius from that volume
       RealType normalRadius = sqrt(vol), maxR(0);
-      for (const auto& p : plist)
-	if (p.sigma<=normalRadius && maxR<p.sigma) maxR = p.sigma;
+      for (const auto& p : plist) {
+	// Need to use a number slightly bigger than normalRadius to combat floating point rounding
+	if (p.sigma<=(1.01)*normalRadius && maxR<p.sigma) maxR = p.sigma;
+      }
       cutoff = 2*maxR + skinDepth;
-      
       // First estimate of sdx, sdy
       sdx = sdy = cutoff;
       RealType minSec = 1.;
@@ -136,9 +141,9 @@ namespace GFlow {
     sdy = (bounds.top-bounds.bottom)/nsy;
     isdx = 1./sdx;
     isdy = 1./sdy;
-    // Threshold radius
-    
-    threshold = 0.5*min(sdy-skinDepth, sdy-skinDepth);
+
+    // Threshold radius - if the radius is smaller than this, we can check every particle within 2*threshold+skinDepth by just checking adjacent sectors
+    threshold = 0.5*min(sdy-skinDepth, sdx-skinDepth);
 
     // Add for edge sectors
     nsx += 2; nsy += 2;

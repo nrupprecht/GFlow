@@ -15,6 +15,7 @@ int main (int argc, char** argv) {
   
   string config = "";
   string buoyancy = "";
+  string aero = "";
   string writeDirectory = "";
   string loadFile = "";
   string saveFile = "";
@@ -50,6 +51,7 @@ int main (int argc, char** argv) {
   bool plotCorrelation = false;
   bool plotDensity = false;
   bool plotPressureVDepth = false;
+  bool plotAlignment = false;
   // Centering 
   bool center = false; 
   bool cv = false;
@@ -91,6 +93,7 @@ int main (int argc, char** argv) {
   // Check if we need to load a file
   parser.get("config", config);
   parser.get("buoyancy", buoyancy);
+  parser.get("aero", aero);
   parser.get("loadFile", loadFile);
   
   // Create from file or command line args
@@ -137,7 +140,7 @@ int main (int argc, char** argv) {
   else if (buoyancy!="") {
     Creator creator;
     // Get options
-    RealType density(100), velocity(10), radius(0.5);
+    RealType density(100), velocity(5), radius(0.5);
     parser.get("density", density);
     parser.get("velocity", velocity);
     parser.get("radius", radius);
@@ -157,6 +160,29 @@ int main (int argc, char** argv) {
     }
     // Create buoyancy scenario from the data
     creator.createBuoyancy(simData, integrator, radius, density, vec2(0, -velocity), cv, insert);
+  }
+  else if (aero!="") {
+    Creator creator;
+    // Get options
+    RealType density(100), velocity(5), radius(0.5);
+    parser.get("density", density);
+    parser.get("velocity", velocity);
+    parser.get("radius", radius);
+    parser.get("cv", cv);
+    // Load from file
+    try {
+      fileParser.loadFromFile(aero, simData, integrator);
+    }
+    catch (FileParser::FileDoesNotExist file) {
+      std::cerr << "File [" << file.name << "] does not exist.";
+      exit(0);
+    }
+    catch (GFlow::BadIstreamRead read) {
+      std::cerr << "Parsing failed when it attempted to read in a [" << read.type << "], expected [" << printChar(read.expected) << "], found [" << printChar(read.unexpected) << "]. Exiting.\n";
+      exit(0);
+    }
+    // Create buoyancy scenario from the data
+    creator.createAero(simData, integrator, radius, density, vec2(0, -velocity), cv);
   }
   else {
     try {
@@ -211,6 +237,7 @@ int main (int argc, char** argv) {
   parser.get("plotCorrelation", plotCorrelation);
   parser.get("plotDensity", plotDensity);
   parser.get("plotPressureVDepth", plotPressureVDepth);
+  parser.get("plotAlignment", plotAlignment);
   parser.get("center", center);
   parser.get("print", print);
   parser.get("quiet", quiet);
@@ -262,6 +289,7 @@ int main (int argc, char** argv) {
     if (plotCorrelation) dataRecord->addStatPlot(StatPlot_RadialCorrelation, RPair(0,1), 100, "correlation");
     if (plotDensity) dataRecord->addStatPlot(StatPlot_DensityVsDepth, RPair(0,0), 100, "densityVsDepth");
     if (plotPressureVDepth) dataRecord->addStatPlot(StatPlot_PressureVsDepth, RPair(0,0), 100, "pressureVsDepth");
+    if (plotAlignment) dataRecord->addStatPlot(StatPlot_Alignment, RPair(0,1), 100, "alignment");
     // Set recording options
     dataRecord->setRecPos(animate);
     dataRecord->setLowerSizeLimit(lowerSizeLimit);

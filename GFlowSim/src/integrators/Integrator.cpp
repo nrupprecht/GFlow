@@ -53,7 +53,6 @@ namespace GFlow {
     // Create a sectorization
     if (sectors) delete sectors;
     sectors = new StandardSectorization;
-
     // Set up the sectorization
     if (simData) sectors->initialize(simData);
   }

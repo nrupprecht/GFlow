@@ -33,6 +33,9 @@ namespace GFlow {
     // Modify the simdata for a buoyancy study
     void createBuoyancy(SimData *&, Integrator *&, RealType, RealType, vec2, bool=false, bool=false);
 
+    // Modify the simdata for an aerodynamics study
+    void createAero(SimData *&, Integrator *&, RealType, RealType, vec2, bool);
+
     // FileParser is a friend class
     friend class FileParser;
   private:

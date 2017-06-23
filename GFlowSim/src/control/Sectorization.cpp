@@ -40,6 +40,9 @@ namespace GFlow {
     rank = simData->getRank();
     numProc = simData->getNumProc();
 #endif
+
+    // Sectorize
+    sectorize();
   }
 
   void Sectorization::sectorize() {
@@ -218,6 +221,131 @@ namespace GFlow {
 
   vec2 Sectorization::getDisplacement(const vec2 a, const vec2 b) {
     return getDisplacement(a.x, a.y, b.x, b.y);
+  }
+
+  int Sectorization::getClosest(int id, SimData *simData) {
+    // Get data
+    RealType *px = simData->getPxPtr();
+    RealType *py = simData->getPyPtr();
+    int *it = simData->getItPtr();
+    // Search progressively outwards
+    vec2 pos(px[id], py[id]);
+    int sec = getSec(pos.x, pos.y);
+    int sx = sec % nsx, sy = sec/nsx;
+    int reach = 1;
+    RealType minD = 1e9;
+    int minID = -1;
+    // Search through sectors for closest particles
+    for (int reach=1; reach<min(nsx-2, nsy-2); ++reach) {
+      // THIS COULD BE MORE EFFICIENT IF WE ONLY LOOK FOR THINGS AT SQUARE DISTANCE REACH, NOT *WITHIN* REACH
+	for (int y=max(sy-reach, 1); y<min(sy+reach, nsy-2); ++y)
+	  for (int x=max(sx-reach, 1); x<min(sx+reach, nsx-2); ++x) {
+	    RealType threshold = sqr(reach*min(sdx, sdy)); // Corners of the square will be searched before closer regions at the compass points of the square. This keeps us from finding incorrect "closer" particles
+	    for (const auto &i : sec_at(x,y)) {
+	      if (it[i]<0) continue;
+	      vec2 pos2(px[i], py[i]);
+	      RealType dsqr = sqr(simData->getDisplacement(pos,pos2));
+	      if (dsqr>0 && dsqr<threshold && dsqr<=minD) { // Don't find yourself
+		minD = dsqr;
+		minID = i;
+	      }
+	    }
+	  }
+	// If we have found two, we are done
+	if (minID>-1) break;
+    }
+    return minID;
+  }
+
+  pair<int, int> Sectorization::getClosestTwo(int id, SimData *simData) {
+    // Get data
+    RealType *px = simData->getPxPtr();
+    RealType *py = simData->getPyPtr();
+    int *it = simData->getItPtr();
+    // Search progressively outwards
+    vec2 pos(px[id], py[id]);
+    int sec = getSec(pos.x, pos.y);
+    int sx = sec % nsx, sy = sec/nsx;
+    int reach = 1;
+    RealType minD1 = 1e9, minD2 = 1e9;
+    int min1 = -1, min2 = -1;
+
+    // Helper lambda
+    auto check = [&] (int x, int y, RealType threshold) {
+      for (const auto &index : sec_at(x,y)) {
+	if (it[index]<0) return;
+	vec2 pos2(px[index], py[index]);
+	RealType dsqr = sqr(simData->getDisplacement(pos,pos2));
+	if (dsqr>0 && dsqr<threshold) { // Don't find yourself
+	  if (dsqr<=minD1) {
+	    minD1 = dsqr;
+	    min1 = index;
+	  }
+	  else if (dsqr<minD2) {
+	    minD2 = dsqr;
+	    min2 = index;
+	  }
+	}
+      }
+    };
+
+    /*
+    // Search your sector
+    for (const auto &i : sec_at(sx, sy)) check(sx, sy, sqr(min(sdx,sdy)));
+    // Start searching surrounding sectors
+    for (int reach=1; reach<min(nsx-2, nsy-1); ++reach) {
+      RealType threshold = sqr(reach*min(sdx, sdy)); // Corners of the square will be searched before closer regions at the compass points of the square. This keeps us from finding incorrect "closer" particles
+      // Left
+      if (0<sx-reach)
+	for (int y=max(1,sy-reach); y<=min(nsy-2, sy+reach); ++y) check(sx-reach, y, threshold);
+      // Top
+      if (sy+reach<nsy-1)
+	for (int x=max(1,sx-reach); x<=min(nsx-2, sx+reach); ++x) check(x, sy+reach, threshold);
+      // Right
+      if (sx+reach<nsx-1)
+	for (int y=max(1,sy-reach); y<=min(nsy-2, sy+reach); ++y) check(sx+reach, y, threshold);
+      // Bottom
+      if (0<sy-reach)
+	for (int x=max(1,sx-reach); x<=min(nsx-2, sx+reach); ++x) check(x, sy-reach, threshold);
+      // If we have found two, we are done
+      if (min2>-1) break;
+    }
+    // Return the pair
+    return pair<int, int>(min1, min2);
+    */
+    
+    /*
+    // Search through sectors for closest particles
+    for (int reach=1; reach<min(nsx-2, nsy-2); ++reach) {
+      // THIS COULD BE MORE EFFICIENT IF WE ONLY LOOK FOR THINGS AT SQUARE DISTANCE REACH, NOT *WITHIN* REACH
+      for (int y=max(sy-reach, 1); y<min(sy+reach, nsy-2); ++y)
+	for (int x=max(sx-reach, 1); x<min(sx+reach, nsx-2); ++x) {
+	  RealType threshold = sqr(reach*min(sdx, sdy)); // Corners of the square will be searched before closer regions at the compass points of the square. This keeps us from finding incorrect "closer" particles
+	  check(x,y,threshold);
+	}
+      // If we have found two, we are done
+      if (min2>-1) break;
+    }
+    // Return the pair
+    return pair<int, int>(min1, min2);
+    */
+
+    // Brute force
+    int domain_end = simData->getDomainEnd();
+    for (int i=0; i<domain_end; ++i) {
+      if (i==id) continue;
+      vec2 pos2(px[i], py[i]);
+      RealType dsqr = sqr(simData->getDisplacement(pos,pos2));
+      if (dsqr < minD1) {
+	minD1 = dsqr;
+	min1 = i;
+      }
+      else if (dsqr<minD2) {
+	minD2 = dsqr;
+	min2 = i;
+      }
+    }
+    return pair<int,int>(min1, min2);
   }
 
   inline int Sectorization::getSec(const RealType x, const RealType y) {

@@ -62,37 +62,7 @@ namespace GFlow {
   }
 
   void SimData::addWall(const Wall& w) {
-    vec2 left = w.left, right = w.getRight();
-    RealType EPS = 0.001;
-    // Clip walls so they are always within the proper region if we are wrapping
-    if (wrapX || wrapY) {
-      if (left.x==right.x) { // Verticle wall - cannot parameterize by x
-	// Only need to add (at most) one wall
-	if (wrapY) {
-	  if (right.y<simBounds.bottom || simBounds.top<left.y) return; // Wall is out of bounds
-	  else {
-	    left.y = max(left.y, simBounds.bottom+EPS);
-	    right.y = min(right.y, simBounds.top-EPS);
-	  }
-	}
-	// Make sure we are not on an edge if we are wrapping
-	if (wrapX && left.x==simBounds.left) {
-	  left.x += EPS; right.x += EPS;
-	}
-	if (wrapX && left.x==simBounds.right) {
-	  left.x -= EPS; right.x -= EPS;
-	}
-	// Add the wall
-	walls.push_back(Wall(left, right)); // No need to clip
-      }
-      else { // Parameterize by x
-	// SIMPLE CLIP
-	// Wall slope
-	RealType slope = (right.y-left.y)/(right.x-left.x);
-	// Find first x value where the wall is right of the left wall
-      }
-    }
-    else walls.push_back(w);
+    walls.push_back(w);
   }
 
   void SimData::addWall(const Bounds& b) {
@@ -101,6 +71,10 @@ namespace GFlow {
     walls.push_back(Wall(bl, tl));
     walls.push_back(Wall(tl, tr));
     walls.push_back(Wall(br, tr));
+  }
+
+  void SimData::addWall(const vector<Wall>& walls) {
+    for (const auto &w : walls) addWall(w);
   }
 
   int SimData::addParticle(const Particle& p) {
@@ -265,6 +239,10 @@ namespace GFlow {
     for (int i=0; i<domain_end; ++i)
       if (-1<it[i]) vol += sqr(sg[i]);
     return PI*vol/simBounds.volume();
+  }
+
+  pair<int, int> SimData::getClosestTwo(int id) {
+    return sectors->getClosestTwo(id, this);
   }
 
 #if USE_MPI == 1

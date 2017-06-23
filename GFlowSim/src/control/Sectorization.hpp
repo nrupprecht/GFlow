@@ -72,6 +72,12 @@ namespace GFlow {
     RealType getMaxCutR()   { return maxCutR; }
     RealType getSecCutR()   { return secCutR; }
 
+    // Get the closest
+    int getClosest(int, SimData*);
+
+    // Get closest two
+    pair<int, int> getClosestTwo(int, SimData*);
+
     // DataRecord is a friend class
     friend class DataRecord;
 

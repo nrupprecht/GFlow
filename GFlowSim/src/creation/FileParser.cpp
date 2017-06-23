@@ -84,7 +84,7 @@ namespace GFlow {
 	char f, s;
 	fin.get(f); fin.get(s);
 	while (!fin.eof()) {
-	  if (tok.at(0)=='*' && tok.at(1)=='/') break;
+	  if (f=='*' && s=='/') break;
 	  f = s;
 	  fin.get(s);
 	}
@@ -169,7 +169,7 @@ namespace GFlow {
     simData->setWrapX(wrapX);
     simData->setWrapY(wrapY);
     // Add walls
-    for (auto& w : walls) simData->addWall(w);
+    simData->addWall(walls);
     // Add individual particles
     simData->reserve(particles.size());
     for (auto& p : particles) simData->addParticle(p);
@@ -549,7 +549,7 @@ namespace GFlow {
       else if (tok==Dissipation_Tok) getValue(fin, dissipation, variables);
       else if (tok==Coeff_Tok) getValue(fin, coeff, variables);
       else throw UnrecognizedToken(tok);
-
+      // Get next token
       fin >> tok;
     }
 

@@ -51,6 +51,7 @@ namespace GFlow {
     // Add walls
     void addWall(const Wall&);
     void addWall(const Bounds&);
+    void addWall(const vector<Wall>&);
 
     // Add particles
     int addParticle(const Particle&);
@@ -140,6 +141,9 @@ namespace GFlow {
 
     // Calculate packing fraction
     RealType getPhi();
+
+    // Get the indices of the two closest particles to a particular particle
+    pair<int, int> getClosestTwo(int);
 
 #if USE_MPI == 1 // Get MPI data
     int getRank()    { return rank; }

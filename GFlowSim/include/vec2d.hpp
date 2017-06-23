@@ -46,4 +46,14 @@ const vec2 Zero(0,0);
 // Special squaring function for vectors
 inline RealType sqr(const vec2& v) { return v*v; }
 
+// Normalization function
+inline void normalize(vec2 &v) {
+  RealType mag = sqrt(sqr(v));
+  v.x /= mag; v.y /= mag;
+}
+
+inline RealType length(vec2 &v) {
+  return sqrt(sqr(v));
+}
+
 #endif // __VEC_2D_HPP__

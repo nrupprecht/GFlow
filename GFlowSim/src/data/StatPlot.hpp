@@ -15,6 +15,7 @@ namespace GFlow {
   typedef void (*StatPlot) (SimData*, vector<RPair>&, const RPair);
 
   inline void StatPlot_Velocity(SimData* simData, vector<RPair>& statVector, const RPair bounds) { 
+    // Get the bins
     int bins = statVector.size();
     if (bins==0) return;
     // Bin data
@@ -112,6 +113,34 @@ namespace GFlow {
     // Combine data
     for (int i=0; i<bins; ++i)
       if (count.at(i)>0) statVector.at(i).second += press.at(i)/count.at(i);
+  }
+
+  inline void StatPlot_Alignment(SimData* simData, vector<RPair>& statVector, const RPair bounds) {
+    // Get the bins
+    int bins = statVector.size();
+    if (bins==0) return;
+    // Bin data
+    double dq = (bounds.second-bounds.first)/bins;
+    // Get data
+    RealType *px = simData->getPxPtr();
+    RealType *py = simData->getPyPtr();
+    // Interaction pointer
+    int *it = simData->getItPtr();
+    int domain_end = simData->getDomainEnd();
+    // Bin data
+    for (int i=0; i<domain_end; ++i) {
+      vec2 pos(px[i], py[i]);
+      pair<int, int> closest = simData->getClosestTwo(i);
+      int j = closest.first, k = closest.second;
+      if (j==-1 || k==-1) continue;
+      vec2 p1(px[j], py[j]), p2(px[k], py[k]);
+      vec2 d1 = simData->getDisplacement(p1,pos), d2 = simData->getDisplacement(p2,pos);
+      normalize(d1); normalize(d2);
+      RealType theta = acos(d1*d2)/PI; // Cosine of the angle between the closest two particles
+      int b = (theta - bounds.first)/dq;
+      if (b<0 || bins<=b) ; // Don't go out of bounds
+      else statVector.at(b).second += 1;
+    }
   }
   
 }
