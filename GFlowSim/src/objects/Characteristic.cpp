@@ -13,7 +13,7 @@ namespace GFlow {
       if (useOm) simData->getOm(id) = omega;
       // Check if we should deactivate -- temporary code (?)
       RealType close = (simData->getPy(id) - simData->getSimBounds().bottom)/simData->getSg(id);
-      if (close<5) {
+      if (stop && close<5) {
 	active = false;
 	simData->getVx(id) = 0;
 	simData->getVy(id) = 0;

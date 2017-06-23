@@ -26,9 +26,11 @@ namespace GFlow {
   class ConstantVelocity : public Characteristic {
   public:
     // Constructors
-    ConstantVelocity(vec2 v) : velocity(v), omega(0), useV(true), useOm(false), active(true) {};
-    ConstantVelocity(RealType om) : velocity(Zero), omega(om), useV(false), useOm(true), active(true) {};
-    ConstantVelocity(vec2 v, RealType om) : velocity(v), omega(om), useV(true), useOm(true), active(true) {};
+    ConstantVelocity(vec2 v) : velocity(v), omega(0), useV(true), useOm(false), active(true), stop(false) {};
+    ConstantVelocity(vec2 v, bool s) : velocity(v), omega(0), useV(true), useOm(false), active(true), stop(s) {};
+    ConstantVelocity(RealType om) : velocity(Zero), omega(om), useV(false), useOm(true), active(true), stop(true) {};
+    ConstantVelocity(vec2 v, RealType om) : velocity(v), omega(om), useV(true), useOm(true), active(true), stop(false) {};
+    ConstantVelocity(vec2 v, RealType om, bool s) : velocity(v), omega(om), useV(true), useOm(true), active(true), stop(s) {};
 
     virtual void modify(SimData*, int, RealType);
   private:
@@ -37,6 +39,7 @@ namespace GFlow {
     bool useV, useOm;
 
     bool active;
+    bool stop;
   };
 
   /*

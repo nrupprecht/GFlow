@@ -24,7 +24,7 @@ namespace GFlow {
       P.velocity = velocity;
       // Add either with inserter, constant velocity, or as normal
       if (insert) simData->addParticle(P, new Insertion(velocity, 0));
-      else if (constant) simData->addParticle(P, new ConstantVelocity(velocity, 0));
+      else if (constant) simData->addParticle(P, new ConstantVelocity(velocity, 0, true));
       else simData->addParticle(P);
     }
 
@@ -50,7 +50,7 @@ namespace GFlow {
       P.setDensity(density);
       P.velocity = velocity;
       // Add either with constant velocity, or as normal
-      if (constant) simData->addParticle(P, new ConstantVelocity(velocity, 0));
+      if (constant) simData->addParticle(P, new ConstantVelocity(velocity, 0.));
       else simData->addParticle(P);
       // Make sure there is no serious overlap
       StandardSectorization remover(simData);
