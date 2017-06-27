@@ -51,6 +51,9 @@ namespace GFlow {
 
     /****** Accessors *****/
 
+    // Get all particles within some radius of a point
+    vector<Particle> getParticles(vec2, RealType, SimData*);
+
     // Returns the particle verlet list
     auto& getVerletList() { return verletList; }
 

@@ -11,6 +11,8 @@ class ScalarField {
  public:
   ScalarField();
   ScalarField(double, double, double, double);
+  ScalarField(const ScalarField&);
+  ScalarField& operator=(const ScalarField&);
 
   // Accessors
   double get(vec2) const;
@@ -83,7 +85,7 @@ class ScalarField {
 
   class IllegalResolution {};
 
- private:
+private:
   // Private helper functions
   void cinc(int, int, double); // Conditional increase, increase the entry if it exists
 
@@ -92,10 +94,10 @@ class ScalarField {
   Bounds bounds;
   double dx, idx, dy, idy;
   bool wrapX, wrapY;
-  double *array;
-  double *lap_array;
+  RealType *array;
+  RealType *lap_array;
 
-  double diffusion, lambda;
+  RealType diffusion, lambda;
 
   // The resolution to print at for ostream or .csv files
   mutable int printPoints;

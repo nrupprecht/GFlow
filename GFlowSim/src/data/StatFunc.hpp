@@ -247,6 +247,6 @@ namespace GFlow {
       if (-1<it[i] && max<sg[i]) max = sg[i];
     return max;
   }
-
+  
 }
 #endif // __STAT_FUNC_HPP__

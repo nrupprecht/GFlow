@@ -265,7 +265,7 @@ namespace GFlow {
     // Search progressively outwards
     vec2 pos(px[id], py[id]);
     int sec = getSec(pos.x, pos.y);
-    int sx = sec % nsx, sy = sec/nsx;
+    int sx = sec % nsx, sy = sec / nsx;
     int reach = 1;
     RealType minD1 = 1e9, minD2 = 1e9;
     int min1 = -1, min2 = -1;
@@ -426,4 +426,38 @@ namespace GFlow {
     for (auto p : remove) simData->removeAt(p);
   }
   
+  vector<Particle> Sectorization::getParticles(vec2 pos, RealType scanDist, SimData *simData) {
+    // Sectorize
+    _sectorize();
+    // List of particles to fill
+    vector<Particle> particles;
+    // Set up
+    int sec = getSec(pos.x, pos.y);
+    int x = sec%nsx, y = sec/nsx;
+    RealType scanDistSqr = sqr(scanDist);
+    int scanBinsX = ceil(scanDist/sdx);
+    int scanBinsY = ceil(scanDist/sdy);
+    int minX = x-scanBinsX, maxX = x+scanBinsX;
+    int minY = y-scanBinsY, maxY = y+scanBinsY;
+    // Adjust for wrapping or bounds
+    if (minX<1) minX = (wrapX ? minX+nsx-2 : 1);
+    if (nsx-2<maxX) maxX = (wrapX ? maxX-nsx+2 : nsx-2);
+    if (minY<1) minY = (wrapY ? minY+nsy-2 : 1);
+    if (nsy-2<maxY) maxY = (wrapY ? maxY-nsy+2 : nsy-2);
+    // Sweep
+    RealType *px = simData->getPxPtr(), *py = simData->getPyPtr();
+    int *it = simData->getItPtr();
+    for (int sy = minY; sy!=maxY+1; ++sy) {
+      for (int sx = minX; sx!=maxX+1; ++sx) {
+	for (const auto I : sec_at(sx, sy)) {
+	  if (-1<it[I] && sqr(simData->getDisplacement(pos.x, pos.y, px[I], py[I]))<scanDistSqr)
+	    particles.push_back( simData->makeParticle(I) );
+	}
+	if (wrapX && nsx-1==sx) sx = 0; // The ++ will make this 1
+      }
+      if (wrapY && nsy-1==sy) sy = 0; // The ++ will make this 1
+    }
+    return particles;
+  }
+
 }

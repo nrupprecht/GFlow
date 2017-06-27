@@ -106,6 +106,10 @@ namespace GFlow {
     a = b; b = temp;
   }
 
+  template<typename T> inline T& Last(vector<T> lst) {
+    return lst.at(lst.size()-1);
+  }
+
   /// Get the current time
   inline auto current_time() {
     return high_resolution_clock::now();

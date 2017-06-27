@@ -106,6 +106,9 @@ namespace GFlow {
     RealType& getIm(int i) { return im[i]; }
     int&      getIt(int i) { return it[i]; }
 
+    // Get a copy of a particle
+    Particle makeParticle(int);
+
     // Get position record
     vec2* getPRPtr()     { return positionRecord.getPtr(); }
 
@@ -117,6 +120,9 @@ namespace GFlow {
 
     // Get a list of all the particles
     vector<Particle> getParticles();
+
+    // Get all the particles withing a cutoff radius
+    vector<Particle> getParticles(vec2, RealType);
 
     // Get the characteristics
     auto& getCharacteristics() { return characteristics; }
@@ -192,6 +198,11 @@ namespace GFlow {
     friend class Creator;
     // FileParser is a friend class
     friend class FileParser;
+
+    struct BadParticle {
+      BadParticle(int i) : index(i) {};
+      int index;
+    };
     
   private:
     // Private helper functions

@@ -4,7 +4,7 @@
 #include "../forces/ExternalForce.hpp"
 
 namespace GFlow {
-  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-delay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), lowerSizeLimit(0), recOption(1), recBulk(false), recBulkOutline(false), recDisplacementField(false), displacementSnapshot(false), trackDisplacement(false), recPressField(false), recPerf(false), statRecPerf(-1), recMvRatio(false), statRecMvRatio(-1), recDt(false), statRecDt(-1), recDelay(false), statRecDelay(-1), center(false) {
+  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-delay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), lowerSizeLimit(0), recOption(1), stripeHeight(3), recBulk(false), recBulkOutline(false), recDisplacementField(false), displacementSnapshot(false), trackDisplacement(false), recPressField(false), recPerf(false), statRecPerf(-1), recMvRatio(false), statRecMvRatio(-1), recDt(false), statRecDt(-1), recDelay(false), statRecDelay(-1), center(false) {
     start_time = end_time = high_resolution_clock::now();
   };
 
@@ -33,6 +33,12 @@ namespace GFlow {
       statFunctionData.push_back(vector<RPair>());
       statFunctionName.push_back("delay");
       statRecDelay = end;
+      ++end;
+    }
+    if (recDistance) {
+      statFunctionData.push_back(vector<RPair>());
+      statFunctionName.push_back("distance");
+      statRecDistance = end;
       ++end;
     }
   }
@@ -71,37 +77,20 @@ namespace GFlow {
     // Record data
     lastRecord = time;
 
-    // Get the arrays
-    RealType *px = simData->getPxPtr();
-    RealType *py = simData->getPyPtr();
-    RealType *sg = simData->getSgPtr();
-    RealType *th = simData->getThPtr();
-    int *it = simData->getItPtr();
-    int domain_end = simData->domain_end;
-
     // Initialize displacement tracking, if neccessary
     if (recIter==0) {
+      RealType *px = simData->getPxPtr();
+      RealType *py = simData->getPyPtr();
+      int domain_end = simData->domain_end;    
       initialPositions = vector<vec2>(domain_end);
+      // Record
       for (int i=0; i<domain_end; ++i) initialPositions.at(i) = vec2(px[i], py[i]);
     }
 
     // Record position data
     if (recPos) {
       vector<PData> positions;
-      if (recOption==1) // Record pressure
-	simData->getPressureData(positions, lowerSizeLimit);
-      else if (recOption==2) // Record by particle id
-	recordByNumber(simData, positions);
-      else if (recOption==3) // Record by number of verlet lists the particle is in
-	recordByVerletList(simData, positions);
-      else if (recOption==4) // Record by velocity
-	recordByVelocity(simData, positions);
-      else if (recOption==5) // Record by displacement
-	recordByDisplacement(simData, positions);
-      else { // recOption==0 or default. Record nothing extra
-	for (int i=0; i<domain_end; ++i)
-	  if (it[i]>-1 && lowerSizeLimit<sg[i]) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], 0));
-      }
+      getPositionData(positions, simData, recOption);
       positionRecord.push_back(positions);
     }
 
@@ -135,6 +124,21 @@ namespace GFlow {
       getPressureData(simData, region, pressField);
     }
 
+    // Record vortex data
+    if (recVortex) {
+      Bounds region;
+      if (center) {
+        RealType max_posx = StatFunc_MaxR_PosX(simData);
+        RealType max_posy = StatFunc_MaxR_PosY(simData);
+        RealType maxSigma = StatFunc_MaxR_Sigma(simData);
+        region = Bounds(max_posx-6*maxSigma, max_posx+6*maxSigma, max_posy-6*maxSigma, max_posy+18*maxSigma);
+      }
+      else region = simData->getSimBounds();
+      ScalarField vortex;
+      getVortexData(simData, region, vortex);
+      vortexRecord.push_back(vortex);
+    }
+
     // Record displacement field
     if (recDisplacementField) displacementFieldRecord.push_back(createDisplacementField(simData, true));
 
@@ -148,6 +152,23 @@ namespace GFlow {
     for (int i=0; i<statPlots.size(); ++i) {
       StatPlot sp = statPlots.at(i);
       sp(simData, statPlotData.at(i), statPlotBounds.at(i));
+    }
+
+    // Record average distance
+    if (recDistance && statRecDistance>-1) {
+      // Find the average distance
+      RealType R = 0;
+      RealType *px = simData->getPxPtr();
+      RealType *py = simData->getPyPtr();
+      int *it = simData->getItPtr();
+      int domain_end = simData->getDomainEnd(), domain_size = simData->getDomainSize();
+      if (domain_size>0) {
+	for (int i=0; i<domain_end; ++i) {
+	  if (-1<it[i]) R += sqrt(sqr(simData->getDisplacement(vec2(px[i], py[i]), initialPositions.at(i))));
+	}
+	R /= domain_size;
+	statFunctionData.at(statRecDistance).push_back(RPair(time, R));
+      }
     }
 
     // Increment record counter
@@ -273,6 +294,18 @@ namespace GFlow {
 
     // Write pressure data
     if (recPressField) pressField.printToCSV(writeDirectory+"/pressField.csv", 1./static_cast<RealType>(recIter));
+
+    // Write vortex data
+    if (recVortex) {
+      // Create vortex directors
+      mkdir((writeDirectory+"/Vortex").c_str(), 0777);
+      // Print frames
+      int index = 0;
+      for (const auto &f : vortexRecord) {
+	f.printToCSV(writeDirectory+"/Vortex/vortex"+toStr(index)+".csv");
+	++index;
+      }
+    }
   }
 
   void DataRecord::writeRunSummary(SimData* simData, Integrator* integrator) const {
@@ -404,6 +437,31 @@ namespace GFlow {
 
     // Add the stat plot's name
     statPlotName.push_back(name);
+  }
+
+  void DataRecord::getPositionData(vector<PData>& positions, SimData *simData, int option) {
+    if (option==1) // Record pressure
+      simData->getPressureData(positions, lowerSizeLimit);
+    else if (option==2) // Record by particle id
+      recordByNumber(simData, positions);
+    else if (option==3) // Record by number of verlet lists the particle is in
+      recordByVerletList(simData, positions);
+    else if (option==4) // Record by velocity
+      recordByVelocity(simData, positions);
+    else if (option==5) // Record by displacement
+      recordByDisplacement(simData, positions);
+    else if (option==6) // Record by height, in colored stripes
+      recordByHeight(simData, positions);
+    else { // recOption==0 or default. Record nothing extra
+      RealType *px = simData->getPxPtr();
+      RealType *py = simData->getPyPtr();
+      RealType *sg = simData->getSgPtr();
+      RealType *th = simData->getThPtr();
+      int *it = simData->getItPtr();
+      int domain_end = simData->domain_end;
+      for (int i=0; i<domain_end; ++i)
+	if (it[i]>-1 && lowerSizeLimit<sg[i]) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], 0));
+    }
   }
 
   vector<pair<RealType, RealType> > DataRecord::getStatFunctionData(int index) const {
@@ -568,6 +626,24 @@ namespace GFlow {
     // We will sort out particles with it<0 at the end
     for (int i=0; i<domain_end; ++i)
       if (it[i]>-1) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], sqrt(sqr(initialPositions.at(i)-vec2(px[i],py[i])))));
+  }
+
+  void DataRecord::recordByHeight(SimData* simData, vector<PData>& positions) const {
+    // Get the arrays
+    RealType *px = simData->getPxPtr();
+    RealType *py = simData->getPyPtr();
+    RealType *sg = simData->getSgPtr();
+    RealType *th = simData->getThPtr();
+    RealType *vx = simData->getVxPtr();
+    RealType *vy = simData->getVyPtr();
+    int *it = simData->getItPtr();
+    int domain_end = simData->domain_end;
+
+    // We will sort out particles with it<0 at the end
+    for (int i=0; i<domain_end; ++i) {
+      int col = static_cast<int>(initialPositions.at(i).y / stripeHeight) % 2;
+      if (it[i]>-1) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], col));
+    }
   }
 
   void DataRecord::getBulkData(SimData* simData, const Bounds& region, vector<RealType>& volumes, ScalarField& field, vector<pair<vec2,vec2> >& lines, RealType resolution, RealType dr, RealType lowerVCut, RealType upperVCut) const {
@@ -936,6 +1012,38 @@ namespace GFlow {
 	field.at(sec_x, sec_y) += std::get<5>(p);
     }
     
+  }
+  
+  inline void DataRecord::getVortexData(SimData* simData, const Bounds& region, ScalarField& field, RealType resolution, RealType cutoff) const {
+    int nsx = (region.right - region.left)/resolution, nsy = (region.top - region.bottom)/resolution;
+    RealType sdx = (region.right - region.left)/nsx, sdy = (region.top - region.bottom)/nsy;
+    ++nsx;
+    ++nsy;
+    // Set up field if that hasn't already been done
+    if (field.empty()) {
+      RealType sx = (region.right - region.left)/nsx, sy = (region.top - region.bottom)/nsy;
+      field.setBounds(region);
+      field.setResolution(sx);
+      field.setPrintPoints(200);
+    }
+    // Measure local angular momentum
+    RealType X(0), Y(region.bottom + 0.5*sdy);
+    for (int y=0; y<nsy; ++y, Y += sdy) {
+      X = region.left + 0.5*sdx;
+      for (int x=0; x<nsx; ++x, X += sdx) {
+	vec2 pos(X, Y);
+	auto particles = simData->getParticles(pos, cutoff);
+	RealType ang = 0;
+	for (const auto p : particles) {
+	  if (p.sigma < 0.1) { // Radius restiction
+	    vec2 displacement = simData->getDisplacement(p.position, pos);
+	    RealType angM = displacement^((1./p.invMass)*p.velocity);
+	    ang += angM;
+	  }
+	}
+	field.at(x,y) = ang;
+      }
+    }
   }
 
 }

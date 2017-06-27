@@ -129,6 +129,24 @@ namespace GFlow {
     if (index==domain_end-1) --domain_end;
     holes.push_back(index);
   }
+
+  Particle SimData::makeParticle(int i) {
+    if (domain_end<=i || it[i]<0) throw BadParticle(i);
+    // Create and return a copy of the particle
+    Particle P(px.at(i), py.at(i), sg.at(i));
+    P.velocity    = vec2(vx.at(i), vy.at(i));
+    P.force       = vec2(fx.at(i), fy.at(i));
+    P.theta       = th.at(i);
+    P.omega       = om.at(i);
+    P.torque      = tq.at(i);
+    P.invMass     = im.at(i);
+    P.invII       = iI.at(i);
+    P.repulsion   = rp.at(i);
+    P.dissipation = ds.at(i);
+    P.coeff       = cf.at(i);
+    P.interaction = it.at(i);
+    return P;
+  }
   
   vector<Particle> SimData::getParticles() {
     vector<Particle> plist;
@@ -151,6 +169,10 @@ namespace GFlow {
       }
     }
     return plist;
+  }
+
+  vector<Particle> SimData::getParticles(vec2 pos, RealType cutoff) {
+    return sectors->getParticles(pos, cutoff, this);
   }
 
   void SimData::getPressureData(vector<PData>& positions, RealType lowerSizeLimit) {

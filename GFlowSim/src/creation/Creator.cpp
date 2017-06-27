@@ -33,6 +33,13 @@ namespace GFlow {
   }
 
   void Creator::createAero(SimData *& simData, Integrator *& integrator, RealType radius, RealType density, vec2 velocity, bool constant) {
+    Bounds sb = simData->getSimBounds();
+    // Change the bounds for the addition of the new particle
+    RealType height = StatFunc_HighestBall(simData); // Height of the tops of the balls
+    Bounds nb(sb.left, sb.right, sb.bottom, height);
+    // Set new bounds
+    simData->setSimBounds(nb);
+    simData->setBounds(nb);
     // Get rid of the old walls
     simData->getWalls().clear();
     // Set wrapping in the y-direction
@@ -40,13 +47,12 @@ namespace GFlow {
     // Remove external forces
     simData->clearExternalForces();
     // Create new walls
-    Bounds sb = simData->getSimBounds();
-    Wall lw(sb.left, sb.bottom, sb.left, sb.top);
-    Wall rw(sb.right, sb.bottom, sb.right, sb.top);
+    Wall lw(nb.left, nb.bottom, nb.left, nb.top);
+    Wall rw(nb.right, nb.bottom, nb.right, nb.top);
     simData->addWall(lw); simData->addWall(rw);
     // Insert the intruding particle
     if (radius>0) {
-      Particle P(0.5*(sb.right+sb.left), 0.5*(sb.top+sb.bottom), radius);
+      Particle P(0.5*(nb.right+nb.left), 0.5*(nb.top+nb.bottom), radius);
       P.setDensity(density);
       P.velocity = velocity;
       // Add either with constant velocity, or as normal

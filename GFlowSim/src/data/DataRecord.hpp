@@ -80,11 +80,13 @@ namespace GFlow {
     void setRecMvRatio(bool b) { recMvRatio = b; }
     void setRecDt(bool b)      { recDt = b; }
     void setRecDelay(bool b)   { recDelay = b; }
+    void setRecDistance(bool b) { recDistance = b; }
     void setRecBulk(bool b)    { recBulk = b; }
     void setRecBulkOutline(bool b) { recBulkOutline = b; }
     void setRecDisplacementField(bool b) { recDisplacementField = b; }
     void setDisplacementSnapshot(bool b) { displacementSnapshot = b; }
     void setRecPressField(bool b) { recPressField = b; }
+    void setRecVortex(bool b) { recVortex = b; }
     void setTrackDisplacement(bool b) { trackDisplacement = b; }
 
     // Whether to center the data
@@ -112,6 +114,9 @@ namespace GFlow {
 
     // Get the simulation run time
     RealType getRunTime() const { return runTime; }
+
+    // Get position data
+    void getPositionData(vector<PData>&, SimData*, int);
 
     // Get the number of stat functions
     int getNumberOfStatFunctions() const { return statFunctionData.size(); }
@@ -141,6 +146,7 @@ namespace GFlow {
     void recordByVerletList(SimData*, vector<PData>&) const;
     void recordByVelocity(SimData*, vector<PData>&) const;
     void recordByDisplacement(SimData*, vector<PData>&) const;
+    void recordByHeight(SimData*, vector<PData>&) const;
     void getBulkData(SimData*, const Bounds&, vector<RealType>&, ScalarField&, vector<pair<vec2,vec2> >&, RealType=0.015, RealType=0.015, RealType=0.01, RealType=1.) const;    
     inline void unite(int*, int, int) const;
     inline void createOutline(int*, int, int, RealType, RealType, Bounds, vector<pair<vec2,vec2> >&) const;
@@ -149,6 +155,7 @@ namespace GFlow {
     inline ScalarField createDisplacementField(SimData*, bool=true) const;
     inline void writeDisplacementField(SimData*) const;
     inline void getPressureData(SimData*, const Bounds&, ScalarField&, RealType=0.1) const;
+    inline void getVortexData(SimData*, const Bounds&, ScalarField&, RealType=0.1, RealType=0.2) const;
 
     // The command that was used
     vector<string> command;
@@ -184,7 +191,8 @@ namespace GFlow {
     vector<vector<PData> > positionRecord;
     bool recPos;
     RealType lowerSizeLimit; // Particles smaller than this will not be animated
-    int recOption; // Color particles according to what
+    int recOption;           // Color particles according to what
+    RealType stripeHeight;   // The width of the stripes when we color the particles by height in stripes
 
     // Bulk data
     bool recBulk, recBulkOutline;
@@ -218,6 +226,10 @@ namespace GFlow {
     bool recPressField;
     ScalarField pressField;
 
+    // Vortex field tracking
+    bool recVortex;
+    vector<ScalarField> vortexRecord;
+
     // Performance tracking
     bool recPerf;
     high_resolution_clock::time_point last_record;
@@ -231,6 +243,9 @@ namespace GFlow {
 
     bool recDelay;
     int statRecDelay;
+
+    bool recDistance;
+    int statRecDistance;
 
     bool center; // Whether to center on the largest object
   };

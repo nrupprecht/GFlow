@@ -32,7 +32,7 @@ namespace GFlow {
           nlist.push_back(i); // You are at the head of the list
 
 	  // If you are a "small" particle (only need to check adjacent sectors)
-	  if (false && sigma<=threshold) { //**--
+	  if (sigma<=threshold) {
 	    // Sector you are in
 	    auto q = p; ++q; // Check only particles ordered after you
 	    for (; q!=sec_at(x,y).end(); ++q) {
@@ -80,18 +80,16 @@ namespace GFlow {
 	    int scanBinsY = ceil(scanDist/sdy);
 	    int minX = x-scanBinsX, maxX = x+scanBinsX;
 	    int minY = y-scanBinsY, maxY = y+scanBinsY;
-	    // ----> THIS IS UNTESTED. WE SHOULD TEST IT //**
+	    // Adjust for wrapping or bounds
 	    if (minX<1) minX = (wrapX ? minX+nsx-2 : 1);
 	    if (nsx-2<maxX) maxX = (wrapX ? maxX-nsx+2 : nsx-2);
-
 	    if (minY<1) minY = (wrapY ? minY+nsy-2 : 1);
 	    if (nsy-2<maxY) maxY = (wrapY ? maxY-nsy+2 : nsy-2);
-
 	    // Sweep
 	    for (int sy=minY; sy!=maxY+1; ++sy) {
 	      for (int sx=minX; sx!=maxX+1; ++sx) {
 		check(sx,sy,i,it,px,py,sg,sigma,nlist);
-		if (nsx-1==sx) sx = 0; // The ++ will make this 1
+		if (wrapX && nsx-1==sx) sx = 0; // The ++ will make this 1
 	      }
 	      if (wrapY && nsy-1==sy) sy = 0; // The ++ will make this 1
 	    }

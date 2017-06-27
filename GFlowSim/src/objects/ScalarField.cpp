@@ -7,6 +7,31 @@ ScalarField::ScalarField(double l, double r, double b, double t) : bounds(Bounds
     lap_array = new double[nsx*nsy];
 }
 
+ScalarField::ScalarField(const ScalarField& sf) : array(0), lap_array(0) {
+  *this = sf;
+}
+
+ScalarField& ScalarField::operator=(const ScalarField& sf) {
+  nsx = sf.nsx; nsy = sf.nsy;
+  bounds = sf.bounds;
+  dx = sf.dx; idx = sf.idx; dy = sf.dy; idy = sf.idy;
+  wrapX = sf.wrapX; wrapY = sf.wrapY;
+  if (array) delete [] array;
+  if (lap_array) delete [] lap_array;
+  array = new RealType[nsx*nsy];
+  lap_array = new double[nsx*nsy];  
+  for (int i=0; i<nsx*nsy; ++i) {
+    array[i] = sf.array[i];
+    lap_array[i] = sf.lap_array[i];
+  }
+  diffusion = sf.diffusion;
+  lambda = sf.lambda;
+  printPoints = sf.printPoints;
+  propReduce = sf.propReduce;
+
+  return *this;
+}
+
 void ScalarField::set(std::function<double(double,double)> f) {
   double X, Y=bounds.bottom;
   for (int y=0; y<nsy; ++y) {

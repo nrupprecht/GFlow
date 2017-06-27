@@ -29,11 +29,13 @@ int main (int argc, char** argv) {
   bool recMvRatio = false;
   bool recDt = false;
   bool recDelay = false;
+  bool recDistance = false;
   bool recBulk = false;
   bool recBulkOutline = false;
   bool recDisplacementField = false;
   bool displacementSnapshot = false;
   bool recPressField = false;
+  bool recVortexField = false;
   bool trackDisplacement = false;
   int fps = 15;
   // Stat function options
@@ -217,11 +219,13 @@ int main (int argc, char** argv) {
   parser.get("recMvRatio", recMvRatio);
   parser.get("recDt", recDt);
   parser.get("recDelay", recDelay);
+  parser.get("recDistance", recDistance);
   parser.get("recBulk", recBulk);
   parser.get("recBulkOutline", recBulkOutline);
   parser.get("recDisplacementField", recDisplacementField);
   parser.get("displacementSnapshot", displacementSnapshot);
   parser.get("recPressField", recPressField);
+  parser.get("recVortexField", recVortexField);
   parser.get("trackDisplacement", trackDisplacement);
   parser.get("fps", fps);
   parser.get("maxRatio", maxRatio);
@@ -298,11 +302,13 @@ int main (int argc, char** argv) {
     dataRecord->setRecMvRatio(recMvRatio);
     dataRecord->setRecDt(recDt);
     dataRecord->setRecDelay(recDelay);
+    dataRecord->setRecDistance(recDistance);
     dataRecord->setRecBulk(recBulk);
     dataRecord->setRecBulkOutline(recBulkOutline);
     dataRecord->setRecDisplacementField(recDisplacementField);
     dataRecord->setDisplacementSnapshot(displacementSnapshot);
     dataRecord->setRecPressField(recPressField);
+    dataRecord->setRecVortex(recVortexField);
     dataRecord->setTrackDisplacement(trackDisplacement);
     dataRecord->setDelay(1./static_cast<RealType>(fps));
     dataRecord->setCenter(center);

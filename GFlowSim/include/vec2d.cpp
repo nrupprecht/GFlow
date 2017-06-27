@@ -26,6 +26,10 @@ RealType vec2::operator*(const vec2& v) const {
   return x*v.x + y*v.y;
 }
 
+RealType vec2::operator^(const vec2& v) const {
+  return x*v.y-y*v.x;
+}
+
 vec2 operator*(const RealType c, const vec2& v) {
   return vec2(c*v.x, c*v.y);
 }
