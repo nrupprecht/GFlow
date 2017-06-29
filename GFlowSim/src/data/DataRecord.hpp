@@ -88,6 +88,7 @@ namespace GFlow {
     void setRecPressField(bool b) { recPressField = b; }
     void setRecVortex(bool b) { recVortex = b; }
     void setTrackDisplacement(bool b) { trackDisplacement = b; }
+    void setRecDisplacementColumns(bool b) { recDisplacementColumns = b; }
 
     // Whether to center the data
     void setCenter(bool c) { center = c; }
@@ -154,6 +155,7 @@ namespace GFlow {
     inline void writeDisplacementData(SimData*) const;
     inline ScalarField createDisplacementField(SimData*, bool=true) const;
     inline void writeDisplacementField(SimData*) const;
+    inline void writeColumnDisplacement(SimData*, int) const;
     inline void getPressureData(SimData*, const Bounds&, ScalarField&, RealType=0.1) const;
     inline void getVortexData(SimData*, const Bounds&, ScalarField&, RealType=0.1, RealType=0.2) const;
 
@@ -221,6 +223,7 @@ namespace GFlow {
     // Displacement tracking
     bool trackDisplacement;
     vector<vec2> initialPositions;
+    bool recDisplacementColumns;
 
     // Pressure field tracking
     bool recPressField;

@@ -33,6 +33,7 @@ int main (int argc, char** argv) {
   bool recBulk = false;
   bool recBulkOutline = false;
   bool recDisplacementField = false;
+  bool recDisplacementColumns = false;
   bool displacementSnapshot = false;
   bool recPressField = false;
   bool recVortexField = false;
@@ -223,6 +224,7 @@ int main (int argc, char** argv) {
   parser.get("recBulk", recBulk);
   parser.get("recBulkOutline", recBulkOutline);
   parser.get("recDisplacementField", recDisplacementField);
+  parser.get("recDisplacementColumns", recDisplacementColumns);
   parser.get("displacementSnapshot", displacementSnapshot);
   parser.get("recPressField", recPressField);
   parser.get("recVortexField", recVortexField);
@@ -306,6 +308,7 @@ int main (int argc, char** argv) {
     dataRecord->setRecBulk(recBulk);
     dataRecord->setRecBulkOutline(recBulkOutline);
     dataRecord->setRecDisplacementField(recDisplacementField);
+    dataRecord->setRecDisplacementColumns(recDisplacementColumns);
     dataRecord->setDisplacementSnapshot(displacementSnapshot);
     dataRecord->setRecPressField(recPressField);
     dataRecord->setRecVortex(recVortexField);

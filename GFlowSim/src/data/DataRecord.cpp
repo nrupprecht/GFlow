@@ -282,6 +282,11 @@ namespace GFlow {
 	displacementFieldRecord.at(i).printToCSV(writeDirectory+"/DisplacementField/dispField"+toStr(i)+".csv");
       }
     }
+    if (simData && recDisplacementColumns) {
+      auto sb = simData->getSimBounds();
+      int bins = (sb.right - sb.left)/0.2;
+      writeColumnDisplacement(simData, bins);
+    }
 
     // Write bulk data
     if (recBulk) {
@@ -949,6 +954,28 @@ namespace GFlow {
   inline void DataRecord::writeDisplacementField(SimData* simData) const {
     ScalarField field = createDisplacementField(simData, true);
     field.printToCSV(writeDirectory+"/displacementField.csv");
+  }
+  
+  inline void DataRecord::writeColumnDisplacement(SimData* simData, int bins) const {
+    vector<pair<RealType, RealType> > columns[bins];
+    Bounds sb = simData->getSimBounds();
+    RealType binWidth = (sb.right-sb.left)/bins;
+    // Bin data
+    int domain_end = simData->getDomainEnd();
+    RealType *px = simData->getPxPtr(), *py = simData->getPyPtr();
+    int *it = simData->getItPtr();
+    for (int i=0; i<domain_end; ++i) {
+      if (-1<it[i]) {
+	int b = (initialPositions.at(i).x-sb.left)/binWidth;
+	auto point = pair<RealType, RealType>( initialPositions.at(i).y, py[i] );
+	columns[b].push_back(point);
+      }
+    }
+
+    // Write data
+    string dirname = writeDirectory+"/Columns";
+    mkdir(dirname.c_str(), 0777);
+    for (int i=0; i<bins; ++i) printToCSV(dirname+"/col"+toStr(i)+".csv", columns[i]);
   }
 
   inline void DataRecord::getPressureData(SimData* simData, const Bounds& region, ScalarField& field, RealType resolution) const {
