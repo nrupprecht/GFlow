@@ -158,6 +158,7 @@ namespace GFlow {
     inline void writeColumnDisplacement(SimData*, int) const;
     inline void getPressureData(SimData*, const Bounds&, ScalarField&, RealType=0.1) const;
     inline void getVortexData(SimData*, const Bounds&, ScalarField&, RealType=0.1, RealType=0.2) const;
+    inline RealType getMixingParameter(SimData*, Bounds& region);
 
     // The command that was used
     vector<string> command;

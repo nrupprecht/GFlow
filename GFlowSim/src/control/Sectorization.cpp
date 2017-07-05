@@ -333,7 +333,7 @@ namespace GFlow {
     // Brute force
     int domain_end = simData->getDomainEnd();
     for (int i=0; i<domain_end; ++i) {
-      if (i==id) continue;
+      if (i==id || it[i]<0) continue;
       vec2 pos2(px[i], py[i]);
       RealType dsqr = sqr(simData->getDisplacement(pos,pos2));
       if (dsqr < minD1) {
@@ -355,6 +355,22 @@ namespace GFlow {
     SY = SY>nsy-1 ? nsy-1 : SY;
     SY = SY<0 ? 0 : SY;
     return SY*nsx+SX;
+  }
+
+  vector<int> Sectorization::getParticlesWithin(int id, RealType dist, SimData* simData) {
+    RealType distSqr = sqr(dist);
+    RealType *px = simData->getPxPtr(), *py = simData->getPyPtr();
+    vec2 pos(px[id], py[id]);
+    vector<int> particles;  
+    // Brute force
+    int *it = simData->getItPtr(), domain_end = simData->getDomainEnd();
+    for (int i=0; i<domain_end; ++i) {
+      if (i==id || it[i]<0) continue;
+      vec2 pos2(px[i], py[i]);
+      RealType dsqr = sqr(simData->getDisplacement(pos,pos2));
+      if (dsqr < distSqr) particles.push_back(i);
+    }
+    return particles;
   }
 
   void Sectorization::_makeSectors() {

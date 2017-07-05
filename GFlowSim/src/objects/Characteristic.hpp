@@ -7,8 +7,7 @@
 namespace GFlow {
 
   // Forward declaration to SimData
-  class SimData;
-  
+  class SimData;  
 
   /*
    * @class Characteristic
@@ -59,6 +58,22 @@ namespace GFlow {
     RealType distance, speed;
     bool forward;
     bool useV, useOm;
+  };
+
+  /*
+   * @class Circulate
+   *
+   */
+  class Circulate : public Characteristic {
+  public:
+    // Constructors
+    Circulate(RealType r, RealType om=2*PI, RealType th=0) : radius(r), omega(om), theta(r), center(Zero), first(true) {};
+
+    virtual void modify(SimData*, int, RealType);
+  private:
+    RealType radius, omega, theta;
+    vec2 center;
+    bool first;
   };
 
 }

@@ -41,4 +41,19 @@ namespace GFlow {
     if (distance<-3*simData->getSg(id)) simData->setTerminate(true);
   }
 
+  void Circulate::modify(SimData* simData, int id, RealType dt) {
+    if (first) {
+      RealType px = simData->getPx(id), py = simData->getPy(id);
+      // Set center
+      px -= radius*cos(theta); py -= radius*sin(theta);
+      center = vec2(px, py);
+      // Done
+      first = false;
+    }
+    // Update angle
+    simData->getPx(id) = center.x + radius*cos(theta);
+    simData->getPy(id) = center.y + radius*sin(theta);
+    theta += dt*omega;
+  }
+
 }

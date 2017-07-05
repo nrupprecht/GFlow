@@ -16,6 +16,7 @@ int main (int argc, char** argv) {
   string config = "";
   string buoyancy = "";
   string aero = "";
+  string mix = "";
   string writeDirectory = "";
   string loadFile = "";
   string saveFile = "";
@@ -49,7 +50,8 @@ int main (int argc, char** argv) {
   bool maxF = false;
   bool trackX = false;
   bool trackY = false;
- // Stat plot options
+  bool mixing = false;
+  // Stat plot options
   bool plotVelocity = false;
   bool plotCorrelation = false;
   bool plotDensity = false;
@@ -97,6 +99,7 @@ int main (int argc, char** argv) {
   parser.get("config", config);
   parser.get("buoyancy", buoyancy);
   parser.get("aero", aero);
+  parser.get("mix", mix);
   parser.get("loadFile", loadFile);
   
   // Create from file or command line args
@@ -187,6 +190,29 @@ int main (int argc, char** argv) {
     // Create buoyancy scenario from the data
     creator.createAero(simData, integrator, radius, density, vec2(0, -velocity), cv);
   }
+  else if (mix!="") {
+    Creator creator;
+    // Get options
+    RealType omega(2*PI), radius(0.5), circleRadius(1.5), force(1);
+    parser.get("omega", omega);
+    parser.get("radius", radius);
+    parser.get("circleRadius", circleRadius);
+    parser.get("force", force);
+    // Load from file
+    try {
+      fileParser.loadFromFile(mix, simData, integrator);
+    }
+    catch (FileParser::FileDoesNotExist file) {
+      std::cerr << "File [" << file.name << "] does not exist.";
+      exit(0);
+    }
+    catch (GFlow::BadIstreamRead read) {
+      std::cerr << "Parsing failed when it attempted to read in a [" << read.type << "], expected [" << printChar(read.expected) << "], found [" << printChar(read.unexpected) << "]. Exiting.\n";
+      exit(0);
+    }
+    // Create buoyancy scenario from the data
+    creator.createMixer(simData, integrator, radius, circleRadius, omega, static_cast<bool>(force));
+  }
   else {
     try {
       fileParser.parse("samples/box.cfg", simData, integrator);
@@ -238,6 +264,7 @@ int main (int argc, char** argv) {
   parser.get("maxF", maxF);
   parser.get("aveF", aveF);
   parser.get("trackX", trackX);
+  parser.get("mixing", mixing);
   parser.get("trackY", trackY);
   parser.get("plotVelocity", plotVelocity);
   parser.get("plotCorrelation", plotCorrelation);
@@ -290,6 +317,7 @@ int main (int argc, char** argv) {
     if (aveF)     dataRecord->addStatFunction(StatFunc_AveForce, "aveF");
     if (trackX)   dataRecord->addStatFunction(StatFunc_MaxR_PosX, "trackX");
     if (trackY)   dataRecord->addStatFunction(StatFunc_MaxR_PosY, "trackY");
+    if (mixing)   dataRecord->addStatFunction(StatFunc_MixingParameter, "mixing");
     // Set stat plot options
     if (plotVelocity) dataRecord->addStatPlot(StatPlot_Velocity, RPair(0,3), 100, "velocityPlot");
     if (plotCorrelation) dataRecord->addStatPlot(StatPlot_RadialCorrelation, RPair(0,1), 100, "correlation");

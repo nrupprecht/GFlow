@@ -151,6 +151,9 @@ namespace GFlow {
     // Get the indices of the two closest particles to a particular particle
     pair<int, int> getClosestTwo(int);
 
+    // Get the indices of the particles within some distance of a particular particle
+    vector<int> getParticlesWithin(int, RealType);
+
 #if USE_MPI == 1 // Get MPI data
     int getRank()    { return rank; }
     int getNumProc() { return numProc; }
@@ -185,6 +188,9 @@ namespace GFlow {
 
     // Update position record
     void updatePositionRecord();
+
+    // Set initial position vector
+    void setInitialPositions();
 
     // Remove particles that overlap too much
     void removeOverlapping(RealType=0.03);
@@ -250,6 +256,9 @@ namespace GFlow {
 
     // Holes in the arrays
     list<int> holes;
+
+    // Initial positions
+    vector<vec2> initialPositions;
 
     // Characteristics - we are in charge of managing (deleting) these
     std::map<int, Characteristic*> characteristics;

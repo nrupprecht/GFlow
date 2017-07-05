@@ -4,7 +4,7 @@
 #include "../forces/ExternalForce.hpp"
 
 namespace GFlow {
-  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-delay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), lowerSizeLimit(0), recOption(1), stripeHeight(3), recBulk(false), recBulkOutline(false), recDisplacementField(false), displacementSnapshot(false), trackDisplacement(false), recPressField(false), recPerf(false), statRecPerf(-1), recMvRatio(false), statRecMvRatio(-1), recDt(false), statRecDt(-1), recDelay(false), statRecDelay(-1), center(false) {
+  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-2*delay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), lowerSizeLimit(0), recOption(1), stripeHeight(3), recBulk(false), recBulkOutline(false), recDisplacementField(false), displacementSnapshot(false), trackDisplacement(false), recPressField(false), recPerf(false), statRecPerf(-1), recMvRatio(false), statRecMvRatio(-1), recDt(false), statRecDt(-1), recDelay(false), statRecDelay(-1), center(false) {
     start_time = end_time = high_resolution_clock::now();
   };
 
@@ -79,6 +79,9 @@ namespace GFlow {
 
     // Initialize displacement tracking, if neccessary
     if (recIter==0) {
+      // Have simdata record the initial positions
+      simData->setInitialPositions();
+      // Set our own initial position record (unneccessary now?)
       RealType *px = simData->getPxPtr();
       RealType *py = simData->getPyPtr();
       int domain_end = simData->domain_end;    
@@ -348,6 +351,7 @@ namespace GFlow {
       // Print simulation summary
       fout << "Simulation and space:\n";
       fout << "  - Dimensions:               " << simData->simBounds << "\n";
+      fout << "  - Wrapping:                 " << simData->getWrapX() << ", " << simData->getWrapY() << "\n";
       fout << "  - Number of particles:      " << simData->domain_size << "\n";
       fout << "  - Ratio x Particles:        " << runTime/elapsedTime*simData->domain_size << "\n";
       RealType vol = 0;
@@ -937,7 +941,7 @@ namespace GFlow {
     // Collect data
     for (int i=0; i<domain_end; ++i) {
       if (sg[i]==maxSg) continue;
-      RealType disp = sqrt(sqr(initialPositions.at(i) - vec2(px[i], py[i])));
+      RealType disp = sqrt(sqr(simData->getDisplacement(initialPositions.at(i), vec2(px[i], py[i]))));
       // Bin data
       int sec_x = (initialPositions.at(i).x-bounds.left)*idx;
       int sec_y = (initialPositions.at(i).y-bounds.bottom)*idy;
@@ -1071,6 +1075,22 @@ namespace GFlow {
 	field.at(x,y) = ang;
       }
     }
+  }
+
+  inline RealType DataRecord::getMixingParameter(SimData* simData, Bounds& region) {
+    // Get the average mixing parameter of the particles  who are in the specified region
+    RealType *px = simData->getPxPtr(), *py = simData->getPyPtr();
+    int *it = simData->getItPtr(), domain_end = simData->getDomainEnd();
+    // Average
+    RealType mixing = 0;
+    for (int i=0; i<domain_end; ++i) {
+      if (it[i]<0) continue;
+      auto particles = simData->getParticlesWithin(i, 0.25);
+      RealType localMixing = 0;
+      for (auto id : particles) localMixing += sqr(initialPositions.at(id) - vec2(px[id], py[id]));
+      if (!particles.empty()) mixing += localMixing/particles.size();
+    }
+    return mixing;
   }
 
 }

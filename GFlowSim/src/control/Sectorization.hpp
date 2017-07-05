@@ -78,6 +78,9 @@ namespace GFlow {
     // Get the closest
     int getClosest(int, SimData*);
 
+    // Get particles within a distance
+    vector<int> getParticlesWithin(int, RealType, SimData*);
+
     // Get closest two
     pair<int, int> getClosestTwo(int, SimData*);
 

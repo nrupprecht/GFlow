@@ -5,10 +5,8 @@ namespace GFlow {
   void Creator::createBuoyancy(SimData *& simData, Integrator *& integrator, RealType radius, RealType density, vec2 velocity, bool constant, bool insert) {
     Bounds sb = simData->getSimBounds();
     // Change the bounds for the addition of the new particle
-    
-    RealType height = StatFunc_HighestBall(simData); //** Height of the tops of the balls
+    RealType height = StatFunc_HighestBall(simData); // Height of the tops of the balls
     Bounds nb(sb.left, sb.right, sb.bottom, height+6*radius);
-
     // Set new bounds
     simData->setSimBounds(nb);
     simData->setBounds(nb);
@@ -16,7 +14,6 @@ namespace GFlow {
     simData->getWalls().clear();
     // Create new walls
     simData->addWall(nb);
-
     // Insert the intruding particle
     if (radius>0) {
       Particle P(0.5*(nb.right+nb.left), height + radius, radius);
@@ -29,7 +26,7 @@ namespace GFlow {
     }
 
     // Make sure we use a small time step
-    reinterpret_cast<VelocityVerletIntegrator*>(integrator)->setMaxTimeStep(1e-4);
+    if (integrator) reinterpret_cast<VelocityVerletIntegrator*>(integrator)->setMaxTimeStep(1e-4);
   }
 
   void Creator::createAero(SimData *& simData, Integrator *& integrator, RealType radius, RealType density, vec2 velocity, bool constant) {
@@ -62,6 +59,41 @@ namespace GFlow {
       StandardSectorization remover(simData);
       remover.removeOverlapping();
     }
+  }
+
+  void Creator::createMixer(SimData *& simData, Integrator *& integrator, RealType radius, RealType circleRadius, RealType omega, bool gravity) {
+    Bounds sb = simData->getSimBounds();
+    // Change the bounds for the addition of the new particle
+    RealType height = StatFunc_HighestBall(simData); // Height of the tops of the balls
+    Bounds nb(sb.left, sb.right, sb.bottom, height);
+    // Set new bounds
+    simData->setSimBounds(nb);
+    simData->setBounds(nb);
+    // Get rid of the old walls
+    simData->getWalls().clear();
+    // Set wrapping in the x-direction
+    simData->setWrapX(true);
+    if (gravity) {
+      // Create new walls
+      Wall bw(nb.left, nb.bottom, nb.right, nb.bottom);
+      Wall tw(nb.left, nb.top, nb.right, nb.top);
+      simData->addWall(bw); simData->addWall(tw);
+    }
+    else {
+      simData->setWrapY(true);
+      // Remove external forces
+      simData->clearExternalForces();
+    }
+    // Insert the mixing particle
+    Particle P(0.5*(nb.right+nb.left)+circleRadius, 0.5*(nb.top+nb.bottom), radius);
+    P.setDensity(1.); // Density doesn't matter, its motion is controlled
+    // Add either with constant velocity, or as normal
+    simData->addParticle(P, new Circulate(circleRadius, omega));
+    // Make sure there is no serious overlap
+    StandardSectorization remover(simData);
+    remover.removeOverlapping();
+    // Make sure we use a small time step
+    if (integrator) reinterpret_cast<VelocityVerletIntegrator*>(integrator)->setMaxTimeStep(1e-4);
   }
 
   bool Creator::createRegion(Region& region, SimData* simData) {

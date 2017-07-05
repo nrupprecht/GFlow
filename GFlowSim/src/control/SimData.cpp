@@ -201,20 +201,20 @@ namespace GFlow {
     if (wrapX) {
       if (x<simBounds.left)
 	x = simBounds.right-fmod(simBounds.left-x, simBounds.right-simBounds.left);
-      else if (simBounds.right<x) 
+      else if (simBounds.right<=x)
 	x = fmod(x-simBounds.left, simBounds.right-simBounds.left)+simBounds.left;
     }
     if (wrapY) {
       if (y<simBounds.bottom)
 	y = simBounds.top-fmod(simBounds.bottom-y, simBounds.top-bounds.bottom);
-      else if (simBounds.top<y)
+      else if (simBounds.top<=y)
 	y = fmod(y-simBounds.bottom, simBounds.top-simBounds.bottom)+simBounds.bottom;
     }
   }
 
   void SimData::wrap(RealType& theta) {
     if (theta<0) theta = 2*PI-fmod(-theta, 2*PI);
-    else if (2*PI<theta) theta = fmod(theta, 2*PI);
+    else if (2*PI<=theta) theta = fmod(theta, 2*PI);
   }
 
   vec2 SimData::getDisplacement(const RealType ax, const RealType ay, const RealType bx, const RealType by) {
@@ -266,6 +266,10 @@ namespace GFlow {
   pair<int, int> SimData::getClosestTwo(int id) {
     return sectors->getClosestTwo(id, this);
   }
+  
+  vector<int> SimData::getParticlesWithin(int id, RealType dist) {
+    return sectors->getParticlesWithin(id, dist, this);
+  }
 
 #if USE_MPI == 1
   void SimData::atomMove() {
@@ -296,6 +300,11 @@ namespace GFlow {
 
   void SimData::updatePositionRecord() {
     for (int i=0; i<domain_end; ++i) positionRecord[i] = vec2(px[i], py[i]);
+  }
+
+  void SimData::setInitialPositions() {
+    initialPositions = vector<vec2>(domain_end);
+    for (int i=0; i<domain_end; ++i) initialPositions[i] = vec2(px[i], py[i]);
   }
 
   void SimData::removeOverlapping(RealType maxOverlap) {

@@ -247,6 +247,23 @@ namespace GFlow {
       if (-1<it[i] && max<sg[i]) max = sg[i];
     return max;
   }
+
+  inline RealType StatFunc_MixingParameter(SimData* simData) {
+    // Get the average mixing parameter of the particles  who are in the specified region
+    RealType *px = simData->getPxPtr(), *py = simData->getPyPtr();
+    int *it = simData->getItPtr(), domain_end = simData->getDomainEnd();
+    vec2 *initialPositions = simData->getPRPtr();
+    // Average
+    RealType mixing = 0;
+    for (int i=0; i<domain_end; ++i) {
+      if (it[i]<0) continue;
+      auto particles = simData->getParticlesWithin(i, 0.25);
+      RealType localMixing = 0;
+      for (auto id : particles) localMixing += sqr(initialPositions[id] - vec2(px[id], py[id]));
+      if (!particles.empty()) mixing += localMixing/particles.size();
+    }
+    return mixing;
+  }
   
 }
 #endif // __STAT_FUNC_HPP__
