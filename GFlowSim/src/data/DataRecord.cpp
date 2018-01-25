@@ -1077,20 +1077,4 @@ namespace GFlow {
     }
   }
 
-  inline RealType DataRecord::getMixingParameter(SimData* simData, Bounds& region) {
-    // Get the average mixing parameter of the particles  who are in the specified region
-    RealType *px = simData->getPxPtr(), *py = simData->getPyPtr();
-    int *it = simData->getItPtr(), domain_end = simData->getDomainEnd();
-    // Average
-    RealType mixing = 0;
-    for (int i=0; i<domain_end; ++i) {
-      if (it[i]<0) continue;
-      auto particles = simData->getParticlesWithin(i, 0.25);
-      RealType localMixing = 0;
-      for (auto id : particles) localMixing += sqr(initialPositions.at(id) - vec2(px[id], py[id]));
-      if (!particles.empty()) mixing += localMixing/particles.size();
-    }
-    return mixing;
-  }
-
 }

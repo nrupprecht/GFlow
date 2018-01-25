@@ -46,7 +46,7 @@ namespace GFlow {
       }
     }
   }
-
+  
   void ForceHandler::wForces(const WListType& wallList, SimData* simData) const {
     // Get the interaction array and domain size
     int *it = simData->getItPtr();

@@ -175,6 +175,10 @@ namespace GFlow {
     return sectors->getParticles(pos, cutoff, this);
   }
 
+  vector<int> SimData::getParticlesID(vec2 pos, RealType cutoff) {
+    return sectors->getParticlesID(pos, cutoff, this);
+  }
+
   void SimData::getPressureData(vector<PData>& positions, RealType lowerSizeLimit) {
     // We will sort out particles with it<0 at the end
     vector<PData> pos;
@@ -265,10 +269,6 @@ namespace GFlow {
 
   pair<int, int> SimData::getClosestTwo(int id) {
     return sectors->getClosestTwo(id, this);
-  }
-  
-  vector<int> SimData::getParticlesWithin(int id, RealType dist) {
-    return sectors->getParticlesWithin(id, dist, this);
   }
 
 #if USE_MPI == 1

@@ -252,16 +252,25 @@ namespace GFlow {
     // Get the average mixing parameter of the particles  who are in the specified region
     RealType *px = simData->getPxPtr(), *py = simData->getPyPtr();
     int *it = simData->getItPtr(), domain_end = simData->getDomainEnd();
-    vec2 *initialPositions = simData->getPRPtr();
+    auto initialPositions = simData->getInitialPositions();
     // Average
     RealType mixing = 0;
     for (int i=0; i<domain_end; ++i) {
       if (it[i]<0) continue;
-      auto particles = simData->getParticlesWithin(i, 0.25);
+      vec2 posF(px[i], py[i]), posI = initialPositions.at(i);
+      // Get all particles within a radius of the particle position
+      RealType cutoff = 0.25;
+      auto particles = simData->getParticlesID(posF, cutoff);
+      // Calculate the local mixing
       RealType localMixing = 0;
-      for (auto id : particles) localMixing += sqr(initialPositions[id] - vec2(px[id], py[id]));
-      if (!particles.empty()) mixing += localMixing/particles.size();
+      for (auto id : particles) {
+	vec2 pI = initialPositions.at(id), pF(px[id], py[id]);
+	RealType initD = length(posI - pI), finalD = length(posF - pF);
+	localMixing += sqr(finalD - initD);
+      }
+      if (!particles.empty()) mixing += sqrt(localMixing/particles.size());
     }
+    mixing /= simData->getDomainSize();
     return mixing;
   }
   

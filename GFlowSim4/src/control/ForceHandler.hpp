@@ -9,8 +9,8 @@
 
 // Includes
 #include "SimData.hpp"
-#include "../forces/InteractionFunctions.hpp"
-#include "../forces/WallInteractionFunctions.hpp"
+// #include "../forces/InteractionFunctions.hpp"
+// #include "../forces/WallInteractionFunctions.hpp"
 
 namespace GFlow {
 
@@ -35,8 +35,8 @@ namespace GFlow {
     inline void interactP(int, int, SimData*, RealType&, RealType&, bool = true) const;
     inline void interactW(int, int, SimData*, RealType&, RealType&, bool = true) const;
 
-    InteractionFunction interactionFunctions[16];
-    WallInteractionFunction wallInteractionFunctions[4];
+    //InteractionFunction interactionFunctions[16];
+    //WallInteractionFunction wallInteractionFunctions[4];
   };
 
 }

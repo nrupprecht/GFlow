@@ -56,4 +56,17 @@ namespace GFlow {
     theta += dt*omega;
   }
 
+  void Fixed::modify(SimData* simData, int id, RealType dt) {
+    simData->getFxPtr() [id] = 0;
+    simData->getFyPtr() [id] = 0;
+    simData->getVxPtr() [id] = 0;
+    simData->getVyPtr() [id] = 0;
+  }
+
+  void ApplyForce::modify(SimData* simData, int id, RealType dt) {
+    F += dt*dF;
+    simData->getFxPtr() [id] = F.x;
+    simData->getFyPtr() [id] = F.y;
+  }
+
 }

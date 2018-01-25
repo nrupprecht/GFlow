@@ -44,8 +44,8 @@ struct vec2 {
 
 const vec2 Zero(0,0);
 
-// Special squaring function for vectors
-inline RealType sqr(const vec2& v) { return v*v; }
+// Special squaring function for vectors (not a reference so we can use lvalues)
+inline RealType sqr(const vec2 v) { return v*v; }
 
 // Normalization function
 inline void normalize(vec2 &v) {
@@ -53,7 +53,8 @@ inline void normalize(vec2 &v) {
   v.x /= mag; v.y /= mag;
 }
 
-inline RealType length(vec2 &v) {
+// (not a reference so we can use lvalues)
+inline RealType length(const vec2 v) {
   return sqrt(sqr(v));
 }
 

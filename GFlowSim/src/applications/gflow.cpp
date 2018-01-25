@@ -193,7 +193,7 @@ int main (int argc, char** argv) {
   else if (mix!="") {
     Creator creator;
     // Get options
-    RealType omega(2*PI), radius(0.5), circleRadius(1.5), force(1);
+    RealType omega(2*PI), radius(0.5), circleRadius(1.5), force(0);
     parser.get("omega", omega);
     parser.get("radius", radius);
     parser.get("circleRadius", circleRadius);

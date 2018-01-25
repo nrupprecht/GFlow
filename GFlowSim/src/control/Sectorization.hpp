@@ -53,6 +53,7 @@ namespace GFlow {
 
     // Get all particles within some radius of a point
     vector<Particle> getParticles(vec2, RealType, SimData*);
+    vector<int> getParticlesID(vec2, RealType, SimData*);
 
     // Returns the particle verlet list
     auto& getVerletList() { return verletList; }
@@ -77,10 +78,6 @@ namespace GFlow {
 
     // Get the closest
     int getClosest(int, SimData*);
-
-    // Get particles within a distance
-    vector<int> getParticlesWithin(int, RealType, SimData*);
-
     // Get closest two
     pair<int, int> getClosestTwo(int, SimData*);
 

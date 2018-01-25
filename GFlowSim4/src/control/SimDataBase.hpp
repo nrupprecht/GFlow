@@ -81,7 +81,7 @@ namespace GFlow {
     Particle makeParticle(int);
 
     // Get position record
-    vec2* getPRPtr()     { return positionRecord.getPtr(); }
+    // vec2* getPRPtr()     { return positionRecord.getPtr(); }
 
     // Get pressure data
     void getPressureData(vector<PData>&, RealType=0.);
@@ -162,7 +162,7 @@ namespace GFlow {
     void setInitialPositions();
 
     // Get initial position vector
-    const vector<vec2>& getInitialPositions() { return initialPositions; }
+    const vector<vec2>& getInitialPositions() const;
 
     // Remove particles that overlap too much
     void removeOverlapping(RealType=0.03);
@@ -182,7 +182,7 @@ namespace GFlow {
       int index;
     };
     
-  private:
+  protected:
     // CRTP derived function
     Derived& derived();
 
@@ -207,36 +207,11 @@ namespace GFlow {
     // Storage allocated for edge particles
     int edge_capacity;
 
-    // Particle data
-    aligned_array<RealType> px;
-    aligned_array<RealType> py;
-    aligned_array<RealType> vx;
-    aligned_array<RealType> vy;
-    aligned_array<RealType> fx;
-    aligned_array<RealType> fy;
-    aligned_array<RealType> th;
-    aligned_array<RealType> om;
-    aligned_array<RealType> tq;
-    aligned_array<RealType> sg;
-    aligned_array<RealType> im;
-    aligned_array<RealType> iI;
-    aligned_array<RealType> rp;
-    aligned_array<RealType> ds;
-    aligned_array<RealType> cf;
-    // Interaction is -1 for empty array spaces
-    aligned_array<int> it;
-
-    // Positions at the last verlet list creation
-    aligned_array<vec2> positionRecord;
-
     // Wall data
     vector<Wall> walls;
 
     // Holes in the arrays
     list<int> holes;
-
-    // Initial positions
-    vector<vec2> initialPositions;
 
     // Characteristics - we are in charge of managing (deleting) these
     std::map<int, Characteristic*> characteristics;

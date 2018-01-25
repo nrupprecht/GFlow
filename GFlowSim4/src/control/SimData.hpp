@@ -30,6 +30,9 @@ namespace GFlow {
     RealType* getCfPtr() { return cf.getPtr(); }
     int*      getItPtr() { return it.getPtr(); }
 
+    // Get initial position vector
+    const vector<vec2>& getInitialPositions() const;
+
     // CRTP "inherited" functions
     void reserve(int, int);
     void reserveAdditional(int, int);
@@ -49,7 +52,38 @@ namespace GFlow {
 
     // Private CRTP "inherited" functions    
     inline void compressArrays();
+
+    /** Particle data **/
+    // Position data
+    aligned_array<RealType> px;
+    aligned_array<RealType> py;
+    // Velocity data
+    aligned_array<RealType> vx;
+    aligned_array<RealType> vy;
+    // Angle data
+    aligned_array<RealType> th;
+    // Angular velocity data
+    aligned_array<RealType> om;    
+    // Zeroable
+    aligned_array<RealType> fx;
+    aligned_array<RealType> fy;
+    aligned_array<RealType> tq;
+    // Other data
+    aligned_array<RealType> sg;
+    aligned_array<RealType> im;
+    aligned_array<RealType> iI;
+    aligned_array<RealType> rp;
+    aligned_array<RealType> ds;
+    aligned_array<RealType> cf;
+    // Particle type data - is -1 for empty array spaces, no particle
+    aligned_array<int> it;
+
+    // Positions at the last verlet list creation
+    aligned_array<vec2> positionRecord;
     
+    // Initial positions
+    vector<vec2> initialPositions;
+
   };
 
 }

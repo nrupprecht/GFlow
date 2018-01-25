@@ -76,5 +76,23 @@ namespace GFlow {
     bool first;
   };
 
+  class Fixed : public Characteristic {
+  public:
+    // Constructors
+    Fixed();
+
+    virtual void modify(SimData*, int, RealType);
+  };
+
+  class ApplyForce : public Characteristic {
+  public:
+    // Constructors
+    ApplyForce(vec2 f0, vec2 df) : F(f0), dF(df) {};
+    
+    virtual void modify(SimData*, int, RealType);
+  private:
+    vec2 F, dF;
+  };
+
 }
 #endif // __CHARACTERISTICS_HPP__

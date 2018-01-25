@@ -73,17 +73,16 @@ namespace GFlow {
     simData->getWalls().clear();
     // Set wrapping in the x-direction
     simData->setWrapX(true);
-    if (gravity) {
-      // Create new walls
-      Wall bw(nb.left, nb.bottom, nb.right, nb.bottom);
-      Wall tw(nb.left, nb.top, nb.right, nb.top);
-      simData->addWall(bw); simData->addWall(tw);
-    }
-    else {
-      simData->setWrapY(true);
-      // Remove external forces
-      simData->clearExternalForces();
-    }
+    // Create new walls
+    Wall bw(nb.left, nb.bottom, nb.right, nb.bottom);
+    Wall tw(nb.left, nb.top, nb.right, nb.top);
+    Wall lw(nb.left, nb.bottom, nb.left, nb.top);
+    Wall rw(nb.right, nb.bottom, nb.right, nb.top);
+    simData->addWall(bw); 
+    simData->addWall(tw);
+    simData->addWall(lw);
+    simData->addWall(rw);
+    if (!gravity) simData->clearExternalForces();
     // Insert the mixing particle
     Particle P(0.5*(nb.right+nb.left)+circleRadius, 0.5*(nb.top+nb.bottom), radius);
     P.setDensity(1.); // Density doesn't matter, its motion is controlled

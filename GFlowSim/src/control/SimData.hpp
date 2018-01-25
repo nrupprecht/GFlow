@@ -123,6 +123,7 @@ namespace GFlow {
 
     // Get all the particles withing a cutoff radius
     vector<Particle> getParticles(vec2, RealType);
+    vector<int> getParticlesID(vec2, RealType);
 
     // Get the characteristics
     auto& getCharacteristics() { return characteristics; }
@@ -150,9 +151,6 @@ namespace GFlow {
 
     // Get the indices of the two closest particles to a particular particle
     pair<int, int> getClosestTwo(int);
-
-    // Get the indices of the particles within some distance of a particular particle
-    vector<int> getParticlesWithin(int, RealType);
 
 #if USE_MPI == 1 // Get MPI data
     int getRank()    { return rank; }
@@ -191,6 +189,9 @@ namespace GFlow {
 
     // Set initial position vector
     void setInitialPositions();
+
+    // Get initial position vector
+    const vector<vec2>& getInitialPositions() { return initialPositions; }
 
     // Remove particles that overlap too much
     void removeOverlapping(RealType=0.03);
