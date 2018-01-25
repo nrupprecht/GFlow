@@ -49,7 +49,7 @@ namespace GFlow {
     in >> X;
     getNext(in,c);
     if (c!=',') throw BadIstreamRead("vec2", c, ',');
-    getWhiteSpace(in);
+    getWhiteSpace(in); 
     in >> Y;
     getNext(in,c);
     if (c!='}') throw BadIstreamRead("vec2", c, '}');

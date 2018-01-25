@@ -338,7 +338,7 @@ namespace GFlow {
 	int it;
 	fin >> pos >> velocity >> th >> om >> sg >> rp >> ds >> cf >> it;
 	// Set the particle data
-	Particle P(pos, sg);
+	Particle P(pos, 2.5*15*sg); //** SHOULD JUST BE sg
 	P.velocity    = velocity;
 	P.theta       = th;
 	P.omega       = om;
@@ -353,9 +353,6 @@ namespace GFlow {
       else if (tok=="FP") {
 	vector<int> particleIDs;
 	fin >> particleIDs;
-
-	cout << particleIDs << endl; //**
-
 	fixedParticles.insert(fixedParticles.end(), particleIDs.begin(), particleIDs.end());
       }
       // External force applied to particles
