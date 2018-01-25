@@ -279,6 +279,8 @@ namespace GFlow {
     vector<Particle> particles;
     vector<Wall> walls;
     vector<ExternalForce*> externalForces;
+    vector<int> fixedParticles;
+    vector<pair<vec2, vector<int> > > drivenParticles;
     bool wrapX(false), wrapY(false);
 
     // For getting comments
@@ -289,20 +291,25 @@ namespace GFlow {
     string tok;
     fin >> tok;
     while (!fin.eof()) {
+      // Comments
       if (tok.at(0)=='#') { // Comment
 	fin.getline(comment, max_comment_size);
       }
+      // Bounds
       if (tok=="B") {
 	RealType l, r, b, t;
 	fin >> l >> r >> b >> t;
 	bounds = Bounds(l,r,b,t);
       }
+      // Whether we should wrap in the x direction (0/1)
       else if (tok=="wx") {
 	fin >> wrapX;
       }
+      // Whether we should wrap in the y direction (0/1)
       else if (tok=="wy") {
 	fin >> wrapY;
       }
+      // Add an external force
       else if (tok=="ef") {
 	fin >> tok; // Get the type of external force
 	if (tok=="ca") {
@@ -311,6 +318,7 @@ namespace GFlow {
 	  externalForces.push_back(new ConstantAcceleration(acc));
 	}
       }
+      // Create a wall
       else if (tok=="W") {
 	vec2 left, right;
 	RealType rp, ds, cf;
@@ -323,6 +331,7 @@ namespace GFlow {
 	// Push back the wall
 	walls.push_back(w);
       }
+      // Create a particle
       else if (tok=="P") {
 	vec2 pos, velocity;
 	RealType th, om, sg, rp, ds, cf;
@@ -339,6 +348,24 @@ namespace GFlow {
 	P.interaction = it;
 	// Push back the particle
 	particles.push_back(P);
+      }
+      // Fixed particles
+      else if (tok=="FP") {
+	vector<int> particleIDs;
+	fin >> particleIDs;
+
+	cout << particleIDs << endl; //**
+
+	fixedParticles.insert(fixedParticles.end(), particleIDs.begin(), particleIDs.end());
+      }
+      // External force applied to particles
+      else if (tok=="EFP") {
+	vector<int> particleIDs;
+	vec2 df;
+	// Read in the ids of the particles and the df
+	fin >> particleIDs;
+	fin >> df;
+	drivenParticles.push_back(pair<vec2, vector<int> >(df, particleIDs));
       }
       // Get the next token
       fin >> tok;
@@ -363,7 +390,15 @@ namespace GFlow {
     for (auto& w : walls) simData->addWall(w);
     // Add individual particles
     simData->reserve(particles.size());
-    for (auto& p : particles) simData->addParticle(p);
+    simData->addParticle(particles);
+    // Add characteristics as necessary
+    for (auto id : fixedParticles)
+      simData->addCharacteristic(id, new Fixed);
+    for (auto pr : drivenParticles) {
+      auto df = pr.first;
+      for (auto id : pr.second)
+	simData->addCharacteristic(id, new ApplyForce(Zero, df));
+    }
 
     // Create integrator
     integrator = new VelocityVerletIntegrator(simData);

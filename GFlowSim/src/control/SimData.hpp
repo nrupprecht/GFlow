@@ -58,6 +58,9 @@ namespace GFlow {
     void addParticle(const vector<Particle>&);
     int addParticle(const Particle&, Characteristic*);
 
+    // Add a characteristic to a particle
+    void addCharacteristic(int, Characteristic*);
+
     // Remove particles
     void removeAt(int);
 

@@ -117,6 +117,15 @@ namespace GFlow {
     return addParticle(p);
   }
 
+  void SimData::addCharacteristic(int id, Characteristic *c) {
+    // If the particle already has a characteristic
+    if (characteristics.count(id)) {
+      delete characteristics.at(id);
+      characteristics.at(id) = c;
+    }
+    else characteristics.emplace(id, c);
+  }
+
   void SimData::removeAt(int index) {
     if (it[index]<0) return;
     it[index] = -1;

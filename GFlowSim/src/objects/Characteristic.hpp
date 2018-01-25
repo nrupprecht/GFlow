@@ -79,14 +79,15 @@ namespace GFlow {
   class Fixed : public Characteristic {
   public:
     // Constructors
-    Fixed();
-
+    Fixed() {};
+    
     virtual void modify(SimData*, int, RealType);
   };
 
   class ApplyForce : public Characteristic {
   public:
     // Constructors
+    ApplyForce(vec2 df) : F(Zero), dF(df) {};
     ApplyForce(vec2 f0, vec2 df) : F(f0), dF(df) {};
     
     virtual void modify(SimData*, int, RealType);

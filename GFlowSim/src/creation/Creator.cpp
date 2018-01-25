@@ -106,10 +106,6 @@ namespace GFlow {
     if (region.sigma) region.sigma->makeValues(region, particles);
     else return false; // We require a sigma function
 
-    // Assign interaction
-    if (region.interaction) region.interaction->makeValues(region, particles);
-    else Homogeneous_Interaction().makeValues(region, particles);
-
     // Assign positions
     if (region.position) region.position->makeValues(region, particles);
     else Uniform_Space_Distribution().makeValues(region, particles);
@@ -130,7 +126,7 @@ namespace GFlow {
     if (region.coeff) region.coeff->makeValues(region, particles);
     else Uniform_Random_Coeff().makeValues(region, particles);
 
-    // Let the simulation relax, using heavy viscous drag, so particles do not overlap with things
+    // Let the simulation relax, using heavy viscous drag and hard spheres, so particles do not overlap with things
     SimData *relax = new SimData(region.bounds, region.bounds);
     relax->setWrap(false);
     relax->reserve(particles.size());
@@ -139,6 +135,8 @@ namespace GFlow {
     relax->addWall(region.bounds);
     // Add all walls from the simulation
     relax->addWall(simData->getWalls());
+    // Assign interaction to be hard spheres for the purposes of relaxing the particles
+    Homogeneous_Interaction().makeValues(region, particles);
     // Create the relaxation integrator
     VelocityVerletIntegrator verlet(relax);
     verlet.setAdjustTimeStep(false);
@@ -161,6 +159,10 @@ namespace GFlow {
     // Assign omega
     if (region.omega) region.omega->makeValues(region, particles);
     else Normal_Random_Omega().makeValues(region, particles);    
+
+    // Assign interaction
+    if (region.interaction) region.interaction->makeValues(region, particles);
+    else Homogeneous_Interaction().makeValues(region, particles);
     
     // Reserve more room for the new particles
     simData->reserveAdditional(particles.size(), 0);
