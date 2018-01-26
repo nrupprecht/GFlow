@@ -10,8 +10,10 @@ namespace GFlow {
 	// Update time
 	time += dt;
 	// Set position
-	simData->getPxPtr() [id] = pos.x + velocity.x*time;
-	simData->getPyPtr() [id] = pos.y + velocity.y*time;
+	RealType x = pos.x + velocity.x*time, y =  pos.y + velocity.y*time;
+	simData->wrap(x,y);
+	simData->getPxPtr() [id] = x;
+	simData->getPyPtr() [id] = y;
 	// Set velocities
 	simData->getVxPtr() [id] = velocity.x;
 	simData->getVyPtr() [id] = velocity.y;
