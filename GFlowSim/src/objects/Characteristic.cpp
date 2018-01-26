@@ -7,8 +7,14 @@ namespace GFlow {
     // Keep velocity and omega constant
     if (active) {
       if (useV) {
-	simData->getVx(id) = velocity.x;
-	simData->getVy(id) = velocity.y;
+	// Update time
+	time += dt;
+	// Set position
+	simData->getPxPtr() [id] = pos.x + velocity.x*time;
+	simData->getPyPtr() [id] = pos.y + velocity.y*time;
+	// Set velocities
+	simData->getVxPtr() [id] = velocity.x;
+	simData->getVyPtr() [id] = velocity.y;
       }
       if (useOm) {
 	simData->getOm(id) = omega;

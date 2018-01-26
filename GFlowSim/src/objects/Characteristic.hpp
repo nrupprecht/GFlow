@@ -25,16 +25,21 @@ namespace GFlow {
   class ConstantVelocity : public Characteristic {
   public:
     // Constructors
-    ConstantVelocity(vec2 v) : velocity(v), omega(0), useV(true), useOm(false), active(true), stop(false) {};
-    ConstantVelocity(vec2 v, bool s) : velocity(v), omega(0), useV(true), useOm(false), active(true), stop(s) {};
+    ConstantVelocity(vec2 p, vec2 v) : pos(p), velocity(v), omega(0), useV(true), useOm(false), active(true), stop(false) {};
+    ConstantVelocity(vec2 p, vec2 v, bool s) : pos(p), velocity(v), omega(0), useV(true), useOm(false), active(true), stop(s) {};
     ConstantVelocity(RealType om) : velocity(Zero), omega(om), useV(false), useOm(true), active(true), stop(true) {};
-    ConstantVelocity(vec2 v, RealType om) : velocity(v), omega(om), useV(true), useOm(true), active(true), stop(false) {};
-    ConstantVelocity(vec2 v, RealType om, bool s) : velocity(v), omega(om), useV(true), useOm(true), active(true), stop(s) {};
+    ConstantVelocity(vec2 p, vec2 v, RealType om) : pos(p), velocity(v), omega(om), useV(true), useOm(true), active(true), stop(false) {};
+    ConstantVelocity(vec2 p, vec2 v, RealType om, bool s) : pos(p), velocity(v), omega(om), useV(true), useOm(true), active(true), stop(s) {};
 
     virtual void modify(SimData*, int, RealType);
   private:
+
+    vec2 pos; // Initial position
+    RealType time; // How much time has passed
+
     vec2 velocity;
     RealType omega;
+    // Whether to control velocity, angular velocity
     bool useV, useOm;
 
     bool active;

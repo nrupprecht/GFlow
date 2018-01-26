@@ -371,7 +371,7 @@ namespace GFlow {
 	drivenParticles.push_back(pair<vec2, vector<int> >(df, particleIDs));
       }
       // Constant velocity particles
-      else if (tok=="") {
+      else if (tok=="CV") {
 	vector<int> particleIDs;
 	vec2 vel;
 	fin >> particleIDs;
@@ -416,10 +416,9 @@ namespace GFlow {
     for (auto pr : cvParticles) {
       auto v = pr.first;
       for (auto id : pr.second) 
-	simData->addCharacteristic(id, new ConstantVelocity(v));
+	simData->addCharacteristic(id, new ConstantVelocity(vec2(simData->getPxPtr() [id], simData->getPyPtr() [id]), v));
     }
     
-
     // Create integrator
     integrator = new VelocityVerletIntegrator(simData);
 

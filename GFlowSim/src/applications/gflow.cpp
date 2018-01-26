@@ -39,7 +39,7 @@ int main (int argc, char** argv) {
   bool recPressField = false;
   bool recVortexField = false;
   bool trackDisplacement = false;
-  int fps = 15;
+  RealType fps = 15;
   // Stat function options
   bool maxRatio = false;
   bool ratio = false;
@@ -341,7 +341,7 @@ int main (int argc, char** argv) {
     dataRecord->setRecPressField(recPressField);
     dataRecord->setRecVortex(recVortexField);
     dataRecord->setTrackDisplacement(trackDisplacement);
-    dataRecord->setDelay(1./static_cast<RealType>(fps));
+    dataRecord->setDelay(1./fps);
     dataRecord->setCenter(center);
   }
 
