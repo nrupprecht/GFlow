@@ -281,6 +281,7 @@ namespace GFlow {
     vector<ExternalForce*> externalForces;
     vector<int> fixedParticles;
     vector<pair<vec2, vector<int> > > drivenParticles;
+    vector<pair<vec2, vector<int> > > cvParticles;
     bool wrapX(false), wrapY(false);
 
     // For getting comments
@@ -317,6 +318,11 @@ namespace GFlow {
 	  fin >> acc;
 	  externalForces.push_back(new ConstantAcceleration(acc));
 	}
+	if (tok=="vd") {
+	  RealType vis;
+	  fin >> vis;
+	  externalForces.push_back(new ViscousDrag(vis));
+	}
       }
       // Create a wall
       else if (tok=="W") {
@@ -338,7 +344,7 @@ namespace GFlow {
 	int it;
 	fin >> pos >> velocity >> th >> om >> sg >> rp >> ds >> cf >> it;
 	// Set the particle data
-	Particle P(pos, 2.5*15*sg); //** SHOULD JUST BE sg
+	Particle P(pos, sg);
 	P.velocity    = velocity;
 	P.theta       = th;
 	P.omega       = om;
@@ -364,6 +370,14 @@ namespace GFlow {
 	fin >> df;
 	drivenParticles.push_back(pair<vec2, vector<int> >(df, particleIDs));
       }
+      // Constant velocity particles
+      else if (tok=="") {
+	vector<int> particleIDs;
+	vec2 vel;
+	fin >> particleIDs;
+	fin >> vel;
+	cvParticles.push_back(pair<vec2, vector<int> >(vel, particleIDs));
+      }
       // Get the next token
       fin >> tok;
     }
@@ -388,14 +402,23 @@ namespace GFlow {
     // Add individual particles
     simData->reserve(particles.size());
     simData->addParticle(particles);
-    // Add characteristics as necessary
+    /** Add characteristics as necessary **/
+    // Add fixed particles
     for (auto id : fixedParticles)
-      simData->addCharacteristic(id, new Fixed);
+      simData->addCharacteristic(id, new Fixed(vec2(simData->getPxPtr()[id], simData->getPyPtr()[id])));
+    // Add driven particles
     for (auto pr : drivenParticles) {
       auto df = pr.first;
       for (auto id : pr.second)
 	simData->addCharacteristic(id, new ApplyForce(Zero, df));
     }
+    // Add constant velocity particles
+    for (auto pr : cvParticles) {
+      auto v = pr.first;
+      for (auto id : pr.second) 
+	simData->addCharacteristic(id, new ConstantVelocity(v));
+    }
+    
 
     // Create integrator
     integrator = new VelocityVerletIntegrator(simData);

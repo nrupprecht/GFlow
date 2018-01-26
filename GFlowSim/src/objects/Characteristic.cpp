@@ -10,9 +10,12 @@ namespace GFlow {
 	simData->getVx(id) = velocity.x;
 	simData->getVy(id) = velocity.y;
       }
-      if (useOm) simData->getOm(id) = omega;
+      if (useOm) {
+	simData->getOm(id) = omega;
+      }
       // Check if we should deactivate -- temporary code (?)
       RealType close = (simData->getPy(id) - simData->getSimBounds().bottom)/simData->getSg(id);
+      // Stop if we are supposed to
       if (stop && close<5) {
 	active = false;
 	simData->getVx(id) = 0;
@@ -61,6 +64,8 @@ namespace GFlow {
     simData->getFyPtr() [id] = 0;
     simData->getVxPtr() [id] = 0;
     simData->getVyPtr() [id] = 0;
+    simData->getPxPtr() [id] = pos.x;
+    simData->getPyPtr() [id] = pos.y;
   }
 
   void ApplyForce::modify(SimData* simData, int id, RealType dt) {

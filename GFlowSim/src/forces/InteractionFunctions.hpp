@@ -114,32 +114,26 @@ namespace GFlow {
       RealType d6 = sqr(d3);
       RealType d12 = sqr(d6);
       // Force is - d/dx (LJ)
-      RealType strength = repulsion*(12*d12-6*d6)*(1./rmin) * 0.00001; // AD HOC CORRECTION  
-
+      RealType strength = repulsion*(12*d12-6*d6)*(1./rmin); // AD HOC CORRECTION  
       // Velocities
       vec2 dV(vx[j]-vx[i], vy[j]-vy[i]);
       RealType Vn = dV*normal; // Normal velocity
       // --> Only calculate shear velocity if dist<sg[i]+sg[j]
       // Calculate the normal force
-      Fn = -strength;
-      /*
-      if (dist<rmin) Fn -= dissipation*clamp(-Vn); // Damping term
+      Fn = -strength-dissipation*clamp(-Vn); // Damping term
       // Calculate the Shear force
-      if (dist<rmin && coeff>0) {
-	double Vs = dV*shear + 0.4* (sg[i]*om[i] + sg[j]*om[j]); // Shear velocity THE *0.4 is a temporary fix - for the rmin value
-	Fs = -coeff*Fn*sign(Vs);
-      }
-      */
+      // double Vs = dV*shear + 0.4*(sg[i]*om[i] + sg[j]*om[j]); // Shear velocity THE *0.4 is a temporary fix - for the rmin value
+      // Fs = coeff ? coeff*Fn*sign(Vs) : 0;
       // Update forces
-      double FX = Fn*normal.x+Fs*shear.x, FY = Fn*normal.y+Fs*shear.y;
+      RealType FX = Fn*normal.x+Fs*shear.x, FY = Fn*normal.y+Fs*shear.y;
       if (update) {
 	fx[i] += FX;
 	fy[i] += FY;
 	fx[j] -= FX;
 	fy[j] -= FY;
 	// Update torque
-	tq[i] -= (Fs*sg[i]);
-	tq[j] -= (Fs*sg[j]);
+	// tq[i] -= (Fs*sg[i]);
+	// tq[j] -= (Fs*sg[j]);
       }
       // Particles interacted
       return true;

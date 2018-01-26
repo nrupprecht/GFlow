@@ -68,7 +68,6 @@ namespace GFlow {
   void ForceHandler::wForcesRec(const WListType& wallList, SimData* simData, vector<PData>& positions) const {
     // Get the interaction array
     int *it = simData->getItPtr();
-
     // Do the forces using the wall list
     for (const auto& wl : wallList) {
       auto p = wl.begin();
@@ -77,7 +76,7 @@ namespace GFlow {
       for (; q!=wl.end(); ++q) {
         j = *q;
         RealType Fn, Fs;
-        if (it[j]>-1) {
+        if (it[j]>-1) { // If the particle is real
 	  interactW(i, j, simData, Fn, Fs, false);
 	  // Record data -- i is the wall, so just do j
 	  std::get<5>(positions.at(j)) += fabs(Fn);
@@ -88,9 +87,9 @@ namespace GFlow {
 
   inline void ForceHandler::interactP(int i, int j, SimData* simData, RealType& Fn, RealType& Fs, bool update) const {
     // Do the interaction
+
     if (simData->getItPtr() [i] == 0) hardDiskInteraction(i, j, simData, Fn, Fs, update);
-    else LJInteraction(i, j, simData, Fn, Fs, update);
-    
+    else LJInteraction(i, j, simData, Fn, Fs, update);    
   }
 
   inline void ForceHandler::interactW(int i, int j, SimData* simData, RealType& Fn, RealType& Fs, bool update) const {

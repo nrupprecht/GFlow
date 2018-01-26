@@ -79,9 +79,11 @@ namespace GFlow {
   class Fixed : public Characteristic {
   public:
     // Constructors
-    Fixed() {};
+    Fixed(vec2 p) : pos(p) {};
     
     virtual void modify(SimData*, int, RealType);
+  private:
+    vec2 pos; // The position the particle should stay in
   };
 
   class ApplyForce : public Characteristic {

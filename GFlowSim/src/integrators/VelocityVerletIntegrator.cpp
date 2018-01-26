@@ -169,7 +169,7 @@ namespace GFlow {
   }
 
   inline void VelocityVerletIntegrator::updates() {
-    // Do characteristics
+    // Do characteristics first
     for (auto &c : simData->getCharacteristics())
       c.second->modify(simData, c.first, dt);
 
