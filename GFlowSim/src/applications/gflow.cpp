@@ -61,6 +61,16 @@ int main (int argc, char** argv) {
     FractureSimulation* sim = dynamic_cast<FractureSimulation*>(simulation);
     cout << "breaks=" << sim->getCumNumBreaks() << ";\n";
     cout << "bonds="  << sim->getCumNumBonds()  << ";\n";
+    ofstream fout("dataDump.txt");
+    if (fout.fail()) cout << "Data dump failure.\n";
+    else {
+      auto breakages = sim->getBreakages();
+      for (auto &dat : breakages) {
+	fout << "t=" << std::get<0>(dat) << ": " << std::get<1>(dat) << ", " << std::get<2>(dat) << "\n";
+      }
+      if (breakages.empty()) fout << "None.\n";
+      fout.close();
+    }
   }
 
   // Finalize mpi
