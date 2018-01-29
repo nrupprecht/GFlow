@@ -4,7 +4,7 @@
 #include "../forces/ExternalForce.hpp"
 
 namespace GFlow {
-  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-2*delay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), lowerSizeLimit(0), recOption(1), stripeHeight(3), recBulk(false), recBulkOutline(false), recDisplacementField(false), displacementSnapshot(false), trackDisplacement(false), recPressField(false), recPerf(false), statRecPerf(-1), recMvRatio(false), statRecMvRatio(-1), recDt(false), statRecDt(-1), recDelay(false), statRecDelay(-1), center(false) {
+  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-2.*delay), animationDelay(1./15.), lastAnimate(-2.*animationDelay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), lowerSizeLimit(0), recOption(1), stripeHeight(3), recBulk(false), recBulkOutline(false), recDisplacementField(false), displacementSnapshot(false), trackDisplacement(false), recPressField(false), recPerf(false), statRecPerf(-1), recMvRatio(false), statRecMvRatio(-1), recDt(false), statRecDt(-1), recDelay(false), statRecDelay(-1), center(false) {
     start_time = end_time = high_resolution_clock::now();
   };
 
@@ -91,10 +91,11 @@ namespace GFlow {
     }
 
     // Record position data
-    if (recPos) {
+    if (recPos && time-lastAnimate>animationDelay) {
       vector<PData> positions;
       getPositionData(positions, simData, recOption);
       positionRecord.push_back(positions);
+      lastAnimate = time;
     }
 
     // Record bulk data

@@ -69,6 +69,9 @@ namespace GFlow {
     // Set delay
     void setDelay(RealType d) { delay = d; }
 
+    // Set the animation delay
+    void setAnimationDelay(RealType d) { animationDelay = d; }
+
     // Set command line options
     void setCommand(int, char**);
 
@@ -170,6 +173,12 @@ namespace GFlow {
 
     // What time we last recorded data
     RealType lastRecord;
+
+    // How long between recording animation data
+    RealType animationDelay;
+
+    // What time we last recorded animation data
+    RealType lastAnimate;
 
     // How long it took to parse
     RealType setupTime;

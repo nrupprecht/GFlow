@@ -49,6 +49,7 @@ namespace GFlow {
     bool recVortexField = false;
     bool trackDisplacement = false;
     RealType fps = 15;
+    RealType dataFrequency = 15;
     // Stat function options
     bool maxRatio = false;
     bool ratio = false;
@@ -103,6 +104,7 @@ namespace GFlow {
     parser.get("recVortexField", recVortexField);
     parser.get("trackDisplacement", trackDisplacement);
     parser.get("fps", fps);
+    parser.get("dataFrequency", dataFrequency);
     parser.get("maxRatio", maxRatio);
     parser.get("ratio", ratio);
     parser.get("KE", KE);
@@ -241,7 +243,8 @@ c configuration file. Exiting.\n";
       dataRecord->setRecPressField(recPressField);
       dataRecord->setRecVortex(recVortexField);
       dataRecord->setTrackDisplacement(trackDisplacement);
-      dataRecord->setDelay(1./fps);
+      dataRecord->setAnimationDelay(1./fps);
+      dataRecord->setDelay(1./dataFrequency);
       dataRecord->setCenter(center);
     }
 
