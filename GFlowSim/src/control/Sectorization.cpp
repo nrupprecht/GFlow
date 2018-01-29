@@ -223,6 +223,11 @@ namespace GFlow {
     return getDisplacement(a.x, a.y, b.x, b.y);
   }
 
+  void Sectorization::setSkinDepth(RealType sd) {
+    skinDepth = sd;
+    _makeSectors();
+  }
+
   int Sectorization::getClosest(int id, SimData *simData) {
     // Get data
     RealType *px = simData->getPxPtr();

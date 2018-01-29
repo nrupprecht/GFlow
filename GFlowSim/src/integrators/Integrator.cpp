@@ -23,6 +23,10 @@ namespace GFlow {
     // Create and set up a sectorization
     initializeSectors();
 
+    // Make sure we have initial verlet lists
+    sectors->createVerletLists();
+    sectors->createWallLists();
+
     // Create and set up a force handler
     initializeForceHandler();
   }
@@ -86,10 +90,6 @@ namespace GFlow {
       // Initial record
       dataRecord->record(simData, time);
     }
-
-    // Make sure we have initial verlet lists
-    sectors->createVerletLists();
-    sectors->createWallLists();
   }
 
   void Integrator::preStep() {};

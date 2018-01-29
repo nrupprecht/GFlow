@@ -27,16 +27,30 @@ namespace GFlow {
     // Save data from the simulation
     virtual void write();
 
+    // Get breakage, bonding data
+    auto& getBreakages() { return breakages; }
+    auto& getBondings()  { return bondings; }
+    auto& getCumNumBreaks() { return cumNumBreaks; }
+    auto& getCumNumBonds()  { return cumNumBonds; }
+
   private:
     // Private helper functions
     inline void checkForBreaks();
-    inline void compare(const VListSubType&, const VListSubType&, vector<pair<int,int> >&, vector<pair<int,int> >&);
+    inline void compare(vector<pair<int,int> >&, vector<pair<int,int> >&);
+    inline void setVerletListRecord(VListType&);
+    inline void setVerletListRecord();
 
     // Run time
     RealType runTime;
 
+    // Delay between checking for breaks/bonds
+    RealType delay;
+
     // A record of the verlet lists
     VListType verletListRecord;
+
+    // A way to sort the verlet list we get from the sectorization
+    vector<VListSubType*> accessor;
     
     // A lists {time, particle #, particle #} of when breakages and bondings occur
     vector<std::tuple<RealType,int,int> > breakages, bondings;

@@ -175,7 +175,7 @@ namespace GFlow {
 
     // Update sectors
     if (updateDelay < updateTimer) {
-      
+      // Check termination conditions
       for (auto & t : termination)
 	if (t->check(simData)) {
 	  running = false;

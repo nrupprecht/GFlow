@@ -76,6 +76,9 @@ namespace GFlow {
     RealType getMaxCutR()   { return maxCutR; }
     RealType getSecCutR()   { return secCutR; }
 
+    // Mutators
+    void setSkinDepth(RealType);
+
     // Get the closest
     int getClosest(int, SimData*);
     // Get closest two

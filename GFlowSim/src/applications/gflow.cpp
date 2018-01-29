@@ -31,9 +31,11 @@ int main (int argc, char** argv) {
 
   // Simulation creation options
   bool fracture = false;
+  bool print = false;
   // Read some simulation options
   ArgParse parser(argc, argv);
   parser.get("fracture", fracture);
+  parser.get("print", print);
 
   // Create a simulation
   SimulationBase *simulation = nullptr;
@@ -54,6 +56,12 @@ int main (int argc, char** argv) {
 
   // Write data from the simulation
   simulation->write();
+
+  if (fracture && print) {
+    FractureSimulation* sim = dynamic_cast<FractureSimulation*>(simulation);
+    cout << "breaks=" << sim->getCumNumBreaks() << ";\n";
+    cout << "bonds="  << sim->getCumNumBonds()  << ";\n";
+  }
 
   // Finalize mpi
 #if USE_MPI == 1

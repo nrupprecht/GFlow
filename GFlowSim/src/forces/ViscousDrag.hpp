@@ -25,6 +25,9 @@ namespace GFlow {
     // Viscosity setting constructor
     ViscousDrag(RealType);
 
+    // Get the viscosity
+    RealType getViscosity() const { return viscosity; }
+
   protected:
     // Inherited private virtual functions
     virtual void _applyForce(SimData*) const;

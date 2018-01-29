@@ -440,21 +440,28 @@ namespace GFlow {
     }
     // Write number of balls and walls in a comment
     fout << "# There are " << simData->domain_size << " particles and " << simData->walls.size() << ".\n";
+
     // Write bounds
     Bounds simBounds = simData->simBounds;
     fout << "B " << simBounds.left << " " << simBounds.right << " " << simBounds.bottom << " " << simBounds.top << endl;
+
     // Write wrapping
     fout << "wx " << (simData->wrapX ? "1" : "0") << "\nwy " << (simData->wrapY ? "1" : "0") << "\n";
+
     // Write walls
     for (const auto& w : simData->walls) {
       fout << "W " << w.left << " " << w.getRight() << " " << w.repulsion << " " << w.dissipation << " " << w.coeff << "\n";
     }
+
     // Write external forces
     for (const auto& f : simData->externalForces) {
-      auto ca = reinterpret_cast<ConstantAcceleration*>(f);
+      auto ca = dynamic_cast<ConstantAcceleration*>(f);
       if (ca) fout << "ef ca " << ca->getAcceleration() << "\n";
-      // Allow for other forces here
+      auto vd = dynamic_cast<ViscousDrag*>(f);
+      if (vd) fout << "ef vd " << vd->getViscosity() << "\n";
+      // Other forces go here
     }
+
     // Write particles
     for (const auto& p : simData->getParticles()) {
       fout << "P " << p.position << " " << p.velocity << " " << p.theta << " " << p.omega << " " << p.sigma << " " << p.repulsion << " " << p.dissipation << " " << p.coeff << " " << p.interaction << "\n";
