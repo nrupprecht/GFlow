@@ -6,6 +6,8 @@ namespace GFlow {
 
   FileParser::FileParser(int argc, char** argv) : creator(new Creator), status(nullptr), randomSeed(0), argc(argc), argv(argv), parser(nullptr) {};
 
+  FileParser::FileParser() : creator(nullptr), status(nullptr), randomSeed(0), argc(0), argv(nullptr), parser(nullptr) {};
+
   FileParser::~FileParser() {
     if (creator) delete creator;
   }

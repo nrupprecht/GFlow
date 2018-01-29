@@ -125,7 +125,7 @@ namespace GFlow {
 	  VListSubType nlist;
 	  nlist.push_back(i); // You are at the head of the list
 	  vec2 r;
-	  // Sector you are in
+	  // Check for neighbors in the sector you are in
 	  auto q = p; ++q; // Check only particles ordered after you
 	  for (; q!=sec_at(x,y).end(); ++q) {
 	    int j = *q;
@@ -134,7 +134,7 @@ namespace GFlow {
 	    if (sqr(r) < sqr(sigma + sg[j] + skinDepth)) 
 	      nlist.push_back(j);
 	  }
-
+	  // Lambda that checks for neighbors in sector {sx,sy}
 	  auto check = [&] (int sx, int sy) {
             for (const auto &j : sec_at(sx, sy)) {
               if (it[j]<0) continue;
@@ -348,6 +348,64 @@ namespace GFlow {
     return pair<int,int>(min1, min2);
   }
 
+  // Only checks surrounding sectors for neighbors
+  list<int> Sectorization::getNeighbors(int id) {
+    // Get particle data
+    RealType *px = simData->getPxPtr();
+    RealType *py = simData->getPyPtr();
+    RealType *sg = simData->getSgPtr();
+    int *it      = simData->getItPtr();
+
+    list<int> nList;
+    RealType sigma = sg[id];
+    // You are at the head of your neighbor list
+    nList.push_back(id);
+    // Get the sector the particle is in
+    auto sec = getSecPair(px[id], py[id]);
+    int sx = sec.first, sy = sec.second;
+
+    // Lambda that checks for neighbors in sector {sx,sy}
+    auto check = [&] (int sx, int sy) {
+      for (const auto &j : sec_at(sx, sy)) {
+        if (it[j]<0 || j==id) continue;
+        auto r = getDisplacement(px[id], py[id], px[j], py[j]);
+        if (sqr(r) < sqr(sigma + sg[j] + skinDepth))
+          nList.push_back(j);
+      }  
+    };
+
+    // Top left
+    --sx; ++sy;
+    check(sx, sy);
+    // Top
+    ++sx;
+    check(sx, sy);
+    // Top right
+    ++sx;
+    check(sx, sy);
+    // Left
+    sx -= 2;
+    --sy;
+    check(sx, sy);
+    // Middle 
+    ++sx;
+    check(sx, sy);
+    // Middle right
+    ++sx;
+    check(sx, sy);
+    // Bottom left
+    sx -= 2;
+    --sy;
+    check(sx, sy);
+    // Bottom middle
+    ++sx;
+    check(sx, sy);
+    // Bottom right
+    ++sx;
+
+    return nList;
+  }
+    
   inline int Sectorization::getSec(const RealType x, const RealType y) {
     int SX = (x-bounds.left)*isdx+1, SY = (y-bounds.bottom)*isdy+1;
     SX = SX>nsx-1 ? nsx-1 : SX; 
@@ -355,6 +413,15 @@ namespace GFlow {
     SY = SY>nsy-1 ? nsy-1 : SY;
     SY = SY<0 ? 0 : SY;
     return SY*nsx+SX;
+  }
+
+  inline pair<int,int> Sectorization::getSecPair(const RealType x, const RealType y) {
+    int SX = (x-bounds.left)*isdx+1, SY = (y-bounds.bottom)*isdy+1;
+    SX = SX>nsx-1 ? nsx-1 : SX;
+    SX = SX<0 ? 0 : SX;
+    SY = SY>nsy-1 ? nsy-1 : SY;
+    SY = SY<0 ? 0 : SY;
+    return pair<int,int>(SX, SY);
   }
 
   void Sectorization::_makeSectors() {

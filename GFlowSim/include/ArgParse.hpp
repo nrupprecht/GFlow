@@ -17,17 +17,23 @@ using std::endl;
 
 /// Command line argument parsing class
 class ArgParse {
-public:
+ public:
+  // Default constructor
   ArgParse() : argc(0), argv(0) {};
+  
+  // Constructor that sets argc, argv
   ArgParse(int argc, char** argv) {
     this->argc = argc;
     this->argv = argv;
     parse();
+    throw true; 
   }
   
+  // Set argc, argv
   void set(int ac, char** av) { 
     argc = ac; 
     argv = av; 
+    // Parse the arguments
     parse();
   }
 
@@ -66,6 +72,7 @@ public:
     for (auto tpair : tlist) {
       if (tpair.first==token) {
 	opt = tpair;
+	// We have looked for this token
 	checked.at(i) = true;
       }
       ++i;
@@ -73,19 +80,26 @@ public:
     return opt;
   }
 
+  // The token to look for and a variable in which to store the value it was given
   template<typename T> void get(const string& token, T& var) {
+    // Find the {token, value} pair
     pair<string,string> opt = find(token);
+    // If the token was found
     if (!opt.first.empty()) {
       stringstream stream;
-      if (opt.second.empty()) stream << "1"; // Default argument
+      // If no argument was provided, use 1 (true) as the default argument
+      if (opt.second.empty()) stream << "1";
+      // Otherwise, read in the argument. Stringstream converts it to the correct type
       else stream << opt.second;
       stream >> var;
     }
   }
 
+  // Checks if any command line arguments were not checked by the parser. If so, then they are assumed to be illegal arguments, and an error will be thrown
   void check() {
-    for (int i=0; i<checked.size(); ++i)
+    for (int i=0; i<checked.size(); ++i) {
       if (!checked.at(i)) throw UncheckedToken("Tok=["+tlist.at(i).first + "]: Val=[" + tlist.at(i).second+"]");
+    }
   }
 
   /// Exception classes
@@ -95,6 +109,7 @@ public:
     char c;
   };
 
+  /// Exception class
   class UncheckedToken {
   public:
     UncheckedToken(string s) : token(s) {};
@@ -102,11 +117,15 @@ public:
   };
 
 private:
+  // Number of arguments and string array
   int argc;
   char** argv;
   
-  vector<pair<string,string> > tlist; // List of found tokens and their corresponding value
-  vector<bool> checked;               // Whether we have asked about the tlist token
+  // List of found tokens and their corresponding value
+  vector<pair<string,string> > tlist;
+
+  // Tokens we have looked for in the argv
+  vector<bool> checked;
 
 };
 

@@ -81,6 +81,9 @@ namespace GFlow {
     // Get closest two
     pair<int, int> getClosestTwo(int, SimData*);
 
+    // Get all the neighbors of a particle
+    list<int> getNeighbors(int);
+
     // DataRecord is a friend class
     friend class DataRecord;
 
@@ -92,6 +95,7 @@ namespace GFlow {
 
     // Private helper functions
     inline int getSec(const RealType, const RealType);
+    inline pair<int,int> getSecPair(const RealType, const RealType);
     inline vector<int>& sec_at(int x, int y) { return sectors[nsx*y+x]; }
 
     // Pointer to the simulation data we manage

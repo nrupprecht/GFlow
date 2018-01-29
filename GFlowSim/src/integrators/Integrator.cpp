@@ -39,14 +39,16 @@ namespace GFlow {
     preIntegrate();
 
     // Do the integration
-    while (running) {
-      preStep();    // Before doing an integration update
-      _integrate(); // Integration update
-      postStep();   // After doing an integration update
-    }
+    while (running) step();
 
     // Post
     postIntegrate();
+  }
+
+  void Integrator::step() {
+    preStep();    // Before doing an integration update
+    _integrate(); // Integration update
+    postStep();   // After doing an integration update
   }
 
   void Integrator::initializeSectors() {

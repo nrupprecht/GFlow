@@ -40,14 +40,32 @@ namespace GFlow {
     // Destructor - cleans up sectors
     ~Integrator();
 
+    // Initialize the integrator
+    virtual void initialize(RealType runTime);
+
     // Give the integrator a data record object
     void setDataRecord(DataRecord* dr);
+
+    // Things to do to set up integration
+    virtual void preIntegrate();
 
     // Integrate function wraps protected virtual function
     void integrate(RealType);
 
+    // Things to do after integration
+    virtual void postIntegrate();
+
+    // Do a single timestep
+    void step();
+    
     // Get the timestep
     RealType getDt() { return dt; }
+
+    // Get the simulation time
+    RealType getTime() { return time; }
+
+    // Get the running status
+    bool isRunning() { return running; }
 
     // Set the timestep
     void setDt(RealType t) { dt = t; }
@@ -60,12 +78,9 @@ namespace GFlow {
 
   protected:
     // Private virtual functions
-    virtual void initialize(RealType runTime);
     virtual void initializeSectors();
     virtual void initializeForceHandler();
-    virtual void preIntegrate();
     virtual inline void _integrate() = 0;
-    virtual void postIntegrate();
     virtual void preStep();
     virtual void postStep();
 

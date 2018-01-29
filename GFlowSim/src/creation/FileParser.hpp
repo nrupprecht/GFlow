@@ -35,6 +35,9 @@ namespace GFlow {
     // Default constructor
     FileParser(int, char**);
 
+    // Empty constructor
+    FileParser();
+
     // Destructor
     ~FileParser();
 
@@ -52,6 +55,9 @@ namespace GFlow {
 
     // Get the random seed used
     unsigned getSeed() { return randomSeed; }
+
+    // Set the argc, argv
+    void set(int ac, char** av) { argc = ac; argv = av; }
 
     // Give a status object
     void setStatusObject(StatusObject *so) { status = so; }
