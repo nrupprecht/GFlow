@@ -58,4 +58,10 @@ inline RealType length(const vec2 v) {
   return sqrt(sqr(v));
 }
 
+// Get a random unit vector
+inline vec2 randV() {
+  float a = drand48();
+  return vec2(sinf(2*GFlow::PI*a), cosf(2*GFlow::PI*a));
+}
+
 #endif // __VEC_2D_HPP__

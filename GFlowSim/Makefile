@@ -18,7 +18,7 @@ DATA_OBJECTS    = build/DataRecord.o
 INT_OBJECTS     = build/VelocityVerletIntegrator.o build/Integrator.o build/StandardSectorization.o
 OBJ_OBJECTS     = build/Particle.o build/Wall.o build/ScalarField.o
 INC_OBJECTS     = build/vec2d.o
-FORCE_OBJECTS   = build/ViscousDrag.o build/ConstantAcceleration.o
+FORCE_OBJECTS   = build/ViscousDrag.o build/ConstantAcceleration.o build/TemperatureForce.o
 
 ALL_OBJECTS     = $(CONTROL_OBJECTS) $(SIMULATION_OBJECTS) $(CREATION_OBJECTS) $(DATA_OBJECTS) $(INT_OBJECTS) $(OBJ_OBJECTS) $(INC_OBJECTS) $(FORCE_OBJECTS) $(TEST_OBJECTS)
 

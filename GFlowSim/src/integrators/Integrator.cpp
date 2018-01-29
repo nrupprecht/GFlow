@@ -77,6 +77,7 @@ namespace GFlow {
     
     // Reset time
     time = 0;
+    simData->time = 0;
 
     // Set running to true
     running = true;
@@ -100,6 +101,7 @@ namespace GFlow {
 
     // Update time
     time += dt;
+    simData->time = time;
 
     // End if we have simulated for enough time
     if (runTime < time) running = false;

@@ -70,6 +70,9 @@ namespace GFlow {
     int getDomainCapacity() { return domain_capacity; }
     int getEdgeSize()       { return edge_size; }
     int getEdgeCapacity()   { return edge_capacity; }
+    
+    // Get the current time
+    RealType getTime() { return time; }
 
     // Returns the bounds
     Bounds getBounds()    { return bounds; }
@@ -208,6 +211,8 @@ namespace GFlow {
     friend class Creator;
     // FileParser is a friend class
     friend class FileParser;
+    // Integrator is a friend class
+    friend class Integrator;
 
     struct BadParticle {
       BadParticle(int i) : index(i) {};
@@ -217,6 +222,9 @@ namespace GFlow {
   private:
     // Private helper functions
     inline void compressArrays();
+
+    // Current time
+    RealType time;
 
     // Number of domain particles
     int domain_size;

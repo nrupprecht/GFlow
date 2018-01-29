@@ -76,7 +76,7 @@ namespace GFlow {
     
     // Delay between updating sectors
     RealType updateDelay;
-    
+        
     // Delay multiplying factor
     RealType delayFactor;
     

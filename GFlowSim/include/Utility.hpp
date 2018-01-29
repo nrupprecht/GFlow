@@ -75,7 +75,7 @@ namespace GFlow {
   typedef vector<WListSubType> WListType;
 
   // Constants
-  const double PI = 3.14159265358979;
+  const RealType PI = 3.14159265358979;
 
   // Squaring function
   template<typename T> inline T sqr(const T& value) {
@@ -160,7 +160,10 @@ namespace GFlow {
   // Random number generators
   static std::mt19937 generator;
   static std::normal_distribution<RealType> normal_dist(0., 1.);
-  // static std::poisson_distribution<int> poisson_dist();
+
+  inline double randNormal() {
+    return normal_dist(generator);
+  }
 }
 
 #endif // __UTILITY_HPP__
