@@ -47,7 +47,7 @@ namespace GFlow {
       running = integrator->isRunning();
       time = integrator->getTime();
 
-      // Check for fragmentation
+      // Check for fragmentation - just not every timestep
       if (time - timer > delay) {
 	checkForBreaks();
 	// Reset timer
@@ -65,7 +65,10 @@ namespace GFlow {
   }
 
   void FractureSimulation::checkForBreaks() {
+    // Get a reference to the verlet lists
+    auto& verletLists = integrator->getSectorization()->getVerletList();
 
+    
   }
 
 }

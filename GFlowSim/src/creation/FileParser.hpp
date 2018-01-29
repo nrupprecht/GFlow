@@ -9,7 +9,7 @@
 
 // Includes
 #include "ParsingTokens.hpp"
-#include "../../include/ArgParse.h"
+#include "../../include/ArgParse.hpp"
 #include "../control/SimData.hpp"
 #include "../control/StatusObject.hpp"
 #include "../forces/ConstantAcceleration.hpp"

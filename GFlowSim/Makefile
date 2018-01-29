@@ -25,40 +25,47 @@ ALL_OBJECTS     = $(CONTROL_OBJECTS) $(SIMULATION_OBJECTS) $(CREATION_OBJECTS) $
 all: bin/gflow
 
 ###### Executables #####
-bin/gflow: build/gflow.o $(ALL_OBJECTS)
+bin/gflow: build/gflow.o $(ALL_OBJECTS) | bin
 	$(COMP) $^ -o $@
+
+# Create directories if they don't exist
+bin:
+	mkdir -p $@
+
+build:
+	mkdir -p $@
 
 #####   Objects   #####
 # In /src/
-build/%.o: src/applications/%.cpp
+build/%.o: src/applications/%.cpp | build
 	$(COMP) -c -o $@ $< $(FLAGS)
 
-build/%.o: src/control/%.cpp
+build/%.o: src/control/%.cpp | build
 	$(COMP) -c -o $@ $< $(FLAGS)
 
-build/%.o: src/simulation/%.cpp
+build/%.o: src/simulation/%.cpp | build
 	$(COMP) -c -o $@ $< $(FLAGS)
 
-build/%.o: src/creation/%.cpp
+build/%.o: src/creation/%.cpp | build
 	$(COMP) -c -o $@ $< $(FLAGS)
 
-build/%.o: src/data/%.cpp
+build/%.o: src/data/%.cpp | build
 	$(COMP) -c -o $@ $< $(FLAGS)
 
-build/%.o: src/forces/%.cpp
+build/%.o: src/forces/%.cpp | build
 	$(COMP) -c -o $@ $< $(FLAGS)
 
-build/%.o: src/integrators/%.cpp
+build/%.o: src/integrators/%.cpp | build
 	$(COMP) -c -o $@ $< $(FLAGS)
 
-build/%.o: src/objects/%.cpp
+build/%.o: src/objects/%.cpp | build
 	$(COMP) -c -o $@ $< $(FLAGS)
 
 # Not in /src/
-build/%.o: include/%.cpp
+build/%.o: include/%.cpp | build
 	$(COMP) $(FLAGS) -c -o $@ $<
 
-build/%.o: test/%.cpp
+build/%.o: test/%.cpp | build
 	$(COMP) $(FLAGS) -c -o $@ $<
 
 #####   Clean    #####

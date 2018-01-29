@@ -68,6 +68,10 @@ namespace GFlow {
     FileParser fileParser;
 
     // Writing and saving options
+    // nowrite - if true, no summary file / data will be written
+    // print - whether to print stat data to the console
+    // quiet - whether to print any messages to the console
+    // saveFile - if provided, the final system configuration will be saved to the file
     bool nowrite, print, quiet;
     string saveFile;
   };

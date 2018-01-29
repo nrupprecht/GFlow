@@ -64,6 +64,9 @@ namespace GFlow {
     // Get the simulation time
     RealType getTime() { return time; }
 
+    // Get a pointer to the sectorization
+    Sectorization* getSectorization() { return sectors; }
+
     // Get the running status
     bool isRunning() { return running; }
 

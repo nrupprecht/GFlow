@@ -7,7 +7,6 @@
 #include "../creation/Creator.hpp"
 #include "../creation/FileParser.hpp"
 #include "../integrators/VelocityVerletIntegrator.hpp"
-#include "../../include/ArgParse.h"
 
 // Include simulation types
 #include "../simulation/StandardSimulation.hpp"

@@ -3,7 +3,7 @@
 
 namespace GFlow {
 
-  SimulationBase::SimulationBase() : integrator(nullptr), simData(nullptr), dataRecord(nullptr), nowrite(false), print(true), quiet(false), saveFile("") {};
+  SimulationBase::SimulationBase() : integrator(nullptr), simData(nullptr), dataRecord(nullptr), nowrite(false), print(false), quiet(false), saveFile("") {};
 
   SimulationBase::~SimulationBase() {
     if (simData)    delete simData;

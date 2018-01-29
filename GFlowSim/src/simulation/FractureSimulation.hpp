@@ -33,6 +33,9 @@ namespace GFlow {
 
     // Run time
     RealType runTime;
+
+    // A record of the verlet lists
+    VListType verletListsRecord;
   };
 
 }
