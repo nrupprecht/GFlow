@@ -26,7 +26,6 @@ class ArgParse {
     this->argc = argc;
     this->argv = argv;
     parse();
-    throw true; 
   }
   
   // Set argc, argv

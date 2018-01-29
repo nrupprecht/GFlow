@@ -21,7 +21,12 @@ namespace GFlow {
     fileParser.setDataRecord(dataRecord);
   }
 
-  void SimulationBase::standardParsing() {
+  void SimulationBase::updateFlagCheck(string flag) {
+    // This will set the checked flag to true
+    parser.find(flag);
+  }
+
+  void SimulationBase::standardParsing(bool check) {
     // Files
     string config = "";
     string writeDirectory = "";
@@ -250,7 +255,7 @@ c configuration file. Exiting.\n";
     parser.get("quiet", quiet);
     parser.get("saveFile", saveFile);
 
-    checkParsing();
+    if (check) checkParsing();
   }
 
   void SimulationBase::standardWriting() {    

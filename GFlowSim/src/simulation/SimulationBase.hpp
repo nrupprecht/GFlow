@@ -42,12 +42,15 @@ namespace GFlow {
     // Save data from the simulation
     virtual void write() = 0;
 
+    // Tell the simulator we checked for certain flags
+    void updateFlagCheck(string);
+
     // Check if any illegal flags have been invoked
     void checkParsing();
-
+    
   protected:
     // Private helper functions
-    void standardParsing();
+    void standardParsing(bool=true); // bool is whether to check parsing at the end
     void standardWriting();
 
     // The integrator

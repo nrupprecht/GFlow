@@ -64,10 +64,53 @@ namespace GFlow {
     standardWriting();
   }
 
-  void FractureSimulation::checkForBreaks() {
+  inline void FractureSimulation::checkForBreaks() {
     // Get a reference to the verlet lists
-    auto& verletLists = integrator->getSectorization()->getVerletList();
+    auto& verletList = integrator->getSectorization()->getVerletList();
 
+    // Keep track of new bondings and breaking bonds
+    vector<pair<int, int> > bonds, breaks;
+
+    // Compair to recorded verlet lists
+    for (const auto &nl : verletList) {
+      auto p = nl.begin();
+      int head = *p; ++p;
+      // Compair to the last recorded neighbor list for particle [head]
+      auto list = verletListRecord.at(head);
+      for (; p!=nl.end(); ++p) compare(list, nl, bonds, breaks);
+    }
+
+    // Set the verlet list record to be the current verlet list. We have to sort the data
+    // Clear the old data
+    for (auto &nl : verletListRecord) nl.clear();
+    // Insert new data
+    for (const auto &nl : verletList) {
+      int head = *nl.begin();
+      verletListRecord.at(head) = nl;
+    }
+    // Get the current time, for recording when this happened
+    RealType currentTime = integrator->getTime();
+    // If there is bond data to record
+    if (!bonds.empty()) {
+      // Add bond pairs
+      for (auto &b : bonds) 
+	bondings.push_back(std::tuple<RealType,int,int>(currentTime, b.first, b.second));
+      // Update cumulative counting statistics
+      numBonds += bonds.size();
+      cumNumBonds.push_back(pair<RealType,int>(currentTime, numBonds));
+    }
+    // If there is breakage data to record
+    if (!breaks.empty()) {
+      // Add break pairs
+      for (auto &b : breaks)
+	breakages.push_back(std::tuple<RealType,int,int>(currentTime, b.first, b.second));
+      // Update cumulative counting statistics
+      numBreaks += breaks.size();
+      cumNumBreaks.push_back(pair<RealType,int>(currentTime, numBreaks));
+    }
+  }
+
+  inline void FractureSimulation::compare(const VListSubType& oldList, const VListSubType& newList, vector<pair<int,int> >& bonds, vector<pair<int,int> >& breaks) {
     
   }
 

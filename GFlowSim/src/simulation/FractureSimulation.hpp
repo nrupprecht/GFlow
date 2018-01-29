@@ -29,13 +29,21 @@ namespace GFlow {
 
   private:
     // Private helper functions
-    void checkForBreaks();
+    inline void checkForBreaks();
+    inline void compare(const VListSubType&, const VListSubType&, vector<pair<int,int> >&, vector<pair<int,int> >&);
 
     // Run time
     RealType runTime;
 
     // A record of the verlet lists
-    VListType verletListsRecord;
+    VListType verletListRecord;
+    
+    // A lists {time, particle #, particle #} of when breakages and bondings occur
+    vector<std::tuple<RealType,int,int> > breakages, bondings;
+    // Cumulative number of breaks and bonds as a time series
+    vector<pair<RealType,int> > cumNumBreaks, cumNumBonds;
+    // Cumulative number of breaks and bonds
+    int numBreaks, numBonds;
   };
 
 }

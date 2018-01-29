@@ -29,11 +29,22 @@ int main (int argc, char** argv) {
 #endif
 #endif
 
+  // Simulation creation options
+  bool fracture = false;
+  // Read some simulation options
+  ArgParse parser(argc, argv);
+  parser.get("fracture", fracture);
+
   // Create a simulation
-  SimulationBase *simulation = new StandardSimulation;
+  SimulationBase *simulation = nullptr;
+  if (fracture) simulation = new FractureSimulation;
+  else simulation = new StandardSimulation;
 
   // Set up the simulation
   simulation->setUp(argc, argv);
+
+  // Update checked flags
+  simulation->updateFlagCheck("fracture");
 
   // Parse command line arguments
   simulation->parse();
