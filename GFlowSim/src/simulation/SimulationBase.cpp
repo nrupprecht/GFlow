@@ -1,5 +1,7 @@
 #include "SimulationBase.hpp"
 #include "../integrators/VelocityVerletIntegrator.hpp"
+#include "../forces/ViscousDrag.hpp"
+#include "../forces/TemperatureForce.hpp"
 
 namespace GFlow {
 
@@ -80,6 +82,8 @@ namespace GFlow {
     RealType maxDt = -1;
     RealType minDt = -1;
     RealType dt = -1;
+    // Temperature
+    RealType temperature = -1.; // The temperature of the simulation (if positive)
 
     /** Check standard options **/
     // Check if we need to load a file
@@ -129,6 +133,8 @@ namespace GFlow {
     parser.get("maxDt", maxDt);
     parser.get("minDt", minDt);
     parser.get("dt", dt);
+    // Temperature
+    parser.get("temperature", temperature);
 
     // Set up configurations
     if (config!="") {
@@ -204,6 +210,12 @@ c configuration file. Exiting.\n";
     }
     if (dt>0) integrator->setDt(dt);
 
+    // Temperature
+    if (temperature>0) {
+      simData->addExternalForce(new TemperatureForce(temperature));
+      simData->addExternalForce(new ViscousDrag);
+    }
+
     // Set up the data recorder
     if (writeDirectory!="") dataRecord->setWriteDirectory(writeDirectory);
     integrator->setDataRecord(dataRecord);
@@ -276,9 +288,9 @@ c configuration file. Exiting.\n";
 
 	if (!nowrite) {
 	  // Write animation data to files
-	  dataRecord->writeData(simData);
+	  dataRecord->writeData();
 	  // Write sectorization data to file
-	  dataRecord->writeRunSummary(simData, integrator);
+	  dataRecord->writeRunSummary(integrator);
 	}
 
 	// Write out stat function data - for now

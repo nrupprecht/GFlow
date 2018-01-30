@@ -76,11 +76,15 @@ namespace GFlow {
     RealType getMaxCutR()   { return maxCutR; }
     RealType getSecCutR()   { return secCutR; }
 
-    // Mutators
+    // Set the skin depth
     void setSkinDepth(RealType);
+    
+    // Set the cutoff length
+    void setCutoff(RealType);
 
     // Get the closest
     int getClosest(int, SimData*);
+
     // Get closest two
     pair<int, int> getClosestTwo(int, SimData*);
 
@@ -94,6 +98,7 @@ namespace GFlow {
     virtual void _sectorize();
     virtual void _createVerletLists();
     virtual void _createWallLists();
+    virtual void _calculateCutoff();
     virtual void _makeSectors();
 
     // Private helper functions

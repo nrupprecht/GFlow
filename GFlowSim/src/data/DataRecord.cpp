@@ -4,7 +4,7 @@
 #include "../forces/ExternalForce.hpp"
 
 namespace GFlow {
-  DataRecord::DataRecord() : writeDirectory("RunData"), delay(1./15.), lastRecord(-2.*delay), animationDelay(1./15.), lastAnimate(-2.*animationDelay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), lowerSizeLimit(0), recOption(1), stripeHeight(3), recBulk(false), recBulkOutline(false), recDisplacementField(false), displacementSnapshot(false), trackDisplacement(false), recPressField(false), recPerf(false), statRecPerf(-1), recMvRatio(false), statRecMvRatio(-1), recDt(false), statRecDt(-1), recDelay(false), statRecDelay(-1), center(false) {
+  DataRecord::DataRecord() : simData(nullptr), sectors(nullptr), forceHandler(nullptr), writeDirectory("RunData"), delay(1./15.), lastRecord(-2.*delay), animationDelay(1./15.), lastAnimate(-2.*animationDelay), recIter(0), nsx(-1), nsy(-1), sdx(-1), sdy(-1), cutoff(-1), skinDepth(-1), recPos(false), lowerSizeLimit(0), recOption(1), stripeHeight(3), recBulk(false), recBulkOutline(false), recDisplacementField(false), displacementSnapshot(false), trackDisplacement(false), recPressField(false), recPerf(false), statRecPerf(-1), recMvRatio(false), statRecMvRatio(-1), recDt(false), statRecDt(-1), recDelay(false), statRecDelay(-1), center(false) {
     start_time = end_time = high_resolution_clock::now();
   };
 
@@ -63,7 +63,7 @@ namespace GFlow {
     return actualTime/getElapsedTime();
   }
 
-  void DataRecord::record(SimData* simData, RealType time) {
+  void DataRecord::record(RealType time) {
     // Return if not enough time has gone by
     if (time-lastRecord<delay) return;
 
@@ -93,7 +93,7 @@ namespace GFlow {
     // Record position data
     if (recPos && time-lastAnimate>animationDelay) {
       vector<PData> positions;
-      getPositionData(positions, simData, recOption);
+      getPositionData(positions, recOption);
       positionRecord.push_back(positions);
       lastAnimate = time;
     }
@@ -110,7 +110,7 @@ namespace GFlow {
       else region = simData->getSimBounds();
       vector<RealType> volumes;
       vector<pair<vec2,vec2> > lines;
-      getBulkData(simData, region, volumes, bulkField, lines);
+      getBulkData(region, volumes, bulkField, lines);
       if (recBulkOutline) bulkOutline.push_back(lines);
       if (recBulk)        bulkVolumes.push_back(volumes);
     }
@@ -125,7 +125,7 @@ namespace GFlow {
 	region = Bounds(max_posx-6*maxSigma, max_posx+6*maxSigma, max_posy-6*maxSigma, max_posy+18*maxSigma);
       }
       else region = simData->getSimBounds();
-      getPressureData(simData, region, pressField);
+      getPressureData(region, pressField);
     }
 
     // Record vortex data
@@ -139,12 +139,12 @@ namespace GFlow {
       }
       else region = simData->getSimBounds();
       ScalarField vortex;
-      getVortexData(simData, region, vortex);
+      getVortexData(region, vortex);
       vortexRecord.push_back(vortex);
     }
 
     // Record displacement field
-    if (recDisplacementField) displacementFieldRecord.push_back(createDisplacementField(simData, true));
+    if (recDisplacementField) displacementFieldRecord.push_back(createDisplacementField(true));
 
     // Record stat functions
     for (int i=0; i<statFunctions.size(); ++i) {
@@ -190,7 +190,7 @@ namespace GFlow {
     if (recDelay && statRecDelay>-1) statFunctionData.at(statRecDelay).push_back(RPair(time, integrator->getUpdateDelay()));
  }
 
-  void DataRecord::getSectorizationData(Sectorization* sectors) {
+  void DataRecord::getSectorizationData() {
     if (sectors==nullptr) return;
     // Get width and height of sector grid
     nsx = sectors->nsx; 
@@ -224,7 +224,7 @@ namespace GFlow {
     avePerOccupiedSector /= (occupiedSectors>0 ? occupiedSectors : 1);
   }
 
-  void DataRecord::writeData(SimData* simData) const {
+  void DataRecord::writeData() const {
     // Remove previously existing files
     system(("rm -rf "+writeDirectory).c_str());
 
@@ -276,9 +276,9 @@ namespace GFlow {
     }
 
     // Write displacement data
-    if (simData && trackDisplacement) writeDisplacementData(simData);
-    if (simData && displacementSnapshot) writeDisplacementField(simData);
-    if (simData && recDisplacementField) {
+    if (trackDisplacement) writeDisplacementData();
+    if (displacementSnapshot) writeDisplacementField();
+    if (recDisplacementField) {
       // Create a directory for the field frames
       mkdir((writeDirectory+"/DisplacementField").c_str(), 0777);
       // Write the fields
@@ -289,7 +289,7 @@ namespace GFlow {
     if (simData && recDisplacementColumns) {
       auto sb = simData->getSimBounds();
       int bins = (sb.right - sb.left)/0.2;
-      writeColumnDisplacement(simData, bins);
+      writeColumnDisplacement(bins);
     }
 
     // Write bulk data
@@ -317,7 +317,7 @@ namespace GFlow {
     }
   }
 
-  void DataRecord::writeRunSummary(SimData* simData, Integrator* integrator) const {
+  void DataRecord::writeRunSummary(Integrator* integrator) const {
     std::ofstream fout(writeDirectory+"/run_summary.txt");
     if (fout.fail()) {
       // Write error message
@@ -375,17 +375,18 @@ namespace GFlow {
       }
 
       // Print particle data
-      if (0<simData->domain_size) writeParticleData(fout, simData);
+      if (0<simData->domain_size) writeParticleData(fout);
 
       // Print checks
-      if (0<simData->domain_size) writeParticleChecks(fout, simData);
+      if (0<simData->domain_size) writeParticleChecks(fout);
     }
 
     if (integrator) {
       fout << "Integration:\n";
       fout << "  - Iterations:               " << integrator->iter << "\n";
+      fout << "  - Time per iteration:       " << elapsedTime / integrator->iter << "\n";
       fout << "  - Time step (at end):       " << integrator->dt << "\n";
-      auto vvint = reinterpret_cast<VelocityVerletIntegrator*>(integrator);
+      auto vvint = dynamic_cast<VelocityVerletIntegrator*>(integrator);
       if (vvint!=nullptr) {
 	fout << "  - Average time step:        " << vvint->getAveTimeStep() << "\n";
 	fout << "  - Average update delay:     " << vvint->getAveUpdateDelay() << "\n";
@@ -395,9 +396,9 @@ namespace GFlow {
     }
     
     // Print the sectorization summary
-    if (simData->sectors) {
+    if (sectors) {
       fout << "Sectorization summary (as of end of simulation):\n";
-      int nsx = simData->sectors->getNSX(), nsy = simData->sectors->getNSY();
+      int nsx = sectors->getNSX(), nsy = sectors->getNSY();
       
       fout << "  - Grid dimensions:          " << nsx << " x " << nsy << "\n";
       fout << "  - Total sectors:            " << nsx * nsy << "\n";
@@ -449,19 +450,19 @@ namespace GFlow {
     statPlotName.push_back(name);
   }
 
-  void DataRecord::getPositionData(vector<PData>& positions, SimData *simData, int option) {
+  void DataRecord::getPositionData(vector<PData>& positions, int option) {
     if (option==1) // Record pressure
-      simData->getPressureData(positions, lowerSizeLimit);
+      recordByPressure(positions);
     else if (option==2) // Record by particle id
-      recordByNumber(simData, positions);
+      recordByNumber(positions);
     else if (option==3) // Record by number of verlet lists the particle is in
-      recordByVerletList(simData, positions);
+      recordByVerletList(positions);
     else if (option==4) // Record by velocity
-      recordByVelocity(simData, positions);
+      recordByVelocity(positions);
     else if (option==5) // Record by displacement
-      recordByDisplacement(simData, positions);
+      recordByDisplacement(positions);
     else if (option==6) // Record by height, in colored stripes
-      recordByHeight(simData, positions);
+      recordByHeight(positions);
     else { // recOption==0 or default. Record nothing extra
       RealType *px = simData->getPxPtr();
       RealType *py = simData->getPyPtr();
@@ -484,7 +485,7 @@ namespace GFlow {
     return statFunctionName.at(index);
   }
 
-  void DataRecord::writeParticleData(std::ofstream& fout, SimData *simData) const {
+  void DataRecord::writeParticleData(std::ofstream& fout) const {
     // We are here only if 0 < domain_size
     fout << "Particle Average Data:\n";
 
@@ -548,7 +549,7 @@ namespace GFlow {
     fout << "\n";
   }
 
-  void DataRecord::writeParticleChecks(std::ofstream& fout, SimData* simData) const {
+  void DataRecord::writeParticleChecks(std::ofstream& fout) const {
     // We are here only if 0 < domain_size
     fout << "Particle Checks:\n";
     
@@ -567,7 +568,41 @@ namespace GFlow {
     fout << "\n";
   }
 
-  void DataRecord::recordByNumber(SimData* simData, vector<PData>& positions) const {
+  void DataRecord::recordByPressure(vector<PData>& positions) const {
+    // Checks
+    if (sectors==nullptr || forceHandler==nullptr) return;
+
+    // Get arrays
+    auto px = simData->getPxPtr();
+    auto py = simData->getPyPtr();
+    auto sg = simData->getSgPtr();
+    auto th = simData->getThPtr();
+    auto it = simData->getItPtr();
+    int domain_end = simData->getDomainEnd();
+
+    // Add data to the vector, except for special data (last element)
+    vector<PData> pos;
+    for (int i=0; i<domain_end; ++i)
+      pos.push_back(PData(px[i], py[i], sg[i], th[i], it[i], 0));
+
+    // Get lists
+    const auto& verletList = sectors->getVerletList();
+    const auto& wallList   = sectors->getWallList();
+
+    // Get data
+    forceHandler->pForcesRec(verletList, simData, pos);
+    forceHandler->wForcesRec(wallList, simData, pos);
+
+    // Make sure we only have "real" particles (it>-1)
+    for (int i=0; i<domain_end; ++i)
+      if (it[i]>-1 && lowerSizeLimit<sg[i]) {
+        PData pdata = pos.at(i);
+	std::get<5>(pdata) /= 2*PI*sg[i]; // Convert to pressure
+        positions.push_back(pdata);
+      }
+  }
+
+  void DataRecord::recordByNumber(vector<PData>& positions) const {
     // Get the arrays
     RealType *px = simData->getPxPtr();
     RealType *py = simData->getPyPtr();
@@ -580,7 +615,7 @@ namespace GFlow {
       if (it[i]>-1 && lowerSizeLimit<sg[i]) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], i));
   }
 
-  void DataRecord::recordByVerletList(SimData* simData, vector<PData>& positions) const {
+  void DataRecord::recordByVerletList(vector<PData>& positions) const {
     // Get the arrays
     RealType *px = simData->getPxPtr();
     RealType *py = simData->getPyPtr();
@@ -594,8 +629,8 @@ namespace GFlow {
     for (int i=0; i<domain_size; ++i)
       pos.push_back(PData(px[i], py[i], sg[i], th[i], it[i], 0));
     
-    if (simData && simData->sectors) {
-      const auto& verletList = simData->sectors->getVerletList();
+    if (simData && sectors) {
+      const auto& verletList = sectors->getVerletList();
       for (auto vl : verletList)
 	for (auto id : vl)
 	  ++std::get<5>(pos.at(id));
@@ -606,7 +641,7 @@ namespace GFlow {
       if (it[i]>-1 && lowerSizeLimit<sg[i]) positions.push_back(pos.at(i));
   }
 
-  void DataRecord::recordByVelocity(SimData* simData, vector<PData>& positions) const {
+  void DataRecord::recordByVelocity(vector<PData>& positions) const {
     // Get the arrays
     RealType *px = simData->getPxPtr();
     RealType *py = simData->getPyPtr();
@@ -622,7 +657,7 @@ namespace GFlow {
       if (it[i]>-1 && lowerSizeLimit<sg[i]) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], sqrt(sqr(vx[i])+sqr(vy[i]))));
   }
 
-  void DataRecord::recordByDisplacement(SimData* simData, vector<PData>& positions) const {
+  void DataRecord::recordByDisplacement(vector<PData>& positions) const {
     // Get the arrays
     RealType *px = simData->getPxPtr();
     RealType *py = simData->getPyPtr();
@@ -638,7 +673,7 @@ namespace GFlow {
       if (it[i]>-1) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], sqrt(sqr(initialPositions.at(i)-vec2(px[i],py[i])))));
   }
 
-  void DataRecord::recordByHeight(SimData* simData, vector<PData>& positions) const {
+  void DataRecord::recordByHeight(vector<PData>& positions) const {
     // Get the arrays
     RealType *px = simData->getPxPtr();
     RealType *py = simData->getPyPtr();
@@ -656,12 +691,12 @@ namespace GFlow {
     }
   }
 
-  void DataRecord::getBulkData(SimData* simData, const Bounds& region, vector<RealType>& volumes, ScalarField& field, vector<pair<vec2,vec2> >& lines, RealType resolution, RealType dr, RealType lowerVCut, RealType upperVCut) const {
+  void DataRecord::getBulkData(const Bounds& region, vector<RealType>& volumes, ScalarField& field, vector<pair<vec2,vec2> >& lines, RealType resolution, RealType dr, RealType lowerVCut, RealType upperVCut) const {
     int nsx = (region.right - region.left)/resolution, nsy = (region.top - region.bottom)/resolution;
     RealType sx = (region.right - region.left)/nsx, sy = (region.top - region.bottom)/nsy;
     ++nsx;
     ++nsy;
-    list<int> *sectors = new list<int>[nsx*nsy];
+    list<int> *bulkSectors = new list<int>[nsx*nsy];
     // Fill sectors
     int i=0;
     auto allParticles = simData->getParticles();
@@ -669,16 +704,16 @@ namespace GFlow {
       int sec_x = (p.position.x - region.left)/sx;
       int sec_y = (p.position.y - region.bottom)/sy;
       if (-1<sec_x && sec_x<nsx && -1<sec_y && sec_y<nsy)
-	sectors[nsx*sec_y+sec_x].push_back(i);
+	bulkSectors[nsx*sec_y+sec_x].push_back(i);
       // If part of the particle sticks into the region, place the particle in the closest sector. This ignores particles "diagonal" to the region that stick into the region
       else if (region.left<p.position.x+p.sigma   && -1<sec_y && sec_y<nsy)
-	sectors[nsx*sec_y+0].push_back(i); // Left
+	bulkSectors[nsx*sec_y+0].push_back(i); // Left
       else if (p.position.x-p.sigma<region.right  && -1<sec_y && sec_y<nsy)
-	sectors[nsx*sec_y+(nsx-1)].push_back(i); // Right
+	bulkSectors[nsx*sec_y+(nsx-1)].push_back(i); // Right
       else if (region.bottom<p.position.y+p.sigma && -1<sec_x && sec_x<nsx)
-	sectors[sec_x].push_back(i); // Bottom
+	bulkSectors[sec_x].push_back(i); // Bottom
       else if (p.position.y-p.sigma<region.top    && -1<sec_x && sec_x<nsx)
-	sectors[nsx*(nsy-1)+sec_x].push_back(i); // Top
+	bulkSectors[nsx*(nsy-1)+sec_x].push_back(i); // Top
       ++i;
     }
     // Find the particle of maximum radius
@@ -703,7 +738,7 @@ namespace GFlow {
 	int startX = max(0, x-sweepX), endX = min(nsx-1, x+sweepX);
 	int startY = max(0, y-sweepY), endY = min(nsy-1, y+sweepY);
 	// Check your own sector first for speed's sake
-	for (const auto index : sectors[nsx*y+x]) {
+	for (const auto index : bulkSectors[nsx*y+x]) {
 	  vec2 dR = pos-allParticles.at(index).position;
 	  RealType R = dr+allParticles.at(index).sigma;
 	  if (sqr(dR)<sqr(R)) {
@@ -716,7 +751,7 @@ namespace GFlow {
 	for (int Y=startY; Y<endY && !done; ++Y) {
 	  for (int X=startX; X<endX && !done; ++X) {
 	    if (X!=x || Y!=y)
-	      for (const auto index : sectors[nsx*Y+X]) {
+	      for (const auto index : bulkSectors[nsx*Y+X]) {
 		vec2 dR= pos-allParticles.at(index).position;
 		RealType R = dr+allParticles.at(index).sigma;
 		if (sqr(dR)<sqr(R)) {
@@ -763,7 +798,7 @@ namespace GFlow {
 	}
     // If there are no empty volumes
     if (labels.empty()) {
-      delete [] sectors;
+      delete [] bulkSectors;
       delete [] array;
       return;
     }
@@ -820,7 +855,7 @@ namespace GFlow {
     // Sort sizes
     std::sort(volumes.begin(), volumes.end());
     // Clean up and return
-    delete [] sectors;
+    delete [] bulkSectors;
     delete [] array;
   }
 
@@ -890,7 +925,7 @@ namespace GFlow {
     return index;
   }
 
-  inline void DataRecord::writeDisplacementData(SimData* simData) const {
+  inline void DataRecord::writeDisplacementData() const {
     // Get data
     int domain_end = simData->getDomainEnd();
     RealType *px = simData->getPxPtr();
@@ -919,7 +954,7 @@ namespace GFlow {
       std::cerr << "Failed to print to [" << writeDirectory << "/displacementF.csv].\n";
   }
 
-  inline ScalarField DataRecord::createDisplacementField(SimData* simData, bool finalPos) const {
+  inline ScalarField DataRecord::createDisplacementField(bool finalPos) const {
     // Get data
     int domain_end = simData->getDomainEnd();
     RealType *px = simData->getPxPtr();
@@ -956,12 +991,12 @@ namespace GFlow {
     return field;
   }
 
-  inline void DataRecord::writeDisplacementField(SimData* simData) const {
-    ScalarField field = createDisplacementField(simData, true);
+  inline void DataRecord::writeDisplacementField() const {
+    ScalarField field = createDisplacementField(true);
     field.printToCSV(writeDirectory+"/displacementField.csv");
   }
   
-  inline void DataRecord::writeColumnDisplacement(SimData* simData, int bins) const {
+  inline void DataRecord::writeColumnDisplacement(int bins) const {
     vector<pair<RealType, RealType> > columns[bins];
     Bounds sb = simData->getSimBounds();
     RealType binWidth = (sb.right-sb.left)/bins;
@@ -983,16 +1018,16 @@ namespace GFlow {
     for (int i=0; i<bins; ++i) printToCSV(dirname+"/col"+toStr(i)+".csv", columns[i]);
   }
 
-  inline void DataRecord::getPressureData(SimData* simData, const Bounds& region, ScalarField& field, RealType resolution) const {
+  inline void DataRecord::getPressureData(const Bounds& region, ScalarField& field, RealType resolution) const {
+    /*
     // Get the particle pressure data
     vector<PData> positions;
-    simData->getPressureData(positions); 
+    sectors->getPressureData(positions); 
     // Find which particles cover which parts of the field
     int nsx = (region.right - region.left)/resolution, nsy = (region.top - region.bottom)/resolution;
     RealType sx = (region.right - region.left)/nsx, sy = (region.top - region.bottom)/nsy;
     ++nsx;
     ++nsy;
-    /*
     vector<int> *sectors = new vector<int>[nsx*nsy];
     // Sectorize
     auto allParticles = simData->getParticles();
@@ -1012,7 +1047,6 @@ namespace GFlow {
         sectors[nsx*(nsy-1)+sec_x].push_back(i); // Top
       ++i;
     }
-    */
 
     // Set up field if that hasn't already been done
     if (field.empty()) {
@@ -1022,7 +1056,6 @@ namespace GFlow {
       field.setPrintPoints(200);
     }
     
-    /*
     RealType dx = field.getDx(), dy = field.getDy();
     // Update field
     for (int y=0; y<nsy; ++y)
@@ -1035,7 +1068,6 @@ namespace GFlow {
 	}
 	if (c>0) field.at(x,y) += p/c;
       }
-    */
     
     for (const auto &p : positions) {
       int sec_x = (std::get<0>(p) - region.left)/sx;
@@ -1043,10 +1075,11 @@ namespace GFlow {
       if (-1<sec_x && sec_x<nsx && -1<sec_y && sec_y<nsy)
 	field.at(sec_x, sec_y) += std::get<5>(p);
     }
-    
+    */
   }
   
-  inline void DataRecord::getVortexData(SimData* simData, const Bounds& region, ScalarField& field, RealType resolution, RealType cutoff) const {
+  inline void DataRecord::getVortexData(const Bounds& region, ScalarField& field, RealType resolution, RealType cutoff) const {
+    /*
     int nsx = (region.right - region.left)/resolution, nsy = (region.top - region.bottom)/resolution;
     RealType sdx = (region.right - region.left)/nsx, sdy = (region.top - region.bottom)/nsy;
     ++nsx;
@@ -1076,6 +1109,7 @@ namespace GFlow {
 	field.at(x,y) = ang;
       }
     }
+    */
   }
 
 }

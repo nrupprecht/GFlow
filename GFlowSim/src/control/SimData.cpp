@@ -5,7 +5,7 @@
 
 namespace GFlow {
 
-  SimData::SimData(const Bounds& b, const Bounds& sb) : time(0), domain_size(0), domain_end(0), domain_capacity(0), edge_size(0), edge_capacity(0), bounds(b), simBounds(sb), wrapX(true), wrapY(true), sectors(nullptr), forceHandler(nullptr), terminate(false) {
+  SimData::SimData(const Bounds& b, const Bounds& sb) : time(0), domain_size(0), domain_end(0), domain_capacity(0), edge_size(0), edge_capacity(0), bounds(b), simBounds(sb), wrapX(true), wrapY(true), /*sectors(nullptr), forceHandler(nullptr),*/ terminate(false) {
     // Set up MPI (possibly)
 #if USE_MPI == 1
 #if _CLANG_ == 1
@@ -180,14 +180,19 @@ namespace GFlow {
     return plist;
   }
 
+  /*
   vector<Particle> SimData::getParticles(vec2 pos, RealType cutoff) {
     return sectors->getParticles(pos, cutoff, this);
   }
+  */
 
+  /*
   vector<int> SimData::getParticlesID(vec2 pos, RealType cutoff) {
     return sectors->getParticlesID(pos, cutoff, this);
   }
+  */
 
+  /*
   void SimData::getPressureData(vector<PData>& positions, RealType lowerSizeLimit) {
     // We will sort out particles with it<0 at the end
     vector<PData> pos;
@@ -209,6 +214,7 @@ namespace GFlow {
         positions.push_back(pdata);
       }
   }
+  */
 
   void SimData::wrap(RealType& x, RealType& y) {
     if (wrapX) {
@@ -276,9 +282,11 @@ namespace GFlow {
     return PI*vol/simBounds.volume();
   }
 
+  /*
   pair<int, int> SimData::getClosestTwo(int id) {
     return sectors->getClosestTwo(id, this);
   }
+  */
 
 #if USE_MPI == 1
   void SimData::atomMove() {
@@ -316,9 +324,11 @@ namespace GFlow {
     for (int i=0; i<domain_end; ++i) initialPositions[i] = vec2(px[i], py[i]);
   }
 
+  /*
   void SimData::removeOverlapping(RealType maxOverlap) {
     if (sectors) sectors->removeOverlapping(maxOverlap);
   }
+  */
 
   inline void SimData::compressArrays() {
     // Holes will not in general be in order

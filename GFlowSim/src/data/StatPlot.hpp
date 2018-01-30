@@ -87,6 +87,7 @@ namespace GFlow {
   }
 
   inline void StatPlot_PressureVsDepth(SimData* simData, vector<RPair>& statVector, const RPair bounds) {    
+    /*
     // Get bins
     int bins = statVector.size();
     if (bins==0) return;
@@ -113,9 +114,11 @@ namespace GFlow {
     // Combine data
     for (int i=0; i<bins; ++i)
       if (count.at(i)>0) statVector.at(i).second += press.at(i)/count.at(i);
+    */
   }
 
   inline void StatPlot_Alignment(SimData* simData, vector<RPair>& statVector, const RPair bounds) {
+    /*
     // Get the bins
     int bins = statVector.size();
     if (bins==0) return;
@@ -141,6 +144,7 @@ namespace GFlow {
       if (b<0 || bins<=b) ; // Don't go out of bounds
       else statVector.at(b).second += 1;
     }
+    */
   }
   
 }

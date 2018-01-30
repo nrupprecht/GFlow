@@ -66,9 +66,6 @@ namespace GFlow {
   void Integrator::initializeForceHandler() {
     // Create force handler
     forceHandler = new ForceHandler;
-
-    // Give the force handler to the simulation data
-    if (simData) simData->setForceHandler(forceHandler);
   }
 
   void Integrator::preIntegrate() {
@@ -88,8 +85,12 @@ namespace GFlow {
       dataRecord->markTime();
       dataRecord->setRunTime(runTime);
       dataRecord->startTiming();
+      // Give data record pointers to objects
+      dataRecord->setSimData(simData);
+      dataRecord->setSectorization(sectors);
+      dataRecord->setForceHandler(forceHandler);
       // Initial record
-      dataRecord->record(simData, time);
+      dataRecord->record(time);
     }
   }
 
@@ -110,14 +111,14 @@ namespace GFlow {
     if (simData->getTerminate()) running = false;
 
     // Update data recorder
-    if (dataRecord) dataRecord->record(simData, time);
+    if (dataRecord) dataRecord->record(time);
   }
 
   void Integrator::postIntegrate() {
     // Ending data record stuff
     if (dataRecord) {
       dataRecord->endTiming();
-      dataRecord->getSectorizationData(sectors);
+      dataRecord->getSectorizationData();
       dataRecord->setActualTime(time);
     }
   }

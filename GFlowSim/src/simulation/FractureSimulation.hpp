@@ -46,6 +46,9 @@ namespace GFlow {
     // Delay between checking for breaks/bonds
     RealType delay;
 
+    // A sectorization for doing breakage analysis
+    Sectorization bondLists;
+
     // A record of the verlet lists
     VListType verletListRecord;
 

@@ -11,6 +11,7 @@
 #include "../../include/CSVUtility.hpp"
 #include "../control/SimData.hpp"
 #include "../control/Sectorization.hpp"
+#include "../control/ForceHandler.hpp"
 #include "../objects/ScalarField.hpp"
 #include "StatFunc.hpp"
 #include "StatPlot.hpp"
@@ -35,8 +36,10 @@ namespace GFlow {
     // Initialize
     void initialize();
 
-    // Start and end timing
+    // Start timing
     void startTiming();
+
+    // End timing
     void endTiming();
    
     // Set lastRecord time for performance timing
@@ -52,17 +55,26 @@ namespace GFlow {
     RealType getRatio() const;
 
     // (Potentially) record data related to simulation data
-    void record(SimData*, RealType); 
+    void record(RealType); 
     void record(VelocityVerletIntegrator*, RealType);
 
+    // Set the sim data
+    void setSimData(SimData *s) { simData = s; }
+
+    // Set the sectorizatoin
+    void setSectorization(Sectorization *s) { sectors = s; }
+
+    // Set the force handler
+    void setForceHandler(ForceHandler *f) { forceHandler = f; }
+
     // Get sectorization data at the end
-    void getSectorizationData(Sectorization*);
+    void getSectorizationData();
 
     // Write data
-    void writeData(SimData* = nullptr) const;
+    void writeData() const;
 
     // Write run summary data
-    void writeRunSummary(SimData* = nullptr, Integrator* = nullptr) const;
+    void writeRunSummary(Integrator* = nullptr) const;
 
     /*** Mutators ***/
 
@@ -120,7 +132,7 @@ namespace GFlow {
     RealType getRunTime() const { return runTime; }
 
     // Get position data
-    void getPositionData(vector<PData>&, SimData*, int);
+    void getPositionData(vector<PData>&, int);
 
     // Get the number of stat functions
     int getNumberOfStatFunctions() const { return statFunctionData.size(); }
@@ -144,23 +156,33 @@ namespace GFlow {
 
   private:
     // Private helper functions
-    void writeParticleData(std::ofstream&, SimData*) const;
-    void writeParticleChecks(std::ofstream&, SimData*) const;
-    void recordByNumber(SimData*, vector<PData>&) const;
-    void recordByVerletList(SimData*, vector<PData>&) const;
-    void recordByVelocity(SimData*, vector<PData>&) const;
-    void recordByDisplacement(SimData*, vector<PData>&) const;
-    void recordByHeight(SimData*, vector<PData>&) const;
-    void getBulkData(SimData*, const Bounds&, vector<RealType>&, ScalarField&, vector<pair<vec2,vec2> >&, RealType=0.015, RealType=0.015, RealType=0.01, RealType=1.) const;    
+    void writeParticleData(std::ofstream&) const;
+    void writeParticleChecks(std::ofstream&) const;
+    void recordByPressure(vector<PData>&) const;
+    void recordByNumber(vector<PData>&) const;
+    void recordByVerletList(vector<PData>&) const;
+    void recordByVelocity(vector<PData>&) const;
+    void recordByDisplacement(vector<PData>&) const;
+    void recordByHeight(vector<PData>&) const;
+    void getBulkData(const Bounds&, vector<RealType>&, ScalarField&, vector<pair<vec2,vec2> >&, RealType=0.015, RealType=0.015, RealType=0.01, RealType=1.) const;    
     inline void unite(int*, int, int) const;
     inline void createOutline(int*, int, int, RealType, RealType, Bounds, vector<pair<vec2,vec2> >&) const;
     inline int getHead(int*, int) const;
-    inline void writeDisplacementData(SimData*) const;
-    inline ScalarField createDisplacementField(SimData*, bool=true) const;
-    inline void writeDisplacementField(SimData*) const;
-    inline void writeColumnDisplacement(SimData*, int) const;
-    inline void getPressureData(SimData*, const Bounds&, ScalarField&, RealType=0.1) const;
-    inline void getVortexData(SimData*, const Bounds&, ScalarField&, RealType=0.1, RealType=0.2) const;
+    inline void writeDisplacementData() const;
+    inline ScalarField createDisplacementField(bool=true) const;
+    inline void writeDisplacementField() const;
+    inline void writeColumnDisplacement(int) const;
+    inline void getPressureData(const Bounds&, ScalarField&, RealType=0.1) const;
+    inline void getVortexData(const Bounds&, ScalarField&, RealType=0.1, RealType=0.2) const;
+
+    // The sim data to get data from
+    SimData *simData;
+
+    // The sectors to get data from
+    Sectorization *sectors;
+
+    // The force handler to get data from
+    ForceHandler *forceHandler;
 
     // The command that was used
     vector<string> command;

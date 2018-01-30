@@ -29,11 +29,14 @@ namespace GFlow {
     wrapX = simData->getWrapX();
     wrapY = simData->getWrapY();
 
+    // Automatically calculate cutoff
+    _calculateCutoff();
+
     // Set up sector array
     _makeSectors();
     
     // Set this as the sectorization for the sim data
-    sd->setSectors(this);
+    // sd->setSectors(this);
 
     // Get mpi data
 #if USE_MPI == 1
@@ -224,7 +227,18 @@ namespace GFlow {
   }
 
   void Sectorization::setSkinDepth(RealType sd) {
+    // Set the skin depth
     skinDepth = sd;
+    // Automatically calculate the new cutoff
+    _calculateCutoff();
+    // Remake the sectors
+    _makeSectors();
+  }
+
+  void Sectorization::setCutoff(RealType ct) {
+    // Set the cutoff
+    cutoff = ct;
+    // Remake the sectors
     _makeSectors();
   }
 
@@ -232,7 +246,7 @@ namespace GFlow {
     // Get data
     RealType *px = simData->getPxPtr();
     RealType *py = simData->getPyPtr();
-    int *it = simData->getItPtr();
+    int *it      = simData->getItPtr();
     // Search progressively outwards
     vec2 pos(px[id], py[id]);
     int sec = getSec(pos.x, pos.y);
@@ -293,47 +307,6 @@ namespace GFlow {
 	}
       }
     };
-
-    /*
-    // Search your sector
-    for (const auto &i : sec_at(sx, sy)) check(sx, sy, sqr(min(sdx,sdy)));
-    // Start searching surrounding sectors
-    for (int reach=1; reach<min(nsx-2, nsy-1); ++reach) {
-      RealType threshold = sqr(reach*min(sdx, sdy)); // Corners of the square will be searched before closer regions at the compass points of the square. This keeps us from finding incorrect "closer" particles
-      // Left
-      if (0<sx-reach)
-	for (int y=max(1,sy-reach); y<=min(nsy-2, sy+reach); ++y) check(sx-reach, y, threshold);
-      // Top
-      if (sy+reach<nsy-1)
-	for (int x=max(1,sx-reach); x<=min(nsx-2, sx+reach); ++x) check(x, sy+reach, threshold);
-      // Right
-      if (sx+reach<nsx-1)
-	for (int y=max(1,sy-reach); y<=min(nsy-2, sy+reach); ++y) check(sx+reach, y, threshold);
-      // Bottom
-      if (0<sy-reach)
-	for (int x=max(1,sx-reach); x<=min(nsx-2, sx+reach); ++x) check(x, sy-reach, threshold);
-      // If we have found two, we are done
-      if (min2>-1) break;
-    }
-    // Return the pair
-    return pair<int, int>(min1, min2);
-    */
-    
-    /*
-    // Search through sectors for closest particles
-    for (int reach=1; reach<min(nsx-2, nsy-2); ++reach) {
-      // THIS COULD BE MORE EFFICIENT IF WE ONLY LOOK FOR THINGS AT SQUARE DISTANCE REACH, NOT *WITHIN* REACH
-      for (int y=max(sy-reach, 1); y<min(sy+reach, nsy-2); ++y)
-	for (int x=max(sx-reach, 1); x<min(sx+reach, nsx-2); ++x) {
-	  RealType threshold = sqr(reach*min(sdx, sdy)); // Corners of the square will be searched before closer regions at the compass points of the square. This keeps us from finding incorrect "closer" particles
-	  check(x,y,threshold);
-	}
-      // If we have found two, we are done
-      if (min2>-1) break;
-    }
-    // Return the pair
-    return pair<int, int>(min1, min2);
-    */
 
     // Brute force
     int domain_end = simData->getDomainEnd();
@@ -429,7 +402,7 @@ namespace GFlow {
     return pair<int,int>(SX, SY);
   }
 
-  void Sectorization::_makeSectors() {
+  void Sectorization::_calculateCutoff() {
     // Find appropriate cutoff radii
     auto plist = simData->getParticles();
     for (const auto &p : plist) {
@@ -440,7 +413,9 @@ namespace GFlow {
 
     // Cutoff radius
     cutoff = maxCutR + secCutR + skinDepth;
+  }
 
+  void Sectorization::_makeSectors() {
     // First estimate of sdx, sdy
     sdx = sdy = cutoff;
     RealType minSec = 1.;

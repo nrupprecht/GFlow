@@ -87,9 +87,8 @@ namespace GFlow {
 
   inline void ForceHandler::interactP(int i, int j, SimData* simData, RealType& Fn, RealType& Fs, bool update) const {
     // Do the interaction
-
     if (simData->getItPtr() [i] == 0) hardDiskInteraction(i, j, simData, Fn, Fs, update);
-    else LJInteraction(i, j, simData, Fn, Fs, update);    
+    else LJInteraction(i, j, simData, Fn, Fs, update);
   }
 
   inline void ForceHandler::interactW(int i, int j, SimData* simData, RealType& Fn, RealType& Fs, bool update) const {

@@ -32,11 +32,12 @@ namespace GFlow {
     // Initialize
     integrator->initialize(runTime);
 
-    // Increase skin depth
-    // integrator->getSectorization()->setSkinDepth(2*default_sectorization_skin_depth);
-
     // Set up verlet list tracking (do after integrator initialization)
     int num = simData->getDomainSize();
+    bondLists.initialize(simData);
+    RealType cut = bondLists.getCutoff();
+    bondLists.setCutoff(0.5*cut); // Set the cutoff and skin depth
+
     verletListRecord.resize(num);
     accessor.resize(num);
     setVerletListRecord();
@@ -72,7 +73,13 @@ namespace GFlow {
     if (integrator==nullptr) return;
     if (integrator->getSectorization()==nullptr) return;
     // Get a reference to the verlet lists
-    auto& verletList = integrator->getSectorization()->getVerletList();
+    // auto& verletList = integrator->getSectorization()->getVerletList();
+
+    //**
+    // if (bondList->checkNeedRemake()) 
+    bondLists.sectorize(); /* Update lists */
+    auto& verletList = bondLists.getVerletList();
+    //**
 
     // Set up the accesser
     for (auto &a : accessor) a = nullptr;
@@ -84,7 +91,7 @@ namespace GFlow {
     // Look for bonds and breaks
     compare(bonds, breaks);
 
-    // Set the verlet list record to be the current verlet list. We have to sort the data
+    // Set verlet list record to be the current verlet list. We have to sort the data
     setVerletListRecord(verletList);
 
     // Get the current time, for recording when this happened
@@ -170,8 +177,14 @@ namespace GFlow {
     // Do checks
     if (integrator==nullptr) return;
     if (integrator->getSectorization()==nullptr) return;
+
     // Set up verlet list recording
-    auto& verletList = integrator->getSectorization()->getVerletList();
+    // auto& verletList = integrator->getSectorization()->getVerletList();
+
+    //**
+    auto& verletList = bondLists.getVerletList();
+    //**
+
     setVerletListRecord(verletList);
   }
 

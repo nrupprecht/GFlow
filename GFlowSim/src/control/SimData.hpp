@@ -26,9 +26,9 @@ namespace GFlow {
   // Forward declaration to FileParser
   class FileParser;
   // Forward declaration to Sectorization
-  class Sectorization;
+  // class Sectorization;
   // Forward declaration to ForceHandler
-  class ForceHandler;
+  //class ForceHandler;
 
   /*
    * @class SimData
@@ -135,7 +135,7 @@ namespace GFlow {
     auto& getCharacteristics() { return characteristics; }
 
     // Get the force handler
-    ForceHandler* getForceHandler() { return forceHandler; }
+    // ForceHandler* getForceHandler() { return forceHandler; }
 
     // Get the external forces
     vector<ExternalForce*>& getExternalForces() { return externalForces; }
@@ -178,10 +178,10 @@ namespace GFlow {
     void setSimBounds(const Bounds& b) { simBounds = b; }
 
     // Set sectorization
-    void setSectors(Sectorization *sec) { sectors = sec; }
+    // void setSectors(Sectorization *sec) { sectors = sec; }
 
     // Set force handler
-    void setForceHandler(ForceHandler* frc) { forceHandler = frc; }
+    // void setForceHandler(ForceHandler* frc) { forceHandler = frc; }
 
     // Add an external force or remove all of them
     void addExternalForce(ExternalForce*);
@@ -286,10 +286,10 @@ namespace GFlow {
     bool wrapX, wrapY;
 
     // The sectorization that handles this data
-    Sectorization *sectors;
+    // Sectorization *sectors;
 
     // The force handler that handles our forces
-    ForceHandler *forceHandler;
+    // ForceHandler *forceHandler;
 
     // A termination indicator
     bool terminate;

@@ -250,6 +250,7 @@ namespace GFlow {
 
   inline RealType StatFunc_MixingParameter(SimData* simData) {
     // Get the average mixing parameter of the particles  who are in the specified region
+    /*
     RealType *px = simData->getPxPtr(), *py = simData->getPyPtr();
     int *it = simData->getItPtr(), domain_end = simData->getDomainEnd();
     auto initialPositions = simData->getInitialPositions();
@@ -272,6 +273,8 @@ namespace GFlow {
     }
     mixing /= simData->getDomainSize();
     return mixing;
+    */
+    return 0;
   }
   
 }
