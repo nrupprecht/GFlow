@@ -25,10 +25,6 @@ namespace GFlow {
   class Creator;
   // Forward declaration to FileParser
   class FileParser;
-  // Forward declaration to Sectorization
-  // class Sectorization;
-  // Forward declaration to ForceHandler
-  //class ForceHandler;
 
   /*
    * @class SimData
@@ -73,6 +69,9 @@ namespace GFlow {
     
     // Get the current time
     RealType getTime() { return time; }
+
+    // Reset the time
+    void resetTime() { time = 0; }
 
     // Returns the bounds
     Bounds getBounds()    { return bounds; }
@@ -128,17 +127,26 @@ namespace GFlow {
     vector<Particle> getParticles();
 
     // Get all the particles withing a cutoff radius
-    vector<Particle> getParticles(vec2, RealType);
-    vector<int> getParticlesID(vec2, RealType);
+    // vector<Particle> getParticles(vec2, RealType);
+    // vector<int> getParticlesID(vec2, RealType);
 
     // Get the characteristics
     auto& getCharacteristics() { return characteristics; }
 
-    // Get the force handler
-    // ForceHandler* getForceHandler() { return forceHandler; }
+    // Set whether to use characteristics or not
+    void setDoCharacteristics(bool d) { doCharacteristics = d; }
+
+    // Get the do characteristics flag
+    bool getDoCharacteristics() { return doCharacteristics; }
+
+    // Reset characteristics
+    void resetCharacteristics();
 
     // Get the external forces
     vector<ExternalForce*>& getExternalForces() { return externalForces; }
+
+    // Transfer external forces to someone else's care. Does not delete the forces, but clears out our record of them.
+    vector<ExternalForce*> transferExternalForces();
 
     // Get termination indicator
     bool getTerminate() { return terminate; }
@@ -177,15 +185,11 @@ namespace GFlow {
     void setBounds(const Bounds& b)    { bounds = b; }
     void setSimBounds(const Bounds& b) { simBounds = b; }
 
-    // Set sectorization
-    // void setSectors(Sectorization *sec) { sectors = sec; }
-
-    // Set force handler
-    // void setForceHandler(ForceHandler* frc) { forceHandler = frc; }
-
     // Add an external force or remove all of them
     void addExternalForce(ExternalForce*);
+    void addExternalForce(vector<ExternalForce*>);
     void clearExternalForces();
+    void clearFinishedForces();
 
     // Clear forces and torques
     void clearForceTorque();
@@ -204,6 +208,12 @@ namespace GFlow {
 
     // Set termination indicator
     void setTerminate(bool s) { terminate = s; }
+
+    // Reset to original positions
+    void reset();
+
+    // Set velocities to zero
+    void zeroMotion();
 
     // DataRecord is a friend class
     friend class DataRecord;
@@ -274,6 +284,7 @@ namespace GFlow {
 
     // Characteristics - we are in charge of managing (deleting) these
     std::map<int, Characteristic*> characteristics;
+    bool doCharacteristics;
 
     // Domain and Simulation bounds
     Bounds bounds;
@@ -284,12 +295,6 @@ namespace GFlow {
 
     // Simulation boundary conditions
     bool wrapX, wrapY;
-
-    // The sectorization that handles this data
-    // Sectorization *sectors;
-
-    // The force handler that handles our forces
-    // ForceHandler *forceHandler;
 
     // A termination indicator
     bool terminate;

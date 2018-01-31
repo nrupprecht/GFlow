@@ -273,7 +273,7 @@ c configuration file. Exiting.\n";
     if (check) checkParsing();
   }
 
-  void SimulationBase::standardWriting() {    
+  void SimulationBase::standardWriting(bool message) {    
     // Execute writing and saving
 #if USE_MPI == 1
     if (rank==0) {
@@ -281,7 +281,7 @@ c configuration file. Exiting.\n";
       if (dataRecord) {
 	// Print out time and ratio
 	double runTime = dataRecord->getElapsedTime();
-	if (!quiet) {
+	if (!quiet && message) {
 	  cout << "Run time: " << runTime << endl;
 	  cout << "Ratio: " << dataRecord->getRatio() << endl;
 	}

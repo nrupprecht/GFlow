@@ -20,6 +20,7 @@ namespace GFlow {
   public:
     // Constructor
     TemperatureForce(RealType); // Temperature
+    TemperatureForce(vec2, RealType, RealType); // Position, radius, temperature
     TemperatureForce(RealType, RealType); // Temperature and viscosity
 
   protected:
@@ -30,7 +31,9 @@ namespace GFlow {
     // The temperature and viscosity
     RealType temperature; // Temperature
     RealType viscosity;   // Viscosity
+    RealType radius;      // Radius around the position that the temperature applies
     RealType tempDelay;   // How long we should wait between perturbations
+    vec2 position;
     mutable RealType lastUpdate;  // The last time a perturbation was applied
   };
 };

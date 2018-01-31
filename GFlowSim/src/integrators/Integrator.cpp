@@ -55,6 +55,18 @@ namespace GFlow {
     postStep();   // After doing an integration update
   }
 
+  void Integrator::reset() {
+    time = 0;
+    running = true;
+    // Reset the SimData
+    simData->reset();
+  }
+
+  void Integrator::clearTerminationConditions() {
+    for (auto& tc : termination) delete tc;
+    termination.clear();
+  }
+
   void Integrator::initializeSectors() {
     // Create a sectorization
     if (sectors) delete sectors;

@@ -25,5 +25,14 @@ namespace GFlow {
     virtual bool check(SimData*);
   };
 
+  class MaxVelocity : public TerminationCondition {
+  public:
+    MaxVelocity(RealType v);
+    virtual bool check(SimData*);
+  private:
+    // The maximum value of velocity squared to allow
+    RealType maxVSqr;
+  };
+
 }
 #endif // __TERMINAL_CONDITION_HPP__

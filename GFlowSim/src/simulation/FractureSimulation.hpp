@@ -39,6 +39,7 @@ namespace GFlow {
     inline void compare(vector<pair<int,int> >&, vector<pair<int,int> >&);
     inline void setVerletListRecord(VListType&);
     inline void setVerletListRecord();
+    inline void strengthenProcedure();
 
     // Run time
     RealType runTime;
@@ -60,6 +61,15 @@ namespace GFlow {
 
     // Whether to mark breakages or the formation of bonds
     bool markBreaks;
+
+    // Whether to do iterative strengthening
+    bool strengthen;
+
+    // The strengthening iteration we are on and the total number of strengthening iterations
+    int heatIters, maxIters;
+    
+    // How long to apply heat and relax during a strengthening
+    RealType heatTime, relaxTime;
     
     // A lists {time, particle #, particle #} of when breakages and bondings occur
     vector<std::tuple<RealType,int,int> > breakages, bondings;

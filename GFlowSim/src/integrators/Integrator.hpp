@@ -64,6 +64,9 @@ namespace GFlow {
     // Get the simulation time
     RealType getTime() { return time; }
 
+    // Reset the simulation time and the running flag
+    void reset();
+
     // Get a pointer to the sectorization
     Sectorization* getSectorization() { return sectors; }
 
@@ -75,6 +78,9 @@ namespace GFlow {
 
     // Add a termination condition - Integrator is responsible for managing them
     void addTerminationCondition(TerminationCondition *t) { termination.push_back(t); }
+
+    // Clear termination conditions
+    void clearTerminationConditions();
 
     // DataRecord is a friend class
     friend class DataRecord;

@@ -66,7 +66,6 @@ namespace GFlow {
   void DataRecord::record(RealType time) {
     // Return if not enough time has gone by
     if (time-lastRecord<delay) return;
-
     // Record performance
     if (recPerf) {
       high_resolution_clock::time_point current_time = high_resolution_clock::now();
@@ -417,6 +416,11 @@ namespace GFlow {
   void DataRecord::setCommand(int argc, char** argv) {
     command.clear();
     for (int i=0; i<argc; ++i) command.push_back(argv[i]);
+  }
+
+  void DataRecord::resetTimers() {
+    lastRecord = -2.*delay;
+    lastAnimate = -2.*animationDelay;
   }
 
   void DataRecord::addStatFunction(StatFunc sf, string name) {

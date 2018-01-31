@@ -18,6 +18,7 @@ namespace GFlow {
    */
   class ExternalForce {
   public:
+    ExternalForce() : finished(false) {};
     virtual ~ExternalForce() {};
 
     void applyForce(SimData* simData) {
@@ -28,10 +29,22 @@ namespace GFlow {
       return _summary();
     }
 
+    // Get the finished flag
+    bool getFinished() { return finished; }
+
+    // Set the finished flag
+    void setFinished(bool f) { finished = f; }
+
+    // Reset the force (if applicable)
+    virtual void reset() {};
+
   protected:
     // Private virtual functions, purely abstract
     virtual void _applyForce(SimData*) const = 0;
     virtual string _summary()          const = 0;
+
+    // Whether the force is done and can be removed
+    bool finished;
   };
 
 }

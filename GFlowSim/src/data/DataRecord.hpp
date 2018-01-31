@@ -107,6 +107,9 @@ namespace GFlow {
     void setTrackDisplacement(bool b) { trackDisplacement = b; }
     void setRecDisplacementColumns(bool b) { recDisplacementColumns = b; }
 
+    // Reset the last record and last animation timer
+    void resetTimers();
+
     // Whether to center the data
     void setCenter(bool c) { center = c; }
 
@@ -121,6 +124,9 @@ namespace GFlow {
 
     // Set the marked particle
     void setMarked(std::unordered_set<int> m) { marked = m; }
+
+    // Clear marked particles set
+    void clearMarked() { marked.clear(); }
 
     // Add a stat function
     void addStatFunction(StatFunc, string);

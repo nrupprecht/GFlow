@@ -5,7 +5,7 @@
 
 namespace GFlow {
 
-  SimData::SimData(const Bounds& b, const Bounds& sb) : time(0), domain_size(0), domain_end(0), domain_capacity(0), edge_size(0), edge_capacity(0), bounds(b), simBounds(sb), wrapX(true), wrapY(true), /*sectors(nullptr), forceHandler(nullptr),*/ terminate(false) {
+  SimData::SimData(const Bounds& b, const Bounds& sb) : time(0), domain_size(0), domain_end(0), domain_capacity(0), edge_size(0), edge_capacity(0), doCharacteristics(true), bounds(b), simBounds(sb), wrapX(true), wrapY(true), /*sectors(nullptr), forceHandler(nullptr),*/ terminate(false) {
     // Set up MPI (possibly)
 #if USE_MPI == 1
 #if _CLANG_ == 1
@@ -128,12 +128,15 @@ namespace GFlow {
 
   void SimData::removeAt(int index) {
     if (it[index]<0) return;
+    // Remove particle by setting its type to -1
     it[index] = -1;
+    // If the particle had a characteristic, remove it
     auto c = characteristics.find(index);
     if (c!=characteristics.end()) {
       delete c->second;
       characteristics.erase(index);
     }
+    // Record the creation of a hole (if neccessary)
     --domain_size;
     if (index==domain_end-1) --domain_end;
     holes.push_back(index);
@@ -191,6 +194,17 @@ namespace GFlow {
     return sectors->getParticlesID(pos, cutoff, this);
   }
   */
+  
+  void SimData::resetCharacteristics() {
+    // Reset all the characteristics
+    for (auto c : characteristics) c.second->reset();
+  }
+ 
+  vector<ExternalForce*> SimData::transferExternalForces() {
+    auto temp = externalForces;
+    externalForces.clear();
+    return temp;
+  }
 
   /*
   void SimData::getPressureData(vector<PData>& positions, RealType lowerSizeLimit) {
@@ -302,11 +316,34 @@ namespace GFlow {
     externalForces.push_back(force);
   }
 
+  void SimData::addExternalForce(vector<ExternalForce*> forces) {
+    for (auto f : forces) externalForces.push_back(f);
+  }
+
   void SimData::clearExternalForces() {
     // Clean up the forces
-    for (auto& f : externalForces) delete f;
+    for (auto& f : externalForces) {
+      delete f;
+      f = nullptr; 
+    }
     // Clear the list
     externalForces.clear();
+  }
+
+  void SimData::clearFinishedForces() {
+    // Temp vector in which to save ExternalForce pointers
+    vector<ExternalForce*> temp;
+    // Look for forces that are finished and delete them
+    for (auto& f : externalForces) {
+      if (f && f->getFinished()) {
+	delete f;
+	f = nullptr; 
+      }
+      else temp.push_back(f);
+    }
+
+    // Set new external force vector
+    externalForces = temp;
   }
 
   void SimData::clearForceTorque() {
@@ -324,11 +361,25 @@ namespace GFlow {
     for (int i=0; i<domain_end; ++i) initialPositions[i] = vec2(px[i], py[i]);
   }
 
-  /*
-  void SimData::removeOverlapping(RealType maxOverlap) {
-    if (sectors) sectors->removeOverlapping(maxOverlap);
+  void SimData::reset() {
+    // Reset particle positions
+    for (int i=0; i<domain_end; ++i) {
+      px[i] = initialPositions.at(i).x;
+      py[i] = initialPositions.at(i).y;
+      // Other data should be reset - namely vx, vy, th, om
+      // -->
+    }
+    // Reset time
+    time = 0;
   }
-  */
+
+  void SimData::zeroMotion() {
+    for (int i=0; i<domain_end; ++i) {
+      vx[i] = 0;
+      vy[i] = 0;
+      om[i] = 0;
+    }
+  }
 
   inline void SimData::compressArrays() {
     // Holes will not in general be in order
@@ -354,7 +405,7 @@ namespace GFlow {
       ds[j] = ds[domain_end-1];
       cf[j] = cf[domain_end-1];
       it[j] = it[domain_end-1];
-      
+      // Relabel characteristic
       auto c = characteristics.find(domain_end-1);
       if (c!=characteristics.end()) characteristics.emplace(j, c->second);
       // This entry is now empty

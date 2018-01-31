@@ -15,7 +15,10 @@ namespace GFlow {
    */
   class Characteristic {
   public:
+    // Characteristic modifies particle
     virtual void modify(SimData*, int, RealType) = 0;
+    // Reset the characteristic if neccessary
+    virtual void reset() {};
   };
 
   /*
@@ -32,6 +35,7 @@ namespace GFlow {
     ConstantVelocity(vec2 p, vec2 v, RealType om, bool s) : pos(p), velocity(v), omega(om), useV(true), useOm(true), active(true), stop(s) {};
 
     virtual void modify(SimData*, int, RealType);
+    virtual void reset();
   private:
 
     vec2 pos; // Initial position

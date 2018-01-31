@@ -51,7 +51,7 @@ namespace GFlow {
   protected:
     // Private helper functions
     void standardParsing(bool=true); // bool is whether to check parsing at the end
-    void standardWriting();
+    void standardWriting(bool=true); // bool is whether to write runtime/ratio to screen
 
     // The integrator
     Integrator* integrator;

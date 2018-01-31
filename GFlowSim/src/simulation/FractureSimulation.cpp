@@ -1,8 +1,10 @@
 #include "FractureSimulation.hpp"
+#include "../forces/TemperatureForce.hpp"
+#include "../forces/ViscousDrag.hpp"
 
 namespace GFlow {
 
-  FractureSimulation::FractureSimulation() : SimulationBase(), runTime(10), delay(0.01), markBreaks(true) {};
+  FractureSimulation::FractureSimulation() : SimulationBase(), runTime(10), delay(0.01), markBreaks(true), strengthen(true), heatIters(0), maxIters(10), heatTime(5.), relaxTime(5.) {};
 
   void FractureSimulation::setUp(int argc, char** argv) {
     // Set the command line input
@@ -17,6 +19,9 @@ namespace GFlow {
     // How long should the simulation run
     parser.get("time", runTime);
     parser.get("markBreaks", markBreaks);
+    parser.get("strengthen", strengthen);
+    parser.get("maxIters", maxIters);
+    parser.get("heatTime", heatTime);
 
     // Standard parsing options and checking
     standardParsing();
@@ -45,7 +50,7 @@ namespace GFlow {
 
     // Pre
     integrator->preIntegrate();
-
+    heatIters = 0;
     // Run the simulation
     while (running) {
       // Perform an integration step
@@ -59,15 +64,33 @@ namespace GFlow {
 	// Reset timer
 	timer = time;
       }
+
+      // If there is a break, reset and heat up the break
+      if (strengthen && !breakages.empty()) {
+	// Do a finite number of strengthening iterations
+	if (heatIters < maxIters) {
+	  // Print a message
+	  cout << "Iteration " << heatIters << ": t=" << simData->getTime() << endl;
+	  // Clear marked data
+	  dataRecord->clearMarked();
+	  // Do the strengthening procedure
+	  strengthenProcedure();
+	  // Print a message
+	  cout << "Starting next trial.\n";
+	  // Reset marked particles
+	}
+	else running = false;
+      }
     }
 
-    // Post
+    // Post integration
     integrator->postIntegrate();
   }
 
   // Save data from the simulation
   void FractureSimulation::write() {
-    standardWriting();
+    // Post - only print a ratio/runtime message if not doing strengthening
+    standardWriting(!strengthen);
   }
 
   inline void FractureSimulation::checkForBreaks() {
@@ -105,7 +128,6 @@ namespace GFlow {
 	  marked.insert(b.first);
 	  marked.insert(b.second);
 	}
-
       }
       // Update cumulative counting statistics
       numBonds += bonds.size();
@@ -190,4 +212,54 @@ namespace GFlow {
     setVerletListRecord(verletList);
   }
 
+  inline void FractureSimulation::strengthenProcedure() {
+    // Reset the scenario
+    integrator->reset();
+    simData->zeroMotion(); // A temporary fix since we don't store initial velocities, so resetting the simData doesn't reset velocities
+    dataRecord->resetTimers(); // If we don't do this, data records 'last *' timers will be in the future, and no data will be collected
+    // Get the particle numbers of the first breakage
+    auto data = *breakages.begin();
+    int p1 = std::get<1>(data), p2 = std::get<2>(data);
+    // Reset breakages and bondings lists
+    breakages.clear();
+    bondings.clear();
+    // Find the position of the particle that broke
+    vec2 pos1(simData->getPxPtr() [p1], simData->getPyPtr() [p1]);
+    vec2 pos2(simData->getPxPtr() [p2], simData->getPyPtr() [p2]);
+    // Turn off particle's characteristics
+    simData->setDoCharacteristics(false);
+    // Take away the simulation's forces. We will return them after the strengthening procedure
+    auto externalForces = simData->transferExternalForces();
+    // Apply a temperature near that position - pos, radius, temp
+    ExternalForce *forces[3];
+    forces[0] = new TemperatureForce(pos1, 0.5, 1);
+    forces[1] = new TemperatureForce(pos2, 0.5, 1);
+    forces[2] = new ViscousDrag;
+    simData->addExternalForce(forces[0]);
+    simData->addExternalForce(forces[1]);
+    simData->addExternalForce(forces[2]);
+    // Run for some amount of time
+    integrator->integrate(heatTime);
+    // Remove the external forces
+    forces[0]->setFinished(true);
+    forces[1]->setFinished(true);
+    forces[2]->setFinished(true);
+    simData->clearFinishedForces();
+    // Let the system relax
+    integrator->integrate(relaxTime);
+    // Reset the time of the integrator and set the positions as the new initial positions
+    simData->setInitialPositions();
+    integrator->reset();
+    simData->zeroMotion(); // A temporary fix since we don't store initial velocities, so resetting the simData doesn't reset velocities
+    dataRecord->resetTimers(); // If we don't do this, data records 'last *' timers will be in the future, and no data will be collected
+    // Turn back on and reset the characteristics, check are what cause particles to be fixed, to move, etc.
+    simData->setDoCharacteristics(true);
+    simData->resetCharacteristics();
+    // Give back the original external force after resetting them
+    for (auto f : externalForces) f->reset();
+    simData->addExternalForce(externalForces);
+    // Update count
+    ++heatIters;
+  }
+  
 }

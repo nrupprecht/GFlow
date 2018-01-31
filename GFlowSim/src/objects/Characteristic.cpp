@@ -11,10 +11,12 @@ namespace GFlow {
 	time += dt;
 	// Set position
 	RealType x = pos.x + velocity.x*time, y =  pos.y + velocity.y*time;
+	// Make sure to wrap the position
 	simData->wrap(x,y);
+	// Manually set the position
 	simData->getPxPtr() [id] = x;
 	simData->getPyPtr() [id] = y;
-	// Set velocities
+	// Set velocities so dissipative forces work correctly
 	simData->getVxPtr() [id] = velocity.x;
 	simData->getVyPtr() [id] = velocity.y;
       }
@@ -30,6 +32,12 @@ namespace GFlow {
 	simData->getVy(id) = 0;
       }
     }
+  }
+
+  void ConstantVelocity::reset() {
+    time = 0;
+    active = true;
+    stop = false;
   }
 
   void Insertion::modify(SimData* simData, int id, RealType dt) {
