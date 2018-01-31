@@ -8,6 +8,8 @@
 #define __DATA_RECORD_HPP__
 
 // Includes
+#include <unordered_set>
+
 #include "../../include/CSVUtility.hpp"
 #include "../control/SimData.hpp"
 #include "../control/Sectorization.hpp"
@@ -117,6 +119,9 @@ namespace GFlow {
     // Set the actual simulated time
     void setActualTime(RealType t) { actualTime = t; }
 
+    // Set the marked particle
+    void setMarked(std::unordered_set<int> m) { marked = m; }
+
     // Add a stat function
     void addStatFunction(StatFunc, string);
 
@@ -164,6 +169,7 @@ namespace GFlow {
     void recordByVelocity(vector<PData>&) const;
     void recordByDisplacement(vector<PData>&) const;
     void recordByHeight(vector<PData>&) const;
+    void recordByMarked(vector<PData>&) const;
     void getBulkData(const Bounds&, vector<RealType>&, ScalarField&, vector<pair<vec2,vec2> >&, RealType=0.015, RealType=0.015, RealType=0.01, RealType=1.) const;    
     inline void unite(int*, int, int) const;
     inline void createOutline(int*, int, int, RealType, RealType, Bounds, vector<pair<vec2,vec2> >&) const;
@@ -210,6 +216,9 @@ namespace GFlow {
 
     // How long the simulation should last and how long the simulation actually lasted
     RealType runTime, actualTime;
+
+    // Marked particles which should be "painted" when animated
+    std::unordered_set<int> marked;
 
     // Sectorization information
     int nsx, nsy;

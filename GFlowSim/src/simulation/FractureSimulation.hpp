@@ -52,8 +52,14 @@ namespace GFlow {
     // A record of the verlet lists
     VListType verletListRecord;
 
+    // An unordered set of all the particles that have most recently broken bonds
+    std::unordered_set<int> marked;
+
     // A way to sort the verlet list we get from the sectorization
     vector<VListSubType*> accessor;
+
+    // Whether to mark breakages or the formation of bonds
+    bool markBreaks;
     
     // A lists {time, particle #, particle #} of when breakages and bondings occur
     vector<std::tuple<RealType,int,int> > breakages, bondings;

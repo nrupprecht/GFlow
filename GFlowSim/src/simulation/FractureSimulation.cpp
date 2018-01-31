@@ -2,7 +2,7 @@
 
 namespace GFlow {
 
-  FractureSimulation::FractureSimulation() : SimulationBase(), runTime(10), delay(0.01) {};
+  FractureSimulation::FractureSimulation() : SimulationBase(), runTime(10), delay(0.01), markBreaks(true) {};
 
   void FractureSimulation::setUp(int argc, char** argv) {
     // Set the command line input
@@ -16,6 +16,7 @@ namespace GFlow {
   void FractureSimulation::parse() {
     // How long should the simulation run
     parser.get("time", runTime);
+    parser.get("markBreaks", markBreaks);
 
     // Standard parsing options and checking
     standardParsing();
@@ -37,7 +38,7 @@ namespace GFlow {
     bondLists.initialize(simData);
     RealType cut = bondLists.getCutoff();
     bondLists.setCutoff(0.5*cut); // Set the cutoff and skin depth
-
+    bondLists.createVerletLists(); // Create the initial verlet lists
     verletListRecord.resize(num);
     accessor.resize(num);
     setVerletListRecord();
@@ -72,14 +73,12 @@ namespace GFlow {
   inline void FractureSimulation::checkForBreaks() {
     if (integrator==nullptr) return;
     if (integrator->getSectorization()==nullptr) return;
-    // Get a reference to the verlet lists
-    // auto& verletList = integrator->getSectorization()->getVerletList();
-
-    //**
-    // if (bondList->checkNeedRemake()) 
-    bondLists.sectorize(); /* Update lists */
+    // Update the verlet lists and get them
+    bondLists.createVerletLists();
     auto& verletList = bondLists.getVerletList();
-    //**
+
+    // Clear the marked set
+    marked.clear();
 
     // Set up the accesser
     for (auto &a : accessor) a = nullptr;
@@ -99,8 +98,15 @@ namespace GFlow {
     // If there is bond data to record
     if (!bonds.empty()) {
       // Add bond pairs
-      for (auto &b : bonds) 
+      for (auto &b : bonds) {
 	bondings.push_back(std::tuple<RealType,int,int>(currentTime, b.first, b.second));
+	// We keep an unordered set of all the particles bonding or undergoing breakages
+	if (!markBreaks) {
+	  marked.insert(b.first);
+	  marked.insert(b.second);
+	}
+
+      }
       // Update cumulative counting statistics
       numBonds += bonds.size();
       cumNumBonds.push_back(pair<RealType,int>(currentTime, numBonds));
@@ -108,12 +114,21 @@ namespace GFlow {
     // If there is breakage data to record
     if (!breaks.empty()) {
       // Add break pairs
-      for (auto &b : breaks)
+      for (auto &b : breaks) {
 	breakages.push_back(std::tuple<RealType,int,int>(currentTime, b.first, b.second));
+	// We keep an unordered set of all the particles bonding or undergoing breakages
+	if (markBreaks) {
+	  marked.insert(b.first);
+	  marked.insert(b.second);
+	}
+      }
       // Update cumulative counting statistics
       numBreaks += breaks.size();
       cumNumBreaks.push_back(pair<RealType,int>(currentTime, numBreaks));
     }
+
+    // Give the data record the marked particles
+    dataRecord->setMarked(marked);
   }
 
   // Checks for bonds and breaks by comparing current and past verlet lists
@@ -134,14 +149,8 @@ namespace GFlow {
 	  if (nb==i) continue;
 	  // Check if [nb] is still in [i]'s neighbor list this time, or if [i] is in [nb]'s list this time
 	  if (!check(nb, accessor.at(i)) && 
-	      !check(i, accessor.at(nb))) {
+	      !check(i, accessor.at(nb)))
 	    breaks.push_back(pair<int,int>(i,nb));
-
-	    vec2 pi(simData->getPxPtr() [i], simData->getPyPtr() [i]);
-	    vec2 pj(simData->getPxPtr() [nb], simData->getPyPtr() [nb]);
-	    RealType dist = sqrt(sqr(simData->getDisplacement(pi, pj)));
-	    if (simData->getSgPtr() [i] + simData->getSgPtr() [nb] > dist) cout << "Error" << endl;
-	  }
 	}
       }
     }
@@ -162,10 +171,8 @@ namespace GFlow {
   inline void FractureSimulation::setVerletListRecord(VListType& verletList) {
     // Clear the old data
     for (int i=0; i<verletListRecord.size(); ++i) verletListRecord.at(i).clear();
-    
     // Clear accessor
     for (int i=0; i<accessor.size(); ++i) accessor.at(i) = nullptr;
-
     // Insert new data
     for (const auto &nl : verletList) {
       int head = *nl.begin();
@@ -177,14 +184,9 @@ namespace GFlow {
     // Do checks
     if (integrator==nullptr) return;
     if (integrator->getSectorization()==nullptr) return;
-
     // Set up verlet list recording
-    // auto& verletList = integrator->getSectorization()->getVerletList();
-
-    //**
     auto& verletList = bondLists.getVerletList();
-    //**
-
+    // Set the verlet list record
     setVerletListRecord(verletList);
   }
 

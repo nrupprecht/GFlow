@@ -34,9 +34,6 @@ namespace GFlow {
 
     // Set up sector array
     _makeSectors();
-    
-    // Set this as the sectorization for the sim data
-    // sd->setSectors(this);
 
     // Get mpi data
 #if USE_MPI == 1
@@ -45,7 +42,7 @@ namespace GFlow {
 #endif
 
     // Sectorize
-    sectorize();
+    _sectorize();
   }
 
   void Sectorization::sectorize() {

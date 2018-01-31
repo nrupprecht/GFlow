@@ -463,6 +463,8 @@ namespace GFlow {
       recordByDisplacement(positions);
     else if (option==6) // Record by height, in colored stripes
       recordByHeight(positions);
+    else if (option==7) // Color marked particles
+      recordByMarked(positions);
     else { // recOption==0 or default. Record nothing extra
       RealType *px = simData->getPxPtr();
       RealType *py = simData->getPyPtr();
@@ -687,6 +689,26 @@ namespace GFlow {
     // We will sort out particles with it<0 at the end
     for (int i=0; i<domain_end; ++i) {
       int col = static_cast<int>(initialPositions.at(i).y / stripeHeight) % 2;
+      if (it[i]>-1) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], col));
+    }
+  }
+
+  void DataRecord::recordByMarked(vector<PData>& positions) const {
+    // Get the arrays
+    RealType *px = simData->getPxPtr();
+    RealType *py = simData->getPyPtr();
+    RealType *sg = simData->getSgPtr();
+    RealType *th = simData->getThPtr();
+    RealType *vx = simData->getVxPtr();
+    RealType *vy = simData->getVyPtr();
+    int *it = simData->getItPtr();
+    int domain_end = simData->domain_end;
+
+    // We will sort out particles with it<0 at the end
+    for (int i=0; i<domain_end; ++i) {
+      // Unordered set returns an iterator to the element if it is found
+      RealType col = marked.find(i)!=marked.end() ? 1. : 0.;
+      // Push back the data
       if (it[i]>-1) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], col));
     }
   }
