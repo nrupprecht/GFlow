@@ -46,6 +46,9 @@ namespace GFlow {
     // Give the integrator a data record object
     void setDataRecord(DataRecord* dr);
 
+    // Set the run time for the integrator
+    void setRunTime(RealType t) { runTime = t; }
+
     // Things to do to set up integration
     virtual void preIntegrate();
 

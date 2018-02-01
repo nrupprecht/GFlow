@@ -4,7 +4,7 @@
 
 namespace GFlow {
 
-  FractureSimulation::FractureSimulation() : SimulationBase(), runTime(10), delay(0.01), markBreaks(true), strengthen(true), heatIters(0), maxIters(10), heatTime(5.), relaxTime(5.) {};
+  FractureSimulation::FractureSimulation() : SimulationBase(), limitTime(10), delay(0.002), bondRadius(0.5), markBreaks(true), lastBreak(0), breakDisplayLength(0.25), strengthen(true), heatIters(0), maxIters(10), heatTime(5.), relaxTime(5.), temperature(1.), heatRadius(0.5) {};
 
   void FractureSimulation::setUp(int argc, char** argv) {
     // Set the command line input
@@ -17,11 +17,15 @@ namespace GFlow {
   // Set parameters from the command line
   void FractureSimulation::parse() {
     // How long should the simulation run
-    parser.get("time", runTime);
+    parser.get("time", limitTime);
     parser.get("markBreaks", markBreaks);
     parser.get("strengthen", strengthen);
     parser.get("maxIters", maxIters);
     parser.get("heatTime", heatTime);
+    parser.get("relaxTime", relaxTime);
+    parser.get("checkDelay", delay);
+    parser.get("heatTemperature", temperature);
+    parser.get("heatRadius", heatRadius);
 
     // Standard parsing options and checking
     standardParsing();
@@ -31,35 +35,49 @@ namespace GFlow {
   void FractureSimulation::run() {
     if (integrator==nullptr) return;
 
-    // Integration
+    // Set timers/counters
     bool running = true;
     RealType time = 0, timer = 0;
+    heatIters = 0;
 
     // Initialize
-    integrator->initialize(runTime);
+    integrator->initialize(limitTime);
 
     // Set up verlet list tracking (do after integrator initialization)
     int num = simData->getDomainSize();
     bondLists.initialize(simData);
-    RealType cut = bondLists.getCutoff();
-    bondLists.setCutoff(0.5*cut); // Set the cutoff and skin depth
+    
+    // Find the average radius of particles
+    RealType aveSg = 0.;
+    for (int i=0; i<num; ++i) aveSg += simData->getSgPtr() [i];
+    aveSg /= num;
+
+    // Set radii and array sized
+    bondRadius = 0.4*aveSg;
+    bondLists.setSkinDepth(0);    
     bondLists.createVerletLists(); // Create the initial verlet lists
-    verletListRecord.resize(num);
+    verletListRecord.resize(num);  // Allocate enough space for each particle
+    bondedParticles.resize(num);   // Allocate enough space for each particle
     accessor.resize(num);
     setVerletListRecord();
-
+    
+    // Make particles stationary
+    simData->zeroMotion();
+    
     // Pre
     integrator->preIntegrate();
-    heatIters = 0;
     // Run the simulation
     while (running) {
       // Perform an integration step
       integrator->step();
+
       // Update the time and running flag
       time = integrator->getTime();
       running = integrator->isRunning();
+
       // Check for fragmentation - just not every timestep
       if (time - timer > delay) {
+	// Check for breaks
 	checkForBreaks();
 	// Reset timer
 	timer = time;
@@ -70,15 +88,23 @@ namespace GFlow {
 	// Do a finite number of strengthening iterations
 	if (heatIters < maxIters) {
 	  // Print a message
-	  cout << "Iteration " << heatIters << ": t=" << simData->getTime() << endl;
-	  // Clear marked data
-	  dataRecord->clearMarked();
+	  if (!quiet) cout << "Iteration " << heatIters << ": t=" << simData->getTime() << ", " << numBreaks << " breaks.\n";
 	  // Do the strengthening procedure
 	  strengthenProcedure();
 	  // Print a message
-	  cout << "Starting next trial.\n";
-	  // Reset marked particles
+	  if (!quiet) cout << "Starting next trial.\n";
+	  // Remake bond lists
+	  setVerletListRecord();
+	  // Reset the integrator time limit
+	  integrator->setRunTime(limitTime);
+	  // Reset timer/time
+	  timer = 0;
+	  time = 0;
+	  // Reset break/bond count
+	  numBreaks = 0;
+	  numBonds = 0;
 	}
+	// We have done the requisite number of iterations
 	else running = false;
       }
     }
@@ -94,8 +120,9 @@ namespace GFlow {
   }
 
   inline void FractureSimulation::checkForBreaks() {
-    if (integrator==nullptr) return;
-    if (integrator->getSectorization()==nullptr) return;
+    // Checks
+    if (integrator==nullptr || integrator->getSectorization()==nullptr) return;
+    
     // Update the verlet lists and get them
     bondLists.createVerletLists();
     auto& verletList = bondLists.getVerletList();
@@ -112,7 +139,7 @@ namespace GFlow {
 
     // Look for bonds and breaks
     compare(bonds, breaks);
-
+    
     // Set verlet list record to be the current verlet list. We have to sort the data
     setVerletListRecord(verletList);
 
@@ -147,13 +174,30 @@ namespace GFlow {
       // Update cumulative counting statistics
       numBreaks += breaks.size();
       cumNumBreaks.push_back(pair<RealType,int>(currentTime, numBreaks));
+      // Update last break time
+      lastBreak = currentTime;
     }
 
     // Give the data record the marked particles
-    dataRecord->setMarked(marked);
+    if (!marked.empty() || currentTime-lastBreak>breakDisplayLength) dataRecord->setMarked(marked);
+  }
+
+  // Check for bonds and breaks
+  inline void FractureSimulation::compare(vector<pair<int,int> >& bonds, vector<pair<int,int> >& breaks) {
+    
+    // If a formerly bonded particle went beyond a certain distance, it is no longer bonded
+    for (int i=0; i<bondedParticles.size(); ++i) {
+      for (auto j : bondedParticles.at(i))
+	if (getHardCoreDistance(i,j) > 2*bondRadius)
+	  breaks.push_back(pair<int,int>(i,j));
+    }
+    
+    // Look for bonds
+    // <--------------------
   }
 
   // Checks for bonds and breaks by comparing current and past verlet lists
+  /*
   inline void FractureSimulation::compare(vector<pair<int,int> >& bonds, vector<pair<int,int> >& breaks) {
     // Lambda to find an element in a list
     auto check = [] (const int n, const VListSubType *list)->bool {
@@ -189,23 +233,51 @@ namespace GFlow {
       }
     }
   }
+  */
 
   inline void FractureSimulation::setVerletListRecord(VListType& verletList) {
     // Clear the old data
     for (int i=0; i<verletListRecord.size(); ++i) verletListRecord.at(i).clear();
+
     // Clear accessor
     for (int i=0; i<accessor.size(); ++i) accessor.at(i) = nullptr;
+
     // Insert new data
     for (const auto &nl : verletList) {
       int head = *nl.begin();
       verletListRecord.at(head) = nl; // If this causes an error, then there are new particles
+    }
+
+    // Lambda for finding objects in a list
+    auto contains = [&] (int n, int p) ->bool {
+      return std::find(bondedParticles.at(p).begin(), 
+		       bondedParticles.at(p).end(), 
+		       n)!=bondedParticles.at(p).end();
+    };
+
+    // Update [bondedParticles]
+    vector<int> temp;
+    RealType max = 0, min = 1;
+    for (int i=0; i<verletListRecord.size(); ++i) {
+      // If bonded particle is still in the (larger radius) neighbor list
+      for(auto n : verletListRecord.at(i)) {
+	if (n==i) continue;
+	// Particle n is in the (big) neighborhood of i. Check if it was in the bond neighborhood, or if it should be (if it's close enough)
+	// The rmin points (hard centers) of the particle should be within [bondRadius] of each other for them to count as being bound
+	RealType hcDist = getHardCoreDistance(n,i);
+	if ((hcDist < 2*bondRadius && contains(n,i)) || hcDist < bondRadius)
+	  temp.push_back(n);
+      }
+      // Set the new bonded particles list
+      bondedParticles.at(i) = temp;
+      // Clear temp array
+      temp.clear();
     }
   }
 
   inline void FractureSimulation::setVerletListRecord() {
     // Do checks
     if (integrator==nullptr) return;
-    if (integrator->getSectorization()==nullptr) return;
     // Set up verlet list recording
     auto& verletList = bondLists.getVerletList();
     // Set the verlet list record
@@ -226,14 +298,22 @@ namespace GFlow {
     // Find the position of the particle that broke
     vec2 pos1(simData->getPxPtr() [p1], simData->getPyPtr() [p1]);
     vec2 pos2(simData->getPxPtr() [p2], simData->getPyPtr() [p2]);
-    // Turn off particle's characteristics
-    simData->setDoCharacteristics(false);
+    // Turn off particle's characteristics except for [Fixed]
+    // If we don't fix the CV/CF/etc. particles, they can suddenly change position
+    auto& characteristics = simData->getCharacteristics();
+    vector<pair<int, Characteristic*> > characteristicRecord;
+    for (auto& pc : characteristics) {
+      // Keep track of what the original characteristic was
+      characteristicRecord.push_back(pc);
+      // Replace with a [Fixed] characteristic
+      pc.second = new Fixed(pc.first, simData);
+    }
     // Take away the simulation's forces. We will return them after the strengthening procedure
     auto externalForces = simData->transferExternalForces();
     // Apply a temperature near that position - pos, radius, temp
     ExternalForce *forces[3];
-    forces[0] = new TemperatureForce(pos1, 0.5, 1);
-    forces[1] = new TemperatureForce(pos2, 0.5, 1);
+    forces[0] = new TemperatureForce(pos1, heatRadius, temperature);
+    forces[1] = new TemperatureForce(pos2, heatRadius, temperature);
     forces[2] = new ViscousDrag;
     simData->addExternalForce(forces[0]);
     simData->addExternalForce(forces[1]);
@@ -245,21 +325,35 @@ namespace GFlow {
     forces[1]->setFinished(true);
     forces[2]->setFinished(true);
     simData->clearFinishedForces();
+    // Add a viscous drag
+    auto vd = new ViscousDrag(1.);
+    simData->addExternalForce(vd);
     // Let the system relax
     integrator->integrate(relaxTime);
+    // Remove external forces
+    vd->setFinished(true);
+    simData->clearFinishedForces(); 
     // Reset the time of the integrator and set the positions as the new initial positions
     simData->setInitialPositions();
-    integrator->reset();
     simData->zeroMotion(); // A temporary fix since we don't store initial velocities, so resetting the simData doesn't reset velocities
+    integrator->reset();
     dataRecord->resetTimers(); // If we don't do this, data records 'last *' timers will be in the future, and no data will be collected
-    // Turn back on and reset the characteristics, check are what cause particles to be fixed, to move, etc.
-    simData->setDoCharacteristics(true);
+    // Return particles to their original characteristics
+    for(auto pc: characteristicRecord) {
+      Characteristic* &c = characteristics.at(pc.first);
+      delete c;
+      c = pc.second;
+    }
     simData->resetCharacteristics();
     // Give back the original external force after resetting them
     for (auto f : externalForces) f->reset();
     simData->addExternalForce(externalForces);
     // Update count
     ++heatIters;
+  }
+
+  inline RealType FractureSimulation::getHardCoreDistance(int i, int j) {
+    return sqrt(sqr(simData->getDisplacement(i,j)))-0.4*(simData->getSgPtr() [i] + simData->getSgPtr() [j]);
   }
   
 }

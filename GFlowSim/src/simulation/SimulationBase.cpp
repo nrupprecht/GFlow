@@ -90,6 +90,7 @@ namespace GFlow {
     parser.get("config", config);
     parser.get("writeDirectory", writeDirectory);
     parser.get("loadFile", loadFile);
+    parser.get("saveFile", saveFile);
     // Animation options
     parser.get("animate", animate);
     parser.get("lowerSizeLimit", lowerSizeLimit);
@@ -127,6 +128,7 @@ namespace GFlow {
     parser.get("center", center);
     parser.get("print", print);
     parser.get("quiet", quiet);
+    parser.get("nowrite", nowrite);
     // Performance options
     parser.get("adjust", adjust);
     parser.get("adjustDelay", adjustDelay);
@@ -260,16 +262,20 @@ c configuration file. Exiting.\n";
       dataRecord->setCenter(center);
     }
 
+    // Set SimData initial positions
+    simData->setInitialPositions();
+
     // Set run time
-    if (adjust>-1) reinterpret_cast<VelocityVerletIntegrator*>(integrator)->setAdjustTimeStep(adjust);
-    if (adjustDelay>-1) reinterpret_cast<VelocityVerletIntegrator*>(integrator)->setAdjustUpdateDelay(adjustDelay);
+    if (adjust>-1) {
+      auto v = dynamic_cast<VelocityVerletIntegrator*>(integrator);
+      if (v) v->setAdjustTimeStep(adjust);
+    }
+    if (adjustDelay>-1) {
+      auto v = dynamic_cast<VelocityVerletIntegrator*>(integrator);
+      if (v) v->setAdjustUpdateDelay(adjustDelay);
+    }
 
-    // Get writing and saving options
-    parser.get("nowrite", nowrite);
-    parser.get("print", print);
-    parser.get("quiet", quiet);
-    parser.get("saveFile", saveFile);
-
+    // Check parsing for if any illegal flags were used
     if (check) checkParsing();
   }
 

@@ -110,6 +110,9 @@ namespace GFlow {
     // Reset the last record and last animation timer
     void resetTimers();
 
+    // Set the doRecord option
+    void setDoRecord(bool r) { doRecord = r; }
+
     // Whether to center the data
     void setCenter(bool c) { center = c; }
 
@@ -138,6 +141,9 @@ namespace GFlow {
     void setRecMoveRatio(bool b) { recMvRatio = b; }
 
     /*** Accessors ***/
+
+    // Get doRecord
+    bool getDoRecord() { return doRecord; }
 
     // Get the simulation run time
     RealType getRunTime() const { return runTime; }
@@ -186,6 +192,9 @@ namespace GFlow {
     inline void writeColumnDisplacement(int) const;
     inline void getPressureData(const Bounds&, ScalarField&, RealType=0.1) const;
     inline void getVortexData(const Bounds&, ScalarField&, RealType=0.1, RealType=0.2) const;
+
+    // Whether we should be recording data
+    bool doRecord;
 
     // The sim data to get data from
     SimData *simData;

@@ -15,10 +15,22 @@ namespace GFlow {
    */
   class Characteristic {
   public:
+    // Default constructor
+    Characteristic() : active(true) {};
     // Characteristic modifies particle
     virtual void modify(SimData*, int, RealType) = 0;
     // Reset the characteristic if neccessary
     virtual void reset() {};
+
+    // Get active flag
+    bool getActive() { return active; }
+
+    // Set active flag
+    void setActive(bool a) { active = a; }
+
+  protected:
+    // Whether the characteristic is active or not
+    bool active;
   };
 
   /*
@@ -28,11 +40,11 @@ namespace GFlow {
   class ConstantVelocity : public Characteristic {
   public:
     // Constructors
-    ConstantVelocity(vec2 p, vec2 v) : pos(p), velocity(v), omega(0), useV(true), useOm(false), active(true), stop(false) {};
-    ConstantVelocity(vec2 p, vec2 v, bool s) : pos(p), velocity(v), omega(0), useV(true), useOm(false), active(true), stop(s) {};
-    ConstantVelocity(RealType om) : velocity(Zero), omega(om), useV(false), useOm(true), active(true), stop(true) {};
-    ConstantVelocity(vec2 p, vec2 v, RealType om) : pos(p), velocity(v), omega(om), useV(true), useOm(true), active(true), stop(false) {};
-    ConstantVelocity(vec2 p, vec2 v, RealType om, bool s) : pos(p), velocity(v), omega(om), useV(true), useOm(true), active(true), stop(s) {};
+    ConstantVelocity(vec2 p, vec2 v) : pos(p), time(0), velocity(v), omega(0), useV(true), useOm(false), stop(false) {};
+    ConstantVelocity(vec2 p, vec2 v, bool s) : pos(p), time(0), velocity(v), omega(0), useV(true), useOm(false), stop(s) {};
+    ConstantVelocity(RealType om) : pos(Zero), time(0), velocity(Zero), omega(om), useV(false), useOm(true), stop(true) {};
+    ConstantVelocity(vec2 p, vec2 v, RealType om) : pos(p), time(0), velocity(v), omega(om), useV(true), useOm(true), stop(false) {};
+    ConstantVelocity(vec2 p, vec2 v, RealType om, bool s) : pos(p), time(0), velocity(v), omega(om), useV(true), useOm(true), stop(s) {};
 
     virtual void modify(SimData*, int, RealType);
     virtual void reset();
@@ -45,8 +57,7 @@ namespace GFlow {
     RealType omega;
     // Whether to control velocity, angular velocity
     bool useV, useOm;
-
-    bool active;
+    
     bool stop;
   };
 
@@ -89,6 +100,7 @@ namespace GFlow {
   public:
     // Constructors
     Fixed(vec2 p) : pos(p) {};
+    Fixed(int, SimData*);
     
     virtual void modify(SimData*, int, RealType);
   private:

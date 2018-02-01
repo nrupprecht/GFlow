@@ -269,6 +269,10 @@ namespace GFlow {
     return getDisplacement(a.x, a.y, b.x, b.y);
   }
 
+  vec2 SimData::getDisplacement(const int i, const int j) {
+    return getDisplacement(px[i], py[i], px[j], py[j]);
+  }
+
   vec2 SimData::getWallDisplacement(const Wall& w, const vec2 p, RealType sigma) {
     if (wrapX || wrapY) {
       // Displacement

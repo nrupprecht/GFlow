@@ -69,6 +69,7 @@ namespace GFlow {
     virtual inline void updates();
     virtual inline void forces();
     virtual inline void secondHalfKick();
+    virtual inline void updateCharacteristics();
 
     // Adjustment functions
     inline void doAdjustDelay();

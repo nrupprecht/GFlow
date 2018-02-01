@@ -56,8 +56,12 @@ namespace GFlow {
   
   inline void VelocityVerletIntegrator::_integrate() {
     // First VV half kick
-    firstHalfKick();
-    
+    // Forces/torques are cleared at the end of first half kick
+    firstHalfKick(); 
+
+    // First half characteristics update
+    updateCharacteristics();
+
     // Update sectors, do MPI
     updates();
 
@@ -66,6 +70,9 @@ namespace GFlow {
     
     // Second VV half kick
     secondHalfKick();
+
+    // Second half characteristics update
+    updateCharacteristics();
   }
   
   void VelocityVerletIntegrator::postStep() {
@@ -169,11 +176,6 @@ namespace GFlow {
   }
 
   inline void VelocityVerletIntegrator::updates() {
-    // Do characteristics first if they are 'on'
-    if (simData->getDoCharacteristics())
-      for (auto &c : simData->getCharacteristics())
-	c.second->modify(simData, c.first, dt);
-
     // Update sectors
     if (updateDelay < updateTimer) {
       // Check termination conditions
@@ -244,6 +246,14 @@ namespace GFlow {
       vy[i] += hdt*im[i]*fy[i];
       om[i] += hdt*iI[i]*tq[i];
     }
+  }
+
+  inline void VelocityVerletIntegrator::updateCharacteristics() {
+    // Do characteristics first if they are 'on'
+    if (simData->getDoCharacteristics())
+      for (auto &c : simData->getCharacteristics())
+	// This is a half step, so delta t = 0.5*dt
+	c.second->modify(simData, c.first, 0.5*dt);
   }
   
   inline void VelocityVerletIntegrator::doAdjustDelay() {

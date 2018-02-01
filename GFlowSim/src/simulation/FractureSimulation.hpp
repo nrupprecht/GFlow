@@ -40,9 +40,10 @@ namespace GFlow {
     inline void setVerletListRecord(VListType&);
     inline void setVerletListRecord();
     inline void strengthenProcedure();
+    inline RealType getHardCoreDistance(int, int);
 
     // Run time
-    RealType runTime;
+    RealType limitTime;
 
     // Delay between checking for breaks/bonds
     RealType delay;
@@ -50,7 +51,7 @@ namespace GFlow {
     // A sectorization for doing breakage analysis
     Sectorization bondLists;
 
-    // A record of the verlet lists
+    // A record of the verlet lists for the large neighborhood
     VListType verletListRecord;
 
     // An unordered set of all the particles that have most recently broken bonds
@@ -59,8 +60,20 @@ namespace GFlow {
     // A way to sort the verlet list we get from the sectorization
     vector<VListSubType*> accessor;
 
+    // Particles that were closer than the inner radius
+    vector<vector<int> > bondedParticles; 
+
+    // Radius required for bonding - distance the rmin points should be from each other
+    RealType bondRadius;
+
     // Whether to mark breakages or the formation of bonds
     bool markBreaks;
+
+    // Time that last break occured
+    RealType lastBreak;
+
+    // Amount of time we should animate breaks
+    RealType breakDisplayLength;
 
     // Whether to do iterative strengthening
     bool strengthen;
@@ -70,6 +83,12 @@ namespace GFlow {
     
     // How long to apply heat and relax during a strengthening
     RealType heatTime, relaxTime;
+
+    // The temperature to use for heating
+    RealType temperature;
+
+    // The radius of the heat application
+    RealType heatRadius;
     
     // A lists {time, particle #, particle #} of when breakages and bondings occur
     vector<std::tuple<RealType,int,int> > breakages, bondings;
