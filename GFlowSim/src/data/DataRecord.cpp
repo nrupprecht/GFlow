@@ -12,34 +12,49 @@ namespace GFlow {
     int end = statFunctions.size();
     // Put in other statistics (not from normal stat functions) after the normal stat functions
     if (recPerf) {
+      /*
       statFunctionData.push_back(vector<RPair>());
       statFunctionName.push_back("perf");
       statRecPerf = end;
       ++end;
+      */
+      statRecPerf = getStatDataSlot("perf");
     }
     if (recMvRatio) {
+      /*
       statFunctionData.push_back(vector<RPair>());
       statFunctionName.push_back("mvRatio");
       statRecMvRatio = end;
       ++end;
+      */
+      statRecMvRatio = getStatDataSlot("perf");
     }
     if (recDt) {
+      /*
       statFunctionData.push_back(vector<RPair>());
       statFunctionName.push_back("dt");
       statRecDt = end;
       ++end;
+      */
+      statRecDt = getStatDataSlot("dt");
     }
     if (recDelay) {
+      /*
       statFunctionData.push_back(vector<RPair>());
       statFunctionName.push_back("delay");
       statRecDelay = end;
       ++end;
+      */
+      statRecDelay = getStatDataSlot("delay");
     }
     if (recDistance) {
+      /*
       statFunctionData.push_back(vector<RPair>());
       statFunctionName.push_back("distance");
       statRecDistance = end;
       ++end;
+      */
+      statRecDistance = getStatDataSlot("distance");
     }
   }
 
@@ -157,7 +172,8 @@ namespace GFlow {
     // Record stat functions
     for (int i=0; i<statFunctions.size(); ++i) {
       StatFunc sf = statFunctions.at(i);
-      statFunctionData.at(i).push_back(pair<RealType, RealType>(time, sf(simData)));
+      int slot = statSlot.at(i);
+      statFunctionData.at(slot).push_back(pair<RealType, RealType>(time, sf(simData)));
     }
 
     // Record stat plots
@@ -263,6 +279,7 @@ namespace GFlow {
       fout.close();
       // Write stat function data
       for (int i=0; i<statFunctionData.size(); ++i) {
+	if (statFunctionData.at(i).empty()) continue;
 	if (!printToCSV(writeDirectory+"/StatData/"+statFunctionName.at(i)+".csv", statFunctionData.at(i)))
 	  std::cerr << "Failed to print to [" << writeDirectory << "/StatData/" << statFunctionName.at(i) << ".csv].\n";
       }
@@ -437,10 +454,29 @@ namespace GFlow {
     statFunctions.push_back(sf);
 
     // Add a place to store this function's data
-    statFunctionData.push_back(vector<pair<RealType,RealType> >());
+    statFunctionData.push_back(vector<RPair>());
 
     // Add the stat function's name
     statFunctionName.push_back(name);
+
+    // Give this stat function a slot
+    statSlot.push_back(statFunctionData.size()-1);
+  }
+
+  int DataRecord::getStatDataSlot(string name) {
+    // Add a place to store the data
+    statFunctionData.push_back(vector<RPair>());
+
+    // Add the data's name
+    for (auto& c : name) if(c==' ') c='_';
+    statFunctionName.push_back(name);
+    
+    // Return what slot to access
+    return statFunctionData.size()-1;
+  }
+
+  void DataRecord::addStatData(int slot, RPair data) {
+    statFunctionData.at(slot).push_back(data);
   }
 
   void DataRecord::addStatPlot(StatPlot sp, RPair bounds, int bins, string name) {

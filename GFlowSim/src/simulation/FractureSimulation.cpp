@@ -4,7 +4,7 @@
 
 namespace GFlow {
 
-  FractureSimulation::FractureSimulation() : SimulationBase(), limitTime(10), delay(0.002), bondRadius(0.5), markBreaks(true), lastBreak(0), breakDisplayLength(0.25), strengthen(true), heatIters(0), maxIters(10), heatTime(5.), relaxTime(5.), temperature(1.), heatRadius(0.5) {};
+  FractureSimulation::FractureSimulation() : SimulationBase(), limitTime(10), delay(0.002), bondRadius(0.5), markBreaks(true), lastBreak(0), breakDisplayLength(0.25), strengthen(true), breakDataSlot(-1), heatIters(0), maxIters(10), heatTime(5.), relaxTime(5.), temperature(1.), heatRadius(0.5) {};
 
   void FractureSimulation::setUp(int argc, char** argv) {
     // Set the command line input
@@ -12,6 +12,7 @@ namespace GFlow {
     // Create data record, SimData, integrator
     dataRecord = new DataRecord;
     dataRecord->setCommand(argc, argv);
+    breakDataSlot = dataRecord->getStatDataSlot("breaks times");
   }
 
   // Set parameters from the command line
@@ -85,6 +86,8 @@ namespace GFlow {
 
       // If there is a break, reset and heat up the break
       if (strengthen && !breakages.empty()) {
+	// This is the break time for the [heatIters] iteration
+	if (-1<breakDataSlot) dataRecord->addStatData(breakDataSlot, RPair(heatIters, time));
 	// Do a finite number of strengthening iterations
 	if (heatIters < maxIters) {
 	  // Print a message

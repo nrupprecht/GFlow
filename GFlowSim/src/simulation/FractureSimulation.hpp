@@ -78,6 +78,12 @@ namespace GFlow {
     // Whether to do iterative strengthening
     bool strengthen;
 
+    // A list of [trial][break time]
+    vector<vec2> breakTimes;
+
+    // Slot in dataRecord that we use to record breakTimes
+    int breakDataSlot;
+
     // The strengthening iteration we are on and the total number of strengthening iterations
     int heatIters, maxIters;
     

@@ -134,7 +134,13 @@ namespace GFlow {
     // Add a stat function
     void addStatFunction(StatFunc, string);
 
-    // Add a stat plo
+    // Allow other objects to store stat data in the data plot. Get the address to the stat data slot your data is allocated to. Provide the stat name.
+    int getStatDataSlot(string);
+
+    // Allow other objects to store stat data in the data plot. Add data to your slot
+    void addStatData(int, RPair);
+
+    // Add a stat plot
     void addStatPlot(StatPlot, RPair, int, string);
 
     // Set whether to record the movement ratio
@@ -268,6 +274,7 @@ namespace GFlow {
     vector<StatFunc> statFunctions;
     vector<vector<RPair> > statFunctionData;
     vector<string> statFunctionName;
+    vector<int> statSlot;
 
     // List of stat plots to use
     vector<StatPlot> statPlots;
