@@ -274,9 +274,21 @@ namespace GFlow {
   }
 
   vec2 SimData::getWallDisplacement(const Wall& w, const vec2 p, RealType sigma) {
+    // Calculate displacement and normal vectors
+    vec2 displacement = getDisplacement(p.x, p.y, w.px, w.py);
+    vec2 normal(cos(w.th), sin(w.th)), perpendicular(-normal.y, normal.x);
+    // Get components of the displacement in the "normal/perpendicular" framc
+    RealType dn = displacement*normal, dp = displacement*perpendicular;
+    // Calculate the displacement between the center of the particle and the closest point on the wall
+    vec2 minimalDisplacement = dp*perpendicular;
+    if (fabs(dn)>w.sg) minimalDisplacement += sign(dn)*(dn-w.sg)*normal;
+    // Return the displacement
+    return minimalDisplacement;
+
+    /*
     if (wrapX || wrapY) {
       // Displacement
-      vec2 d1 = p-w.left;
+      vec2 d1 = p-w.getLeft();
       wallDisplacement(d1, sigma, w);
       RealType dsqr1 = sqr(d1);
       // Wrapped displacement
@@ -291,6 +303,7 @@ namespace GFlow {
       wallDisplacement(d, sigma, w);
       return d;
     }
+    */
   }
 
   RealType SimData::getPhi() {

@@ -171,6 +171,19 @@ namespace GFlow {
 	th[i] += dt*om[i];
       }
     }
+
+    // Update walls
+    for (auto &w : simData->getWalls()) {
+      // Update linear variables
+      w.vx += hdt*w.im*w.fx;
+      w.vy += hdt*w.im*w.fx;
+      w.px += dt*w.vx;
+      w.py += dt*w.vy;
+      // Update angular variables
+      w.om += hdt*w.iI*w.tq;
+      w.th += dt*w.om;
+    }
+
     // Clear force and torque
     simData->clearForceTorque();
   }

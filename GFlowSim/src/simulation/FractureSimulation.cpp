@@ -4,7 +4,7 @@
 
 namespace GFlow {
 
-  FractureSimulation::FractureSimulation() : SimulationBase(), limitTime(10), delay(0.002), bondRadius(0.5), markBreaks(true), lastBreak(0), breakDisplayLength(0.25), strengthen(true), breakDataSlot(-1), heatIters(0), maxIters(10), heatTime(5.), relaxTime(5.), temperature(1.), heatRadius(0.5) {};
+  FractureSimulation::FractureSimulation() : SimulationBase(), limitTime(10), delay(0.002), bondRadius(0.5), markBreaks(true), lastBreak(0), breakDisplayLength(0.25), strengthen(true), breakDataSlot(-1), heatIters(0), maxIters(10), heatTime(5.), relaxTime(5.), heatTemperature(1.), heatRadius(0.5) {};
 
   void FractureSimulation::setUp(int argc, char** argv) {
     // Set the command line input
@@ -25,7 +25,7 @@ namespace GFlow {
     parser.get("heatTime", heatTime);
     parser.get("relaxTime", relaxTime);
     parser.get("checkDelay", delay);
-    parser.get("heatTemperature", temperature);
+    parser.get("heatTemperature", heatTemperature);
     parser.get("heatRadius", heatRadius);
 
     // Standard parsing options and checking
@@ -315,8 +315,8 @@ namespace GFlow {
     auto externalForces = simData->transferExternalForces();
     // Apply a temperature near that position - pos, radius, temp
     ExternalForce *forces[3];
-    forces[0] = new TemperatureForce(pos1, heatRadius, temperature);
-    forces[1] = new TemperatureForce(pos2, heatRadius, temperature);
+    forces[0] = new TemperatureForce(pos1, heatRadius, heatTemperature);
+    forces[1] = new TemperatureForce(pos2, heatRadius, heatTemperature);
     forces[2] = new ViscousDrag;
     simData->addExternalForce(forces[0]);
     simData->addExternalForce(forces[1]);

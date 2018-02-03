@@ -333,9 +333,14 @@ namespace GFlow {
 	// Get the wall data
 	fin >> left >> right >> rp >> ds >> cf;
 	Wall w(left, right);
+	/*
 	w.repulsion   = rp;
 	w.dissipation = ds;
 	w.coeff       = cf;
+	*/
+	w.rp = rp;
+	w.ds = ds;
+	w.cf = cf;
 	// Push back the wall
 	walls.push_back(w);
       }
@@ -450,7 +455,8 @@ namespace GFlow {
 
     // Write walls
     for (const auto& w : simData->walls) {
-      fout << "W " << w.left << " " << w.getRight() << " " << w.repulsion << " " << w.dissipation << " " << w.coeff << "\n";
+      // fout << "W " << w.getLeft() << " " << w.getRight() << " " << w.repulsion << " " << w.dissipation << " " << w.coeff << "\n";
+      fout << "W " << w.getLeft() << " " << w.getRight() << " " << w.rp << " " << w.ds << " " << w.cf << "\n";
     }
 
     // Write external forces
@@ -619,9 +625,14 @@ namespace GFlow {
     // Make the wall from the gathered values
     if (!(lx==0 && ly==0 && rx==0 && ry==0)) {
       Wall w(lx, ly, rx, ry);
+      /*
       w.repulsion = repulsion;
       w.dissipation = dissipation;
       w.coeff = coeff;
+      */
+      w.rp = repulsion;
+      w.ds = dissipation;
+      w.cf = coeff;
       walls.push_back(w);
     }
   }

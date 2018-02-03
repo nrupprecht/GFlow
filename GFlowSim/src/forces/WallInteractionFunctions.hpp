@@ -15,6 +15,72 @@ namespace GFlow {
   // Typedef for wall interaction functions
   typedef bool (*WallInteractionFunction) (int, int, SimData*, RealType&, RealType&, bool);
 
+  // Wall [i], particle [j]
+  inline bool hardDiskWallInteraction(int i, int j, SimData* simData, RealType& Fn, RealType& Fs, bool update=true) {
+    // Get data pointers
+    RealType *px = simData->getPxPtr();
+    RealType *py = simData->getPyPtr();
+    RealType *sg = simData->getSgPtr();
+    // Get the wall
+    Wall& w = simData->getWalls()[i];
+    // Calculate displacement and normal vectors
+    vec2 displacement = simData->getDisplacement(px[j], py[j], w.px, w.py);
+    vec2 normal(cos(w.th), sin(w.th)), perpendicular(-normal.y, normal.x);
+    // Get components of the displacement in the "normal/perpendicular" framc
+    RealType dn = displacement*normal, dp = displacement*perpendicular;
+    // Calculate the displacement between the center of the particle and the closest point on the wall
+    vec2 minimalDisplacement = dp*perpendicular;
+    if (fabs(dn)>w.sg) minimalDisplacement += sign(dn)*(dn-w.sg)*normal;
+    // Check if the particle is close enough to the wall
+    if (sqr(minimalDisplacement) < sqr(w.wd + sg[j])) {
+      // Calculate distance
+      RealType dist = sqrt(sqr(minimalDisplacement)), invDist = 1./dist;
+      // Get the other pointers
+      RealType *vx = simData->getVxPtr();
+      RealType *vy = simData->getVyPtr();
+      RealType *fx = simData->getFxPtr();
+      RealType *fy = simData->getFyPtr();
+      RealType *om = simData->getOmPtr();
+      RealType *tq = simData->getTqPtr();
+      RealType *ds = simData->getDsPtr();
+      RealType *rp = simData->getRpPtr();
+      RealType *cf = simData->getCfPtr();
+      // Compute interaction parameters ( ad hoc )
+      double dissipation = ds[j] + w.ds;
+      double repulsion = rp[j] + w.rp;
+      double coeff = cf[j] * w.cf;
+      // Compute force
+      vec2 normal = invDist * minimalDisplacement;
+      vec2 shear = vec2(normal.y, -normal.x);
+      // Spring force strength
+      double strength = 2*repulsion*(sg[j] + w.wd - dist);
+      double Vn = vx[j]*normal.x + vy[j]*normal.y;
+      double Vs = vx[j]*shear.x+vy[j]*shear.y + om[j]*sg[j]; // If the wall had velocity then we would subtract: - velocity*(shear*normal);
+
+      // Damped harmonic oscillator
+      Fn = -strength-dissipation*clamp(-Vn);
+      // Fn /= p.invMass; //--- So Large Particles don't simply drop through the wall
+      Fs = 0;
+      if (coeff)
+        Fs = fabs(coeff*Fn)*sign(Vs);
+      // Add forces
+      if (update) {
+	// Update the 
+        fx[j] -= Fn*normal.x+Fs*shear.x;
+        fy[j] -= Fn*normal.y+Fs*shear.y;
+        tq[j] -= Fs*sg[j];
+	// Update the wall forces
+	w.fx += Fn*normal.x+Fs*shear.x;
+	w.fy += Fn*normal.y+Fs*shear.y;
+	// Update the wall torques
+	//** TODO -- Not that important for what this has to do
+      }
+      return true;
+    }
+    return false;
+  }
+
+  /*
   // Hard disk - wall interaction function
   // i - wall, j - particle
   inline bool hardDiskWallInteraction(int i, int j, SimData* simData, RealType& Fn, RealType& Fs, bool update=true) {
@@ -29,6 +95,7 @@ namespace GFlow {
     vec2 displacement = simData->getWallDisplacement(w, vec2(px[j], py[j]), sg[j]);
     double radSqr = sqr(sg[j]+default_wall_width);
     // Displacement is p.position - w.left
+    */
     /*
     RealType l_par = displacement*w.normal;
     vec2 d_par = l_par*w.normal;
@@ -39,6 +106,7 @@ namespace GFlow {
       else displacement -= w.length*w.normal; // Displacement from the nearest end (the far end) of the wall
     }
     */
+  /*
     double distSqr = sqr(displacement);   // Located behind the origin
     /// We now have the correct displacement vector and distSqr value
     if (distSqr<=radSqr) {
@@ -82,6 +150,7 @@ namespace GFlow {
     }
     return false;
   }
+*/
   
 }
 #endif

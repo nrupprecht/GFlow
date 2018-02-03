@@ -73,9 +73,6 @@ namespace GFlow {
     bool center = false;
     bool cv = false;
     bool insert = false;
-    // Print options
-    bool print = false;    // Whether we should print stat data to the screen
-    bool quiet = false;
     // Performance options
     int adjust = -1;       // Whether to auto-adjust the time step
     int adjustDelay = -1;  // Whether to auto-adjust the update delay

@@ -91,7 +91,7 @@ namespace GFlow {
     RealType heatTime, relaxTime;
 
     // The temperature to use for heating
-    RealType temperature;
+    RealType heatTemperature;
 
     // The radius of the heat application
     RealType heatRadius;
