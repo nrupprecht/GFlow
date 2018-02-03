@@ -14,11 +14,11 @@ namespace GFlow {
       auto p = vl.begin(); 
       auto q = p; ++q;
       int i = *p, j;
-      if (it[i]<0) continue;
+      // if (it[i]<0) continue;
       for (; q!=vl.end(); ++q) {
 	j = *q;
 	RealType Fn, Fs;
-	if (it[j]<0) continue;
+	//i f (it[j]<0) continue;
 	interactP(i, j, simData, Fn, Fs);
       }
     }
@@ -33,16 +33,16 @@ namespace GFlow {
       auto p = vl.begin();
       auto q = p; ++q;
       int i = *p, j;
-      if (it[i]<0) continue;
+      // if (it[i]<0) continue;
       for (; q!=vl.end(); ++q) {
         j = *q;
-        if (it[j]>-1) {
-	  RealType Fn, Fs;
-	  interactP(i, j, simData, Fn, Fs, false);
-	  // Record data
-	  std::get<5>(positions.at(i)) += fabs(Fn);
-	  std::get<5>(positions.at(j)) += fabs(Fn);
-	}
+        // if (it[j]>-1) {
+	RealType Fn, Fs;
+	interactP(i, j, simData, Fn, Fs, false);
+	// Record data
+	std::get<5>(positions.at(i)) += fabs(Fn);
+	std::get<5>(positions.at(j)) += fabs(Fn);
+	//}
       }
     }
   }
@@ -59,7 +59,7 @@ namespace GFlow {
       for (; q!=wl.end(); ++q) {
 	j = *q;
 	RealType Fn, Fs;
-	if (it[j]<0) continue;
+	// if (it[j]<0) continue;
 	interactW(i, j, simData, Fn, Fs);
       }
     }
@@ -76,11 +76,11 @@ namespace GFlow {
       for (; q!=wl.end(); ++q) {
         j = *q;
         RealType Fn, Fs;
-        if (it[j]>-1) { // If the particle is real
-	  interactW(i, j, simData, Fn, Fs, false);
-	  // Record data -- i is the wall, so just do j
-	  std::get<5>(positions.at(j)) += fabs(Fn);
-	}
+        // if (it[j]>-1) { // If the particle is real
+	interactW(i, j, simData, Fn, Fs, false);
+	// Record data -- i is the wall, so just do j
+	std::get<5>(positions.at(j)) += fabs(Fn);
+	//}
       }
     }
   }
