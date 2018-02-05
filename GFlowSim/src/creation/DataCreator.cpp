@@ -4,6 +4,28 @@
 
 namespace GFlow {
 
+  void Square_Lattice::makeValues(Region& region, vector<Particle>& particles) {
+    // Clear any pre-existing particles (particle # is usually set by a region.sigma)
+    particles.clear();
+    // Get parameters
+    RealType left = region.bounds.left, width = region.bounds.right - left;
+    RealType bottom = region.bounds.bottom, height = region.bounds.top - bottom;
+    // Figure out the lattice dimensions/spacing
+    int nx = floor(0.5*packing*width/sigma), ny = floor(0.5*packing*height/sigma);
+    RealType dx = width/(2.*nx), dy = height/(2.*ny);
+    // Place the particles
+    for (int y=0; y<ny; ++y)
+      for (int x=0; x<nx; ++x) {
+	// Lattice positions
+	RealType px = left+sigma+(2*x+1)*dx, py = bottom+(2*y+1)*dy;
+	// Perturb positions on the lattice
+	px += 0.1*drand48()*sigma; py += 0.1*drand48()*sigma;
+	// Create the particles
+	particles.push_back(Particle(px, py, sigma));
+      }
+  }
+
+
   void Fixed_Number_Uniform_Radii::makeValues(Region& region, vector<Particle>& particles) {
     for (int i=0; i<number; ++i) {
       RealType s = sigma*(1-dispersion*drand48());

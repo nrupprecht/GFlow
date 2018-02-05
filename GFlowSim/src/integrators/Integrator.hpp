@@ -97,7 +97,7 @@ namespace GFlow {
     virtual void postStep();
 
     // Whether the simulation is running or not
-    bool running;
+    volatile bool running;
 
     // Time step
     RealType dt;

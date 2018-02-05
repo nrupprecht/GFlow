@@ -259,10 +259,6 @@ namespace GFlow {
     if (recPos) {
       // Print position data
       printToDirectory(writeDirectory+"/Pos", "pos", positionRecord);
-
-      // Write wall data
-      if (!printToCSV(writeDirectory+"/walls.csv", simData->getWalls()))
-	std::cerr << "Failed to print walls to [" << writeDirectory << "/walls.csv].\n";
     }
      
     // Write bounds data
@@ -523,6 +519,11 @@ namespace GFlow {
       int domain_end = simData->domain_end;
       for (int i=0; i<domain_end; ++i)
 	if (it[i]>-1 && lowerSizeLimit<sg[i]) positions.push_back(PData(px[i], py[i], sg[i], th[i], it[i], 0));
+    }
+
+    // Record any walls - walls are it==2
+    for (auto &w : simData->getWalls()) {
+      positions.push_back(PData(w.px, w.py, w.sg, w.th, 2, 0));
     }
   }
 

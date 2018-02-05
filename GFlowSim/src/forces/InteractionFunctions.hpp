@@ -90,7 +90,6 @@ namespace GFlow {
       RealType invDist = 1./dist;
       // LJ cutoff is 2.5*rmin
       RealType rmin = 0.4*cutoff; 
-
       // Get the other pointers
       RealType *vx = simData->getVxPtr();
       RealType *vy = simData->getVyPtr();

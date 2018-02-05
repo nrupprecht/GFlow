@@ -64,7 +64,19 @@ namespace GFlow {
     
     // Make particles stationary
     simData->zeroMotion();
-    
+
+    //**
+    // Add a moving wall
+    Wall w(-2, 24, 2, 24);
+    w.im = 1;
+    w.vy = -1;
+    w.rp = 0.288884;
+    simData->addWall(w);
+    // Add a bottom wall
+    Wall w2(-2, 0, 2, 0);
+    w2.rp = 0.288884;
+    simData->addWall(w);
+
     // Pre
     integrator->preIntegrate();
     // Run the simulation

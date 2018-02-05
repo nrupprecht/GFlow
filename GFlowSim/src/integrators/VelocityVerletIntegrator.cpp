@@ -263,10 +263,14 @@ namespace GFlow {
 
   inline void VelocityVerletIntegrator::updateCharacteristics() {
     // Do characteristics first if they are 'on'
-    if (simData->getDoCharacteristics())
+    if (simData->getDoCharacteristics()) {
       for (auto &c : simData->getCharacteristics())
 	// This is a half step, so delta t = 0.5*dt
 	c.second->modify(simData, c.first, 0.5*dt);
+      for (auto &c : simData->getWallCharacteristics()) 
+	// This is a half step, so delta t = 0.5*dt
+	c.second->modify(simData, c.first, 0.5*dt, false);
+    }
   }
   
   inline void VelocityVerletIntegrator::doAdjustDelay() {

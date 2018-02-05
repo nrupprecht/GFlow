@@ -43,6 +43,8 @@ namespace GFlow {
     // For user defined variables and options
     std::map<string, string> variables;
     std::map<string, string> options;
+    // External forces
+    vector<ExternalForce*> forces;
     // Define true as 1 and false as 0
     variables.emplace(Bool_True,  "1");
     variables.emplace(Bool_False, "0");
@@ -143,6 +145,11 @@ namespace GFlow {
 	getValue(fin, y, variables);
 	gravity = vec2(x,y);
       }
+      else if (tok==Viscous_Tok) {
+	RealType eta;
+	getValue(fin, eta, variables);
+	forces.push_back(new ViscousDrag(eta));
+      }
       
       // region 
       // [left] [right] [bottom] [top]
@@ -191,9 +198,13 @@ namespace GFlow {
     if (minDt>0) integ->setMinTimeStep(minDt);
     if (maxDt>0) integ->setMaxTimeStep(maxDt);
 
+    // Add the forces
+    simData->addExternalForce(forces);
+
     // Make sure there is no serious overlap
-    StandardSectorization remover(simData);
-    remover.removeOverlapping();
+    //** StandardSectorization remover(simData);
+    //** remover.removeOverlapping();
+    //** ---> LJ particles should overlap
 
     // Timing
     if (dataRecord) {
@@ -282,7 +293,7 @@ namespace GFlow {
     vector<Wall> walls;
     vector<ExternalForce*> externalForces;
     vector<int> fixedParticles;
-    vector<pair<vec2, vector<int> > > drivenParticles;
+    vector<pair<vec2, vector<int> > > drivenParticles, drivenWalls;
     vector<pair<vec2, vector<int> > > cvParticles;
     bool wrapX(false), wrapY(false);
 
@@ -329,18 +340,15 @@ namespace GFlow {
       // Create a wall
       else if (tok=="W") {
 	vec2 left, right;
-	RealType rp, ds, cf;
+	RealType rp, ds, cf, im(0);
 	// Get the wall data
-	fin >> left >> right >> rp >> ds >> cf;
+	fin >> left >> right >> rp >> ds >> cf >> im;
+	// Create the wall
 	Wall w(left, right);
-	/*
-	w.repulsion   = rp;
-	w.dissipation = ds;
-	w.coeff       = cf;
-	*/
 	w.rp = rp;
 	w.ds = ds;
 	w.cf = cf;
+	w.im = im;
 	// Push back the wall
 	walls.push_back(w);
       }
@@ -385,6 +393,16 @@ namespace GFlow {
 	fin >> vel;
 	cvParticles.push_back(pair<vec2, vector<int> >(vel, particleIDs));
       }
+      // External force applied to walls
+      else if (tok=="EFW") {
+	vector<int> wallIDs;
+	vec2 df;
+	// Read in the ids of the wall and the df
+	fin >> wallIDs;
+	fin >> df;
+	drivenWalls.push_back(pair<vec2, vector<int> >(df, wallIDs));
+      }
+
       // Get the next token
       fin >> tok;
     }
@@ -418,6 +436,12 @@ namespace GFlow {
       auto df = pr.first;
       for (auto id : pr.second)
 	simData->addCharacteristic(id, new ApplyForce(Zero, df));
+    }
+    // Add driven walls
+    for (auto pr : drivenWalls) {
+      auto df = pr.first;
+      for (auto id : pr.second) 
+	simData->addWallCharacteristic(id, new ApplyForce(Zero, df));
     }
     // Add constant velocity particles
     for (auto pr : cvParticles) {
@@ -494,6 +518,9 @@ namespace GFlow {
     bool randomVChoice[3]; 
     for(int i=0; i<3; ++i) randomVChoice[i] = false;
 
+    // Type of region
+    string type;
+
     // For getting comments
     const int max_comment_size = 512;
     char comment[max_comment_size];
@@ -509,6 +536,7 @@ namespace GFlow {
 	end = true;
 	continue;
       }
+      else if (tok==Type_Tok) getValue(fin, type, variables);
       else if (tok==Number_Tok) getValue(fin, number, variables);
       else if (tok==Phi_Tok) getValue(fin, phi, variables);
       else if (tok==Sigma_Tok) getValue(fin, sigma, variables);
@@ -544,17 +572,21 @@ namespace GFlow {
       fin >> tok;
     }
 
+    // Position
+    if (type=="lattice") {
+      if (phi>0) region.position = new Square_Lattice(sigma, phi);
+      else region.position = new Square_Lattice(sigma);
+    }
+    else region.position = new Uniform_Space_Distribution;
     // Sigma function
-    if (number!=-1) {
+    if (number!=-1)
       region.sigma = new Fixed_Number_Uniform_Radii(number, sigma, dispersion);
-    }
-    else if (phi!=-1) {
+    else if (phi!=-1)
       region.sigma = new Fixed_Phi_Uniform_Radii(phi, sigma, dispersion);
-    }
     // Dissipation
-    if (0<=dissipation) {
+    if (0<=dissipation)
       region.dissipation = new Uniform_Random_Dissipation(dissipation);
-    }
+
     // Velocity
     if (0<=velocity) {
       if (randomVChoice[0])      region.velocity = new Normal_Random_Velocity(velocity);
@@ -584,14 +616,14 @@ namespace GFlow {
   void FileParser::make_wall(std::ifstream& fin, vector<Wall>& walls, const std::map<string,string>& variables) {
 
     // wall
-    // pos [lx] [ly] [rx] [ry] | repulsion [repulsion] | dissipation [dissipation] | coeff [coeff]
+    // pos [lx] [ly] [rx] [ry] | repulsion [repulsion] | dissipation [dissipation] | coeff [coeff] | mass [mass]
     // ...
     // end    
 
     // For recording data
     string tok("");
     RealType lx(0), ly(0), rx(0), ry(0);
-    RealType repulsion(default_wall_repulsion), dissipation(default_wall_dissipation), coeff(default_wall_coeff);
+    RealType repulsion(default_wall_repulsion), dissipation(default_wall_dissipation), coeff(default_wall_coeff), mass(0);
 
     // For getting comments
     const int max_comment_size = 512;
@@ -617,6 +649,7 @@ namespace GFlow {
       else if (tok==Repulsion_Tok) getValue(fin, repulsion, variables);
       else if (tok==Dissipation_Tok) getValue(fin, dissipation, variables);
       else if (tok==Coeff_Tok) getValue(fin, coeff, variables);
+      else if (tok==Mass_Tok) getValue(fin, mass, variables);
       else throw UnrecognizedToken(tok);
       // Get next token
       fin >> tok;
@@ -625,14 +658,10 @@ namespace GFlow {
     // Make the wall from the gathered values
     if (!(lx==0 && ly==0 && rx==0 && ry==0)) {
       Wall w(lx, ly, rx, ry);
-      /*
-      w.repulsion = repulsion;
-      w.dissipation = dissipation;
-      w.coeff = coeff;
-      */
       w.rp = repulsion;
       w.ds = dissipation;
       w.cf = coeff;
+      if (mass>0) w.im = 1./mass;      
       walls.push_back(w);
     }
   }

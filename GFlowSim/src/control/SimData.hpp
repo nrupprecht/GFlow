@@ -57,6 +57,9 @@ namespace GFlow {
     // Add a characteristic to a particle
     void addCharacteristic(int, Characteristic*);
 
+    // Add a characteristic to a wall
+    void addWallCharacteristic(int, Characteristic*);
+
     // Remove particles
     void removeAt(int);
 
@@ -130,8 +133,11 @@ namespace GFlow {
     // vector<Particle> getParticles(vec2, RealType);
     // vector<int> getParticlesID(vec2, RealType);
 
-    // Get the characteristics
+    // Get the particle characteristics
     auto& getCharacteristics() { return characteristics; }
+
+    // Get the wall characteristics
+    auto& getWallCharacteristics() { return wallCharacteristics; }
 
     // Set whether to use characteristics or not
     void setDoCharacteristics(bool d) { doCharacteristics = d; }
@@ -285,6 +291,7 @@ namespace GFlow {
 
     // Characteristics - we are in charge of managing (deleting) these
     std::map<int, Characteristic*> characteristics;
+    std::map<int, Characteristic*> wallCharacteristics;
     bool doCharacteristics;
 
     // Domain and Simulation bounds

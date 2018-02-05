@@ -20,7 +20,9 @@ const string WrapX_Tok   = "wrapX";
 const string WrapY_Tok   = "wrapY";
 const string Bounds_Tok  = "bounds";
 const string Gravity_Tok = "gravity";
+const string Viscous_Tok = "drag";
 
+const string Type_Tok    = "type";
 const string Number_Tok  = "number";
 const string Phi_Tok     = "phi";
 
@@ -39,6 +41,7 @@ const string Repulsion_Tok = "repulsion";
 const string Dissipation_Tok = "dissipation";
 const string Coeff_Tok = "coeff";
 const string Interaction_Tok = "interaction";
+const string Mass_Tok = "mass";
 
 const string Region_Tok  = "region";
 const string Wall_Tok = "wall";

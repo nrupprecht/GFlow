@@ -17,8 +17,8 @@ namespace GFlow {
   public:
     // Default constructor
     Characteristic() : active(true) {};
-    // Characteristic modifies particle
-    virtual void modify(SimData*, int, RealType) = 0;
+    // Characteristic modifies particle or wall, bool is false for walls
+    virtual void modify(SimData*, int, RealType, bool=true) = 0;
     // Reset the characteristic if neccessary
     virtual void reset() {};
 
@@ -46,7 +46,7 @@ namespace GFlow {
     ConstantVelocity(vec2 p, vec2 v, RealType om) : pos(p), time(0), velocity(v), omega(om), useV(true), useOm(true), stop(false) {};
     ConstantVelocity(vec2 p, vec2 v, RealType om, bool s) : pos(p), time(0), velocity(v), omega(om), useV(true), useOm(true), stop(s) {};
 
-    virtual void modify(SimData*, int, RealType);
+    virtual void modify(SimData*, int, RealType, bool=true);
     virtual void reset();
   private:
 
@@ -71,7 +71,7 @@ namespace GFlow {
     Insertion(vec2 v) : velocity(v), omega(0), distance(0), speed(sqrt(sqr(v))), forward(true), useV(true), useOm(false) {};
     Insertion(vec2 v, RealType om) : velocity(v), omega(om), distance(0), speed(sqrt(sqr(v))), forward(true), useV(true), useOm(false) {};
     
-    virtual void modify(SimData*, int, RealType);
+    virtual void modify(SimData*, int, RealType, bool=true);
   private:
     vec2 velocity;
     RealType omega;
@@ -89,7 +89,7 @@ namespace GFlow {
     // Constructors
     Circulate(RealType r, RealType om=2*PI, RealType th=0) : radius(r), omega(om), theta(r), center(Zero), first(true) {};
 
-    virtual void modify(SimData*, int, RealType);
+    virtual void modify(SimData*, int, RealType, bool=true);
   private:
     RealType radius, omega, theta;
     vec2 center;
@@ -102,7 +102,7 @@ namespace GFlow {
     Fixed(vec2 p) : pos(p) {};
     Fixed(int, SimData*);
     
-    virtual void modify(SimData*, int, RealType);
+    virtual void modify(SimData*, int, RealType, bool=true);
   private:
     vec2 pos; // The position the particle should stay in
   };
@@ -113,7 +113,7 @@ namespace GFlow {
     ApplyForce(vec2 df) : F(Zero), dF(df) {};
     ApplyForce(vec2 f0, vec2 df) : F(f0), dF(df) {};
     
-    virtual void modify(SimData*, int, RealType);
+    virtual void modify(SimData*, int, RealType, bool=true);
   private:
     vec2 F, dF;
   };

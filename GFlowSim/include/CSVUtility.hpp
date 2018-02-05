@@ -60,7 +60,8 @@ namespace GFlow {
     if (lst.empty()) return true;
     ofstream fout(filename);
     if (fout.fail()) return false;
-    for (int i=0; i<lst.size(); i++) fout << toCSV(lst.at(i)) << endl;
+    for (auto data : lst) fout << toCSV(data) << endl;
+    // for (int i=0; i<lst.size(); i++) fout << toCSV(lst.at(i)) << endl;
     fout.close();
     return true;
   }
@@ -98,7 +99,6 @@ namespace GFlow {
       success = false;
 
     // Make the individual csv files
-
     for (int i=0; i<lst.size(); ++i) {
       if (!printToCSV(directory+"/"+file, lst.at(i), i)) {
 	std::cerr << "Failed to print to [" << directory << "/" << file << i << ".csv].\n";

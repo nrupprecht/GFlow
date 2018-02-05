@@ -3,9 +3,11 @@
 
 namespace GFlow {
 
-  void ConstantVelocity::modify(SimData* simData, int id, RealType dt) {
+  void ConstantVelocity::modify(SimData* simData, int id, RealType dt, bool modP) {
     // Checks
     if (!active) return;
+    // Load either particle or wall data
+    RealType &px = modP ? simData->getPxPtr() [id] : simData->getWalls() [id].px;
     // Keep velocity and omega constant
     if (useV) {
       // Update time
@@ -40,7 +42,7 @@ namespace GFlow {
     stop = false;
   }
 
-  void Insertion::modify(SimData* simData, int id, RealType dt) {
+  void Insertion::modify(SimData* simData, int id, RealType dt, bool modP) {
     if (!active) return;
     // Keep velocity and omega constant
     if (useV) {
@@ -61,7 +63,7 @@ namespace GFlow {
     if (distance<-3*simData->getSg(id)) simData->setTerminate(true);
   }
 
-  void Circulate::modify(SimData* simData, int id, RealType dt) {
+  void Circulate::modify(SimData* simData, int id, RealType dt, bool modP) {
     if (!active) return;
     if (first) {
       RealType px = simData->getPx(id), py = simData->getPy(id);
@@ -82,7 +84,7 @@ namespace GFlow {
     pos.y = sd->getPyPtr() [id];
   }
 
-  void Fixed::modify(SimData* simData, int id, RealType dt) {
+  void Fixed::modify(SimData* simData, int id, RealType dt, bool modP) {
     if (!active) return;
     simData->getFxPtr() [id] = 0;
     simData->getFyPtr() [id] = 0;
@@ -92,7 +94,7 @@ namespace GFlow {
     simData->getPyPtr() [id] = pos.y;
   }
 
-  void ApplyForce::modify(SimData* simData, int id, RealType dt) {
+  void ApplyForce::modify(SimData* simData, int id, RealType dt, bool modP) {
     if (!active) return;
     F += dt*dF;
     simData->getFxPtr() [id] = F.x;

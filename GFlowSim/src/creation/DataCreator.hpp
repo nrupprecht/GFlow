@@ -24,6 +24,15 @@ namespace GFlow {
     virtual void makeValues(Region&, vector<Particle>&) = 0;
   };
 
+  // Square lattice
+  struct Square_Lattice : public DataCreator {
+    Square_Lattice(RealType sig) : sigma(sig), packing(1.) {};
+    Square_Lattice(RealType sig, RealType pack) : sigma(sig), packing(pack) {};
+    virtual void makeValues(Region&, vector<Particle>&);
+  private:
+    RealType sigma, packing;
+  };
+
   // Radius (and number)
   struct Fixed_Number_Uniform_Radii : public DataCreator {
     Fixed_Number_Uniform_Radii(int num, RealType sig, RealType disp) : number(num), sigma(sig), dispersion(disp) {};

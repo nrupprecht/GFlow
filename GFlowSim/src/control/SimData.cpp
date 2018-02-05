@@ -23,6 +23,7 @@ namespace GFlow {
     for (auto& f : externalForces) delete f;
     // We are responsible for cleaning up characteristics
     for (auto& c : characteristics) delete c.second;
+    for (auto& c : wallCharacteristics) delete c.second;
   }
 
   void SimData::reserve(int dcap, int ecap) {
@@ -124,6 +125,15 @@ namespace GFlow {
       characteristics.at(id) = c;
     }
     else characteristics.emplace(id, c);
+  }
+
+  void SimData::addWallCharacteristic(int id, Characteristic *c) {
+    // If the wall already has a characteristic
+    if (wallCharacteristics.count(id)) {
+      delete wallCharacteristics.at(id);
+      wallCharacteristics.at(id) = c;
+    }
+    else wallCharacteristics.emplace(id, c);
   }
 
   void SimData::removeAt(int index) {

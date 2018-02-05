@@ -135,19 +135,32 @@ namespace GFlow {
     relax->addWall(region.bounds);
     // Add all walls from the simulation
     relax->addWall(simData->getWalls());
+
     // Assign interaction to be hard spheres for the purposes of relaxing the particles
     Homogeneous_Interaction().makeValues(region, particles);
+    // Assign the particles the interactions they should have
+    // region.interaction->makeValues(region, particles);
+
     // Create the relaxation integrator
     VelocityVerletIntegrator verlet(relax);
     verlet.setAdjustTimeStep(false);
-    verlet.addExternalForce(new ViscousDrag(1.)); // This is large enough
+    verlet.addExternalForce(new ViscousDrag(1.));
     RealType phi = relax->getPhi();
+    // Change radii so that they are the hard sphere radii
+    for (int i=0; i<relax->getDomainSize(); ++i)
+      // Adjust LJ particles' radii
+      if (relax->getItPtr() [i]==1) relax->getSgPtr() [i] *= 0.4;
+    // Integrate
     verlet.integrate(2*sqr(phi));
+    // Change radii back
+    for (int i=0; i<relax->getDomainSize(); ++i)
+      // Adjust LJ particles' radii
+      if (relax->getItPtr() [i]==1) relax->getSgPtr() [i] *= 2.5;
     // Remove drag force
     particles = relax->getParticles();
     delete relax;
     
-    // Set velocities and omegas
+    /// Set velocities and omegas
     // Assign velocity
     if (region.velocity) region.velocity->makeValues(region, particles);
     else Normal_Random_Velocity().makeValues(region, particles);
