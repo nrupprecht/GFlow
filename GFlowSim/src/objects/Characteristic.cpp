@@ -8,6 +8,9 @@ namespace GFlow {
     if (!active) return;
     // Load either particle or wall data
     RealType &px = modP ? simData->getPxPtr() [id] : simData->getWalls() [id].px;
+    RealType &py = modP ? simData->getPyPtr() [id] : simData->getWalls() [id].py;
+    RealType &vx = modP ? simData->getVxPtr() [id] : simData->getWalls() [id].vx;
+    RealType &vy = modP ? simData->getVyPtr() [id] : simData->getWalls() [id].vy;
     // Keep velocity and omega constant
     if (useV) {
       // Update time
@@ -17,14 +20,15 @@ namespace GFlow {
       // Make sure to wrap the position
       simData->wrap(x,y);
       // Manually set the position
-      simData->getPxPtr() [id] = x;
-      simData->getPyPtr() [id] = y;
+      px = x;
+      py = y;
       // Set velocities so dissipative forces work correctly
-      simData->getVxPtr() [id] = velocity.x;
-      simData->getVyPtr() [id] = velocity.y;
+      vx = velocity.x;
+      vy = velocity.y;
     }
     if (useOm) {
-      simData->getOm(id) = omega;
+      if (modP) simData->getOmPtr() [id] = omega;
+      else simData->getWalls() [id].om = omega;
     }
     // Check if we should deactivate -- temporary code (?)
     RealType close = (simData->getPy(id) - simData->getSimBounds().bottom)/simData->getSg(id);
@@ -94,11 +98,21 @@ namespace GFlow {
     simData->getPyPtr() [id] = pos.y;
   }
 
+  ApplyForce::ApplyForce(vec2 df) : F0(Zero), F(Zero), dF(df) {};
+
+  ApplyForce::ApplyForce(vec2 f0, vec2 df) : F0(f0), F(f0), dF(df) {};
+
   void ApplyForce::modify(SimData* simData, int id, RealType dt, bool modP) {
     if (!active) return;
     F += dt*dF;
-    simData->getFxPtr() [id] = F.x;
-    simData->getFyPtr() [id] = F.y;
+    RealType &fx = modP ? simData->getFxPtr() [id] : simData->getWalls() [id].fx;
+    RealType &fy = modP ? simData->getFyPtr() [id] : simData->getWalls() [id].fy;
+    fx = F.x;
+    fy = F.y;
+  }
+
+  void ApplyForce::reset() {
+    F = F0;
   }
 
 }

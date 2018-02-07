@@ -289,6 +289,9 @@ namespace GFlow {
     // Initial positions
     vector<vec2> initialPositions;
 
+    // Initial positions of walls - { px, py, th }
+    vector<std::tuple<RealType, RealType, RealType> > initialWallPositions;
+
     // Characteristics - we are in charge of managing (deleting) these
     std::map<int, Characteristic*> characteristics;
     std::map<int, Characteristic*> wallCharacteristics;

@@ -440,7 +440,7 @@ namespace GFlow {
     // Add driven walls
     for (auto pr : drivenWalls) {
       auto df = pr.first;
-      for (auto id : pr.second) 
+      for (auto id : pr.second)
 	simData->addWallCharacteristic(id, new ApplyForce(Zero, df));
     }
     // Add constant velocity particles
@@ -468,7 +468,7 @@ namespace GFlow {
       throw FileDoesNotExist(filename);
     }
     // Write number of balls and walls in a comment
-    fout << "# There are " << simData->domain_size << " particles and " << simData->walls.size() << ".\n";
+    fout << "# There are " << simData->domain_size << " particles and " << simData->walls.size() << " walls.\n";
 
     // Write bounds
     Bounds simBounds = simData->simBounds;
@@ -480,7 +480,7 @@ namespace GFlow {
     // Write walls
     for (const auto& w : simData->walls) {
       // fout << "W " << w.getLeft() << " " << w.getRight() << " " << w.repulsion << " " << w.dissipation << " " << w.coeff << "\n";
-      fout << "W " << w.getLeft() << " " << w.getRight() << " " << w.rp << " " << w.ds << " " << w.cf << "\n";
+      fout << "W " << w.getLeft() << " " << w.getRight() << " " << w.rp << " " << w.ds << " " << w.cf << " " << w.im << "\n";
     }
 
     // Write external forces

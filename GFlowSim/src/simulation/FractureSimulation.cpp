@@ -47,7 +47,10 @@ namespace GFlow {
     // Set up verlet list tracking (do after integrator initialization)
     int num = simData->getDomainSize();
     bondLists.initialize(simData);
-    
+
+    // Set a watcher on the top wall (wall #1)
+    dataRecord->addWatcher(new NetForceWatcher(0, false));
+      
     // Find the average radius of particles
     RealType aveSg = 0.;
     for (int i=0; i<num; ++i) aveSg += simData->getSgPtr() [i];
@@ -66,16 +69,8 @@ namespace GFlow {
     simData->zeroMotion();
 
     //**
-    // Add a moving wall
-    Wall w(-2, 24, 2, 24);
-    w.im = 1;
-    w.vy = -1;
-    w.rp = 0.288884;
-    simData->addWall(w);
-    // Add a bottom wall
-    Wall w2(-2, 0, 2, 0);
-    w2.rp = 0.288884;
-    simData->addWall(w);
+    // dataRecord->setDoRecord(false);
+    //**
 
     // Pre
     integrator->preIntegrate();
@@ -87,6 +82,10 @@ namespace GFlow {
       // Update the time and running flag
       time = integrator->getTime();
       running = integrator->isRunning();
+
+      //**
+      // if (time>21) dataRecord->setDoRecord(true);
+      //**
 
       // Check for fragmentation - just not every timestep
       if (time - timer > delay) {
@@ -211,45 +210,6 @@ namespace GFlow {
     // <--------------------
   }
 
-  // Checks for bonds and breaks by comparing current and past verlet lists
-  /*
-  inline void FractureSimulation::compare(vector<pair<int,int> >& bonds, vector<pair<int,int> >& breaks) {
-    // Lambda to find an element in a list
-    auto check = [] (const int n, const VListSubType *list)->bool {
-      if (list==nullptr) return false;
-      for (auto &m : *list) if (m==n) return true;
-      return false;
-    };
-
-    // Look for breaks
-    for (int i=0; i<verletListRecord.size(); ++i) {
-      if (!verletListRecord.at(i).empty()) {
-	// For all of [i]'s neighbors, check that they stay neighbors
-	for (auto nb : verletListRecord.at(i)) {
-	  // Doesn't matter if you are in your verlet list. This is not a bonding/breakage
-	  if (nb==i) continue;
-	  // Check if [nb] is still in [i]'s neighbor list this time, or if [i] is in [nb]'s list this time
-	  if (!check(nb, accessor.at(i)) && 
-	      !check(i, accessor.at(nb)))
-	    breaks.push_back(pair<int,int>(i,nb));
-	}
-      }
-    }
-
-    // Look for bonds
-    for (int i=0; i<accessor.size(); ++i) {
-      if (accessor.at(i)!=nullptr) {
-	// For all of [i]'s neighbors, check that they were already neighbors. If not, a bond has formed
-	for (auto nb : *accessor.at(i))
-	  // Check if [nb] was in [i]'s neighbor list last time, or if [i] was in [nb]'s neighbor list last time
-	  if (!check(nb, &verletListRecord.at(i)) && 
-	      !check(i, &verletListRecord.at(nb)))
-	    bonds.push_back(pair<int,int>(i,nb));
-      }
-    }
-  }
-  */
-
   inline void FractureSimulation::setVerletListRecord(VListType& verletList) {
     // Clear the old data
     for (int i=0; i<verletListRecord.size(); ++i) verletListRecord.at(i).clear();
@@ -316,10 +276,17 @@ namespace GFlow {
     // Turn off particle's characteristics except for [Fixed]
     // If we don't fix the CV/CF/etc. particles, they can suddenly change position
     auto& characteristics = simData->getCharacteristics();
-    vector<pair<int, Characteristic*> > characteristicRecord;
+    auto& wallCharacteristics = simData->getWallCharacteristics();
+    vector<pair<int, Characteristic*> > characteristicRecord, wallCharacteristicRecord;
     for (auto& pc : characteristics) {
       // Keep track of what the original characteristic was
       characteristicRecord.push_back(pc);
+      // Replace with a [Fixed] characteristic
+      pc.second = new Fixed(pc.first, simData);
+    }
+    for (auto& pc : wallCharacteristics) {
+      // Keep track of what the original characteristic was
+      wallCharacteristicRecord.push_back(pc);
       // Replace with a [Fixed] characteristic
       pc.second = new Fixed(pc.first, simData);
     }
@@ -356,6 +323,11 @@ namespace GFlow {
     // Return particles to their original characteristics
     for(auto pc: characteristicRecord) {
       Characteristic* &c = characteristics.at(pc.first);
+      delete c;
+      c = pc.second;
+    }
+    for(auto pc: wallCharacteristicRecord) {
+      Characteristic* &c = wallCharacteristics.at(pc.first);
       delete c;
       c = pc.second;
     }

@@ -8,6 +8,11 @@ namespace GFlow {
     start_time = end_time = high_resolution_clock::now();
   };
 
+  DataRecord::~DataRecord() {
+    for (auto &w : watchers) delete w;
+    watchers.clear();
+  }
+
   void DataRecord::initialize() {
     int end = statFunctions.size();
     // Put in other statistics (not from normal stat functions) after the normal stat functions
@@ -181,6 +186,9 @@ namespace GFlow {
       StatPlot sp = statPlots.at(i);
       sp(simData, statPlotData.at(i), statPlotBounds.at(i));
     }
+
+    // Record watchers
+    for (auto w : watchers) w->record();
 
     // Record average distance
     if (recDistance && statRecDistance>-1) {
@@ -475,6 +483,10 @@ namespace GFlow {
     statFunctionData.at(slot).push_back(data);
   }
 
+  void DataRecord::addStatData(int slot, RealType value) {
+    statFunctionData.at(slot).push_back(RPair(simData->time, value));
+  }
+
   void DataRecord::addStatPlot(StatPlot sp, RPair bounds, int bins, string name) {
     // Add the stat plot
     statPlots.push_back(sp);
@@ -493,6 +505,11 @@ namespace GFlow {
 
     // Add the stat plot's name
     statPlotName.push_back(name);
+  }
+
+  void DataRecord::addWatcher(Watcher *w) {
+    w->setDataRecord(this);
+    watchers.push_back(w);
   }
 
   void DataRecord::getPositionData(vector<PData>& positions, int option) {
@@ -590,6 +607,15 @@ namespace GFlow {
     speed /= simData->domain_size;
     fout << "  - Average speed:            " << speed << "\n";
     
+    // Find max speed
+    
+    RealType max_speed = 0;
+    for(int i=0; i<simData->domain_size; ++i) {
+      RealType v = sqrt(sqr(simData->vx[i]) + sqr(simData->vy[i]));
+      if (-1<simData->it[i] && v>max_speed) max_speed = v;
+    }
+    fout << "  - Max speed:                " << max_speed << "\n";
+    
     // Find average omega
     RealType omega = 0;
     for(int i=0; i<simData->domain_size; ++i)
@@ -601,7 +627,7 @@ namespace GFlow {
     fout << "\n";
   }
 
-  void DataRecord::writeParticleChecks(std::ofstream& fout) const {
+    void DataRecord::writeParticleChecks(std::ofstream& fout) const {
     // We are here only if 0 < domain_size
     fout << "Particle Checks:\n";
     

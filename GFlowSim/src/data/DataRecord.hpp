@@ -17,6 +17,7 @@
 #include "../objects/ScalarField.hpp"
 #include "StatFunc.hpp"
 #include "StatPlot.hpp"
+#include "Watcher.hpp"
 
 namespace GFlow {
 
@@ -34,6 +35,9 @@ namespace GFlow {
   public:
     // Default constructor
     DataRecord();
+
+    // Destructor
+    ~DataRecord();
 
     // Initialize
     void initialize();
@@ -140,11 +144,17 @@ namespace GFlow {
     // Allow other objects to store stat data in the data plot. Add data to your slot
     void addStatData(int, RPair);
 
+    // Allow other objects to store stat data in the data plot. Uses the current time.
+    void addStatData(int, RealType);
+
     // Add a stat plot
     void addStatPlot(StatPlot, RPair, int, string);
 
     // Set whether to record the movement ratio
     void setRecMoveRatio(bool b) { recMvRatio = b; }
+
+    // Add a watcher
+    void addWatcher(Watcher*);
 
     /*** Accessors ***/
 
@@ -176,6 +186,9 @@ namespace GFlow {
       BadStatFunction(int i) : value(i) {};
       int value;
     };
+
+    // Watcher is a friend
+    friend class Watcher;
 
   private:
     // Private helper functions
@@ -281,6 +294,9 @@ namespace GFlow {
     vector<vector<RPair> > statPlotData;
     vector<RPair> statPlotBounds;
     vector<string> statPlotName;
+
+    // Watchers
+    vector<Watcher*> watchers;
 
     // Displacement tracking
     bool trackDisplacement;

@@ -77,9 +77,9 @@ namespace GFlow {
   
   void VelocityVerletIntegrator::postStep() {
     // Record data from the integrator (before time is updated)
-    if (dataRecord) dataRecord->record(this, time);
+    // if (dataRecord) dataRecord->record(this, time);
 
-    // Do the normal post-step
+    // Do the normal post-step. Record happends here.
     Integrator::postStep();
 
     // Update adjustments 
@@ -173,15 +173,25 @@ namespace GFlow {
     }
 
     // Update walls
+#if _INTEL_ == 1
+#pragma vector aligned
+#pragma simd
+#endif
+#if _CLANG_ == 1
+#pragma clang loop vectorize(enable)
+#pragma clang loop interleave(enable)
+#endif
     for (auto &w : simData->getWalls()) {
       // Update linear variables
       w.vx += hdt*w.im*w.fx;
-      w.vy += hdt*w.im*w.fx;
+      w.vy += hdt*w.im*w.fy;
       w.px += dt*w.vx;
       w.py += dt*w.vy;
+      // Wrap position
+      simData->wrap(w.px, w.py);
       // Update angular variables
-      w.om += hdt*w.iI*w.tq;
-      w.th += dt*w.om;
+      // w.om += hdt*w.iI*w.tq;
+      // w.th += dt*w.om;
     }
 
     // Clear force and torque
@@ -258,6 +268,23 @@ namespace GFlow {
       vx[i] += hdt*im[i]*fx[i];
       vy[i] += hdt*im[i]*fy[i];
       om[i] += hdt*iI[i]*tq[i];
+    }
+
+    // Update walls
+#if _INTEL_ == 1
+#pragma vector aligned
+#pragma simd
+#endif
+#if _CLANG_ == 1
+#pragma clang loop vectorize(enable)
+#pragma clang loop interleave(enable)
+#endif
+    for (auto &w : simData->getWalls()) {
+      // Update linear variables
+      w.vx += hdt*w.im*w.fx;
+      w.vy += hdt*w.im*w.fy;
+      // Update angular variables
+      // w.om += hdt*w.iI*w.tq;
     }
   }
 

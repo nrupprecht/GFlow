@@ -12,7 +12,7 @@ namespace GFlow {
     int *it = simData->getItPtr();
     for (int i=0; i<domain_end; ++i) {
       if (it[i]<0) continue;
-      vec2 pos(simData->getPx(i), simData->getPy(i));
+      vec2 pos(simData->getPxPtr() [i], simData->getPyPtr() [i]);
       if (!simBounds.contains(pos)) return true;
     }
     return false;

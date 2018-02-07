@@ -110,12 +110,14 @@ namespace GFlow {
   class ApplyForce : public Characteristic {
   public:
     // Constructors
-    ApplyForce(vec2 df) : F(Zero), dF(df) {};
-    ApplyForce(vec2 f0, vec2 df) : F(f0), dF(df) {};
+    ApplyForce(vec2);
+    ApplyForce(vec2, vec2);
     
     virtual void modify(SimData*, int, RealType, bool=true);
+    // Reset the characteristic if neccessary
+    virtual void reset();
   private:
-    vec2 F, dF;
+      vec2 F0, F, dF;
   };
 
 }

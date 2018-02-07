@@ -206,8 +206,12 @@ namespace GFlow {
   */
   
   void SimData::resetCharacteristics() {
-    // Reset all the characteristics
-    for (auto c : characteristics) c.second->reset();
+    // Reset particle characteristics
+    for (auto c : characteristics)
+      c.second->reset();
+    // Reset wall characteristics
+    for (auto c : wallCharacteristics)
+      c.second->reset();
   }
  
   vector<ExternalForce*> SimData::transferExternalForces() {
@@ -377,6 +381,8 @@ namespace GFlow {
     fx.clearValues();
     fy.clearValues();
     tq.clearValues();
+    for (auto& w : walls)
+      w.fx = w.fy = w.tq = 0;
   }
 
   void SimData::updatePositionRecord() {
@@ -384,8 +390,16 @@ namespace GFlow {
   }
 
   void SimData::setInitialPositions() {
+    // Set initial particle data
     initialPositions = vector<vec2>(domain_end);
     for (int i=0; i<domain_end; ++i) initialPositions[i] = vec2(px[i], py[i]);
+    // Set initial wall data
+    initialWallPositions.resize(walls.size());
+    for (int i=0; i<walls.size(); ++i) {
+      std::get<0>(initialWallPositions.at(i)) = walls.at(i).px;
+      std::get<1>(initialWallPositions.at(i)) = walls.at(i).py;
+      std::get<2>(initialWallPositions.at(i)) = walls.at(i).th;
+    }
   }
 
   void SimData::reset() {
@@ -394,7 +408,13 @@ namespace GFlow {
       px[i] = initialPositions.at(i).x;
       py[i] = initialPositions.at(i).y;
       // Other data should be reset - namely vx, vy, th, om
-      // -->
+      // --> This is not currently recorded
+      vx[i] = vy[i] = om[i] = 0;
+    }
+    for (int i=0; i<initialWallPositions.size(); ++i) {
+      walls.at(i).px = std::get<0>(initialWallPositions.at(i));
+      walls.at(i).py = std::get<1>(initialWallPositions.at(i));
+      walls.at(i).th = std::get<2>(initialWallPositions.at(i));
     }
     // Reset time
     time = 0;

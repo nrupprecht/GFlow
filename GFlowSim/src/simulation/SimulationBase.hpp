@@ -77,6 +77,9 @@ namespace GFlow {
     // saveFile - if provided, the final system configuration will be saved to the file
     bool nowrite, print, quiet;
     string saveFile;
+
+    // A tag for the simulation
+    int tag;
   };
 
 };

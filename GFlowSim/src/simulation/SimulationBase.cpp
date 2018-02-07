@@ -5,7 +5,7 @@
 
 namespace GFlow {
 
-  SimulationBase::SimulationBase() : integrator(nullptr), simData(nullptr), dataRecord(nullptr), nowrite(false), print(false), quiet(false), saveFile("") {};
+  SimulationBase::SimulationBase() : integrator(nullptr), simData(nullptr), dataRecord(nullptr), nowrite(false), print(false), quiet(false), saveFile(""), tag(0) {};
 
   SimulationBase::~SimulationBase() {
     if (simData)    delete simData;
@@ -134,6 +134,8 @@ namespace GFlow {
     parser.get("dt", dt);
     // Temperature
     parser.get("temperature", temperature);
+    // Tag
+    parser.get("tag", tag);
 
     // Set up configurations
     if (config!="") {
