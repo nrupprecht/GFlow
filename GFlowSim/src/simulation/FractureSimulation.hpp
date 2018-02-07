@@ -45,6 +45,9 @@ namespace GFlow {
     // Run time
     RealType limitTime;
 
+    // Actual time simulation took
+    RealType totalTime;
+
     // Delay between checking for breaks/bonds
     RealType delay;
 
@@ -81,8 +84,8 @@ namespace GFlow {
     // A list of [trial][break time]
     vector<vec2> breakTimes;
 
-    // Slot in dataRecord that we use to record breakTimes
-    int breakDataSlot;
+    // Slot in dataRecord that we use to record breakTimes and improvement
+    int breakDataSlot, improvementSlot;
 
     // The strengthening iteration we are on and the total number of strengthening iterations
     int heatIters, maxIters;
@@ -96,12 +99,18 @@ namespace GFlow {
     // The radius of the heat application
     RealType heatRadius;
     
+    // The dF/dt of the wall
+    RealType dF;
+
     // A lists {time, particle #, particle #} of when breakages and bondings occur
     vector<std::tuple<RealType,int,int> > breakages, bondings;
     // Cumulative number of breaks and bonds as a time series
     vector<pair<RealType,int> > cumNumBreaks, cumNumBonds;
     // Cumulative number of breaks and bonds
     int numBreaks, numBonds;
+
+    // Force to cause the first break
+    RealType breakF0;
   };
 
 }
