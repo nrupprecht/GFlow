@@ -81,6 +81,8 @@ namespace GFlow {
     RealType dt = -1;
     // Temperature
     RealType temperature = -1.; // The temperature of the simulation (if positive)
+    // Seed rand
+    unsigned int seed = 0;
 
     /** Check standard options **/
     // Check if we need to load a file
@@ -136,6 +138,14 @@ namespace GFlow {
     parser.get("temperature", temperature);
     // Tag
     parser.get("tag", tag);
+    // Randomness
+    parser.get("seed", seed);
+
+    // Seed random number generator
+    if (seed==0) seed = std::chrono::system_clock::now().time_since_epoch().count();
+    fileParser.setSeed(seed);
+    srand48( seed );
+    seedNormalDistribution();
 
     // Set up configurations
     if (config!="") {

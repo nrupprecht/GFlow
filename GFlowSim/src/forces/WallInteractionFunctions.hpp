@@ -60,20 +60,19 @@ namespace GFlow {
       RealType vy = simData->getVyPtr() [j];
       RealType om = simData->getOmPtr() [j];
       // Compute interaction parameters ( ad hoc )
-      double dissipation = simData->getDsPtr() [j] + w.ds;
-      double repulsion = simData->getRpPtr() [j] + w.rp;
-      double coeff = simData->getCfPtr() [j] * w.cf;
+      RealType dissipation = simData->getDsPtr() [j] + w.ds;
+      RealType repulsion = simData->getRpPtr() [j] + w.rp;
+      RealType coeff = simData->getCfPtr() [j] * w.cf;
       // Compute force
       vec2 normal = invDist * minimalDisplacement;
       vec2 shear = vec2(normal.y, -normal.x);
       // Calculate strength
       double strength = 2*repulsion*(sg + w.wd - dist);
       // Velocities
-      double Vn = vx*normal.x + vy*normal.y;
-      double Vs = vx*shear.x+vy*shear.y + om*sg; // If the wall had velocity then we would subtract: - velocity*(shear*normal);
+      RealType Vn = vx*normal.x + vy*normal.y;
+      RealType Vs = vx*shear.x+vy*shear.y + om*sg; // If the wall had velocity then we would subtract: - velocity*(shear*normal);
       // Damped harmonic oscillator
       Fn = -strength-dissipation*clamp(-Vn);
-      // Fn /= p.invMass; //--- So Large Particles don't simply drop through the wall
       Fs = 0;
       if (coeff)
         Fs = fabs(coeff*Fn)*sign(Vs);

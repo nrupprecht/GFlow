@@ -100,7 +100,7 @@ namespace GFlow {
   public:
     // Constructors
     Fixed(vec2 p) : pos(p) {};
-    Fixed(int, SimData*);
+    Fixed(int, SimData*, bool);
     
     virtual void modify(SimData*, int, RealType, bool=true);
   private:

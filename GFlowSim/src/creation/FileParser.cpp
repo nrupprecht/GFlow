@@ -745,15 +745,15 @@ namespace GFlow {
   
   inline void FileParser::seed_rand() {
     randomSeed = std::chrono::system_clock::now().time_since_epoch().count();
-    srand48( randomSeed );
-    srand  ( randomSeed );
+    srand48 ( randomSeed );
+    srand   ( randomSeed );
     generator = std::mt19937(randomSeed);
   }
   
   inline void FileParser::seed_rand(unsigned seed) {
     randomSeed = seed;
-    srand48( randomSeed );
-    srand  ( randomSeed );
+    srand48 ( randomSeed );
+    srand   ( randomSeed );
     generator =std::mt19937(randomSeed);
   }
 

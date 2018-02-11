@@ -68,6 +68,8 @@ namespace GFlow {
   }
 
   void Circulate::modify(SimData* simData, int id, RealType dt, bool modP) {
+    // Checks
+    if (modP==false) throw false;
     if (!active) return;
     if (first) {
       RealType px = simData->getPx(id), py = simData->getPy(id);
@@ -83,19 +85,40 @@ namespace GFlow {
     theta += dt*omega;
   }
 
-  Fixed::Fixed(int id, SimData* sd) {
-    pos.x = sd->getPxPtr() [id];
-    pos.y = sd->getPyPtr() [id];
+  Fixed::Fixed(int id, SimData* sd, bool modP) {
+    // If modifying a particle
+    if (modP) {
+      pos.x = sd->getPxPtr() [id];
+      pos.y = sd->getPyPtr() [id];
+    }
+    // If modifying a wall
+    else {
+      pos.x = sd->getWalls() [id].px;
+      pos.y = sd->getWalls() [id].py;
+    } 
   }
 
   void Fixed::modify(SimData* simData, int id, RealType dt, bool modP) {
     if (!active) return;
-    simData->getFxPtr() [id] = 0;
-    simData->getFyPtr() [id] = 0;
-    simData->getVxPtr() [id] = 0;
-    simData->getVyPtr() [id] = 0;
-    simData->getPxPtr() [id] = pos.x;
-    simData->getPyPtr() [id] = pos.y;
+    // If modifying a particle
+    if (modP) {
+      simData->getFxPtr() [id] = 0;
+      simData->getFyPtr() [id] = 0;
+      simData->getVxPtr() [id] = 0;
+      simData->getVyPtr() [id] = 0;
+      simData->getPxPtr() [id] = pos.x;
+      simData->getPyPtr() [id] = pos.y;
+    }
+    // If modifying a wall
+    else {
+      auto &wall = simData->getWalls() [id];
+      wall.fx = 0;
+      wall.fy = 0;
+      wall.vx = 0;
+      wall.vy = 0;
+      wall.px = pos.x;
+      wall.py = pos.y;
+    }
   }
 
   ApplyForce::ApplyForce(vec2 df) : F0(Zero), F(Zero), dF(df) {};
@@ -105,6 +128,7 @@ namespace GFlow {
   void ApplyForce::modify(SimData* simData, int id, RealType dt, bool modP) {
     if (!active) return;
     F += dt*dF;
+    // Modify either particle or wall
     RealType &fx = modP ? simData->getFxPtr() [id] : simData->getWalls() [id].fx;
     RealType &fy = modP ? simData->getFyPtr() [id] : simData->getWalls() [id].fy;
     fx = F.x;

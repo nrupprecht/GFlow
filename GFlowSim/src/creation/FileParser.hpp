@@ -53,6 +53,9 @@ namespace GFlow {
     // Save sim data to a file
     void saveToFile(SimData*, string);
 
+    // Set the random seed
+    void setSeed(unsigned int s) { randomSeed=s; }
+
     // Get the random seed used
     unsigned getSeed() { return randomSeed; }
 

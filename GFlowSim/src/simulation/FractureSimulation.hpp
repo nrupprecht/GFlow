@@ -100,7 +100,7 @@ namespace GFlow {
     RealType heatRadius;
     
     // The dF/dt of the wall
-    RealType dF;
+    RealType dFx, dFy;
 
     // A lists {time, particle #, particle #} of when breakages and bondings occur
     vector<std::tuple<RealType,int,int> > breakages, bondings;

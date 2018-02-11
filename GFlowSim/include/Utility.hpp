@@ -162,6 +162,11 @@ namespace GFlow {
   static std::mt19937 generator;
   static std::normal_distribution<RealType> normal_dist(0., 1.);
 
+  inline void seedNormalDistribution() {
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    generator = std::mt19937(seed);
+  }
+
   inline double randNormal() {
     return normal_dist(generator);
   }

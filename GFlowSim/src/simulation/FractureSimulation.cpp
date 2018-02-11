@@ -4,7 +4,7 @@
 
 namespace GFlow {
 
-  FractureSimulation::FractureSimulation() : SimulationBase(), limitTime(10), totalTime(0), delay(0.002), bondRadius(0.5), markBreaks(true), lastBreak(0), breakDisplayLength(0.25), strengthen(true), breakDataSlot(-1), improvementSlot(-1), heatIters(0), maxIters(10), heatTime(5.), relaxTime(5.), heatTemperature(1.), heatRadius(0.5), breakF0(-1) {};
+  FractureSimulation::FractureSimulation() : SimulationBase(), limitTime(10), totalTime(0), delay(0.002), bondRadius(0.5), markBreaks(true), lastBreak(0), breakDisplayLength(0.25), strengthen(true), breakDataSlot(-1), improvementSlot(-1), heatIters(0), maxIters(10), heatTime(5.), relaxTime(5.), heatTemperature(1.), heatRadius(0.5), breakF0(-1), dFx(0), dFy(0) {};
 
   void FractureSimulation::setUp(int argc, char** argv) {
     // Set the command line input
@@ -28,7 +28,8 @@ namespace GFlow {
     parser.get("checkDelay", delay);
     parser.get("heatTemperature", heatTemperature);
     parser.get("heatRadius", heatRadius);
-    parser.get("dF", dF);
+    parser.get("dFx", dFx);
+    parser.get("dFy", dFy);
 
     // Standard parsing options and checking
     standardParsing();
@@ -68,7 +69,11 @@ namespace GFlow {
     simData->zeroMotion();
 
     // Make the top wall move
-    simData->addWallCharacteristic(1, new ApplyForce(Zero, vec2(0,-dF)));
+    vec2 dF(dFx, dFy);
+    simData->addWallCharacteristic(1, new ApplyForce(Zero, dF));
+
+    // Remove any external forces
+    simData->clearExternalForces();
 
     // Start timing
     auto start_time = current_time();
@@ -95,16 +100,18 @@ namespace GFlow {
       // If there is a break, reset and heat up the break
       if (strengthen && !breakages.empty()) {
 	// If this is the first break iter, record the break force
-	if (heatIters==0) breakF0 = dF*time;
+	if (heatIters==0) breakF0 = sqrt(sqr(dFx)+sqr(dFy))*time;
 	// This is the break time for the [heatIters] iteration
 	dataRecord->addStatData(breakDataSlot, RPair(heatIters, time));
-	dataRecord->addStatData(improvementSlot, RPair(heatIters, time*dF/breakF0));
+	dataRecord->addStatData(improvementSlot, RPair(heatIters, sqrt(sqr(dFx)+sqr(dFy))*time/breakF0));
 	// Do a finite number of strengthening iterations
 	if (heatIters < maxIters) {
 	  // Print a message
 	  if (!quiet) cout << "Iteration " << heatIters << ": t=" << simData->getTime() << ", " << numBreaks << " breaks.\n";
 	  // Do the strengthening procedure
 	  strengthenProcedure();
+	  // Clear the marked particles from the data recorder
+	  dataRecord->clearMarked();
 	  // Print a message
 	  if (!quiet) cout << "Starting next trial.\n";
 	  // Remake bond lists
@@ -292,13 +299,13 @@ namespace GFlow {
       // Keep track of what the original characteristic was
       characteristicRecord.push_back(pc);
       // Replace with a [Fixed] characteristic
-      pc.second = new Fixed(pc.first, simData);
+      pc.second = new Fixed(pc.first, simData, true);
     }
     for (auto& pc : wallCharacteristics) {
       // Keep track of what the original characteristic was
       wallCharacteristicRecord.push_back(pc);
       // Replace with a [Fixed] characteristic
-      pc.second = new Fixed(pc.first, simData);
+      pc.second = new Fixed(pc.first, simData, false);
     }
 
     // Take away the simulation's forces. We will return them after the strengthening procedure
@@ -336,7 +343,7 @@ namespace GFlow {
     simData->setInitialPositions();
     simData->zeroMotion(); // A temporary fix since we don't store initial velocities, so resetting the simData doesn't reset velocities
     integrator->reset();
-    dataRecord->resetTimers(); // If we don't do this, data records 'last *' timers will be in the future, and no data will be collected
+    dataRecord->resetTimers(); // If we don't do this, data record's 'last *' timers will be in the future, and no data will be collected
 
     // Return particles to their original characteristics
     for(auto pc: characteristicRecord) {
