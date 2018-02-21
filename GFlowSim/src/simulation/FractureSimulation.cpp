@@ -4,7 +4,7 @@
 
 namespace GFlow {
 
-  FractureSimulation::FractureSimulation() : SimulationBase(), limitTime(10), totalTime(0), delay(0.002), bondRadius(0.5), markBreaks(true), lastBreak(0), breakDisplayLength(0.25), strengthen(true), breakDataSlot(-1), improvementSlot(-1), heatIters(0), maxIters(10), heatTime(5.), relaxTime(5.), heatTemperature(1.), heatRadius(0.5), breakF0(-1), dFx(0), dFy(0) {};
+  FractureSimulation::FractureSimulation() : SimulationBase(), limitTime(10), totalTime(0), delay(0.002), bondRadius(0.5), lastBreak(0), breakDisplayLength(0.25), strengthen(true), breakDataSlot(-1), improvementSlot(-1), heatIters(0), maxIters(10), heatTime(5.), relaxTime(5.), heatTemperature(1.), heatRadius(0.5), breakF0(-1), dFx(0), dFy(0), detection(0) {};
 
   void FractureSimulation::setUp(int argc, char** argv) {
     // Set the command line input
@@ -20,7 +20,6 @@ namespace GFlow {
   void FractureSimulation::parse() {
     // How long should the simulation run
     parser.get("time", limitTime);
-    parser.get("markBreaks", markBreaks);
     parser.get("strengthen", strengthen);
     parser.get("maxIters", maxIters);
     parser.get("heatTime", heatTime);
@@ -30,6 +29,7 @@ namespace GFlow {
     parser.get("heatRadius", heatRadius);
     parser.get("dFx", dFx);
     parser.get("dFy", dFy);
+    parser.get("detection", detection);
 
     // Standard parsing options and checking
     standardParsing();
@@ -98,35 +98,80 @@ namespace GFlow {
       }
 
       // If there is a break, reset and heat up the break
-      if (strengthen && !breakages.empty()) {
-	// If this is the first break iter, record the break force
-	if (heatIters==0) breakF0 = sqrt(sqr(dFx)+sqr(dFy))*time;
-	// This is the break time for the [heatIters] iteration
-	dataRecord->addStatData(breakDataSlot, RPair(heatIters, time));
-	dataRecord->addStatData(improvementSlot, RPair(heatIters, sqrt(sqr(dFx)+sqr(dFy))*time/breakF0));
-	// Do a finite number of strengthening iterations
-	if (heatIters < maxIters) {
-	  // Print a message
-	  if (!quiet) cout << "Iteration " << heatIters << ": t=" << simData->getTime() << ", " << numBreaks << " breaks.\n";
-	  // Do the strengthening procedure
-	  strengthenProcedure();
-	  // Clear the marked particles from the data recorder
-	  dataRecord->clearMarked();
-	  // Print a message
-	  if (!quiet) cout << "Starting next trial.\n";
-	  // Remake bond lists
-	  setVerletListRecord();
-	  // Reset the integrator time limit
-	  integrator->setRunTime(limitTime);
-	  // Reset timer/time
-	  timer = 0;
-	  time = 0;
-	  // Reset break/bond count
-	  numBreaks = 0;
-	  numBonds = 0;
+      if (strengthen) {
+	// Fill the list of detected particles (if necessary)
+	detectedParticles.clear();
+	switch (detection) {
+	  // Break detection
+	case 0:
+	  for (auto s : breakages) {
+	    detectedParticles.push_back(std::get<1>(s));
+	    detectedParticles.push_back(std::get<2>(s));
+	  }
+	  break;
+	  // Bond detection
+	case 1:
+	  for (auto s : bondings) {
+	    detectedParticles.push_back(std::get<1>(s));
+            detectedParticles.push_back(std::get<2>(s));
+	  }
+	  break;
+	  // Break or bond detection
+	case 2:
+	  for (auto s : breakages) {
+            detectedParticles.push_back(std::get<1>(s));
+            detectedParticles.push_back(std::get<2>(s));
+          }
+	  for (auto s : bondings) {
+            detectedParticles.push_back(std::get<1>(s));
+            detectedParticles.push_back(std::get<2>(s));
+          }
+	  break;
 	}
-	// We have done the requisite number of iterations
-	else running = false;
+	// If there is nothing to fix, continue on
+	if (!detectedParticles.empty()) {	  
+	  // If this is the first break iter, record the break force
+	  if (heatIters==0) breakF0 = sqrt(sqr(dFx)+sqr(dFy))*time;
+	  // This is the break time for the [heatIters] iteration
+	  dataRecord->addStatData(breakDataSlot, RPair(heatIters, time));
+	  dataRecord->addStatData(improvementSlot, RPair(heatIters, sqrt(sqr(dFx)+sqr(dFy))*time/breakF0));
+	  // Do a finite number of strengthening iterations
+	  if (heatIters < maxIters) {
+	    // Print a message
+	    if (!quiet) {
+	      string mess;
+	      switch (detection) {
+	      case 0:
+		mess = (toStr(numBreaks)+" breaks.");
+		break;
+	      case 1:
+		mess = (toStr(numBonds)+" bonds.");
+		break;
+	      case 2:
+		mess = (toStr(numBreaks+numBonds)+" breaks or bonds.");
+	      }
+	      cout << "Iteration " << heatIters << ": t=" << simData->getTime() << ", " << mess << endl;
+	    }
+	    // Do the strengthening procedure
+	    strengthenProcedure();
+	    // Clear the marked particles from the data recorder
+	    dataRecord->clearMarked();
+	    // Print a message
+	    if (!quiet) cout << "Starting next trial.\n";
+	    // Remake bond lists
+	    setVerletListRecord();
+	    // Reset the integrator time limit
+	    integrator->setRunTime(limitTime);
+	    // Reset timer/time
+	    timer = 0;
+	    time = 0;
+	    // Reset break/bond count
+	    numBreaks = 0;
+	    numBonds = 0;
+	  }
+	  // We have done the requisite number of iterations
+	  else running = false;
+	}
       }
     }
 
@@ -173,13 +218,12 @@ namespace GFlow {
     // Get the current time, for recording when this happened
     RealType currentTime = integrator->getTime();
     // If there is bond data to record
-    /*
     if (!bonds.empty()) {
       // Add bond pairs
       for (auto &b : bonds) {
 	bondings.push_back(std::tuple<RealType,int,int>(currentTime, b.first, b.second));
 	// We keep an unordered set of all the particles bonding or undergoing breakages
-	if (!markBreaks) {
+	if (detection==1 || detection==2) {
 	  marked.insert(b.first);
 	  marked.insert(b.second);
 	}
@@ -188,14 +232,13 @@ namespace GFlow {
       numBonds += bonds.size();
       cumNumBonds.push_back(pair<RealType,int>(currentTime, numBonds));
     }
-    */
     // If there is breakage data to record
     if (!breaks.empty()) {
       // Add break pairs
       for (auto &b : breaks) {
 	breakages.push_back(std::tuple<RealType,int,int>(currentTime, b.first, b.second));
 	// We keep an unordered set of all the particles bonding or undergoing breakages
-	if (markBreaks) {
+	if (detection==0 || detection==2) {
 	  marked.insert(b.first);
 	  marked.insert(b.second);
 	}
@@ -213,7 +256,7 @@ namespace GFlow {
 
   // Check for bonds and breaks
   inline void FractureSimulation::compare(vector<pair<int,int> >& bonds, vector<pair<int,int> >& breaks) {
-    
+    // -----> Look for breaks
     // If a formerly bonded particle went beyond a certain distance, it is no longer bonded
     for (int i=0; i<bondedParticles.size(); ++i) {
       for (auto j : bondedParticles.at(i))
@@ -221,10 +264,29 @@ namespace GFlow {
 	  breaks.push_back(pair<int,int>(i,j));
     }
     
-    // Look for bonds
-    // <--------------------
+    // ----> Look for bonds
+    // Lambda for finding objects in the list of bonds
+    auto contains = [&] (int n, int p) ->bool {
+      return std::find(bondedParticles.at(p).begin(),
+                       bondedParticles.at(p).end(),
+                       n)!=bondedParticles.at(p).end();
+    };
+    // Look at all neighbors of all particles
+    for (int i=0; i<verletListRecord.size(); ++i) 
+      // Look at all of the particles in [i]'s (big) neighborhood
+      for(auto n : verletListRecord.at(i)) {
+        if (n==i) continue;
+        // Particle n is in the (big) neighborhood of [i]. Check if it was in the bond neighorhood, or if it should be (if it's close enough)
+        // The rmin points (hard centers) of the particle should be within [bondRadius] of each other for them to count as being bound
+        RealType hcDist = getHardCoreDistance(n,i);
+        bool isBonded = contains(n,i);
+        // If it was not bonded, but is close enough to bond
+        if (hcDist<bondRadius && !isBonded)
+	  bonds.push_back(pair<int,int>(i,n));
+      }
   }
-
+  
+  // Sets the verlet list, finds bonds
   inline void FractureSimulation::setVerletListRecord(VListType& verletList) {
     // Clear the old data
     for (int i=0; i<verletListRecord.size(); ++i) verletListRecord.at(i).clear();
@@ -255,7 +317,9 @@ namespace GFlow {
 	// Particle n is in the (big) neighborhood of i. Check if it was in the bond neighborhood, or if it should be (if it's close enough)
 	// The rmin points (hard centers) of the particle should be within [bondRadius] of each other for them to count as being bound
 	RealType hcDist = getHardCoreDistance(n,i);
-	if ((hcDist < 2*bondRadius && contains(n,i)) || hcDist < bondRadius)
+	bool isBonded = contains(n,i);
+	// If it was already bonded and has not moved far enough to break the bond, or if it is close enough to bond
+	if (hcDist < 2*bondRadius && isBonded || hcDist<bondRadius)
 	  temp.push_back(n);
       }
       // Set the new bonded particles list
@@ -275,20 +339,30 @@ namespace GFlow {
   }
 
   inline void FractureSimulation::strengthenProcedure() {
+    // Checks
+    if (detectedParticles.empty()) return;
     // Reset the scenario
     integrator->reset();
     simData->zeroMotion(); // A temporary fix since we don't store initial velocities, so resetting the simData doesn't reset velocities
     dataRecord->resetTimers(); // If we don't do this, data records 'last *' timers will be in the future, and no data will be collected
 
     // Get the particle numbers of the first breakage
-    auto data = *breakages.begin();
-    int p1 = std::get<1>(data), p2 = std::get<2>(data);
+    // auto data = *breakages.begin();
+    // int p1 = std::get<1>(data), p2 = std::get<2>(data);
+
+    // Positions of particles that need to be fixed
+    vector<vec2> positions;
+    for (auto i : detectedParticles)
+      positions.push_back(vec2(simData->getPxPtr() [i], 
+			       simData->getPyPtr() [i])
+			  );
+
     // Reset breakages and bondings lists
     breakages.clear();
     bondings.clear();
     // Find the position of the particle that broke
-    vec2 pos1(simData->getPxPtr() [p1], simData->getPyPtr() [p1]);
-    vec2 pos2(simData->getPxPtr() [p2], simData->getPyPtr() [p2]);
+    // vec2 pos1(simData->getPxPtr() [p1], simData->getPyPtr() [p1]);
+    // vec2 pos2(simData->getPxPtr() [p2], simData->getPyPtr() [p2]);
 
     // Turn off particle's characteristics except for [Fixed]
     // If we don't fix the CV/CF/etc. particles, they can suddenly change position
@@ -311,22 +385,32 @@ namespace GFlow {
     // Take away the simulation's forces. We will return them after the strengthening procedure
     auto externalForces = simData->transferExternalForces();
     // Apply a temperature near that position - pos, radius, temp
-    ExternalForce *forces[3];
-    forces[0] = new TemperatureForce(pos1, heatRadius, heatTemperature);
-    forces[1] = new TemperatureForce(pos2, heatRadius, heatTemperature);
-    forces[2] = new ViscousDrag;
-    simData->addExternalForce(forces[0]);
-    simData->addExternalForce(forces[1]);
-    simData->addExternalForce(forces[2]);
+    ExternalForce **forces = new ExternalForce*[positions.size()+1];
+    for (int i=0; i<positions.size(); ++i) {
+      forces[i] = new TemperatureForce(positions.at(i), heatRadius, heatTemperature);
+      simData->addExternalForce(forces[i]);
+    }
+    forces[positions.size()] = new ViscousDrag;
+    simData->addExternalForce(forces[positions.size()]);
+    // forces[0] = new TemperatureForce(pos1, heatRadius, heatTemperature);
+    // forces[1] = new TemperatureForce(pos2, heatRadius, heatTemperature);
+    // forces[2] = new ViscousDrag;
+    // simData->addExternalForce(forces[0]);
+    // simData->addExternalForce(forces[1]);
+    // simData->addExternalForce(forces[2]);
 
     // Run for some amount of time
     if (heatTime>0) integrator->integrate(heatTime);
 
     // Remove the external forces
-    forces[0]->setFinished(true);
-    forces[1]->setFinished(true);
-    forces[2]->setFinished(true);
+    for (int i=0; i<positions.size()+1; ++i)
+      forces[i]->setFinished(true);
+    // forces[0]->setFinished(true);
+    // forces[1]->setFinished(true);
+    // forces[2]->setFinished(true);
     simData->clearFinishedForces();
+    // Clean up the array
+    delete [] forces;
 
     // Add a viscous drag
     auto vd = new ViscousDrag(1.);

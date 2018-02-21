@@ -32,7 +32,7 @@ namespace GFlow {
     auto& getBondings()  { return bondings; }
     auto& getCumNumBreaks() { return cumNumBreaks; }
     auto& getCumNumBonds()  { return cumNumBonds; }
-
+    
   private:
     // Private helper functions
     inline void checkForBreaks();
@@ -69,9 +69,6 @@ namespace GFlow {
     // Radius required for bonding - distance the rmin points should be from each other
     RealType bondRadius;
 
-    // Whether to mark breakages or the formation of bonds
-    bool markBreaks;
-
     // Time that last break occured
     RealType lastBreak;
 
@@ -102,6 +99,12 @@ namespace GFlow {
     // The dF/dt of the wall
     RealType dFx, dFy;
 
+    // What type of detection to use: 0 - breaks, 1 - bonds, 2 - either
+    unsigned int detection;
+
+    // Particles that need to be fixed during the strengthening procedure
+    vector<int> detectedParticles;
+    
     // A lists {time, particle #, particle #} of when breakages and bondings occur
     vector<std::tuple<RealType,int,int> > breakages, bondings;
     // Cumulative number of breaks and bonds as a time series

@@ -279,7 +279,9 @@ namespace GFlow {
       // Write the names of all the files that will be generated
       ofstream fout(writeDirectory+"/StatData/statNames.csv");
       if (fout.fail()) std::cerr << "Failed to open [" << writeDirectory << "/StatData/statNames.txt].\n";
-      for (auto& name : statFunctionName) fout << name << "\n";
+      for (int i=0; i<statFunctionName.size(); ++i)
+	if (!statFunctionData.at(i).empty()) 
+	  fout << statFunctionName.at(i) << "\n";
       fout.close();
       // Write stat function data
       for (int i=0; i<statFunctionData.size(); ++i) {
