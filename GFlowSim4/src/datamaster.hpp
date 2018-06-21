@@ -20,18 +20,24 @@ namespace GFlowSimulation {
 
     // Destructor
     ~DataMaster();
-
-    // GFlow is a friend class
-    friend class GFlow;
-
+    
     // Add a data object - we are subsequently in charge of the data object
     void addDataObject(DataObject*);
 
-    // Have all data objects collect their data
-    void collect();
+    // Call the corresponding routeens of the managed data objects - data
+    // objects will collect data during one or more of these routines
+    virtual void pre_step();
+    virtual void pre_exchange();
+    virtual void pre_neighbors();
+    virtual void pre_forces();
+    virtual void post_forces();
+    virtual void post_step();
 
-    // Do a coordinated write to a directory
-    void writeToDirectory(string);
+    // Do a coordinated write to a directory. Returns true if all writes were successful
+    bool writeToDirectory(string);
+
+    // GFlow is a friend class
+    friend class GFlow;
 
   private:
     // The data objects we are responsible for

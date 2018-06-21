@@ -13,10 +13,13 @@ namespace GFlowSimulation {
 
   GFlow::GFlow() : running(false), elapsed_time(0), iter(0) {
     simData = new SimData(this);
-    integrator = new VelocityVerlet(this);
+    // Integrator will be created by the creator
     sectorization = new Sectorization(this);
     communicator = new Communicator(this);
     dataMaster = new DataMaster(this);
+
+    // Set wrapping to true by defaule
+    setAllWrap(true);
   }
 
   GFlow::~GFlow() {
@@ -88,34 +91,44 @@ namespace GFlowSimulation {
 
     // Do integration for the requested amount of time
     while (running) {
-      // --- Pre-step
+      // --> Pre-step
       integrator->pre_step();
+      dataMaster->pre_step();
       for (auto m : modifiers) m->pre_step();
 
-      // --- Pre-exchange
+      // --> Pre-exchange
       // Wrap positions
       wrapPositions();
+      integrator->pre_exchange();
+      dataMaster->pre_exchange();
+      for (auto m : modifiers) m->pre_exchange();
 
       // --- Exchange particles (potentially) ---
 
-      // --- Pre-neighbors
+      // --> Pre-neighbors
+      integrator->pre_neighbors();
+      dataMaster->pre_neighbors();
+      for (auto m : modifiers) m->pre_neighbors();
 
       // --- Do neighbor updates (potentially)
 
-      // --- Pre-force
-      integrator->pre_forces();
+      // --> Pre-force
+      integrator->pre_forces(); // -- This is where VV first half kick happens
+      dataMaster->pre_forces();
       for (auto m : modifiers) m->pre_forces();
       // Clip positions (if necessary)
 
       // --- Do forces
 
-      // --- Post-forces
-      integrator->post_forces();
+      // --> Post-forces
+      integrator->post_forces(); // -- This is where VV second half kick happens
+      dataMaster->post_forces();
       for (auto m : modifiers) m->post_forces();
 
-      // --- Post-step
+      // --> Post-step
       if (requested_time<=elapsed_time) running = false;
       integrator->post_step();
+      dataMaster->post_step();
       for (auto m : modifiers) m->post_step();
       // Timer updates
       ++iter;
@@ -126,12 +139,35 @@ namespace GFlowSimulation {
 
   }
 
+  void GFlow::writeData(string dirName) {
+    // Make sure data master is non-null, print a warning if any writes failed
+    if (dataMaster && !dataMaster->writeToDirectory(dirName))
+      cout << "Warning: Some writes failed.\n";
+  }
+
   RealType GFlow::getElapsedTime() {
     return elapsed_time;
   }
 
+  void GFlow::setAllWrap(bool w) {
+    for (int d=0; d<DIMENSIONS; ++d) wrap[d] = w;
+  }
+
   inline void GFlow::wrapPositions() {
-    
+    // Get a pointer to position data and the number of particles in simData
+    RealType **x = simData->x;
+    int number = simData->number;
+    // Wrap, if applicable
+    for (int d=0; d<DIMENSIONS; ++d)
+      if (wrap[d]) { // Wrap the d-th dimension
+        // The width of the simulation in the d-th dimension
+        RealType dim = bounds.max[d] - bounds.min[d];
+        // Wrap each particle
+        for (int n=0; n<number; ++n) {
+          if (x[n][d]>bounds.max[d])       x[n][d] -= dim;
+          else if (x[n][d]<=bounds.min[d]) x[n][d] += dim;
+        }
+      }
   }
 
 }

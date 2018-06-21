@@ -20,5 +20,8 @@ int main(int argc, char **argv) {
     return 0;
   }
 
+  // Write accumulated data to files
+  gflow->writeData("RunData");
+
   return 0;
 }

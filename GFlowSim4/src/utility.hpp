@@ -26,6 +26,15 @@ namespace GFlowSimulation {
   // Define what type of floating point data to use
   typedef float RealType;
 
+  // Convert an object to a string
+  template<typename T> string toStr(T obj) {
+    stringstream stream;
+    stream << obj;
+    string str;
+    stream >> str;
+    return str;
+  }
+
 }
 
 // Include this after so RealType is defined

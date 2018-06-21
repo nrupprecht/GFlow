@@ -12,7 +12,7 @@ namespace GFlowSimulation {
   *  Contains the data for the particles in the simulation
   *
   */
-  class SimData : protected Base {
+  class SimData : public Base {
   public:
     // Constructor
     SimData(GFlow *);
@@ -22,6 +22,20 @@ namespace GFlowSimulation {
 
     // Clean all pointers
     void clean();
+
+    // --- Functions for managing a SimData's data
+
+    // Destroy old pointers, create arrays of a specified size
+    void reserve(int);
+
+    // Set all positions to zero
+    void clearX();
+
+    // Set all velocities to zero
+    void clearV();
+
+    // Set all forces to zero
+    void clearF();
 
     // --- Particle data
 
@@ -39,7 +53,10 @@ namespace GFlowSimulation {
     int *type;
     // More data, for more complex objects
     RealType **dataF; // Floating point data
-    RealType **dataI; // Integer data
+    int      **dataI; // Integer data
+
+    // The actual amount of data in the arrays
+    int size;
 
     // GFlow is a friend class -- this allows it to access protected Base members
     friend class GFlow;

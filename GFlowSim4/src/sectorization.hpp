@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
 
-  class Sectorization : protected Base {
+  class Sectorization : public Base {
   public:
     Sectorization(GFlow *);
     

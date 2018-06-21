@@ -5,15 +5,10 @@
 
 namespace GFlowSimulation {
 
-  class Modifier : protected Base {
+  class Modifier : public Base {
   public:
     // Constructor
     Modifier(GFlow *);
-
-    virtual void pre_step()    {};
-    virtual void pre_forces()  {};
-    virtual void post_forces() {};
-    virtual void post_step()   {};
 
     // GFlow is a friend class
     friend class GFlow;

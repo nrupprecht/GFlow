@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
 
-  class Neighbors : protected Base {
+  class Neighbors : public Base {
     public:
       // Default constructor
       Neighbors(GFlow *);

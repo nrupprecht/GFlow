@@ -14,23 +14,28 @@ namespace GFlowSimulation {
   class PositionData : public DataObject {
   public:
     // Constructor
-    PositionData(GFlow*, string);
-    
+    PositionData(GFlow*);
+
     // Destructor
     ~PositionData();
 
-    // Collect the position data from simdata
-    virtual void collect();
+    // Collect the position data from simdata --- happens during the post-step phase
+    virtual void post_step();
 
     // Write data to a file - if true, the string is a path, and you should use your own name as the file name
-    virtual void writeToFile(string, bool=true);
+    // Returns true for success
+    virtual bool writeToFile(string, bool=true);
 
   private:
     // The time steps of when the data was gathered
     vector<RealType> timeStamps;
+
     // Each time step contains a length ( [number of particles] * [DIMENSIONS] ) array 
     // for the positions of the particles in [DIMENSIONS] dimensions
     vector<RealType*> positions; 
+    
+    // The number of particles in the position enties
+    vector<int> numbers;
   };
 
 }

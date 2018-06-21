@@ -6,10 +6,12 @@
 #include "sectorization.hpp"
 #include "communicator.hpp"
 #include "datamaster.hpp"
+#include "modifier.hpp"
 
-// Contains all options for forces, objects
+// Accumulation files
 #include "allforces.hpp"
 #include "alldataobjects.hpp"
+#include "allintegrators.hpp"
 
 namespace GFlowSimulation {
 

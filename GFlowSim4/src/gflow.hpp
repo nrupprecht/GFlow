@@ -29,9 +29,21 @@ namespace GFlowSimulation {
     // Run the simulation for some amount of time
     void run(RealType);
 
+    // Write data from data master to file
+    void writeData(string);
+
     // --- Accessors
+    
     // Get fulfilled time
     RealType getElapsedTime();
+
+    // --- Mutators
+
+    // Set all wrap values to something
+    void setAllWrap(bool);
+
+    // Creators are a friend classes --- all must be since friendship is not inherited
+    friend class BoxCreator;
 
   protected:
     // Private helper functions
@@ -64,7 +76,6 @@ namespace GFlowSimulation {
 
     // Periodicity
     bool wrap[DIMENSIONS];
-
   };
 
 }

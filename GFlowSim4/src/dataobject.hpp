@@ -5,16 +5,13 @@
 
 namespace GFlowSimulation {
 
-  class DataObject : protected Base {
+  class DataObject : public Base {
   public:
     // Constructor
     DataObject(GFlow *, string);
 
-    // Collect and store data from the simulation
-    virtual void collect() = 0;
-
     // Write data to a file - if true, the string is a path, and you should use your own name as the file name
-    virtual void writeToFile(string, bool=true) = 0;
+    virtual bool writeToFile(string, bool=true) = 0;
 
     // GFlow is a friend class
     friend class GFlow;
@@ -22,7 +19,7 @@ namespace GFlowSimulation {
     // --- Accessors
     string getName();
 
-  private:
+  protected:
     // The name of the data we are gathering - will be used to write to files
     string dataName;
 
