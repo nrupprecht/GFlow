@@ -4,13 +4,16 @@ CFLAG = -std=c++11 -Wall
 OPTFLAGS = # -xHost -O3 -no-prec-div -fp-model fast=2 -restrict -funroll-loops -no-inline-max-size
 FLAGS = $(CFLAG) -g $(OPTFLAGS)
 
-# All object files needed
-ALL_OBJECTS = build/gflow.o build/simdata.o build/sectorization.o build/neighbors.o build/communicator.o build/base.o build/integrator.o build/velocityverlet.o build/force.o build/hard_sphere.o
+# Get all object files
+SRC_DIR := src
+OBJ_DIR := build
+SRC_FILES := $(wildcard $(SRC_DIR)/*.cpp)
+OBJ_FILES := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRC_FILES))
 
 all: bin/driver
 
 ###### Executables #####
-bin/driver: build/driver.o $(ALL_OBJECTS)
+bin/driver: build/driver.o $(OBJ_FILES)
 	$(CC) $^ -o $@
 
 #####   Objects   #####

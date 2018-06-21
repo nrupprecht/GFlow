@@ -24,10 +24,10 @@ namespace GFlowSimulation {
   protected:
     GFlow *gflow;
     class SimData *simData;
-    class Sectorization *sectorization;
-    class Neighbors *neighbors;
-    class Communicator *communicator;
     class Integrator *integrator;
+    class Sectorization *sectorization;
+    class Communicator *communicator;
+
   };
 
 }

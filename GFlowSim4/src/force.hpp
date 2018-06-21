@@ -1,8 +1,7 @@
 #ifndef __FORCE_HPP__
 #define __FORCE_HPP__
 
-#include "gflow.hpp"
-#include "neighbors.hpp"
+#include "neighbors.hpp" // Includes gflow
 
 namespace GFlowSimulation {
 

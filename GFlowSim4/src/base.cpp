@@ -7,22 +7,13 @@
 
 namespace GFlowSimulation {
 
-  Base::Base(GFlow *gflow) {
-    this->gflow   = gflow;
-    simData       = gflow->simData;
-    sectorization = gflow->sectorization;
-    neighbors     = gflow->neighbors;
-    communicator  = gflow->communicator;
-    integrator    = gflow->integrator;
+  Base::Base(GFlow *gf) {
+    gf->initializeBase(this);
   }
 
   void Base::initialize() {
     // Reset subpointers
-    simData       = gflow->simData;
-    sectorization = gflow->sectorization;
-    neighbors     = gflow->neighbors;
-    communicator  = gflow->communicator;
-    integrator    = gflow->integrator;
+    gflow->initializeBase(this);
   }
 
 }

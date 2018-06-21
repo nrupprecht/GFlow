@@ -2,6 +2,10 @@
 
 namespace GFlowSimulation {
 
-  Integrator::Integrator(GFlow *gflow) : Base(gflow) {};
+  Integrator::Integrator(GFlow *gflow) : Base(gflow), dt(DEFAULT_TIME_STEP) {};
+
+  RealType Integrator::getTimeStep() {
+    return dt;
+  }
 
 }

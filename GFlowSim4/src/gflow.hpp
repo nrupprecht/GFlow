@@ -1,44 +1,60 @@
 #ifndef __GFLOW_HPP__GFLOW__
 #define __GFLOW_HPP__GFLOW__
 
-
 #include "base.hpp"
 #include "utility.hpp"
-#include "bounds.hpp"
 
 namespace GFlowSimulation {
 
+  /*
+  *  @class GFlow
+  *
+  *  The simulation class
+  *
+  */
   class GFlow {
   public:
-
     // Constructor
-    GFlow(int, char**);
+    GFlow();
 
     // Destructor
     ~GFlow();
 
-    // Initialize
-    void initialize();
+    // Initialize - returns true if all pointers are non-null
+    bool initialize();
+
+    // Initialize a base object to point at GFlow's data
+    void initializeBase(Base *);
 
     // Run the simulation for some amount of time
     void run(RealType);
 
+    // --- Accessors
+    // Get fulfilled time
+    RealType getElapsedTime();
+
+  protected:
+    // Private helper functions
+    inline void wrapPositions();
+
     // Data - public so anyone can access it
     class SimData *simData;             // Particle data
-    class Sectorization *sectorization; // Sectorization of particles
-    class Neighbors *neighbors;         // Neighbor lists
-    class Communicator *communicator;   // Inter-process communicator
     class Integrator *integrator;       // Integrator
+    class Sectorization *sectorization; // Sectorization of particles
+    class Communicator *communicator;   // Inter-process communicator
+    class DataMaster *dataMaster;       // DataMaster object for unified data collection    
 
     // A vector of objects that should modify the simulation at some point(s) during execution
     vector<class Modifier*> modifiers;
 
-  protected:
+    // All the forces that can happen
+    vector<class Force*> forces;
+
     // If true, the simulation should continue to run
     bool running;
 
     // How much of the requested time has been run
-    RealType fulfilled_time; 
+    RealType elapsed_time; 
 
     // The number of iterations
     int iter;

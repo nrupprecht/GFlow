@@ -23,10 +23,7 @@ namespace GFlowSimulation {
     // Clean all pointers
     void clean();
 
-    // GFlow is a friend class
-    friend class GFlow;
-
-    // Particle data
+    // --- Particle data
 
     // Number of particles
     int number;
@@ -44,8 +41,8 @@ namespace GFlowSimulation {
     RealType **dataF; // Floating point data
     RealType **dataI; // Integer data
 
-    // Periodicity (wrapping) indicator
-    bool wrap[DIMENSIONS];
+    // GFlow is a friend class -- this allows it to access protected Base members
+    friend class GFlow;
   };
 
 

@@ -6,6 +6,7 @@
 namespace GFlowSimulation {
 
   class VelocityVerlet : public Integrator {
+  public:
     // Constructor
     VelocityVerlet(GFlow *);
 
@@ -13,7 +14,6 @@ namespace GFlowSimulation {
     virtual void pre_forces();
     virtual void post_forces();
     virtual void post_step();
-
   };
 
 }

@@ -1,10 +1,24 @@
-#include "gflow.hpp"
+#include "boxcreator.hpp"
+
+using namespace GFlowSimulation;
 
 int main(int argc, char **argv) {
 
-  GFlowSimulation::GFlow gflow(argc, argv);
+  // This creator creates gflow simulations
+  Creator *creator = nullptr;
 
-  gflow.run(1.);
+  // Assign a specific type of creator
+  creator = new BoxCreator(argc, argv);
+
+  // Create a gflow simulation
+  GFlow *gflow = creator->createSimulation();
+
+  // Run the simulation
+  if (gflow) gflow->run(1.);
+  else {
+    cout << "GFlow pointer was null. Exiting.\n";
+    return 0;
+  }
 
   return 0;
 }

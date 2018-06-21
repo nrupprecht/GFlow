@@ -3,7 +3,10 @@
 namespace GFlowSimulation {
 
   SimData::SimData(GFlow *gflow) : Base(gflow), number(0), numberG(0), x(nullptr), v(nullptr), f(nullptr), 
-                                  sg(nullptr), im(nullptr), type(nullptr), dataF(nullptr), dataI(nullptr) {};
+                                  sg(nullptr), im(nullptr), type(nullptr), dataF(nullptr), dataI(nullptr)
+  {
+    for(int i=0; i<DIMENSIONS; ++i) wrap[i] = true;
+  };
 
   SimData::~SimData() {
     clean();

@@ -15,6 +15,9 @@ namespace GFlowSimulation {
     virtual void post_forces() {};
     virtual void post_step()   {};
 
+    // --- Accessors
+    RealType getTimeStep();
+
     // GFlow is a friend class
     friend class GFlow;
 
