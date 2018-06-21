@@ -14,7 +14,14 @@ namespace GFlowSimulation {
   */
   class SimData : protected Base {
   public:
+    // Constructor
     SimData(GFlow *);
+
+    // Destructor
+    ~SimData();
+
+    // Clean all pointers
+    void clean();
 
     // GFlow is a friend class
     friend class GFlow;
