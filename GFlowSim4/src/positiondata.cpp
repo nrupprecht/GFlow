@@ -14,13 +14,18 @@ namespace GFlowSimulation {
   }
 
   void PositionData::post_step() {
+    // Only record if enough time has gone by
+    RealType time = Base::gflow->getElapsedTime();
+    if (time-lastRecording<delay) return;
+
     // Record what time it was
-    timeStamps.push_back(Base::gflow->getElapsedTime());
+    timeStamps.push_back(time);
 
     // --- Record all positions
-    /*
+
     // Get the number of particles
     int number = Base::simData->number;
+    numbers.push_back(number);
     // Don't do anything if there are 0 or fewer particles
     if (number<=0) return;
     // Create an array for the data
@@ -28,10 +33,12 @@ namespace GFlowSimulation {
     positions.push_back(array);
     // Fill the array of positions
     for (int i=0; i<number; ++i)
-      for (int d=0; d<DIMENSIONS; ++d)
+      for (int d=0; d<DIMENSIONS; ++d) {
         array[DIMENSIONS*i+d] = Base::simData->x[i][d];
-    */
+      }
 
+    // Set last recording
+    lastRecording = time;
   }
 
   bool PositionData::writeToFile(string fileName, bool useName) {
@@ -49,16 +56,16 @@ namespace GFlowSimulation {
     ofstream fout;
 
     // Write all the data to the file in the format { x[0], x[1], ... } as a csv
-    for (int i=0; i<timeStamps.size(); ++i) {
-
-      fout.open(dirName+dataName+toStr(i)+".csv");
+    for (int iter=0; iter<timeStamps.size(); ++iter) {
+      // Open the file stream
+      fout.open(dirName+dataName+toStr(iter)+".csv");
       if (fout.fail()) return false;
 
       // Write all the particle data
-      for (int n=0; n<numbers[i]; ++i) {
+      for (int n=0; n<numbers[iter]; ++n) {
         // Print out:  x[0], x[1], ...  \n
         for (int d=0; d<DIMENSIONS; ++d) {
-          fout << positions[i][DIMENSIONS*n+d];
+          fout << positions[iter][DIMENSIONS*n+d];
           if (d!=DIMENSIONS-1) fout << ",";
         }
         fout << "\n";

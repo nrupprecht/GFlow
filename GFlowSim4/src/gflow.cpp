@@ -11,7 +11,7 @@
 
 namespace GFlowSimulation {
 
-  GFlow::GFlow() : running(false), elapsed_time(0), iter(0) {
+  GFlow::GFlow() : running(false), requested_time(0), elapsed_time(0), total_time(0), iter(0) {
     simData = new SimData(this);
     // Integrator will be created by the creator
     sectorization = new Sectorization(this);
@@ -76,7 +76,13 @@ namespace GFlowSimulation {
     base->communicator = communicator;
   }
 
-  void GFlow::run(RealType requested_time) {
+  void GFlow::run(RealType rt) {
+    // If a parameter was passed in, it is the requested time
+    if (rt>0) requested_time = rt;
+
+    // Only run if time has been requested
+    if (requested_time<=0) return;
+
     // Make sure we have initialized everything
     if (!initialize()) {
       // Some object was null
@@ -132,11 +138,13 @@ namespace GFlowSimulation {
       for (auto m : modifiers) m->post_step();
       // Timer updates
       ++iter;
-      elapsed_time += integrator->getTimeStep();
+      RealType dt = integrator->getTimeStep();
+      elapsed_time += dt;
+      total_time += dt;
     }
 
     // Post-integrate
-
+    requested_time = 0;
   }
 
   void GFlow::writeData(string dirName) {
@@ -151,6 +159,10 @@ namespace GFlowSimulation {
 
   void GFlow::setAllWrap(bool w) {
     for (int d=0; d<DIMENSIONS; ++d) wrap[d] = w;
+  }
+
+  void GFlow::requestTime(RealType t) {
+    requested_time = t;
   }
 
   inline void GFlow::wrapPositions() {

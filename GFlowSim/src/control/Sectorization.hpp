@@ -91,6 +91,9 @@ namespace GFlow {
     // Get all the neighbors of a particle
     list<int> getNeighbors(int);
 
+    // Get minimum distance between any two particle centers
+    RealType getMinDistance();
+
     // DataRecord is a friend class
     friend class DataRecord;
 

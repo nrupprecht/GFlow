@@ -20,8 +20,12 @@ int main(int argc, char **argv) {
     return 0;
   }
 
+  cout << "Run is over.\n";
+
   // Write accumulated data to files
   gflow->writeData("RunData");
+
+  cout << "Data write is over.\n";
 
   return 0;
 }

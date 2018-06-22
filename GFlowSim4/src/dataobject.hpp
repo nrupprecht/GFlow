@@ -19,9 +19,18 @@ namespace GFlowSimulation {
     // --- Accessors
     string getName();
 
+    // --- Mutators
+    void setFPS(RealType);
+
   protected:
     // The name of the data we are gathering - will be used to write to files
     string dataName;
+
+    // The delay between recording
+    RealType delay; // 1./fps
+
+    // The last time data was recorded
+    RealType lastRecording;
 
   };
 

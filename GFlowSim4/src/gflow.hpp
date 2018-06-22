@@ -27,7 +27,7 @@ namespace GFlowSimulation {
     void initializeBase(Base *);
 
     // Run the simulation for some amount of time
-    void run(RealType);
+    void run(RealType=-1);
 
     // Write data from data master to file
     void writeData(string);
@@ -41,6 +41,9 @@ namespace GFlowSimulation {
 
     // Set all wrap values to something
     void setAllWrap(bool);
+
+    // Set the amount of time we should run for
+    void requestTime(RealType);
 
     // Creators are a friend classes --- all must be since friendship is not inherited
     friend class BoxCreator;
@@ -65,8 +68,14 @@ namespace GFlowSimulation {
     // If true, the simulation should continue to run
     bool running;
 
+    // How much time we have been requested to run for
+    RealType requested_time;
+
     // How much of the requested time has been run
     RealType elapsed_time; 
+
+    // How much time has been run over all runs
+    RealType total_time;
 
     // The number of iterations
     int iter;

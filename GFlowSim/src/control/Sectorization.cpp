@@ -60,7 +60,7 @@ namespace GFlow {
     RealType *py = simData->getPyPtr();
     // Clear out old sectors
     for (int i=0; i<nsx*nsy; ++i) sectors[i].clear();
-    // Place in sector 
+    // Place in sector
     for (int i=0; i<domain_end; ++i) {
       int sec_num = getSec(px[i], py[i]);
       sectors[sec_num].push_back(i);
@@ -379,6 +379,27 @@ namespace GFlow {
     ++sx;
 
     return nList;
+  }
+
+  RealType Sectorization::getMinDistance() {
+    if(verletList.empty()) return -1.;
+
+    RealType *px = simData->getPxPtr();
+    RealType *py = simData->getPyPtr();
+    // Initialize the min and max distance records
+    RealType init = sqr( getDisplacement(px[0], py[0], px[1], py[1]) );
+    RealType minR = init;
+  
+    for (auto &vl : verletList) {
+      auto p = vl.begin();
+      auto q = p; ++q;
+      for ( ; q!=vl.end(); ++q) {
+        RealType r = sqr( getDisplacement(px[*p], py[*p], px[*q], py[*q]) );
+        if (r<minR) minR = r;
+      }
+    }
+    // Return the answer
+    return sqrt(minR);
   }
     
   inline int Sectorization::getSec(const RealType x, const RealType y) {
