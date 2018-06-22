@@ -90,23 +90,28 @@ namespace GFlowSimulation {
       return;
     }
 
-    // Pre-integrate
+    // --> Pre-integrate
     running = true;
     elapsed_time = 0;
     iter = 0;
+    integrator->pre_integrate();
+    dataMaster->pre_integrate();
+    sectorization->pre_integrate();
+    for (auto m : modifiers) m->pre_integrate();
 
     // Do integration for the requested amount of time
     while (running) {
       // --> Pre-step
       integrator->pre_step();
       dataMaster->pre_step();
+      sectorization->pre_step();
       for (auto m : modifiers) m->pre_step();
 
       // --> Pre-exchange
-      // Wrap positions
-      wrapPositions();
+      wrapPositions(); // Wrap positions
       integrator->pre_exchange();
       dataMaster->pre_exchange();
+      sectorization->pre_exchange();
       for (auto m : modifiers) m->pre_exchange();
 
       // --- Exchange particles (potentially) ---
@@ -114,6 +119,7 @@ namespace GFlowSimulation {
       // --> Pre-neighbors
       integrator->pre_neighbors();
       dataMaster->pre_neighbors();
+      sectorization->pre_neighbors();
       for (auto m : modifiers) m->pre_neighbors();
 
       // --- Do neighbor updates (potentially)
@@ -121,20 +127,23 @@ namespace GFlowSimulation {
       // --> Pre-force
       integrator->pre_forces(); // -- This is where VV first half kick happens
       dataMaster->pre_forces();
+      sectorization->pre_forces(); // -- This is where resectorization / verlet list creation might happen
       for (auto m : modifiers) m->pre_forces();
-      // Clip positions (if necessary)
 
       // --- Do forces
+      for (auto &f : forces) f->calculateForces();
 
       // --> Post-forces
       integrator->post_forces(); // -- This is where VV second half kick happens
       dataMaster->post_forces();
+      sectorization->post_forces();
       for (auto m : modifiers) m->post_forces();
 
       // --> Post-step
       if (requested_time<=elapsed_time) running = false;
       integrator->post_step();
       dataMaster->post_step();
+      sectorization->post_step();
       for (auto m : modifiers) m->post_step();
       // Timer updates
       ++iter;
@@ -143,8 +152,12 @@ namespace GFlowSimulation {
       total_time += dt;
     }
 
-    // Post-integrate
+    // --> Post-integrate
     requested_time = 0;
+    integrator->post_integrate();
+    dataMaster->post_integrate();
+    sectorization->post_integrate();
+    for (auto m : modifiers) m->post_integrate();
   }
 
   void GFlow::writeData(string dirName) {
@@ -153,8 +166,16 @@ namespace GFlowSimulation {
       cout << "Warning: Some writes failed.\n";
   }
 
-  RealType GFlow::getElapsedTime() {
+  RealType GFlow::getElapsedTime() const{
     return elapsed_time;
+  }
+
+  Bounds GFlow::getBounds() const {
+    return bounds;
+  }
+
+  const bool* GFlow::getWrap() const {
+    return wrap;
   }
 
   void GFlow::setAllWrap(bool w) {

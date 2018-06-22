@@ -52,7 +52,7 @@ namespace GFlowSimulation {
     // Create the directory
     mkdir(writeDirectory.c_str(), 0777);
     // Create a subdirectory for stat data
-    mkdir((writeDirectory+"/StatData").c_str(), 0777);
+    // mkdir((writeDirectory+"/StatData").c_str(), 0777);
 
     // --- Write a summary
     // *** TODO ***
@@ -60,7 +60,8 @@ namespace GFlowSimulation {
     // --- Have all the data objects write their data
     bool success = true;
     for (auto dob : dataObjects)
-      if (dob) success &= dob->writeToFile(writeDirectory+"/StatData/", true);
+      if (dob) success &= dob->writeToFile(writeDirectory, true);
+      //if (dob) success &= dob->writeToFile(writeDirectory+"/StatData/", true);
 
     // Return true if all writes were successful
     return success;

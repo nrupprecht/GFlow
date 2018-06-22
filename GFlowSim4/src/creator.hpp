@@ -13,6 +13,9 @@
 #include "alldataobjects.hpp"
 #include "allintegrators.hpp"
 
+// Argument parsing
+#include "ArgParse.hpp"
+
 namespace GFlowSimulation {
 
   /*
@@ -29,7 +32,7 @@ namespace GFlowSimulation {
     // Create a GFlow Object
     virtual GFlow* createSimulation() = 0;
 
-  private:
+  protected:
     // Command line arguments
     int argc;
     char **argv;

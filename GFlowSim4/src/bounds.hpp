@@ -7,12 +7,31 @@ namespace GFlowSimulation {
 
   /*
   *  @struct BoundsBase
+  *
+  *  Primary template to BoundsBase
   *  Can be specialized to Linear, Rectangular, Rectangular prismic, etc bounds.
   *  Uses full template specification
-  *  For more info, see <https://en.cppreference.com/w/cpp/language/template_specialization>
+  *  For more info, see <https://en.cppreference.com/w/cpp/language/template_specialization>,
+  *  <https://en.cppreference.com/w/cpp/language/partial_specialization>
   *
   */
-  template <int D> struct BoundsBase {};
+  template <int D> struct BoundsBase {
+    BoundsBase() {
+      for (int d=0; d<DIMENSIONS; ++d) {
+        min[d] = 0; max[d] = 0;
+      }
+    }
+
+    // Return the width of the bounds
+    RealType wd(int d) {
+      return max[d] - min[d];
+    }
+
+    RealType min[DIMENSIONS], max[DIMENSIONS];
+  };
+
+  // Zero dimensional bounds - empty class
+  template<> struct BoundsBase<0> {};
 
   // One dimensional bounds base
   template<> struct BoundsBase<1> {
@@ -20,9 +39,15 @@ namespace GFlowSimulation {
     BoundsBase() {
       min[0] = 0; max[0] = 0;
     }
+
     // Setting constructor
     BoundsBase(RealType left, RealType right) {
       min[0] = left; max[0] = right;
+    }
+
+    // Return the width of the bounds
+    RealType wd(int d) {
+      return max[d] - min[d];
     }
 
     // Data
@@ -36,10 +61,16 @@ namespace GFlowSimulation {
       min[0] = 0; max[0] = 0;
       min[1] = 0; max[1] = 0;
     }
+
     // Setting constructor
     BoundsBase(RealType left, RealType right, RealType bottom, RealType top) {
       min[0] = left;   max[0] = right;
       min[1] = bottom; max[1] = top;
+    }
+
+    // Return the width of the bounds
+    RealType wd(int d) {
+      return max[d] - min[d];
     }
 
     // Data
@@ -61,14 +92,16 @@ namespace GFlowSimulation {
       min[2] = close;  max[2] = far;
     }
 
+    // Return the width of the bounds
+    RealType wd(int d) {
+      return max[d] - min[d];
+    }
+
     // Data
     RealType min[3], max[3];
   };
 
-  // Other
-  // ...
-
-  // Which bounds base we will use --- call this simply [Bounds]
+  // Which bounds base we will primarily use --- call this simply [Bounds]
   typedef BoundsBase<DIMENSIONS> Bounds;
 
 }

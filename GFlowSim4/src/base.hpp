@@ -19,12 +19,14 @@ namespace GFlowSimulation {
     virtual void initialize();
 
     // --> All the times when a base object can act during the run cycle
-    virtual void pre_step()      {};
-    virtual void pre_exchange()  {};
-    virtual void pre_neighbors() {};
-    virtual void pre_forces()    {};
-    virtual void post_forces()   {};
-    virtual void post_step()     {};
+    virtual void pre_integrate()  {};
+    virtual void pre_step()       {};
+    virtual void pre_exchange()   {};
+    virtual void pre_neighbors()  {};
+    virtual void pre_forces()     {};
+    virtual void post_forces()    {};
+    virtual void post_step()      {};
+    virtual void post_integrate() {};
 
     // GFlow is a friend class
     friend class GFlow;

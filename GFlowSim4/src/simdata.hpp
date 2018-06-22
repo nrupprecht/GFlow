@@ -25,8 +25,11 @@ namespace GFlowSimulation {
 
     // --- Functions for managing a SimData's data
 
-    // Destroy old pointers, create arrays of a specified size
+    // Destroy old pointers, create arrays of a specified size for x, v, f, sg, type
     void reserve(int);
+
+  // Destroy old pointers, create arrays of a specified size for x, v, f, sg, type, dataF, dataI
+    void reserveAll(int);
 
     // Set all positions to zero
     void clearX();

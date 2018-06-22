@@ -5,6 +5,22 @@ namespace GFlowSimulation {
   BoxCreator::BoxCreator(int argc, char **argv) : Creator(argc, argv) {};
 
   GFlow* BoxCreator::createSimulation() {
+    // Seed random number generators
+    srand48(time(0));
+
+    // Values
+    RealType time = 10;
+    int number = 10;
+    RealType radius = 0.05;
+    bool animate = false;;
+
+    // Gather command line arguments
+    ArgParse parser(argc, argv);
+    parser.get("time", time);
+    parser.get("number", number);
+    parser.get("radius", radius);
+    parser.get("animate", animate);
+
     // Create a new gflow object
     GFlow *gflow = new GFlow;
 
@@ -21,17 +37,24 @@ namespace GFlowSimulation {
     gflow->setAllWrap(true);
 
     // Add some objects
-    int number = 10;
     gflow->simData->reserve(number);
 
-    // Give some random positions and velocities
+    // --- Set all particle data
+
+    // Get pointers to particle data
     RealType **x = gflow->simData->x;
     RealType **v = gflow->simData->v;
-    for (int n=0; n<number; ++n)
+    RealType *sg = gflow->simData->sg;
+    int *type    = gflow->simData->type;
+    for (int n=0; n<number; ++n) {
+      // Give some random positions and velocities
       for (int d=0; d<DIMENSIONS; ++d) {
         x[n][d] = drand48();
-        v[n][d] = drand48();
+        v[n][d] = 0.25*(drand48() - 0.5);
       }
+      sg[n] = radius;
+      type[n] = 0;
+    }
 
     // Set the correct number of particles
     gflow->simData->number = number;
@@ -39,12 +62,12 @@ namespace GFlowSimulation {
     // Make sure all forces are zero
     gflow->simData->clearF();
 
-    // Make sure everything is initialized (this isn't really necessary - 
-    // initialization happens at the beginning of every run)
-    gflow->initialize();
+    // Request some amount of time to run
+    gflow->requestTime(time); // -- 10 is a stub value
 
     // Give data objects to data master
-    gflow->dataMaster->addDataObject(new PositionData(gflow));
+    if (animate) 
+      gflow->dataMaster->addDataObject(new PositionData(gflow));
 
     return gflow;
   }

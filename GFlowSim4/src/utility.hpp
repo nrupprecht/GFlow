@@ -21,18 +21,30 @@ using std::stringstream;
 
 #include <sys/stat.h> // For mkdir
 
+#include <ctime>
+
+#include <cmath>
+
 namespace GFlowSimulation {
 
   // Define what type of floating point data to use
   typedef float RealType;
 
   // Convert an object to a string
-  template<typename T> string toStr(T obj) {
+  template<typename T> inline string toStr(T obj) {
     stringstream stream;
     stream << obj;
     string str;
     stream >> str;
     return str;
+  }
+
+  template<typename T> inline T max(T a, T b) {
+    return a>b ? a : b;
+  }
+
+  template<typename T> inline T min(T a, T b) {
+    return a<b ? a : b;
   }
 
 }

@@ -4,7 +4,7 @@
 namespace GFlowSimulation {
 
   const RealType DEFAULT_TIME_STEP = 0.001;
-  const int DIMENSIONS = 2;
+  const int DIMENSIONS = 3;
 
 }
 

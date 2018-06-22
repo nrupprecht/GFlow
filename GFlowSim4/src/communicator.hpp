@@ -20,9 +20,6 @@ namespace GFlowSimulation {
 
     // GFlow is a friend class
     friend class GFlow;
-
-  private:
-    
   };
 
 }

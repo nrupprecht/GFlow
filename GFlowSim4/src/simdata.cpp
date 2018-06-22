@@ -83,6 +83,32 @@ namespace GFlowSimulation {
 
     // Set types to -1
     for (int n=0; n<size; ++n) type[n] = -1;
+  }
+
+  void SimData::reserveAll(int num) {
+    // Clear old pointers
+    clean();
+
+    // Set number and size
+    number = 0;
+    numberG = 0;
+    size = num;
+
+    // Reserve new arrays of arrays
+    x = new RealType* [size];
+    for (int n=0; n<size; ++n) x[n] = new RealType[DIMENSIONS];
+    v = new RealType* [size];
+    for (int n=0; n<size; ++n) v[n] = new RealType[DIMENSIONS];
+    f = new RealType* [size];
+    for (int n=0; n<size; ++n) f[n] = new RealType[DIMENSIONS];
+
+    // Reserve new arrays
+    sg   = new RealType[size];
+    im   = new RealType[size];
+    type = new int[size];
+
+    // Set types to -1
+    for (int n=0; n<size; ++n) type[n] = -1;
 
     // Reserve for extra data
     dataF = new RealType*[size];

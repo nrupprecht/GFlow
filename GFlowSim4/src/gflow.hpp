@@ -35,7 +35,13 @@ namespace GFlowSimulation {
     // --- Accessors
     
     // Get fulfilled time
-    RealType getElapsedTime();
+    RealType getElapsedTime() const;
+
+    // Get the bounds
+    Bounds getBounds() const;
+
+    // Get the wrapping data
+    const bool* getWrap() const;
 
     // --- Mutators
 

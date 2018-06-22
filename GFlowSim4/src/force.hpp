@@ -14,9 +14,6 @@ namespace GFlowSimulation {
     // Destructor
     ~Force();
 
-    // Initialize
-    virtual void initialize() = 0;
-
     // Calculate all the forces between atoms in the verlet lists
     virtual void calculateForces() = 0;
 

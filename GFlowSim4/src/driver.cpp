@@ -1,5 +1,13 @@
 #include "boxcreator.hpp"
 
+/*
+*
+*  Running functions dynamically:
+*  <https://stackoverflow.com/questions/11016078/is-it-possible-to-create-a-function-dynamically-during-runtime-in-c>
+*  <http://burnttoys.blogspot.com/2011/04/how-to-allocate-executable-memory-on.html>
+*
+*/
+
 using namespace GFlowSimulation;
 
 int main(int argc, char **argv) {
@@ -14,7 +22,7 @@ int main(int argc, char **argv) {
   GFlow *gflow = creator->createSimulation();
 
   // Run the simulation
-  if (gflow) gflow->run(1.);
+  if (gflow) gflow->run();
   else {
     cout << "GFlow pointer was null. Exiting.\n";
     return 0;
