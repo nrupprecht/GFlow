@@ -28,7 +28,6 @@ namespace GFlowSimulation {
     // objects will collect data during one or more of these routines
     virtual void pre_step();
     virtual void pre_exchange();
-    virtual void pre_neighbors();
     virtual void pre_forces();
     virtual void post_forces();
     virtual void post_step();

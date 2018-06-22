@@ -4,7 +4,7 @@
 
 namespace GFlowSimulation {
 
-  Sectorization::Sectorization(GFlow *gflow) : Base(gflow), xVL(nullptr), sizeXVL(0) {};
+  Sectorization::Sectorization(GFlow *gflow) : Base(gflow), xVL(nullptr), sizeXVL(0), skinDepth(0.025), cutoff(0) {};
 
   Sectorization::~Sectorization() {
     nullXVL();
@@ -36,12 +36,12 @@ namespace GFlowSimulation {
     // An index for placing particles in the sectors
     int index[DIMENSIONS];
     // Place all the particles in the sectors
-    for (int i=0; i<number; ++i) {
+    for (int n=0; n<number; ++n) {
       // Figure out d-th sector coordinate
       for (int d=0; d<DIMENSIONS; ++d)
-        index[d] = static_cast<int>((x[i][d] - bounds.min[d])*inverseW[d]);
+        index[d] = static_cast<int>((x[n][d] - bounds.min[d])*inverseW[d]);
       // Add particle to the appropriate sector
-      sectors.at(index).push_back(i);
+      sectors.at(index).push_back(n);
     }
 
     // --- Record where the particles were

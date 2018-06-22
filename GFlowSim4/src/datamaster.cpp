@@ -5,41 +5,36 @@ namespace GFlowSimulation {
   DataMaster::DataMaster(GFlow *gflow) : Base(gflow) {};
 
   DataMaster::~DataMaster() {
-    for (auto &dob : dataObjects)
+    for (auto& dob : dataObjects)
       if (dob) delete dob;
-  }
-
-  void DataMaster::pre_step() {
-    for (auto dob : dataObjects)
-      if (dob) dob->pre_step();
   }
 
   void DataMaster::addDataObject(DataObject *dob) {
     dataObjects.push_back(dob);
   }
-  
-  void DataMaster::pre_exchange() {
-    for (auto dob : dataObjects)
-      if (dob) dob->pre_exchange();
+
+  void DataMaster::pre_step() {
+    for (auto& dob : dataObjects)
+      if (dob) dob->pre_step();
   }
   
-  void DataMaster::pre_neighbors() {
-    for (auto dob : dataObjects)
-      if (dob) dob->pre_neighbors();
+  void DataMaster::pre_exchange() {
+    for (auto& dob : dataObjects)
+      if (dob) dob->pre_exchange();
   }
 
   void DataMaster::pre_forces() {
-    for (auto dob : dataObjects)
+    for (auto& dob : dataObjects)
       if (dob) dob->pre_forces();
   }
 
   void DataMaster::post_forces() {
-    for (auto dob : dataObjects)
+    for (auto& dob : dataObjects)
       if (dob) dob->post_forces();
   }
 
   void DataMaster::post_step() {
-    for (auto dob : dataObjects)
+    for (auto& dob : dataObjects)
       if (dob) dob->post_step();
   }
 
@@ -59,7 +54,7 @@ namespace GFlowSimulation {
 
     // --- Have all the data objects write their data
     bool success = true;
-    for (auto dob : dataObjects)
+    for (auto& dob : dataObjects)
       if (dob) success &= dob->writeToFile(writeDirectory, true);
       //if (dob) success &= dob->writeToFile(writeDirectory+"/StatData/", true);
 

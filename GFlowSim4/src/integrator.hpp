@@ -9,14 +9,7 @@ namespace GFlowSimulation {
   public:
     // Constructor
     Integrator(GFlow *);
-
-    /*
-    virtual void pre_step()    {};
-    virtual void pre_forces()  {};
-    virtual void post_forces() {};
-    virtual void post_step()   {};
-    */
-
+    
     // --- Accessors
     RealType getTimeStep();
 

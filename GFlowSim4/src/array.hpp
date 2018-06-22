@@ -188,7 +188,7 @@ namespace GFlowSimulation {
     }
 
     T& at(int *index) {
-      int II = index[1]*dims[0]+index[o];
+      int II = index[1]*dims[0]+index[0];
       return data[II];
     }
 

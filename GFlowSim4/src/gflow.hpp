@@ -51,12 +51,14 @@ namespace GFlowSimulation {
     // Set the amount of time we should run for
     void requestTime(RealType);
 
+    // Keep positions in bounds
+    void wrapPositions();
+
     // Creators are a friend classes --- all must be since friendship is not inherited
     friend class BoxCreator;
 
   protected:
     // Private helper functions
-    inline void wrapPositions();
 
     // Data - public so anyone can access it
     class SimData *simData;             // Particle data

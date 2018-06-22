@@ -108,7 +108,6 @@ namespace GFlowSimulation {
       for (auto m : modifiers) m->pre_step();
 
       // --> Pre-exchange
-      wrapPositions(); // Wrap positions
       integrator->pre_exchange();
       dataMaster->pre_exchange();
       sectorization->pre_exchange();
@@ -116,16 +115,9 @@ namespace GFlowSimulation {
 
       // --- Exchange particles (potentially) ---
 
-      // --> Pre-neighbors
-      integrator->pre_neighbors();
-      dataMaster->pre_neighbors();
-      sectorization->pre_neighbors();
-      for (auto m : modifiers) m->pre_neighbors();
-
-      // --- Do neighbor updates (potentially)
-
       // --> Pre-force
       integrator->pre_forces(); // -- This is where VV first half kick happens
+
       dataMaster->pre_forces();
       sectorization->pre_forces(); // -- This is where resectorization / verlet list creation might happen
       for (auto m : modifiers) m->pre_forces();
@@ -186,21 +178,29 @@ namespace GFlowSimulation {
     requested_time = t;
   }
 
-  inline void GFlow::wrapPositions() {
+  void GFlow::wrapPositions() {
     // Get a pointer to position data and the number of particles in simData
     RealType **x = simData->x;
     int number = simData->number;
-    // Wrap, if applicable
-    for (int d=0; d<DIMENSIONS; ++d)
+
+    // Wrap all particles
+    for (int d=0; d<DIMENSIONS; ++d) {
       if (wrap[d]) { // Wrap the d-th dimension
-        // The width of the simulation in the d-th dimension
-        RealType dim = bounds.max[d] - bounds.min[d];
-        // Wrap each particle
         for (int n=0; n<number; ++n) {
-          if (x[n][d]>bounds.max[d])       x[n][d] -= dim;
-          else if (x[n][d]<=bounds.min[d]) x[n][d] += dim;
+          // Create a local copy
+          RealType xlocal = x[n][d];
+          // Wrap xlocal
+          if (xlocal<bounds.min[d])
+            xlocal = bounds.max[d]-fmod(bounds.min[d]-xlocal, bounds.wd(d));
+          else if (bounds.max[d]<=x[n][d])
+            xlocal = fmod(xlocal-bounds.min[d], bounds.wd(d))+bounds.min[d];
+          // Set
+          x[n][d] = xlocal;
+
+          if (xlocal>1) cout << "At wrapping: " << xlocal << " " << bounds.max[d] << endl;
         }
       }
+    }
   }
 
 }
