@@ -18,15 +18,20 @@ namespace GFlowSimulation {
     timeStamps.push_back(Base::gflow->getElapsedTime());
 
     // --- Record all positions
+    /*
     // Get the number of particles
     int number = Base::simData->number;
+    // Don't do anything if there are 0 or fewer particles
+    if (number<=0) return;
     // Create an array for the data
-    RealType *array = new RealType[number];
+    RealType *array = new RealType[number*DIMENSIONS];
     positions.push_back(array);
     // Fill the array of positions
     for (int i=0; i<number; ++i)
       for (int d=0; d<DIMENSIONS; ++d)
         array[DIMENSIONS*i+d] = Base::simData->x[i][d];
+    */
+
   }
 
   bool PositionData::writeToFile(string fileName, bool useName) {
