@@ -11,6 +11,7 @@ namespace GFlowSimulation {
   *
   *  Force master keeps a record of which interaction happens between pairs of particles.
   *  This allows, for example, interactions 0<-->0 to be hard spheres, 0<-->1 is sphere-triangle, etc...
+  *  ForceMaster is not responsible for deleting or managing force objects, GFlow is.
   *
   */
   class ForceMaster : public Base {
@@ -23,6 +24,14 @@ namespace GFlowSimulation {
 
     // Clear all the verlet lists of all the forces
     void clearVerletLists();
+
+    // --- Mutators
+
+    // Set the number of particle types
+    void setNTypes(int);
+
+    // Set the force in the force grid
+    void setForce(int, int, Force*);
 
   private:
 

@@ -26,10 +26,16 @@ namespace GFlowSimulation {
 
     // --- Accessors
 
+    // Return the last head added to the head array
+    int lastHead();
+
     // --- Mutators
 
     // Clear this force's verlet list
     void clearVerletList();
+
+    // Add a pair pf particles - the first is the head
+    void addVerletPair(int, int);
 
     // GFlow is a friend class
     friend class GFlow;

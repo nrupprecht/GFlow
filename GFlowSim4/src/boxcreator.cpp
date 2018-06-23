@@ -59,6 +59,12 @@ namespace GFlowSimulation {
     // Set the correct number of particles
     gflow->simData->number = number;
 
+    // --- Handle forces
+    gflow->forceMaster->setNTypes(1);
+    Force *hard_sphere = new HardSphere(gflow);
+    gflow->forces.push_back(hard_sphere);
+    gflow->forceMaster->setForce(0, 0, hard_sphere);
+
     // Make sure all forces are zero
     gflow->simData->clearF();
 

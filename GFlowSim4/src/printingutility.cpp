@@ -50,13 +50,19 @@ namespace GFlowSimulation {
 
     string PrintingUtility::toStrVec(RealType *x) {
       string str;
-      for (int d=0; d<DIMENSIONS; ++d) str += (toStr(x[d])+",");
+      for (int d=0; d<DIMENSIONS; ++d) {
+        str += toStr(x[d]);
+        if (d!=DIMENSIONS-1) str += ',';
+      }
       return str;
     }
 
     string PrintingUtility::toStrVec(int *x) {
       string str;
-      for (int d=0; d<DIMENSIONS; ++d) str += (toStr(x[d])+",");
+      for (int d=0; d<DIMENSIONS; ++d) {
+        str += toStr(x[d]);
+        if (d!=DIMENSIONS-1) str += ',';
+      }
       return str;
     }
 

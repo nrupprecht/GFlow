@@ -6,6 +6,7 @@
 #include "sectorization.hpp"
 #include "communicator.hpp"
 #include "datamaster.hpp"
+#include "forcemaster.hpp"
 #include "modifier.hpp"
 
 // Accumulation files

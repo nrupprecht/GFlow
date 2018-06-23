@@ -20,6 +20,9 @@ namespace GFlowSimulation {
     // Set sizes (but not capacities) to zero, effectively "clearing" out the data
     void clear();
 
+     // Return the last head added to the head array
+    int lastHead();
+
   private:
     // --- Helper functions
     inline void resizeVerlet(); 

@@ -182,6 +182,18 @@ namespace GFlowSimulation {
       }
     }
 
+    // Resize
+    void resize(int d1, int d2) {
+      int total = dims[0]*dims[1];
+      dims[0] = d1; dims[1] = d2;
+      int newTotal = dims[0]*dims[1];
+      // Reallocate if we don't have the correct amount of space
+      if (total!=newTotal) {
+        if (data) delete data;
+        data = new T[ newTotal ];
+      }
+    }
+
     T& at(int i0, int i1) {
       int II = i1*dims[0]+i0;
       return data[II];
@@ -279,6 +291,29 @@ namespace GFlowSimulation {
   // ---> This notation may not work on all compilers
   // ---> see <https://stackoverflow.com/questions/2996914/c-typedef-for-partial-templates>
   // template<typename T> using Array = ArrayBase<DIMENSIONS, T>;
+
+  // Address helping function
+  template<int D=DIMENSIONS> inline void getAddress(int linear, int *dims, int *address) {
+
+  }
+
+  template<> inline void getAddress<0>(int linear, int *dims, int *address) {};
+
+  template<> inline void getAddress<1>(int linear, int *dims, int *address) {
+    address[0] = linear;
+  }
+
+  template<> inline void getAddress<2>(int linear, int *dims, int *address) {
+    address[0] = linear/dims[0];
+    address[1] = linear - address[0]*dims[0];
+  }
+
+  template<> inline void getAddress<3>(int linear, int *dims, int *address) {
+    int s1 = dims[0]*dims[1];
+    address[0] = linear/s1;
+    address[1] = (linear - address[0]*s1)/dims[0];
+    address[2] = linear - address[0]*s1 - address[1]*dims[0];
+  }
 
 }
 #endif // __ARRAY_HPP__GFLOW__

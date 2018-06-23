@@ -63,6 +63,9 @@ namespace GFlowSimulation {
     // Set up xVL array
     inline void setupXVL(int);
 
+    // Get the address of a sector from a linear address, store in the second argument
+    // inline void getAddress(int, int*);
+
     // Bounds - get these from gflow
     Bounds bounds;
 
@@ -83,6 +86,9 @@ namespace GFlowSimulation {
 
     // Sectorization constants
     RealType skinDepth, cutoff;
+
+    // Current head - for verlet list creation
+    int currentHead;
   };
 
 };

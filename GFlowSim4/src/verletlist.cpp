@@ -26,6 +26,12 @@ namespace GFlowSimulation {
     verlet[vsize++] = id;
   }
 
+  int VerletList::lastHead() {
+    if (hsize>0)
+      return heads[hsize-1];
+    else return -1;
+  }
+
   void VerletList::clear() {
     vsize = 0;
     hcapacity = 0;

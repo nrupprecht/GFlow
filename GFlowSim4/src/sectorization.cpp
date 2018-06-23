@@ -3,6 +3,7 @@
 #include "vectormath.hpp"
 #include "verletlist.hpp"
 #include "forcemaster.hpp"
+#include "force.hpp"
 
 #include "printingutility.hpp" // For debugging
 
@@ -102,6 +103,9 @@ namespace GFlowSimulation {
     // Remake sectors
     sectors.resize(dims);
 
+    // Sectorize
+    sectorize();
+
     // Create verlet lists
     makeVerletLists();
   }
@@ -155,20 +159,22 @@ namespace GFlowSimulation {
     // --- Loop through all sectors
     int total = sectors.total();
     for (int sec=0; sec<total; ++sec) {
+      // Get the address of the sector with linear addres [sec]
+      getAddress<>(sec, dims, sectorAdd);
+
       // Look at all the particles in the sector
       auto &pvec = sectors.at(sectorAdd);
-
-      cout << PrintingUtility::toStrVec(sectorAdd) << endl; //**
-
       for (int p=0; p<pvec.size(); ++p) {
+        currentHead = pvec.at(p);
         // Interaction radius of this particle
-        RealType sigma = sg[p];
+        RealType sigma = sg[currentHead];
        
         // --- Look at other particles in the same sector
         for (int q = p+1; q<pvec.size(); ++q) {
-          getDisplacement(x[p], x[q], displacement, bounds, wrap);
-          if (sqr(displacement) < sigma + sg[q] + skinDepth) 
-            pairInteraction(p, q);
+          int otherParticle = pvec.at(q);
+          getDisplacement(x[currentHead], x[otherParticle], displacement, bounds, wrap);
+          if (sqr(displacement) < sigma + sg[otherParticle] + skinDepth) 
+            pairInteraction(currentHead, otherParticle);
         }
 
         // --- Only look for neighbor particles in sectors that are less than us in at least one dimension
@@ -184,16 +190,11 @@ namespace GFlowSimulation {
           // Look at that neighboring sector
           addVec(sectorAdd, dSectorAdd, otherAdd);
           auto &otherVec = sectors.at(otherAdd);
-
-          cout << otherVec.size() << endl; //**
-
           for (int q=0; q<otherVec.size(); ++q) {
-
-            cout << q << endl; //**
-
-            getDisplacement(x[p], x[q], displacement, bounds, wrap);
-            if (sqr(displacement) < sigma + sg[q] + skinDepth) 
-              pairInteraction(p, q);
+            int otherParticle = otherVec.at(q);
+            getDisplacement(x[currentHead], x[otherParticle], displacement, bounds, wrap);
+            if (sqr(displacement) < sigma + sg[otherParticle] + skinDepth) 
+              pairInteraction(currentHead, otherParticle);
           }
         }
       }
@@ -201,21 +202,12 @@ namespace GFlowSimulation {
   }
 
   inline void Sectorization::pairInteraction(int id1, int id2) {
-
-    cout << "pair: " << id1 << " " << id2 << endl;
-
     // --- Check to see if they are part of the same rigid body. If so, they cannot exert force on each other
 
     // --- Check with force master
-
-    cout << id1 << " " << id2 << endl; //**
-
     Force *force = Base::forceMaster->getForce(simData->type[id1], simData->type[id2]);
-
     // A null force means no interaction
-    if (force) {
-      
-    }
+    if (force) force->addVerletPair(id1, id2);
   }
 
   inline void Sectorization::nullXVL() {
@@ -233,5 +225,5 @@ namespace GFlowSimulation {
     for (int i=0; i<sizeXVL; ++i)
       xVL[i] = new RealType[DIMENSIONS];
   }
-  
+
 }

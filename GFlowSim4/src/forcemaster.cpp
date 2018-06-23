@@ -15,4 +15,13 @@ namespace GFlowSimulation {
     for (auto f : forces) f->clearVerletList();
   }
 
+  void ForceMaster::setNTypes(int n) {
+    ntypes = n;
+    forceGrid.resize(n, n);
+  }
+
+  void ForceMaster::setForce(int type1, int type2, Force *f) {
+    forceGrid.at(type1, type2) = f;
+  }
+
 }
