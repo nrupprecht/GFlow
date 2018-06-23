@@ -11,6 +11,8 @@ namespace GFlowSimulation {
     // Destructor
     ~VerletList();
 
+    // --- Mutators
+
     // Add a new head
     void addHead(int);
 
@@ -20,8 +22,22 @@ namespace GFlowSimulation {
     // Set sizes (but not capacities) to zero, effectively "clearing" out the data
     void clear();
 
+    // --- Accessors
+
      // Return the last head added to the head array
     int lastHead();
+
+    // Return the total length of the verlet list 
+    int vlSize();
+
+    // Return the number of heads in the verlet list
+    int vlHSize();
+
+    // Get a (const) pointer to the verlet array
+    const int* getVerlet();
+
+    // Get a (const) pointer to the heads array
+    const int* getHeads();
 
   private:
     // --- Helper functions

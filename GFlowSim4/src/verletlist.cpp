@@ -1,4 +1,5 @@
 #include "verletlist.hpp"
+#include "utility.hpp"
 
 namespace GFlowSimulation {
 
@@ -15,6 +16,7 @@ namespace GFlowSimulation {
     // Check if we need to resize
     if (hsize==hcapacity) resizeHeads();
     if (vsize==vcapacity) resizeVerlet();
+
     // Set and increment
     heads[hsize++] = vsize;
     verlet[vsize++] = id;
@@ -32,9 +34,27 @@ namespace GFlowSimulation {
     else return -1;
   }
 
+  int VerletList::vlSize() {
+    return vsize;
+  }
+
+  int VerletList::vlHSize() {
+    return hsize;
+  }
+
+  // Get a (const) pointer to the verlet array
+  const int* VerletList::getVerlet() {
+    return verlet;
+  }
+
+  // Get a (const) pointer to the heads array
+  const int* VerletList::getHeads() {
+    return heads;
+  }
+
   void VerletList::clear() {
     vsize = 0;
-    hcapacity = 0;
+    hsize = 0;
   }
 
   inline void VerletList::resizeVerlet() {
@@ -42,6 +62,9 @@ namespace GFlowSimulation {
     int *newVerlet = new int[newCapacity];
     for (int i=0; i<vcapacity; ++i) newVerlet[i] = verlet[i];
     vcapacity = newCapacity;
+    // Set new verlet array
+    if (verlet) delete [] verlet;
+    verlet = newVerlet;
   }
   
   inline void VerletList::resizeHeads() {
@@ -49,6 +72,9 @@ namespace GFlowSimulation {
     int *newHeads = new int[newCapacity];
     for (int i=0; i<hcapacity; ++i) newHeads[i] = heads[i];
     hcapacity = newCapacity;
+    // Set new head array
+    if (heads) delete [] heads;
+    heads = newHeads;
   }
 
 }

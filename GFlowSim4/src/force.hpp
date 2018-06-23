@@ -29,6 +29,12 @@ namespace GFlowSimulation {
     // Return the last head added to the head array
     int lastHead();
 
+    // Return the total length of the verlet list 
+    int vlSize();
+
+    // Return the number of heads in the verlet list
+    int vlHSize();
+
     // --- Mutators
 
     // Clear this force's verlet list

@@ -22,6 +22,9 @@ namespace GFlowSimulation {
 
   void ForceMaster::setForce(int type1, int type2, Force *f) {
     forceGrid.at(type1, type2) = f;
+    // Add to the list if it is not already there
+    if (!contains(forces, f)) forces.push_back(f);
+    if (!contains(gflow->forces, f)) gflow->forces.push_back(f);
   }
 
 }

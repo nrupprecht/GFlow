@@ -1,6 +1,8 @@
 #include "velocityverlet.hpp"
 #include "simdata.hpp"
 
+#include "printingutility.hpp" // For debugging
+
 namespace GFlowSimulation {
 
   VelocityVerlet::VelocityVerlet(GFlow *gflow) : Integrator(gflow) {};
@@ -22,7 +24,9 @@ namespace GFlowSimulation {
 
     for (int i=0; i<number; ++i) {
       // Update linear velocity (half) and position (full) -- we want this loop unrolled
-      for (int d=0; d<DIMENSIONS; ++d) v[i][d] += hdt*im[i]*f[i][d];
+      for (int d=0; d<DIMENSIONS; ++d) {
+        v[i][d] += hdt*im[i]*f[i][d];
+      }
       for (int d=0; d<DIMENSIONS; ++d) x[i][d] += dt*v[i][d];
       // Could update angular variables here ... 
     }

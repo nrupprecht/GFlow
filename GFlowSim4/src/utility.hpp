@@ -25,6 +25,8 @@ using std::stringstream;
 
 #include <cmath>
 
+#include <algorithm>
+
 namespace GFlowSimulation {
 
   // Define what type of floating point data to use
@@ -45,6 +47,10 @@ namespace GFlowSimulation {
 
   template<typename T> inline T min(T a, T b) {
     return a<b ? a : b;
+  }
+
+  template<typename T> inline bool contains(vector<T> vec, T obj) {
+    return std::find(vec.begin(), vec.end(), obj) != vec.end();
   }
 
 }

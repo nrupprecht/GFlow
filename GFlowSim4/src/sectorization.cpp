@@ -20,7 +20,7 @@ namespace GFlowSimulation {
     //      Maybe they should be part of a separate initialization somewhere.
 
     // Get the bounds from gflow
-    bounds = gflow->getBounds();
+    bounds = Base::gflow->getBounds();
     // Make the sectors
     makeSectors();
   }
@@ -32,6 +32,7 @@ namespace GFlowSimulation {
   void Sectorization::sectorize() {
     // Get data from simdata and sectors array
     RealType **x = Base::simData->x;
+
     int number = Base::simData->number, total = sectors.total();
 
     // Clear particles from sectors
@@ -56,6 +57,9 @@ namespace GFlowSimulation {
     for (int i=0; i<number; ++i)
       for (int d=0; d<DIMENSIONS; ++d) 
         xVL[i][d] = x[i][d];
+
+    // Create verlet lists
+    makeVerletLists();
   }
 
   int Sectorization::getNumSectors() {
@@ -103,11 +107,8 @@ namespace GFlowSimulation {
     // Remake sectors
     sectors.resize(dims);
 
-    // Sectorize
+    // Sectorize and create verlet lists
     sectorize();
-
-    // Create verlet lists
-    makeVerletLists();
   }
 
   inline void Sectorization::checkSectors() {
@@ -206,6 +207,7 @@ namespace GFlowSimulation {
 
     // --- Check with force master
     Force *force = Base::forceMaster->getForce(simData->type[id1], simData->type[id2]);
+
     // A null force means no interaction
     if (force) force->addVerletPair(id1, id2);
   }

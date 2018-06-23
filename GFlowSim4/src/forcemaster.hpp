@@ -30,7 +30,8 @@ namespace GFlowSimulation {
     // Set the number of particle types
     void setNTypes(int);
 
-    // Set the force in the force grid
+    // Set the force in the force grid - this also adds it to the force vector here and in the GFlow
+    // object if it is not already in those locations
     void setForce(int, int, Force*);
 
   private:

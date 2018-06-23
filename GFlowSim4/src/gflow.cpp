@@ -127,7 +127,7 @@ namespace GFlowSimulation {
 
       dataMaster->pre_forces();
       sectorization->pre_forces(); // -- This is where resectorization / verlet list creation might happen
-      for (auto m : modifiers) m->pre_forces();
+      for (auto m : modifiers) m->pre_forces(); // -- This is where modifiers should do forces (if they need to)
 
       // --- Do forces
       for (auto &f : forces) f->calculateForces();

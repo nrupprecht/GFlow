@@ -1,4 +1,5 @@
 #include "boxcreator.hpp"
+#include "vectormath.hpp"
 
 namespace GFlowSimulation {
 
@@ -45,6 +46,7 @@ namespace GFlowSimulation {
     RealType **x = gflow->simData->x;
     RealType **v = gflow->simData->v;
     RealType *sg = gflow->simData->sg;
+    RealType *im = gflow->simData->im;
     int *type    = gflow->simData->type;
     for (int n=0; n<number; ++n) {
       // Give some random positions and velocities
@@ -53,6 +55,7 @@ namespace GFlowSimulation {
         v[n][d] = 0.25*(drand48() - 0.5);
       }
       sg[n] = radius;
+      im[n] = 1.0 * PI*sqr(radius); // Density of 1
       type[n] = 0;
     }
 
@@ -62,7 +65,6 @@ namespace GFlowSimulation {
     // --- Handle forces
     gflow->forceMaster->setNTypes(1);
     Force *hard_sphere = new HardSphere(gflow);
-    gflow->forces.push_back(hard_sphere);
     gflow->forceMaster->setForce(0, 0, hard_sphere);
 
     // Make sure all forces are zero

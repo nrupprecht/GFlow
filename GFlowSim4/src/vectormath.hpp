@@ -6,7 +6,7 @@
 namespace GFlowSimulation {
 
   // Get the correct (minimal) displacement vector pointing from y to x
- inline void getDisplacement(RealType *x, RealType *y, RealType *dis, const Bounds B, const bool *wrap) {
+ inline void getDisplacement(const RealType *x, const RealType *y, RealType *dis, const Bounds B, const bool *wrap) {
     for (int d=0; d<DIMENSIONS; ++d) {
       dis[d] = x[d] - y[d];
       if (wrap[d]) {
@@ -16,29 +16,45 @@ namespace GFlowSimulation {
     }
   }
 
-  template<typename T> T dotVec(T *x, T *y) {
+  template<typename T> T inline dotVec(const T *x, const T *y) {
     T dt(0);
     for (int i=0; i<DIMENSIONS; ++i) dt += x[i]*y[i];
     return dt;
   }
 
   // Generic squaring function
-  template<typename T> T sqr(T x) {
+  template<typename T> T inline sqr(const T x) {
     return x*x;
   }
 
   // Vector squaring function
-  RealType sqr(RealType *x) {
+  inline RealType sqr(RealType *x) {
     return dotVec(x,x);
   }
 
-  template<typename T> void zeroVec(T *x) {
+  template<typename T> inline void zeroVec(T *x) {
     for (int d=0; d<DIMENSIONS; ++d)
       x[d] = T(0);
   }
 
-  template<typename T> void addVec(T *x, T *y, T *z) {
+  template<typename T> inline void addVec(const T *x, const T *y, T *z) {
     for (int d=0; d<DIMENSIONS; ++d) z[d] = x[d]+y[d];
+  }
+
+  template<typename T> inline void scalarMultVec(const RealType scalar, const T *x, T *z) {
+    for (int d=0; d<DIMENSIONS; ++d) z[d] = scalar*x[d];
+  }
+
+  template<typename T> inline void plusEqVec(T *z, const T *x) {
+    for (int d=0; d<DIMENSIONS; ++d) z[d] += x[d];
+  }
+
+  template<typename T> inline void minusEqVec(T *z, const T *x) {
+    for (int d=0; d<DIMENSIONS; ++d) z[d] -= x[d];
+  }
+
+  template<typename T> inline void copyVec(const T *x, T *target) {
+    for (int d=0; d<DIMENSIONS; ++d) target[d] = x[d];
   }
 
 }
