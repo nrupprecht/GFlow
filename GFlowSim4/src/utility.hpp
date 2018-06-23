@@ -52,5 +52,9 @@ namespace GFlowSimulation {
 // Include this after so RealType is defined
 #include "defaultconstants.hpp"
 #include "bounds.hpp"
+#include "printingutility.hpp"
+
+// Include this after so string is defined
+#include "exceptions.hpp"
 
 #endif // __UTILITY_HPP__GFLOW__

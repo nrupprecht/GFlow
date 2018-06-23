@@ -1,4 +1,5 @@
 #include "printingutility.hpp"
+#include "utility.hpp"
 
 namespace GFlowSimulation {
 

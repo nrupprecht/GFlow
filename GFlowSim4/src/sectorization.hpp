@@ -51,6 +51,12 @@ namespace GFlowSimulation {
     // Check whether we need to resectorize, if so, then do it
     inline void checkSectors();
 
+    // Create verlet lists for all forces
+    inline void makeVerletLists();
+
+    // Given two particles, take care of whether they should exert forces on one another
+    inline void pairInteraction(int, int);
+
     // Delete and set as null the xVL array
     inline void nullXVL();
 

@@ -1,6 +1,8 @@
 #include "sectorization.hpp"
 #include "simdata.hpp"
 #include "vectormath.hpp"
+#include "verletlist.hpp"
+#include "forcemaster.hpp"
 
 namespace GFlowSimulation {
 
@@ -97,6 +99,9 @@ namespace GFlowSimulation {
 
     // Remake sectors
     sectors.resize(dims);
+
+    // Create verlet lists
+    makeVerletLists();
   }
 
   inline void Sectorization::checkSectors() {
@@ -105,10 +110,7 @@ namespace GFlowSimulation {
     int number = Base::simData->number;
     const bool *wrap = gflow->getWrap();
 
-    if (x==nullptr || wrap==nullptr) {
-      cout << "Bad.\n";
-      return;
-    }
+    if (x==nullptr || wrap==nullptr) throw UnexpectedNullPointer("[x] or [wrap] null in [checkSectors]");
 
     // If there are more particles now, we need to resectorize
     if (sizeXVL<number) sectorize();
@@ -129,6 +131,88 @@ namespace GFlowSimulation {
       }
       // Compair with skin depth
       if (sqrt(maxDSqr) + sqrt(secDSqr) > skinDepth) sectorize();
+    }
+  }
+
+  inline void Sectorization::makeVerletLists() {
+    // Reset the verlet lists of all the forces
+    Base::forceMaster->clearVerletLists();
+
+    // What the central sector we're looking at is, where the other sector is relative to that,
+    // and what that sector's actual address is
+    int sectorAdd[DIMENSIONS], dSectorAdd[DIMENSIONS], otherAdd[DIMENSIONS];
+    zeroVec(sectorAdd);
+    // Get data from simdata
+    RealType **x = simData->x, *sg = simData->sg;
+    const bool *wrap = gflow->getWrap();
+    // A displacement vector - to be set by the getDisplacement function
+    RealType displacement[DIMENSIONS];
+    // The square of the cutoff for inclusion in the verlet list
+    RealType cutSqr = sqr(cutoff);
+
+    // --- Loop through all sectors
+    int total = sectors.total();
+    for (int sec=0; sec<total; ++sec) {
+      // Look at all the particles in the sector
+      auto &pvec = sectors.at(sectorAdd);
+
+      cout << PrintingUtility::toStrVec(sectorAdd) << endl; //**
+
+      for (int p=0; p<pvec.size(); ++p) {
+        // Interaction radius of this particle
+        RealType sigma = sg[p];
+       
+        // --- Look at other particles in the same sector
+        for (int q = p+1; q<pvec.size(); ++q) {
+          getDisplacement(x[p], x[q], displacement, bounds, wrap);
+          if (sqr(displacement) < sigma + sg[q] + skinDepth) 
+            pairInteraction(p, q);
+        }
+
+        // --- Only look for neighbor particles in sectors that are less than us in at least one dimension
+        //     There are 2^(DIMENSIONS) - 1 of these
+        for (int c=1; c<pow(2,DIMENSIONS); ++c) {
+          // Convert c to a binary number, with 1 --> -1, 0 --> 0
+          int c0 = c;
+          for (int d=0; d<DIMENSIONS; ++d) {
+            if(c0 % 2) dSectorAdd[d] = -1;
+            else dSectorAdd[d] = 0;
+            c0 /= 2;
+          }
+          // Look at that neighboring sector
+          addVec(sectorAdd, dSectorAdd, otherAdd);
+          auto &otherVec = sectors.at(otherAdd);
+
+          cout << otherVec.size() << endl; //**
+
+          for (int q=0; q<otherVec.size(); ++q) {
+
+            cout << q << endl; //**
+
+            getDisplacement(x[p], x[q], displacement, bounds, wrap);
+            if (sqr(displacement) < sigma + sg[q] + skinDepth) 
+              pairInteraction(p, q);
+          }
+        }
+      }
+    }
+  }
+
+  inline void Sectorization::pairInteraction(int id1, int id2) {
+
+    cout << "pair: " << id1 << " " << id2 << endl;
+
+    // --- Check to see if they are part of the same rigid body. If so, they cannot exert force on each other
+
+    // --- Check with force master
+
+    cout << id1 << " " << id2 << endl; //**
+
+    Force *force = Base::forceMaster->getForce(simData->type[id1], simData->type[id2]);
+
+    // A null force means no interaction
+    if (force) {
+      
     }
   }
 

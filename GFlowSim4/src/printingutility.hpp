@@ -1,8 +1,6 @@
 #ifndef __PRINTING_UTILITY_HPP__GFLOW__
 #define __PRINTING_UTILITY_HPP__GFLOW__
 
-#include "utility.hpp"
-
 namespace GFlowSimulation {
 
   struct PrintingUtility {

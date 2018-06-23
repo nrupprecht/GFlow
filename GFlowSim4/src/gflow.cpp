@@ -4,9 +4,10 @@
 #include "velocityverlet.hpp"
 #include "force.hpp"
 #include "sectorization.hpp"
-#include "neighbors.hpp"
+#include "verletlist.hpp"
 #include "communicator.hpp"
 #include "datamaster.hpp"
+#include "forcemaster.hpp"
 #include "modifier.hpp"
 
 namespace GFlowSimulation {
@@ -17,6 +18,7 @@ namespace GFlowSimulation {
     sectorization = new Sectorization(this);
     communicator = new Communicator(this);
     dataMaster = new DataMaster(this);
+    forceMaster = new ForceMaster(this);
 
     // Set wrapping to true by defaule
     setAllWrap(true);
@@ -52,6 +54,9 @@ namespace GFlowSimulation {
     if (dataMaster) dataMaster->initialize();
     else non_null = false;
 
+    if (forceMaster) forceMaster->initialize();
+    else non_null = false;
+
     for (auto &md : modifiers) {
       if (md) md->initialize();
       else non_null = false; 
@@ -70,10 +75,12 @@ namespace GFlowSimulation {
     // Give pointer to this GFlow object
     base->gflow = this;
     // Set other objects
-    base->simData = simData;
-    base->integrator = integrator;
+    base->simData       = simData;
+    base->integrator    = integrator;
     base->sectorization = sectorization;
-    base->communicator = communicator;
+    base->communicator  = communicator;
+    base->dataMaster    = dataMaster;
+    base->forceMaster   = forceMaster;
   }
 
   void GFlow::run(RealType rt) {

@@ -16,8 +16,8 @@ namespace GFlowSimulation {
     }
   }
 
-  RealType dot(RealType *x, RealType *y) {
-    RealType dt = 0;
+  template<typename T> T dotVec(T *x, T *y) {
+    T dt(0);
     for (int i=0; i<DIMENSIONS; ++i) dt += x[i]*y[i];
     return dt;
   }
@@ -29,7 +29,16 @@ namespace GFlowSimulation {
 
   // Vector squaring function
   RealType sqr(RealType *x) {
-    return dot(x,x);
+    return dotVec(x,x);
+  }
+
+  template<typename T> void zeroVec(T *x) {
+    for (int d=0; d<DIMENSIONS; ++d)
+      x[d] = T(0);
+  }
+
+  template<typename T> void addVec(T *x, T *y, T *z) {
+    for (int d=0; d<DIMENSIONS; ++d) z[d] = x[d]+y[d];
   }
 
 }

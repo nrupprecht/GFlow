@@ -114,12 +114,12 @@ namespace GFlowSimulation {
 
     // Resize 
     void resize(int *sizes) {
-      int total = dims;
-      dims = *sizes[0];
+      int oldDims = dims;
+      dims = sizes[0];
       // Reallocate if we don't have the correct amount of space
-      if (total!=dims) {
+      if (oldDims!=dims) {
         if (data) delete data;
-        data = new T[ newTotal ];
+        data = new T[dims];
       }
     }
 

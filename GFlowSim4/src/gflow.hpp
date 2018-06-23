@@ -65,7 +65,8 @@ namespace GFlowSimulation {
     class Integrator *integrator;       // Integrator
     class Sectorization *sectorization; // Sectorization of particles
     class Communicator *communicator;   // Inter-process communicator
-    class DataMaster *dataMaster;       // DataMaster object for unified data collection    
+    class DataMaster *dataMaster;       // DataMaster object for unified data collection  
+    class ForceMaster *forceMaster;     // ForceMaster object for defining and storing interparticle forces  
 
     // A vector of objects that should modify the simulation at some point(s) during execution
     vector<class Modifier*> modifiers;

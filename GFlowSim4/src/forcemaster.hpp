@@ -18,10 +18,22 @@ namespace GFlowSimulation {
     // Constructor
     ForceMaster(GFlow*);
 
+    // Get a pointer to the force that the particle pair belongs in. Null means no force.
+    Force* getForce(int, int);
+
+    // Clear all the verlet lists of all the forces
+    void clearVerletLists();
+
   private:
 
     // Particles of type t1, t2, should be governed by force forceGrid.at(t1,t2)
     Array<Force*, 2> forceGrid;
+
+    // Pointers to all the forces that exist in the simulation
+    vector<Force*> forces;
+
+    // Number of particle types
+    int ntypes;
 
   };
 
