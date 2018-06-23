@@ -1,5 +1,4 @@
 #include "printingutility.hpp"
-#include "utility.hpp"
 
 namespace GFlowSimulation {
 
@@ -47,6 +46,18 @@ namespace GFlowSimulation {
 
       // Return success
       return true;
+    }
+
+    string PrintingUtility::toStrVec(RealType *x) {
+      string str;
+      for (int d=0; d<DIMENSIONS; ++d) str += (toStr(x[d])+",");
+      return str;
+    }
+
+    string PrintingUtility::toStrVec(int *x) {
+      string str;
+      for (int d=0; d<DIMENSIONS; ++d) str += (toStr(x[d])+",");
+      return str;
     }
 
 }

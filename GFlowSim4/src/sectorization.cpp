@@ -4,6 +4,8 @@
 #include "verletlist.hpp"
 #include "forcemaster.hpp"
 
+#include "printingutility.hpp" // For debugging
+
 namespace GFlowSimulation {
 
   Sectorization::Sectorization(GFlow *gflow) : Base(gflow), xVL(nullptr), sizeXVL(0), skinDepth(0.025), cutoff(0) {};
