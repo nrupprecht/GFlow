@@ -17,6 +17,9 @@
 // Argument parsing
 #include "ArgParse.hpp"
 
+// Useful
+#include "vectormath.hpp"
+
 namespace GFlowSimulation {
 
   /*

@@ -56,6 +56,7 @@ namespace GFlowSimulation {
 
     // Creators are a friend classes --- all must be since friendship is not inherited
     friend class BoxCreator;
+    friend class DebugCreator;
 
     // Force master is a friend class
     friend class ForceMaster;

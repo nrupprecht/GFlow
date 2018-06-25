@@ -1,4 +1,5 @@
 #include "boxcreator.hpp"
+#include "debugcreator.hpp"
 
 /*
 *
@@ -16,7 +17,8 @@ int main(int argc, char **argv) {
   Creator *creator = nullptr;
 
   // Assign a specific type of creator
-  creator = new BoxCreator(argc, argv);
+  // creator = new BoxCreator(argc, argv);
+  creator = new DebugCreator(argc, argv);
 
   // Create a gflow simulation
   GFlow *gflow = creator->createSimulation();

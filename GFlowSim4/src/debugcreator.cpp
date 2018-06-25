@@ -1,25 +1,18 @@
-#include "boxcreator.hpp"
+#include "debugcreator.hpp"
 
 namespace GFlowSimulation {
 
-  BoxCreator::BoxCreator(int argc, char **argv) : Creator(argc, argv) {};
+  // Constructor
+  DebugCreator::DebugCreator(int argc, char** argv) : Creator(argc, argv) {};
 
-  GFlow* BoxCreator::createSimulation() {
+    // Create simulation
+  GFlow* DebugCreator::createSimulation() {
     // Seed random number generators
     srand48(time(0));
 
     // Values
     RealType time = 10.;
-    int number = 10;
-    RealType radius = 0.05;
-    bool animate = false;;
-
-    // Gather command line arguments
-    ArgParse parser(argc, argv);
-    parser.get("time", time);
-    parser.get("number", number);
-    parser.get("radius", radius);
-    parser.get("animate", animate);
+    bool animate = true;
 
     // Create a new gflow object
     GFlow *gflow = new GFlow;
@@ -37,9 +30,7 @@ namespace GFlowSimulation {
     gflow->setAllWrap(true);
 
     // Add some objects
-    gflow->simData->reserve(number);
-
-    // --- Set all particle data
+    gflow->simData->reserve(2);
 
     // Get pointers to particle data
     RealType **x = gflow->simData->x;
@@ -47,19 +38,23 @@ namespace GFlowSimulation {
     RealType *sg = gflow->simData->sg;
     RealType *im = gflow->simData->im;
     int *type    = gflow->simData->type;
-    for (int n=0; n<number; ++n) {
-      // Give some random positions and velocities
-      for (int d=0; d<DIMENSIONS; ++d) {
-        x[n][d] = drand48();
-        v[n][d] = 0.25*(drand48() - 0.5);
-      }
+
+    // Rightwards ball
+    const RealType radius = 0.05;
+    x[0][0] = 0.3; x[1][0] = 0.7;
+    v[0][0] = 1.;  v[1][0] = -1.;
+    for (int d=1; d<DIMENSIONS; ++d) {
+      x[0][d] = x[1][d] = 0.5;
+      v[0][d] = v[1][d] = 0;
+    }
+    for (int n=0; n<2; ++n) {
       sg[n] = radius;
       im[n] = 1.0 * PI*sqr(radius); // Density of 1
       type[n] = 0;
     }
 
     // Set the correct number of particles
-    gflow->simData->number = number;
+    gflow->simData->number = 2;
 
     // --- Handle forces
     gflow->forceMaster->setNTypes(1);
