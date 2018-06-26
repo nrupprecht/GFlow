@@ -37,6 +37,9 @@ namespace GFlowSimulation {
   // Define what type of floating point data to use
   typedef float RealType;
 
+  // Unsigned int
+  typedef unsigned int uint;
+
   // Convert an object to a string
   template<typename T> inline string toStr(T obj) {
     stringstream stream;
@@ -59,7 +62,7 @@ namespace GFlowSimulation {
   }
 
   /// Get the current time
-  inline auto current_time() {
+  inline high_resolution_clock::time_point current_time() {
     return high_resolution_clock::now();
   }
 

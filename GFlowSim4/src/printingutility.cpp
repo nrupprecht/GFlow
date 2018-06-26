@@ -39,7 +39,7 @@ namespace GFlowSimulation {
       mkdir(dirName.c_str(), 0777);
 
       // Create the data files in the directory
-      for (int iter=0; iter<record.size(); ++iter) {
+      for (uint iter=0; iter<record.size(); ++iter) {
         // The name of the file for this data
         string subfile = dirName+fileName+toStr(iter)+".csv";
         // Create the file [fileName] (inside directory [dirName]) containing the data from record.at(iter)

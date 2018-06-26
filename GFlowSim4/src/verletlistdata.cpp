@@ -32,7 +32,7 @@ namespace GFlowSimulation {
     // Create a directory for all the data
     mkdir(dirName.c_str(), 0777);
 
-    for (int iter=0; iter<verletLists.size(); iter += nForces) {
+    for (uint iter=0; iter<verletLists.size(); iter += nForces) {
       string fileHead = dirName + dataName + toStr(iter/nForces);
       for (int sub_iter=0; sub_iter<nForces; ++sub_iter) {
         string sub_fileName = (fileHead + "_" + toStr(sub_iter) + ".csv");

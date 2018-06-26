@@ -6,8 +6,8 @@ namespace GFlowSimulation {
   VerletList::VerletList() : verlet(nullptr), heads(nullptr), vsize(0), hsize(0), vcapacity(0), hcapacity(0), 
     default_verlet_capacity(1024), default_head_capacity(64) {};
 
-  VerletList::VerletList(const VerletList& vl) : hsize(vl.hsize), hcapacity(vl.hcapacity), vsize(vl.vsize), 
-    vcapacity(vl.vcapacity), default_verlet_capacity(vl.default_verlet_capacity), default_head_capacity(vl.default_head_capacity) 
+  VerletList::VerletList(const VerletList& vl) : vsize(vl.vsize), hsize(vl.hsize), vcapacity(vl.vcapacity), 
+    hcapacity(vl.hcapacity), default_verlet_capacity(vl.default_verlet_capacity), default_head_capacity(vl.default_head_capacity) 
   {
     // Allocate and copy arrays
     verlet = new int[vcapacity];

@@ -29,8 +29,8 @@ namespace GFlowSimulation {
 
     RealType vol() {
       RealType V = 1.;
-      for (int i=0; i<D; ++i) V *= (max[d] - min[d]);
-      return vol;
+      for (int d=0; d<D; ++d) V *= (max[d] - min[d]);
+      return V;
     }
 
     RealType min[DIMENSIONS], max[DIMENSIONS];

@@ -102,7 +102,7 @@ namespace GFlowSimulation {
     fout << "********** 2018, Nathaniel Rupprecht **********\n";
     fout << "***********************************************\n\n";
     // Print command
-    pair<int, const char**> command = gflow->getCommand();
+    pair<int, char**> command = gflow->getCommand();
     if (command.second) for (int c=0; c<command.first; ++c) fout << command.second[c] << " ";
     
     // --- Print timing summary
@@ -122,7 +122,7 @@ namespace GFlowSimulation {
     fout << "  - Dimensions:               " << DIMENSIONS << "\n";
     fout << "  - Wrapping:                 ";
     for (int d=0; d<DIMENSIONS; ++d) {
-      fout << Base::gflow->getWrap()[d] ? "True" : "False";
+      fout << (Base::gflow->getWrap()[d] ? "True" : "False");
       if (d!=DIMENSIONS-1) fout << ", ";
     }
     fout << "\n";

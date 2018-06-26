@@ -104,7 +104,7 @@ class ArgParse {
 
   // Checks if any command line arguments were not checked by the parser. If so, then they are assumed to be illegal arguments, and an error will be thrown
   void check() {
-    for (int i=0; i<checked.size(); ++i) {
+    for (uint i=0; i<checked.size(); ++i) {
       if (!checked.at(i)) throw UncheckedToken("Tok=["+tlist.at(i).first + "]: Val=[" + tlist.at(i).second+"]");
     }
   }

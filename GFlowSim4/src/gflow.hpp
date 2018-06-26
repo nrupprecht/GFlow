@@ -54,7 +54,7 @@ namespace GFlowSimulation {
     // Get the wrapping data
     const bool* getWrap() const;
 
-    pair<int, const char**> getCommand() const;
+    pair<int, char**> getCommand() const;
 
     // --- Mutators
 

@@ -57,7 +57,6 @@ namespace GFlowSimulation {
 
   void VelocityVerlet::post_forces() {
     // Second half kick
-    RealType **x = simData->x;
     RealType **v = simData->v;
     RealType **f = simData->f;
     RealType *im = simData->im;

@@ -74,7 +74,7 @@ namespace GFlowSimulation {
 
     // --- Helper functions
 
-    // Find the product of some of the widths
+    // Find the product of some of the widths - up to, but not including, [n]
     inline int _partial(int n) {
       // Return 1 for n<1
       if (n<1) return 1;
@@ -87,9 +87,10 @@ namespace GFlowSimulation {
     // Find the linear index for an index set
     inline int _get_index(int *index) {
       int II = 0;
-      for (int i=D; i>=0; --i) {
-        II += index[i]*_partial(i);
+      for (int i=0; i<D; ++i) {
+        II += index[i]*_partial(i-1);
       }
+      return II;
     }
   };
 

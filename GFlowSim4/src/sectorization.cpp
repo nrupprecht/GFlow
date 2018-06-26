@@ -163,8 +163,6 @@ namespace GFlowSimulation {
     const bool *wrap = gflow->getWrap();
     // A displacement vector - to be set by the getDisplacement function
     RealType displacement[DIMENSIONS];
-    // The square of the cutoff for inclusion in the verlet list
-    RealType cutSqr = sqr(cutoff);
 
     // --- Loop through all sectors
     int total = sectors.total();
@@ -173,13 +171,13 @@ namespace GFlowSimulation {
       getAddress<>(sec, dims, sectorAdd);
       // Look at all the particles in the sector
       auto &pvec = sectors.at(sectorAdd);
-      for (int p=0; p<pvec.size(); ++p) {
+      for (uint p=0; p<pvec.size(); ++p) {
         currentHead = pvec.at(p);
         // Interaction radius of this particle
         RealType sigma = sg[currentHead];
        
         // --- Look at other particles in the same sector
-        for (int q = p+1; q<pvec.size(); ++q) {
+        for (uint q = p+1; q<pvec.size(); ++q) {
           int otherParticle = pvec.at(q);
           getDisplacement(x[currentHead], x[otherParticle], displacement, bounds, wrap);
           if (sqr(displacement) < sigma + sg[otherParticle] + skinDepth) 
@@ -188,10 +186,10 @@ namespace GFlowSimulation {
 
         // --- Only look for neighbor particles in sectors that are less than us in at least one dimension
         //     There are 2^(DIMENSIONS) - 1 of these
-        for (int c=1; c<pow(2,DIMENSIONS); ++c) {
+        for (uint c=1; c<pow(2,DIMENSIONS); ++c) {
           // Convert c to a binary number, with 1 --> -1, 0 --> 0
           int c0 = c;
-          for (int d=0; d<DIMENSIONS; ++d) {
+          for (uint d=0; d<DIMENSIONS; ++d) {
             if(c0 % 2) dSectorAdd[d] = -1;
             else dSectorAdd[d] = 0;
             c0 /= 2;
@@ -215,7 +213,7 @@ namespace GFlowSimulation {
 
           // Get the sectors
           auto &otherVec = sectors.at(otherAdd);
-          for (int q=0; q<otherVec.size(); ++q) {
+          for (uint q=0; q<otherVec.size(); ++q) {
             int otherParticle = otherVec.at(q);
             getDisplacement(x[currentHead], x[otherParticle], displacement, bounds, wrap);
             if (sqr(displacement) < sigma + sg[otherParticle] + skinDepth) 

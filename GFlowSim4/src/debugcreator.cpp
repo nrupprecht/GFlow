@@ -16,7 +16,6 @@ namespace GFlowSimulation {
     RealType time = 3.;
     RealType radius = 0.05;
     RealType velocity = 0.25;
-    bool animate = true;
 
     // Gather command line arguments
     parserPtr->get("time", time);

@@ -202,8 +202,8 @@ namespace GFlowSimulation {
     return wrap;
   }
 
-  pair<int, const char**> GFlow::getCommand() const {
-    return pair<int, const char**>(argc, argv);
+  pair<int, char**> GFlow::getCommand() const {
+    return pair<int, char**>(argc, argv);
   }
 
   void GFlow::setCommand(int argc, char **argv) {

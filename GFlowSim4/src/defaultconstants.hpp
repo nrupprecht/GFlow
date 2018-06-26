@@ -8,7 +8,7 @@ namespace GFlowSimulation {
   const RealType PI = 3.14159265;
 
   // The number of dimensions the simulation is in
-  const int DIMENSIONS = 1;
+  const int DIMENSIONS = 4;
 
 }
 
