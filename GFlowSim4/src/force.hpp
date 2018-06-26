@@ -35,6 +35,10 @@ namespace GFlowSimulation {
     // Return the number of heads in the verlet list
     int vlHSize();
 
+    // --- Accessors
+
+    const VerletList& getVerletList();
+
     // --- Mutators
 
     // Clear this force's verlet list

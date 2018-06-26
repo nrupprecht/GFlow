@@ -10,6 +10,9 @@ namespace GFlowSimulation {
     // Constructor
     BoxCreator(int, char**);
 
+    // Constructor
+    BoxCreator(ArgParse*);
+
     // Create simulation
     virtual GFlow* createSimulation();
   };

@@ -4,6 +4,8 @@ namespace GFlowSimulation {
 
   BoxCreator::BoxCreator(int argc, char **argv) : Creator(argc, argv) {};
 
+  BoxCreator::BoxCreator(ArgParse *p) : Creator(p) {};
+
   GFlow* BoxCreator::createSimulation() {
     // Seed random number generators
     srand48(time(0));
@@ -15,11 +17,10 @@ namespace GFlowSimulation {
     bool animate = false;;
 
     // Gather command line arguments
-    ArgParse parser(argc, argv);
-    parser.get("time", time);
-    parser.get("number", number);
-    parser.get("radius", radius);
-    parser.get("animate", animate);
+    parserPtr->get("time", time);
+    parserPtr->get("number", number);
+    parserPtr->get("radius", radius);
+    parserPtr->get("animate", animate);
 
     // Create a new gflow object
     GFlow *gflow = new GFlow;
@@ -71,10 +72,6 @@ namespace GFlowSimulation {
 
     // Request some amount of time to run
     gflow->requestTime(time); // -- 10 is a stub value
-
-    // Give data objects to data master
-    if (animate) 
-      gflow->dataMaster->addDataObject(new PositionData(gflow));
 
     return gflow;
   }

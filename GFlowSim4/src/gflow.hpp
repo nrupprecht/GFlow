@@ -70,6 +70,9 @@ namespace GFlowSimulation {
     // Keep positions in bounds
     void wrapPositions();
 
+    // Add a data object
+    void addDataObject(class DataObject*);
+
     // Creators are a friend classes --- all must be since friendship is not inherited
     friend class BoxCreator;
     friend class DebugCreator;

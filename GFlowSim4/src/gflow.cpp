@@ -81,6 +81,9 @@ namespace GFlowSimulation {
     base->communicator  = communicator;
     base->dataMaster    = dataMaster;
     base->forceMaster   = forceMaster;
+    // Set vectors
+    base->modifiersPtr  = &modifiers;
+    base->forcesPtr     = &forces;
   }
 
   void GFlow::run(RealType rt) {
@@ -236,21 +239,17 @@ namespace GFlowSimulation {
             xlocal = fmod(xlocal-bounds.min[d], bounds.wd(d))+bounds.min[d];
           // Set
           x[n][d] = xlocal;
-
-          if (xlocal>1) cout << "At wrapping: " << xlocal << " " << bounds.max[d] << endl;
         }
       }
     }
   }
 
-  inline void GFlow::clearForces() {
-    // Get a pointer to force data and the number of particles in simData
-    RealType **f = simData->f;
-    int number = simData->number;
+  void GFlow::addDataObject(class DataObject* dob) {
+    dataMaster->addDataObject(dob);
+  }
 
-    // Zero all particles' forces
-    for (int n=0; n<number; ++n)
-      for (int d=0; d<DIMENSIONS; ++d) f[n][d] = 0;
+  inline void GFlow::clearForces() {
+    simData->clearF();
   }
 
 }

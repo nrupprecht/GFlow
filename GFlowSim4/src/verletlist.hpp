@@ -8,8 +8,14 @@ namespace GFlowSimulation {
     // Constructor
     VerletList();
 
+    // Copy Constructor
+    VerletList(const VerletList&);
+
     // Destructor
     ~VerletList();
+
+    // Equals operator
+    VerletList& operator=(const VerletList&);
 
     // --- Mutators
 
@@ -25,19 +31,19 @@ namespace GFlowSimulation {
     // --- Accessors
 
      // Return the last head added to the head array
-    int lastHead();
+    int lastHead() const;
 
     // Return the total length of the verlet list 
-    int vlSize();
+    int vlSize() const;
 
     // Return the number of heads in the verlet list
-    int vlHSize();
+    int vlHSize() const;
 
     // Get a (const) pointer to the verlet array
-    const int* getVerlet();
+    const int* getVerlet() const;
 
     // Get a (const) pointer to the heads array
-    const int* getHeads();
+    const int* getHeads() const;
 
   private:
     // --- Helper functions

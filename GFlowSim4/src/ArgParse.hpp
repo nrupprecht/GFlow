@@ -36,6 +36,14 @@ class ArgParse {
     parse();
   }
 
+  int getArgc() {
+    return argc;
+  }
+
+  char** getArgv() {
+    return argv;  
+  }
+
   // Parse the command line arguments for information
   void parse() {
     for (int i=1; i<argc; i++) {

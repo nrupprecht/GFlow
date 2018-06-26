@@ -119,6 +119,8 @@ namespace GFlowSimulation {
     sectorize();
   }
 
+  // Checks whether sectors need to be refilled. This happens when the max distance traveled
+  // by two particles, relative to one another, is > skinDepth
   inline void Sectorization::checkSectors() {
     // Get data from simdata and sectors array
     RealType **x = Base::simData->x;
@@ -198,6 +200,26 @@ namespace GFlowSimulation {
           }
           // Look at that neighboring sector
           addVec(sectorAdd, dSectorAdd, otherAdd);
+          // If sector is negative or too large, either wrap sector or skip
+          bool good = true;
+          for (int d=0; d<DIMENSIONS && good; ++d) {
+            if (otherAdd[d]<0) {
+              if (wrap[d]) otherAdd[d] += dims[d];
+              else {
+                good = false;
+                break;
+              }
+            }
+            else if (dims[d]<=otherAdd[d]) {
+              if (wrap[d]) otherAdd[d] -= dims[d];
+              else {
+                good = false;
+                break;
+              }
+            }
+          }
+
+          // Get the sectors
           auto &otherVec = sectors.at(otherAdd);
           for (int q=0; q<otherVec.size(); ++q) {
             int otherParticle = otherVec.at(q);

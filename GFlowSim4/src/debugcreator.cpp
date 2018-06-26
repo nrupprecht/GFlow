@@ -5,7 +5,9 @@ namespace GFlowSimulation {
   // Constructor
   DebugCreator::DebugCreator(int argc, char** argv) : Creator(argc, argv) {};
 
-    // Create simulation
+  DebugCreator::DebugCreator(ArgParse *p) : Creator(p) {};
+
+  // Create simulation
   GFlow* DebugCreator::createSimulation() {
     // Seed random number generators
     srand48(time(0));
@@ -17,10 +19,8 @@ namespace GFlowSimulation {
     bool animate = true;
 
     // Gather command line arguments
-    ArgParse parser(argc, argv);
-    parser.get("time", time);
-    parser.get("radius", radius);
-    parser.get("animate", animate);
+    parserPtr->get("time", time);
+    parserPtr->get("radius", radius);
 
     // Create a new gflow object
     GFlow *gflow = new GFlow;
@@ -41,11 +41,11 @@ namespace GFlowSimulation {
     gflow->simData->reserve(2);
 
     // Get pointers to particle data
-    RealType **x = gflow->simData->x;
-    RealType **v = gflow->simData->v;
-    RealType *sg = gflow->simData->sg;
-    RealType *im = gflow->simData->im;
-    int *type    = gflow->simData->type;
+    RealType **x   = gflow->simData->x;
+    RealType **v   = gflow->simData->v;
+    RealType *sg   = gflow->simData->sg;
+    RealType *im   = gflow->simData->im;
+    int      *type = gflow->simData->type;
 
     // Rightwards ball
     x[0][0] = 0.3; x[1][0] = 0.7;
@@ -74,10 +74,6 @@ namespace GFlowSimulation {
 
     // Request some amount of time to run
     gflow->requestTime(time); // -- 10 is a stub value
-
-    // Give data objects to data master
-    if (animate) 
-      gflow->dataMaster->addDataObject(new PositionData(gflow));
 
     return gflow;
   }

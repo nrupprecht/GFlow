@@ -12,4 +12,14 @@ namespace GFlowSimulation {
     delay = 1./fps;
   }
 
+  bool DataObject::_check() {
+    // Only record if enough time has gone by
+    RealType time = Base::gflow->getElapsedTime();
+    // If not enough time has gone by, return false
+    if (time-lastRecording<delay) return false;
+    // Otherwise, set last recording, return true
+    lastRecording = time;
+    return true;
+  }
+
 }

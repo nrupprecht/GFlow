@@ -20,6 +20,10 @@ namespace GFlowSimulation {
     return verletList.vlHSize();
   }
 
+  const VerletList& Force::getVerletList() {
+    return verletList;
+  }
+
   void Force::clearVerletList() {
     verletList.clear();
   }

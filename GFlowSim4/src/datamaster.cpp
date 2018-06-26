@@ -32,6 +32,8 @@ namespace GFlowSimulation {
 
   void DataMaster::pre_integrate() {
     startTimer();
+    for (auto& dob : dataObjects)
+      if (dob) dob->pre_integrate();
   }
 
   void DataMaster::pre_step() {

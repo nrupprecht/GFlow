@@ -2,6 +2,7 @@
 #define __DATA_OBJECT_HPP__GFLOW__
 
 #include "gflow.hpp"
+#include "printingutility.hpp"
 
 namespace GFlowSimulation {
 
@@ -23,6 +24,13 @@ namespace GFlowSimulation {
     void setFPS(RealType);
 
   protected:
+    // --- Helper functions
+
+    // Checks whether enough time has gone by to gather data again. If so, it updates [lastRecording]
+    bool _check();
+
+    // --- Data
+
     // The name of the data we are gathering - will be used to write to files
     string dataName;
 

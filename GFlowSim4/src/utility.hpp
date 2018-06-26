@@ -101,6 +101,10 @@ namespace GFlowSimulation {
     return str;
   }
 
+  template<typename T> inline void copyArray(const T *source, T *destination, int size) {
+    for (int i=0; i<size; ++i) destination[i] = source[i];
+  }
+
 } // End namespace GFlowSimulation
 
 // Include this after so RealType is defined

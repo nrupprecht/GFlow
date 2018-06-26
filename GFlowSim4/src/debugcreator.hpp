@@ -10,6 +10,9 @@ namespace GFlowSimulation {
     // Constructor
     DebugCreator(int, char**);
 
+    // Constructor
+    DebugCreator(ArgParse*);
+
     // Create simulation
     virtual GFlow* createSimulation();
   };

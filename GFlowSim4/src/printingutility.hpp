@@ -14,6 +14,8 @@ namespace GFlowSimulation {
     // [fileName] is the name of the new directory, and the files in that directory are called [fileName][#].csv
     static bool writeVectorToDirectory(vector<RealType*>&, const vector<int>&, int, string, const string);
 
+    static bool writeVerletListToDirectory(const class VerletList&, const string);
+
     // Write a vector to a comma separated string
     static string toStrVec(RealType*);
 

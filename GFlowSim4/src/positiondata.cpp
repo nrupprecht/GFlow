@@ -16,17 +16,17 @@ namespace GFlowSimulation {
 
   void PositionData::post_step() {
     // Only record if enough time has gone by
-    RealType time = Base::gflow->getElapsedTime();
-    if (time-lastRecording<delay) return;
+    if (!DataObject::_check()) return;
 
     // Record what time it was
+    RealType time = Base::gflow->getElapsedTime();
     timeStamps.push_back(time);
 
     // --- Record all data: { x[0], x[1], ... , sg}
 
     // Get the number of particles
     int number = Base::simData->number;
-    numbers.push_back(number);
+    numbers.push_back(number); // Record number of particles
     // Don't do anything if there are 0 or fewer particles
     if (number<=0) return;
     // Create an array for the data
@@ -40,9 +40,6 @@ namespace GFlowSimulation {
         array[width*i+d] = Base::simData->x[i][d];
       array[width*i+d] = Base::simData->sg[i];
     }
-
-    // Set last recording
-    lastRecording = time;
   }
 
   bool PositionData::writeToFile(string fileName, bool useName) {
@@ -54,7 +51,6 @@ namespace GFlowSimulation {
     else 
       dirName += ("/"+dataName+"/");
 
-    PrintingUtility pu;
     if(!PrintingUtility::writeVectorToDirectory(positions, numbers, DIMENSIONS+1, fileName, dataName)) return false;
 
     // Write out all the time stamps

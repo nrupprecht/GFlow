@@ -1,6 +1,8 @@
 #ifndef __BASE_HPP__GFLOW__
 #define __BASE_HPP__GFLOW__
 
+#include "utility.hpp"
+
 namespace GFlowSimulation {
 
   /*
@@ -38,6 +40,9 @@ namespace GFlowSimulation {
     class Communicator *communicator;
     class DataMaster *dataMaster; 
     class ForceMaster *forceMaster; 
+    // References to vectors
+    vector<class Modifier*> *modifiersPtr;
+    vector<class Force*>    *forcesPtr;
   };
 
 }

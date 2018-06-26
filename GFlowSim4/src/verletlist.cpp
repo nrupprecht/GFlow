@@ -6,9 +6,37 @@ namespace GFlowSimulation {
   VerletList::VerletList() : verlet(nullptr), heads(nullptr), vsize(0), hsize(0), vcapacity(0), hcapacity(0), 
     default_verlet_capacity(1024), default_head_capacity(64) {};
 
+  VerletList::VerletList(const VerletList& vl) : hsize(vl.hsize), hcapacity(vl.hcapacity), vsize(vl.vsize), 
+    vcapacity(vl.vcapacity), default_verlet_capacity(vl.default_verlet_capacity), default_head_capacity(vl.default_head_capacity) 
+  {
+    // Allocate and copy arrays
+    verlet = new int[vcapacity];
+    copyArray(vl.verlet, verlet, vsize); // Only the first [vsize] elements matter
+    heads = new int[hcapacity];
+    copyArray(vl.heads, heads, hsize);
+  }
+
   VerletList::~VerletList() {
     if (verlet) delete [] verlet;
     if (heads)  delete [] heads;
+  }
+
+  VerletList& VerletList::operator=(const VerletList& vl) {
+    hsize = vl.hsize;
+    hcapacity = vl.hcapacity;
+    vsize = vl.vsize;
+    vcapacity = vl.vcapacity;
+    default_verlet_capacity = vl.default_verlet_capacity;
+    default_head_capacity = vl.default_head_capacity;
+    // Deallocate old arrays
+    if (verlet) delete [] verlet;
+    if (heads)  delete [] heads;
+    // Allocate and copy arrays
+    verlet = new int[vcapacity];
+    copyArray(vl.verlet, verlet, vsize); // Only the first [vsize] elements matter
+    heads = new int[hcapacity];
+    copyArray(vl.heads, heads, hsize);
+    return *this;
   }
 
   // Add a new head
@@ -16,7 +44,6 @@ namespace GFlowSimulation {
     // Check if we need to resize
     if (hsize==hcapacity) resizeHeads();
     if (vsize==vcapacity) resizeVerlet();
-
     // Set and increment
     heads[hsize++] = vsize;
     verlet[vsize++] = id;
@@ -28,27 +55,27 @@ namespace GFlowSimulation {
     verlet[vsize++] = id;
   }
 
-  int VerletList::lastHead() {
+  int VerletList::lastHead() const {
     if (hsize>0)
       return heads[hsize-1];
     else return -1;
   }
 
-  int VerletList::vlSize() {
+  int VerletList::vlSize() const {
     return vsize;
   }
 
-  int VerletList::vlHSize() {
+  int VerletList::vlHSize() const {
     return hsize;
   }
 
   // Get a (const) pointer to the verlet array
-  const int* VerletList::getVerlet() {
+  const int* VerletList::getVerlet() const {
     return verlet;
   }
 
   // Get a (const) pointer to the heads array
-  const int* VerletList::getHeads() {
+  const int* VerletList::getHeads() const {
     return heads;
   }
 

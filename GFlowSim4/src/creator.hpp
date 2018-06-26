@@ -33,6 +33,12 @@ namespace GFlowSimulation {
     // Constructor -- pass in command line arguments
     Creator(int, char**);
 
+    // Constructor -- pass in an ArgParse
+    Creator(ArgParse *parser);
+
+    // Destructor
+    ~Creator();
+
     // Create a GFlow Object
     virtual GFlow* createSimulation() = 0;
 
@@ -45,6 +51,10 @@ namespace GFlowSimulation {
 
     // Bounds of the simulation to create
     Bounds simBounds;
+
+    // Parser
+    ArgParse *parserPtr;
+    bool ourParser; // True if we allocated the parser
   };
 
 }
