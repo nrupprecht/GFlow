@@ -12,7 +12,7 @@
 
 namespace GFlowSimulation {
 
-  GFlow::GFlow() : running(false), requested_time(0), elapsed_time(0), total_time(0), iter(0) {
+  GFlow::GFlow() : running(false), requested_time(0), elapsed_time(0), total_time(0), iter(0), argc(0), argv(nullptr) {
     simData = new SimData(this);
     // Integrator will be created by the creator
     sectorization = new Sectorization(this);
@@ -90,6 +90,9 @@ namespace GFlowSimulation {
     // Only run if time has been requested
     if (requested_time<=0) return;
 
+    // Record this request
+    total_requested_time += requested_time;
+
     // Make sure we have initialized everything
     if (!initialize()) {
       // Some object was null
@@ -138,6 +141,9 @@ namespace GFlowSimulation {
       sectorization->post_forces();
       for (auto m : modifiers) m->post_forces();
 
+      // --- Clear force bufferes
+      clearForces();
+
       // --> Post-step
       if (requested_time<=elapsed_time) running = false;
       integrator->post_step();
@@ -165,8 +171,24 @@ namespace GFlowSimulation {
       cout << "Warning: Some writes failed.\n";
   }
 
+  RealType GFlow::getRequestedTime() const {
+    return requested_time;
+  }
+
+  RealType GFlow::getTotalRequestedTime() const {
+    return total_requested_time;
+  }
+
   RealType GFlow::getElapsedTime() const{
     return elapsed_time;
+  }
+
+  RealType GFlow::getTotalTime() const {
+    return total_time;
+  }
+
+  int GFlow::getIter() const {
+    return iter;
   }
 
   Bounds GFlow::getBounds() const {
@@ -175,6 +197,17 @@ namespace GFlowSimulation {
 
   const bool* GFlow::getWrap() const {
     return wrap;
+  }
+
+  pair<int, const char**> GFlow::getCommand() const {
+    return pair<int, const char**>(argc, argv);
+  }
+
+  void GFlow::setCommand(int argc, char **argv) {
+    if (argv) {
+      this->argc = argc;
+      this->argv = argv;
+    }
   }
 
   void GFlow::setAllWrap(bool w) {
@@ -208,6 +241,16 @@ namespace GFlowSimulation {
         }
       }
     }
+  }
+
+  inline void GFlow::clearForces() {
+    // Get a pointer to force data and the number of particles in simData
+    RealType **f = simData->f;
+    int number = simData->number;
+
+    // Zero all particles' forces
+    for (int n=0; n<number; ++n)
+      for (int d=0; d<DIMENSIONS; ++d) f[n][d] = 0;
   }
 
 }

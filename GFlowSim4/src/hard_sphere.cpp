@@ -13,6 +13,7 @@ namespace GFlowSimulation {
 
   void HardSphere::calculateForces() {
     int nheads = verletList.vlHSize(), nverlet = verletList.vlSize();
+    if (nheads==0) return; // No forces to calculate
     int h0, h1, id1, id2; // Head pointers, id pointers
 
     // Get the data we need
@@ -40,9 +41,6 @@ namespace GFlowSimulation {
         getDisplacement(x[id1], x[id2], displacement, bounds, wrap);
         // Check if the particles should interact
         RealType dsqr = sqr(displacement);
-
-        // cout << id1 << ", " << id2 << ": " << sqrt(dsqr) << " " << sigma + sg[id2] << endl;
-
         if (dsqr < sqr(sigma + sg[id2])) {
           RealType distance = sqrt(dsqr);
           scalarMultVec(strength*(sigma + sg[id2] - distance), displacement, F);
@@ -65,9 +63,10 @@ namespace GFlowSimulation {
       if (dsqr < sqr(sigma + sg[id2])) {
         RealType distance = sqrt(dsqr);
         scalarMultVec(100*(sigma + sg[id2] - distance), displacement, F);
+        
         // Add force
-        minusEqVec(f[id1], F);
-        plusEqVec (f[id2], F);
+        minusEqVec(f[id2], F);
+        plusEqVec (f[id1], F);
       }
     }
   }

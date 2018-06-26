@@ -21,6 +21,11 @@ using std::stringstream;
 
 #include <sys/stat.h> // For mkdir
 
+#include <chrono>
+using std::chrono::high_resolution_clock;
+using std::chrono::duration;
+using std::chrono::duration_cast;
+
 #include <ctime>
 
 #include <cmath>
@@ -53,7 +58,50 @@ namespace GFlowSimulation {
     return std::find(vec.begin(), vec.end(), obj) != vec.end();
   }
 
-}
+  /// Get the current time
+  inline auto current_time() {
+    return high_resolution_clock::now();
+  }
+
+  // high_resolution_clock::time_point
+  template<typename T> inline RealType time_span(T end, T start) {
+    duration<RealType> span = duration_cast<duration<double> >(end-start);
+    return span.count();
+  }
+
+  // Print as (hrs):(mins):(sec)
+  inline string printAsTime(double seconds) {
+    stringstream stream;
+    string str;
+    // Just print seconds as usual
+    if (seconds<60) {
+      stream << seconds;
+      stream >> str;
+      return str;
+    }
+    // Print full
+    int hours = floor(seconds/3600.);
+    seconds -= 3600*hours;
+    int minutes = floor(seconds/60.);
+    seconds -= 60*minutes;
+    // Round seconds
+    int sec = seconds;
+    // Print hours
+    if (hours==0);
+    else if (hours<10) stream << "0" << hours << ":";
+    else stream << hours << ":";
+    // Print minutes
+    if (minutes<10 && hours>0) stream << "0" << minutes << ":";
+    else if (minutes<10) stream << minutes << ":";
+    else stream << minutes << ":";
+    // Print seconds
+    if (seconds<10) stream << "0" << sec;
+    else stream << sec;
+    stream >> str;
+    return str;
+  }
+
+} // End namespace GFlowSimulation
 
 // Include this after so RealType is defined
 #include "defaultconstants.hpp"

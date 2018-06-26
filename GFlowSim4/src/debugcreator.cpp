@@ -11,8 +11,16 @@ namespace GFlowSimulation {
     srand48(time(0));
 
     // Values
-    RealType time = 10.;
+    RealType time = 3.;
+    RealType radius = 0.05;
+    RealType velocity = 0.25;
     bool animate = true;
+
+    // Gather command line arguments
+    ArgParse parser(argc, argv);
+    parser.get("time", time);
+    parser.get("radius", radius);
+    parser.get("animate", animate);
 
     // Create a new gflow object
     GFlow *gflow = new GFlow;
@@ -40,16 +48,16 @@ namespace GFlowSimulation {
     int *type    = gflow->simData->type;
 
     // Rightwards ball
-    const RealType radius = 0.05;
     x[0][0] = 0.3; x[1][0] = 0.7;
-    v[0][0] = 1.;  v[1][0] = -1.;
-    for (int d=1; d<DIMENSIONS; ++d) {
+    v[0][0] = velocity;  v[1][0] = -velocity;
+    x[0][1] = 0.5*(1.-radius); x[1][1] = 0.5*(1.+radius);
+    for (int d=2; d<DIMENSIONS; ++d) {
       x[0][d] = x[1][d] = 0.5;
       v[0][d] = v[1][d] = 0;
     }
     for (int n=0; n<2; ++n) {
       sg[n] = radius;
-      im[n] = 1.0 * PI*sqr(radius); // Density of 1
+      im[n] = 1.0 / (1.0 * PI*sqr(radius)); // Density of 1
       type[n] = 0;
     }
 

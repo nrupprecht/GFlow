@@ -33,9 +33,20 @@ namespace GFlowSimulation {
     void writeData(string);
 
     // --- Accessors
+
+    // Get the requested time
+    RealType getRequestedTime() const;
+
+    RealType getTotalRequestedTime() const;
     
     // Get fulfilled time
     RealType getElapsedTime() const;
+
+    // Get all the time the simulation ran for
+    RealType getTotalTime() const;
+
+    // Get the number of iterations
+    int getIter() const;
 
     // Get the bounds
     Bounds getBounds() const;
@@ -43,7 +54,12 @@ namespace GFlowSimulation {
     // Get the wrapping data
     const bool* getWrap() const;
 
+    pair<int, const char**> getCommand() const;
+
     // --- Mutators
+
+    // Set the command info
+    void setCommand(int, char**);
 
     // Set all wrap values to something
     void setAllWrap(bool);
@@ -62,9 +78,10 @@ namespace GFlowSimulation {
     friend class ForceMaster;
 
   protected:
-    // Private helper functions
+    // --- Private helper functions
+    inline void clearForces();
 
-    // Data - public so anyone can access it
+    // --- Data - public so anyone can access it
     class SimData *simData;             // Particle data
     class Integrator *integrator;       // Integrator
     class Sectorization *sectorization; // Sectorization of particles
@@ -84,6 +101,9 @@ namespace GFlowSimulation {
     // How much time we have been requested to run for
     RealType requested_time;
 
+    // How much time has ever been requested
+    RealType total_requested_time;
+
     // How much of the requested time has been run
     RealType elapsed_time; 
 
@@ -98,6 +118,10 @@ namespace GFlowSimulation {
 
     // Periodicity
     bool wrap[DIMENSIONS];
+
+    // The command info (optional)
+    int argc;
+    char **argv;
   };
 
 }

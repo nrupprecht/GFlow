@@ -62,6 +62,14 @@ namespace GFlowSimulation {
     makeVerletLists();
   }
 
+  const int* Sectorization::getDims() {
+    return dims;
+  }
+
+  const RealType* Sectorization::getWidths() {
+    return widths;
+  }
+
   int Sectorization::getNumSectors() {
     int total = 1;
     for (int i=0; i<DIMENSIONS; ++i) total *= dims[i];

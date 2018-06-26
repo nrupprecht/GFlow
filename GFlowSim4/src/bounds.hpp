@@ -27,6 +27,12 @@ namespace GFlowSimulation {
       return max[d] - min[d];
     }
 
+    RealType vol() {
+      RealType V = 1.;
+      for (int i=0; i<D; ++i) V *= (max[d] - min[d]);
+      return vol;
+    }
+
     RealType min[DIMENSIONS], max[DIMENSIONS];
   };
 
@@ -48,6 +54,10 @@ namespace GFlowSimulation {
     // Return the width of the bounds
     RealType wd(int d) {
       return max[d] - min[d];
+    }
+
+    RealType vol() {
+      return (max[0] - min[0]);
     }
 
     // Data
@@ -73,6 +83,10 @@ namespace GFlowSimulation {
       return max[d] - min[d];
     }
 
+    RealType vol() {
+      return (max[0] - min[0])*(max[1] - min[1]);
+    }
+
     // Data
     RealType min[2], max[2];
   };
@@ -95,6 +109,10 @@ namespace GFlowSimulation {
     // Return the width of the bounds
     RealType wd(int d) {
       return max[d] - min[d];
+    }
+
+    RealType vol() {
+      return (max[0] - min[0])*(max[1] - min[1])*(max[2] - min[2]);
     }
 
     // Data

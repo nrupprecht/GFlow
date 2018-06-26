@@ -1,6 +1,8 @@
 #include "boxcreator.hpp"
 #include "debugcreator.hpp"
 
+#include "ArgParse.hpp"
+
 /*
 *
 *  Running functions dynamically:
@@ -13,12 +15,17 @@ using namespace GFlowSimulation;
 
 int main(int argc, char **argv) {
 
+  bool debug_flag = false;
+
+  // For getting command line arguments
+  ArgParse parser(argc, argv);
+  parser.get("debug", debug_flag);
+
   // This creator creates gflow simulations
   Creator *creator = nullptr;
-
   // Assign a specific type of creator
-  // creator = new BoxCreator(argc, argv);
-  creator = new DebugCreator(argc, argv);
+  if (debug_flag) creator = new DebugCreator(argc, argv);
+  else            creator = new BoxCreator(argc, argv);
 
   // Create a gflow simulation
   GFlow *gflow = creator->createSimulation();

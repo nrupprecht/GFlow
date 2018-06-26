@@ -25,6 +25,12 @@ namespace GFlowSimulation {
 
     // --- Accessors
 
+    // Get the dims
+    const int* getDims();
+
+    // Get the widths
+    const RealType* getWidths();
+
     // Get the total number of sectors
     int getNumSectors();
 
@@ -72,7 +78,7 @@ namespace GFlowSimulation {
     // Number of sectors in each dimension
     int dims[DIMENSIONS];
     
-    // The id's of particles in each sector
+    // The id's of particles in each sector - these are the actual sectors
     Array< vector<int> > sectors;
 
     // The widths of sectors in each dimension

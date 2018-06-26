@@ -54,7 +54,7 @@ namespace GFlowSimulation {
         v[n][d] = 0.25*(drand48() - 0.5);
       }
       sg[n] = radius;
-      im[n] = 1.0 * PI*sqr(radius); // Density of 1
+      im[n] = 1.0 / (1.0 * PI*sqr(radius)); // Density of 1
       type[n] = 0;
     }
 
