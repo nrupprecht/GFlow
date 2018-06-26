@@ -53,15 +53,6 @@ namespace GFlowSimulation {
 
     if(!PrintingUtility::writeVectorToDirectory(positions, numbers, DIMENSIONS+1, fileName, dataName)) return false;
 
-    // Write out all the time stamps
-    /*
-    ofstream fout(dirName+"times.csv");
-    if (fout.fail()) return false;
-    for (auto ts : timeStamps) 
-      fout << ts << endl;
-    fout.close();
-    */
-
     // Return success
     return true;
   }

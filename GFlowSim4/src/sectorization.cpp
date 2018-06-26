@@ -32,7 +32,6 @@ namespace GFlowSimulation {
   void Sectorization::sectorize() {
     // Get data from simdata and sectors array
     RealType **x = Base::simData->x;
-
     int number = Base::simData->number, total = sectors.total();
 
     // Clear particles from sectors
@@ -172,7 +171,6 @@ namespace GFlowSimulation {
     for (int sec=0; sec<total; ++sec) {
       // Get the address of the sector with linear addres [sec]
       getAddress<>(sec, dims, sectorAdd);
-
       // Look at all the particles in the sector
       auto &pvec = sectors.at(sectorAdd);
       for (int p=0; p<pvec.size(); ++p) {
@@ -200,24 +198,20 @@ namespace GFlowSimulation {
           }
           // Look at that neighboring sector
           addVec(sectorAdd, dSectorAdd, otherAdd);
-          // If sector is negative or too large, either wrap sector or skip
+          // If sector is negative, either wrap sector or skip (we only look at sectors that are smaller,
+          // so there is no need to see if a sector is to large)
           bool good = true;
           for (int d=0; d<DIMENSIONS && good; ++d) {
             if (otherAdd[d]<0) {
-              if (wrap[d]) otherAdd[d] += dims[d];
-              else {
-                good = false;
-                break;
-              }
-            }
-            else if (dims[d]<=otherAdd[d]) {
-              if (wrap[d]) otherAdd[d] -= dims[d];
+              if (wrap[d] && dims[d]>1) otherAdd[d] += dims[d];
               else {
                 good = false;
                 break;
               }
             }
           }
+          // Do not evaluate if we shouldn't
+          if (!good) continue;
 
           // Get the sectors
           auto &otherVec = sectors.at(otherAdd);

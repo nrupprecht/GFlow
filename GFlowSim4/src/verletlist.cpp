@@ -45,7 +45,7 @@ namespace GFlowSimulation {
     if (hsize==hcapacity) resizeHeads();
     if (vsize==vcapacity) resizeVerlet();
     // Set and increment
-    heads[hsize++] = vsize;
+    heads [hsize++] = vsize; // Mark where the next head is in the verlet list
     verlet[vsize++] = id;
   }
 
@@ -56,8 +56,9 @@ namespace GFlowSimulation {
   }
 
   int VerletList::lastHead() const {
+  // Return the id of the last head
     if (hsize>0)
-      return heads[hsize-1];
+      return verlet[heads[hsize-1]]; 
     else return -1;
   }
 

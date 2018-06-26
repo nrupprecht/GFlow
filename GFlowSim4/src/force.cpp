@@ -31,7 +31,6 @@ namespace GFlowSimulation {
   void Force::addVerletPair(int id1, int id2) {
     // Add the head if it is new
     if (id1!=lastHead()) verletList.addHead(id1);
-
     // Add id2 to the head
     verletList.addToHead(id2);
   }

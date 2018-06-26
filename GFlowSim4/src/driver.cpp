@@ -26,12 +26,14 @@ int main(int argc, char **argv) {
   // Data to gather
   bool animate; // Record positions
   bool vlData;  // Record verlet list information
+  string writeDirectory = "RunData";
 
   // For getting command line arguments
   ArgParse parser(argc, argv);
   parser.get("debug", debug_flag);
   parser.get("animate", animate);
   parser.get("vlData", vlData);
+  parser.get("writeDirectory", writeDirectory);
 
   // This creator creates gflow simulations
   Creator *creator = nullptr;
@@ -65,7 +67,7 @@ int main(int argc, char **argv) {
   cout << "Run is over.\n";
 
   // Write accumulated data to files
-  gflow->writeData("RunData");
+  gflow->writeData(writeDirectory);
 
   cout << "Data write is over.\n";
 

@@ -22,6 +22,15 @@ namespace GFlowSimulation {
     // Write an integer vector to a comma separated string
     static string toStrVec(int*);
 
+    template<typename T> static string toStrVec(T* vec, int number) {
+      string str;
+      for (int i=0; i<number; ++i) {
+        str += toStr(vec[i]);
+        if (i!=number-1) str += ',';
+      }
+      return str;
+    }
+
   };
 
 }
