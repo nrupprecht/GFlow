@@ -155,6 +155,9 @@ namespace GFlowSimulation {
   // Checks whether sectors need to be refilled. This happens when the max distance traveled
   // by two particles, relative to one another, is > skinDepth
   inline void Sectorization::checkSectors() {
+    // Don't check sectors too often
+    // ...
+
     // Get data from simdata and sectors array
     RealType **x = Base::simData->x;
     int number = Base::simData->number;
