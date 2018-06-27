@@ -22,8 +22,6 @@ namespace GFlowSimulation {
     // Create a directory for all the data
     _makeDir(dirName);
 
-    cout << dirName << endl;
-
     // Write data
     ofstream fout(dirName+dataName+".csv");
     if (fout.fail()) return false;

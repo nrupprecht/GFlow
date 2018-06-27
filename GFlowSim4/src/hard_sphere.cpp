@@ -64,8 +64,8 @@ namespace GFlowSimulation {
       RealType dsqr = sqr(displacement);
       if (dsqr < sqr(sigma + sg[id2])) {
         RealType distance = sqrt(dsqr);
-        scalarMultVec(100*(sigma + sg[id2] - distance), displacement, F);
-        
+        normalVec(displacement, normal); // Get the normal vector
+        scalarMultVec(repulsion*(sigma + sg[id2] - distance), normal, F);
         // Add force
         minusEqVec(f[id2], F);
         plusEqVec (f[id1], F);

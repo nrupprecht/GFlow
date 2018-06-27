@@ -1,6 +1,6 @@
 CC = icpc
 MPICC = mpic++
-CFLAG = -std=c++14 -Wall
+CFLAG = -std=c++11 -Wall
 OPTFLAGS = -xHost -O3 -no-prec-div -fp-model fast=2 -restrict -funroll-loops -no-inline-max-size
 FLAGS = $(CFLAG) -g $(OPTFLAGS)
 
