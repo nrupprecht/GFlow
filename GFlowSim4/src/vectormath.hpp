@@ -57,5 +57,12 @@ namespace GFlowSimulation {
     for (int d=0; d<DIMENSIONS; ++d) target[d] = x[d];
   }
 
+  template<typename T> inline void normalVec(const T *x, T *norm) {
+    T mag = 0;
+    for (int d=0; d<DIMENSIONS; ++d) mag += sqr(x[d]);
+    T invMag = 1./mag;
+    scalarMultVec(invMag, x, norm);
+  }
+
 }
 #endif // __VECTOR_MATH_HPP__GFLOW__

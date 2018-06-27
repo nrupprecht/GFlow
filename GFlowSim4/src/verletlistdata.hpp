@@ -10,6 +10,7 @@ namespace GFlowSimulation {
     // Constructor
     VerletListData(GFlow*);
     
+    // Get nForces
     virtual void pre_integrate();
 
     // Destructor

@@ -1,4 +1,5 @@
 #include "velocityverlet.hpp"
+// Other files
 #include "simdata.hpp"
 
 #include "printingutility.hpp" // For debugging
@@ -6,8 +7,6 @@
 namespace GFlowSimulation {
 
   VelocityVerlet::VelocityVerlet(GFlow *gflow) : Integrator(gflow) {};
-
-  void VelocityVerlet::pre_step() {}
 
   void VelocityVerlet::pre_forces() {
     // First half kick
@@ -88,7 +87,5 @@ namespace GFlowSimulation {
       // Could update angular variables here ... 
     }
   }
-
-  void VelocityVerlet::post_step() {}
 
 }

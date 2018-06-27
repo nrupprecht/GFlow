@@ -130,7 +130,6 @@ namespace GFlowSimulation {
 
       // --> Pre-force
       integrator->pre_forces(); // -- This is where VV first half kick happens
-
       dataMaster->pre_forces();
       sectorization->pre_forces(); // -- This is where resectorization / verlet list creation might happen
       for (auto m : modifiers) m->pre_forces(); // -- This is where modifiers should do forces (if they need to)

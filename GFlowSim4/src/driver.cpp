@@ -22,10 +22,12 @@ int main(int argc, char **argv) {
 
   // Type of simulation
   bool debug_flag = false;
+  bool over_damped_flag = false;
 
   // Data to gather
   bool animate; // Record positions
   bool vlData;  // Record verlet list information
+  bool sectorData; // Record sector information
   string writeDirectory = "RunData";
 
   // For getting command line arguments
@@ -33,6 +35,7 @@ int main(int argc, char **argv) {
   parser.get("debug", debug_flag);
   parser.get("animate", animate);
   parser.get("vlData", vlData);
+  parser.get("sectorData", sectorData);
   parser.get("writeDirectory", writeDirectory);
 
   // This creator creates gflow simulations
@@ -56,6 +59,7 @@ int main(int argc, char **argv) {
   // Add data objects
   if (animate) gflow->addDataObject(new PositionData(gflow));
   if (vlData)  gflow->addDataObject(new VerletListData(gflow));
+  if (sectorData) gflow->addDataObject(new SectorizationData(gflow));
 
   // Run the simulation
   if (gflow) gflow->run();

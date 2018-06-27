@@ -10,10 +10,8 @@ namespace GFlowSimulation {
     // Constructor
     VelocityVerlet(GFlow *);
 
-    virtual void pre_step();
     virtual void pre_forces();
     virtual void post_forces();
-    virtual void post_step();
   };
 
 }

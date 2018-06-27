@@ -1,6 +1,7 @@
 #include "hard_sphere.hpp"
 #include "simdata.hpp"
 #include "vectormath.hpp"
+#include "printingutility.hpp" // For debugging
 
 namespace GFlowSimulation {
 
@@ -19,7 +20,7 @@ namespace GFlowSimulation {
     // Get the data we need
     RealType **x = Base::simData->x, **f = Base::simData->f;
     RealType *sg = Base::simData->sg;
-    RealType displacement[DIMENSIONS]; // To calculate displacement
+    RealType displacement[DIMENSIONS], normal[DIMENSIONS]; // To calculate displacement, normal vector
     Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
     bool wrap[DIMENSIONS]; 
     copyVec(Base::gflow->getWrap(), wrap); // Keep a local copy of the wrap frags
@@ -43,10 +44,11 @@ namespace GFlowSimulation {
         RealType dsqr = sqr(displacement);
         if (dsqr < sqr(sigma + sg[id2])) {
           RealType distance = sqrt(dsqr);
-          scalarMultVec(strength*(sigma + sg[id2] - distance), displacement, F);
+          normalVec(displacement, normal); // Get the normal vector
+          scalarMultVec(strength*(sigma + sg[id2] - distance), normal, F);
           // Add force
-          minusEqVec(f[id1], F);
-          plusEqVec (f[id2], F);
+          plusEqVec(f[id1], F);
+          minusEqVec (f[id2], F);
         }
       }
     }

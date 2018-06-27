@@ -47,6 +47,7 @@ namespace GFlowSimulation {
     
     // GFlow is a friend class
     friend class GFlow;
+    friend class SectorizationData;
     
   private:
     // --- Helper functions

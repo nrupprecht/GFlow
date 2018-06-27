@@ -1,4 +1,5 @@
 #include "boxcreator.hpp"
+#include "overdampedintegrator.hpp"
 
 namespace GFlowSimulation {
 
@@ -15,18 +16,21 @@ namespace GFlowSimulation {
     int number = 10;
     RealType radius = 0.05;
     bool animate = false;;
+    bool over_damped_flag = false;
 
     // Gather command line arguments
     parserPtr->get("time", time);
     parserPtr->get("number", number);
     parserPtr->get("radius", radius);
     parserPtr->get("animate", animate);
+    parserPtr->get("overdamped", over_damped_flag);
 
     // Create a new gflow object
     GFlow *gflow = new GFlow;
 
     // Create an integrator
-    gflow->integrator = new VelocityVerlet(gflow);
+    if (over_damped_flag) gflow->integrator = new OverdampedIntegrator(gflow);
+    else gflow->integrator = new VelocityVerlet(gflow);
 
     // Set the bounds of the gflow object --- for now, just make it [0,1] in each dimension
     for (int d=0; d<DIMENSIONS; ++d) {

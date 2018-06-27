@@ -1,5 +1,5 @@
 #include "verletlistdata.hpp"
-// Other files needed
+// Other files
 #include "force.hpp"
 
 namespace GFlowSimulation {
@@ -15,7 +15,7 @@ namespace GFlowSimulation {
   void VerletListData::post_step() {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
-
+    // Get the data
     for (auto &f : *Base::forcesPtr)
     verletLists.push_back(f->getVerletList());
 
