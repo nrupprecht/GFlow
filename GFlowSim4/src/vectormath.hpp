@@ -41,8 +41,14 @@ namespace GFlowSimulation {
     for (int d=0; d<DIMENSIONS; ++d) z[d] = x[d]+y[d];
   }
 
+  // Times
   template<typename T> inline void scalarMultVec(const RealType scalar, const T *x, T *z) {
     for (int d=0; d<DIMENSIONS; ++d) z[d] = scalar*x[d];
+  }
+
+  // Times equals
+  template<typename T> inline void scalarMultVec(const RealType scalar, T *z) {
+    for (int d=0; d<DIMENSIONS; ++d) z[d] *= scalar;
   }
 
   template<typename T> inline void plusEqVec(T *z, const T *x) {
@@ -62,6 +68,21 @@ namespace GFlowSimulation {
     for (int d=0; d<DIMENSIONS; ++d) mag += sqr(x[d]);
     T invMag = 1./mag;
     scalarMultVec(invMag, x, norm);
+  }
+
+  template<typename T> inline void normalizeVec(T *norm) {
+    T mag = 0;
+    for (int d=0; d<DIMENSIONS; ++d) mag += sqr(norm[d]);
+    T invMag = 1./mag;
+    scalarMultVec(invMag, norm);
+  }
+
+  inline void randomNormalVec(RealType *x) {
+    // Random normal components
+    for (int d=0; d<DIMENSIONS; ++d)
+      x[d] = randNormal();
+    // Normalize
+    normalizeVec(x);
   }
 
 }

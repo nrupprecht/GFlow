@@ -43,7 +43,6 @@ namespace GFlowSimulation {
   }
 
   bool PositionData::writeToFile(string fileName, bool useName) {
-
     // The name of the directory for this data
     string dirName = fileName;
     if (*fileName.rbegin()=='/') // Make sure there is a /

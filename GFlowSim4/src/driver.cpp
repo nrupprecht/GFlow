@@ -28,6 +28,8 @@ int main(int argc, char **argv) {
   bool animate; // Record positions
   bool vlData;  // Record verlet list information
   bool sectorData; // Record sector information
+  bool ke; // Record kinetic energy
+  bool aveKE; // Record average kinetic energy (per particle)
   string writeDirectory = "RunData";
 
   // For getting command line arguments
@@ -36,6 +38,8 @@ int main(int argc, char **argv) {
   parser.get("animate", animate);
   parser.get("vlData", vlData);
   parser.get("sectorData", sectorData);
+  parser.get("KE", ke);
+  parser.get("aveKE", aveKE);
   parser.get("writeDirectory", writeDirectory);
 
   // This creator creates gflow simulations
@@ -60,6 +64,7 @@ int main(int argc, char **argv) {
   if (animate) gflow->addDataObject(new PositionData(gflow));
   if (vlData)  gflow->addDataObject(new VerletListData(gflow));
   if (sectorData) gflow->addDataObject(new SectorizationData(gflow));
+  if (aveKE || ke)   gflow->addDataObject(new KineticEnergyData(gflow, aveKE));
 
   // Run the simulation
   if (gflow) gflow->run();

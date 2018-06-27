@@ -3,9 +3,22 @@
 
 namespace GFlowSimulation {
 
-  BoxCreator::BoxCreator(int argc, char **argv) : Creator(argc, argv) {};
+  BoxCreator::BoxCreator(int argc, char **argv) : Creator(argc, argv) {
+    seed = std::chrono::system_clock::now().time_since_epoch().count();
+    seedGenerator(seed);
+    normal_dist = std::normal_distribution<RealType>(0., 1.);
+  };
 
-  BoxCreator::BoxCreator(ArgParse *p) : Creator(p) {};
+  BoxCreator::BoxCreator(ArgParse *p) : Creator(p) {
+    seed = std::chrono::system_clock::now().time_since_epoch().count();
+    seedGenerator(seed);
+    normal_dist = std::normal_distribution<RealType>(0., 1.);
+  };
+
+  void BoxCreator::seedGenerator(uint s) {
+    Creator::seedGenerator(s);
+    generator = std::mt19937(seed);
+  }
 
   GFlow* BoxCreator::createSimulation() {
     // Seed random number generators
@@ -17,6 +30,7 @@ namespace GFlowSimulation {
     RealType radius = 0.05;
     RealType phi = 0.5;
     RealType width = 4.;
+    RealType vsgma = 0.25;
     bool animate = false;;
     bool over_damped_flag = false;
 
@@ -86,9 +100,15 @@ namespace GFlowSimulation {
     else gflow->integrator = new VelocityVerlet(gflow);
 
     // --- Set velocities
+    RealType normal[DIMENSIONS];
     for (int n=0; n<number; ++n) {
-      // Give some random positions and velocities
-      for (int d=0; d<DIMENSIONS; ++d) v[n][d] = 0.25*(drand48() - 0.5);
+      // Give some random velocities
+      double ke = fabs(vsgma*normal_dist(generator));
+      double velocity = sqrt(2*im[n]*ke/127.324);
+      // Random normal vector
+      randomNormalVec(normal);
+      // Set the velocity
+      scalarMultVec(velocity, normal, v[n]);
       sg[n] = radius;
     }
 

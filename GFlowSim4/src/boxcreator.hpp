@@ -13,8 +13,16 @@ namespace GFlowSimulation {
     // Constructor
     BoxCreator(ArgParse*);
 
+    // Seed generators
+    virtual void seedGenerator(uint);
+
     // Create simulation
     virtual GFlow* createSimulation();
+
+  private:
+    // Normal distribution
+    std::mt19937 generator;
+    std::normal_distribution<RealType> normal_dist;
   };
 
 }

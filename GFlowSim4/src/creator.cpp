@@ -11,4 +11,16 @@ namespace GFlowSimulation {
   Creator::~Creator() {
     if (ourParser && parserPtr) delete parserPtr;
   }
+
+  void Creator::setSeed(uint s) {
+    seed = s;
+  }
+
+  unsigned Creator::getSeed() {
+    return seed;
+  }
+
+  void Creator::seedGenerator(uint s) {
+    seed = s;
+  };
 }

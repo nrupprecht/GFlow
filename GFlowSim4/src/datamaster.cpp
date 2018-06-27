@@ -125,7 +125,7 @@ namespace GFlowSimulation {
     fout << "  - Time simulated:           " << Base::gflow->getTotalTime() << "\n";
     fout << "  - Requested Time:           " << requestedTime << "\n";
     fout << "  - Run Time:                 " << run_time;
-    if (elapsedTime>60) fout << " ( h:m:s - " << printAsTime(elapsedTime) << " )";
+    if (run_time>60) fout << " ( h:m:s - " << printAsTime(run_time) << " )";
     fout << "\n";
     fout << "  - Ratio:                    " << requestedTime/run_time << "\n";
     fout << "  - Inverse Ratio:            " << run_time/requestedTime << "\n";

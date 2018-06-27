@@ -39,6 +39,15 @@ namespace GFlowSimulation {
     // Destructor
     ~Creator();
 
+    // Set the random seed
+    void setSeed(uint);
+
+    // Get the random seed
+    unsigned getSeed();
+
+    // Seed whatever random generators there are
+    virtual void seedGenerator(uint);
+
     // Create a GFlow Object
     virtual GFlow* createSimulation() = 0;
 
@@ -55,6 +64,9 @@ namespace GFlowSimulation {
     // Parser
     ArgParse *parserPtr;
     bool ourParser; // True if we allocated the parser
+
+    // Random seed
+    unsigned seed;
   };
 
 }

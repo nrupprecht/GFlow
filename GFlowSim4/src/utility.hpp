@@ -32,6 +32,8 @@ using std::chrono::duration_cast;
 
 #include <algorithm>
 
+#include <random>
+
 namespace GFlowSimulation {
 
   // Define what type of floating point data to use
@@ -39,6 +41,9 @@ namespace GFlowSimulation {
 
   // Unsigned int
   typedef unsigned int uint;
+
+  // RealType pair
+  typedef pair<RealType, RealType> RPair;
 
   // Convert an object to a string
   template<typename T> inline string toStr(T obj) {
@@ -107,6 +112,19 @@ namespace GFlowSimulation {
   // Copy an array of size [size] from [source] to [destination]
   template<typename T> inline void copyArray(const T *source, T *destination, int size) {
     for (int i=0; i<size; ++i) destination[i] = source[i];
+  }
+
+  // Random number generators
+  static std::mt19937 global_generator;
+  static std::normal_distribution<RealType> global_normal_dist(0., 1.);
+
+  inline void seedNormalDistribution(unsigned seed=-1) {
+    if(seed<0) seed = std::chrono::system_clock::now().time_since_epoch().count();
+    global_generator = std::mt19937(seed);
+  }
+
+  inline double randNormal() {
+    return global_normal_dist(global_generator);
   }
 
 } // End namespace GFlowSimulation
