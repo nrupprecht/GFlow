@@ -41,4 +41,8 @@ namespace GFlowSimulation {
     gflow->wrapPositions(); // Wrap positions
   }
 
+  void OverdampedIntegrator::setDamping(RealType d) {
+    dampingConstant = d;
+  }
+
 }

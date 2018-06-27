@@ -67,6 +67,7 @@ namespace GFlowSimulation {
 
   bool DataMaster::writeToDirectory(string writeDirectory) {
     // --- Do file related things
+    bool success = true;
 
     // Remove previously existing files if they exist
     system(("rm -rf "+writeDirectory).c_str());
@@ -79,8 +80,20 @@ namespace GFlowSimulation {
     // --- Write a summary
     writeSummary(writeDirectory);
 
+    // --- Write the bounds
+    if (!dataObjects.empty()) {
+      ofstream fout(writeDirectory+"/bnds.csv");
+      if (fout.fail()) success = false;
+      else {
+        for (int d=0; d<DIMENSIONS; ++d) {
+          fout << Base::gflow->getBounds().min[d] << "," << Base::gflow->getBounds().max[d];
+          fout << endl;
+        }
+        fout.close();
+      }
+    }
+
     // --- Have all the data objects write their data
-    bool success = true;
     for (auto& dob : dataObjects)
       if (dob) success &= dob->writeToFile(writeDirectory, true);
       //if (dob) success &= dob->writeToFile(writeDirectory+"/StatData/", true);
@@ -106,15 +119,16 @@ namespace GFlowSimulation {
     if (command.second) for (int c=0; c<command.first; ++c) fout << command.second[c] << " ";
     
     // --- Print timing summary
-    RealType elapsedTime = Base::gflow->getElapsedTime();
+    RealType elapsedTime   = Base::gflow->getElapsedTime();
+    RealType requestedTime = Base::gflow->getTotalRequestedTime();
     fout << "Timing and performance:\n";
     fout << "  - Time simulated:           " << Base::gflow->getTotalTime() << "\n";
-    fout << "  - Requested Time:           " << Base::gflow->getTotalRequestedTime() << "\n";
+    fout << "  - Requested Time:           " << requestedTime << "\n";
     fout << "  - Run Time:                 " << run_time;
     if (elapsedTime>60) fout << " ( h:m:s - " << printAsTime(elapsedTime) << " )";
     fout << "\n";
-    fout << "  - Ratio:                    " << run_time/elapsedTime << "\n";
-    fout << "  - Inverse Ratio:            " << elapsedTime/run_time << "\n";
+    fout << "  - Ratio:                    " << requestedTime/run_time << "\n";
+    fout << "  - Inverse Ratio:            " << run_time/requestedTime << "\n";
     fout << "\n";
 
     // --- Print simulation summary
@@ -142,7 +156,6 @@ namespace GFlowSimulation {
     fout << "  - Iterations:               " << iterations << "\n";
     fout << "  - Time per iteration:       " << elapsedTime / static_cast<RealType>(iterations) << "\n";
     fout << "  - Time step (at end):       " << integrator->getTimeStep() << "\n";
-    fout << "  - Time per iteration:       " << elapsedTime/static_cast<RealType>(iterations) << "\n";
     fout << "\n";
     
     // --- Print the sectorization summary

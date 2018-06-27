@@ -212,6 +212,11 @@ namespace GFlowSimulation {
     }
   }
 
+  void GFlow::setBounds(Bounds b) {
+    bounds = b;
+    // Sectorization updates its bounds in pre_integrate()
+  }
+
   void GFlow::setAllWrap(bool w) {
     for (int d=0; d<DIMENSIONS; ++d) wrap[d] = w;
   }
@@ -245,6 +250,14 @@ namespace GFlowSimulation {
 
   void GFlow::addDataObject(class DataObject* dob) {
     dataMaster->addDataObject(dob);
+  }
+
+  void GFlow::resetAllTimes() {
+    requested_time       = 0.;
+    total_requested_time = 0.;
+    elapsed_time         = 0.;
+    total_time           = 0.;
+    iter                 = 0 ;
   }
 
   inline void GFlow::clearForces() {

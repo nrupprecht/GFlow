@@ -61,6 +61,9 @@ namespace GFlowSimulation {
     // Set the command info
     void setCommand(int, char**);
 
+    // Set the bounds
+    void setBounds(Bounds);
+
     // Set all wrap values to something
     void setAllWrap(bool);
 
@@ -72,6 +75,9 @@ namespace GFlowSimulation {
 
     // Add a data object
     void addDataObject(class DataObject*);
+
+    // Reset all timers (use e.g. after doing relaxation of a random initial state)
+    void resetAllTimes();
 
     // Creators are a friend classes --- all must be since friendship is not inherited
     friend class BoxCreator;
@@ -95,7 +101,8 @@ namespace GFlowSimulation {
     // A vector of objects that should modify the simulation at some point(s) during execution
     vector<class Modifier*> modifiers;
 
-    // All the forces that can happen
+    // All the forces that can happen - which ones correspond to which pairs of particles is controlled by
+    // the ForceMaster object
     vector<class Force*> forces;
 
     // If true, the simulation should continue to run

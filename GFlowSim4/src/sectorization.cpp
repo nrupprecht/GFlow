@@ -9,7 +9,17 @@
 
 namespace GFlowSimulation {
 
-  Sectorization::Sectorization(GFlow *gflow) : Base(gflow), xVL(nullptr), sizeXVL(0), skinDepth(0.025), cutoff(0) {};
+  Sectorization::Sectorization(GFlow *gflow) : Base(gflow), xVL(nullptr), sizeXVL(0), skinDepth(0.025), currentHead(-1), 
+    cutoff(0), central_sector_number(0) 
+  {
+    #if _INTEL_ == 1
+    #pragma unroll(DIMENSIONS)
+    #endif 
+    for (int d=0; d<DIMENSIONS; ++d) {
+      central_sector_number *= 3;
+      ++central_sector_number;
+    }
+  };
 
   Sectorization::~Sectorization() {
     nullXVL();
@@ -43,6 +53,9 @@ namespace GFlowSimulation {
     // Place all the particles in the sectors
     for (int n=0; n<number; ++n) {
       // Figure out d-th sector coordinate
+      #if _INTEL_ == 1
+      #pragma unroll(DIMENSIONS)
+      #endif 
       for (int d=0; d<DIMENSIONS; ++d)
         index[d] = static_cast<int>((x[n][d] - bounds.min[d])*inverseW[d]);
       // Add particle to the appropriate sector
@@ -54,6 +67,9 @@ namespace GFlowSimulation {
     if (number!=sizeXVL) setupXVL(number);
     // Fill array
     for (int i=0; i<number; ++i)
+      #if _INTEL_ == 1
+      #pragma unroll(DIMENSIONS)
+      #endif 
       for (int d=0; d<DIMENSIONS; ++d) 
         xVL[i][d] = x[i][d];
 
@@ -71,7 +87,10 @@ namespace GFlowSimulation {
 
   int Sectorization::getNumSectors() {
     int total = 1;
-    for (int i=0; i<DIMENSIONS; ++i) total *= dims[i];
+    #if _INTEL_ == 1
+    #pragma unroll(DIMENSIONS)
+    #endif 
+    for (int d=0; d<DIMENSIONS; ++d) total *= dims[d];
     return total;
   }
 
@@ -102,9 +121,15 @@ namespace GFlowSimulation {
     cutoff = maxCutR + secCutR + skinDepth; // Cutoff radius
 
     // First estimate of sdx, sdy
+    #if _INTEL_ == 1
+    #pragma unroll(DIMENSIONS)
+    #endif 
     for (int d=0; d<DIMENSIONS; ++d) widths[d] = cutoff;
 
     // Correct estimate so sectors are no smaller than our estimation
+    #if _INTEL_ == 1
+    #pragma unroll(DIMENSIONS)
+    #endif 
     for (int d=0; d<DIMENSIONS; ++d) {
       dims[d] = static_cast<int>(max(RealType(1.), bounds.wd(d)/widths[d]));
       widths[d] = bounds.wd(d)/dims[d];
@@ -184,6 +209,7 @@ namespace GFlowSimulation {
             pairInteraction(currentHead, otherParticle);
         }
 
+        /*
         // --- Only look for neighbor particles in sectors that are less than us in at least one dimension
         //     There are 2^(DIMENSIONS) - 1 of these
         for (uint c=1; c<pow(2,DIMENSIONS); ++c) {
@@ -194,14 +220,33 @@ namespace GFlowSimulation {
             else dSectorAdd[d] = 0;
             c0 /= 2;
           }
+          */
+
+        // --- Look at all surrounding sectors
+        for (uint c=0; c<pow(3,DIMENSIONS); ++c) {
+          // Make sure this is not the central sector
+          if (c==central_sector_number) continue;
+          // Convert to a base 3 number (-1, 0, 1)
+          int c0=c;
+          for (uint d=0; d<DIMENSIONS; ++d) {
+            dSectorAdd[d] = (c0%3) - 1;
+            c0 /= 3;
+          }
+
           // Look at that neighboring sector
           addVec(sectorAdd, dSectorAdd, otherAdd);
-          // If sector is negative, either wrap sector or skip (we only look at sectors that are smaller,
-          // so there is no need to see if a sector is to large)
+          // If sector is negative, either wrap sector or skip. Similarly if sector is too large
           bool good = true;
           for (int d=0; d<DIMENSIONS && good; ++d) {
             if (otherAdd[d]<0) {
               if (wrap[d] && dims[d]>1) otherAdd[d] += dims[d];
+              else {
+                good = false;
+                break;
+              }
+            }
+            if (otherAdd[d]>=dims[d]) {
+              if (wrap[d] && dims[d]>1) otherAdd[d] -= dims[d];
               else {
                 good = false;
                 break;
@@ -215,7 +260,15 @@ namespace GFlowSimulation {
           auto &otherVec = sectors.at(otherAdd);
           for (uint q=0; q<otherVec.size(); ++q) {
             int otherParticle = otherVec.at(q);
+
+            // Only look at particles that are smaller than you --- ***
+            //if (sigma<sg[otherParticle]) continue; 
+            // Only look at particles to your left
+            if (x[currentHead][1]<x[otherParticle][1]) continue;
+
+            // Get the displacement between particles
             getDisplacement(x[currentHead], x[otherParticle], displacement, bounds, wrap);
+            // If close enough, they interact
             if (sqr(displacement) < sigma + sg[otherParticle] + skinDepth) 
               pairInteraction(currentHead, otherParticle);
           }

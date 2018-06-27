@@ -104,6 +104,7 @@ namespace GFlowSimulation {
     return str;
   }
 
+  // Copy an array of size [size] from [source] to [destination]
   template<typename T> inline void copyArray(const T *source, T *destination, int size) {
     for (int i=0; i<size; ++i) destination[i] = source[i];
   }
@@ -113,6 +114,15 @@ namespace GFlowSimulation {
 // Include this after so RealType is defined
 #include "defaultconstants.hpp"
 #include "bounds.hpp"
+
+namespace GFlowSimulation {
+
+  // The volume of a [D]-dimensional sphere - need PI
+  inline RealType sphere_volume(RealType radius, int D=DIMENSIONS) {
+    return pow(PI, D/2.) * pow(radius, D) / tgamma(D/2. + 1.);
+  }
+
+}
 
 // Include this after so string is defined
 #include "exceptions.hpp"

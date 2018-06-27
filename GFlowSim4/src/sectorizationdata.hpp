@@ -18,7 +18,7 @@ namespace GFlowSimulation {
     virtual bool writeToFile(string, bool=true);
 
   private:
-
+    // A vector of sector occupations
     vector< vector<int> > sectorOccupation; // [iter] [sector # (linear)] [# of particles]
   };
 

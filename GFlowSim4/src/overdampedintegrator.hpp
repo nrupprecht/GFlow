@@ -13,6 +13,9 @@ namespace GFlowSimulation {
     // Only need to act here
     virtual void post_forces();
 
+    // Set damping constant
+    void setDamping(RealType);
+
   private:
     // Damping constant
     RealType dampingConstant;
