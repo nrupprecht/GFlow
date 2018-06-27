@@ -42,8 +42,21 @@ namespace GFlowSimulation {
   // Unsigned int
   typedef unsigned int uint;
 
-  // RealType pair
+  // --- Pair typedefs
+
+  // Real pair
   typedef pair<RealType, RealType> RPair;
+
+  // Int pair
+  typedef pair<int, int> IPair;
+
+  // Real-Int pair
+  typedef pair<RealType, int> RIPair;
+
+  // Int-Real pair
+  typedef pair<int, RealType> IRPair;
+
+  // --- Common functions
 
   // Convert an object to a string
   template<typename T> inline string toStr(T obj) {
@@ -118,8 +131,8 @@ namespace GFlowSimulation {
   static std::mt19937 global_generator;
   static std::normal_distribution<RealType> global_normal_dist(0., 1.);
 
-  inline void seedNormalDistribution(unsigned seed=-1) {
-    if(seed<0) seed = std::chrono::system_clock::now().time_since_epoch().count();
+  inline void seedNormalDistribution(unsigned seed=0) {
+    if(seed==0) seed = std::chrono::system_clock::now().time_since_epoch().count();
     global_generator = std::mt19937(seed);
   }
 

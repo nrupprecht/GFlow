@@ -25,6 +25,11 @@ namespace GFlowSimulation {
 
   protected:
     // --- Helper functions
+    // Get what the directory name for the data should be
+    string _correctDirName(string);
+    
+    // Create a directory
+    void _makeDir(string);
 
     // Checks whether enough time has gone by to gather data again. If so, it updates [lastRecording]
     bool _check();

@@ -5,7 +5,9 @@
 
 #include "positiondata.hpp"
 #include "verletlistdata.hpp"
+#include "verletlistnumberdata.hpp"
 #include "sectorizationdata.hpp"
 #include "kineticenergydata.hpp"
+#include "sectorizationremakedata.hpp"
 
 #endif // __ALL_DATA_OBJECTS_HPP__GFLOW__

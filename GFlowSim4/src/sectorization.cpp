@@ -10,7 +10,7 @@
 namespace GFlowSimulation {
 
   Sectorization::Sectorization(GFlow *gflow) : Base(gflow), xVL(nullptr), sizeXVL(0), skinDepth(0.025), currentHead(-1), 
-    cutoff(0), central_sector_number(0) 
+    cutoff(0), central_sector_number(0), number_of_remakes(0)
   {
     #if _INTEL_ == 1
     #pragma unroll(DIMENSIONS)
@@ -40,6 +40,9 @@ namespace GFlowSimulation {
   }
 
   void Sectorization::sectorize() {
+    // Increment counter
+    ++number_of_remakes;
+
     // Get data from simdata and sectors array
     RealType **x = Base::simData->x;
     int number = Base::simData->number, total = sectors.total();
@@ -100,6 +103,10 @@ namespace GFlowSimulation {
 
   RealType Sectorization::getCutoff() {
     return cutoff;
+  }
+
+  int Sectorization::getNumberOfRemakes() {
+    return number_of_remakes;
   }
 
   void Sectorization::setSkinDepth(RealType s) {

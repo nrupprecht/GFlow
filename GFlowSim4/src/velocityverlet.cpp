@@ -34,9 +34,7 @@ namespace GFlowSimulation {
       #if _INTEL_ == 1
       #pragma unroll(DIMENSIONS)
       #endif 
-      for (int d=0; d<DIMENSIONS; ++d) {
-        v[i][d] += hdt*im[i]*f[i][d];
-      }
+      for (int d=0; d<DIMENSIONS; ++d) v[i][d] += hdt*im[i]*f[i][d];
       #if _INTEL_ == 1
       #pragma unroll(DIMENSIONS)
       #endif 

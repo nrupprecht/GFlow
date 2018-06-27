@@ -27,6 +27,7 @@ namespace GFlowSimulation {
     // Values
     RealType time = 10.;
     int number = -1; // -1 means use volume density
+    RealType dt = 0.001;
     RealType radius = 0.05;
     RealType phi = 0.5;
     RealType width = 4.;
@@ -37,6 +38,7 @@ namespace GFlowSimulation {
     // Gather command line arguments
     parserPtr->get("time", time);
     parserPtr->get("number", number);
+    parserPtr->get("dt", dt);
     parserPtr->get("radius", radius);
     parserPtr->get("phi", phi);
     parserPtr->get("width", width);
@@ -98,6 +100,8 @@ namespace GFlowSimulation {
     delete [] gflow->integrator;
     if (over_damped_flag) gflow->integrator = new OverdampedIntegrator(gflow);
     else gflow->integrator = new VelocityVerlet(gflow);
+    // Set integrator initial time step
+    gflow->integrator->setDT(dt);
 
     // --- Set velocities
     RealType normal[DIMENSIONS];

@@ -1,9 +1,9 @@
+// For argument parsing
+#include "ArgParse.hpp"
+
 // Simulation creators
 #include "boxcreator.hpp"
 #include "debugcreator.hpp"
-
-// For argument parsing
-#include "ArgParse.hpp"
 
 // All data objects to choose from
 #include "alldataobjects.hpp"
@@ -22,14 +22,15 @@ int main(int argc, char **argv) {
 
   // Type of simulation
   bool debug_flag = false;
-  bool over_damped_flag = false;
 
   // Data to gather
   bool animate; // Record positions
   bool vlData;  // Record verlet list information
+  bool vlNums;  // Record numeric data about verlet lists
   bool sectorData; // Record sector information
   bool ke; // Record kinetic energy
   bool aveKE; // Record average kinetic energy (per particle)
+  bool secRemake; 
   string writeDirectory = "RunData";
 
   // For getting command line arguments
@@ -37,9 +38,11 @@ int main(int argc, char **argv) {
   parser.get("debug", debug_flag);
   parser.get("animate", animate);
   parser.get("vlData", vlData);
+  parser.get("vlNums", vlNums);
   parser.get("sectorData", sectorData);
   parser.get("KE", ke);
   parser.get("aveKE", aveKE);
+  parser.get("secRemake", secRemake);
   parser.get("writeDirectory", writeDirectory);
 
   // This creator creates gflow simulations
@@ -63,8 +66,10 @@ int main(int argc, char **argv) {
   // Add data objects
   if (animate) gflow->addDataObject(new PositionData(gflow));
   if (vlData)  gflow->addDataObject(new VerletListData(gflow));
-  if (sectorData) gflow->addDataObject(new SectorizationData(gflow));
-  if (aveKE || ke)   gflow->addDataObject(new KineticEnergyData(gflow, aveKE));
+  if (vlNums)  gflow->addDataObject(new VerletListNumberData(gflow));
+  if (sectorData)  gflow->addDataObject(new SectorizationData(gflow));
+  if (aveKE || ke) gflow->addDataObject(new KineticEnergyData(gflow, aveKE));
+  if (secRemake)  gflow->addDataObject(new SectorizationRemakeData(gflow));
 
   // Run the simulation
   if (gflow) gflow->run();

@@ -13,6 +13,9 @@ namespace GFlowSimulation {
     // --- Accessors
     RealType getTimeStep();
 
+    // --- Mutators
+    void setDT(RealType);
+
     // GFlow is a friend class
     friend class GFlow;
 

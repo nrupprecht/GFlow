@@ -8,4 +8,8 @@ namespace GFlowSimulation {
     return dt;
   }
 
+  void Integrator::setDT(RealType t) {
+    dt = t;
+  }
+
 }

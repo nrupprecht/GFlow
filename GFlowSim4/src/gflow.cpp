@@ -115,43 +115,42 @@ namespace GFlowSimulation {
     // Do integration for the requested amount of time
     while (running) {
       // --> Pre-step
+      for (auto m : modifiers) m->pre_step();
       integrator->pre_step();
       dataMaster->pre_step();
       sectorization->pre_step();
-      for (auto m : modifiers) m->pre_step();
 
       // --> Pre-exchange
+        for (auto m : modifiers) m->pre_exchange();
       integrator->pre_exchange();
       dataMaster->pre_exchange();
       sectorization->pre_exchange();
-      for (auto m : modifiers) m->pre_exchange();
 
       // --- Exchange particles (potentially) ---
 
       // --> Pre-force
+      for (auto m : modifiers) m->pre_forces();
       integrator->pre_forces(); // -- This is where VV first half kick happens
       dataMaster->pre_forces();
       sectorization->pre_forces(); // -- This is where resectorization / verlet list creation might happen
-      for (auto m : modifiers) m->pre_forces(); // -- This is where modifiers should do forces (if they need to)
 
       // --- Do forces
+      clearForces(); // Clear force buffers
+      // Calculate current forces
       for (auto &f : forces) f->calculateForces();
 
       // --> Post-forces
+      for (auto m : modifiers) m->post_forces(); // -- This is where modifiers should do forces (if they need to)
       integrator->post_forces(); // -- This is where VV second half kick happens
       dataMaster->post_forces();
       sectorization->post_forces();
-      for (auto m : modifiers) m->post_forces();
-
-      // --- Clear force bufferes
-      clearForces();
 
       // --> Post-step
       if (requested_time<=elapsed_time) running = false;
+      for (auto m : modifiers) m->post_step();
       integrator->post_step();
       dataMaster->post_step();
       sectorization->post_step();
-      for (auto m : modifiers) m->post_step();
       // Timer updates
       ++iter;
       RealType dt = integrator->getTimeStep();

@@ -18,7 +18,6 @@ namespace GFlowSimulation {
     // Get the data
     for (auto &f : *Base::forcesPtr)
     verletLists.push_back(f->getVerletList());
-
   }
 
   bool VerletListData::writeToFile(string fileName, bool useName) {
@@ -39,7 +38,7 @@ namespace GFlowSimulation {
         PrintingUtility::writeVerletListToDirectory(verletLists.at(iter+sub_iter), sub_fileName);
       }
     }
-
+    // Return success
     return true;
   }
 

@@ -17,7 +17,7 @@ namespace GFlowSimulation {
     virtual void calculateForces();
 
   private:
-    RealType strength;
+    RealType repulsion;
   };
 
 }

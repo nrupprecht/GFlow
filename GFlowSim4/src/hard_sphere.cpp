@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
 
-  HardSphere::HardSphere(GFlow *gflow) : Force(gflow), strength(DEFAULT_HARD_SPHERE_STRENGTH) {};
+  HardSphere::HardSphere(GFlow *gflow) : Force(gflow), repulsion(DEFAULT_HARD_SPHERE_REPULSION) {};
 
   void HardSphere::initialize() {
     // Set up verlet list
@@ -45,7 +45,7 @@ namespace GFlowSimulation {
         if (dsqr < sqr(sigma + sg[id2])) {
           RealType distance = sqrt(dsqr);
           normalVec(displacement, normal); // Get the normal vector
-          scalarMultVec(strength*(sigma + sg[id2] - distance), normal, F);
+          scalarMultVec(repulsion*(sigma + sg[id2] - distance), normal, F);
           // Add force
           plusEqVec(f[id1], F);
           minusEqVec (f[id2], F);

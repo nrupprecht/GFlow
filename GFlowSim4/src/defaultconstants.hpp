@@ -4,7 +4,7 @@
 namespace GFlowSimulation {
 
   const RealType DEFAULT_TIME_STEP = 0.001;
-  const RealType DEFAULT_HARD_SPHERE_STRENGTH = 10.;
+  const RealType DEFAULT_HARD_SPHERE_REPULSION = 10.;
   const RealType DEFAULT_DAMPING_CONSTANT = 0.1;
   const RealType PI = 3.14159265;
 
