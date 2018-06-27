@@ -59,8 +59,10 @@ namespace GFlowSimulation {
       #if _INTEL_ == 1
       #pragma unroll(DIMENSIONS)
       #endif 
-      for (int d=0; d<DIMENSIONS; ++d)
+      for (int d=0; d<DIMENSIONS; ++d) {
         index[d] = static_cast<int>((x[n][d] - bounds.min[d])*inverseW[d]);
+        if (index[d]>=dims[d]) index[d] = dims[d]-1; // Rounding errors (I assume) can cause index to be too large
+      }
       // Add particle to the appropriate sector
       sectors.at(index).push_back(n);
     }
