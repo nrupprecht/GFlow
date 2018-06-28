@@ -97,9 +97,9 @@ namespace GFlowSimulation {
       // Put a bond between them
       gflow->addModifier(new HarmonicBond(gflow, id1, id2));
       // Give a radius, mass, and type
-      sg[n] = radius;
-      im[n] = 1.0 / (1.0 * PI*sqr(radius)); // Density of 1
-      type[n] = 0;
+      sg[id1] = sg[id2] = radius;
+      im[id1] = im[id2] = 1.0 / (1.0 * PI*sqr(radius)); // Density of 1
+      type[id1] = type[id2] = 0;
     }
 
     // --- Handle forces

@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
 
-  HarmonicBond::HarmonicBond(GFlow *gflow, int i1, int i2) : Modifier(gflow), id1(i1), id2(i2) {};
+  HarmonicBond::HarmonicBond(GFlow *gflow, int i1, int i2) : Modifier(gflow), id1(i1), id2(i2), springK(DEFAULT_SPRING_K) {};
 
   void HarmonicBond::post_forces() {
     // Get positions
