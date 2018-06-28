@@ -13,6 +13,9 @@ namespace GFlowSimulation {
     // Apply forces
     virtual void post_forces();
 
+    // --- Mutators
+    void setSpringK(RealType);
+
   private:
     // The particles that participate in this force
     int id1, id2;

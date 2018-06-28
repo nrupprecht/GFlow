@@ -192,6 +192,10 @@ namespace GFlowSimulation {
     return iter;
   }
 
+  int GFlow::getNumForces() const { 
+    return forces.size(); 
+  }
+
   Bounds GFlow::getBounds() const {
     return bounds;
   }

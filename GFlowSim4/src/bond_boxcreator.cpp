@@ -91,16 +91,21 @@ namespace GFlowSimulation {
       // Random normal vector, to displace the particle along
       randomNormalVec(normal);
       scalarMultVec(0.5*eqLength, normal);
+
       // Set positions
-      addVec(normal, center, x[id1]);
-      subtractVec(normal, center, x[id2]);
+      addVec(center, normal, x[id1]);
+      subtractVec(center, normal, x[id2]);
       // Put a bond between them
-      gflow->addModifier(new HarmonicBond(gflow, id1, id2));
+      HarmonicBond *bond = new HarmonicBond(gflow, id1, id2);
+      bond->setSpringK(1.);
+      gflow->addModifier(bond);
       // Give a radius, mass, and type
       sg[id1] = sg[id2] = radius;
       im[id1] = im[id2] = 1.0 / (1.0 * PI*sqr(radius)); // Density of 1
       type[id1] = type[id2] = 0;
     }
+    // Wrap positions
+    gflow->wrapPositions();
 
     // --- Handle forces
     gflow->forceMaster->setNTypes(1); // Only one type of particle
@@ -124,16 +129,16 @@ namespace GFlowSimulation {
     // Set integrator initial time step
     gflow->integrator->setDT(dt);
 
-    // --- Set velocities
-    for (int n=0; n<number; ++n) {
+    // --- Set velocities - give pairs the same velocity
+    for (int n=0; n<number/2; ++n) {
       // Give some random velocities
       double ke = fabs(vsgma*normal_dist(generator));
       double velocity = sqrt(2*im[n]*ke/127.324);
       // Random normal vector
       randomNormalVec(normal);
       // Set the velocity
-      scalarMultVec(velocity, normal, v[n]);
-      sg[n] = radius;
+      scalarMultVec(velocity, normal, v[2*n]);
+      scalarMultVec(velocity, normal, v[2*n+1]);
     }
 
     // Request time

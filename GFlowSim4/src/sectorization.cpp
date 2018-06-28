@@ -40,6 +40,9 @@ namespace GFlowSimulation {
   }
 
   void Sectorization::pre_forces() {
+    // If there are no forces, there is no need to check sectors
+    if (Base::gflow->getNumForces()==0) return;
+    // Get the current simulation time
     RealType current_time = Base::gflow->getElapsedTime();
     // Check whether we should check sectors
     if (current_time-lastUpdate>updateDelay) checkSectors();

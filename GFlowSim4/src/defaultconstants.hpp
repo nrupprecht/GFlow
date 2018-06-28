@@ -8,6 +8,7 @@ namespace GFlowSimulation {
   const RealType DEFAULT_DAMPING_CONSTANT = 0.1;
   const RealType DEFAULT_MAX_UPDATE_DELAY = 0.025;
   const RealType DEFAULT_SPRING_K = 10.;
+  const RealType DEFAULT_VISCOSITY = 1.308e-3;
   const RealType PI = 3.14159265;
 
   // The number of dimensions the simulation is in

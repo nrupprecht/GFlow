@@ -2,6 +2,7 @@
 #define __VECTOR_MATH_HPP__GFLOW__
 
 #include "bounds.hpp"
+#include "printingutility.hpp"
 
 namespace GFlowSimulation {
 
@@ -76,7 +77,7 @@ namespace GFlowSimulation {
   template<typename T> inline void normalizeVec(T *norm) {
     T mag = 0;
     for (int d=0; d<DIMENSIONS; ++d) mag += sqr(norm[d]);
-    T invMag = 1./mag;
+    T invMag = 1./sqrt(mag);
     scalarMultVec(invMag, norm);
   }
 
@@ -86,6 +87,10 @@ namespace GFlowSimulation {
       x[d] = randNormal();
     // Normalize
     normalizeVec(x);
+  }
+
+  inline string toStr(RealType *vec) {
+    return ("{"+PrintingUtility::toStrVec(vec)+"}");
   }
 
 }

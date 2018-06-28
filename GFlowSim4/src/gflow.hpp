@@ -48,6 +48,9 @@ namespace GFlowSimulation {
     // Get the number of iterations
     int getIter() const;
 
+    // Get the number of forces
+    int getNumForces() const;
+
     // Get the bounds
     Bounds getBounds() const;
 
