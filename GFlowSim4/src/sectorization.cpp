@@ -10,7 +10,8 @@
 namespace GFlowSimulation {
 
   Sectorization::Sectorization(GFlow *gflow) : Base(gflow), xVL(nullptr), sizeXVL(0), skinDepth(0.025), currentHead(-1), 
-    cutoff(0), central_sector_number(0), number_of_remakes(0)
+    cutoff(0), central_sector_number(0), number_of_remakes(0), lastCheck(-1.), lastUpdate(-1.), updateDelay(1.0e-4), 
+    max_update_delay(DEFAULT_MAX_UPDATE_DELAY), mvRatioTollerance(1.5)
   {
     #if _INTEL_ == 1
     #pragma unroll(DIMENSIONS)
@@ -28,7 +29,10 @@ namespace GFlowSimulation {
   void Sectorization::pre_integrate() {
     // ---> If time is requested twice on the same simulation, these steps are unnecessary. 
     //      Maybe they should be part of a separate initialization somewhere.
-
+    // Reset time points
+    lastCheck  = -1.;
+    lastUpdate = -1.;
+    updateDelay = 1.0e-4;
     // Get the bounds from gflow
     bounds = Base::gflow->getBounds();
     // Make the sectors
@@ -36,12 +40,17 @@ namespace GFlowSimulation {
   }
 
   void Sectorization::pre_forces() {
-    checkSectors();
+    RealType current_time = Base::gflow->getElapsedTime();
+    // Check whether we should check sectors
+    if (current_time-lastUpdate>updateDelay) checkSectors();
   }
 
   void Sectorization::sectorize() {
     // Increment counter
     ++number_of_remakes;
+
+    // Set timer
+    lastUpdate = Base::gflow->getElapsedTime();
 
     // Get data from simdata and sectors array
     RealType **x = Base::simData->x;
@@ -63,6 +72,7 @@ namespace GFlowSimulation {
         index[d] = static_cast<int>((x[n][d] - bounds.min[d])*inverseW[d]);
         if (index[d]>=dims[d]) index[d] = dims[d]-1; // Rounding errors (I assume) can cause index to be too large
       }
+
       // Add particle to the appropriate sector
       sectors.at(index).push_back(n);
     }
@@ -117,9 +127,12 @@ namespace GFlowSimulation {
   }
 
   inline void Sectorization::makeSectors() {
+    // If bounds are unset, then don't make sectors
+    if (bounds.wd(0) == 0) return;
     // Calculate cutoff
     RealType *sg = simData->sg;
     int number = simData->number;
+
     // Largest and second largest radii
     RealType maxCutR(0), secCutR(0);
     // Look for largest and second largest radii
@@ -142,6 +155,7 @@ namespace GFlowSimulation {
     for (int d=0; d<DIMENSIONS; ++d) {
       dims[d] = static_cast<int>(max(RealType(1.), bounds.wd(d)/widths[d]));
       widths[d] = bounds.wd(d)/dims[d];
+
       inverseW[d] = 1./widths[d];
     }
 
@@ -152,38 +166,45 @@ namespace GFlowSimulation {
     sectorize();
   }
 
-  // Checks whether sectors need to be refilled. This happens when the max distance traveled
-  // by two particles, relative to one another, is > skinDepth
-  inline void Sectorization::checkSectors() {
-    // Don't check sectors too often
-    // ...
-
+  inline RealType Sectorization::maxMotion() {
     // Get data from simdata and sectors array
     RealType **x = Base::simData->x;
     int number = Base::simData->number;
     const bool *wrap = gflow->getWrap();
 
-    if (x==nullptr || wrap==nullptr) throw UnexpectedNullPointer("[x] or [wrap] null in [checkSectors]");
-
-    // If there are more particles now, we need to resectorize
-    if (sizeXVL<number) sectorize();
-    else {
-      // Check if re-sectorization is required --- see how far particles have traveled
-      RealType dsqr(0), maxDSqr(0), secDSqr(0), displacement[DIMENSIONS];
-      for (int i=0; i<number; ++i) {
-        getDisplacement(xVL[i], x[i], displacement, bounds, wrap);
-        dsqr = sqr(displacement);
-        // Check if this is the largest or second largest displacement (squared)
-        if (dsqr>secDSqr) {
-          if (dsqr>maxDSqr){
-            secDSqr = maxDSqr;
-            maxDSqr = dsqr;
-          }
-          else secDSqr = dsqr;
+    // Check if re-sectorization is required --- see how far particles have traveled
+    RealType dsqr(0), maxDSqr(0), secDSqr(0), displacement[DIMENSIONS];
+    for (int n=0; n<number; ++n) {
+      getDisplacement(xVL[n], x[n], displacement, bounds, wrap);
+      dsqr = sqr(displacement);
+      // Check if this is the largest or second largest displacement (squared)
+      if (dsqr>secDSqr) {
+        if (dsqr>maxDSqr){
+          secDSqr = maxDSqr;
+          maxDSqr = dsqr;
         }
+        else secDSqr = dsqr;
       }
-      // Compair with skin depth
-      if (sqrt(maxDSqr) + sqrt(secDSqr) > skinDepth) sectorize();
+    }
+    return sqrt(maxDSqr)+sqrt(secDSqr);
+  }
+
+  // Checks whether sectors need to be refilled. This happens when the max distance traveled
+  // by two particles, relative to one another, is > skinDepth
+  inline void Sectorization::checkSectors() {
+    // Set time point
+    lastCheck = Base::gflow->getElapsedTime();
+    // Get data from simdata and sectors array
+    if (sizeXVL<Base::simData->number) sectorize();
+    else {
+      // If there are more particles now, we need to resectorize
+      RealType maxmotion = maxMotion();
+      if (maxmotion>skinDepth) {
+        sectorize();
+      }
+      else { // Guess what the delay should be
+        updateDelay = mvRatioTollerance*(lastCheck-lastUpdate)*skinDepth/maxmotion; // [lastCheck] is the current time
+      }
     }
   }
 
@@ -220,19 +241,6 @@ namespace GFlowSimulation {
           if (sqr(displacement) < sigma + sg[otherParticle] + skinDepth) 
             pairInteraction(currentHead, otherParticle);
         }
-
-        /*
-        // --- Only look for neighbor particles in sectors that are less than us in at least one dimension
-        //     There are 2^(DIMENSIONS) - 1 of these
-        for (uint c=1; c<pow(2,DIMENSIONS); ++c) {
-          // Convert c to a binary number, with 1 --> -1, 0 --> 0
-          int c0 = c;
-          for (uint d=0; d<DIMENSIONS; ++d) {
-            if(c0 % 2) dSectorAdd[d] = -1;
-            else dSectorAdd[d] = 0;
-            c0 /= 2;
-          }
-          */
 
         // --- Look at all surrounding sectors
         for (uint c=0; c<pow(3,DIMENSIONS); ++c) {
@@ -313,6 +321,9 @@ namespace GFlowSimulation {
     xVL = new RealType*[sizeXVL];
     for (int i=0; i<sizeXVL; ++i)
       xVL[i] = new RealType[DIMENSIONS];
+
+    // If there are few particles, use a low move ratio tollerance
+    if (length<10) mvRatioTollerance = 1.;
   }
 
 }

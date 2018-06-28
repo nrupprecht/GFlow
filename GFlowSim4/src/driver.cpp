@@ -2,8 +2,7 @@
 #include "ArgParse.hpp"
 
 // Simulation creators
-#include "boxcreator.hpp"
-#include "debugcreator.hpp"
+#include "allcreators.hpp"
 
 // All data objects to choose from
 #include "alldataobjects.hpp"
@@ -22,6 +21,7 @@ int main(int argc, char **argv) {
 
   // Type of simulation
   bool debug_flag = false;
+  bool bond_flag = false;
 
   // Data to gather
   bool animate; // Record positions
@@ -36,6 +36,7 @@ int main(int argc, char **argv) {
   // For getting command line arguments
   ArgParse parser(argc, argv);
   parser.get("debug", debug_flag);
+  parser.get("bondbox", bond_flag); 
   parser.get("animate", animate);
   parser.get("vlData", vlData);
   parser.get("vlNums", vlNums);
@@ -48,8 +49,9 @@ int main(int argc, char **argv) {
   // This creator creates gflow simulations
   Creator *creator = nullptr;
   // Assign a specific type of creator
-  if (debug_flag) creator = new DebugCreator(&parser);
-  else            creator = new BoxCreator(&parser);
+  if (debug_flag)     creator = new DebugCreator(&parser);
+  else if (bond_flag) creator = new BondBoxCreator(&parser);
+  else                creator = new BoxCreator(&parser);
 
   // Create a gflow simulation
   GFlow *gflow = creator->createSimulation();

@@ -251,6 +251,10 @@ namespace GFlowSimulation {
     dataMaster->addDataObject(dob);
   }
 
+  void GFlow::addModifier(class Modifier* mod) {
+    modifiers.push_back(mod);
+  }
+
   void GFlow::resetAllTimes() {
     requested_time       = 0.;
     total_requested_time = 0.;

@@ -76,11 +76,15 @@ namespace GFlowSimulation {
     // Add a data object
     void addDataObject(class DataObject*);
 
+    // Add a modifier
+    void addModifier(class Modifier*);
+
     // Reset all timers (use e.g. after doing relaxation of a random initial state)
     void resetAllTimes();
 
     // Creators are a friend classes --- all must be since friendship is not inherited
     friend class BoxCreator;
+    friend class BondBoxCreator;
     friend class DebugCreator;
 
     // Force master is a friend class

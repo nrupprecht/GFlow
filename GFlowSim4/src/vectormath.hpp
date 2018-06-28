@@ -33,12 +33,15 @@ namespace GFlowSimulation {
   }
 
   template<typename T> inline void zeroVec(T *x) {
-    for (int d=0; d<DIMENSIONS; ++d)
-      x[d] = T(0);
+    for (int d=0; d<DIMENSIONS; ++d) x[d] = T(0);
   }
 
   template<typename T> inline void addVec(const T *x, const T *y, T *z) {
     for (int d=0; d<DIMENSIONS; ++d) z[d] = x[d]+y[d];
+  }
+
+  template<typename T> inline void subtractVec(const T *x, const T *y, T *z) {
+    for (int d=0; d<DIMENSIONS; ++d) z[d] = x[d]-y[d];
   }
 
   // Times

@@ -1,25 +1,27 @@
-#include "boxcreator.hpp"
+#include "bond_boxcreator.hpp"
+// Other files
+#include "harmonicbond.hpp"
 
 namespace GFlowSimulation {
 
-  BoxCreator::BoxCreator(int argc, char **argv) : Creator(argc, argv) {
+  BondBoxCreator::BondBoxCreator(int argc, char **argv) : Creator(argc, argv) {
     seed = std::chrono::system_clock::now().time_since_epoch().count();
     seedGenerator(seed);
     normal_dist = std::normal_distribution<RealType>(0., 1.);
   };
 
-  BoxCreator::BoxCreator(ArgParse *p) : Creator(p) {
+  BondBoxCreator::BondBoxCreator(ArgParse *p) : Creator(p) {
     seed = std::chrono::system_clock::now().time_since_epoch().count();
     seedGenerator(seed);
     normal_dist = std::normal_distribution<RealType>(0., 1.);
   };
 
-  void BoxCreator::seedGenerator(uint s) {
+  void BondBoxCreator::seedGenerator(uint s) {
     Creator::seedGenerator(s);
     generator = std::mt19937(seed);
   }
 
-  GFlow* BoxCreator::createSimulation() {
+  GFlow* BondBoxCreator::createSimulation() {
     // Seed random number generators
     srand48(time(0));
 
@@ -70,6 +72,8 @@ namespace GFlowSimulation {
       number = phi*vol/sphere_volume(radius);
     }
     // Add some objects
+    RealType eqLength = 2.1*radius; // Equilibrium bond length
+    number = 2*(number/2);
     gflow->simData->reserve(number);
     gflow->simData->number = number;
     // Get pointers to particle data
@@ -77,10 +81,22 @@ namespace GFlowSimulation {
     RealType **v = gflow->simData->v;
     RealType *sg = gflow->simData->sg;
     RealType *im = gflow->simData->im;
+    // For choosing the center of a particle pair, and their displacement from the center
+    RealType center[DIMENSIONS], normal[DIMENSIONS]; 
     int *type    = gflow->simData->type;
-    for (int n=0; n<number; ++n) {
-      // Give some random initial positions - we will allow these to relax
-      for (int d=0; d<DIMENSIONS; ++d) x[n][d] = (drand48()-0.5)*width;
+    for (int n=0; n<number/2; ++n) {
+      int id1 = 2*n, id2 = 2*n+1;
+      // --- Give the pair some random initial positions near each other - we will allow these to relax
+      for (int d=0; d<DIMENSIONS; ++d) center[d] = (drand48()-0.5)*width;
+      // Random normal vector, to displace the particle along
+      randomNormalVec(normal);
+      scalarMultVec(0.5*eqLength, normal);
+      // Set positions
+      addVec(normal, center, x[id1]);
+      subtractVec(normal, center, x[id2]);
+      // Put a bond between them
+      gflow->addModifier(new HarmonicBond(gflow, id1, id2));
+      // Give a radius, mass, and type
       sg[n] = radius;
       im[n] = 1.0 / (1.0 * PI*sqr(radius)); // Density of 1
       type[n] = 0;
@@ -109,7 +125,6 @@ namespace GFlowSimulation {
     gflow->integrator->setDT(dt);
 
     // --- Set velocities
-    RealType normal[DIMENSIONS];
     for (int n=0; n<number; ++n) {
       // Give some random velocities
       double ke = fabs(vsgma*normal_dist(generator));

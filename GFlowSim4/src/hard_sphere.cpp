@@ -48,7 +48,7 @@ namespace GFlowSimulation {
           scalarMultVec(repulsion*(sigma + sg[id2] - distance), normal, F);
           // Add force
           plusEqVec(f[id1], F);
-          minusEqVec (f[id2], F);
+          minusEqVec(f[id2], F);
         }
       }
     }

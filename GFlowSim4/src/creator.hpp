@@ -2,12 +2,14 @@
 #define __CREATOR_HPP__GFLOW__
 
 #include "simdata.hpp"
-#include "integrator.hpp"
 #include "sectorization.hpp"
 #include "communicator.hpp"
 #include "datamaster.hpp"
 #include "forcemaster.hpp"
 #include "modifier.hpp"
+
+// For relax step
+#include "overdampedintegrator.hpp"
 
 // Accumulation files
 #include "allforces.hpp"

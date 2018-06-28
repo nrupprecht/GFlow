@@ -155,7 +155,7 @@ namespace GFlowSimulation {
     int iterations = Base::gflow->getIter();
     fout << "Integration:\n";
     fout << "  - Iterations:               " << iterations << "\n";
-    fout << "  - Time per iteration:       " << elapsedTime / static_cast<RealType>(iterations) << "\n";
+    fout << "  - Time per iteration:       " << run_time / static_cast<RealType>(iterations) << "\n";
     fout << "  - Time step (at end):       " << integrator->getTimeStep() << "\n";
     fout << "\n";
     
@@ -178,6 +178,11 @@ namespace GFlowSimulation {
     // fout << "  - Average per verlet list:  " << (avePerVerletList>-1 ? toStr(avePerVerletList) : "---") << "\n";
     fout << "  - Cutoff:                   " << Base::sectorization->getCutoff() << "\n";
     fout << "  - Skin depth:               " << Base::sectorization->getSkinDepth() << "\n";
+    fout << "  - Sector remakes:           " << Base::sectorization->getNumberOfRemakes() << "\n";
+    RealType re_ps = Base::sectorization->getNumberOfRemakes() / Base::gflow->getTotalTime();
+    fout << "  - Remakes per second:       " << re_ps << "\n";
+    fout << "  - Average remake delay:     " << 1./re_ps << "\n";
+    fout << "  - Average iters per delay:  " << static_cast<RealType>(iterations) / Base::sectorization->getNumberOfRemakes() <<"\n";
     // fout << "  - Occupied sectors:         " << occupiedSectors << "\n";
     // fout << "  - Ave per occupied sector:  " << avePerOccupiedSector << "\n";
     // Close the stream

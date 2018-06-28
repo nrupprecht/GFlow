@@ -58,6 +58,8 @@ namespace GFlowSimulation {
     // Create sectors
     inline void makeSectors();
 
+    inline RealType maxMotion();
+
     // Check whether we need to resectorize, if so, then do it
     inline void checkSectors();
 
@@ -102,6 +104,12 @@ namespace GFlowSimulation {
 
     // The number of times we have remade the sectors
     int number_of_remakes;
+
+    // Update timers and related
+    RealType lastCheck, lastUpdate, updateDelay, max_update_delay;
+
+    // The target move ratio for remake
+    RealType mvRatioTollerance;
   };
 
 };
