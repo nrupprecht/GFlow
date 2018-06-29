@@ -67,10 +67,14 @@ namespace GFlowSimulation {
     for (int d=0; d<DIMENSIONS; ++d) target[d] = x[d];
   }
 
+  template<typename T> inline T magnitudeVec(T *vec) {
+    return sqrt(sqr(vec));
+  }
+
   template<typename T> inline void normalVec(const T *x, T *norm) {
     T mag = 0;
     for (int d=0; d<DIMENSIONS; ++d) mag += sqr(x[d]);
-    T invMag = 1./mag;
+    T invMag = 1./sqrt(mag);
     scalarMultVec(invMag, x, norm);
   }
 
@@ -89,7 +93,11 @@ namespace GFlowSimulation {
     normalizeVec(x);
   }
 
-  inline string toStr(RealType *vec) {
+  inline string toStrVec(RealType *vec) {
+    return ("{"+PrintingUtility::toStrVec(vec)+"}");
+  }
+
+  inline string toStrVec(int *vec) {
     return ("{"+PrintingUtility::toStrVec(vec)+"}");
   }
 

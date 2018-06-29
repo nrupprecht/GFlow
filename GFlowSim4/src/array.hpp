@@ -2,8 +2,14 @@
 #define __ARRAY_HPP__GFLOW__
 
 #include "utility.hpp"
+#include "vectormath.hpp"
 
 namespace GFlowSimulation {
+
+  /* ADDRESSING:
+  *  --> Address: {i(0), i(1), ... , i(n-1)}, Dims {d(0), d(1), ... , d(n-1)}
+  *  --> Linear address = i(0)*[d(1)*...*d(n-1)] + i(1)*[d(2)*...*d(n-1)] + ... + i(n-2)*d(n-1) + i(n-1) 
+  */
 
   /*
   *  @class ArrayBase
@@ -20,13 +26,14 @@ namespace GFlowSimulation {
     // Default constructor
     Array() : data(nullptr) {
       dims = new int[D];
+      for (int d=0; d<D; ++d) dims[d] = 0;
     }
 
     // Constructor
     Array(int *sizes) {
       dims = new int[D]; 
-      for (int i=0; i<D; ++i) dims[i] = sizes[i];     
-      data = new T[ _partial(D) ];
+      for (int i=0; i<D; ++i) dims[i] = sizes[i];
+      data = new T[ _product(0) ];
     }
 
     // Destructor
@@ -37,9 +44,9 @@ namespace GFlowSimulation {
 
     // Resize 
     void resize(int *sizes) {
-      int total = _partial(D);
+      int total = _product(0);
       for (int i=0; i<D; ++i) dims[i] = sizes[i];
-      int newTotal = _partial(D);
+      int newTotal = _product(0);
       // Reallocate if we don't have the correct amount of space
       if (total!=newTotal) {
         if (data) delete data;
@@ -57,7 +64,7 @@ namespace GFlowSimulation {
     }
 
     int total() {
-      return _partial(D);
+      return _product(0);
     }
 
     // Check wheter data is non-null
@@ -75,21 +82,18 @@ namespace GFlowSimulation {
     // --- Helper functions
 
     // Find the product of some of the widths - up to, but not including, [n]
-    inline int _partial(int n) {
-      // Return 1 for n<1
-      if (n<1) return 1;
-      // Do the product
+    inline int _product(int n) {
+      // Do the product - will not be done if n>=D, so we will return 1
       int total = 1;
-      for (int i=0; i<n; ++i) total *= dims[i];
+      for (int i=n; i<D; ++i) total *= dims[i];
       return total;
     }
 
     // Find the linear index for an index set
     inline int _get_index(int *index) {
       int II = 0;
-      for (int i=0; i<D; ++i) {
-        II += index[i]*_partial(i-1);
-      }
+      for (int i=0; i<D; ++i)
+        II += index[i]*_product(i+1);
       return II;
     }
   };
@@ -196,12 +200,12 @@ namespace GFlowSimulation {
     }
 
     T& at(int i0, int i1) {
-      int II = i1*dims[0]+i0;
+      int II = i0*dims[0]+i1;
       return data[II];
     }
 
     T& at(int *index) {
-      int II = index[1]*dims[0]+index[0];
+      int II = index[0]*dims[0]+index[1];
       return data[II];
     }
 
@@ -258,12 +262,12 @@ namespace GFlowSimulation {
     }
 
     T& at(int i0, int i1, int i2) {
-      int II = i2*dims[0]*dims[1]+i1*dims[0]+i0;
+      int II = i0*dims[1]*dims[2]+i1*dims[2]+i0;
       return data[II];
     }
 
     T& at(int *index) {
-      int II = index[2]*dims[1]*dims[0]+index[1]*dims[0]+index[0];
+      int II = index[2]*dims[1]*dims[2]+index[1]*dims[2]+index[0];
       return data[II];
     }
 
@@ -295,7 +299,18 @@ namespace GFlowSimulation {
 
   // Address helping function
   template<int D=DIMENSIONS> inline void getAddress(int linear, int *dims, int *address) {
+    // Lambda for the produce
+    auto product = [&] (int c) -> int {
+      int p = 1;
+      for (int i=c; i<D; ++i) p*=dims[i];
+      return p;
+    };
 
+    for (int d=0; d<D; ++d) {
+      int prod = product(d+1);
+      address[d] = linear / prod;
+      linear %= prod;
+    }
   }
 
   template<> inline void getAddress<0>(int linear, int *dims, int *address) {};
@@ -305,15 +320,16 @@ namespace GFlowSimulation {
   }
 
   template<> inline void getAddress<2>(int linear, int *dims, int *address) {
-    address[0] = linear/dims[0];
-    address[1] = linear - address[0]*dims[0];
+    address[0] = linear / dims[1];
+    address[1] = linear % dims[1];
   }
 
   template<> inline void getAddress<3>(int linear, int *dims, int *address) {
-    int s1 = dims[0]*dims[1];
+    int s1 = dims[1]*dims[2];
     address[0] = linear/s1;
-    address[1] = (linear - address[0]*s1)/dims[0];
-    address[2] = linear - address[0]*s1 - address[1]*dims[0];
+    linear %= s1;
+    address[1] = linear / dims[2];
+    address[2] = linear % dims[2];
   }
 
 }

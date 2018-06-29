@@ -21,7 +21,6 @@
 using namespace GFlowSimulation;
 
 int main(int argc, char **argv) {
-
   // --- Options
 
   // Type of simulation

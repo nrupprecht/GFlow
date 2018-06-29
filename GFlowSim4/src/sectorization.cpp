@@ -6,21 +6,13 @@
 #include "force.hpp"
 
 #include "printingutility.hpp" // For debugging
+#include "vectormath.hpp"
 
 namespace GFlowSimulation {
 
   Sectorization::Sectorization(GFlow *gflow) : Base(gflow), xVL(nullptr), sizeXVL(0), skinDepth(0.025), currentHead(-1), 
-    cutoff(0), central_sector_number(0), number_of_remakes(0), lastCheck(-1.), lastUpdate(-1.), updateDelay(1.0e-4), 
-    max_update_delay(DEFAULT_MAX_UPDATE_DELAY), mvRatioTollerance(1.5)
-  {
-    #if _INTEL_ == 1
-    #pragma unroll(DIMENSIONS)
-    #endif 
-    for (int d=0; d<DIMENSIONS; ++d) {
-      central_sector_number *= 3;
-      ++central_sector_number;
-    }
-  };
+    cutoff(0), number_of_remakes(0), lastCheck(-1.), lastUpdate(-1.), updateDelay(1.0e-4), 
+    max_update_delay(DEFAULT_MAX_UPDATE_DELAY), mvRatioTollerance(1.5) {};
 
   Sectorization::~Sectorization() {
     nullXVL();
@@ -157,8 +149,10 @@ namespace GFlowSimulation {
     #endif 
     for (int d=0; d<DIMENSIONS; ++d) {
       dims[d] = static_cast<int>(max(RealType(1.), bounds.wd(d)/widths[d]));
+      // To solve (temporarily?) the "two sector" problem - see comments in "makeVerletLists"
+      if (dims[d]==2) dims[d] = 1; 
+      // Set widths and inverse widths
       widths[d] = bounds.wd(d)/dims[d];
-
       inverseW[d] = 1./widths[d];
     }
 
@@ -225,10 +219,10 @@ namespace GFlowSimulation {
     // A displacement vector - to be set by the getDisplacement function
     RealType displacement[DIMENSIONS];
 
-    // --- Loop through all sectors
+    // --- Loop through all sectors - Does not work correctly if there are only TWO sectors in more than one dimension 
     int total = sectors.total();
     for (int sec=0; sec<total; ++sec) {
-      // Get the address of the sector with linear addres [sec]
+      // Get the address of the sector with linear address [sec]
       getAddress<>(sec, dims, sectorAdd);
       // Look at all the particles in the sector
       auto &pvec = sectors.at(sectorAdd);
@@ -241,14 +235,13 @@ namespace GFlowSimulation {
         for (uint q = p+1; q<pvec.size(); ++q) {
           int otherParticle = pvec.at(q);
           getDisplacement(x[currentHead], x[otherParticle], displacement, bounds, wrap);
-          if (sqr(displacement) < sigma + sg[otherParticle] + skinDepth) 
+          if (sqr(displacement) < sigma + sg[otherParticle] + skinDepth)
             pairInteraction(currentHead, otherParticle);
         }
 
-        // --- Look at all surrounding sectors
-        for (uint c=0; c<pow(3,DIMENSIONS); ++c) {
-          // Make sure this is not the central sector
-          if (c==central_sector_number) continue;
+        // --- Look in the first half (rounded down) sectors only
+        for (uint c=0; c<floor(pow(3,DIMENSIONS)/2); ++c) {
+
           // Convert to a base 3 number (-1, 0, 1)
           int c0=c;
           for (uint d=0; d<DIMENSIONS; ++d) {
@@ -258,7 +251,12 @@ namespace GFlowSimulation {
 
           // Look at that neighboring sector
           addVec(sectorAdd, dSectorAdd, otherAdd);
-          // If sector is negative, either wrap sector or skip. Similarly if sector is too large
+
+          // If sector is negative, either wrap sector or skip. Similarly if sector is too large.
+          // --- If there are only two sectors in a dimension, you will query corner sectors twice
+          //  -> For now, just set it (in "sectorize") so that if the sectorization wants 2 sectors in some dim, we give it 1
+          // --- If there is only one sector in a dimension, don't vary in that dimensions
+          //  -> Use the check "dims[d]>1"
           bool good = true;
           for (int d=0; d<DIMENSIONS && good; ++d) {
             if (otherAdd[d]<0) {
@@ -276,23 +274,17 @@ namespace GFlowSimulation {
               }
             }
           }
+
           // Do not evaluate if we shouldn't
           if (!good) continue;
-
           // Get the sectors
           auto &otherVec = sectors.at(otherAdd);
           for (uint q=0; q<otherVec.size(); ++q) {
             int otherParticle = otherVec.at(q);
-
-            // Only look at particles that are smaller than you --- ***
-            //if (sigma<sg[otherParticle]) continue; 
-            // Only look at particles to your left
-            if (x[currentHead][1]<x[otherParticle][1]) continue;
-
             // Get the displacement between particles
             getDisplacement(x[currentHead], x[otherParticle], displacement, bounds, wrap);
             // If close enough, they interact
-            if (sqr(displacement) < sigma + sg[otherParticle] + skinDepth) 
+            if (sqr(displacement) < sigma + sg[otherParticle] + skinDepth)
               pairInteraction(currentHead, otherParticle);
           }
         }

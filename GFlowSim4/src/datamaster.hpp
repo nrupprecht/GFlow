@@ -43,6 +43,9 @@ namespace GFlowSimulation {
     // Do a coordinated write to a directory. Returns true if all writes were successful
     bool writeToDirectory(string);
 
+    // Reset the time - use e.g. after relaxation step
+    void resetTimer();
+
     // GFlow is a friend class
     friend class GFlow;
 

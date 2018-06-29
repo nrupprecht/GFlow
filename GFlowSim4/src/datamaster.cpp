@@ -96,10 +96,13 @@ namespace GFlowSimulation {
     // --- Have all the data objects write their data
     for (auto& dob : dataObjects)
       if (dob) success &= dob->writeToFile(writeDirectory, true);
-      //if (dob) success &= dob->writeToFile(writeDirectory+"/StatData/", true);
 
     // Return true if all writes were successful
     return success;
+  }
+
+  void DataMaster::resetTimer() {
+    run_time = 0;
   }
 
   inline bool DataMaster::writeSummary(string writeDirectory) {
@@ -122,14 +125,19 @@ namespace GFlowSimulation {
     RealType elapsedTime   = Base::gflow->getElapsedTime();
     RealType requestedTime = Base::gflow->getTotalRequestedTime();
     RealType ratio = requestedTime/run_time;
+    // Helper lambda - checks whether run_time was non-zero
+    auto toStrRT = [&] (RealType x) -> string {
+      return (run_time>0 ? toStr(x) : "--");
+    };
+    // Print data
     fout << "Timing and performance:\n";
     fout << "  - Time simulated:           " << Base::gflow->getTotalTime() << "\n";
     fout << "  - Requested Time:           " << requestedTime << "\n";
     fout << "  - Run Time:                 " << run_time;
     if (run_time>60) fout << " ( h:m:s - " << printAsTime(run_time) << " )";
     fout << "\n";
-    fout << "  - Ratio:                    " << ratio << "\n";
-    fout << "  - Inverse Ratio:            " << 1./ratio << "\n";
+    fout << "  - Ratio:                    " << toStrRT(ratio) << "\n";
+    fout << "  - Inverse Ratio:            " << toStrRT(1./ratio) << "\n";
     fout << "\n";
 
     // --- Print simulation summary
@@ -142,7 +150,7 @@ namespace GFlowSimulation {
     }
     fout << "\n";
     fout << "  - Number of particles:      " << Base::simData->number << "\n";
-    fout << "  - Ratio x Particles:        " << ratio*Base::simData->number << "\n";
+    fout << "  - Ratio x Particles:        " << toStrRT(ratio*Base::simData->number) << "\n";
     RealType vol = 0;
     RealType *sg = Base::simData->sg;
     for (int n=0; n<Base::simData->number; ++n) vol += pow(sg[n], DIMENSIONS);
@@ -155,7 +163,7 @@ namespace GFlowSimulation {
     int iterations = Base::gflow->getIter();
     fout << "Integration:\n";
     fout << "  - Iterations:               " << iterations << "\n";
-    fout << "  - Time per iteration:       " << run_time / static_cast<RealType>(iterations) << "\n";
+    fout << "  - Time per iteration:       " << toStrRT(run_time / static_cast<RealType>(iterations)) << "\n";
     fout << "  - Time step (at end):       " << integrator->getTimeStep() << "\n";
     fout << "\n";
     
@@ -178,13 +186,16 @@ namespace GFlowSimulation {
     // fout << "  - Average per verlet list:  " << (avePerVerletList>-1 ? toStr(avePerVerletList) : "---") << "\n";
     fout << "  - Cutoff:                   " << Base::sectorization->getCutoff() << "\n";
     fout << "  - Skin depth:               " << Base::sectorization->getSkinDepth() << "\n";
+    if (run_time>0) {
     fout << "  - Sector remakes:           " << Base::sectorization->getNumberOfRemakes() << "\n";
-    RealType re_ps = Base::sectorization->getNumberOfRemakes() / Base::gflow->getTotalTime();
-    fout << "  - Remakes per second:       " << re_ps << "\n";
-    fout << "  - Average remake delay:     " << 1./re_ps << "\n";
-    fout << "  - Average iters per delay:  " << static_cast<RealType>(iterations) / Base::sectorization->getNumberOfRemakes() <<"\n";
+      RealType re_ps = Base::sectorization->getNumberOfRemakes() / Base::gflow->getTotalTime();
+      fout << "  - Remakes per second:       " << re_ps << "\n";
+      fout << "  - Average remake delay:     " << 1./re_ps << "\n";
+      fout << "  - Average iters per delay:  " << static_cast<RealType>(iterations) / Base::sectorization->getNumberOfRemakes() <<"\n";
+    }
     // fout << "  - Occupied sectors:         " << occupiedSectors << "\n";
     // fout << "  - Ave per occupied sector:  " << avePerOccupiedSector << "\n";
+    
     // Close the stream
     fout.close();
 

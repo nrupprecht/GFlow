@@ -99,9 +99,6 @@ namespace GFlowSimulation {
     // Current head - for verlet list creation
     int currentHead;
 
-    // The number that corresponds to 11...1 in base 3
-    int central_sector_number;
-
     // The number of times we have remade the sectors
     int number_of_remakes;
 

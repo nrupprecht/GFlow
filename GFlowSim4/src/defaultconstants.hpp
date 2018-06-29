@@ -13,7 +13,7 @@ namespace GFlowSimulation {
 
   // The number of dimensions the simulation is in
   const int DIMENSIONS = 2;
-
+  
 }
 
 #endif // __DEFAULT_CONSTANTS_HPP__GFLOW__
