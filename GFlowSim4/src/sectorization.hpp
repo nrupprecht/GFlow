@@ -25,23 +25,26 @@ namespace GFlowSimulation {
 
     // --- Accessors
 
+    // Get a sector
+    const vector<int>& getSector(int *) const;
+
     // Get the dims
-    const int* getDims();
+    const int* getDims() const;
 
     // Get the widths
-    const RealType* getWidths();
+    const RealType* getWidths() const;
 
     // Get the total number of sectors
-    int getNumSectors();
+    int getNumSectors() const;
 
     // Get the skin depth
-    RealType getSkinDepth();
+    RealType getSkinDepth() const;
 
     // Get the cutoff
-    RealType getCutoff();
+    RealType getCutoff() const;
 
     // Get the number of remakes
-    int getNumberOfRemakes();
+    int getNumberOfRemakes() const;
 
     // --- Mutators
 

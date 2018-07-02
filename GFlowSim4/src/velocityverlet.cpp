@@ -41,9 +41,6 @@ namespace GFlowSimulation {
       for (int d=0; d<DIMENSIONS; ++d) x[i][d] += dt*v[i][d];
       // Could update angular variables here ... 
     }
-
-    // Wrap positions
-    gflow->wrapPositions(); // Wrap positions
   }
 
   void VelocityVerlet::post_forces() {

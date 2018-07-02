@@ -65,7 +65,10 @@ namespace GFlowSimulation {
       #endif 
       for (int d=0; d<DIMENSIONS; ++d) {
         index[d] = static_cast<int>((x[n][d] - bounds.min[d])*inverseW[d]);
-        if (index[d]>=dims[d]) index[d] = dims[d]-1; // Rounding errors (I assume) can cause index to be too large
+        // Even when wrapping, rounding errors (I assume) can cause index to be too large.
+        // When not wrapping, particles could be outside the sectorization grid
+        if (index[d]>=dims[d]) index[d] = dims[d]-1; 
+        else if (index[d]<0)   index[d] = 0;
       }
 
       // Add particle to the appropriate sector
@@ -87,15 +90,19 @@ namespace GFlowSimulation {
     makeVerletLists();
   }
 
-  const int* Sectorization::getDims() {
+  const vector<int>& Sectorization::getSector(int *index) const {
+    return sectors.at(index);
+  }
+
+  const int* Sectorization::getDims() const {
     return dims;
   }
 
-  const RealType* Sectorization::getWidths() {
+  const RealType* Sectorization::getWidths() const {
     return widths;
   }
 
-  int Sectorization::getNumSectors() {
+  int Sectorization::getNumSectors() const {
     int total = 1;
     #if _INTEL_ == 1
     #pragma unroll(DIMENSIONS)
@@ -104,15 +111,15 @@ namespace GFlowSimulation {
     return total;
   }
 
-  RealType Sectorization::getSkinDepth() {
+  RealType Sectorization::getSkinDepth() const {
     return skinDepth;
   }
 
-  RealType Sectorization::getCutoff() {
+  RealType Sectorization::getCutoff() const {
     return cutoff;
   }
 
-  int Sectorization::getNumberOfRemakes() {
+  int Sectorization::getNumberOfRemakes() const {
     return number_of_remakes;
   }
 
@@ -167,12 +174,12 @@ namespace GFlowSimulation {
     // Get data from simdata and sectors array
     RealType **x = Base::simData->x;
     int number = Base::simData->number;
-    const bool *wrap = gflow->getWrap();
+    const BCFlag *boundaryConditions = gflow->getBCs();
 
     // Check if re-sectorization is required --- see how far particles have traveled
     RealType dsqr(0), maxDSqr(0), secDSqr(0), displacement[DIMENSIONS];
     for (int n=0; n<number; ++n) {
-      getDisplacement(xVL[n], x[n], displacement, bounds, wrap);
+      getDisplacement(xVL[n], x[n], displacement, bounds, boundaryConditions);
       dsqr = sqr(displacement);
       // Check if this is the largest or second largest displacement (squared)
       if (dsqr>secDSqr) {
@@ -215,7 +222,7 @@ namespace GFlowSimulation {
     zeroVec(sectorAdd);
     // Get data from simdata
     RealType **x = simData->x, *sg = simData->sg;
-    const bool *wrap = gflow->getWrap();
+    const BCFlag *boundaryConditions = gflow->getBCs();
     // A displacement vector - to be set by the getDisplacement function
     RealType displacement[DIMENSIONS];
 
@@ -234,7 +241,7 @@ namespace GFlowSimulation {
         // --- Look at other particles in the same sector
         for (uint q = p+1; q<pvec.size(); ++q) {
           int otherParticle = pvec.at(q);
-          getDisplacement(x[currentHead], x[otherParticle], displacement, bounds, wrap);
+          getDisplacement(x[currentHead], x[otherParticle], displacement, bounds, boundaryConditions);
           if (sqr(displacement) < sigma + sg[otherParticle] + skinDepth)
             pairInteraction(currentHead, otherParticle);
         }
@@ -260,14 +267,14 @@ namespace GFlowSimulation {
           bool good = true;
           for (int d=0; d<DIMENSIONS && good; ++d) {
             if (otherAdd[d]<0) {
-              if (wrap[d] && dims[d]>1) otherAdd[d] += dims[d];
+              if (boundaryConditions[d]==BCFlag::WRAP && dims[d]>1) otherAdd[d] += dims[d];
               else {
                 good = false;
                 break;
               }
             }
             if (otherAdd[d]>=dims[d]) {
-              if (wrap[d] && dims[d]>1) otherAdd[d] -= dims[d];
+              if (boundaryConditions[d]==BCFlag::WRAP && dims[d]>1) otherAdd[d] -= dims[d];
               else {
                 good = false;
                 break;
@@ -282,7 +289,7 @@ namespace GFlowSimulation {
           for (uint q=0; q<otherVec.size(); ++q) {
             int otherParticle = otherVec.at(q);
             // Get the displacement between particles
-            getDisplacement(x[currentHead], x[otherParticle], displacement, bounds, wrap);
+            getDisplacement(x[currentHead], x[otherParticle], displacement, bounds, boundaryConditions);
             // If close enough, they interact
             if (sqr(displacement) < sigma + sg[otherParticle] + skinDepth)
               pairInteraction(currentHead, otherParticle);

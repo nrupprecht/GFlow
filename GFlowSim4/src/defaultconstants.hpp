@@ -11,6 +11,9 @@ namespace GFlowSimulation {
   const RealType DEFAULT_VISCOSITY = 1.308e-3;
   const RealType PI = 3.14159265;
 
+  // Boundary condition flags
+  enum class BCFlag { OPEN=0, WRAP=1, REFL=2};
+
   // The number of dimensions the simulation is in
   const int DIMENSIONS = 2;
   

@@ -13,7 +13,7 @@ namespace GFlowSimulation {
     forceMaster = new ForceMaster(this);
 
     // Set wrapping to true by defaule
-    setAllWrap(true);
+    setAllBCs(BCFlag::WRAP);
   }
 
   GFlow::~GFlow() {
@@ -125,6 +125,9 @@ namespace GFlowSimulation {
       integrator->pre_forces(); // -- This is where VV first half kick happens
       dataMaster->pre_forces();
       sectorization->pre_forces(); // -- This is where resectorization / verlet list creation might happen
+      // Wrap or reflect particles
+      wrapPositions();
+      reflectPositions();
 
       // --- Do forces
       clearForces(); // Clear force buffers
@@ -192,8 +195,14 @@ namespace GFlowSimulation {
     return bounds;
   }
 
-  const bool* GFlow::getWrap() const {
-    return wrap;
+  const BCFlag* GFlow::getBCs() const {
+    return boundaryConditions;
+  }
+
+  BCFlag GFlow::getBC(int dim) const {
+    if (dim<0 || DIMENSIONS<=dim) 
+      throw BadDimension("Bad dim in get BC.");
+    return boundaryConditions[dim];
   }
 
   int GFlow::getNTypes() const {
@@ -216,8 +225,8 @@ namespace GFlowSimulation {
     // Sectorization updates its bounds in pre_integrate()
   }
 
-  void GFlow::setAllWrap(bool w) {
-    for (int d=0; d<DIMENSIONS; ++d) wrap[d] = w;
+  void GFlow::setAllBCs(BCFlag type) {
+    for (int d=0; d<DIMENSIONS; ++d) boundaryConditions[d] = type;
   }
 
   void GFlow::requestTime(RealType t) {
@@ -231,7 +240,7 @@ namespace GFlowSimulation {
 
     // Wrap all particles
     for (int d=0; d<DIMENSIONS; ++d) {
-      if (wrap[d]) { // Wrap the d-th dimension
+      if (boundaryConditions[d]==BCFlag::WRAP) { // Wrap the d-th dimension
         for (int n=0; n<number; ++n) {
           // Create a local copy
           RealType xlocal = x[n][d];
@@ -245,6 +254,31 @@ namespace GFlowSimulation {
         }
       }
     }
+  }
+
+  void GFlow::reflectPositions() {
+    // Get a pointer to position data and the number of particles in simData
+    RealType **x = simData->x, **v = simData->v, *sg = simData->sg;
+    int number = simData->number;
+
+    // Reflect all the particles
+    for (int d=0; d<DIMENSIONS; ++d)
+      if (boundaryConditions[d]==BCFlag::REFL) { 
+        for (int n=0; n<number; ++n) {
+          // Create a local copy
+          RealType xlocal = x[n][d];
+          if (xlocal<bounds.min[d]) {
+            xlocal = 2*bounds.min[d] - xlocal ;
+            v[n][d] = -v[n][d];
+          }
+          else if (bounds.max[d]<xlocal) {
+            xlocal = 2*bounds.max[d] - xlocal;
+            v[n][d] = -v[n][d];
+          }
+          x[n][d] = xlocal;
+        }
+      }
+
   }
 
   void GFlow::addDataObject(class DataObject* dob) {

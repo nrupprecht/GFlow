@@ -33,7 +33,8 @@ namespace GFlowSimulation {
     RealType width = 4.;
     RealType vsgma = 0.25;
     RealType skinDepth = -1.;
-    bool animate = false;;
+    bool animate = false;
+    bool reflect = false;
     bool over_damped_flag = false;
 
     // Gather command line arguments
@@ -46,6 +47,7 @@ namespace GFlowSimulation {
     parserPtr->get("vsgma", vsgma);
     parserPtr->get("skinDepth", skinDepth);
     parserPtr->get("animate", animate);
+    parserPtr->get("reflect", reflect);
     parserPtr->get("overdamped", over_damped_flag);
 
     // Create a new gflow object
@@ -59,7 +61,8 @@ namespace GFlowSimulation {
     }
 
     // Set wrapping
-    gflow->setAllWrap(true);
+    if (reflect) gflow->setAllBCs(BCFlag::REFL);
+    else         gflow->setAllBCs(BCFlag::WRAP);
 
     // --- Set initial particle data
     // Find how many objects to use

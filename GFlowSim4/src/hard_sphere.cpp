@@ -19,8 +19,8 @@ namespace GFlowSimulation {
     RealType *sg = Base::simData->sg;
     RealType displacement[DIMENSIONS], normal[DIMENSIONS]; // To calculate displacement, normal vector
     Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
-    bool wrap[DIMENSIONS]; 
-    copyVec(Base::gflow->getWrap(), wrap); // Keep a local copy of the wrap frags
+    BCFlag boundaryConditions[DIMENSIONS]; 
+    copyVec(Base::gflow->getBCs(), boundaryConditions); // Keep a local copy of the wrap frags
     RealType sigma; // Will hold the interaction radius of the head particle
 
     // Get verlet list data
@@ -36,7 +36,7 @@ namespace GFlowSimulation {
       for ( ; h0<h1; ++h0) {
         id2 = verlet[h0];
         // Get the displacement between the particles
-        getDisplacement(x[id1], x[id2], displacement, bounds, wrap);
+        getDisplacement(x[id1], x[id2], displacement, bounds, boundaryConditions);
         // Check if the particles should interact
         RealType dsqr = sqr(displacement);
         if (dsqr < sqr(sigma + sg[id2])) {
@@ -56,7 +56,7 @@ namespace GFlowSimulation {
     for (; h0<nverlet; ++h0) {
       id2 = verlet[h0];
       // Get the displacement between the particles
-      getDisplacement(x[id1], x[id2], displacement, bounds, wrap);
+      getDisplacement(x[id1], x[id2], displacement, bounds, boundaryConditions);
       // Check if the particles should interact
       RealType dsqr = sqr(displacement);
       if (dsqr < sqr(sigma + sg[id2])) {

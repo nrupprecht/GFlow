@@ -59,6 +59,11 @@ namespace GFlowSimulation {
       return data[II];
     }
 
+    T at(int *index) const {
+      int II = _get_index(index);
+      return data[II];
+    }
+
     T& operator[] (int II) {
       return data[II];
     }
@@ -136,7 +141,16 @@ namespace GFlowSimulation {
       return data[i0];
     }
 
+    T at(int i0) const {
+      return data[i0];
+    }
+
     T& at(int *index) {
+      // Index should just be a number (a 1-tuple)
+      return data[*index];
+    }
+
+    T at(int *index) const {
       // Index should just be a number (a 1-tuple)
       return data[*index];
     }
@@ -212,7 +226,17 @@ namespace GFlowSimulation {
       return data[II];
     }
 
+    T at(int i0, int i1) const {
+      int II = i0*dims[0]+i1;
+      return data[II];
+    }
+
     T& at(int *index) {
+      int II = index[0]*dims[0]+index[1];
+      return data[II];
+    }
+
+    T at(int *index) const {
       int II = index[0]*dims[0]+index[1];
       return data[II];
     }
@@ -278,7 +302,17 @@ namespace GFlowSimulation {
       return data[II];
     }
 
+    T at(int i0, int i1, int i2) const {
+      int II = i0*dims[1]*dims[2]+i1*dims[2]+i0;
+      return data[II];
+    }
+
     T& at(int *index) {
+      int II = index[2]*dims[1]*dims[2]+index[1]*dims[2]+index[0];
+      return data[II];
+    }
+
+    T at(int *index) const {
       int II = index[2]*dims[1]*dims[2]+index[1]*dims[2]+index[0];
       return data[II];
     }

@@ -61,7 +61,7 @@ namespace GFlowSimulation {
     }
 
     // Set wrapping
-    gflow->setAllWrap(true);
+    gflow->setAllBCs(BCFlag::WRAP);
 
     // --- Set initial particle data
     // Find how many objects to use

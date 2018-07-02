@@ -36,7 +36,7 @@ namespace GFlowSimulation {
     }
 
     // Set wrapping
-    gflow->setAllWrap(true);
+    gflow->setAllBCs(BCFlag::WRAP);
 
     // Add some objects
     gflow->simData->reserve(2);

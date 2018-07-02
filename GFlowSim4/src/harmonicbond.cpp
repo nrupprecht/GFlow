@@ -18,7 +18,7 @@ namespace GFlowSimulation {
     RealType *x1 = Base::simData->x[id1], *x2 = Base::simData->x[id2];
     // Figure out force
     RealType force[DIMENSIONS];
-    getDisplacement(x1, x2, force, Base::gflow->getBounds(), Base::gflow->getWrap()); // Displacement
+    getDisplacement(x1, x2, force, Base::gflow->getBounds(), Base::gflow->getBCs()); // Displacement
     // Distance
     RealType distance = sqrt(sqr(force));
     // Find x-x_eq

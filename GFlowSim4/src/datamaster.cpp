@@ -171,7 +171,20 @@ namespace GFlowSimulation {
     fout << "  - Dimensions:               " << DIMENSIONS << "\n";
     fout << "  - Wrapping:                 ";
     for (int d=0; d<DIMENSIONS; ++d) {
-      fout << (Base::gflow->getWrap()[d] ? "True" : "False");
+      switch (Base::gflow->getBC(d)) {
+        case BCFlag::OPEN: {
+          fout << "Open";
+          break;
+        }
+        case BCFlag::WRAP: {
+          fout << "Wrap";
+          break;
+        }
+        case BCFlag::REFL: {
+          fout << "Reflect";
+          break;
+        }
+      }
       if (d!=DIMENSIONS-1) fout << ", ";
     }
     fout << "\n";

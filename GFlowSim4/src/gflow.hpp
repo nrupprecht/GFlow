@@ -54,8 +54,11 @@ namespace GFlowSimulation {
     // Get the bounds
     Bounds getBounds() const;
 
-    // Get the wrapping data
-    const bool* getWrap() const;
+    // Get the boundary conditions
+    const BCFlag* getBCs() const;
+
+    // Get a single boundary condition
+    BCFlag getBC(int) const;
 
     // Get the number of types of particles in the simulation
     int getNTypes() const;
@@ -71,13 +74,16 @@ namespace GFlowSimulation {
     void setBounds(Bounds);
 
     // Set all wrap values to something
-    void setAllWrap(bool);
+    void setAllBCs(BCFlag);
 
     // Set the amount of time we should run for
     void requestTime(RealType);
 
     // Keep positions in bounds
     void wrapPositions();
+
+    // "Reflect" positions off the bounds
+    void reflectPositions();
 
     // Add a data object
     void addDataObject(class DataObject*);
@@ -147,8 +153,11 @@ namespace GFlowSimulation {
     // The simulation bounds
     Bounds bounds;
 
-    // Periodicity
-    bool wrap[DIMENSIONS];
+    // Boundary types
+    // 0 - none
+    // 1 - wrap
+    // 2 - reflect
+    BCFlag boundaryConditions[DIMENSIONS];
 
     // The command info (optional)
     int argc;
