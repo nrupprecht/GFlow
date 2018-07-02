@@ -1,26 +1,15 @@
 #ifndef __CREATOR_HPP__GFLOW__
 #define __CREATOR_HPP__GFLOW__
 
-#include "simdata.hpp"
-#include "sectorization.hpp"
-#include "communicator.hpp"
-#include "datamaster.hpp"
-#include "forcemaster.hpp"
-#include "modifier.hpp"
-
-// For relax step
-#include "overdampedintegrator.hpp"
+#include "utility.hpp"
+#include "ArgParse.hpp"
+#include "vectormath.hpp"
 
 // Accumulation files
+#include "allbaseobjects.hpp"
 #include "allforces.hpp"
 #include "alldataobjects.hpp"
 #include "allintegrators.hpp"
-
-// Argument parsing
-#include "ArgParse.hpp"
-
-// Useful
-#include "vectormath.hpp"
 
 namespace GFlowSimulation {
 
@@ -51,9 +40,15 @@ namespace GFlowSimulation {
     virtual void seedGenerator(uint);
 
     // Create a GFlow Object
-    virtual GFlow* createSimulation() = 0;
+    virtual class GFlow* createSimulation() = 0;
 
   protected:
+    // --- Helper functions
+
+    // Relax function - gives the simdata a overdamped integrator, runs it for some amount
+    // of time, then discards the integrator and resets the timers
+    void relax(class GFlow*, RealType=0.25);
+
     // Command line arguments
     int argc;
     char **argv;

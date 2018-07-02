@@ -24,8 +24,9 @@ int main(int argc, char **argv) {
   // --- Options
 
   // Type of simulation
-  bool debug_flag = false;
   bool bond_flag = false;
+  bool binary_flag = false;
+  bool debug_flag = false;
 
   // Data to gather
   bool animate; // Record positions
@@ -33,8 +34,11 @@ int main(int argc, char **argv) {
   bool vlNums;  // Record numeric data about verlet lists
   bool sectorData; // Record sector information
   bool ke; // Record kinetic energy
+  bool keTypes;
   bool aveKE; // Record average kinetic energy (per particle)
   bool secRemake; 
+  RealType startRecTime = 0;
+  RealType fps = 15.;
   string writeDirectory = "RunData";
 
   // Modifiers
@@ -42,24 +46,29 @@ int main(int argc, char **argv) {
 
   // --- For getting command line arguments
   ArgParse parser(argc, argv);
-  parser.get("debug", debug_flag);
-  parser.get("bondbox", bond_flag); 
+  parser.get("bondbox", bond_flag);
+  parser.get("binarybox", binary_flag);
+  parser.get("debug", debug_flag); 
   parser.get("animate", animate);
   parser.get("vlData", vlData);
   parser.get("vlNums", vlNums);
   parser.get("sectorData", sectorData);
   parser.get("KE", ke);
+  parser.get("KETypes", keTypes);
   parser.get("aveKE", aveKE);
   parser.get("secRemake", secRemake);
+  parser.get("startRec", startRecTime);
+  parser.get("fps", fps);
   parser.get("writeDirectory", writeDirectory);
   parser.get("temperature", temperature);
 
   // --- This creator creates gflow simulations
   Creator *creator = nullptr;
   // Assign a specific type of creator
-  if (debug_flag)     creator = new DebugCreator(&parser);
-  else if (bond_flag) creator = new BondBoxCreator(&parser);
-  else                creator = new BoxCreator(&parser);
+  if (bond_flag)        creator = new BondBoxCreator(&parser);
+  else if (binary_flag) creator = new BinaryBoxCreator(&parser);
+  else if (debug_flag)  creator = new DebugCreator(&parser);
+  else                  creator = new BoxCreator(&parser);
 
   // --- Create a gflow simulation
   GFlow *gflow = creator->createSimulation();
@@ -74,12 +83,15 @@ int main(int argc, char **argv) {
   }
 
   // --- Add data objects
+  gflow->setStartRecTime(startRecTime);
+  gflow->setFPS(fps);
   if (animate) gflow->addDataObject(new PositionData(gflow));
   if (vlData)  gflow->addDataObject(new VerletListData(gflow));
   if (vlNums)  gflow->addDataObject(new VerletListNumberData(gflow));
   if (sectorData)  gflow->addDataObject(new SectorizationData(gflow));
   if (aveKE || ke) gflow->addDataObject(new KineticEnergyData(gflow, aveKE));
-  if (secRemake)  gflow->addDataObject(new SectorizationRemakeData(gflow));
+  if (keTypes)     gflow->addDataObject(new KineticEnergyTypesData(gflow, aveKE));
+  if (secRemake)   gflow->addDataObject(new SectorizationRemakeData(gflow));
 
   // --- Add modifiers
   if (temperature>0) gflow->addModifier(new TemperatureModifier(gflow, temperature));

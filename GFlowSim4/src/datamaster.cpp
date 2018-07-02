@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
 
-  DataMaster::DataMaster(GFlow *gflow) : Base(gflow), run_time(0), timing(false) {};
+  DataMaster::DataMaster(GFlow *gflow) : Base(gflow), run_time(0), timing(false), startRecTime(0) {};
 
   DataMaster::~DataMaster() {
     for (auto& dob : dataObjects)
@@ -32,37 +32,46 @@ namespace GFlowSimulation {
 
   void DataMaster::pre_integrate() {
     startTimer();
+    if (Base::gflow->getElapsedTime()<startRecTime) return;
     for (auto& dob : dataObjects)
       if (dob) dob->pre_integrate();
   }
 
   void DataMaster::pre_step() {
+    if (Base::gflow->getElapsedTime()<startRecTime) return;
     for (auto& dob : dataObjects)
       if (dob) dob->pre_step();
   }
   
   void DataMaster::pre_exchange() {
+    if (Base::gflow->getElapsedTime()<startRecTime) return;
     for (auto& dob : dataObjects)
       if (dob) dob->pre_exchange();
   }
 
   void DataMaster::pre_forces() {
+    if (Base::gflow->getElapsedTime()<startRecTime) return;
     for (auto& dob : dataObjects)
       if (dob) dob->pre_forces();
   }
 
   void DataMaster::post_forces() {
+    if (Base::gflow->getElapsedTime()<startRecTime) return;
     for (auto& dob : dataObjects)
       if (dob) dob->post_forces();
   }
 
   void DataMaster::post_step() {
+    if (Base::gflow->getElapsedTime()<startRecTime) return;
     for (auto& dob : dataObjects)
       if (dob) dob->post_step();
   }
 
   void DataMaster::post_integrate() {
     endTimer();
+    if (Base::gflow->getElapsedTime()<startRecTime) return;
+    for (auto& dob : dataObjects)
+      if (dob) dob->post_integrate();
   }
 
   bool DataMaster::writeToDirectory(string writeDirectory) {
@@ -74,17 +83,18 @@ namespace GFlowSimulation {
 
     // Create the directory
     mkdir(writeDirectory.c_str(), 0777);
-    // Create a subdirectory for stat data
-    // mkdir((writeDirectory+"/StatData").c_str(), 0777);
 
     // --- Write a summary
     writeSummary(writeDirectory);
 
-    // --- Write the bounds
+    // --- Write the bounds and dimensions to a info file
     if (!dataObjects.empty()) {
-      ofstream fout(writeDirectory+"/bnds.csv");
+      ofstream fout(writeDirectory+"/info.csv");
       if (fout.fail()) success = false;
       else {
+        // Write the number of dimensions
+        fout << DIMENSIONS << endl;
+        // Write the bounds
         for (int d=0; d<DIMENSIONS; ++d) {
           fout << Base::gflow->getBounds().min[d] << "," << Base::gflow->getBounds().max[d];
           fout << endl;
@@ -103,6 +113,22 @@ namespace GFlowSimulation {
 
   void DataMaster::resetTimer() {
     run_time = 0;
+  }
+
+  void DataMaster::setStartRecTime(RealType t) {
+    startRecTime = t;
+  }
+
+  // Set the fps of all the data objects
+  void DataMaster::setFPS(RealType fps) {
+    for (auto &dob : dataObjects) 
+      if (dob) dob->setFPS(fps);
+  }
+
+  // Set the fps of particular data objects
+  void DataMaster::setFPS(int obj_id, RealType fps) {
+    if (-1<obj_id && obj_id<dataObjects.size())
+      dataObjects.at(obj_id)->setFPS(fps);
   }
 
   inline bool DataMaster::writeSummary(string writeDirectory) {
@@ -150,6 +176,16 @@ namespace GFlowSimulation {
     }
     fout << "\n";
     fout << "  - Number of particles:      " << Base::simData->number << "\n";
+    int types = Base::simData->ntypes;
+    if (types>1) {
+      int *count = new int[types];
+      for (int ty=0; ty<types; ++ty) count[ty] = 0;
+      for (int n=0; n<Base::simData->number; ++n) ++count[Base::simData->type[n]];
+      for (int ty=0; ty<types; ++ty)
+        fout << "     Type " << toStr(ty) << ":                  " << count[ty] << " (" << 
+          count[ty] / static_cast<RealType>(Base::simData->number) << "%)\n";
+      delete [] count;
+    }
     fout << "  - Ratio x Particles:        " << toStrRT(ratio*Base::simData->number) << "\n";
     RealType vol = 0;
     RealType *sg = Base::simData->sg;
@@ -157,6 +193,10 @@ namespace GFlowSimulation {
     vol *= pow(PI, DIMENSIONS/2.) / tgamma(DIMENSIONS/2. + 1.);
     RealType phi = vol/Base::gflow->getBounds().vol();
     fout << "  - Packing fraction:         " << phi << "\n";
+    fout << "\n";
+
+    // --- Print particle summary
+    writeParticleData(fout);
     fout << "\n";
 
     // --- Print integration summary
@@ -200,6 +240,31 @@ namespace GFlowSimulation {
     fout.close();
 
     return true;
+  }
+
+  inline void DataMaster::writeParticleData(std::ostream& out) {
+    RealType asigma(0), amass(0), aden(0), aspeed(0), ake(0);
+    for (int n=0; n<Base::simData->number; ++n) {
+      RealType sig = Base::simData->sg[n];
+      asigma += sig;
+      amass  += 1./Base::simData->im[n];
+      aden   += 1./(Base::simData->im[n]*sphere_volume(sig));
+      aspeed += magnitudeVec(Base::simData->v[n]);
+      ake    += sqr(magnitudeVec(Base::simData->v[n]))*(1./Base::simData->im[n]);
+    }
+    // Normalize
+    RealType invN = 1./static_cast<RealType>(Base::simData->number);
+    asigma *= invN;
+    amass  *= invN;
+    aden   *= invN;
+    aspeed *= invN;
+    ake    *= (0.5*invN);
+    // Print data
+    out << "Particle Average Data (at finish):\n";
+    out << "  - Average sigma:            " << asigma << "\n";
+    out << "  - Average mass:             " << amass << "\n";
+    out << "  - Average density:          " << aden << "\n";
+    out << "  - Average speed:            " << aspeed << "\n";
   }
 
 }

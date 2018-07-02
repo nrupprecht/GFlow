@@ -1,26 +1,28 @@
-#include "boxcreator.hpp"
+#include "binaryboxcreator.hpp"
 #include "gflow.hpp"
 
 namespace GFlowSimulation {
 
-  BoxCreator::BoxCreator(int argc, char **argv) : Creator(argc, argv) {
+  BinaryBoxCreator::BinaryBoxCreator(int argc, char **argv) : Creator(argc, argv) {
     seed = std::chrono::system_clock::now().time_since_epoch().count();
     seedGenerator(seed);
     normal_dist = std::normal_distribution<RealType>(0., 1.);
+    real_dist = std::uniform_real_distribution<RealType>(0., 1.);
   };
 
-  BoxCreator::BoxCreator(ArgParse *p) : Creator(p) {
+  BinaryBoxCreator::BinaryBoxCreator(ArgParse *p) : Creator(p) {
     seed = std::chrono::system_clock::now().time_since_epoch().count();
     seedGenerator(seed);
     normal_dist = std::normal_distribution<RealType>(0., 1.);
+    real_dist = std::uniform_real_distribution<RealType>(0., 1.);
   };
 
-  void BoxCreator::seedGenerator(uint s) {
+  void BinaryBoxCreator::seedGenerator(uint s) {
     Creator::seedGenerator(s);
     generator = std::mt19937(seed);
   }
 
-  GFlow* BoxCreator::createSimulation() {
+  GFlow* BinaryBoxCreator::createSimulation() {
     // Seed random number generators
     srand48(time(0));
 
@@ -32,6 +34,7 @@ namespace GFlowSimulation {
     RealType phi = 0.5;
     RealType width = 4.;
     RealType vsgma = 0.25;
+    RealType portion = 0.5; // Portion of the particles that are type 0
     RealType skinDepth = -1.;
     bool animate = false;;
     bool over_damped_flag = false;
@@ -44,6 +47,7 @@ namespace GFlowSimulation {
     parserPtr->get("phi", phi);
     parserPtr->get("width", width);
     parserPtr->get("vsgma", vsgma);
+    parserPtr->get("portion", portion);
     parserPtr->get("skinDepth", skinDepth);
     parserPtr->get("animate", animate);
     parserPtr->get("overdamped", over_damped_flag);
@@ -62,6 +66,7 @@ namespace GFlowSimulation {
     gflow->setAllWrap(true);
 
     // --- Set initial particle data
+
     // Find how many objects to use
     if (number<0) {
       RealType vol = pow(width, DIMENSIONS);  
@@ -81,16 +86,23 @@ namespace GFlowSimulation {
       for (int d=0; d<DIMENSIONS; ++d) x[n][d] = (drand48()-0.5)*width;
       sg[n] = radius;
       im[n] = 1.0 / (1.0 * PI*sqr(radius)); // Density of 1
-      type[n] = 0;
+      // Choose particle type
+      RealType randreal = real_dist(generator);
+      if (randreal<portion) type[n] = 0;
+      else                  type[n] = 1;
     }
 
     // --- Handle forces
-    gflow->forceMaster->setNTypes(1); // Only one type of particle
+
+    gflow->forceMaster->setNTypes(2); // Only one type of particle
     Force *hard_sphere = new HardSphere(gflow);
-    gflow->forceMaster->setForce(0, 0, hard_sphere);
+    gflow->forceMaster->setForce(0, 1, hard_sphere);
+    gflow->forceMaster->setForce(1, 0, hard_sphere);
 
     // Set skin depth
     if (skinDepth>0) gflow->sectorization->setSkinDepth(skinDepth);
+
+    // --- Create integrator
 
     // Relax the setup
     relax(gflow);
@@ -100,6 +112,7 @@ namespace GFlowSimulation {
     gflow->integrator->setDT(dt);
 
     // --- Set velocities
+
     RealType normal[DIMENSIONS];
     for (int n=0; n<number; ++n) {
       // Give some random velocities
@@ -112,7 +125,8 @@ namespace GFlowSimulation {
       sg[n] = radius;
     }
 
-    // Request time
+    // --- Request the desired amount of time
+
     gflow->resetAllTimes();
     gflow->requestTime(time);
 

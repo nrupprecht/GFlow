@@ -1,5 +1,7 @@
 #include "forcemaster.hpp"
+// Other files
 #include "force.hpp"
+#include "simdata.hpp"
 
 namespace GFlowSimulation {
 
@@ -14,9 +16,18 @@ namespace GFlowSimulation {
     for (auto f : forces) f->clearVerletList();
   }
 
+  int ForceMaster::getNTypes() const {
+    return ntypes;
+  }
+
   void ForceMaster::setNTypes(int n) {
+    // Set ntypes for this object
     ntypes = n;
+    // Set ntypes for the simdata
+    Base::simData->ntypes = n;
+    // Resize and erase array
     forceGrid.resize(n, n);
+    forceGrid.setAll(nullptr);
   }
 
   void ForceMaster::setForce(int type1, int type2, Force *f) {

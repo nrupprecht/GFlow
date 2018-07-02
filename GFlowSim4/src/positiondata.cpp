@@ -4,7 +4,7 @@
 
 namespace GFlowSimulation {
   // Constructor
-  PositionData::PositionData(GFlow *gflow) : DataObject(gflow, "Pos") {};
+  PositionData::PositionData(GFlow *gflow) : DataObject(gflow, "Pos"), dataWidth(DIMENSIONS+2) {};
 
   // Destructor
   PositionData::~PositionData() {
@@ -30,15 +30,16 @@ namespace GFlowSimulation {
     // Don't do anything if there are 0 or fewer particles
     if (number<=0) return;
     // Create an array for the data
-    int width = DIMENSIONS+1; // data width
-    RealType *array = new RealType[number*width];
+    RealType *array = new RealType[number*dataWidth];
     positions.push_back(array);
     // Fill the array of positions
     for (int i=0; i<number; ++i) {
+      // Add data - [dataWidth]'s worth
       int d=0;
       for (; d<DIMENSIONS; ++d)
-        array[width*i+d] = Base::simData->x[i][d];
-      array[width*i+d] = Base::simData->sg[i];
+        array[dataWidth*i+d] = Base::simData->x[i][d];
+      array[dataWidth*i+d++] = Base::simData->sg[i];
+      array[dataWidth*i+d++] = Base::simData->type[i];
     }
   }
 
@@ -50,7 +51,7 @@ namespace GFlowSimulation {
     else 
       dirName += ("/"+dataName+"/");
 
-    if(!PrintingUtility::writeVectorToDirectory(positions, numbers, DIMENSIONS+1, fileName, dataName)) return false;
+    if(!PrintingUtility::writeVectorToDirectory(positions, numbers, dataWidth, fileName, dataName)) return false;
 
     // Return success
     return true;

@@ -13,6 +13,9 @@ using std::ofstream;
 using std::vector;
 using std::pair;
 
+#include <list>
+using std::list;
+
 #include <string>
 using std::string;
 

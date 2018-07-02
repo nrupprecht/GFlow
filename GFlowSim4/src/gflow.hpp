@@ -57,6 +57,9 @@ namespace GFlowSimulation {
     // Get the wrapping data
     const bool* getWrap() const;
 
+    // Get the number of types of particles in the simulation
+    int getNTypes() const;
+
     pair<int, char**> getCommand() const;
 
     // --- Mutators
@@ -85,9 +88,20 @@ namespace GFlowSimulation {
     // Reset all timers (use e.g. after doing relaxation of a random initial state)
     void resetAllTimes();
 
+    // Set the start recording time
+    void setStartRecTime(RealType);
+
+    // Set the frames per second for all data objects
+    void setFPS(RealType);
+
+    // Set the fps of particular data objects
+    void setFPS(int, RealType);
+
     // Creators are a friend classes --- all must be since friendship is not inherited
+    friend class Creator;
     friend class BoxCreator;
     friend class BondBoxCreator;
+    friend class BinaryBoxCreator;
     friend class DebugCreator;
 
     // Force master is a friend class

@@ -33,6 +33,9 @@ namespace GFlowSimulation {
     // Each time step contains a length ( [number of particles] * [DIMENSIONS] ) array 
     // for the positions of the particles in [DIMENSIONS] dimensions
     vector<RealType*> positions; 
+
+    // The amount of data we collect per particle
+    int dataWidth;
     
     // The number of particles in the position enties
     vector<int> numbers;

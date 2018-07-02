@@ -72,6 +72,10 @@ namespace GFlowSimulation {
       return data!=nullptr;
     }
 
+    void setAll(T value) {
+      for (int i=0; i<_product(0); ++i) data[i] = value;
+    }
+
   private:
     // The lengths of the data
     int *dims;
@@ -150,6 +154,10 @@ namespace GFlowSimulation {
       return data!=nullptr;
     }
 
+    void setAll(T value) {
+      for (int i=0; i<dims; ++i) data[i] = value;
+    }
+
   private:
     // The length of the data
     int dims;
@@ -222,6 +230,10 @@ namespace GFlowSimulation {
       return data!=nullptr;
     }
 
+    void setAll(T value) {
+      for (int i=0; i<dims[0]*dims[1]; ++i) data[i] = value;
+    }
+
   private:
     // The lengths of the data
     int dims[2];
@@ -282,6 +294,10 @@ namespace GFlowSimulation {
     // Check wheter data is non-null
     bool check() {
       return data!=nullptr;
+    }
+
+    void setAll(T value) {
+      for (int i=0; i<dims[0]*dims[1]*dims[2]; ++i) data[i] = value;
     }
 
   private:

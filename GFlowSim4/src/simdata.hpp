@@ -48,6 +48,9 @@ namespace GFlowSimulation {
     // Number of "ghost" particles
     int numberG;
 
+    // Number of types of particles: 0, 1, ... , [ntypes]
+    int ntypes;
+
     // All particles have position, force - this data is used for integration, calculating verlet lists, etc.
     RealType **x, **v, **f;
     // All particles also have a characteristic length (sg - for sigma), (inverse) mass

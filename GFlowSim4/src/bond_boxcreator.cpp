@@ -1,6 +1,7 @@
 #include "bond_boxcreator.hpp"
 // Other files
 #include "harmonicbond.hpp"
+#include "gflow.hpp"
 
 namespace GFlowSimulation {
 
@@ -51,9 +52,6 @@ namespace GFlowSimulation {
 
     // Create a new gflow object
     GFlow *gflow = new GFlow;
-
-    // Use overdamped integrator for relaxation
-    gflow->integrator = new OverdampedIntegrator(gflow);
 
     // Set the bounds of the gflow object
     if (width<=0) width = 1.; // In case of bad argument
@@ -115,15 +113,8 @@ namespace GFlowSimulation {
     // Set skin depth
     if (skinDepth>0) gflow->sectorization->setSkinDepth(skinDepth);
 
-    // Make sure all forces are zero
-    gflow->simData->clearF();
-
-    // Relax simulation
-    gflow->requestTime(0.25); // Should be long enough
-    gflow->run();
-
-    // Set new integrator
-    delete [] gflow->integrator;
+    // Relax the setup
+    relax(gflow);
     if (over_damped_flag) gflow->integrator = new OverdampedIntegrator(gflow);
     else gflow->integrator = new VelocityVerlet(gflow);
     // Set integrator initial time step

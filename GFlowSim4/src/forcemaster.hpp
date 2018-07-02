@@ -25,6 +25,11 @@ namespace GFlowSimulation {
     // Clear all the verlet lists of all the forces
     void clearVerletLists();
 
+    // --- Accessors
+
+    // Get the number of types of particles in the simulation
+    int getNTypes() const;
+
     // --- Mutators
 
     // Set the number of particle types
@@ -44,7 +49,6 @@ namespace GFlowSimulation {
 
     // Number of particle types
     int ntypes;
-
   };
 
 }

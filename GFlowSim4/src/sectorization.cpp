@@ -297,7 +297,7 @@ namespace GFlowSimulation {
 
     // --- Check with force master
     Force *force = Base::forceMaster->getForce(simData->type[id1], simData->type[id2]);
-
+    
     // A null force means no interaction
     if (force) force->addVerletPair(id1, id2);
   }

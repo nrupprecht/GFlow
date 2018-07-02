@@ -3,6 +3,7 @@
 
 #include "boxcreator.hpp"
 #include "bond_boxcreator.hpp"
+#include "binaryboxcreator.hpp"
 #include "debugcreator.hpp"
 
 #endif // __ALL_CREATORS_HPP__GFLOW__

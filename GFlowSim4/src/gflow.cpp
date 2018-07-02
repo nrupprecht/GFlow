@@ -1,14 +1,6 @@
 #include "gflow.hpp"
-#include "simdata.hpp"
-#include "integrator.hpp"
-#include "velocityverlet.hpp"
-#include "force.hpp"
-#include "sectorization.hpp"
-#include "verletlist.hpp"
-#include "communicator.hpp"
-#include "datamaster.hpp"
-#include "forcemaster.hpp"
-#include "modifier.hpp"
+// Other files
+#include "allbaseobjects.hpp"
 
 namespace GFlowSimulation {
 
@@ -204,6 +196,10 @@ namespace GFlowSimulation {
     return wrap;
   }
 
+  int GFlow::getNTypes() const {
+    return forceMaster->getNTypes();
+  }
+
   pair<int, char**> GFlow::getCommand() const {
     return pair<int, char**>(argc, argv);
   }
@@ -265,6 +261,18 @@ namespace GFlowSimulation {
     elapsed_time         = 0.;
     total_time           = 0.;
     iter                 = 0 ;
+  }
+
+  void GFlow::setStartRecTime(RealType t) {
+    dataMaster->setStartRecTime(t);
+  }
+
+  void GFlow::setFPS(RealType fps) {
+    dataMaster->setFPS(fps);
+  }
+
+  void GFlow::setFPS(int dob_id, RealType fps) {
+    dataMaster->setFPS(dob_id, fps);
   }
 
   inline void GFlow::clearForces() {

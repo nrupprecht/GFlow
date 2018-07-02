@@ -46,11 +46,26 @@ namespace GFlowSimulation {
     // Reset the time - use e.g. after relaxation step
     void resetTimer();
 
+    // Set start recording time
+    void setStartRecTime(RealType);
+
+    // Set the fps of all the data objects
+    void setFPS(RealType);
+
+    // Set the fps of particular data objects
+    void setFPS(int, RealType);
+
     // GFlow is a friend class
     friend class GFlow;
 
   protected:
     // --- Helper functions
+
+    // Write a summary of the run to a text file
+    inline bool writeSummary(string);
+
+    // Write particle data to a stream
+    inline void writeParticleData(std::ostream&);
 
     // Run time (real time)
     RealType run_time;
@@ -58,9 +73,8 @@ namespace GFlowSimulation {
     high_resolution_clock::time_point start_time;
     // Whether the timer is running
     bool timing; 
-
-    // Write a summary of the run to a text file
-    inline bool writeSummary(string);
+    // Time to start taking data
+    RealType startRecTime;
 
     // The data objects we are responsible for
     vector<DataObject*> dataObjects;
