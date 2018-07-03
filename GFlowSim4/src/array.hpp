@@ -6,15 +6,18 @@
 
 namespace GFlowSimulation {
 
-  // For aligned memory
-  #define POSIX_MEMALIGN 1
-
+  // Note --- Allinea map cannot be used with memalign functions, it causese it
+  // to break. See e.g. <https://github.com/gperftools/gperftools/issues/909>
    template<typename T> inline void alignedAlloc(T *& pointer, size_t alignment, size_t size) {
-#if POSIX_MEMALIGN == 1
+    #if DEBUG == 1
+    pointer = new T[size];
+    #else
+    #if POSIX_MEMALIGN == 1
     posix_memalign((void**)(&pointer), static_cast<size_t>(alignment), static_cast<size_t>(size*sizeof(T)));
-#else
+    #else
     pointer = (T*) aligned_alloc(alignment, size*sizeof(T));
-#endif
+    #endif
+    #endif
   }
 
   /* ADDRESSING:

@@ -2,7 +2,8 @@
 #define __DEFAULT_CONSTANTS_HPP__GFLOW__
 
 // For aligned memory
-#define POSIX_MEMALIGN 1
+#define POSIX_MEMALIGN 0
+#define DEBUG 0
 
 namespace GFlowSimulation {
 
