@@ -25,7 +25,6 @@ namespace GFlowSimulation {
     srand48(time(0));
 
     // Values
-    RealType time = 10.;
     int number = -1; // -1 means use volume density
     RealType dt = 0.001;
     RealType radius = 0.05;
@@ -39,7 +38,6 @@ namespace GFlowSimulation {
     bool lj_flag = false;
 
     // Gather command line arguments
-    parserPtr->get("time", time);
     parserPtr->get("number", number);
     parserPtr->get("dt", dt);
     parserPtr->get("radius", radius);
@@ -118,10 +116,6 @@ namespace GFlowSimulation {
       scalarMultVec(velocity, normal, v[n]);
       sg[n] = radius;
     }
-
-    // Request time
-    gflow->resetAllTimes();
-    gflow->requestTime(time);
 
     return gflow;
   }

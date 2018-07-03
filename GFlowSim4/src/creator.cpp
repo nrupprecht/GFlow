@@ -53,6 +53,8 @@ namespace GFlowSimulation {
     gflow->requestTime(time); // Should be long enough
     gflow->run();
     gflow->dataMaster->resetTimer(); // So the setup does not count towards the run time
+    gflow->resetAllTimes();
+    
 
     // Reset integrator
     delete [] gflow->integrator;

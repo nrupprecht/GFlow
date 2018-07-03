@@ -40,6 +40,7 @@ int main(int argc, char **argv) {
   RealType startRecTime = 0;
   RealType fps = 15.;
   RealType dt = 0.001;
+  RealType time = 10.;
   string writeDirectory = "RunData";
 
   // Modifiers
@@ -61,6 +62,7 @@ int main(int argc, char **argv) {
   parser.get("startRec", startRecTime);
   parser.get("fps", fps);
   parser.get("dt", dt);
+  parser.get("time", time);
   parser.get("writeDirectory", writeDirectory);
   parser.get("temperature", temperature);
 
@@ -98,8 +100,9 @@ int main(int argc, char **argv) {
   // --- Add modifiers
   if (temperature>0) gflow->addModifier(new TemperatureModifier(gflow, temperature));
 
-  // Set time step
+  // Set time step and request time
   gflow->setDT(dt);
+  gflow->requestTime(time);
 
   // Run the simulation
   if (gflow) gflow->run();
@@ -112,6 +115,9 @@ int main(int argc, char **argv) {
   // Write accumulated data to files
   gflow->writeData(writeDirectory);
   cout << "Data write is over.\n";
+
+  // Delete creator, gflow
+  delete creator, gflow;
 
   return 0;
 }
