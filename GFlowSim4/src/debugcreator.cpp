@@ -67,8 +67,8 @@ namespace GFlowSimulation {
 
     // --- Handle forces
     gflow->forceMaster->setNTypes(1);
-    Force *hard_sphere = new HardSphere(gflow);
-    gflow->forceMaster->setForce(0, 0, hard_sphere);
+    Force *force = new LennardJones(gflow);
+    gflow->forceMaster->setForce(0, 0, force);
 
     // Set skin depth
     if (skinDepth>0) gflow->sectorization->setSkinDepth(skinDepth);

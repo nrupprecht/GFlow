@@ -19,6 +19,9 @@ namespace GFlowSimulation {
     // Constructor
     ForceMaster(GFlow*);
 
+    // Constructor - also includes number of forces
+    ForceMaster(GFlow*, int);
+
     // Get a pointer to the force that the particle pair belongs in. Null means no force.
     Force* getForce(int, int);
 

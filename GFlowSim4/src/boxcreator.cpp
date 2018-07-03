@@ -36,6 +36,7 @@ namespace GFlowSimulation {
     bool animate = false;
     bool reflect = false;
     bool over_damped_flag = false;
+    bool lj_flag = false;
 
     // Gather command line arguments
     parserPtr->get("time", time);
@@ -49,6 +50,7 @@ namespace GFlowSimulation {
     parserPtr->get("animate", animate);
     parserPtr->get("reflect", reflect);
     parserPtr->get("overdamped", over_damped_flag);
+    parserPtr->get("lj", lj_flag);
 
     // Create a new gflow object
     GFlow *gflow = new GFlow;
@@ -89,8 +91,10 @@ namespace GFlowSimulation {
 
     // --- Handle forces
     gflow->forceMaster->setNTypes(1); // Only one type of particle
-    Force *hard_sphere = new HardSphere(gflow);
-    gflow->forceMaster->setForce(0, 0, hard_sphere);
+    Force *force;
+    if(lj_flag) force = new LennardJones(gflow);
+    else        force = new HardSphere(gflow);
+    gflow->forceMaster->setForce(0, 0, force);
 
     // Set skin depth
     if (skinDepth>0) gflow->sectorization->setSkinDepth(skinDepth);

@@ -37,6 +37,8 @@ using std::chrono::duration_cast;
 
 #include <random>
 
+#include <stdlib.h> // For aligned_alloc
+
 namespace GFlowSimulation {
 
   // Define what type of floating point data to use

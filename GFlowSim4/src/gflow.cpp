@@ -309,6 +309,10 @@ namespace GFlowSimulation {
     dataMaster->setFPS(dob_id, fps);
   }
 
+  void GFlow::setDT(RealType dt) {
+    integrator->setDT(dt);
+  }
+
   inline void GFlow::clearForces() {
     simData->clearF();
   }

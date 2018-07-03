@@ -29,7 +29,22 @@ namespace GFlowSimulation {
     if (gflow==nullptr) return;
 
     // Use overdamped integrator for relaxation
+    Integrator *integrator = gflow->integrator;
     gflow->integrator = new OverdampedIntegrator(gflow);
+
+    // Use hard sphere forces
+    int ntypes = gflow->getNTypes();
+    HardSphere hsForce(gflow);
+    ForceMaster *master = gflow->forceMaster; // Save old master
+    vector<Force*> forces = gflow->forces; // Save old forces
+    gflow->forces.clear(); // Clear old forces
+    // New force master - for hard sphere forces only.
+    ForceMaster forceMaster(gflow, ntypes);
+    gflow->forceMaster = &forceMaster; // Give it to gflow
+    // All particles interact as hard spheres
+    for (int n1=0; n1<ntypes; ++n1) 
+      for (int n2=0; n2<ntypes; ++n2)
+        forceMaster.setForce(n1, n2, &hsForce);
 
     // Make sure all forces are zero
     gflow->simData->clearF();
@@ -39,10 +54,13 @@ namespace GFlowSimulation {
     gflow->run();
     gflow->dataMaster->resetTimer(); // So the setup does not count towards the run time
 
-    // Set new integrator
+    // Reset integrator
     delete [] gflow->integrator;
+    gflow->integrator = integrator;
 
-    // Make sure all forces are zero again
+    // Reset forces
+    gflow->forceMaster = master;
+    gflow->forces = forces;
     gflow->simData->clearF();
   }
 

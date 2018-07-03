@@ -7,6 +7,10 @@ namespace GFlowSimulation {
 
   ForceMaster::ForceMaster(GFlow *gflow) : Base(gflow), ntypes(0) {};
 
+  ForceMaster::ForceMaster(GFlow *gflow, int nt) : Base(gflow) {
+    setNTypes(nt);
+  };
+
   Force* ForceMaster::getForce(int type1, int type2) {
     if (ntypes<=type1 || ntypes<=type2 || type1<0 || type2<0) return nullptr;
     return forceGrid.at(type1, type2);

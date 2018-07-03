@@ -103,6 +103,9 @@ namespace GFlowSimulation {
     // Set the fps of particular data objects
     void setFPS(int, RealType);
 
+    // Set the time step
+    void setDT(RealType);
+
     // Creators are a friend classes --- all must be since friendship is not inherited
     friend class Creator;
     friend class BoxCreator;

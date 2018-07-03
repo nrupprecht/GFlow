@@ -27,17 +27,18 @@ namespace GFlowSimulation {
     // --- Accessors
 
     // Return the last head added to the head array
-    int lastHead();
+    int lastHead() const;
 
     // Return the total length of the verlet list 
-    int vlSize();
+    int vlSize() const;
 
     // Return the number of heads in the verlet list
-    int vlHSize();
+    int vlHSize() const;
 
     // --- Accessors
 
-    const VerletList& getVerletList();
+    // Get the verlet list (get it as a const reference)
+    const VerletList& getVerletList() const;
 
     // --- Mutators
 
@@ -51,6 +52,15 @@ namespace GFlowSimulation {
     friend class GFlow;
 
   protected:
+    // --- Helper functions
+
+    // Does the force loop used by many types of forces. Calls the virtual function [forceStrength] 
+    // for the evaluation of the force
+    void default_force_loop();
+
+    // Children can override this to use the default force loop
+    virtual void calculateStrength(RealType*, RealType*, RealType, int, int) {};
+
     // The neighbor (verlet) lists for all the pairs of atoms between which this force is active
     VerletList verletList;
 

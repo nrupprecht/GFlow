@@ -10,13 +10,13 @@ namespace GFlowSimulation {
     // Constructor
     HardSphere(GFlow *);
 
-    // Initialize
-    virtual void initialize();
-
     // Calculate all the forces between atoms in the verlet lists
-    virtual void calculateForces();
+    virtual void calculateForces() final;
 
   private:
+    // Calculate force strength
+    void forceStrength(RealType*, RealType*, RealType, int, int);
+
     RealType repulsion;
   };
 

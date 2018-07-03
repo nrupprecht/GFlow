@@ -35,6 +35,17 @@ namespace GFlowSimulation {
       #pragma unroll(DIMENSIONS)
       #endif 
       for (int d=0; d<DIMENSIONS; ++d) v[i][d] += hdt*im[i]*f[i][d];
+    }
+
+    #if _INTEL_ == 1
+    #pragma vector aligned
+    #pragma simd
+    #endif
+    #if _CLANG_ == 1
+    #pragma clang loop vectorize(enable)
+    #pragma clang loop interleave(enable)
+    #endif
+    for (int i=0; i<number; ++i) {
       #if _INTEL_ == 1
       #pragma unroll(DIMENSIONS)
       #endif 

@@ -39,6 +39,7 @@ int main(int argc, char **argv) {
   bool secRemake; 
   RealType startRecTime = 0;
   RealType fps = 15.;
+  RealType dt = 0.001;
   string writeDirectory = "RunData";
 
   // Modifiers
@@ -59,6 +60,7 @@ int main(int argc, char **argv) {
   parser.get("secRemake", secRemake);
   parser.get("startRec", startRecTime);
   parser.get("fps", fps);
+  parser.get("dt", dt);
   parser.get("writeDirectory", writeDirectory);
   parser.get("temperature", temperature);
 
@@ -84,7 +86,6 @@ int main(int argc, char **argv) {
 
   // --- Add data objects
   gflow->setStartRecTime(startRecTime);
-  gflow->setFPS(fps);
   if (animate) gflow->addDataObject(new PositionData(gflow));
   if (vlData)  gflow->addDataObject(new VerletListData(gflow));
   if (vlNums)  gflow->addDataObject(new VerletListNumberData(gflow));
@@ -92,9 +93,13 @@ int main(int argc, char **argv) {
   if (aveKE || ke) gflow->addDataObject(new KineticEnergyData(gflow, aveKE));
   if (keTypes)     gflow->addDataObject(new KineticEnergyTypesData(gflow, aveKE));
   if (secRemake)   gflow->addDataObject(new SectorizationRemakeData(gflow));
+  gflow->setFPS(fps); // Do after data objects are loaded
 
   // --- Add modifiers
   if (temperature>0) gflow->addModifier(new TemperatureModifier(gflow, temperature));
+
+  // Set time step
+  gflow->setDT(dt);
 
   // Run the simulation
   if (gflow) gflow->run();

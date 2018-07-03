@@ -1,10 +1,15 @@
 #ifndef __DEFAULT_CONSTANTS_HPP__GFLOW__
 #define __DEFAULT_CONSTANTS_HPP__GFLOW__
 
+// For aligned memory
+#define POSIX_MEMALIGN 1
+
 namespace GFlowSimulation {
 
   const RealType DEFAULT_TIME_STEP = 0.001;
   const RealType DEFAULT_HARD_SPHERE_REPULSION = 10.;
+  const RealType DEFAULT_LENNARD_JONES_STRENGTH = 0.01;
+  const RealType DEFAULT_LENNARD_JONES_CUTOFF = 2.5;
   const RealType DEFAULT_DAMPING_CONSTANT = 0.1;
   const RealType DEFAULT_MAX_UPDATE_DELAY = 0.025;
   const RealType DEFAULT_SPRING_K = 10.;

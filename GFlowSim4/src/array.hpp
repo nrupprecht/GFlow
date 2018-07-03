@@ -6,6 +6,17 @@
 
 namespace GFlowSimulation {
 
+  // For aligned memory
+  #define POSIX_MEMALIGN 1
+
+   template<typename T> inline void alignedAlloc(T *& pointer, size_t alignment, size_t size) {
+#if POSIX_MEMALIGN == 1
+    posix_memalign((void**)(&pointer), static_cast<size_t>(alignment), static_cast<size_t>(size*sizeof(T)));
+#else
+    pointer = (T*) aligned_alloc(alignment, size*sizeof(T));
+#endif
+  }
+
   /* ADDRESSING:
   *  --> Address: {i(0), i(1), ... , i(n-1)}, Dims {d(0), d(1), ... , d(n-1)}
   *  --> Linear address = i(0)*[d(1)*...*d(n-1)] + i(1)*[d(2)*...*d(n-1)] + ... + i(n-2)*d(n-1) + i(n-1) 
@@ -24,7 +35,7 @@ namespace GFlowSimulation {
   template<class T, int D=DIMENSIONS> class Array {
   public:
     // Default constructor
-    Array() : data(nullptr) {
+    Array() : data(nullptr), alignment(64) {
       dims = new int[D];
       for (int d=0; d<D; ++d) dims[d] = 0;
     }
@@ -33,24 +44,28 @@ namespace GFlowSimulation {
     Array(int *sizes) {
       dims = new int[D]; 
       for (int i=0; i<D; ++i) dims[i] = sizes[i];
-      data = new T[ _product(0) ];
+
+      alignedAlloc(data, alignment, _product(0));
+      //data = new T[ _product(0) ];
     }
 
     // Destructor
     ~Array() {
       if (dims) delete [] dims;
-      if (data) delete [] data;
+      if (data) free(data);
     }
 
     // Resize 
     void resize(int *sizes) {
-      int total = _product(0);
+      uint total = _product(0);
       for (int i=0; i<D; ++i) dims[i] = sizes[i];
-      int newTotal = _product(0);
+      uint newTotal = _product(0);
       // Reallocate if we don't have the correct amount of space
       if (total!=newTotal) {
-        if (data) delete data;
-        data = new T[ newTotal ];
+        //if (data) delete data;
+        if (data) free(data);
+        //data = new T[ newTotal ];
+        alignedAlloc(data, alignment, newTotal);
       }
     }
 
@@ -59,7 +74,7 @@ namespace GFlowSimulation {
       return data[II];
     }
 
-    T at(int *index) const {
+    const T& at(int *index) const {
       int II = _get_index(index);
       return data[II];
     }
@@ -88,6 +103,9 @@ namespace GFlowSimulation {
     // The data itself
     T *data;
 
+    // Alignment
+    uint alignment;
+
     // --- Helper functions
 
     // Find the product of some of the widths - up to, but not including, [n]
@@ -114,26 +132,30 @@ namespace GFlowSimulation {
   template<class T> class Array<T,1> {
   public:
     // Default constructor
-    Array() : data(nullptr) {};
+    Array() : data(nullptr), alignment(64) {};
 
     // Constructor
     Array(int s0) : dims(s0) {
-      data = new T[s0];
+      // data = new T[s0];
+      alignedAlloc(data, alignment, s0);
     }
 
     // Destructor
     ~Array() {
-      if (data) delete [] data;
+      //if (data) delete [] data;
+      if (data) free(data);
     }
 
     // Resize 
     void resize(int *sizes) {
-      int oldDims = dims;
+      uint oldDims = dims;
       dims = sizes[0];
       // Reallocate if we don't have the correct amount of space
       if (oldDims!=dims) {
-        if (data) delete data;
-        data = new T[dims];
+        //if (data) delete data;
+        if (data) free(data);
+        // data = new T[dims];
+        alignedAlloc(data, alignment, dims);
       }
     }
 
@@ -141,7 +163,7 @@ namespace GFlowSimulation {
       return data[i0];
     }
 
-    T at(int i0) const {
+    const T& at(int i0) const {
       return data[i0];
     }
 
@@ -150,7 +172,7 @@ namespace GFlowSimulation {
       return data[*index];
     }
 
-    T at(int *index) const {
+    const T& at(int *index) const {
       // Index should just be a number (a 1-tuple)
       return data[*index];
     }
@@ -176,6 +198,9 @@ namespace GFlowSimulation {
     // The length of the data
     int dims;
 
+    // Alignment
+    uint alignment;
+
     // The data itself
     T *data;
   };
@@ -184,28 +209,31 @@ namespace GFlowSimulation {
   template<class T> class Array<T,2> {
   public:
     // Default constructor
-    Array() : data(nullptr) {};
+    Array() : data(nullptr), alignment(64) {};
 
     // Constructor
     Array(int s0, int s1) {
       dims[0] = s0; dims[1] = s1;
-      data = new T[s0*s1];
+      //data = new T[s0*s1];
+      alignedAlloc(data, alignment, s0*s1);
     }
 
     // Destructor
     ~Array() {
-      if (data) delete [] data;
+      //if (data) delete [] data;
+      if (data) free(data);
     }
 
     // Resize 
     void resize(int *sizes) {
       int total = dims[0]*dims[1];
       dims[0] = sizes[0]; dims[1] = sizes[1];
-      int newTotal = dims[0]*dims[1];
+      uint newTotal = dims[0]*dims[1];
       // Reallocate if we don't have the correct amount of space
       if (total!=newTotal) {
-        if (data) delete data;
-        data = new T[ newTotal ];
+        if (data) free(data); //delete data;
+        // data = new T[ newTotal ];
+        alignedAlloc(data, alignment, newTotal);
       }
     }
 
@@ -213,11 +241,12 @@ namespace GFlowSimulation {
     void resize(int d1, int d2) {
       int total = dims[0]*dims[1];
       dims[0] = d1; dims[1] = d2;
-      int newTotal = dims[0]*dims[1];
+      uint newTotal = dims[0]*dims[1];
       // Reallocate if we don't have the correct amount of space
       if (total!=newTotal) {
-        if (data) delete data;
-        data = new T[ newTotal ];
+        if (data) free(data); // delete data;
+        //data = new T[ newTotal ];
+        alignedAlloc(data, alignment, newTotal);
       }
     }
 
@@ -226,7 +255,7 @@ namespace GFlowSimulation {
       return data[II];
     }
 
-    T at(int i0, int i1) const {
+    const T& at(int i0, int i1) const {
       int II = i0*dims[0]+i1;
       return data[II];
     }
@@ -236,7 +265,7 @@ namespace GFlowSimulation {
       return data[II];
     }
 
-    T at(int *index) const {
+    const T& at(int *index) const {
       int II = index[0]*dims[0]+index[1];
       return data[II];
     }
@@ -262,6 +291,9 @@ namespace GFlowSimulation {
     // The lengths of the data
     int dims[2];
 
+    // Alignment
+    uint alignment;
+
     // The data itself
     T *data;
   };
@@ -270,30 +302,32 @@ namespace GFlowSimulation {
   template<class T> class Array<T,3> {
   public:
     // Default constructor
-    Array() : data(nullptr) {};
+    Array() : data(nullptr), alignment(64) {};
 
     // Constructor
     Array(int s0, int s1, int s2) {
       dims[0] = s0; dims[1] = s1; dims[2] = s2;
-      data = new T[s0*s1*s2];
+      //data = new T[s0*s1*s2];
+      alignedAlloc(data, alignment, s0*s1*s2);
     }
 
     // Destructor
     ~Array() {
-      if (data) delete [] data;
+      if (data) free(data); // delete [] data;
     }
 
     // Resize 
     void resize(int *sizes) {
-      int total = dims[0]*dims[1]*dims[2];
+      uint total = dims[0]*dims[1]*dims[2];
       dims[0] = sizes[0]; 
       dims[1] = sizes[1]; 
       dims[2] = sizes[2];
-      int newTotal = dims[0]*dims[1]*dims[2];
+      uint newTotal = dims[0]*dims[1]*dims[2];
       // Reallocate if we don't have the correct amount of space
       if (total!=newTotal) {
-        if (data) delete data;
-        data = new T[ newTotal ];
+        if (data) free(data); // delete data;
+        //data = new T[ newTotal ];
+        alignedAlloc(data, alignment, newTotal);
       }
     }
 
@@ -302,7 +336,7 @@ namespace GFlowSimulation {
       return data[II];
     }
 
-    T at(int i0, int i1, int i2) const {
+    const T& at(int i0, int i1, int i2) const {
       int II = i0*dims[1]*dims[2]+i1*dims[2]+i0;
       return data[II];
     }
@@ -312,7 +346,7 @@ namespace GFlowSimulation {
       return data[II];
     }
 
-    T at(int *index) const {
+    const T& at(int *index) const {
       int II = index[2]*dims[1]*dims[2]+index[1]*dims[2]+index[0];
       return data[II];
     }
@@ -337,6 +371,9 @@ namespace GFlowSimulation {
   private:
     // The lengths of the data
     int dims[3];
+
+    // Alignment
+    uint alignment;
 
     // The data itself
     T *data;
