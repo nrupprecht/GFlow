@@ -28,6 +28,7 @@ namespace GFlowSimulation {
 
     // Values
     int number = -1; // -1 means use volume density
+    int ntypes = 2;  
     RealType dt = 0.001;
     RealType radius = 0.05;
     RealType phi = 0.5;
@@ -40,6 +41,7 @@ namespace GFlowSimulation {
 
     // Gather command line arguments
     parserPtr->get("number", number);
+    parserPtr->get("ntypes", ntypes);
     parserPtr->get("dt", dt);
     parserPtr->get("radius", radius);
     parserPtr->get("phi", phi);
@@ -86,16 +88,23 @@ namespace GFlowSimulation {
       im[n] = 1.0 / (1.0 * PI*sqr(radius)); // Density of 1
       // Choose particle type
       RealType randreal = real_dist(generator);
-      if (randreal<portion) type[n] = 0;
-      else                  type[n] = 1;
+      if (ntypes>2) {
+        type[n] = static_cast<int>(randreal*ntypes);
+      }
+      else {
+        if (randreal<portion) type[n] = 0;
+        else                  type[n] = 1;
+      }
     }
 
     // --- Handle forces
 
     gflow->forceMaster->setNTypes(2); // Only one type of particle
     Force *hard_sphere = new HardSphere(gflow);
-    gflow->forceMaster->setForce(0, 1, hard_sphere);
-    gflow->forceMaster->setForce(1, 0, hard_sphere);
+    for (int t1=0; t1<ntypes; ++t1) 
+      for (int t2 = 0; t2<ntypes; ++t2) 
+        if (t1!=t2)
+          gflow->forceMaster->setForce(t1, t2, hard_sphere);
 
     // Set skin depth
     if (skinDepth>0) gflow->sectorization->setSkinDepth(skinDepth);

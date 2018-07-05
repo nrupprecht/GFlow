@@ -23,16 +23,21 @@ int main(int argc, char **argv) {
 
   // --- For getting command line arguments
   ArgParse parser(argc, argv);
-
-  // --- Create a gflow simulation
-  BoxCreator creator(&parser);
-  creator.setWidth(width);
+  parser.get("iters", nIters);
+  parser.get("width", width);
+  parser.get("minPhi", minPhi);
+  parser.get("maxPhi", maxPhi);
+  parser.get("time", time);
+  parser.get("startRec", startRec);
 
   RealType phi;
   vector<RPair> data;
   for (int iter=0; iter<nIters; ++iter) {
     // Set up
     phi = (maxPhi-minPhi)*static_cast<RealType>(iter)/nIters + minPhi;
+    // --- Create a gflow simulation
+    BoxCreator creator(&parser);
+    creator.setWidth(width);
     creator.setPhi(phi);
     GFlow *gflow = creator.createSimulation();
     // Run
@@ -43,6 +48,10 @@ int main(int argc, char **argv) {
     data.push_back(RPair(phi, bfData->getAverage()));
     // GFlow will delete bfData
     delete gflow;
+  }
+
+  for (auto d : data) {
+    cout << "{" << d.first << "," << d.second << "},";
   }
 
   return 0;
