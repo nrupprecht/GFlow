@@ -2,7 +2,7 @@
 #define __DEFAULT_CONSTANTS_HPP__GFLOW__
 
 // For aligned memory
-#define POSIX_MEMALIGN 0
+#define POSIX_MEMALIGN 1
 #define DEBUG 0
 
 namespace GFlowSimulation {
@@ -18,7 +18,7 @@ namespace GFlowSimulation {
   const RealType PI = 3.14159265;
 
   // Boundary condition flags
-  enum class BCFlag { OPEN=0, WRAP=1, REFL=2};
+  enum class BCFlag { OPEN=0, WRAP=1, REFL=2, REPL=3 };
 
   // The number of dimensions the simulation is in
   const int DIMENSIONS = 2;

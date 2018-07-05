@@ -42,6 +42,8 @@ namespace GFlowSimulation {
     // Create a GFlow Object
     virtual class GFlow* createSimulation() = 0;
 
+    void setBCFlag(BCFlag b) { bcFlag = b; }
+
   protected:
     // --- Helper functions
 
@@ -54,6 +56,9 @@ namespace GFlowSimulation {
     char **argv;
 
     // --- Data that all creators will (likely) use
+
+    // Boundary condition
+    BCFlag bcFlag;
 
     // Bounds of the simulation to create
     Bounds simBounds;

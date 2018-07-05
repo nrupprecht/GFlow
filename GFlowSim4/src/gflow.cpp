@@ -4,7 +4,9 @@
 
 namespace GFlowSimulation {
 
-  GFlow::GFlow() : running(false), requested_time(0), elapsed_time(0), total_time(0), iter(0), argc(0), argv(nullptr) {
+  GFlow::GFlow() : running(false), requested_time(0), elapsed_time(0), total_time(0), 
+    iter(0), argc(0), argv(nullptr), repulsion(DEFAULT_HARD_SPHERE_REPULSION) 
+  {
     simData = new SimData(this);
     // Integrator will be created by the creator
     sectorization = new Sectorization(this);
@@ -128,6 +130,7 @@ namespace GFlowSimulation {
       // Wrap or reflect particles
       wrapPositions();
       reflectPositions();
+      repulsePositions();
 
       // --- Do forces
       clearForces(); // Clear force buffers
@@ -181,6 +184,10 @@ namespace GFlowSimulation {
 
   RealType GFlow::getTotalTime() const {
     return total_time;
+  }
+
+  RealType GFlow::getBoundaryForce() const {
+    return boundaryForce;
   }
 
   int GFlow::getIter() const {
@@ -278,7 +285,29 @@ namespace GFlowSimulation {
           x[n][d] = xlocal;
         }
       }
+  }
 
+  void GFlow::repulsePositions() {
+    // Get a pointer to position data and the number of particles in simData
+    RealType **x = simData->x, **f = simData->v;
+    int number = simData->number;
+    // Reset boundary force
+    boundaryForce = 0;
+    // Reflect all the particles
+    for (int d=0; d<DIMENSIONS; ++d)
+      if (boundaryConditions[d]==BCFlag::REPL) { 
+        for (int n=0; n<number; ++n) {
+          // Create a local copy
+          if (x[n][d]<bounds.min[d]) {
+            f[n][d] += repulsion*(bounds.min[d] - x[n][d]);
+            boundaryForce += repulsion*(bounds.min[d] - x[n][d]);
+          }
+          else if (bounds.max[d]<x[n][d]) {
+            f[n][d] -= repulsion*(x[n][d] - bounds.max[d]);
+            boundaryForce += repulsion*(x[n][d] - bounds.max[d]);
+          }
+        }
+      }
   }
 
   void GFlow::addDataObject(class DataObject* dob) {

@@ -45,6 +45,8 @@ namespace GFlowSimulation {
     // Get all the time the simulation ran for
     RealType getTotalTime() const;
 
+    RealType getBoundaryForce() const;
+
     // Get the number of iterations
     int getIter() const;
 
@@ -84,6 +86,9 @@ namespace GFlowSimulation {
 
     // "Reflect" positions off the bounds
     void reflectPositions();
+
+    // Apply a force to keep particles in bounds
+    void repulsePositions();
 
     // Add a data object
     void addDataObject(class DataObject*);
@@ -157,10 +162,10 @@ namespace GFlowSimulation {
     Bounds bounds;
 
     // Boundary types
-    // 0 - none
-    // 1 - wrap
-    // 2 - reflect
     BCFlag boundaryConditions[DIMENSIONS];
+
+    // Strength of boundary repulsion forces, and total force applied
+    RealType repulsion, boundaryForce;
 
     // The command info (optional)
     int argc;

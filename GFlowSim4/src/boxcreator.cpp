@@ -3,13 +3,13 @@
 
 namespace GFlowSimulation {
 
-  BoxCreator::BoxCreator(int argc, char **argv) : Creator(argc, argv) {
+  BoxCreator::BoxCreator(int argc, char **argv) : Creator(argc, argv), phi(0.5), width(4.), radius(0.05) {
     seed = std::chrono::system_clock::now().time_since_epoch().count();
     seedGenerator(seed);
     normal_dist = std::normal_distribution<RealType>(0., 1.);
   };
 
-  BoxCreator::BoxCreator(ArgParse *p) : Creator(p) {
+  BoxCreator::BoxCreator(ArgParse *p) : Creator(p), phi(0.5), width(4.), radius(0.05) {
     seed = std::chrono::system_clock::now().time_since_epoch().count();
     seedGenerator(seed);
     normal_dist = std::normal_distribution<RealType>(0., 1.);
@@ -27,13 +27,9 @@ namespace GFlowSimulation {
     // Values
     int number = -1; // -1 means use volume density
     RealType dt = 0.001;
-    RealType radius = 0.05;
-    RealType phi = 0.5;
-    RealType width = 4.;
     RealType vsgma = 0.25;
     RealType skinDepth = -1.;
     bool animate = false;
-    bool reflect = false;
     bool over_damped_flag = false;
     bool lj_flag = false;
 
@@ -46,12 +42,12 @@ namespace GFlowSimulation {
     parserPtr->get("vsgma", vsgma);
     parserPtr->get("skinDepth", skinDepth);
     parserPtr->get("animate", animate);
-    parserPtr->get("reflect", reflect);
     parserPtr->get("overdamped", over_damped_flag);
     parserPtr->get("lj", lj_flag);
 
     // Create a new gflow object
     GFlow *gflow = new GFlow;
+    gflow->setAllBCs(bcFlag);
 
     // Set the bounds of the gflow object
     if (width<=0) width = 1.; // In case of bad argument
@@ -59,10 +55,6 @@ namespace GFlowSimulation {
       gflow->bounds.min[d] = -0.5*width;
       gflow->bounds.max[d] =  0.5*width;
     }
-
-    // Set wrapping
-    if (reflect) gflow->setAllBCs(BCFlag::REFL);
-    else         gflow->setAllBCs(BCFlag::WRAP);
 
     // --- Set initial particle data
     // Find how many objects to use

@@ -10,15 +10,21 @@ OBJ_DIR := build
 SRC_FILES := $(wildcard $(SRC_DIR)/*.cpp)
 OBJ_FILES := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRC_FILES))
 
-all: bin/driver
+all: bin/driver bin/pressureanalysis
 
 ###### Executables #####
 bin/driver: build/driver.o $(OBJ_FILES)
 	$(CC) $^ -o $@
 
+bin/pressureanalysis: build/pressureanalysis.o $(OBJ_FILES)
+	$(CC) $^ -o $@
+
 #####   Objects   #####
 # In /src/
 build/%.o: src/%.cpp
+	$(CC) -c -o $@ $< $(FLAGS)
+
+build/%.o: applications/%.cpp
 	$(CC) -c -o $@ $< $(FLAGS)
 
 #####   Clean    #####
