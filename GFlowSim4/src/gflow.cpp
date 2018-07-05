@@ -233,7 +233,8 @@ namespace GFlowSimulation {
   }
 
   void GFlow::setAllBCs(BCFlag type) {
-    for (int d=0; d<DIMENSIONS; ++d) boundaryConditions[d] = type;
+    for (int d=0; d<DIMENSIONS; ++d) 
+      boundaryConditions[d] = type;
   }
 
   void GFlow::requestTime(RealType t) {

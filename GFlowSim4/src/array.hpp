@@ -47,9 +47,8 @@ namespace GFlowSimulation {
     Array(int *sizes) {
       dims = new int[D]; 
       for (int i=0; i<D; ++i) dims[i] = sizes[i];
-
       alignedAlloc(data, alignment, _product(0));
-      //data = new T[ _product(0) ];
+      for (int i=0; i<_product(0); ++i) data[i] = T();
     }
 
     // Destructor
@@ -65,10 +64,9 @@ namespace GFlowSimulation {
       uint newTotal = _product(0);
       // Reallocate if we don't have the correct amount of space
       if (total!=newTotal) {
-        //if (data) delete data;
         if (data) free(data);
-        //data = new T[ newTotal ];
         alignedAlloc(data, alignment, newTotal);
+	for (int i=0; i<newTotal; ++i) data[i] = T();
       }
     }
 
@@ -135,12 +133,12 @@ namespace GFlowSimulation {
   template<class T> class Array<T,1> {
   public:
     // Default constructor
-    Array() : data(nullptr), alignment(64) {};
+    Array() : data(nullptr), alignment(64), dims(0) {};
 
     // Constructor
     Array(int s0) : dims(s0) {
-      // data = new T[s0];
       alignedAlloc(data, alignment, s0);
+      for (int i=0; i<s0; ++i) data[i] = T();
     }
 
     // Destructor
@@ -157,8 +155,8 @@ namespace GFlowSimulation {
       if (oldDims!=dims) {
         //if (data) delete data;
         if (data) free(data);
-        // data = new T[dims];
         alignedAlloc(data, alignment, dims);
+	for (int i=0; i<dims; ++i) data[i] = T();
       }
     }
 
@@ -212,18 +210,19 @@ namespace GFlowSimulation {
   template<class T> class Array<T,2> {
   public:
     // Default constructor
-    Array() : data(nullptr), alignment(64) {};
+    Array() : data(nullptr), alignment(64) {
+      dims[0] = dims[1] = 0;
+    };
 
     // Constructor
     Array(int s0, int s1) {
       dims[0] = s0; dims[1] = s1;
-      //data = new T[s0*s1];
       alignedAlloc(data, alignment, s0*s1);
+      for (int i=0; i<s0*s1; ++i) data[i] = T();
     }
 
     // Destructor
     ~Array() {
-      //if (data) delete [] data;
       if (data) free(data);
     }
 
@@ -234,9 +233,9 @@ namespace GFlowSimulation {
       uint newTotal = dims[0]*dims[1];
       // Reallocate if we don't have the correct amount of space
       if (total!=newTotal) {
-        if (data) free(data); //delete data;
-        // data = new T[ newTotal ];
+        if (data) free(data);
         alignedAlloc(data, alignment, newTotal);
+	for (int i=0; i<newTotal; ++i) data[i] = T();
       }
     }
 
@@ -248,8 +247,8 @@ namespace GFlowSimulation {
       // Reallocate if we don't have the correct amount of space
       if (total!=newTotal) {
         if (data) free(data); // delete data;
-        //data = new T[ newTotal ];
         alignedAlloc(data, alignment, newTotal);
+	for (int i=0; i<newTotal; ++i) data[i] = T();
       }
     }
 
@@ -305,18 +304,20 @@ namespace GFlowSimulation {
   template<class T> class Array<T,3> {
   public:
     // Default constructor
-    Array() : data(nullptr), alignment(64) {};
+    Array() : data(nullptr), alignment(64) {
+      dims[0] = dims[1] = dims[2] = 0;
+    };
 
     // Constructor
     Array(int s0, int s1, int s2) {
       dims[0] = s0; dims[1] = s1; dims[2] = s2;
-      //data = new T[s0*s1*s2];
       alignedAlloc(data, alignment, s0*s1*s2);
+      for (int i=0; i<s0*s1*s2; ++i) data[i] = T();
     }
 
     // Destructor
     ~Array() {
-      if (data) free(data); // delete [] data;
+      if (data) free(data);
     }
 
     // Resize 
@@ -328,9 +329,9 @@ namespace GFlowSimulation {
       uint newTotal = dims[0]*dims[1]*dims[2];
       // Reallocate if we don't have the correct amount of space
       if (total!=newTotal) {
-        if (data) free(data); // delete data;
-        //data = new T[ newTotal ];
+        if (data) free(data); 
         alignedAlloc(data, alignment, newTotal);
+	for (int i=0; i<newTotal; ++i) data[i] = T();
       }
     }
 

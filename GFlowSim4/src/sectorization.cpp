@@ -312,7 +312,7 @@ namespace GFlowSimulation {
   inline void Sectorization::nullXVL() {
     if (xVL) {
       for (int i=0; i<sizeXVL; ++i)
-        if (xVL[i]) delete [] xVL;
+        if (xVL[i]) delete [] xVL[i];
       delete [] xVL;
     }
   }

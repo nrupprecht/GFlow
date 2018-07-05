@@ -29,7 +29,7 @@ namespace GFlowSimulation {
     if (gflow==nullptr) return;
 
     // Use overdamped integrator for relaxation
-    Integrator *integrator = gflow->integrator;
+    Integrator *integrator = gflow->integrator; // Save integrator
     gflow->integrator = new OverdampedIntegrator(gflow);
 
     // Use hard sphere forces
@@ -57,7 +57,7 @@ namespace GFlowSimulation {
     
 
     // Reset integrator
-    delete [] gflow->integrator;
+    delete gflow->integrator;
     gflow->integrator = integrator;
 
     // Reset forces
