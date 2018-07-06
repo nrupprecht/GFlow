@@ -99,7 +99,7 @@ namespace GFlowSimulation {
 
     // --- Handle forces
 
-    gflow->forceMaster->setNTypes(2); // Only one type of particle
+    gflow->forceMaster->setNTypes(ntypes);
     Force *hard_sphere = new HardSphere(gflow);
     for (int t1=0; t1<ntypes; ++t1) 
       for (int t2 = 0; t2<ntypes; ++t2) 
