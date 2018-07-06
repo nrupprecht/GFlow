@@ -16,6 +16,10 @@ namespace GFlowSimulation {
     dataObjects.push_back(dob);
   }
 
+  void DataMaster::setCommand(int ac, char **av) {
+    argc = ac; argv = av;
+  }
+
   void DataMaster::startTimer() {
     start_time = current_time();
     timing = true;

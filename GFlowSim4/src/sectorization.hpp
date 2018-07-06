@@ -50,6 +50,8 @@ namespace GFlowSimulation {
 
     // Set the skin depth
     void setSkinDepth(RealType);
+
+    void setCutoffFactor(RealType);
     
     // GFlow is a friend class
     friend class GFlow;
@@ -97,7 +99,7 @@ namespace GFlowSimulation {
     int sizeXVL; // The size of the xVL array
 
     // Sectorization constants
-    RealType skinDepth, cutoff;
+    RealType skinDepth, cutoff, minCutoff, cutoffFactor;
 
     // Current head - for verlet list creation
     int currentHead;

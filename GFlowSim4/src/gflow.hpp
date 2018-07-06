@@ -78,6 +78,8 @@ namespace GFlowSimulation {
     // Set all wrap values to something
     void setAllBCs(BCFlag);
 
+    void setRepulsion(RealType);
+
     // Set the amount of time we should run for
     void requestTime(RealType);
 

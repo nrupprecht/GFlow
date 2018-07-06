@@ -11,7 +11,7 @@
 namespace GFlowSimulation {
 
   Sectorization::Sectorization(GFlow *gflow) : Base(gflow), xVL(nullptr), sizeXVL(0), skinDepth(0.025), currentHead(-1), 
-    cutoff(0), number_of_remakes(0), lastCheck(-1.), lastUpdate(-1.), updateDelay(1.0e-4), 
+    cutoff(0), minCutoff(0), cutoffFactor(1.), number_of_remakes(0), lastCheck(-1.), lastUpdate(-1.), updateDelay(1.0e-4), 
     max_update_delay(DEFAULT_MAX_UPDATE_DELAY), mvRatioTollerance(1.5) {};
 
   Sectorization::~Sectorization() {
@@ -128,6 +128,11 @@ namespace GFlowSimulation {
     makeSectors();
   }
 
+  void Sectorization::setCutoffFactor(RealType f) {
+    cutoffFactor = f;
+    makeSectors();
+  }
+
   inline void Sectorization::makeSectors() {
     // If bounds are unset, then don't make sectors
     if (bounds.wd(0) == 0) return;
@@ -142,7 +147,10 @@ namespace GFlowSimulation {
       if (sg[i]>maxCutR) maxCutR = sg[i];
       else if (sg[i]>secCutR) secCutR = sg[i];
     }
-    cutoff = maxCutR + secCutR + skinDepth; // Cutoff radius
+    minCutoff = maxCutR + secCutR + skinDepth; // Cutoff radius
+
+    // The actual cutoff is some multiple of the minimum cutoff
+    cutoff = minCutoff*cutoffFactor;
 
     // First estimate of sdx, sdy
     #if _INTEL_ == 1

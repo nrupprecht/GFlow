@@ -29,21 +29,25 @@ namespace GFlowSimulation {
     RealType dt = 0.001;
     RealType vsgma = 0.25;
     RealType skinDepth = -1.;
+    RealType repulsion = 1.;
     bool animate = false;
     bool over_damped_flag = false;
     bool lj_flag = false;
 
     // Gather command line arguments
-    parserPtr->get("number", number);
-    parserPtr->get("dt", dt);
-    parserPtr->get("radius", radius);
-    parserPtr->get("phi", phi);
-    parserPtr->get("width", width);
-    parserPtr->get("vsgma", vsgma);
-    parserPtr->get("skinDepth", skinDepth);
-    parserPtr->get("animate", animate);
-    parserPtr->get("overdamped", over_damped_flag);
-    parserPtr->get("lj", lj_flag);
+    if (parserPtr) {
+      parserPtr->get("number", number);
+      parserPtr->get("dt", dt);
+      parserPtr->get("radius", radius);
+      parserPtr->get("phi", phi);
+      parserPtr->get("width", width);
+      parserPtr->get("vsgma", vsgma);
+      parserPtr->get("skinDepth", skinDepth);
+      parserPtr->get("repulsion", repulsion);
+      parserPtr->get("animate", animate);
+      parserPtr->get("overdamped", over_damped_flag);
+      parserPtr->get("lj", lj_flag);
+    }
 
     // Create a new gflow object
     GFlow *gflow = new GFlow;
@@ -85,6 +89,11 @@ namespace GFlowSimulation {
     if(lj_flag) force = new LennardJones(gflow);
     else        force = new HardSphere(gflow);
     gflow->forceMaster->setForce(0, 0, force);
+
+    // Adjust repulsion
+    if (!lj_flag) {
+      dynamic_cast<HardSphere*>(force)->setRepulsion(repulsion*DEFAULT_HARD_SPHERE_REPULSION);
+    }
 
     // Set skin depth
     if (skinDepth>0) gflow->sectorization->setSkinDepth(skinDepth);

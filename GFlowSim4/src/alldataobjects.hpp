@@ -4,6 +4,7 @@
 // Includes for all the [DataObject] objects' header files -- This may or may not end up being necessary
 
 #include "positiondata.hpp"
+#include "ending_snapshot.hpp"
 #include "verletlistdata.hpp"
 #include "verletlistnumberdata.hpp"
 #include "sectorizationdata.hpp"
