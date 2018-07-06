@@ -24,6 +24,9 @@ namespace GFlowSimulation {
     // Add a data object - we are subsequently in charge of the data object
     void addDataObject(DataObject*);
 
+    // Set the command data
+    void setCommand(int, char**);
+
     // Start a timer
     void startTimer();
 
@@ -66,6 +69,9 @@ namespace GFlowSimulation {
 
     // Write particle data to a stream
     inline void writeParticleData(std::ostream&);
+
+    int argc;
+    char **argv;
 
     // Run time (real time)
     RealType run_time;

@@ -237,7 +237,13 @@ namespace GFlowSimulation {
       boundaryConditions[d] = type;
   }
 
+  void GFlow::setRepulsion(RealType r) {
+    if (r<0) return;
+    repulsion = r;
+  }
+
   void GFlow::requestTime(RealType t) {
+    if (t<0) t = 0;
     requested_time = t;
   }
 

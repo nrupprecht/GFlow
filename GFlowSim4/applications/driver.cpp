@@ -30,6 +30,7 @@ int main(int argc, char **argv) {
 
   // Data to gather
   bool animate = false; // Record positions
+  bool snapshot = false;
   bool vlData = false;  // Record verlet list information
   bool vlNums = false;  // Record numeric data about verlet lists
   bool sectorData = false; // Record sector information
@@ -54,6 +55,7 @@ int main(int argc, char **argv) {
   parser.get("binarybox", binary_flag);
   parser.get("debug", debug_flag); 
   parser.get("animate", animate);
+  parser.get("snapshot", snapshot);
   parser.get("vlData", vlData);
   parser.get("vlNums", vlNums);
   parser.get("sectorData", sectorData);
@@ -108,9 +110,10 @@ int main(int argc, char **argv) {
 
   // --- Add data objects
   gflow->setStartRecTime(startRecTime);
-  if (animate) gflow->addDataObject(new PositionData(gflow));
-  if (vlData)  gflow->addDataObject(new VerletListData(gflow));
-  if (vlNums)  gflow->addDataObject(new VerletListNumberData(gflow));
+  if (animate)  gflow->addDataObject(new PositionData(gflow));
+  if (snapshot) gflow->addDataObject(new EndingSnapshot(gflow));
+  if (vlData)   gflow->addDataObject(new VerletListData(gflow));
+  if (vlNums)   gflow->addDataObject(new VerletListNumberData(gflow));
   if (sectorData)  gflow->addDataObject(new SectorizationData(gflow));
   if (aveKE || ke) gflow->addDataObject(new KineticEnergyData(gflow, aveKE));
   if (keTypes)     gflow->addDataObject(new KineticEnergyTypesData(gflow, aveKE));

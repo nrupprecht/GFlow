@@ -73,6 +73,10 @@ namespace GFlowSimulation {
     }
   }
 
+  void HardSphere::setRepulsion(RealType r) { 
+    repulsion = r; 
+  }
+
   inline void HardSphere::forceStrength(RealType *F, RealType *normal, RealType distance, int id1, int id2) {
     RealType *sg = Base::simData->sg;
     scalarMultVec(repulsion*(sg[id1] + sg[id2] - distance), normal, F);
