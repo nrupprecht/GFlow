@@ -162,6 +162,7 @@ namespace GFlowSimulation {
     fout << "  - Run Time:                 " << run_time;
     if (run_time>60) fout << " ( h:m:s - " << printAsTime(run_time) << " )";
     fout << "\n";
+    fout << "  - Ratio x Particles:        " << toStrRT(ratio*Base::simData->number) << "\n";
     fout << "  - Ratio:                    " << toStrRT(ratio) << "\n";
     fout << "  - Inverse Ratio:            " << toStrRT(1./ratio) << "\n";
     fout << "\n";
@@ -199,7 +200,6 @@ namespace GFlowSimulation {
           count[ty] / static_cast<RealType>(Base::simData->number) << "%)\n";
       delete [] count;
     }
-    fout << "  - Ratio x Particles:        " << toStrRT(ratio*Base::simData->number) << "\n";
     RealType vol = 0;
     RealType *sg = Base::simData->sg;
     for (int n=0; n<Base::simData->number; ++n) vol += pow(sg[n], DIMENSIONS);

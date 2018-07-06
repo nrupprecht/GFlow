@@ -40,6 +40,7 @@ int main(int argc, char **argv) {
     creator.setWidth(width);
     creator.setPhi(phi);
     GFlow *gflow = creator.createSimulation();
+    gflow->setAllBCs(BCFlag::REPL);
     // Run
     BoundaryForceData *bfData = new BoundaryForceData(gflow);
     gflow->addDataObject(bfData);
