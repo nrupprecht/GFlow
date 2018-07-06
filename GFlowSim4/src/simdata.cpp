@@ -62,6 +62,9 @@ namespace GFlowSimulation {
     // Clear old pointers
     clean();
 
+    // Don't allocate for a zero or negative number of particles
+    if (num<=0) return;
+
     // Set number and size
     number = 0;
     numberG = 0;

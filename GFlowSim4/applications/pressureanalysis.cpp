@@ -35,20 +35,23 @@ int main(int argc, char **argv) {
   for (int iter=0; iter<nIters; ++iter) {
     // Set up
     phi = (maxPhi-minPhi)*static_cast<RealType>(iter)/nIters + minPhi;
-    // --- Create a gflow simulation
-    BoxCreator creator(&parser);
-    creator.setWidth(width);
-    creator.setPhi(phi);
-    GFlow *gflow = creator.createSimulation();
-    gflow->setAllBCs(BCFlag::REPL);
-    // Run
-    BoundaryForceData *bfData = new BoundaryForceData(gflow);
-    gflow->addDataObject(bfData);
-    gflow->run(time);
-    // Data
-    data.push_back(RPair(phi, bfData->getAverage()));
-    // GFlow will delete bfData
-    delete gflow;
+    if (phi>0) {
+      // --- Create a gflow simulation
+      BoxCreator creator(&parser);
+      creator.setWidth(width);
+      creator.setPhi(phi);
+      GFlow *gflow = creator.createSimulation();
+      gflow->setAllBCs(BCFlag::REPL);
+      // Run
+      BoundaryForceData *bfData = new BoundaryForceData(gflow);
+      gflow->addDataObject(bfData);
+      gflow->run(time);
+      // Data
+      data.push_back(RPair(phi, bfData->getAverage()));
+      // GFlow will delete bfData
+      delete gflow;
+    }
+    else data.push_back(RPair(0,0));
   }
 
   for (auto d : data) {

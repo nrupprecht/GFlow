@@ -29,15 +29,15 @@ int main(int argc, char **argv) {
   bool debug_flag = false;
 
   // Data to gather
-  bool animate; // Record positions
-  bool vlData;  // Record verlet list information
-  bool vlNums;  // Record numeric data about verlet lists
-  bool sectorData; // Record sector information
-  bool ke; // Record kinetic energy
-  bool keTypes;
-  bool aveKE; // Record average kinetic energy (per particle)
-  bool secRemake; 
-  bool bdForces;
+  bool animate = false; // Record positions
+  bool vlData = false;  // Record verlet list information
+  bool vlNums = false;  // Record numeric data about verlet lists
+  bool sectorData = false; // Record sector information
+  bool ke = false; // Record kinetic energy
+  bool keTypes = false;
+  bool aveKE = false; // Record average kinetic energy (per particle)
+  bool secRemake = false; 
+  bool bdForces = false;
   RealType startRecTime = 0;
   RealType fps = 15.;
   RealType dt = 0.001;
