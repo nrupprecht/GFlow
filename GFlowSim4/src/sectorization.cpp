@@ -54,6 +54,9 @@ namespace GFlowSimulation {
     // Clear particles from sectors
     for (int i=0; i<total; ++i) sectors[i].clear();
 
+    // No need to resectorize
+    if (number<1) return;
+
     // --- Place particles in their sectors
     // An index for placing particles in the sectors
     int index[DIMENSIONS];

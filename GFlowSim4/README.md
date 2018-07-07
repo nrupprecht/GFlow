@@ -16,12 +16,36 @@ This generation was heavily inspired by LAMMPS, GROMACS, OpenMD, etc. to make im
 
 * GROMACS: High performance molecular simulations through multi-level parallelism from laptops to supercomputers - Paper on GROMACS
 
-[29]
+* ls1 mardyne: Current record holder for largest md simulation - over 10^12 particles. See this [paper](https://arxiv.org/pdf/1408.4599.pdf)
 
 Run with
 ```
 ./bin/driver
 ```
+
+## TODO:
+
+* Bodies, rigid and otherwise.
+
+* Walls
+
+* Angles / torque
+
+* Sectorization that is optimized for multiple scales of particles
+
+* Hard triangles
+
+* Bond/angle modifier
+
+* Time step monitoring
+
+* Vectorize integration step
+
+* Adding/removing particles while the simulation is running
+
+* More efficient force calculation
+
+* Parallelization
 
 ## Authors
 * **Nathaniel Rupprecht** - *Author*

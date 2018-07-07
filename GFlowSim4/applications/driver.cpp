@@ -98,6 +98,10 @@ int main(int argc, char **argv) {
 
   // --- Create a gflow simulation
   GFlow *gflow = creator->createSimulation();
+  if (gflow==nullptr) {
+    cout << "GFlow was null. Exiting.\n";
+    return 1;
+  }
 
   // --- Make sure we didn't enter any illegal tokens - do this after gflow creation since creator uses flags
   try {

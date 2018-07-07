@@ -33,9 +33,9 @@ int main(int argc, char **argv) {
   parser.get("time", time);
   parser.get("startRec", startRec);
 
-  // Keep in bounds
+  // Keep in bounds - max phi can be > 1 for bipartite
   minPhi = minPhi<0 ? 0 : minPhi;
-  maxPhi = maxPhi>1 ? 1 : maxPhi;
+  if (!bipartite_flag) maxPhi = maxPhi>1 ? 1 : maxPhi;
 
   RealType phi, invArea = 1./(2.*DIMENSIONS*pow(width,DIMENSIONS-1));
   vector<RPair> data;
@@ -59,6 +59,10 @@ int main(int argc, char **argv) {
         creator = bc;
       }
       GFlow *gflow = creator->createSimulation();
+      if (gflow==nullptr) {
+	cout << "GFlow was null. Exiting.\n";
+	return 1;
+      }
       gflow->setAllBCs(BCFlag::REPL);
       // Run
       BoundaryForceData *bfData = new BoundaryForceData(gflow);

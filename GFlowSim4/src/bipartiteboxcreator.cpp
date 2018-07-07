@@ -10,7 +10,7 @@ namespace GFlowSimulation {
     real_dist = std::uniform_real_distribution<RealType>(0., 1.);
   };
 
-  BipartiteBoxCreator::BipartiteBoxCreator(ArgParse *p) : Creator(p) {
+  BipartiteBoxCreator::BipartiteBoxCreator(ArgParse *p) : Creator(p), phi(0.5), width(4.), radius(0.05) {
     seed = std::chrono::system_clock::now().time_since_epoch().count();
     seedGenerator(seed);
     normal_dist = std::normal_distribution<RealType>(0., 1.);
@@ -23,6 +23,9 @@ namespace GFlowSimulation {
   }
 
   GFlow* BipartiteBoxCreator::createSimulation() {
+    // Checks
+    if (radius<=0 || phi<=0 || width<=0) return nullptr;
+
     // Seed random number generators
     srand48(time(0));
 
