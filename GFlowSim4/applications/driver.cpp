@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
 
   // Type of simulation
   bool bond_flag = false;
-  bool binary_flag = false;
+  bool bipartite_flag = false;
   bool debug_flag = false;
 
   // Data to gather
@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
   // --- For getting command line arguments
   ArgParse parser(argc, argv);
   parser.get("bondbox", bond_flag);
-  parser.get("binarybox", binary_flag);
+  parser.get("bipartite", bipartite_flag);
   parser.get("debug", debug_flag); 
   parser.get("animate", animate);
   parser.get("snapshot", snapshot);
@@ -75,10 +75,10 @@ int main(int argc, char **argv) {
   // --- This creator creates gflow simulations
   Creator *creator = nullptr;
   // Assign a specific type of creator
-  if      (bond_flag)   creator = new BondBoxCreator(&parser);
-  else if (binary_flag) creator = new BinaryBoxCreator(&parser);
-  else if (debug_flag)  creator = new DebugCreator(&parser);
-  else                  creator = new BoxCreator(&parser);
+  if      (bond_flag)      creator = new BondBoxCreator(&parser);
+  else if (bipartite_flag) creator = new BipartiteBoxCreator(&parser);
+  else if (debug_flag)     creator = new DebugCreator(&parser);
+  else                     creator = new BoxCreator(&parser);
   // --- Set boundary conditions
   switch (boundary) {
     case 0:

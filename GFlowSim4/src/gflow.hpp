@@ -117,7 +117,7 @@ namespace GFlowSimulation {
     friend class Creator;
     friend class BoxCreator;
     friend class BondBoxCreator;
-    friend class BinaryBoxCreator;
+    friend class BipartiteBoxCreator;
     friend class DebugCreator;
 
     // Force master is a friend class

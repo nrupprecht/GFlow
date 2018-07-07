@@ -14,6 +14,7 @@ using namespace GFlowSimulation;
 
 int main(int argc, char **argv) {
   // Options
+  bool bipartite_flag = false;
   int nIters = 10;
   RealType width = 4.;
   RealType minPhi = 0.;
@@ -24,6 +25,7 @@ int main(int argc, char **argv) {
 
   // --- For getting command line arguments
   ArgParse parser(argc, argv);
+  parser.get("bipartite", bipartite_flag);
   parser.get("iters", nIters);
   parser.get("width", width);
   parser.get("minPhi", minPhi);
@@ -38,15 +40,25 @@ int main(int argc, char **argv) {
   RealType phi, invArea = 1./(2.*DIMENSIONS*pow(width,DIMENSIONS-1));
   vector<RPair> data;
 
+  Creator *creator = nullptr;
   for (int iter=0; iter<nIters; ++iter) {
     // Set up
     phi = (maxPhi-minPhi)*static_cast<RealType>(iter)/nIters + minPhi;
     if (phi>0) {
       // --- Create a gflow simulation
-      BoxCreator creator(&parser);
-      creator.setWidth(width);
-      creator.setPhi(phi);
-      GFlow *gflow = creator.createSimulation();
+      if (bipartite_flag) {
+        BipartiteBoxCreator *bc = new BipartiteBoxCreator(&parser);
+        bc->setWidth(width);
+        bc->setPhi(phi);
+        creator = bc;
+      }
+      else {
+        BoxCreator *bc = new BoxCreator(&parser);
+        bc->setWidth(width);
+        bc->setPhi(phi);
+        creator = bc;
+      }
+      GFlow *gflow = creator->createSimulation();
       gflow->setAllBCs(BCFlag::REPL);
       // Run
       BoundaryForceData *bfData = new BoundaryForceData(gflow);
@@ -56,7 +68,7 @@ int main(int argc, char **argv) {
       // Data
       data.push_back(RPair(phi, invArea*bfData->getAverage()));
       // GFlow will delete bfData
-      delete gflow;
+      delete gflow, creator;
     }
     else data.push_back(RPair(0,0));
   }

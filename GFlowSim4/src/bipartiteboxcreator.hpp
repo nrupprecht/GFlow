@@ -1,17 +1,17 @@
-#ifndef __BINARY_BOX_CREATOR_HPP__GFLOW__
-#define __BINARY_BOX_CREATOR_HPP__GFLOW__
+#ifndef __BIPARTITE_BOX_CREATOR_HPP__GFLOW__
+#define __BIARTITE_BOX_CREATOR_HPP__GFLOW__
 
 #include "creator.hpp"
 
 namespace GFlowSimulation {
 
-  class BinaryBoxCreator : public Creator {
+  class BipartiteBoxCreator : public Creator {
   public: 
     // Constructor
-    BinaryBoxCreator(int, char**);
+    BipartiteBoxCreator(int, char**);
 
     // Constructor
-    BinaryBoxCreator(ArgParse*);
+    BipartiteBoxCreator(ArgParse*);
 
     // Seed generators
     virtual void seedGenerator(uint);
@@ -19,7 +19,14 @@ namespace GFlowSimulation {
     // Create simulation
     virtual GFlow* createSimulation();
 
+    void setPhi(RealType p) { phi = p; }
+    void setWidth(RealType w) { width = w; }
+    void setRadius(RealType r) { radius = r; }
+
   private:
+    // Data
+    RealType phi, width, radius;
+    
     // Normal distribution
     std::mt19937 generator;
     std::normal_distribution<RealType> normal_dist;

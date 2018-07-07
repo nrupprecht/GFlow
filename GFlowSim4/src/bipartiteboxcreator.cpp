@@ -1,28 +1,28 @@
-#include "binaryboxcreator.hpp"
+#include "bipartiteboxcreator.hpp"
 #include "gflow.hpp"
 
 namespace GFlowSimulation {
 
-  BinaryBoxCreator::BinaryBoxCreator(int argc, char **argv) : Creator(argc, argv) {
+  BipartiteBoxCreator::BipartiteBoxCreator(int argc, char **argv) : Creator(argc, argv), phi(0.5), width(4.), radius(0.05) {
     seed = std::chrono::system_clock::now().time_since_epoch().count();
     seedGenerator(seed);
     normal_dist = std::normal_distribution<RealType>(0., 1.);
     real_dist = std::uniform_real_distribution<RealType>(0., 1.);
   };
 
-  BinaryBoxCreator::BinaryBoxCreator(ArgParse *p) : Creator(p) {
+  BipartiteBoxCreator::BipartiteBoxCreator(ArgParse *p) : Creator(p) {
     seed = std::chrono::system_clock::now().time_since_epoch().count();
     seedGenerator(seed);
     normal_dist = std::normal_distribution<RealType>(0., 1.);
     real_dist = std::uniform_real_distribution<RealType>(0., 1.);
   };
 
-  void BinaryBoxCreator::seedGenerator(uint s) {
+  void BipartiteBoxCreator::seedGenerator(uint s) {
     Creator::seedGenerator(s);
     generator = std::mt19937(seed);
   }
 
-  GFlow* BinaryBoxCreator::createSimulation() {
+  GFlow* BipartiteBoxCreator::createSimulation() {
     // Seed random number generators
     srand48(time(0));
 
@@ -30,9 +30,6 @@ namespace GFlowSimulation {
     int number = -1; // -1 means use volume density
     int ntypes = 2;  
     RealType dt = 0.001;
-    RealType radius = 0.05;
-    RealType phi = 0.5;
-    RealType width = 4.;
     RealType vsgma = 0.25;
     RealType portion = 0.5; // Portion of the particles that are type 0
     RealType skinDepth = -1.;
