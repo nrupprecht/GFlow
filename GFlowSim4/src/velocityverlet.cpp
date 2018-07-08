@@ -34,12 +34,7 @@ namespace GFlowSimulation {
       #if _INTEL_ == 1
       #pragma unroll(DIMENSIONS)
       #endif 
-      for (int d=0; d<DIMENSIONS; ++d) {
-        v[i][d] += hdt*im[i]*f[i][d];
-      }
-
-      RealType ff = magnitudeVec(f[i]);
-      if (ff>0.5) cout << "A " << ff << endl;
+      for (int d=0; d<DIMENSIONS; ++d) v[i][d] += hdt*im[i]*f[i][d];
     }
 
     #if _INTEL_ == 1
@@ -86,9 +81,6 @@ namespace GFlowSimulation {
       #endif 
       for (int d=0; d<DIMENSIONS; ++d) v[i][d] += hdt*im[i]*f[i][d];
       // Could update angular variables here ... 
-
-      RealType ff = magnitudeVec(f[i]);
-      if (isnan(ff)) cout << "B " << ff << endl;
     }
   }
 
