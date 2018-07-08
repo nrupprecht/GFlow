@@ -40,6 +40,9 @@ int main(int argc, char **argv) {
   bool secRemake = false; 
   bool bdForces = false;
   bool timestep = false;
+  bool averages = false;
+  bool minDistances = false;
+  // Other options
   bool adjustDT = false;
   RealType startRecTime = 0;
   RealType fps = 15.;
@@ -67,6 +70,8 @@ int main(int argc, char **argv) {
   parser.get("secRemake", secRemake);
   parser.get("bdForces", bdForces);
   parser.get("timestep", timestep);
+  parser.get("averages", averages);
+  parser.get("minDistances", minDistances);
   parser.get("adjustDT", adjustDT);
   parser.get("startRec", startRecTime);
   parser.get("fps", fps);
@@ -133,6 +138,8 @@ int main(int argc, char **argv) {
   if (secRemake)   gflow->addDataObject(new SectorizationRemakeData(gflow));
   if (bdForces)    gflow->addDataObject(new BoundaryForceData(gflow));
   if (timestep)    gflow->addDataObject(new TimeStepData(gflow));
+  if (averages)    gflow->addDataObject(new AverageData(gflow));
+  if (minDistances) gflow->addDataObject(new MinInteractingDistance(gflow));
   gflow->setFPS(fps); // Do after data objects are loaded
   gflow->setDMCmd(argc, argv);
 

@@ -69,6 +69,8 @@ namespace GFlowSimulation {
 
     pair<int, char**> getCommand() const;
 
+    const vector<class Force*>& getForces() const;
+
     // --- Mutators
 
     // Set the command info

@@ -39,6 +39,7 @@ namespace GFlowSimulation {
       plusEqVec (f[n], force);
       minusEqVec(f[n],  drag);
     }
+
     // Update time point - we shouldn't update this before now, so 
     // that (time-lastUpdate) will be correct (instead of 0)
     lastUpdate = time;

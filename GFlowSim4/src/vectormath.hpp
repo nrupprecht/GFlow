@@ -107,7 +107,7 @@ namespace GFlowSimulation {
     #pragma unroll(DIMENSIONS)
     #endif 
     for (int d=0; d<DIMENSIONS; ++d) mag += sqr(x[d]);
-    T invMag = 1./sqrt(mag);
+    T invMag = mag>0 ? 1./sqrt(mag) : 0;
     scalarMultVec(invMag, x, norm);
   }
 
@@ -117,7 +117,7 @@ namespace GFlowSimulation {
     #pragma unroll(DIMENSIONS)
     #endif 
     for (int d=0; d<DIMENSIONS; ++d) mag += sqr(norm[d]);
-    T invMag = 1./sqrt(mag);
+    T invMag = mag>0 ? 1./sqrt(mag) : 0;
     scalarMultVec(invMag, norm);
   }
 

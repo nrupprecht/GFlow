@@ -224,6 +224,10 @@ namespace GFlowSimulation {
     return pair<int, char**>(argc, argv);
   }
 
+  const vector<class Force*>& GFlow::getForces() const {
+    return forces;
+  }
+
   void GFlow::setCommand(int argc, char **argv) {
     if (argv) {
       this->argc = argc;

@@ -2,7 +2,9 @@
 #define __DATA_OBJECT_HPP__GFLOW__
 
 #include "gflow.hpp"
+#include "simdata.hpp"
 #include "printingutility.hpp"
+#include "vectormath.hpp"
 
 namespace GFlowSimulation {
 
