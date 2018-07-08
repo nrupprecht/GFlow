@@ -35,9 +35,6 @@ namespace GFlowSimulation {
     // If there are no forces, there is no need to check sectors
     if (Base::gflow->getNumForces()==0) return;
 
-    checkSectors();
-    return;
-
     // Get the current simulation time
     RealType current_time = Base::gflow->getElapsedTime();
     // Check whether we should check sectors

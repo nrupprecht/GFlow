@@ -8,6 +8,9 @@ namespace GFlowSimulation {
   MinInteractingDistance::MinInteractingDistance(GFlow* gflow) : DataObject(gflow, "MinIntDist") {};
 
   void MinInteractingDistance::post_step() {
+    // Only record if enough time has gone by
+    if (!DataObject::_check()) return;
+    
     RealType minDistance = 10.; // Random "large" number
     // Check each verlet list
     for (const auto f : gflow->getForces()) {
