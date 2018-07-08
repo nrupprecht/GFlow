@@ -311,7 +311,9 @@ namespace GFlowSimulation {
   }
 
   inline void Sectorization::pairInteraction(int id1, int id2) {
-    // --- Check to see if they are part of the same rigid body. If so, they cannot exert force on each other
+    // --- Check to see if they are part of the same body. If so, they cannot exert force on each other
+    if (Base::simData->body && Base::simData->body[id1]>0 && Base::simData->body[id2]==Base::simData->body[id1])
+      return; // The particles are in the same body
 
     // --- Check with force master
     Force *force = Base::forceMaster->getForce(simData->type[id1], simData->type[id2]);

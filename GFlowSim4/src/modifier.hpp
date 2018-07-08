@@ -2,6 +2,8 @@
 #define __MODIFIER_HPP__
 
 #include "gflow.hpp"
+#include "simdata.hpp"
+#include "vectormath.hpp"
 
 namespace GFlowSimulation {
 

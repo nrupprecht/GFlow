@@ -36,9 +36,11 @@ int main(int argc, char **argv) {
   bool sectorData = false; // Record sector information
   bool ke = false; // Record kinetic energy
   bool keTypes = false;
-  bool aveKE = false; // Record average kinetic energy (per particle)
+  bool totalKE = false; // Record average kinetic energy (per particle)
   bool secRemake = false; 
   bool bdForces = false;
+  bool timestep = false;
+  bool adjustDT = false;
   RealType startRecTime = 0;
   RealType fps = 15.;
   RealType dt = 0.001;
@@ -61,9 +63,11 @@ int main(int argc, char **argv) {
   parser.get("sectorData", sectorData);
   parser.get("KE", ke);
   parser.get("KETypes", keTypes);
-  parser.get("aveKE", aveKE);
+  parser.get("totalKE", totalKE);
   parser.get("secRemake", secRemake);
   parser.get("bdForces", bdForces);
+  parser.get("timestep", timestep);
+  parser.get("adjustDT", adjustDT);
   parser.get("startRec", startRecTime);
   parser.get("fps", fps);
   parser.get("dt", dt);
@@ -79,21 +83,26 @@ int main(int argc, char **argv) {
   else if (bipartite_flag) creator = new BipartiteBoxCreator(&parser);
   else if (debug_flag)     creator = new DebugCreator(&parser);
   else                     creator = new BoxCreator(&parser);
+
   // --- Set boundary conditions
   switch (boundary) {
-    case 0:
-    creator->setBCFlag(BCFlag::OPEN);
-    break;
+    case 0: {
+      creator->setBCFlag(BCFlag::OPEN);
+      break;
+    }
     default:
-    case 1:
-    creator->setBCFlag(BCFlag::WRAP);
-    break;
-    case 2:
-    creator->setBCFlag(BCFlag::REFL);
-    break;
-    case 3:
-    creator->setBCFlag(BCFlag::REPL);
-    break;
+    case 1: {
+      creator->setBCFlag(BCFlag::WRAP);
+      break;
+    }
+    case 2: {
+      creator->setBCFlag(BCFlag::REFL);
+      break;
+    }
+    case 3: {
+      creator->setBCFlag(BCFlag::REPL);
+      break;
+    }
   }
 
   // --- Create a gflow simulation
@@ -119,14 +128,18 @@ int main(int argc, char **argv) {
   if (vlData)   gflow->addDataObject(new VerletListData(gflow));
   if (vlNums)   gflow->addDataObject(new VerletListNumberData(gflow));
   if (sectorData)  gflow->addDataObject(new SectorizationData(gflow));
-  if (aveKE || ke) gflow->addDataObject(new KineticEnergyData(gflow, aveKE));
-  if (keTypes)     gflow->addDataObject(new KineticEnergyTypesData(gflow, aveKE));
+  if (totalKE || ke) gflow->addDataObject(new KineticEnergyData(gflow, ke));
+  if (keTypes)     gflow->addDataObject(new KineticEnergyTypesData(gflow, true));
   if (secRemake)   gflow->addDataObject(new SectorizationRemakeData(gflow));
   if (bdForces)    gflow->addDataObject(new BoundaryForceData(gflow));
+  if (timestep)    gflow->addDataObject(new TimeStepData(gflow));
   gflow->setFPS(fps); // Do after data objects are loaded
+  gflow->setDMCmd(argc, argv);
 
   // --- Add modifiers
   if (temperature>0) gflow->addModifier(new TemperatureModifier(gflow, temperature));
+  // Timestep adjustment
+  if (adjustDT) gflow->addModifier(new TimestepModifier(gflow));
 
   // Set time step and request time
   gflow->setDT(dt);

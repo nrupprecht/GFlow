@@ -47,8 +47,11 @@ namespace GFlowSimulation {
   protected:
     // --- Helper functions
 
-    // Relax function - gives the simdata a overdamped integrator, runs it for some amount
+    // Relax function - gives the simdata an overdamped integrator and hard sphere interactions, runs it for some amount
     // of time, then discards the integrator and resets the timers
+    void hs_relax(class GFlow*, RealType=0.25);
+
+    // Relax function - uses the native forces and an overdamped integrator
     void relax(class GFlow*, RealType=0.25);
 
     // Command line arguments

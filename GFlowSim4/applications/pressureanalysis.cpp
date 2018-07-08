@@ -19,6 +19,7 @@ int main(int argc, char **argv) {
   RealType width = 4.;
   RealType minPhi = 0.;
   RealType maxPhi = 0.8;
+  RealType dt = 0.001;
   RealType time = 60.;
   RealType startRec = 5.;
   RealType repulsion = 1.;
@@ -30,6 +31,7 @@ int main(int argc, char **argv) {
   parser.get("width", width);
   parser.get("minPhi", minPhi);
   parser.get("maxPhi", maxPhi);
+  parser.get("dt", dt);
   parser.get("time", time);
   parser.get("startRec", startRec);
 
@@ -60,14 +62,17 @@ int main(int argc, char **argv) {
       }
       GFlow *gflow = creator->createSimulation();
       if (gflow==nullptr) {
-	cout << "GFlow was null. Exiting.\n";
-	return 1;
+	      cout << "GFlow was null. Exiting.\n";
+	      return 1;
       }
+      // Repulsion force boundary conditions
       gflow->setAllBCs(BCFlag::REPL);
       // Run
       BoundaryForceData *bfData = new BoundaryForceData(gflow);
+      gflow->setStartRecTime(5.);
       gflow->addDataObject(bfData);
       gflow->setRepulsion(repulsion*DEFAULT_HARD_SPHERE_REPULSION);
+      gflow->setDT(dt);
       gflow->run(time);
       // Data
       data.push_back(RPair(phi, invArea*bfData->getAverage()));

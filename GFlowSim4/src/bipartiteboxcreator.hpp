@@ -1,5 +1,5 @@
 #ifndef __BIPARTITE_BOX_CREATOR_HPP__GFLOW__
-#define __BIARTITE_BOX_CREATOR_HPP__GFLOW__
+#define __BIPARTITE_BOX_CREATOR_HPP__GFLOW__
 
 #include "creator.hpp"
 
@@ -34,4 +34,4 @@ namespace GFlowSimulation {
   };
 
 }
-#endif // __BINARY_BOX_CREATOR_HPP__GFLOW__
+#endif // __BIPARTITE_BOX_CREATOR_HPP__GFLOW__

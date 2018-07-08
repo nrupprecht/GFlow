@@ -47,6 +47,8 @@ namespace GFlowSimulation {
 
     RealType getBoundaryForce() const;
 
+    RealType getDT() const;
+
     // Get the number of iterations
     int getIter() const;
 
@@ -113,6 +115,9 @@ namespace GFlowSimulation {
     // Set the time step
     void setDT(RealType);
 
+    // Set data master command line data
+    void setDMCmd(int, char**);
+
     // Creators are a friend classes --- all must be since friendship is not inherited
     friend class Creator;
     friend class BoxCreator;
@@ -122,6 +127,9 @@ namespace GFlowSimulation {
 
     // Force master is a friend class
     friend class ForceMaster;
+
+    // Data master is a friend class
+    friend class DataMaster;
 
   protected:
     // --- Private helper functions

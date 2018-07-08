@@ -24,7 +24,7 @@ namespace GFlowSimulation {
     seed = s;
   };
 
-  void Creator::relax(GFlow* gflow, RealType time) {
+  void Creator::hs_relax(GFlow* gflow, RealType time) {
     // Check for valid object
     if (gflow==nullptr) return;
 
@@ -64,6 +64,29 @@ namespace GFlowSimulation {
     gflow->forceMaster = master;
     gflow->forces = forces;
     gflow->simData->clearF();
+  }
+
+  void Creator::relax(class GFlow *gflow, RealType time) {
+    // Check for valid object
+    if (gflow==nullptr) return;
+
+    // Use overdamped integrator for relaxation
+    Integrator *integrator = gflow->integrator; // Save integrator
+    gflow->integrator = new OverdampedIntegrator(gflow);
+
+    // Make sure all forces are zero
+    gflow->simData->clearF();
+
+    // Relax simulation
+    gflow->requestTime(time); // Should be long enough
+    gflow->run();
+    gflow->dataMaster->resetTimer(); // So the setup does not count towards the run time
+    gflow->resetAllTimes();
+    
+    // Reset integrator
+    delete gflow->integrator;
+    gflow->integrator = integrator;
+
   }
 
 }

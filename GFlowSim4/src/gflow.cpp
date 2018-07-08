@@ -190,6 +190,10 @@ namespace GFlowSimulation {
     return boundaryForce;
   }
 
+  RealType GFlow::getDT() const {
+    return integrator->getTimeStep();
+  }
+
   int GFlow::getIter() const {
     return iter;
   }
@@ -347,6 +351,10 @@ namespace GFlowSimulation {
 
   void GFlow::setDT(RealType dt) {
     integrator->setDT(dt);
+  }
+
+  void GFlow::setDMCmd(int argc, char** argv) {
+    dataMaster->setCommand(argc, argv);
   }
 
   inline void GFlow::clearForces() {

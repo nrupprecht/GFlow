@@ -18,6 +18,8 @@ This generation was heavily inspired by LAMMPS, GROMACS, OpenMD, etc. to make im
 
 * ls1 mardyne: Current record holder for largest md simulation - over 10^12 particles. See this [paper](https://arxiv.org/pdf/1408.4599.pdf)
 
+* OpenMD: See e.g. [this](http://openmd.org/wp-content/docs/OpenMD-2.5.pdf)
+
 Run with
 ```
 ./bin/driver

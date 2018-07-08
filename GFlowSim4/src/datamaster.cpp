@@ -148,13 +148,19 @@ namespace GFlowSimulation {
     fout << "********** 2018, Nathaniel Rupprecht **********\n";
     fout << "***********************************************\n\n";
     // Print command
-    pair<int, char**> command = gflow->getCommand();
-    if (command.second) for (int c=0; c<command.first; ++c) fout << command.second[c] << " ";
-    
+    if (argc>0) {
+      for (int c=0; c<argc; ++c) fout << argv[c] << " ";
+    }
+    else { // Try to get command from gflow
+      pair<int, char**> command = gflow->getCommand();
+      if (command.second) for (int c=0; c<command.first; ++c) fout << command.second[c] << " ";
+    }
+    fout << "\n\n";
     // --- Print timing summary
     RealType elapsedTime   = Base::gflow->getElapsedTime();
     RealType requestedTime = Base::gflow->getTotalRequestedTime();
     RealType ratio = requestedTime/run_time;
+    int iterations = Base::gflow->getIter(), particles = Base::simData->number;
     // Helper lambda - checks whether run_time was non-zero
     auto toStrRT = [&] (RealType x) -> string {
       return (run_time>0 ? toStr(x) : "--");
@@ -166,7 +172,8 @@ namespace GFlowSimulation {
     fout << "  - Run Time:                 " << run_time;
     if (run_time>60) fout << " ( h:m:s - " << printAsTime(run_time) << " )";
     fout << "\n";
-    fout << "  - Ratio x Particles:        " << toStrRT(ratio*Base::simData->number) << "\n";
+    fout << "  - Iters x Particles / Time: " << iterations*particles/run_time << "\n";
+    fout << "  - Ratio x Particles:        " << toStrRT(ratio*particles) << "\n";
     fout << "  - Ratio:                    " << toStrRT(ratio) << "\n";
     fout << "  - Inverse Ratio:            " << toStrRT(1./ratio) << "\n";
     fout << "\n";
@@ -174,7 +181,13 @@ namespace GFlowSimulation {
     // --- Print simulation summary
     fout << "Simulation and space:\n";
     fout << "  - Dimensions:               " << DIMENSIONS << "\n";
-    fout << "  - Wrapping:                 ";
+    fout << "  - Boundaries:               ";
+    for (int d=0; d<DIMENSIONS; ++d) {
+      fout << "{" << Base::gflow->bounds.min[d] << "," << Base::gflow->bounds.max[d] << "}";
+      if (d!=DIMENSIONS-1) fout << ", ";
+    }
+    fout << "\n";
+    fout << "  - Boundaries:               ";
     for (int d=0; d<DIMENSIONS; ++d) {
       switch (Base::gflow->getBC(d)) {
         case BCFlag::OPEN: {
@@ -187,6 +200,14 @@ namespace GFlowSimulation {
         }
         case BCFlag::REFL: {
           fout << "Reflect";
+          break;
+        }
+        case BCFlag::REPL: {
+          fout << "Repulse";
+          break;
+        }
+        default: {
+          fout << "Other";
           break;
         }
       }
@@ -217,7 +238,6 @@ namespace GFlowSimulation {
     fout << "\n";
 
     // --- Print integration summary
-    int iterations = Base::gflow->getIter();
     fout << "Integration:\n";
     fout << "  - Iterations:               " << iterations << "\n";
     fout << "  - Time per iteration:       " << toStrRT(run_time / static_cast<RealType>(iterations)) << "\n";

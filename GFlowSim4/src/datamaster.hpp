@@ -70,6 +70,7 @@ namespace GFlowSimulation {
     // Write particle data to a stream
     inline void writeParticleData(std::ostream&);
 
+    // Command line arguments
     int argc;
     char **argv;
 

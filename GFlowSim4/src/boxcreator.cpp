@@ -99,7 +99,7 @@ namespace GFlowSimulation {
     if (skinDepth>0) gflow->sectorization->setSkinDepth(skinDepth);
 
     // Relax the setup
-    relax(gflow);
+    hs_relax(gflow);
     if (over_damped_flag) gflow->integrator = new OverdampedIntegrator(gflow);
     else gflow->integrator = new VelocityVerlet(gflow);
     // Set integrator initial time step

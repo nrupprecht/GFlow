@@ -36,24 +36,31 @@ namespace GFlowSimulation {
     RealType vsgma = 0.25;
     RealType portion = 0.5; // Portion of the particles that are type 0
     RealType skinDepth = -1.;
+    RealType repulsion = 1.;
     bool animate = false;;
     bool over_damped_flag = false;
+    bool lj_flag = false;
 
     // Gather command line arguments
-    parserPtr->get("number", number);
-    parserPtr->get("ntypes", ntypes);
-    parserPtr->get("dt", dt);
-    parserPtr->get("radius", radius);
-    parserPtr->get("phi", phi);
-    parserPtr->get("width", width);
-    parserPtr->get("vsgma", vsgma);
-    parserPtr->get("portion", portion);
-    parserPtr->get("skinDepth", skinDepth);
-    parserPtr->get("animate", animate);
-    parserPtr->get("overdamped", over_damped_flag);
+    if (parserPtr) {
+      parserPtr->get("number", number);
+      parserPtr->get("ntypes", ntypes);
+      parserPtr->get("dt", dt);
+      parserPtr->get("radius", radius);
+      parserPtr->get("phi", phi);
+      parserPtr->get("width", width);
+      parserPtr->get("vsgma", vsgma);
+      parserPtr->get("portion", portion);
+      parserPtr->get("skinDepth", skinDepth);
+      parserPtr->get("repulsion", repulsion);
+      parserPtr->get("animate", animate);
+      parserPtr->get("overdamped", over_damped_flag);
+      parserPtr->get("lj", lj_flag);
+    }
 
     // Create a new gflow object
     GFlow *gflow = new GFlow;
+    gflow->setAllBCs(bcFlag);
 
     // Set the bounds of the gflow object
     if (width<=0) width = 1.; // In case of bad argument
@@ -61,9 +68,6 @@ namespace GFlowSimulation {
       gflow->bounds.min[d] = -0.5*width;
       gflow->bounds.max[d] =  0.5*width;
     }
-
-    // Set wrapping
-    gflow->setAllBCs(BCFlag::WRAP);
 
     // --- Set initial particle data
 
@@ -76,11 +80,12 @@ namespace GFlowSimulation {
     gflow->simData->reserve(number);
     gflow->simData->number = number;
     // Get pointers to particle data
-    RealType **x = gflow->simData->x;
-    RealType **v = gflow->simData->v;
-    RealType *sg = gflow->simData->sg;
-    RealType *im = gflow->simData->im;
-    int *type    = gflow->simData->type;
+    SimData *simData = gflow->simData;
+    RealType **x = simData->x;
+    RealType **v = simData->v;
+    RealType *sg = simData->sg;
+    RealType *im = simData->im;
+    int *type    = simData->type;
     for (int n=0; n<number; ++n) {
       // Give some random initial positions - we will allow these to relax
       for (int d=0; d<DIMENSIONS; ++d) x[n][d] = (drand48()-0.5)*width;
@@ -100,11 +105,16 @@ namespace GFlowSimulation {
     // --- Handle forces
 
     gflow->forceMaster->setNTypes(ntypes);
-    Force *hard_sphere = new HardSphere(gflow);
+    Force *force;
+    if (lj_flag) force = new LennardJones(gflow);
+    else {
+      force = new HardSphere(gflow);
+      dynamic_cast<HardSphere*>(force)->setRepulsion(repulsion*DEFAULT_HARD_SPHERE_REPULSION);
+    }
     for (int t1=0; t1<ntypes; ++t1) 
       for (int t2 = 0; t2<ntypes; ++t2) 
         if (t1!=t2)
-          gflow->forceMaster->setForce(t1, t2, hard_sphere);
+          gflow->forceMaster->setForce(t1, t2, force);
 
     // Set skin depth
     if (skinDepth>0) gflow->sectorization->setSkinDepth(skinDepth);
