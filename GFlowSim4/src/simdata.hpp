@@ -15,8 +15,9 @@ namespace GFlowSimulation {
   struct ParticleLayout {
     ParticleLayout(string n, int t, int ndf, int ndi) : name(n), type(t), n_dataF(ndf), n_dataI(ndi) {};
 
-    string name; // A name
-    int type;    // What type this atom is denoted by
+    // --- Data
+    string name;          // A name for the particle
+    int type;             // What type this atom is denoted by
     int n_dataF, n_dataI; // The amount of dataF and dataI space allocated
   };
 
@@ -63,6 +64,9 @@ namespace GFlowSimulation {
     RealType& F(int n, int d) { return f[n][d]; }
     RealType* F(int n)        { return f[n]; }
 
+    RealType* DataF(int n)    { return dataF[n]; }
+    RealType* DataI(int n)    { return dataI[n]; }
+
     // --- Particle data
 
     // Number of particles
@@ -83,7 +87,7 @@ namespace GFlowSimulation {
     // More data, for more complex objects
     RealType **dataF; // Floating point data
     int      **dataI; // Integer data
-    int      *body;   // Which body a particle is part of. No body is -1. If body == nullptr, there are no bodies
+    int       *body;  // Which body a particle is part of. No body is -1. If body == nullptr, there are no bodies
 
     // The actual amount of data in the arrays
     int size;

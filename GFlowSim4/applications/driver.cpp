@@ -73,6 +73,7 @@ int main(int argc, char **argv) {
   parser.get("averages", averages);
   parser.get("minDistances", minDistances);
   parser.get("adjustDT", adjustDT);
+  parser.get("lj", adjustDT); // Adjust DT if lj is true
   parser.get("startRec", startRecTime);
   parser.get("fps", fps);
   parser.get("dt", dt);

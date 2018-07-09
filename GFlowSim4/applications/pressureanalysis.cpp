@@ -23,6 +23,7 @@ int main(int argc, char **argv) {
   RealType time = 60.;
   RealType startRec = 5.;
   RealType repulsion = 1.;
+  bool adjustDT = false;
 
   // --- For getting command line arguments
   ArgParse parser(argc, argv);
@@ -34,6 +35,7 @@ int main(int argc, char **argv) {
   parser.get("dt", dt);
   parser.get("time", time);
   parser.get("startRec", startRec);
+  parser.get("adjustDT", adjustDT);
 
   // Keep in bounds - max phi can be > 1 for bipartite
   minPhi = minPhi<0 ? 0 : minPhi;
@@ -43,7 +45,7 @@ int main(int argc, char **argv) {
   vector<RPair> data;
 
   Creator *creator = nullptr;
-  for (int iter=0; iter<nIters; ++iter) {
+  for (int iter=0; iter<=nIters; ++iter) {
     // Set up
     phi = (maxPhi-minPhi)*static_cast<RealType>(iter)/nIters + minPhi;
     if (phi>0) {
@@ -73,6 +75,8 @@ int main(int argc, char **argv) {
       gflow->addDataObject(bfData);
       gflow->setRepulsion(repulsion*DEFAULT_HARD_SPHERE_REPULSION);
       gflow->setDT(dt);
+      // Timestep adjustment
+      if (adjustDT || lj) gflow->addModifier(new TimestepModifier(gflow));
       gflow->run(time);
       // Data
       data.push_back(RPair(phi, invArea*bfData->getAverage()));

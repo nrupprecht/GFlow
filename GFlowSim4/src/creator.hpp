@@ -4,6 +4,7 @@
 #include "utility.hpp"
 #include "ArgParse.hpp"
 #include "vectormath.hpp"
+#include "gflow.hpp"
 
 // Accumulation files
 #include "allbaseobjects.hpp"

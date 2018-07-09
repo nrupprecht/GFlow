@@ -22,6 +22,8 @@ namespace GFlowSimulation {
     // Calculate all the forces between atoms in the verlet lists
     virtual void calculateForces() final;
 
+    void setStrength(RealType);
+
   private:
     // Calculate force strength
     void forceStrength(RealType*, RealType*, RealType, int, int);

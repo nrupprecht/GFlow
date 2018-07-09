@@ -86,14 +86,19 @@ namespace GFlowSimulation {
     // --- Handle forces
     gflow->forceMaster->setNTypes(1); // Only one type of particle
     Force *force;
-    if(lj_flag) force = new LennardJones(gflow);
-    else        force = new HardSphere(gflow);
-    gflow->forceMaster->setForce(0, 0, force);
-
-    // Adjust repulsion
-    if (!lj_flag) {
-      dynamic_cast<HardSphere*>(force)->setRepulsion(repulsion*DEFAULT_HARD_SPHERE_REPULSION);
+    if(lj_flag) {
+      force = new LennardJones(gflow);
+      dynamic_cast<LennardJones*>(force)->setStrength(
+        repulsion*DEFAULT_LENNARD_JONES_STRENGTH
+      );
     }
+    else {
+      force = new HardSphere(gflow);
+      dynamic_cast<HardSphere*>(force)->setRepulsion(
+        repulsion*DEFAULT_HARD_SPHERE_REPULSION
+      );
+    }
+    gflow->forceMaster->setForce(0, 0, force);
 
     // Set skin depth
     if (skinDepth>0) gflow->sectorization->setSkinDepth(skinDepth);

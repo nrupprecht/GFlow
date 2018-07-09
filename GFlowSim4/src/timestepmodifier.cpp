@@ -2,7 +2,7 @@
 
 namespace GFlowSimulation {
 
-  TimestepModifier::TimestepModifier(GFlow *gflow) : Modifier(gflow), minSigma(1.0), vtollerance(0.1), atollerance(0.1), 
+  TimestepModifier::TimestepModifier(GFlow *gflow) : Modifier(gflow), minSigma(1.0), vtollerance(0.07), atollerance(1), 
     lastCheck(0), delay(0.025), max_dt(DEFAULT_MAX_DT), min_dt(DEFAULT_MIN_DT) {}
 
   void TimestepModifier::pre_integrate() {
@@ -34,6 +34,9 @@ namespace GFlowSimulation {
       RealType a = magnitudeVec(simData->f[n])*simData->im[n];
       if (a>maxA) maxA = a;
     }
+
+    // --> Should really look for maximum dF/dx * v for particles
+
     // Propose timesteps
     RealType dt_v = vtollerance*minSigma/maxV, dt_a = atollerance/maxA;
     // Set the timestep

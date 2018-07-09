@@ -74,6 +74,10 @@ namespace GFlowSimulation {
     }
   }
 
+  void LennardJones::setStrength(RealType s) {
+    strength = s;
+  }
+
   inline void LennardJones::forceStrength(RealType* F, RealType *normal, RealType distance, int id1, int id2) {
     RealType *sg = simData->sg;
     // Calculate the magnitude
