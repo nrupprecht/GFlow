@@ -16,6 +16,8 @@ This generation was heavily inspired by LAMMPS, GROMACS, OpenMD, etc. to make im
 
 * Vectorized forces/neighbor lists [here](ftp://crack.seismo.unr.edu/downloads/russell/O(N)/grest_1989_vectorized_link_cell_code_md.PDF)
 
+* Parallel decompositions [paper](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.35.6047&rep=rep1&type=pdf)
+
 * GROMACS: High performance molecular simulations through multi-level parallelism from laptops to supercomputers - Paper on GROMACS
 
 * ls1 mardyne: Current record holder for largest md simulation - over 10^12 particles. See this [paper](https://arxiv.org/pdf/1408.4599.pdf)

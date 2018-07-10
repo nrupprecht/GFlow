@@ -49,21 +49,21 @@ namespace GFlowSimulation {
 
   // --- Pair typedefs
 
-  // Real pair
+  //! Real pair
   typedef pair<RealType, RealType> RPair;
 
-  // Int pair
+  //! Int pair
   typedef pair<int, int> IPair;
 
-  // Real-Int pair
+  //! Real-Int pair
   typedef pair<RealType, int> RIPair;
 
-  // Int-Real pair
+  //! Int-Real pair
   typedef pair<int, RealType> IRPair;
 
   // --- Common functions
 
-  // Convert an object to a string
+  //! Convert an object to a string
   template<typename T> inline string toStr(T obj) {
     stringstream stream;
     stream << obj;
@@ -84,18 +84,18 @@ namespace GFlowSimulation {
     return std::find(vec.begin(), vec.end(), obj) != vec.end();
   }
 
-  /// Get the current time
+  //! Get the current time
   inline high_resolution_clock::time_point current_time() {
     return high_resolution_clock::now();
   }
 
-  // high_resolution_clock::time_point
+  //! Takes two high_resolution_clock::time_point, returns the number of seconds
   template<typename T> inline RealType time_span(T end, T start) {
     duration<RealType> span = duration_cast<duration<double> >(end-start);
     return span.count();
   }
 
-  // Print as (hrs):(mins):(sec)
+  //! Print as (hrs):(mins):(sec)
   inline string printAsTime(double seconds) {
     stringstream stream;
     string str;
@@ -127,13 +127,14 @@ namespace GFlowSimulation {
     return str;
   }
 
-  // Copy an array of size [size] from [source] to [destination]
+  //! Copy an array of size [size] from [source] to [destination]
   template<typename T> inline void copyArray(const T *source, T *destination, int size) {
     for (int i=0; i<size; ++i) destination[i] = source[i];
   }
 
-  // Random number generators
+  //! Global random number generator
   static std::mt19937 global_generator;
+  //! Global normal distribution
   static std::normal_distribution<RealType> global_normal_dist(0., 1.);
 
   inline void seedNormalDistribution(unsigned seed=0) {
@@ -150,6 +151,11 @@ namespace GFlowSimulation {
 // Include this after so RealType is defined
 #include "defaultconstants.hpp"
 #include "bounds.hpp"
+
+// Needs flag from "defaultconstants.hpp"
+#if USE_MPI == 1
+#include <mpi.h>
+#endif
 
 namespace GFlowSimulation {
 

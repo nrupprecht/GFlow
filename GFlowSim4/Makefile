@@ -1,7 +1,9 @@
 CC = icpc
 MPICC = mpic++
+COMP = $(CC)
 CFLAG = -std=c++11 -Wall
-OPTFLAGS = -xHost -O3 -no-prec-div -fp-model fast=2 -restrict -funroll-loops -no-inline-max-size
+OPTFLAGS = -O3 -funroll-loops
+OPTFLAGS2 = -xHost -no-prec-div -fp-model fast=2 -restrict -no-inline-max-size
 FLAGS = $(CFLAG) -g $(OPTFLAGS)
 
 # Get all object files
@@ -14,18 +16,18 @@ all: bin/driver bin/pressureanalysis
 
 ###### Executables #####
 bin/driver: build/driver.o $(OBJ_FILES)
-	$(CC) $^ -o $@
+	$(COMP) $^ -o $@
 
 bin/pressureanalysis: build/pressureanalysis.o $(OBJ_FILES)
-	$(CC) $^ -o $@
+	$(COMP) $^ -o $@
 
 #####   Objects   #####
 # In /src/
 build/%.o: src/%.cpp
-	$(CC) -c -o $@ $< $(FLAGS)
+	$(COMP) -c -o $@ $< $(FLAGS)
 
 build/%.o: applications/%.cpp
-	$(CC) -c -o $@ $< $(FLAGS)
+	$(COMP) -c -o $@ $< $(FLAGS)
 
 #####   Clean    #####
 .PHONY : clean

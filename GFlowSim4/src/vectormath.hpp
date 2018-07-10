@@ -123,9 +123,7 @@ namespace GFlowSimulation {
 
   inline void randomNormalVec(RealType *x) {
     // Random normal components
-    #if _INTEL_ == 1
-    #pragma unroll(DIMENSIONS)
-    #endif 
+    // Note: Loop cannot be unrolled
     for (int d=0; d<DIMENSIONS; ++d)
       x[d] = randNormal();
     // Normalize

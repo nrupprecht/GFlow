@@ -280,7 +280,7 @@ namespace GFlowSimulation {
 
   void GFlow::reflectPositions() {
     // Get a pointer to position data and the number of particles in simData
-    RealType **x = simData->x, **v = simData->v, *sg = simData->sg;
+    RealType **x = simData->x, **v = simData->v;
     int number = simData->number;
 
     // Reflect all the particles

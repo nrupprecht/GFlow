@@ -157,7 +157,6 @@ namespace GFlowSimulation {
     }
     fout << "\n\n";
     // --- Print timing summary
-    RealType elapsedTime   = Base::gflow->getElapsedTime();
     RealType requestedTime = Base::gflow->getTotalRequestedTime();
     RealType ratio = requestedTime/run_time;
     int iterations = Base::gflow->getIter(), particles = Base::simData->number;
@@ -170,9 +169,9 @@ namespace GFlowSimulation {
     fout << "  - Time simulated:           " << Base::gflow->getTotalTime() << "\n";
     fout << "  - Requested Time:           " << requestedTime << "\n";
     fout << "  - Run Time:                 " << run_time;
-    if (run_time>60) fout << " ( h:m:s - " << printAsTime(run_time) << " )";
+    if (run_time>60) fout << " ( h:m:s - "   << printAsTime(run_time) << " )";
     fout << "\n";
-    fout << "  - Iters x Particles / Time: " << iterations*particles/run_time << "\n";
+    fout << "  - Iters x Particles / Time: " << toStrRT(iterations*particles/run_time) << "\n";
     fout << "  - Ratio x Particles:        " << toStrRT(ratio*particles) << "\n";
     fout << "  - Ratio:                    " << toStrRT(ratio) << "\n";
     fout << "  - Inverse Ratio:            " << toStrRT(1./ratio) << "\n";

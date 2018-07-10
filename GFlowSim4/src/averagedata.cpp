@@ -12,7 +12,6 @@ namespace GFlowSimulation {
   void AverageData::post_step() {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
-
     // Store data
     RealType time = Base::gflow->getElapsedTime();
     RealType *dat = new RealType[dataWidth];
@@ -22,7 +21,6 @@ namespace GFlowSimulation {
     dat[2] = 0;
     dat[3] = 0;
     // Get and store data
-    RealType aveX = 0, aveV = 0, aveF = 0;
     RealType **x = Base::simData->x;
     RealType **v = Base::simData->v;
     RealType **f = Base::simData->f;

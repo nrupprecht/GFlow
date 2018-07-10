@@ -36,6 +36,7 @@ int main(int argc, char **argv) {
   parser.get("time", time);
   parser.get("startRec", startRec);
   parser.get("adjustDT", adjustDT);
+  parser.get("lj", adjustDT); // If using lj, adjust dt
 
   // Keep in bounds - max phi can be > 1 for bipartite
   minPhi = minPhi<0 ? 0 : minPhi;
@@ -76,7 +77,7 @@ int main(int argc, char **argv) {
       gflow->setRepulsion(repulsion*DEFAULT_HARD_SPHERE_REPULSION);
       gflow->setDT(dt);
       // Timestep adjustment
-      if (adjustDT || lj) gflow->addModifier(new TimestepModifier(gflow));
+      if (adjustDT) gflow->addModifier(new TimestepModifier(gflow));
       gflow->run(time);
       // Data
       data.push_back(RPair(phi, invArea*bfData->getAverage()));

@@ -29,7 +29,7 @@ namespace GFlowSimulation {
     Creator(ArgParse *parser);
 
     // Destructor
-    ~Creator();
+    virtual ~Creator();
 
     // Set the random seed
     void setSeed(uint);

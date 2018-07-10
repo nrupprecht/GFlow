@@ -73,51 +73,52 @@ namespace GFlowSimulation {
 
     // --- Mutators
 
-    // Set the command info
+    //! Set the command info
     void setCommand(int, char**);
 
-    // Set the bounds
+    //! Set the bounds
     void setBounds(Bounds);
 
-    // Set all wrap values to something
+    //! Set all wrap values to the same value
     void setAllBCs(BCFlag);
 
+    //! Set the repulsion stength for repulsing boundary conditions
     void setRepulsion(RealType);
 
-    // Set the amount of time we should run for
+    //! Set the amount of time we should run for
     void requestTime(RealType);
 
-    // Keep positions in bounds
+    //! Keep positions in bounds
     void wrapPositions();
 
-    // "Reflect" positions off the bounds
+    //! "Reflect" positions off the bounds
     void reflectPositions();
 
-    // Apply a force to keep particles in bounds
+    //! Apply a force to keep particles in bounds
     void repulsePositions();
 
-    // Add a data object
+    //! Add a data object
     void addDataObject(class DataObject*);
 
-    // Add a modifier
+    //! Add a modifier object
     void addModifier(class Modifier*);
 
-    // Reset all timers (use e.g. after doing relaxation of a random initial state)
+    //! Reset all timers (use e.g. after doing relaxation of a random initial state)
     void resetAllTimes();
 
-    // Set the start recording time
+    //! Set the start recording time
     void setStartRecTime(RealType);
 
-    // Set the frames per second for all data objects
+    //! Set the frames per second for all data objects
     void setFPS(RealType);
 
-    // Set the fps of particular data objects
+    //! Set the fps of particular data objects
     void setFPS(int, RealType);
 
-    // Set the time step
+    //! Set the time step
     void setDT(RealType);
 
-    // Set data master command line data
+    //! Set data master command line data
     void setDMCmd(int, char**);
 
     // Creators are a friend classes --- all must be since friendship is not inherited
@@ -135,6 +136,7 @@ namespace GFlowSimulation {
 
   protected:
     // --- Private helper functions
+    //! Clear all the force arrays
     inline void clearForces();
 
     // --- Data - public so anyone can access it
@@ -145,39 +147,41 @@ namespace GFlowSimulation {
     class DataMaster *dataMaster;       // DataMaster object for unified data collection  
     class ForceMaster *forceMaster;     // ForceMaster object for defining and storing interparticle forces  
 
-    // A vector of objects that should modify the simulation at some point(s) during execution
+    //! A vector of objects that should modify the simulation at some point(s) during execution
     vector<class Modifier*> modifiers;
 
-    // All the forces that can happen - which ones correspond to which pairs of particles is controlled by
+    //! All the forces that can happen - which ones correspond to which pairs of particles is controlled by
     // the ForceMaster object
     vector<class Force*> forces;
 
-    // If true, the simulation should continue to run
+    //! If true, the simulation should continue to run
     bool running;
 
-    // How much time we have been requested to run for
+    //! How much time we have been requested to run for
     RealType requested_time;
 
-    // How much time has ever been requested
+    //! How much time has ever been requested
     RealType total_requested_time;
 
-    // How much of the requested time has been run
+    //! How much of the requested time has been run
     RealType elapsed_time; 
 
-    // How much time has been run over all runs
+    //! How much time has been run over all runs
     RealType total_time;
 
-    // The number of iterations
+    //! The number of iterations that have passed
     int iter;
 
-    // The simulation bounds
+    //! The simulation bounds
     Bounds bounds;
 
-    // Boundary types
+    //! Boundary types
     BCFlag boundaryConditions[DIMENSIONS];
 
-    // Strength of boundary repulsion forces, and total force applied
-    RealType repulsion, boundaryForce;
+    //! Strength of boundary repulsion forces
+    RealType repulsion;
+    //! Total boundary force applied this iteration
+    RealType boundaryForce;
 
     // The command info (optional)
     int argc;

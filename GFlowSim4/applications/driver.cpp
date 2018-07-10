@@ -21,6 +21,26 @@
 using namespace GFlowSimulation;
 
 int main(int argc, char **argv) {
+
+  auto start_time = current_time();
+  cout << "Starting up simulation...\n";
+
+  // --- MPI
+  int rank(0), numProc(1);
+  
+  #if USE_MPI == 1
+  #if _CLANG_ == 1
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &numProc);
+  #else
+  MPI::Init(argc, argv);
+  rank = MPI::COMM_WORLD.Get_rank();
+  numProc = MPI::COMM_WORLD.Get_size();
+  #endif
+  cout << "Initialized MPI.\n";
+  #endif
+
   // --- Options
 
   // Type of simulation
@@ -50,6 +70,7 @@ int main(int argc, char **argv) {
   RealType time = 10.;
   string writeDirectory = "RunData";
   int boundary = 1;
+  string monitor = ""; // Monitor file
 
   // Modifiers
   RealType temperature = 0;
@@ -154,19 +175,31 @@ int main(int argc, char **argv) {
   gflow->requestTime(time);
 
   // Run the simulation
+  cout << "Initialized, ready to run:\t" << time_span(current_time(), start_time) << "\n";
   if (gflow) gflow->run();
   else {
     cout << "GFlow pointer was null. Exiting.\n";
     return 0;
   }
-  cout << "Run is over.\n";
+  cout << "Run is over:\t\t\t" << time_span(current_time(), start_time) << "\n";
 
   // Write accumulated data to files
   gflow->writeData(writeDirectory);
-  cout << "Data write is over.\n";
+  cout << "Data write is over:\t\t" << time_span(current_time(), start_time) << "\n";
 
   // Delete creator, gflow
-  delete creator, gflow;
+  if (creator) delete creator;
+  if (gflow) delete gflow;
+  
+  // Finalize mpi
+  #if USE_MPI == 1
+  #if _CLANG_ == 1
+  MPI_Finalize();
+  #else
+  MPI::Finalize();
+  #endif
+  cout << "Finalized MPI.\n";
+  #endif
 
   return 0;
 }

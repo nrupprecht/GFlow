@@ -5,6 +5,13 @@
 #define POSIX_MEMALIGN 1
 #define DEBUG 0
 
+// For MPI
+#define USE_MPI 0
+
+// Compiler type
+#define _INTEL_ 1
+#define _CLANG_ 0
+
 namespace GFlowSimulation {
 
   const RealType DEFAULT_TIME_STEP = 0.001;
