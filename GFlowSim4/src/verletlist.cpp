@@ -77,7 +77,7 @@ namespace GFlowSimulation {
         if (_current_point==_next_head) {
           id1 = verlet[heads[_next_head_number]];  // Set id1 to be the new head
           _current_point = _next_head+1;           // The address of the first tail is right after the new head
-          id2 = verlet[_current_point];            // Set the [id2] we should point at
+          id2 = verlet[_current_point++];          // Set the [id2] we should point at, increment [_current_point]
           ++_next_head_number;                     // Increment [_next_head_number]
           // Since we have entered a new verlet list, we have to check if it is the last verlet list
           _last_region = (_next_head_number==hsize); 
