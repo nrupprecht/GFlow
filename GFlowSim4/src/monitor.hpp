@@ -1,6 +1,8 @@
 #ifndef __MONITOR_HPP__GFLOW__
 #define __MONITOR_HPP__GFLOW__
 
+#include "gflow.hpp"
+
 namespace GFlowSimulation {
 
   /*! \brief Monitors the simulation, can be used to print out data
