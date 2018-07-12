@@ -30,7 +30,7 @@ namespace GFlowSimulation {
 
     // --- Accessors
 
-     // Return the last head added to the head array
+    // Return the last head added to the head array
     int lastHead() const;
 
     // Return the total length of the verlet list 

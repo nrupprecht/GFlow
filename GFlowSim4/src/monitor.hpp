@@ -15,9 +15,7 @@ namespace GFlowSimulation {
    */
   class Monitor : public Base {
   public:
-    
-  private:
-
+    Monitor(GFlow*);
   };
 
 }
