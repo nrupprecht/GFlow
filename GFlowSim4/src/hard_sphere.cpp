@@ -80,7 +80,7 @@ namespace GFlowSimulation {
     // Set verlet list to begin
     if(!verletList.begin(id1)) return;
 
-    cout << "ID1\tID2\tPnt\tNH\tNH#\tLast\tSizes\n"; //**
+    //cout << "ID1\tID2\tPnt\tNH\tNH#\tLast\tSizes\n"; //**
 
     // Get the data we need
     RealType **x = Base::simData->x, **f = Base::simData->f;

@@ -43,7 +43,7 @@ namespace GFlowSimulation {
   // Add a new head
   void VerletList::addHead(int id) {
     // Check if we need to resize
-    if (hsize==hcapacity-1) resizeHeads(); // Make sure there is a pad
+    if (hsize>=hcapacity-1) resizeHeads(); // Make sure there is a pad
     if (vsize==vcapacity) resizeVerlet();
     // Set and increment
     heads [hsize++] = vsize; // Mark where the next head is in the verlet list
@@ -97,9 +97,10 @@ namespace GFlowSimulation {
       }
     }
 
-    
+    /*
     cout << id1 << "\t" << id2 << ":\t" << _current_point << "\t" << _next_head << "\t" 
     << _next_head_number << "\t" << _last_region << "\t:: " << vsize << "\t" << hsize << endl;
+    */
     
 
     // If _current_point==vsize, we have reached the end of the verlet lists. Return true if _current_point<=vsize
