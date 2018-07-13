@@ -13,6 +13,9 @@ namespace GFlowSimulation {
     // Calculate all the forces between atoms in the verlet lists
     virtual void calculateForces() final;
 
+    // Find the force given two particle ids
+    virtual void forceKernel(int, int) final;
+
     void setRepulsion(RealType r);
 
   private:

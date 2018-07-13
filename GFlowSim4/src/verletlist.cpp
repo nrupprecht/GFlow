@@ -1,5 +1,6 @@
 #include "verletlist.hpp"
 #include "utility.hpp"
+#include "force.hpp"
 
 namespace GFlowSimulation {
 
@@ -7,7 +8,7 @@ namespace GFlowSimulation {
     default_verlet_capacity(1024), default_head_capacity(64), _current_point(0), _next_head(0), _next_head_number(0), _last_region(false) {};
 
   VerletList::VerletList(const VerletList& vl) : vsize(vl.vsize), hsize(vl.hsize), vcapacity(vl.vcapacity), 
-    hcapacity(vl.hcapacity), default_verlet_capacity(vl.default_verlet_capacity), default_head_capacity(vl.default_head_capacity),
+    hcapacity(vl.hcapacity), default_verlet_capacity(vl.default_verlet_capacity), default_head_capacity(vl.default_head_capacity), 
     _current_point(0), _next_head(0), _next_head_number(0), _last_region(false)
   {
     // Allocate and copy arrays
@@ -97,15 +98,32 @@ namespace GFlowSimulation {
       }
     }
 
-    /*
-    cout << id1 << "\t" << id2 << ":\t" << _current_point << "\t" << _next_head << "\t" 
-    << _next_head_number << "\t" << _last_region << "\t:: " << vsize << "\t" << hsize << endl;
-    */
-    
-
     // If _current_point==vsize, we have reached the end of the verlet lists. Return true if _current_point<=vsize
     // (_current_point has already been incremented, hence allowing _current_point==vsize)
     return (_current_point<=vsize);
+  }
+
+  void VerletList::forceLoop(Force *force) {
+    if (hsize==0) return; // No forces to calculate
+    int h0, h1, id1, id2; // Head pointers, id pointers
+
+    // --- Go through all particles
+    for (int h=0; h<hsize-1; ++h) {
+      h0 = heads[h]; 
+      h1 = heads[h+1];    // This delimits the end of this part of the verlet list
+      id1 = verlet[h0++]; // First particle head might interact with is the one after the head
+      for (; h0<h1; ++h0) {
+        id2 = verlet[h0];
+        force->forceKernel(id1, id2);
+      }
+    }
+    // Last part of the lists - there is no "next head" to delimit the end, the end is the end of the list
+    h0 = heads[hsize-1]; // Last head
+    id1 = verlet[h0++];   // First particle is the one after the head
+    for (; h0<vsize; ++h0) {
+      id2 = verlet[h0];
+      force->forceKernel(id1, id2);
+    }
   }
 
   int VerletList::lastHead() const {

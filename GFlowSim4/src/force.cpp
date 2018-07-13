@@ -5,7 +5,11 @@
 
 namespace GFlowSimulation {
 
-  Force::Force(GFlow *gflow) : Base(gflow), typeMap(nullptr) {};
+  Force::Force(GFlow *gflow) : Base(gflow), typeMap(nullptr) {
+    // Local copies of the data
+    bounds = gflow->getBounds();
+    copyVec(Base::gflow->getBCs(), boundaryConditions);
+  };
 
   Force::~Force() {
     if (typeMap) delete [] typeMap;

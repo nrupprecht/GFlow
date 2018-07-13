@@ -29,7 +29,6 @@ namespace GFlowSimulation {
     void clear();
 
     // --- Accessors
-
     //! Sets up the verlet list for iteration through the pairs of particles. Sets the argument to be the first head.
     //! Returns false if the verlet list is empty.
     bool begin(int&);
@@ -37,6 +36,8 @@ namespace GFlowSimulation {
     //! Allows us to iterate through pairs of interacting particles, sets the arguments to the head and second particle.
     //!  Returns false if we have reached the end of the verlet list
     bool next(int&, int&);
+
+    void forceLoop(class Force*);
 
     // Return the last head added to the head array
     int lastHead() const;
