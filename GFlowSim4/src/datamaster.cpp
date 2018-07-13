@@ -219,15 +219,14 @@ namespace GFlowSimulation {
     if (types>1) {
       int *count = new int[types];
       for (int ty=0; ty<types; ++ty) count[ty] = 0;
-      for (int n=0; n<Base::simData->number; ++n) ++count[Base::simData->type[n]];
+      for (int n=0; n<Base::simData->number; ++n) ++count[Base::simData->Type(n)];
       for (int ty=0; ty<types; ++ty)
         fout << "     Type " << toStr(ty) << ":                  " << count[ty] << " (" << 
           count[ty] / static_cast<RealType>(Base::simData->number) << "%)\n";
       delete [] count;
     }
     RealType vol = 0;
-    RealType *sg = Base::simData->sg;
-    for (int n=0; n<Base::simData->number; ++n) vol += pow(sg[n], DIMENSIONS);
+    for (int n=0; n<Base::simData->number; ++n) vol += pow(simData->Sg(n), DIMENSIONS);
     vol *= pow(PI, DIMENSIONS/2.) / tgamma(DIMENSIONS/2. + 1.);
     RealType phi = vol/Base::gflow->getBounds().vol();
     fout << "  - Packing fraction:         " << phi << "\n";
@@ -269,10 +268,11 @@ namespace GFlowSimulation {
       fout << "  - Average iters per delay:  " << static_cast<RealType>(iterations) / Base::sectorization->getNumberOfRemakes() <<"\n";
     }
     fout << "\n";
-    fout << "Verlet lists: [Total #], [# heads], [Ave per list].\n";
+    fout << "Verlet lists:                [Total #], [# heads], [Ave per list].\n";
     int c=0;
     for (auto &f : gflow->getForces()) {
-      fout << "     Force " << c << ":                 " << f->vlSize() << ", " << f->vlHSize() << ", " << f->vlSize()/f->vlHSize() << "\n";
+      fout << "     Force " << c << ":                 " << f->vlSize() << ", " << f->vlHSize() << ", " 
+        << static_cast<RealType>(f->vlSize())/f->vlHSize() << "\n";
       ++c;
     }
     
@@ -285,12 +285,12 @@ namespace GFlowSimulation {
   inline void DataMaster::writeParticleData(std::ostream& out) {
     RealType asigma(0), amass(0), aden(0), aspeed(0), ake(0);
     for (int n=0; n<Base::simData->number; ++n) {
-      RealType sig = Base::simData->sg[n];
-      asigma += sig;
-      amass  += 1./Base::simData->im[n];
-      aden   += 1./(Base::simData->im[n]*sphere_volume(sig));
-      aspeed += magnitudeVec(Base::simData->v[n]);
-      ake    += sqr(magnitudeVec(Base::simData->v[n]))*(1./Base::simData->im[n]);
+      RealType sig = Base::simData->Sg(n);
+      asigma += sig; 
+      amass  += 1./Base::simData->Im(n);
+      aden   += 1./(Base::simData->Im(n)*sphere_volume(sig));
+      aspeed += magnitudeVec(Base::simData->V(n));
+      ake    += sqr(magnitudeVec(Base::simData->V(n)))*(1./Base::simData->Im(n));
     }
     // Normalize
     RealType invN = 1./static_cast<RealType>(Base::simData->number);

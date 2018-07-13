@@ -1,6 +1,8 @@
 #ifndef __VERLET_LIST_HPP__GFLOW__
 #define __VERLET_LIST_HPP__GFLOW__ 
 
+#include <functional>
+
 namespace GFlowSimulation {
 
   class VerletList {
@@ -38,7 +40,7 @@ namespace GFlowSimulation {
     bool next(int&, int&);
 
     //! Loops through pairs of interacting particles, passing them to the force interaction kernel
-    void forceLoop(class Force*);
+    void forceLoop(const class Force*) const;
 
     // Return the last head added to the head array
     int lastHead() const;
@@ -56,6 +58,7 @@ namespace GFlowSimulation {
     const int* getHeads() const;
 
   private:
+
     // --- Helper functions
     inline void resizeVerlet(); 
     inline void resizeHeads();

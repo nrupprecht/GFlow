@@ -22,9 +22,9 @@ namespace GFlowSimulation {
     ~Force();
 
     // Calculate all the forces between atoms in the verlet lists
-    virtual void calculateForces() = 0;
+    virtual void calculateForces() const = 0;
 
-    virtual void forceKernel(int, int) = 0;
+    virtual void forceKernel(const int, const int) const = 0;
 
     // --- Accessors
 
@@ -54,12 +54,8 @@ namespace GFlowSimulation {
   protected:
     // --- Helper functions
 
-    // Does the force loop used by many types of forces. Calls the virtual function [forceStrength] 
-    // for the evaluation of the force
-    void default_force_loop();
-
     // Children can override this to use the default force loop
-    virtual void calculateStrength(RealType*, RealType*, RealType, int, int) {};
+    void forceStrength(RealType*, const RealType*, const RealType, const int, const int) const {};
 
     // The neighbor (verlet) lists for all the pairs of atoms between which this force is active
     VerletList verletList;

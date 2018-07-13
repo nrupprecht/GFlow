@@ -8,11 +8,9 @@ namespace GFlowSimulation {
 
   HardSphere::HardSphere(GFlow *gflow) : Force(gflow), repulsion(DEFAULT_HARD_SPHERE_REPULSION) {};
 
-  void HardSphere::calculateForces() {
+  void HardSphere::calculateForces() const {
     //verletList.forceLoop(this);
-    //return;
-
-
+    
     int nheads = verletList.vlHSize(), nverlet = verletList.vlSize();
     if (nheads==0) return; // No forces to calculate
     int h0, h1, id1, id2; // Head pointers, id pointers
@@ -77,7 +75,7 @@ namespace GFlowSimulation {
   }
 
   /*
-  void HardSphere::calculateForces() {
+  void HardSphere::calculateForces() const {
     // Id pointers for the particles
     int id1(0), id2(0);
     // Set verlet list to begin
@@ -109,7 +107,7 @@ namespace GFlowSimulation {
   }
   */
 
-  void HardSphere::forceKernel(int id1, int id2) {
+  void HardSphere::forceKernel(int id1, int id2) const {
     RealType **x = Base::simData->x, **f = Base::simData->f;
     RealType *sg = Base::simData->sg;
     RealType displacement[DIMENSIONS]; // To calculate displacement, normal vector
@@ -138,9 +136,10 @@ namespace GFlowSimulation {
     repulsion = r; 
   }
 
-  inline void HardSphere::forceStrength(RealType *F, RealType *normal, RealType distance, int id1, int id2) {
-    RealType *sg = Base::simData->sg;
-    scalarMultVec(repulsion*(sg[id1] + sg[id2] - distance), normal, F);
+  inline void HardSphere::forceStrength(RealType *F, const RealType *normal, const RealType distance, const int id1, const int id2) const {
+    // RealType *sg = Base::simData->sg;
+    // scalarMultVec(repulsion*(sg[id1] + sg[id2] - distance), normal, F);
+    scalarMultVec(repulsion*(simData->Sg(id1) + simData->Sg(id2) - distance), normal, F);
   }
 
 }

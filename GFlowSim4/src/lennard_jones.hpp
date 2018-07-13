@@ -20,15 +20,15 @@ namespace GFlowSimulation {
     LennardJones(GFlow *);
 
     // Calculate all the forces between atoms in the verlet lists
-    virtual void calculateForces() final;
+    virtual void calculateForces() const final;
 
-    virtual void forceKernel(int, int) final;
+    virtual void forceKernel(int, int) const final;
 
     void setStrength(RealType);
 
   private:
     // Calculate force strength
-    void forceStrength(RealType*, RealType*, RealType, int, int);
+    void forceStrength(RealType*, const RealType*, const RealType, const int, const int) const;
 
     // LJ strength, cuttoff
     RealType strength, cutoff;

@@ -9,7 +9,7 @@ namespace GFlowSimulation {
     default_verlet_capacity(1024), default_head_capacity(64) {};
 
   VerletList::VerletList(const VerletList& vl) : vsize(vl.vsize), hsize(vl.hsize), vcapacity(vl.vcapacity), 
-    hcapacity(vl.hcapacity), default_verlet_capacity(vl.default_verlet_capacity), default_head_capacity(vl.default_head_capacity) 
+    hcapacity(vl.hcapacity), default_verlet_capacity(vl.default_verlet_capacity), default_head_capacity(vl.default_head_capacity)
   {
     // Allocate and copy arrays
     verlet = new int[vcapacity];
@@ -103,7 +103,7 @@ namespace GFlowSimulation {
     return (_current_point<=vsize);
   }
 
-  void VerletList::forceLoop(Force *force) {
+  void VerletList::forceLoop(const Force *force) const {
     if (hsize==0) return; // No forces to calculate
     int h0, h1, id1, id2; // Head pointers, id pointers
 

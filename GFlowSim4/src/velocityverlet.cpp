@@ -9,11 +9,7 @@ namespace GFlowSimulation {
   VelocityVerlet::VelocityVerlet(GFlow *gflow) : Integrator(gflow) {};
 
   void VelocityVerlet::pre_forces() {
-    // First half kick
-    RealType **x = simData->x;
-    RealType **v = simData->v;
-    RealType **f = simData->f;
-    RealType *im = simData->im;
+    // --- First half kick
 
     // Half a timestep
     RealType hdt = 0.5*Integrator::dt;
@@ -35,7 +31,7 @@ namespace GFlowSimulation {
       #pragma unroll(DIMENSIONS)
       #endif 
       //for (int d=0; d<DIMENSIONS; ++d) v[i][d] += hdt*im[i]*f[i][d];
-      for (int d=0; d<DIMENSIONS; ++d) simData->V(i,d) += hdt*im[i]*simData->F(i,d);
+      for (int d=0; d<DIMENSIONS; ++d) simData->V(i,d) += hdt*simData->im[i]*simData->F(i,d);
     }
 
     #if _INTEL_ == 1
@@ -57,13 +53,10 @@ namespace GFlowSimulation {
   }
 
   void VelocityVerlet::post_forces() {
-    // Second half kick
-    RealType **v = simData->v;
-    RealType **f = simData->f;
-    RealType *im = simData->im;
+    // --- Second half kick
 
     // Half a timestep
-    RealType hdt = 0.5*dt;
+    RealType hdt = 0.5*Integrator::dt;
 
     // Number of (real - non ghost) particles
     int number = simData->number;
@@ -82,7 +75,7 @@ namespace GFlowSimulation {
       #pragma unroll(DIMENSIONS)
       #endif 
       //for (int d=0; d<DIMENSIONS; ++d) v[i][d] += hdt*im[i]*f[i][d];
-      for (int d=0; d<DIMENSIONS; ++d) simData->V(i,d) += hdt*im[i]*simData->F(i,d);
+      for (int d=0; d<DIMENSIONS; ++d) simData->V(i,d) += hdt*simData->im[i]*simData->F(i,d);
       // Could update angular variables here ... 
     }
   }
