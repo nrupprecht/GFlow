@@ -21,6 +21,9 @@ namespace GFlowSimulation {
     // Destructor
     ~Force();
 
+    // Overload force to update [bounds] and [boundaryConditions]
+    virtual void initialize();
+
     // Calculate all the forces between atoms in the verlet lists
     virtual void calculateForces() = 0;
 
@@ -72,9 +75,6 @@ namespace GFlowSimulation {
 
     // The simulation boundary conditions
     BCFlag boundaryConditions[DIMENSIONS];
-
-    // Type map - this allows different types of particles to be mapped to being the first or second particle type
-    int *typeMap; // { 0, 1, 0, -1, -1, etc... } -- 0: first spot, 1: second spot, -1: invalid. Indexed by particle id (for id>=0)
   };
 
 }

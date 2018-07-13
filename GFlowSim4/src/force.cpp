@@ -15,6 +15,13 @@ namespace GFlowSimulation {
     if (typeMap) delete [] typeMap;
   }
 
+  void Force::initialize() {
+    Base::initialize();
+    // Local copies of the data
+    bounds = gflow->getBounds();
+    copyVec(Base::gflow->getBCs(), boundaryConditions);
+  }
+
   int Force::lastHead() const {
     return verletList.lastHead();
   }

@@ -2,6 +2,7 @@
 #include "simdata.hpp"
 #include "integrator.hpp"
 #include "sectorization.hpp"
+#include "force.hpp"
 
 namespace GFlowSimulation {
 
@@ -258,8 +259,6 @@ namespace GFlowSimulation {
       if (d!=DIMENSIONS-1) fout << ", ";
     }
     fout << "\n";
-    // fout << "  - Number of verlet lists:   " << numberOfVerletLists << "\n";
-    // fout << "  - Average per verlet list:  " << (avePerVerletList>-1 ? toStr(avePerVerletList) : "---") << "\n";
     fout << "  - Cutoff:                   " << Base::sectorization->getCutoff() << "\n";
     fout << "  - Skin depth:               " << Base::sectorization->getSkinDepth() << "\n";
     if (run_time>0) {
@@ -269,8 +268,13 @@ namespace GFlowSimulation {
       fout << "  - Average remake delay:     " << 1./re_ps << "\n";
       fout << "  - Average iters per delay:  " << static_cast<RealType>(iterations) / Base::sectorization->getNumberOfRemakes() <<"\n";
     }
-    // fout << "  - Occupied sectors:         " << occupiedSectors << "\n";
-    // fout << "  - Ave per occupied sector:  " << avePerOccupiedSector << "\n";
+    fout << "\n";
+    fout << "Verlet lists: [Total #], [# heads], [Ave per list].\n";
+    int c=0;
+    for (auto &f : gflow->getForces()) {
+      fout << "     Force " << c << ":                 " << f->vlSize() << ", " << f->vlHSize() << ", " << f->vlSize()/f->vlHSize() << "\n";
+      ++c;
+    }
     
     // Close the stream
     fout.close();

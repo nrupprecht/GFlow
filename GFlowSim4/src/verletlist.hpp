@@ -37,6 +37,7 @@ namespace GFlowSimulation {
     //!  Returns false if we have reached the end of the verlet list
     bool next(int&, int&);
 
+    //! Loops through pairs of interacting particles, passing them to the force interaction kernel
     void forceLoop(class Force*);
 
     // Return the last head added to the head array

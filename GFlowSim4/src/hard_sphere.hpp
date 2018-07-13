@@ -11,7 +11,7 @@ namespace GFlowSimulation {
     HardSphere(GFlow *);
 
     // Calculate all the forces between atoms in the verlet lists
-    virtual void calculateForces() final;
+    virtual void calculateForces();
 
     // Find the force given two particle ids
     virtual void forceKernel(int, int) final;

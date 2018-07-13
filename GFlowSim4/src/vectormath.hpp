@@ -16,7 +16,7 @@ namespace GFlowSimulation {
       if (boundaryConditions[d]==BCFlag::WRAP) {
         RealType dx = B.max[d] - B.min[d] - fabs(dis[d]);
         if (dx<fabs(dis[d])) dis[d] = dis[d]>0 ? -dx : dx;
-      }
+      }      
     }
   }
 

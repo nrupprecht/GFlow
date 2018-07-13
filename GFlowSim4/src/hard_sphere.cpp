@@ -19,9 +19,6 @@ namespace GFlowSimulation {
     RealType **x = Base::simData->x, **f = Base::simData->f;
     RealType *sg = Base::simData->sg;
     RealType displacement[DIMENSIONS], normal[DIMENSIONS]; // To calculate displacement, normal vector
-    Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
-    BCFlag boundaryConditions[DIMENSIONS]; 
-    copyVec(Base::gflow->getBCs(), boundaryConditions); // Keep a local copy of the wrap frags
     RealType sigma; // Will hold the interaction radius of the head particle
     // Get verlet list data
     const int *verlet = verletList.getVerlet();
@@ -36,7 +33,7 @@ namespace GFlowSimulation {
       for (; h0<h1; ++h0) {
         id2 = verlet[h0];
         // Get the displacement between the particles
-        getDisplacement(x[id1], x[id2], displacement, bounds, boundaryConditions);
+        getDisplacement(x [id1], x[id2], displacement, bounds, boundaryConditions);
         // Check if the particles should interact
         RealType dsqr = sqr(displacement);
         if (dsqr < sqr(sigma + sg[id2])) {
@@ -69,7 +66,7 @@ namespace GFlowSimulation {
         // Add force
         plusEqVec (f[id1], F);
         minusEqVec(f[id2], F);        
-      }
+      } 
     }
   }
 
@@ -84,9 +81,6 @@ namespace GFlowSimulation {
     RealType **x = Base::simData->x, **f = Base::simData->f;
     RealType *sg = Base::simData->sg;
     RealType displacement[DIMENSIONS], normal[DIMENSIONS]; // To calculate displacement, normal vector
-    //Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
-    //BCFlag boundaryConditions[DIMENSIONS]; 
-    //copyVec(Base::gflow->getBCs(), boundaryConditions); // Keep a local copy of the wrap frags
 
     // Get verlet list data
     RealType F[DIMENSIONS];
@@ -114,6 +108,7 @@ namespace GFlowSimulation {
     RealType *sg = Base::simData->sg;
     RealType displacement[DIMENSIONS]; // To calculate displacement, normal vector
     RealType F[DIMENSIONS];
+
     // Get displacement
     getDisplacement(x[id1], x[id2], displacement, bounds, boundaryConditions);
     // Check if the particles should interact
