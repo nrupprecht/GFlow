@@ -34,7 +34,8 @@ namespace GFlowSimulation {
       #if _INTEL_ == 1
       #pragma unroll(DIMENSIONS)
       #endif 
-      for (int d=0; d<DIMENSIONS; ++d) v[i][d] += hdt*im[i]*f[i][d];
+      //for (int d=0; d<DIMENSIONS; ++d) v[i][d] += hdt*im[i]*f[i][d];
+      for (int d=0; d<DIMENSIONS; ++d) simData->V(i,d) += hdt*im[i]*simData->F(i,d);
     }
 
     #if _INTEL_ == 1
@@ -49,7 +50,8 @@ namespace GFlowSimulation {
       #if _INTEL_ == 1
       #pragma unroll(DIMENSIONS)
       #endif 
-      for (int d=0; d<DIMENSIONS; ++d) x[i][d] += dt*v[i][d];
+      //for (int d=0; d<DIMENSIONS; ++d) x[i][d] += dt*v[i][d];
+      for (int d=0; d<DIMENSIONS; ++d) simData->X(i,d) += dt*simData->V(i,d);
       // Could update angular variables here ... 
     }
   }
@@ -79,7 +81,8 @@ namespace GFlowSimulation {
       #if _INTEL_ == 1
       #pragma unroll(DIMENSIONS)
       #endif 
-      for (int d=0; d<DIMENSIONS; ++d) v[i][d] += hdt*im[i]*f[i][d];
+      //for (int d=0; d<DIMENSIONS; ++d) v[i][d] += hdt*im[i]*f[i][d];
+      for (int d=0; d<DIMENSIONS; ++d) simData->V(i,d) += hdt*im[i]*simData->F(i,d);
       // Could update angular variables here ... 
     }
   }
