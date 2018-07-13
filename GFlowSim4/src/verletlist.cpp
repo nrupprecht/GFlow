@@ -2,6 +2,8 @@
 #include "utility.hpp"
 #include "force.hpp"
 
+#include "force.hpp"
+
 namespace GFlowSimulation {
 
   VerletList::VerletList() : verlet(nullptr), heads(nullptr), vsize(0), hsize(0), vcapacity(0), hcapacity(0), 

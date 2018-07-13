@@ -77,6 +77,10 @@ namespace GFlowSimulation {
     RealType displacement[DIMENSIONS]; // To calculate displacement, normal vector
     RealType F[DIMENSIONS];
 
+    Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
+    BCFlag boundaryConditions[DIMENSIONS]; 
+    copyVec(Base::gflow->getBCs(), boundaryConditions); // Keep a local copy of the wrap frags
+
     getDisplacement(x[id1], x[id2], displacement, bounds, boundaryConditions);
     // Check if the particles should interact
     RealType dsqr = sqr(displacement);

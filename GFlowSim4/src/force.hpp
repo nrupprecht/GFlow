@@ -41,8 +41,6 @@ namespace GFlowSimulation {
     // Return the number of heads in the verlet list
     int vlHSize() const;
 
-    // --- Accessors
-
     // Get the verlet list (get it as a const reference)
     const VerletList& getVerletList() const;
 
@@ -69,12 +67,6 @@ namespace GFlowSimulation {
 
     // The neighbor (verlet) lists for all the pairs of atoms between which this force is active
     VerletList verletList;
-
-    // The simulation bounds
-    Bounds bounds;
-
-    // The simulation boundary conditions
-    BCFlag boundaryConditions[DIMENSIONS];
   };
 
 }

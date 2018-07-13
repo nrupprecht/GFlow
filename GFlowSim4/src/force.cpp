@@ -5,20 +5,9 @@
 
 namespace GFlowSimulation {
 
-  Force::Force(GFlow *gflow) : Base(gflow) {
-    // Local copies of the data
-    bounds = gflow->getBounds();
-    copyVec(Base::gflow->getBCs(), boundaryConditions);
-  };
+  Force::Force(GFlow *gflow) : Base(gflow) {};
 
   Force::~Force() {}
-
-  void Force::initialize() {
-    Base::initialize();
-    // Local copies of the data
-    bounds = gflow->getBounds();
-    copyVec(Base::gflow->getBCs(), boundaryConditions);
-  }
 
   int Force::lastHead() const {
     return verletList.lastHead();

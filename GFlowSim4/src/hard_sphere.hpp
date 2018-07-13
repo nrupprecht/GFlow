@@ -16,6 +16,8 @@ namespace GFlowSimulation {
     // Find the force given two particle ids
     virtual void forceKernel(int, int) final;
 
+    virtual void forceKernel(int, int) final;
+
     void setRepulsion(RealType r);
 
   private:
