@@ -24,6 +24,8 @@ namespace GFlowSimulation {
     // Calculate all the forces between atoms in the verlet lists
     virtual void calculateForces() = 0;
 
+    virtual void forceKernel(int, int) = 0;
+
     // --- Accessors
 
     // Return the last head added to the head array
@@ -34,8 +36,6 @@ namespace GFlowSimulation {
 
     // Return the number of heads in the verlet list
     int vlHSize() const;
-
-    // --- Accessors
 
     // Get the verlet list (get it as a const reference)
     const VerletList& getVerletList() const;
@@ -63,9 +63,6 @@ namespace GFlowSimulation {
 
     // The neighbor (verlet) lists for all the pairs of atoms between which this force is active
     VerletList verletList;
-
-    // Type map - this allows different types of particles to be mapped to being the first or second particle type
-    int *typeMap; // { 0, 1, 0, -1, -1, etc... } -- 0: first spot, 1: second spot, -1: invalid. Indexed by particle id (for id>=0)
   };
 
 }

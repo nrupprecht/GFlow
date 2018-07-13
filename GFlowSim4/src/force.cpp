@@ -5,11 +5,9 @@
 
 namespace GFlowSimulation {
 
-  Force::Force(GFlow *gflow) : Base(gflow), typeMap(nullptr) {};
+  Force::Force(GFlow *gflow) : Base(gflow) {};
 
-  Force::~Force() {
-    if (typeMap) delete [] typeMap;
-  }
+  Force::~Force() {}
 
   int Force::lastHead() const {
     return verletList.lastHead();
