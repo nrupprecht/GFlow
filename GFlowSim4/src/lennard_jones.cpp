@@ -17,9 +17,6 @@ namespace GFlowSimulation {
     RealType **x = Base::simData->x, **f = Base::simData->f;
     RealType *sg = Base::simData->sg;
     RealType displacement[DIMENSIONS], normal[DIMENSIONS]; // To calculate displacement, normal vector
-    Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
-    BCFlag boundaryConditions[DIMENSIONS]; 
-    copyVec(Base::gflow->getBCs(), boundaryConditions); // Keep a local copy of the wrap frags
     RealType sigma; // Will hold the interaction radius of the head particle
 
     // Get verlet list data

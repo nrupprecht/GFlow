@@ -1,15 +1,17 @@
 #include "verletlist.hpp"
 #include "utility.hpp"
+#include "force.hpp"
 
 #include "force.hpp"
 
 namespace GFlowSimulation {
 
   VerletList::VerletList() : verlet(nullptr), heads(nullptr), vsize(0), hsize(0), vcapacity(0), hcapacity(0), 
-    default_verlet_capacity(1024), default_head_capacity(64) {};
+    default_verlet_capacity(1024), default_head_capacity(64), _current_point(0), _next_head(0), _next_head_number(0), _last_region(false) {};
 
   VerletList::VerletList(const VerletList& vl) : vsize(vl.vsize), hsize(vl.hsize), vcapacity(vl.vcapacity), 
-    hcapacity(vl.hcapacity), default_verlet_capacity(vl.default_verlet_capacity), default_head_capacity(vl.default_head_capacity) 
+    hcapacity(vl.hcapacity), default_verlet_capacity(vl.default_verlet_capacity), default_head_capacity(vl.default_head_capacity), 
+    _current_point(0), _next_head(0), _next_head_number(0), _last_region(false)
   {
     // Allocate and copy arrays
     verlet = new int[vcapacity];
@@ -44,7 +46,7 @@ namespace GFlowSimulation {
   // Add a new head
   void VerletList::addHead(int id) {
     // Check if we need to resize
-    if (hsize==hcapacity) resizeHeads();
+    if (hsize>=hcapacity-1) resizeHeads(); // Make sure there is a pad
     if (vsize==vcapacity) resizeVerlet();
     // Set and increment
     heads [hsize++] = vsize; // Mark where the next head is in the verlet list

@@ -63,6 +63,7 @@ namespace GFlowSimulation {
     RealType* V(int n)        { return v[n]; }
     RealType& F(int n, int d) { return f[n][d]; }
     RealType* F(int n)        { return f[n]; }
+    RealType& IM(int n)       { return im[n]; }
 
     RealType* DataF(int n)    { return dataF[n]; }
     int*      DataI(int n)    { return dataI[n]; }

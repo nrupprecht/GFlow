@@ -61,7 +61,7 @@ namespace GFlowSimulation {
     inline void resizeHeads();
 
     // --- Data
-    int *verlet, *heads;
+    int *verlet, *heads; // Make sure hsize is less than or equal to vcapacity-1 so we have a pad at the end
     int vsize, hsize, vcapacity, hcapacity;
     int default_verlet_capacity, default_head_capacity;
 
