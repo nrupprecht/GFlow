@@ -5,47 +5,47 @@
 
 namespace GFlowSimulation {
 
-  VerletList::VerletList() : verlet(nullptr), heads(nullptr), vsize(0), hsize(0), vcapacity(0), hcapacity(0) {};
+  VerletList::VerletList() : verlet(nullptr), vsize(0), hsize(0), vcapacity(0) {};
 
-  VerletList::VerletList(const VerletList& vl) : vsize(vl.vsize), hsize(vl.hsize), vcapacity(vl.vcapacity), 
-    hcapacity(vl.hcapacity)
+  VerletList::VerletList(const VerletList& vl) : vsize(vl.vsize), hsize(vl.hsize), vcapacity(vl.vcapacity)
   {
     // Allocate and copy arrays
     verlet = new int[vcapacity];
     copyArray(vl.verlet, verlet, vsize); // Only the first [vsize] elements matter
-    heads = new int[hcapacity];
-    copyArray(vl.heads, heads, hsize);
+    //--> heads = new int[hcapacity];
+    //--> copyArray(vl.heads, heads, hsize);
   }
 
   VerletList::~VerletList() {
     if (verlet) delete [] verlet;
-    if (heads)  delete [] heads;
+    //--> if (heads)  delete [] heads;
   }
 
   VerletList& VerletList::operator=(const VerletList& vl) {
     hsize = vl.hsize;
-    hcapacity = vl.hcapacity;
+    //--> hcapacity = vl.hcapacity;
     vsize = vl.vsize;
     vcapacity = vl.vcapacity;
     // Deallocate old arrays
     if (verlet) delete [] verlet;
-    if (heads)  delete [] heads;
+    //--> if (heads)  delete [] heads;
     // Allocate and copy arrays
     verlet = new int[vcapacity];
     copyArray(vl.verlet, verlet, vsize); // Only the first [vsize] elements matter
-    heads = new int[hcapacity];
-    copyArray(vl.heads, heads, hsize);
+    //--> heads = new int[hcapacity];
+    //--> copyArray(vl.heads, heads, hsize);
     return *this;
   }
 
   // Add a new head
   void VerletList::addHead(int id) {
     // Check if we need to resize
-    if (hsize==hcapacity) resizeHeads();
+    //--> if (hsize==hcapacity) resizeHeads();
     if (vsize==vcapacity) resizeVerlet();
     // Set and increment
-    heads [hsize++] = vsize; // Mark where the next head is in the verlet list
-    verlet[vsize++] = id;
+    //--> heads [hsize++] = vsize; // Mark where the next head is in the verlet list
+    ++hsize; //-->
+    verlet[vsize++] = -id-1; // n -> -(n+1) so 0 -> -1
   }
 
   // Add an element to the head
@@ -55,6 +55,7 @@ namespace GFlowSimulation {
   }
 
   bool VerletList::begin(int &id) const {
+    /*
     // If the list is empty, return false
     if (vsize==0) return false;
     // Set id to be the first head and helper variables
@@ -65,9 +66,12 @@ namespace GFlowSimulation {
     _last_region = (hsize==1); // If there is only one head, we are already in the last verlet list
     // Return true
     return true;
+    */
+    return true;
   }
 
   bool VerletList::next(int &id1, int &id2) const {
+    /*
     switch (_last_region) {
       // We are not iterating through the last verlet list
       case false: {
@@ -98,9 +102,12 @@ namespace GFlowSimulation {
     // If _current_point==vsize, we have reached the end of the verlet lists. Return true if _current_point<=vsize
     // (_current_point has already been incremented, hence allowing _current_point==vsize)
     return (_current_point<=vsize);
+    */
+    return true;
   }
 
   void VerletList::forceLoop(const Force *force) const {
+    /*
     if (hsize==0) return; // No forces to calculate
     int h0, h1, id1, id2; // Head pointers, id pointers
 
@@ -121,13 +128,18 @@ namespace GFlowSimulation {
       id2 = verlet[h0];
       force->forceKernel(id1, id2);
     }
+    */
   }
 
   int VerletList::lastHead() const {
   // Return the id of the last head
+    /*
     if (hsize>0)
       return verlet[heads[hsize-1]]; 
     else return -1;
+    */
+    throw 7;
+    return 0;
   }
 
   int VerletList::vlSize() const {
@@ -144,9 +156,11 @@ namespace GFlowSimulation {
   }
 
   // Get a (const) pointer to the heads array
+  /*
   const int* VerletList::getHeads() const {
     return heads;
   }
+  */
 
   void VerletList::clear() {
     vsize = 0;
@@ -163,6 +177,7 @@ namespace GFlowSimulation {
     verlet = newVerlet;
   }
   
+  /*
   inline void VerletList::resizeHeads() {
     int newCapacity = hcapacity>0 ? static_cast<int>(1.5*hcapacity) : 64;
     int *newHeads = new int[newCapacity];
@@ -172,5 +187,6 @@ namespace GFlowSimulation {
     if (heads) delete [] heads;
     heads = newHeads;
   }
+  */
 
 }

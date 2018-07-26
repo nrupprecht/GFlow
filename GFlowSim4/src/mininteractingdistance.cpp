@@ -8,6 +8,7 @@ namespace GFlowSimulation {
   MinInteractingDistance::MinInteractingDistance(GFlow* gflow) : DataObject(gflow, "MinIntDist") {};
 
   void MinInteractingDistance::post_step() {
+    /*
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
     
@@ -59,6 +60,7 @@ namespace GFlowSimulation {
     // Store data
     RealType time = Base::gflow->getElapsedTime();
     data.push_back(RPair(time, minDistance));
+    */
   }
 
   bool MinInteractingDistance::writeToFile(string fileName, bool useName) {

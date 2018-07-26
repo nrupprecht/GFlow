@@ -9,6 +9,7 @@ namespace GFlowSimulation {
   LennardJones::LennardJones(GFlow *gflow) : Force(gflow), strength(DEFAULT_LENNARD_JONES_STRENGTH), cutoff(DEFAULT_LENNARD_JONES_CUTOFF) {};
 
   void LennardJones::calculateForces() const {
+    /*
     int nheads = verletList.vlHSize(), nverlet = verletList.vlSize();
     if (nheads==0) return; // No forces to calculate
     int h0, h1, id1, id2; // Head pointers, id pointers
@@ -72,6 +73,7 @@ namespace GFlowSimulation {
         minusEqVec(f[id2], F);
       }
     }
+    */
   }
 
   void LennardJones::forceKernel(int id1, int id2) const {

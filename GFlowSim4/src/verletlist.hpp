@@ -55,17 +55,19 @@ namespace GFlowSimulation {
     const int* getVerlet() const;
 
     // Get a (const) pointer to the heads array
-    const int* getHeads() const;
+    // const int* getHeads() const;
 
   private:
 
     // --- Helper functions
     inline void resizeVerlet(); 
-    inline void resizeHeads();
+    // inline void resizeHeads();
 
     // --- Data
-    int *verlet, *heads;
-    int vsize, hsize, vcapacity, hcapacity;
+    int *verlet;
+    //--> int *heads;
+    int vsize, hsize, vcapacity;
+    //--> hcapacity;
 
     // --- For iteration through pairs of interacting particles
     mutable int _current_point;    // The current address in [verlet] that the second particle (id2) is
