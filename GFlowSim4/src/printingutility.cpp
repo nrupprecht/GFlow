@@ -56,7 +56,6 @@ namespace GFlowSimulation {
     if (fout.fail()) return false;
 
     // Get the data
-    /*
     const int hsize = vl.vlHSize(), vsize = vl.vlSize();
     const int *heads = vl.getHeads(), *verlet = vl.getVerlet();
     // Write the data
@@ -74,8 +73,6 @@ namespace GFlowSimulation {
       fout << verlet[p];
       if (p!=vsize-1) fout << ",";
     }
-    */
-    throw false; // Need to reimplement
 
     // Return success
     return true;

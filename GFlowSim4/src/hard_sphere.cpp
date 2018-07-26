@@ -13,9 +13,8 @@ namespace GFlowSimulation {
     //verletList.forceLoop(this);
     //return;
     
-    int nheads = verletList.vlHSize(), nverlet = verletList.vlSize();
-    if (nheads==0) return; // No forces to calculate
-    int h0, h1, id1, id2; // Head pointers, id pointers
+    int nverlet = verletList.vlSize(), id1, id2; // List length, id pointers
+    if (verletList.vlHSize()==0) return; // No forces to calculate
 
     // Get the data we need
     RealType **x = Base::simData->x, **f = Base::simData->f;
@@ -28,15 +27,13 @@ namespace GFlowSimulation {
 
     // Get verlet list data
     const int *verlet = verletList.getVerlet();
-    // const int *heads  = verletList.getHeads();
     RealType F[DIMENSIONS];
 
     // --- Go through all particles
-    for (int i=0; i<verletList.vlSize(); ++i) {
+    for (int i=0; i<nverlet; ++i) {
       if (verlet[i]<0) {
-        id1 = -verlet[i]-1;
+        id1 = -verlet[i++]-1;
         sigma = sg[id1]; // Interaction radius of the head particle
-        ++i;
       }
       id2 = verlet[i];
       // Get the displacement between the particles
@@ -52,7 +49,6 @@ namespace GFlowSimulation {
         plusEqVec (f[id1], F);
         minusEqVec(f[id2], F);
       }
-    
     }
 
     /*

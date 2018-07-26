@@ -9,10 +9,11 @@ namespace GFlowSimulation {
   LennardJones::LennardJones(GFlow *gflow) : Force(gflow), strength(DEFAULT_LENNARD_JONES_STRENGTH), cutoff(DEFAULT_LENNARD_JONES_CUTOFF) {};
 
   void LennardJones::calculateForces() const {
-    /*
-    int nheads = verletList.vlHSize(), nverlet = verletList.vlSize();
-    if (nheads==0) return; // No forces to calculate
-    int h0, h1, id1, id2; // Head pointers, id pointers
+    //verletList.forceLoop(this);
+    //return;
+    
+    int nverlet = verletList.vlSize(), id1, id2; // List length, id pointers
+    if (verletList.vlHSize()==0) return; // No forces to calculate
 
     // Get the data we need
     RealType **x = Base::simData->x, **f = Base::simData->f;
@@ -25,47 +26,22 @@ namespace GFlowSimulation {
 
     // Get verlet list data
     const int *verlet = verletList.getVerlet();
-    const int *heads  = verletList.getHeads();
-    // Hold the forces in the same array
     RealType F[DIMENSIONS];
+
     // --- Go through all particles
-    for (int h=0; h<nheads-1; ++h) {
-      h0 = heads[h]; 
-      h1 = heads[h+1];    // This delimits the end of this part of the verlet list
-      id1 = verlet[h0++]; // First particle head might interact with is the one after the head
-      sigma = sg[id1];    // Interaction radius of the head particle
-      for ( ; h0<h1; ++h0) {
-        id2 = verlet[h0];
-        // Get the displacement between the particles
-        getDisplacement(x[id1], x[id2], displacement, bounds, boundaryConditions);
-        // Check if the particles should interact
-        RealType dsqr = sqr(displacement);
-        if (dsqr < sqr(sigma + sg[id2])) {
-          RealType distance = sqrt(dsqr);
-          // Get the normal vector
-          scalarMultVec(1./distance, displacement, normal);
-          // normalVec(displacement, normal); 
-          // Calculate force strength
-          forceStrength(F, normal, distance, id1, id2);
-          // Add force
-          plusEqVec (f[id1], F);
-          minusEqVec(f[id2], F);
-        }
+    for (int i=0; i<nverlet; ++i) {
+      if (verlet[i]<0) {
+        id1 = -verlet[i++]-1;
+        sigma = sg[id1]; // Interaction radius of the head particle
       }
-    }
-    // Last part of the lists - there is no "next head" to delimit the end, the end is the end of the list
-    h0 = heads[nheads-1]; // Last head
-    id1 = verlet[h0++];   // First particle is the one after the head
-    sigma = sg[id1];
-    for (; h0<nverlet; ++h0) {
-      id2 = verlet[h0];
+      id2 = verlet[i];
       // Get the displacement between the particles
       getDisplacement(x[id1], x[id2], displacement, bounds, boundaryConditions);
       // Check if the particles should interact
       RealType dsqr = sqr(displacement);
       if (dsqr < sqr(sigma + sg[id2])) {
         RealType distance = sqrt(dsqr);
-        normalVec(displacement, normal); // Get the normal vector
+        scalarMultVec(1./distance, displacement, normal);
         // Calculate force strength
         forceStrength(F, normal, distance, id1, id2);
         // Add force
@@ -73,7 +49,6 @@ namespace GFlowSimulation {
         minusEqVec(f[id2], F);
       }
     }
-    */
   }
 
   void LennardJones::forceKernel(int id1, int id2) const {

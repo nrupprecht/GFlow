@@ -55,26 +55,20 @@ namespace GFlowSimulation {
     const int* getVerlet() const;
 
     // Get a (const) pointer to the heads array
-    // const int* getHeads() const;
+    const int* getHeads() const;
 
   private:
 
     // --- Helper functions
     inline void resizeVerlet(); 
-    // inline void resizeHeads();
+    inline void resizeHeads();
 
     // --- Data
-    int *verlet;
-    //--> int *heads;
-    int vsize, hsize, vcapacity;
-    //--> hcapacity;
-    int last_head; // The last head that was added
+    int *verlet, *heads;
+    int vsize, hsize, vcapacity, hcapacity;
 
     // --- For iteration through pairs of interacting particles
-    mutable int _current_point;    // The current address in [verlet] that the second particle (id2) is
-    mutable int _next_head;        // The address in [verlet] where the next head is
-    mutable int _next_head_number; // The address in [heads] where the next head is
-    mutable bool _last_region;     // True if we are iterating through the list for the last head particle
+    mutable int _current_point;    // The current address in [verlet] that we are to look at
   };
 
 }
