@@ -57,7 +57,7 @@ namespace GFlowSimulation {
     verlet[vsize++] = id;
   }
 
-  bool VerletList::begin(int &id) {
+  bool VerletList::begin(int &id) const {
     // If the list is empty, return false
     if (vsize==0) return false;
     // Set id to be the first head and helper variables
@@ -70,7 +70,7 @@ namespace GFlowSimulation {
     return true;
   }
 
-  bool VerletList::next(int &id1, int &id2) {
+  bool VerletList::next(int &id1, int &id2) const {
     switch (_last_region) {
       // We are not iterating through the last verlet list
       case false: {

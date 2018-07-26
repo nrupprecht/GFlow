@@ -63,12 +63,12 @@ namespace GFlowSimulation {
     RealType* V(int n)        { return v[n]; }
     RealType& F(int n, int d) { return f[n][d]; }
     RealType* F(int n)        { return f[n]; }
-    RealType  Sg(int n)       { return sg[n]; }
-    RealType  Im(int n)       { return im[n]; }
-    int       Type(int n)     { return type[n]; }
+    RealType& Sg(int n)       { return sg[n]; }
+    RealType& Im(int n)       { return im[n]; }
+    int&      Type(int n)     { return type[n]; }
     RealType* DataF(int n)    { return dataF[n]; }
     int*      DataI(int n)    { return dataI[n]; }
-    int       Body(int n)     { return body[n]; }
+    int&      Body(int n)     { return body[n]; }
 
     // --- Particle data
 

@@ -8,8 +8,10 @@ namespace GFlowSimulation {
 
   HardSphere::HardSphere(GFlow *gflow) : Force(gflow), repulsion(DEFAULT_HARD_SPHERE_REPULSION) {};
 
+  
   void HardSphere::calculateForces() const {
     //verletList.forceLoop(this);
+    //return;
     
     int nheads = verletList.vlHSize(), nverlet = verletList.vlSize();
     if (nheads==0) return; // No forces to calculate
@@ -74,7 +76,7 @@ namespace GFlowSimulation {
     }
   }
 
-  /*
+/*
   void HardSphere::calculateForces() const {
     // Id pointers for the particles
     int id1(0), id2(0);

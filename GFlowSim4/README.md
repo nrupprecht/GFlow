@@ -43,7 +43,7 @@ Run with
 
 * Bond/angle modifier
 
-* Time step monitoring
+* Time step monitoring --- Completed.
 
 * Vectorize integration step
 

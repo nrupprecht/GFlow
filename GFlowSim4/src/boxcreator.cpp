@@ -67,20 +67,15 @@ namespace GFlowSimulation {
       number = phi*vol/sphere_volume(radius);
     }
     // Add some objects
-    gflow->simData->reserve(number);
-    gflow->simData->number = number;
-    // Get pointers to particle data
-    RealType **x = gflow->simData->x;
-    RealType **v = gflow->simData->v;
-    RealType *sg = gflow->simData->sg;
-    RealType *im = gflow->simData->im;
-    int *type    = gflow->simData->type;
+    SimData *simData = gflow->simData;
+    simData->reserve(number);
+    simData->number = number;
     for (int n=0; n<number; ++n) {
       // Give some random initial positions - we will allow these to relax
-      for (int d=0; d<DIMENSIONS; ++d) x[n][d] = (drand48()-0.5)*width;
-      sg[n] = radius;
-      im[n] = 1.0 / (1.0 * PI*sqr(radius)); // Density of 1
-      type[n] = 0;
+      for (int d=0; d<DIMENSIONS; ++d) simData->X(n, d) = (drand48()-0.5)*width;
+      simData->Sg(n) = radius;
+      simData->Im(n) = 1.0 / (1.0 * PI*sqr(radius)); // Density of 1
+      simData->Type(n) = 0;
     }
 
     // --- Handle forces
@@ -115,12 +110,12 @@ namespace GFlowSimulation {
     for (int n=0; n<number; ++n) {
       // Give some random velocities
       double ke = fabs(vsgma*normal_dist(generator));
-      double velocity = sqrt(2*im[n]*ke/127.324);
+      double velocity = sqrt(2*simData->Im(n)*ke/127.324);
       // Random normal vector
       randomNormalVec(normal);
       // Set the velocity
-      scalarMultVec(velocity, normal, v[n]);
-      sg[n] = radius;
+      scalarMultVec(velocity, normal, simData->V(n));
+      simData->Sg(n) = radius;
     }
 
     return gflow;

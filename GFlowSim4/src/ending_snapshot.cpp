@@ -21,9 +21,9 @@ namespace GFlowSimulation {
       // Add data - [dataWidth]'s worth
       int d=0;
       for (; d<DIMENSIONS; ++d)
-        positions[dataWidth*i+d] = Base::simData->x[i][d];
-      positions[dataWidth*i+d++] = Base::simData->sg[i];
-      positions[dataWidth*i+d++] = Base::simData->type[i];
+        positions[dataWidth*i+d] = Base::simData->X(i, d);
+      positions[dataWidth*i+d++] = Base::simData->Sg(i);
+      positions[dataWidth*i+d++] = Base::simData->Type(i);
     }
   }
 

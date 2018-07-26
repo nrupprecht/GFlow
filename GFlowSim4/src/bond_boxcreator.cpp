@@ -70,16 +70,11 @@ namespace GFlowSimulation {
     // Add some objects
     RealType eqLength = 2.1*radius; // Equilibrium bond length
     number = 2*(number/2);
-    gflow->simData->reserve(number);
-    gflow->simData->number = number;
-    // Get pointers to particle data
-    RealType **x = gflow->simData->x;
-    RealType **v = gflow->simData->v;
-    RealType *sg = gflow->simData->sg;
-    RealType *im = gflow->simData->im;
+    SimData *simData = gflow->simData;
+    simData->reserve(number);
+    simData->number = number;
     // For choosing the center of a particle pair, and their displacement from the center
     RealType center[DIMENSIONS], normal[DIMENSIONS]; 
-    int *type    = gflow->simData->type;
     for (int n=0; n<number/2; ++n) {
       int id1 = 2*n, id2 = 2*n+1;
       // --- Give the pair some random initial positions near each other - we will allow these to relax
@@ -89,16 +84,16 @@ namespace GFlowSimulation {
       scalarMultVec(0.5*eqLength, normal);
 
       // Set positions
-      addVec(center, normal, x[id1]);
-      subtractVec(center, normal, x[id2]);
+      addVec(center, normal, simData->X(id1));
+      subtractVec(center, normal, simData->X(id2));
       // Put a bond between them
       HarmonicBond *bond = new HarmonicBond(gflow, id1, id2);
       bond->setSpringK(1.);
       gflow->addModifier(bond);
       // Give a radius, mass, and type
-      sg[id1] = sg[id2] = radius;
-      im[id1] = im[id2] = 1.0 / (1.0 * PI*sqr(radius)); // Density of 1
-      type[id1] = type[id2] = 0;
+      simData->Sg(id1) = simData->Sg(id2) = radius;
+      simData->Im(id1) = simData->Im(id2) = 1.0 / (1.0 * PI*sqr(radius)); // Density of 1
+      simData->Type(id1) = simData->Type(id2) = 0;
     }
     // Wrap positions
     gflow->wrapPositions();
@@ -122,12 +117,12 @@ namespace GFlowSimulation {
     for (int n=0; n<number/2; ++n) {
       // Give some random velocities
       double ke = fabs(vsgma*normal_dist(generator));
-      double velocity = sqrt(2*im[n]*ke/127.324);
+      double velocity = sqrt(2*simData->Im(n)*ke/127.324);
       // Random normal vector
       randomNormalVec(normal);
       // Set the velocity
-      scalarMultVec(velocity, normal, v[2*n]);
-      scalarMultVec(velocity, normal, v[2*n+1]);
+      scalarMultVec(velocity, normal, simData->V(2*n));
+      scalarMultVec(velocity, normal, simData->V(2*n+1));
     }
 
     return gflow;

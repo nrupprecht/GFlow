@@ -81,24 +81,19 @@ namespace GFlowSimulation {
     gflow->simData->number = number;
     // Get pointers to particle data
     SimData *simData = gflow->simData;
-    RealType **x = simData->x;
-    RealType **v = simData->v;
-    RealType *sg = simData->sg;
-    RealType *im = simData->im;
-    int *type    = simData->type;
     for (int n=0; n<number; ++n) {
       // Give some random initial positions - we will allow these to relax
-      for (int d=0; d<DIMENSIONS; ++d) x[n][d] = (drand48()-0.5)*width;
-      sg[n] = radius;
-      im[n] = 1.0 / (1.0 * PI*sqr(radius)); // Density of 1
+      for (int d=0; d<DIMENSIONS; ++d) simData->X(n, d) = (drand48()-0.5)*width;
+      simData->Sg(n) = radius;
+      simData->Im(n) = 1.0 / (1.0 * PI*sqr(radius)); // Density of 1
       // Choose particle type
       RealType randreal = real_dist(generator);
       if (ntypes>2) {
-        type[n] = static_cast<int>(randreal*ntypes);
+        simData->Type(n) = static_cast<int>(randreal*ntypes);
       }
       else {
-        if (randreal<portion) type[n] = 0;
-        else                  type[n] = 1;
+        if (randreal<portion) simData->Type(n) = 0;
+        else                  simData->Type(n) = 1;
       }
     }
 
@@ -134,12 +129,12 @@ namespace GFlowSimulation {
     for (int n=0; n<number; ++n) {
       // Give some random velocities
       double ke = fabs(vsgma*normal_dist(generator));
-      double velocity = sqrt(2*im[n]*ke/127.324);
+      double velocity = sqrt(2*simData->Im(n)*ke/127.324);
       // Random normal vector
       randomNormalVec(normal);
       // Set the velocity
-      scalarMultVec(velocity, normal, v[n]);
-      sg[n] = radius;
+      scalarMultVec(velocity, normal, simData->V(n));
+      simData->Sg(n) = radius;
     }
 
     return gflow;
