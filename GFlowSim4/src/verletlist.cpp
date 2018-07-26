@@ -5,11 +5,10 @@
 
 namespace GFlowSimulation {
 
-  VerletList::VerletList() : verlet(nullptr), heads(nullptr), vsize(0), hsize(0), vcapacity(0), hcapacity(0), 
-    default_verlet_capacity(1024), default_head_capacity(64) {};
+  VerletList::VerletList() : verlet(nullptr), heads(nullptr), vsize(0), hsize(0), vcapacity(0), hcapacity(0) {};
 
   VerletList::VerletList(const VerletList& vl) : vsize(vl.vsize), hsize(vl.hsize), vcapacity(vl.vcapacity), 
-    hcapacity(vl.hcapacity), default_verlet_capacity(vl.default_verlet_capacity), default_head_capacity(vl.default_head_capacity)
+    hcapacity(vl.hcapacity)
   {
     // Allocate and copy arrays
     verlet = new int[vcapacity];
@@ -28,8 +27,6 @@ namespace GFlowSimulation {
     hcapacity = vl.hcapacity;
     vsize = vl.vsize;
     vcapacity = vl.vcapacity;
-    default_verlet_capacity = vl.default_verlet_capacity;
-    default_head_capacity = vl.default_head_capacity;
     // Deallocate old arrays
     if (verlet) delete [] verlet;
     if (heads)  delete [] heads;
@@ -157,7 +154,7 @@ namespace GFlowSimulation {
   }
 
   inline void VerletList::resizeVerlet() {
-    int newCapacity = vcapacity>0 ? static_cast<int>(1.5*vcapacity) : default_verlet_capacity;
+    int newCapacity = vcapacity>0 ? static_cast<int>(1.5*vcapacity) : 1024;
     int *newVerlet = new int[newCapacity];
     for (int i=0; i<vcapacity; ++i) newVerlet[i] = verlet[i];
     vcapacity = newCapacity;
@@ -167,7 +164,7 @@ namespace GFlowSimulation {
   }
   
   inline void VerletList::resizeHeads() {
-    int newCapacity = hcapacity>0 ? static_cast<int>(1.5*hcapacity) : default_head_capacity;
+    int newCapacity = hcapacity>0 ? static_cast<int>(1.5*hcapacity) : 64;
     int *newHeads = new int[newCapacity];
     for (int i=0; i<hcapacity; ++i) newHeads[i] = heads[i];
     hcapacity = newCapacity;

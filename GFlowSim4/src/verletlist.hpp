@@ -66,7 +66,6 @@ namespace GFlowSimulation {
     // --- Data
     int *verlet, *heads;
     int vsize, hsize, vcapacity, hcapacity;
-    int default_verlet_capacity, default_head_capacity;
 
     // --- For iteration through pairs of interacting particles
     mutable int _current_point;    // The current address in [verlet] that the second particle (id2) is
