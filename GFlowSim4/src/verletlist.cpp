@@ -5,9 +5,9 @@
 
 namespace GFlowSimulation {
 
-  VerletList::VerletList() : verlet(nullptr), vsize(0), hsize(0), vcapacity(0) {};
+  VerletList::VerletList() : verlet(nullptr), vsize(0), hsize(0), vcapacity(0), last_head(-1) {};
 
-  VerletList::VerletList(const VerletList& vl) : vsize(vl.vsize), hsize(vl.hsize), vcapacity(vl.vcapacity)
+  VerletList::VerletList(const VerletList& vl) : vsize(vl.vsize), hsize(vl.hsize), vcapacity(vl.vcapacity), last_head(-1)
   {
     // Allocate and copy arrays
     verlet = new int[vcapacity];
@@ -45,6 +45,7 @@ namespace GFlowSimulation {
     // Set and increment
     //--> heads [hsize++] = vsize; // Mark where the next head is in the verlet list
     ++hsize; //-->
+    last_head = id;
     verlet[vsize++] = -id-1; // n -> -(n+1) so 0 -> -1
   }
 
@@ -138,8 +139,7 @@ namespace GFlowSimulation {
       return verlet[heads[hsize-1]]; 
     else return -1;
     */
-    throw 7;
-    return 0;
+    return last_head;
   }
 
   int VerletList::vlSize() const {
@@ -165,6 +165,7 @@ namespace GFlowSimulation {
   void VerletList::clear() {
     vsize = 0;
     hsize = 0;
+    last_head = -1;
   }
 
   inline void VerletList::resizeVerlet() {

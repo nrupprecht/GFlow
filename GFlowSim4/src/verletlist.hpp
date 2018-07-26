@@ -68,6 +68,7 @@ namespace GFlowSimulation {
     //--> int *heads;
     int vsize, hsize, vcapacity;
     //--> hcapacity;
+    int last_head; // The last head that was added
 
     // --- For iteration through pairs of interacting particles
     mutable int _current_point;    // The current address in [verlet] that the second particle (id2) is
