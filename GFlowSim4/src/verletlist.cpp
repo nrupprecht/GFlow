@@ -57,7 +57,7 @@ namespace GFlowSimulation {
     // If the list is empty, return false
     if (vsize==0) return false;
     // Set id to be the first head and helper variables
-    id = verlet[0];        // [id] is the first head, which is the first particle in [verlet]
+    id = -verlet[0]-1;        // [id] is the first head, which is the first particle in [verlet]
     _current_point = 1;
     // Return true
     return true;

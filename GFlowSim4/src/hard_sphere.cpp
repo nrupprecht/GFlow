@@ -13,7 +13,7 @@ namespace GFlowSimulation {
     //verletList.forceLoop(this);
     //return;
     
-    int nverlet = verletList.vlSize(), id1, id2; // List length, id pointers
+    int nverlet = verletList.vlSize(), id1(0), id2(0); // List length, id pointers
     if (verletList.vlHSize()==0) return; // No forces to calculate
 
     // Get the data we need
@@ -162,8 +162,6 @@ namespace GFlowSimulation {
   }
 
   inline void HardSphere::forceStrength(RealType *F, const RealType *normal, const RealType distance, const int id1, const int id2) const {
-    // RealType *sg = Base::simData->sg;
-    // scalarMultVec(repulsion*(sg[id1] + sg[id2] - distance), normal, F);
     scalarMultVec(repulsion*(simData->Sg(id1) + simData->Sg(id2) - distance), normal, F);
   }
 
