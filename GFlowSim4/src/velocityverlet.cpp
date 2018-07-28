@@ -13,10 +13,12 @@ namespace GFlowSimulation {
 
     // Half a timestep
     RealType hdt = 0.5*Integrator::dt;
-
     // Number of (real - non ghost) particles
     int number = simData->number;
+    // Get arrays
+    RealType *x = simData->x[0], *v = simData->v[0], *f = simData->f[0], *im = simData->im;
 
+    // Update velocities
     #if _INTEL_ == 1
     #pragma vector aligned
     #pragma simd
@@ -25,15 +27,12 @@ namespace GFlowSimulation {
     #pragma clang loop vectorize(enable)
     #pragma clang loop interleave(enable)
     #endif
-    for (int i=0; i<number; ++i) {
-      // Update linear velocity (half) and position (full) -- we want this loop unrolled
-      #if _INTEL_ == 1
-      #pragma unroll(DIMENSIONS)
-      #endif 
-      //for (int d=0; d<DIMENSIONS; ++d) v[i][d] += hdt*im[i]*f[i][d];
-      for (int d=0; d<DIMENSIONS; ++d) simData->V(i,d) += hdt*simData->im[i]*simData->F(i,d);
+    for (int i=0; i<number*DIMENSIONS; ++i) {
+      int id = i/DIMENSIONS;
+      v[i] += hdt*im[id]*f[i];
     }
 
+    // Update positions
     #if _INTEL_ == 1
     #pragma vector aligned
     #pragma simd
@@ -42,14 +41,8 @@ namespace GFlowSimulation {
     #pragma clang loop vectorize(enable)
     #pragma clang loop interleave(enable)
     #endif
-    for (int i=0; i<number; ++i) {
-      #if _INTEL_ == 1
-      #pragma unroll(DIMENSIONS)
-      #endif 
-      //for (int d=0; d<DIMENSIONS; ++d) x[i][d] += dt*v[i][d];
-      for (int d=0; d<DIMENSIONS; ++d) simData->X(i,d) += dt*simData->V(i,d);
-      // Could update angular variables here ... 
-    }
+    for (int i=0; i<number*DIMENSIONS; ++i)
+      x[i] += dt*v[i];
   }
 
   void VelocityVerlet::post_forces() {
@@ -57,9 +50,10 @@ namespace GFlowSimulation {
 
     // Half a timestep
     RealType hdt = 0.5*Integrator::dt;
-
     // Number of (real - non ghost) particles
     int number = simData->number;
+    // Get arrays
+    RealType *x = simData->x[0], *v = simData->v[0], *f = simData->f[0], *im = simData->im;
 
     #if _INTEL_ == 1
     #pragma vector aligned
@@ -69,14 +63,9 @@ namespace GFlowSimulation {
     #pragma clang loop vectorize(enable)
     #pragma clang loop interleave(enable)
     #endif
-    for (int i=0; i<number; ++i) {
-      // Update linear velocity -- we want this loop unrolled
-      #if _INTEL_ == 1
-      #pragma unroll(DIMENSIONS)
-      #endif 
-      //for (int d=0; d<DIMENSIONS; ++d) v[i][d] += hdt*im[i]*f[i][d];
-      for (int d=0; d<DIMENSIONS; ++d) simData->V(i,d) += hdt*simData->im[i]*simData->F(i,d);
-      // Could update angular variables here ... 
+    for (int i=0; i<number*DIMENSIONS; ++i) {
+      int id = i/DIMENSIONS;
+      v[i] += hdt*im[id]*f[i];
     }
   }
 
