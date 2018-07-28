@@ -17,12 +17,14 @@ namespace GFlowSimulation {
 
   //! \brief Deallocate memory allocated by [alloc_array_2d] function
   template<typename T> void dealloc_array_2d(T** &pointer) {
+    // Get raw data
     T *raw = pointer[0];
     // Delete the 2d array
     delete [] raw;
     // Delete the pointer to the entries in the 2d array
     delete [] pointer;
-    pointer = 0;
+    // Set pointer to null
+    pointer = nullptr;
   }
 
 }
