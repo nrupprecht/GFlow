@@ -11,12 +11,11 @@ namespace GFlowSimulation {
     if (!DataObject::_check()) return;
     // Get the data
     RealType time = Base::gflow->getElapsedTime();
-    int nheads(0), nverlet(0);
+    int nverlet(0);
     for (auto &f : *Base::forcesPtr) {
-      nheads += f->vlHSize();
       nverlet += f->vlSize();
     }
-    verletNumbers.push_back(pair<RealType, IPair>(time, IPair(nheads, nverlet)));
+    verletNumbers.push_back(pair<RealType, IPair>(time, IPair(0, nverlet)));
   }
 
   bool VerletListNumberData::writeToFile(string fileName, bool useName) {

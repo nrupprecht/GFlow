@@ -28,14 +28,8 @@ namespace GFlowSimulation {
 
     // --- Accessors
 
-    // Return the last head added to the head array
-    int lastHead() const;
-
     // Return the total length of the verlet list 
     int vlSize() const;
-
-    // Return the number of heads in the verlet list
-    int vlHSize() const;
 
     // Get the verlet list (get it as a const reference)
     const VerletList& getVerletList() const;

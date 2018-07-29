@@ -51,30 +51,8 @@ namespace GFlowSimulation {
   }
 
   bool PrintingUtility::writeVerletListToDirectory(const VerletList &vl, const string fileName) {
-    // Open file stream
-    ofstream fout(fileName);
-    if (fout.fail()) return false;
-
-    // Get the data
-    const int hsize = vl.vlHSize(), vsize = vl.vlSize();
-    const int *heads = vl.getHeads(), *verlet = vl.getVerlet();
-    // Write the data
-    for (int h=0; h<hsize-1; ++h) {
-      fout << verlet[heads[h]] << ",";
-      for (int p=heads[h]+1; p<heads[h+1]; ++p) {
-        fout << verlet[p];
-        if (p!=heads[h+1]-1) fout << ",";
-      }
-      fout << endl;
-    }
-    // Last one
-    fout << verlet[heads[hsize-1]] << ",";
-    for (int p=heads[hsize-1]+1; p<vsize; ++p) {
-      fout << verlet[p];
-      if (p!=vsize-1) fout << ",";
-    }
-
-    // Return success
+    throw false;
+    
     return true;
   }
 

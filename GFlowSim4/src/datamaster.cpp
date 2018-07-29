@@ -268,11 +268,10 @@ namespace GFlowSimulation {
       fout << "  - Average iters per delay:  " << static_cast<RealType>(iterations) / Base::sectorization->getNumberOfRemakes() <<"\n";
     }
     fout << "\n";
-    fout << "Verlet lists:                [Total #], [# heads], [Ave per list].\n";
+    fout << "Verlet lists:\n";
     int c=0;
     for (auto &f : gflow->getForces()) {
-      fout << "     Force " << c << ":                 " << f->vlSize() << ", " << f->vlHSize() << ", " 
-        << static_cast<RealType>(f->vlSize())/f->vlHSize() << "\n";
+      fout << "     Force " << c << ":                 " << f->vlSize()/2 << " pairs\n";
       ++c;
     }
     

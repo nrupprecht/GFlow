@@ -9,11 +9,8 @@ namespace GFlowSimulation {
   LennardJones::LennardJones(GFlow *gflow) : Force(gflow), strength(DEFAULT_LENNARD_JONES_STRENGTH), cutoff(DEFAULT_LENNARD_JONES_CUTOFF) {};
 
   void LennardJones::calculateForces() const {
-    //verletList.forceLoop(this);
-    //return;
-    
     int nverlet = verletList.vlSize(), id1, id2; // List length, id pointers
-    if (verletList.vlHSize()==0) return; // No forces to calculate
+    if (nverlet==0) return; // No forces to calculate
 
     // Get the data we need
     RealType **x = Base::simData->x, **f = Base::simData->f;
@@ -29,17 +26,14 @@ namespace GFlowSimulation {
     RealType F[DIMENSIONS];
 
     // --- Go through all particles
-    for (int i=0; i<nverlet; ++i) {
-      if (verlet[i]<0) {
-        id1 = -verlet[i++]-1;
-        sigma = sg[id1]; // Interaction radius of the head particle
-      }
-      id2 = verlet[i];
+    for (int i=0; i<nverlet; i+=2) {
+      id1 = verlet[i];
+      id2 = verlet[i+1];
       // Get the displacement between the particles
       getDisplacement(x[id1], x[id2], displacement, bounds, boundaryConditions);
       // Check if the particles should interact
       RealType dsqr = sqr(displacement);
-      if (dsqr < sqr(sigma + sg[id2])) {
+      if (dsqr < sqr(sg[id1] + sg[id2])) {
         RealType distance = sqrt(dsqr);
         scalarMultVec(1./distance, displacement, normal);
         // Calculate force strength
@@ -61,6 +55,7 @@ namespace GFlowSimulation {
     BCFlag boundaryConditions[DIMENSIONS]; 
     copyVec(Base::gflow->getBCs(), boundaryConditions); // Keep a local copy of the wrap frags
 
+    // Get displacement
     getDisplacement(x[id1], x[id2], displacement, bounds, boundaryConditions);
     // Check if the particles should interact
     RealType dsqr = sqr(displacement);
