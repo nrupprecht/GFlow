@@ -14,7 +14,7 @@ namespace GFlowSimulation {
     zeroVec(dims);
     zeroVec(widths);
     zeroVec(inverseW);
-  };
+  }; 
 
   DomainBase::~DomainBase() {
     nullXVL();
@@ -154,12 +154,13 @@ namespace GFlowSimulation {
     if (sizeXVL<Base::simData->number) return true;
     // Find the maximum possible motion
     RealType max_motion = maxMotion();
-    RealType motion_ratio =skinDepth/max_motion;
-    updateDelay = motionFactor*mvRatioTolerance*(lastCheck-lastUpdate)*motion_ratio;
+    RealType motion_ratio = skinDepth/max_motion;
+    updateDelay = min(motionFactor*mvRatioTolerance*(lastCheck-lastUpdate)*motion_ratio, max_update_delay); 
     if (motion_ratio<1.) {
       ++missed_target;
       ave_miss += 1./motion_ratio;
     }
+    // Criteria for whether we need a remake
     return (max_motion>motionFactor*skinDepth);
   }
 

@@ -188,6 +188,9 @@ namespace GFlowSimulation {
       // Set the size of the array
       cells[ind].adjacent_cell_id_size = neighbors.size(); 
     }
+
+    // Make verlet lists
+    remake_verlet();
   }
 
   void Domain::pre_integrate() {
@@ -242,12 +245,16 @@ namespace GFlowSimulation {
   void Domain::remake_verlet() {
     // Increment counter
     ++number_of_remakes;
-
+    // Record where the particles were
+    fillXVL();
     // Clear old verlet lists
     Base::forceMaster->clearVerletLists();
 
     // Fill the linked cells
     fill_cells();
+
+    // Get the boundary conditions
+    const BCFlag *bcs = gflow->getBCs();
 
     // Pick the appropriate displacement function
     auto Displacement_Halo = [] (const RealType x1[DIMENSIONS], const RealType x2[DIMENSIONS], 
@@ -260,12 +267,14 @@ namespace GFlowSimulation {
     {
       getDisplacement(x1, x2, d, bounds, bcs);
     };
-    auto Displacement = use_halo_cells ? Displacement_Halo : Displacement_No_Halo;
+    bool no_wrap = true;
+    for (int d=0; d<DIMENSIONS; ++d) 
+      if (bcs[d]==BCFlag::WRAP) no_wrap = false;
+    auto Displacement = (use_halo_cells || no_wrap) ? Displacement_Halo : Displacement_No_Halo;
 
     // --- Calculate verlet lists
     int id1(0), id2(0), cell_id(0);
     RealType displacement[DIMENSIONS];
-    const BCFlag *bcs = gflow->getBCs();
     for (const auto &cell1 : cells) {
       // Loop through every particle in the cell
       for (int i1=0; i1<cell1.id_list_size; ++i1) {
@@ -286,7 +295,7 @@ namespace GFlowSimulation {
         for (int c1=0; c1<cell1.adjacent_cell_id_size; ++c1) {
           // Id of the adjacent cell
           cell_id = cell1.adjacent_cell_id[c1];
-          const Cell &cell2 = cells[cell_id]; // []
+          const Cell &cell2 = cells[cell_id];
           // Loop through the particles in the adjacent cells
           for (int i2=0; i2<cell2.id_list_size; ++i2) {
             // Get the id of the second particle
@@ -294,6 +303,7 @@ namespace GFlowSimulation {
             // Get the displacement
             Displacement(Base::simData->x[id1], Base::simData->x[id2], displacement, bounds, bcs);
             // Check the displacement
+
             if (sqr(displacement) < sqr(sigma + Base::simData->sg[id2] + skinDepth))
               pair_interaction(id1, id2);
           }
@@ -363,7 +373,7 @@ namespace GFlowSimulation {
             if (bcs[d]==BCFlag::WRAP && dims[d]>1) other_index[d] += dims[d];
             else {
               good = false;
-              break;
+              break; 
             }
           }
           // Ghost cells will not have wrapping neighbors, hence the check for is_special
@@ -421,9 +431,6 @@ namespace GFlowSimulation {
       // @todo Add cell to halo cells if neccessary
 
     }
-
-    // Record where the particles were the last time the cells were filled
-    fillXVL();
   }
 
 }

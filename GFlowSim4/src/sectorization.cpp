@@ -30,9 +30,10 @@ namespace GFlowSimulation {
   void Sectorization::remake_verlet() {
     // Increment counter
     ++number_of_remakes;
-
     // Set timer
     lastUpdate = Base::gflow->getElapsedTime();
+    // Reset the verlet lists of all the forces
+    Base::forceMaster->clearVerletLists();
 
     // Get data from simdata and sectors array
     RealType **x = Base::simData->x;
@@ -132,9 +133,6 @@ namespace GFlowSimulation {
   }
 
   inline void Sectorization::makeVerletLists() {
-    // Reset the verlet lists of all the forces
-    Base::forceMaster->clearVerletLists();
-
     // What the central sector we're looking at is, where the other sector is relative to that,
     // and what that sector's actual address is
     int sectorAdd[DIMENSIONS], dSectorAdd[DIMENSIONS], otherAdd[DIMENSIONS];
