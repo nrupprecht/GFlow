@@ -58,17 +58,11 @@ namespace GFlowSimulation {
     //! A list of adjacent cells that particles in this cell should check with. This will in 
     //! general not be all the surrounding cells, just half of them.
     //! Adjacent cell list and its size have to be set at initializatoin
-    int *adjacent_cell_id;
+    vector<int> adjacent_cell_id;
 
     //! A list of the ids of the particles whose centers fall within this cell. The id 
     //! corresponds to the index in the simdata object for this processor.
-    int *id_list;
-
-    //! The size of the adjacent cell array
-    int adjacent_cell_id_size;
-
-    //! The size of the particle id array
-    int id_list_size;
+    vector<int> id_list;
 
     //! The type of cell this is
     CellType cellType;
@@ -78,11 +72,6 @@ namespace GFlowSimulation {
     //! Is this the boundary cell of a halo cell? If so, particles inserted into it will need to
     //! create halo images of themselves in halo cells
     bool is_boundary_cell;
-
-  private:
-    //! The capacity (as opposed to size) of the id_list
-    int id_list_capacity; // adjacent_cell_id never changes size, so its size is its capacity
-
   };
 
 }

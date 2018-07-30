@@ -174,19 +174,7 @@ namespace GFlowSimulation {
       linear_to_tuple(ind, index);
       bool is_special = ( cells[ind].cellType==CellType::Halo || cells[ind].cellType==CellType::Ghost );
       // Find cell's neighbors
-      vector<int> neighbors = find_adjacent_cells(index, is_special);
-
-      // --- Set cell's neighbors
-      // Delete old array if necessary
-      if (cells[ind].adjacent_cell_id) delete [] cells[ind].adjacent_cell_id; 
-      // Set the array
-      if (!neighbors.empty()) {
-        cells[ind].adjacent_cell_id = new int[neighbors.size()]; 
-        copyVec(&neighbors[0], cells[ind].adjacent_cell_id, neighbors.size());
-      }
-      else cells[ind].adjacent_cell_id = nullptr;
-      // Set the size of the array
-      cells[ind].adjacent_cell_id_size = neighbors.size(); 
+      find_adjacent_cells(index, is_special, cells[ind].adjacent_cell_id);
     }
 
     // Make verlet lists
@@ -273,17 +261,16 @@ namespace GFlowSimulation {
     auto Displacement = (use_halo_cells || no_wrap) ? Displacement_Halo : Displacement_No_Halo;
 
     // --- Calculate verlet lists
-    int id1(0), id2(0), cell_id(0);
     RealType displacement[DIMENSIONS];
-    for (const auto &cell1 : cells) {
+    for (auto &cell1 : cells) {
       // Loop through every particle in the cell
-      for (int i1=0; i1<cell1.id_list_size; ++i1) {
-        id1 = cell1.id_list[i1];
+      for (auto i1 = cell1.id_list.cbegin(); i1!=cell1.id_list.cend(); ++i1) {
+        const int id1 = *i1;
         RealType sigma = Base::simData->sg[id1];
         // Verlet lists for particles in the same cell
-        for (int i2=i1+1; i2<cell1.id_list_size; ++i2) {
+        for (auto i2 = i1+1; i2!=cell1.id_list.cend(); ++i2) {
           // Get the id of the second particle
-          id2 = cell1.id_list[i2];
+          int id2 = *i2;
           // Get the displacement
           Displacement(Base::simData->x[id1], Base::simData->x[id2], displacement, bounds, bcs);
           // Check the displacement
@@ -292,18 +279,13 @@ namespace GFlowSimulation {
         }
 
         // Loop through adjacent cells
-        for (int c1=0; c1<cell1.adjacent_cell_id_size; ++c1) {
-          // Id of the adjacent cell
-          cell_id = cell1.adjacent_cell_id[c1];
+        for (auto cell_id : cell1.adjacent_cell_id) {
           const Cell &cell2 = cells[cell_id];
           // Loop through the particles in the adjacent cells
-          for (int i2=0; i2<cell2.id_list_size; ++i2) {
-            // Get the id of the second particle
-            id2 = cell2.id_list[i2];
+          for (auto id2 : cell2.id_list) {
             // Get the displacement
             Displacement(Base::simData->x[id1], Base::simData->x[id2], displacement, bounds, bcs);
             // Check the displacement
-
             if (sqr(displacement) < sqr(sigma + Base::simData->sg[id2] + skinDepth))
               pair_interaction(id1, id2);
           }
@@ -332,11 +314,9 @@ namespace GFlowSimulation {
       linear += tuple[d]*product(d+1);
   }
 
-  vector<int> Domain::find_adjacent_cells(int index[DIMENSIONS], bool is_special) {
+  void Domain::find_adjacent_cells(int index[DIMENSIONS], bool is_special, vector<int>& neighbors) {
     // Helper arrays
     int d_index[DIMENSIONS], other_index[DIMENSIONS], linear;
-    // A vector for the (linear) indices of adjacent cells
-    vector<int> neighbors;
 
     // --- Look in the first half (rounded down) sectors only
     for (uint c=0; c<floor(pow(3,DIMENSIONS)/2); ++c) {
@@ -396,8 +376,6 @@ namespace GFlowSimulation {
       // Include the cell
       neighbors.push_back(linear);
     }
-    // Return
-    return neighbors;
   }
 
   inline void Domain::fill_cells() {

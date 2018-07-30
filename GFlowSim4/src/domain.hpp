@@ -56,7 +56,7 @@ namespace GFlowSimulation {
     // Turns a (DIMENSIONS)-dimensional index into a linear cell index
     void tuple_to_linear(int&, const int*);
 
-    vector<int> find_adjacent_cells(int[DIMENSIONS], bool);
+    void find_adjacent_cells(int[DIMENSIONS], bool, vector<int>&);
 
     inline void fill_cells();
 
