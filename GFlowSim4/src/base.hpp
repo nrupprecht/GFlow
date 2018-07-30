@@ -36,7 +36,7 @@ namespace GFlowSimulation {
     GFlow *gflow;
     class SimData *simData;
     class Integrator *integrator;
-    class Sectorization *sectorization;
+    class DomainBase *domain;
     class Communicator *communicator;
     class DataMaster *dataMaster; 
     class ForceMaster *forceMaster; 

@@ -112,7 +112,7 @@ namespace GFlowSimulation {
           gflow->forceMaster->setForce(t1, t2, force);
 
     // Set skin depth
-    if (skinDepth>0) gflow->sectorization->setSkinDepth(skinDepth);
+    if (skinDepth>0) gflow->domain->setSkinDepth(skinDepth);
 
     // --- Create integrator
 

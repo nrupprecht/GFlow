@@ -51,12 +51,12 @@ namespace GFlowSimulation {
   }
 
   bool PrintingUtility::writeVerletListToDirectory(const VerletList &vl, const string fileName) {
-    throw false;
+    throw Unimplemented("writeVerletListToDirectory - Sorry.");
     
     return true;
   }
 
-  string PrintingUtility::toStrVec(RealType *x) {
+  string PrintingUtility::toStrVec(const RealType *x) {
     string str;
     for (int d=0; d<DIMENSIONS; ++d) {
       str += toStr(x[d]);
@@ -65,7 +65,7 @@ namespace GFlowSimulation {
     return str;
   }
 
-  string PrintingUtility::toStrVec(int *x) {
+  string PrintingUtility::toStrVec(const int *x) {
     string str;
     for (int d=0; d<DIMENSIONS; ++d) {
       str += toStr(x[d]);

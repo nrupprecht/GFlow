@@ -32,33 +32,27 @@ namespace GFlowSimulation {
 
     // If bounds are unset, then don't make sectors
     if (domain_bounds.wd(0) == 0) return;
-    // Calculate cutoff
-    RealType *sg = simData->sg;
-    int number = simData->number;
+
+    // --- Calculate cutoff
 
     // Largest and second largest radii
     RealType maxCutR(0), secCutR(0);
     // Look for largest and second largest radii
-    for (int i=0; i<number; ++i) {
-      if (sg[i]>maxCutR) maxCutR = sg[i];
-      else if (sg[i]>secCutR) secCutR = sg[i];
+    for (int i=0; i<simData->number; ++i) {
+      if (Base::simData->sg[i]>maxCutR) maxCutR = Base::simData->sg[i];
+      else if (Base::simData->sg[i]>secCutR) secCutR = Base::simData->sg[i];
     }
     minCutoff = maxCutR + secCutR + skinDepth; // Cutoff radius
 
     // The actual cutoff is some multiple of the minimum cutoff
     cutoff = minCutoff*cutoffFactor;
 
-    // First estimate of sdx, sdy
-    #if _INTEL_ == 1
-    #pragma unroll(DIMENSIONS)
-    #endif 
-    for (int d=0; d<DIMENSIONS; ++d) widths[d] = cutoff;
-
     // Correct estimate so sectors are no smaller than our estimation
     #if _INTEL_ == 1
     #pragma unroll(DIMENSIONS)
     #endif 
     for (int d=0; d<DIMENSIONS; ++d) {
+      widths[d] = cutoff;
       dims[d] = static_cast<int>(max(RealType(1.), bounds.wd(d)/widths[d]));
       // To solve (temporarily?) the "two sector" problem - see comments in "makeVerletLists"
       if (dims[d]==2) dims[d] = 1; 
@@ -68,7 +62,6 @@ namespace GFlowSimulation {
     }
 
     // --- Communicate with other domains so we have common cell dimensions
-
     
     // --- Assign neighbor cells to every cell
 
@@ -142,7 +135,32 @@ namespace GFlowSimulation {
     int index[DIMENSIONS];
     for (int ind=0; ind<size; ++ind) {
       linear_to_tuple(ind, index);
-      find_adjacent_cells(index);
+      vector<int> neighbors = find_adjacent_cells(index);
+      // Set cell's neighbors
+      if (cells[ind].adjacent_cell_id) delete [] cells[ind].adjacent_cell_id;
+      cells[ind].adjacent_cell_id = new int[neighbors.size()];
+      for (int i=0; i<neighbors.size(); ++i) 
+        cells[ind].adjacent_cell_id[i] = neighbors[i];
+      cells[ind].adjacent_cell_id_size = neighbors.size();
+      // Assign this cell's type
+      cells[ind].cellType = CellType::Central;
+      for (int d=0; d<DIMENSIONS; ++d) {
+        // Check if this cell is harmonic or a ghost
+        if (index[d]==0) {
+          if (!ghost_down[d] && bcs[d]==BCFlag::WRAP)
+            cells[ind].cellType = CellType::Harmonic;
+          else if (ghost_down[d])
+            cells[ind].cellType = CellType::Ghost;
+        }
+        if (index[d]==dims[d]-1) {
+          if (!ghost_up[d] && bcs[d]==BCFlag::WRAP) 
+            cells[ind].cellType = CellType::Harmonic;
+          else if (ghost_up[d])
+            cells[ind].cellType = CellType::Ghost;
+        }
+        // Check if this cell is at the edge of the regular domain and has harmonic image cells
+      }
+
     }
 
   }
@@ -154,19 +172,13 @@ namespace GFlowSimulation {
     updateDelay = 1.0e-4;
   }
 
-  void Domain::pre_forces() {
-    // If there are no forces, there is no need to check sectors
-    if (Base::gflow->getNumForces()==0) return;
-
-    // Get the current simulation time
-    RealType current_time = Base::gflow->getElapsedTime();
-    // Check whether we should check if remakes are necessary
-    if (current_time-lastUpdate>updateDelay) check_needs_remake();
-  }
-
-
   void Domain::addToCell(int id) {
-    // simData->X(id)
+    int index = getCellIndex(simData->X(id));
+    Cell &cell = cells[index];
+    cell.add(id);
+    if (cell.cellType==CellType::Harmonic) { 
+      // Create ghost particles in other cells
+    }
   }
 
   int Domain::getCellIndex(RealType *x) {
@@ -180,23 +192,26 @@ namespace GFlowSimulation {
   }
 
   void Domain::parallel_assignments() {
+    // Right now, this function doesn't actually work with MPI or calculate anything about
+    // parallel decomposition. It only works with single processor simulations.
+
     // Calculate how the divison of the simulation into domains
     for (int d=0; d<DIMENSIONS; ++d) domain_dims[d] = 1;
 
     // Calculate which domain we are
-    for (int d=0; d<DIMENSIONS; ++d) domain_index[d] = 0; //--
+    for (int d=0; d<DIMENSIONS; ++d) domain_index[d] = 0;
 
     // Calculate which domains are adjacent to us
-    for (int d=0; d<DIMENSIONS; ++d) { //--
+    for (int d=0; d<DIMENSIONS; ++d) {
       domains_up[d] = -1;
       domains_down[d] = -1;
     }
 
     // Calculate the bounds of this domain
-    domain_bounds = bounds; //--
+    domain_bounds = bounds;
   }
 
-  void Domain::check_needs_remake() {
+  void Domain::remake_verlet() {
     // @todo Implement this
   }
 
@@ -220,7 +235,7 @@ namespace GFlowSimulation {
       linear += tuple[d]*product(d+1);
   }
 
-  void Domain::find_adjacent_cells(int index[DIMENSIONS]) {
+  vector<int> Domain::find_adjacent_cells(int index[DIMENSIONS]) {
     // Helper arrays
     int d_index[DIMENSIONS], other_index[DIMENSIONS], linear;
     // A vector for the (linear) indices of adjacent cells
@@ -228,14 +243,12 @@ namespace GFlowSimulation {
 
     // --- Look in the first half (rounded down) sectors only
     for (uint c=0; c<floor(pow(3,DIMENSIONS)/2); ++c) {
-
       // Convert to a base 3 number (-1, 0, 1)
       int c0=c;
       for (uint d=0; d<DIMENSIONS; ++d) {
         d_index[d] = (c0%3) - 1;
         c0 /= 3;
       }
-
       // Look at that neighboring sector
       addVec(index, d_index, other_index);
 
@@ -258,5 +271,7 @@ namespace GFlowSimulation {
       tuple_to_linear(linear, other_index);
       neighbors.push_back(linear);
     }
+    // Return
+    return neighbors;
   }
 }

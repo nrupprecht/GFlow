@@ -16,6 +16,7 @@ namespace GFlowSimulation {
     // Get the data we need
     RealType **x = Base::simData->x, **f = Base::simData->f;
     RealType *sg = Base::simData->sg;
+    int *type = Base::simData->type;
     RealType displacement[DIMENSIONS], normal[DIMENSIONS]; // To calculate displacement, normal vector
     Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
     BCFlag boundaryConditions[DIMENSIONS]; 
@@ -76,7 +77,11 @@ namespace GFlowSimulation {
   }
 
   inline void HardSphere::forceStrength(RealType *F, const RealType *normal, const RealType distance, const int id1, const int id2) const {
-    scalarMultVec(repulsion*(simData->Sg(id1) + simData->Sg(id2) - distance), normal, F);
+    // This should make sure that forces are zero if either object is of type -1. This does not seem to add much (any?) overhead
+    RealType c1 = Base::simData->type[id1]<0 ? 0 : 1.; //--
+    RealType c2 = Base::simData->type[id2]<0 ? 0 : 1.; //--
+
+    scalarMultVec(c1*c2*repulsion*(simData->Sg(id1) + simData->Sg(id2) - distance), normal, F);
   }
 
 }

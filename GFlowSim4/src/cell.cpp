@@ -5,7 +5,7 @@
 namespace GFlowSimulation {
 
   Cell::Cell() : adjacent_cell_id(nullptr), id_list(nullptr), adjacent_cell_id_size(0), id_list_size(0), 
-    cellType(CellType::UNASSIGNED), id_list_capacity(0) {};
+    cellType(CellType::Unassigned), id_list_capacity(0) {};
 
   Cell::~Cell() {
     if (adjacent_cell_id) delete [] adjacent_cell_id;

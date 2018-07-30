@@ -104,7 +104,7 @@ namespace GFlowSimulation {
     gflow->forceMaster->setForce(0, 0, hard_sphere);
 
     // Set skin depth
-    if (skinDepth>0) gflow->sectorization->setSkinDepth(skinDepth);
+    if (skinDepth>0) gflow->domain->setSkinDepth(skinDepth);
 
     // Relax the setup
     hs_relax(gflow);

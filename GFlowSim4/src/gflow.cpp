@@ -7,12 +7,12 @@ namespace GFlowSimulation {
   GFlow::GFlow() : running(false), requested_time(0), elapsed_time(0), total_time(0), 
     iter(0), argc(0), argv(nullptr), repulsion(DEFAULT_HARD_SPHERE_REPULSION) 
   {
-    simData = new SimData(this);
+    simData      = new SimData(this);
     // Integrator will be created by the creator
-    sectorization = new Sectorization(this);
+    domain       = new Sectorization(this);
     communicator = new Communicator(this);
-    dataMaster = new DataMaster(this);
-    forceMaster = new ForceMaster(this);
+    dataMaster   = new DataMaster(this);
+    forceMaster  = new ForceMaster(this);
 
     // Set wrapping to true by defaule
     setAllBCs(BCFlag::WRAP);
@@ -20,7 +20,7 @@ namespace GFlowSimulation {
 
   GFlow::~GFlow() {
     if (simData)       delete simData;
-    if (sectorization) delete sectorization;
+    if (domain)        delete domain;
     if (integrator)    delete integrator;
     if (communicator)  delete communicator;
     if (dataMaster)    delete dataMaster;
@@ -39,7 +39,7 @@ namespace GFlowSimulation {
     if(integrator) integrator->initialize();
     else non_null = false;
 
-    if (sectorization) sectorization->initialize();
+    if (domain) domain->initialize();
     else non_null = false;
 
     if (communicator) communicator->initialize();
@@ -69,15 +69,15 @@ namespace GFlowSimulation {
     // Give pointer to this GFlow object
     base->gflow = this;
     // Set other objects
-    base->simData       = simData;
-    base->integrator    = integrator;
-    base->sectorization = sectorization;
-    base->communicator  = communicator;
-    base->dataMaster    = dataMaster;
-    base->forceMaster   = forceMaster;
+    base->simData      = simData;
+    base->integrator   = integrator;
+    base->domain       = domain;
+    base->communicator = communicator;
+    base->dataMaster   = dataMaster;
+    base->forceMaster  = forceMaster;
     // Set vectors
-    base->modifiersPtr  = &modifiers;
-    base->forcesPtr     = &forces;
+    base->modifiersPtr = &modifiers;
+    base->forcesPtr    = &forces;
   }
 
   void GFlow::run(RealType rt) {
@@ -103,7 +103,7 @@ namespace GFlowSimulation {
     iter = 0;
     integrator->pre_integrate();
     dataMaster->pre_integrate();
-    sectorization->pre_integrate();
+    domain->pre_integrate();
     for (auto m : modifiers) m->pre_integrate();
 
     // Do integration for the requested amount of time
@@ -112,13 +112,13 @@ namespace GFlowSimulation {
       for (auto m : modifiers) m->pre_step();
       integrator->pre_step();
       dataMaster->pre_step();
-      sectorization->pre_step();
+      domain->pre_step();
 
       // --> Pre-exchange
         for (auto m : modifiers) m->pre_exchange();
       integrator->pre_exchange();
       dataMaster->pre_exchange();
-      sectorization->pre_exchange();
+      domain->pre_exchange();
 
       // --- Exchange particles (potentially) ---
 
@@ -126,7 +126,7 @@ namespace GFlowSimulation {
       for (auto m : modifiers) m->pre_forces();
       integrator->pre_forces(); // -- This is where VV first half kick happens
       dataMaster->pre_forces();
-      sectorization->pre_forces(); // -- This is where resectorization / verlet list creation might happen
+      domain->pre_forces(); // -- This is where resectorization / verlet list creation might happen
       // Wrap or reflect particles
       wrapPositions();
       reflectPositions();
@@ -141,14 +141,14 @@ namespace GFlowSimulation {
       for (auto m : modifiers) m->post_forces(); // -- This is where modifiers should do forces (if they need to)
       integrator->post_forces(); // -- This is where VV second half kick happens
       dataMaster->post_forces();
-      sectorization->post_forces();
+      domain->post_forces();
 
       // --> Post-step
       if (requested_time<=elapsed_time) running = false;
       for (auto m : modifiers) m->post_step();
       integrator->post_step();
       dataMaster->post_step();
-      sectorization->post_step();
+      domain->post_step();
       // Timer updates
       ++iter;
       RealType dt = integrator->getTimeStep();
@@ -160,7 +160,7 @@ namespace GFlowSimulation {
     requested_time = 0;
     integrator->post_integrate();
     dataMaster->post_integrate();
-    sectorization->post_integrate();
+    domain->post_integrate();
     for (auto m : modifiers) m->post_integrate();
   }
 

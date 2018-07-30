@@ -75,11 +75,16 @@ namespace GFlowSimulation {
   }
 
   inline void LennardJones::forceStrength(RealType *F, const RealType *normal, const RealType distance, const int id1, const int id2) const {
+    // This should make sure that forces are zero if either object is of type -1. This does not seem to add much (any?) overhead
+    RealType c1 = Base::simData->type[id1]<0 ? 0 : 1.; //--
+    RealType c2 = Base::simData->type[id2]<0 ? 0 : 1.; //--
+
     RealType *sg = simData->sg;
     // Calculate the magnitude
     RealType gamma = (sg[id1]+sg[id2]) / (distance*cutoff);
     RealType g3 = gamma*gamma*gamma, g6 = sqr(g3), g12 = sqr(g6);
-    RealType magnitude = 24*strength*(2*g12 - g6)*(1./distance);
+    // The c1*c2 makes sure the magnitude is zero if either particles are of type -1
+    RealType magnitude = c1*c2*24*strength*(2*g12 - g6)*(1./distance); 
     // Make vectorial
     scalarMultVec(magnitude, normal, F);
   }

@@ -24,9 +24,6 @@ namespace GFlowSimulation {
     // Pre-integrate calls sectorize
     virtual void pre_integrate();
 
-    // Pre-forces is where resectorization may happen
-    virtual void pre_forces();
-
   private:
     // --- Helper functions
 
@@ -45,8 +42,7 @@ namespace GFlowSimulation {
     //! Calculate the data neccessary to run domains in parallel e.g. domain index, which domain this is, etc.
     void parallel_assignments();
 
-    //! Check whether we need to remake the verletl lists
-    void check_needs_remake();
+    virtual void remake_verlet();
 
     // Turns a linear cell index into a (DIMENSIONS)-dimensional index
     void linear_to_tuple(const int, int*);
@@ -54,7 +50,7 @@ namespace GFlowSimulation {
     // Turns a (DIMENSIONS)-dimensional index into a linear cell index
     void tuple_to_linear(int&, const int*);
 
-    void find_adjacent_cells(int[DIMENSIONS]);
+    vector<int> find_adjacent_cells(int[DIMENSIONS]);
 
     // --- Data
 
@@ -73,26 +69,17 @@ namespace GFlowSimulation {
     //! The (DIMENSION)-tuple domain index of this domain
     int domain_index[DIMENSIONS];
 
-    //! The bounds of the domain
-    Bounds domain_bounds;
     //! The bounds of the domain, including ghost and harmonic cells
     Bounds extended_domain_bounds;
-    //! The bounds of the entire simulation
-    Bounds bounds;
 
     //! If we have harmonic cells on the positive boundary.
     bool harmonic_up[DIMENSIONS];
     //! If we have harmonic cells on the negative boundary.
     bool harmonic_down[DIMENSIONS];
-
+    //! If we have ghost cells on the positive boundary
     bool ghost_up[DIMENSIONS];
+    //! If we have ghost cells on the negative boundary
     bool ghost_down[DIMENSIONS];
-
-    // --- For remakes
-
-    //! The positions of the particles at the last verlet list creation
-    RealType **xVL;
-    int sizeXVL; // The size of the xVL array
 
   };
 

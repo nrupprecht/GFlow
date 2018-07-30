@@ -10,13 +10,7 @@
 
 namespace GFlowSimulation {
 
-  Sectorization::Sectorization(GFlow *gflow) : Base(gflow), xVL(nullptr), sizeXVL(0), skinDepth(0.025), currentHead(-1), 
-    cutoff(0), minCutoff(0), cutoffFactor(1.), number_of_remakes(0), lastCheck(-1.), lastUpdate(-1.), updateDelay(1.0e-4), 
-    max_update_delay(DEFAULT_MAX_UPDATE_DELAY), mvRatioTollerance(1.5) {};
-
-  Sectorization::~Sectorization() {
-    nullXVL();
-  }
+  Sectorization::Sectorization(GFlow *gflow) : DomainBase(gflow), currentHead(-1) {};
 
   void Sectorization::pre_integrate() {
     // ---> If time is requested twice on the same simulation, these steps are unnecessary. 
@@ -27,21 +21,13 @@ namespace GFlowSimulation {
     updateDelay = 1.0e-4;
     // Get the bounds from gflow
     bounds = Base::gflow->getBounds();
+    // This is for single processor, so the domain bounds is the same
+    domain_bounds = bounds;
     // Make the sectors
     makeSectors();
   }
 
-  void Sectorization::pre_forces() {
-    // If there are no forces, there is no need to check sectors
-    if (Base::gflow->getNumForces()==0) return;
-
-    // Get the current simulation time
-    RealType current_time = Base::gflow->getElapsedTime();
-    // Check whether we should check sectors
-    if (current_time-lastUpdate>updateDelay) checkSectors();
-  }
-
-  void Sectorization::sectorize() {
+  void Sectorization::remake_verlet() {
     // Increment counter
     ++number_of_remakes;
 
@@ -79,16 +65,8 @@ namespace GFlowSimulation {
       sectors.at(index).push_back(n);
     }
 
-    // --- Record where the particles were
-    // Check if our array is the correct size
-    if (number!=sizeXVL) setupXVL(number);
-    // Fill array
-    for (int i=0; i<number; ++i)
-      #if _INTEL_ == 1
-      #pragma unroll(DIMENSIONS)
-      #endif 
-      for (int d=0; d<DIMENSIONS; ++d) 
-        xVL[i][d] = x[i][d];
+    // Record where the particles were
+    fillXVL();
 
     // Create verlet lists
     makeVerletLists();
@@ -98,42 +76,13 @@ namespace GFlowSimulation {
     return sectors.at(index);
   }
 
-  const int* Sectorization::getDims() const {
-    return dims;
-  }
-
-  const RealType* Sectorization::getWidths() const {
-    return widths;
-  }
-
-  int Sectorization::getNumSectors() const {
-    int total = 1;
-    #if _INTEL_ == 1
-    #pragma unroll(DIMENSIONS)
-    #endif 
-    for (int d=0; d<DIMENSIONS; ++d) total *= dims[d];
-    return total;
-  }
-
-  RealType Sectorization::getSkinDepth() const {
-    return skinDepth;
-  }
-
-  RealType Sectorization::getCutoff() const {
-    return cutoff;
-  }
-
-  int Sectorization::getNumberOfRemakes() const {
-    return number_of_remakes;
-  }
-
   void Sectorization::setSkinDepth(RealType s) {
-    skinDepth = s;
+    DomainBase::setSkinDepth(s);
     makeSectors();
   }
 
   void Sectorization::setCutoffFactor(RealType f) {
-    cutoffFactor = f;
+    DomainBase::setCutoffFactor(f);
     makeSectors();
   }
 
@@ -179,49 +128,7 @@ namespace GFlowSimulation {
     sectors.resize(dims);
 
     // Sectorize and create verlet lists
-    sectorize();
-  }
-
-  inline RealType Sectorization::maxMotion() {
-    // Get data from simdata and sectors array
-    RealType **x = Base::simData->x;
-    int number = Base::simData->number;
-    const BCFlag *boundaryConditions = gflow->getBCs();
-
-    // Check if re-sectorization is required --- see how far particles have traveled
-    RealType dsqr(0), maxDSqr(0), secDSqr(0), displacement[DIMENSIONS];
-    for (int n=0; n<number; ++n) {
-      getDisplacement(xVL[n], x[n], displacement, bounds, boundaryConditions);
-      dsqr = sqr(displacement);
-      // Check if this is the largest or second largest displacement (squared)
-      if (dsqr>secDSqr) {
-        if (dsqr>maxDSqr){
-          secDSqr = maxDSqr;
-          maxDSqr = dsqr;
-        }
-        else secDSqr = dsqr;
-      }
-    }
-    return sqrt(maxDSqr)+sqrt(secDSqr);
-  }
-
-  // Checks whether sectors need to be refilled. This happens when the max distance traveled
-  // by two particles, relative to one another, is > skinDepth
-  inline void Sectorization::checkSectors() {
-    // Set time point
-    lastCheck = Base::gflow->getElapsedTime();
-    // Get data from simdata and sectors array
-    if (sizeXVL<Base::simData->number) sectorize();
-    else {
-      // If there are more particles now, we need to resectorize
-      RealType maxmotion = maxMotion();
-      if (maxmotion>skinDepth) {
-        sectorize();
-      }
-      else { // Guess what the delay should be
-        updateDelay = mvRatioTollerance*(lastCheck-lastUpdate)*skinDepth/maxmotion; // [lastCheck] is the current time
-      }
-    }
+    remake_verlet();
   }
 
   inline void Sectorization::makeVerletLists() {
@@ -323,23 +230,6 @@ namespace GFlowSimulation {
     if (force) force->addVerletPair(id1, id2);
   }
 
-  inline void Sectorization::nullXVL() {
-    if (xVL) {
-      for (int i=0; i<sizeXVL; ++i)
-        if (xVL[i]) delete [] xVL[i];
-      delete [] xVL;
-    }
-  }
-
-  inline void Sectorization::setupXVL(int length) {
-    if (xVL!=nullptr) nullXVL();
-    sizeXVL = length;
-    xVL = new RealType*[sizeXVL];
-    for (int i=0; i<sizeXVL; ++i)
-      xVL[i] = new RealType[DIMENSIONS];
-
-    // If there are few particles, use a low move ratio tollerance
-    if (length<10) mvRatioTollerance = 1.;
-  }
+  
 
 }

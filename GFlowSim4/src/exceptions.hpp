@@ -28,5 +28,10 @@ namespace GFlowSimulation {
     ParticleTypeError(const string& m) : Exception(m) {};
   };
 
+  struct Unimplemented : public Exception {
+    Unimplemented() {};
+    Unimplemented(const string& m) : Exception(m) {};
+  };
+
 }
 #endif // __EXCEPTIONS_HPP__GFLOW__

@@ -4,7 +4,7 @@
 namespace GFlowSimulation {
 
   //! The types of cells we can have.
-  enum class CellType { CENTRAL, HARMONIC, GHOST, UNASSIGNED };
+  enum class CellType { Central, Harmonic, Ghost, Unassigned };
 
   /** @brief A single cell from a domain. Know's its adjacent cells
   *

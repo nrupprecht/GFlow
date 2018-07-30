@@ -142,7 +142,7 @@ namespace GFlowSimulation {
     // --- Data - public so anyone can access it
     class SimData *simData;             // Particle data
     class Integrator *integrator;       // Integrator
-    class Sectorization *sectorization; // Sectorization of particles
+    class DomainBase *domain;           // Domain
     class Communicator *communicator;   // Inter-process communicator
     class DataMaster *dataMaster;       // DataMaster object for unified data collection  
     class ForceMaster *forceMaster;     // ForceMaster object for defining and storing interparticle forces  

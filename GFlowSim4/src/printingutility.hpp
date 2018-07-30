@@ -40,12 +40,12 @@ namespace GFlowSimulation {
     static bool writeVerletListToDirectory(const class VerletList&, const string);
 
     // Write a vector to a comma separated string
-    static string toStrVec(RealType*);
+    static string toStrVec(const RealType*);
 
     // Write an integer vector to a comma separated string
-    static string toStrVec(int*);
+    static string toStrVec(const int*);
 
-    template<typename T> static string toStrVec(T* vec, int number) {
+    template<typename T> static string toStrVec(const T* vec, int number) {
       string str;
       for (int i=0; i<number; ++i) {
         str += toStr(vec[i]);

@@ -1,7 +1,7 @@
 #include "datamaster.hpp"
 #include "simdata.hpp"
 #include "integrator.hpp"
-#include "sectorization.hpp"
+#include "domain.hpp"
 #include "force.hpp"
 
 namespace GFlowSimulation {
@@ -243,29 +243,29 @@ namespace GFlowSimulation {
     fout << "  - Time step (at end):       " << integrator->getTimeStep() << "\n";
     fout << "\n";
     
-    // --- Print the sectorization summary
-    fout << "Sectorization summary (as of end of simulation):\n";
+    // --- Print the domain summary
+    fout << "Domain summary (as of end of simulation):\n";
     fout << "  - Grid dimensions:          ";
     for (int d=0; d<DIMENSIONS; ++d) {
-      fout << Base::sectorization->getDims()[d];
+      fout << Base::domain->getDims()[d];
       if (d!=DIMENSIONS-1) fout << ", ";
     }
     fout << "\n";
-    fout << "  - Total sectors:            " << Base::sectorization->getNumSectors() << "\n";
+    fout << "  - Total sectors:            " << Base::domain->getNumCells() << "\n";
     fout << "  - Grid lengths:             ";
     for (int d=0; d<DIMENSIONS; ++d) {
-      fout << Base::sectorization->getWidths()[d];
+      fout << Base::domain->getWidths()[d];
       if (d!=DIMENSIONS-1) fout << ", ";
     }
     fout << "\n";
-    fout << "  - Cutoff:                   " << Base::sectorization->getCutoff() << "\n";
-    fout << "  - Skin depth:               " << Base::sectorization->getSkinDepth() << "\n";
+    fout << "  - Cutoff:                   " << Base::domain->getCutoff() << "\n";
+    fout << "  - Skin depth:               " << Base::domain->getSkinDepth() << "\n";
     if (run_time>0) {
-    fout << "  - Sector remakes:           " << Base::sectorization->getNumberOfRemakes() << "\n";
-      RealType re_ps = Base::sectorization->getNumberOfRemakes() / Base::gflow->getTotalTime();
+    fout << "  - Sector remakes:           " << Base::domain->getNumberOfRemakes() << "\n";
+      RealType re_ps = Base::domain->getNumberOfRemakes() / Base::gflow->getTotalTime();
       fout << "  - Remakes per second:       " << re_ps << "\n";
       fout << "  - Average remake delay:     " << 1./re_ps << "\n";
-      fout << "  - Average iters per delay:  " << static_cast<RealType>(iterations) / Base::sectorization->getNumberOfRemakes() <<"\n";
+      fout << "  - Average iters per delay:  " << static_cast<RealType>(iterations) / Base::domain->getNumberOfRemakes() <<"\n";
     }
     fout << "\n";
     fout << "Verlet lists:\n";
