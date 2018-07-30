@@ -19,10 +19,13 @@ namespace GFlowSimulation {
     Domain(GFlow *);
 
     //! Create cells, assign their neighbors, etc.
-    void initialize();
+    virtual void initialize();
 
     // Pre-integrate calls sectorize
     virtual void pre_integrate();
+
+    //! Exchange particles between processors
+    virtual void exchange_particles();
 
   private:
     // --- Helper functions
@@ -42,6 +45,9 @@ namespace GFlowSimulation {
     //! Calculate the data neccessary to run domains in parallel e.g. domain index, which domain this is, etc.
     void parallel_assignments();
 
+    //! @brief Remake the verlet lists for all the forces
+    //!
+    //! Resectorizes the particles into cells and calculates verlet lists from the cell decomposition.
     virtual void remake_verlet();
 
     // Turns a linear cell index into a (DIMENSIONS)-dimensional index
@@ -50,7 +56,9 @@ namespace GFlowSimulation {
     // Turns a (DIMENSIONS)-dimensional index into a linear cell index
     void tuple_to_linear(int&, const int*);
 
-    vector<int> find_adjacent_cells(int[DIMENSIONS]);
+    vector<int> find_adjacent_cells(int[DIMENSIONS], bool);
+
+    inline void fill_cells();
 
     // --- Data
 
@@ -73,13 +81,16 @@ namespace GFlowSimulation {
     Bounds extended_domain_bounds;
 
     //! If we have harmonic cells on the positive boundary.
-    bool harmonic_up[DIMENSIONS];
+    bool halo_up[DIMENSIONS];
     //! If we have harmonic cells on the negative boundary.
-    bool harmonic_down[DIMENSIONS];
+    bool halo_down[DIMENSIONS];
     //! If we have ghost cells on the positive boundary
     bool ghost_up[DIMENSIONS];
     //! If we have ghost cells on the negative boundary
     bool ghost_down[DIMENSIONS];
+
+    //! Whether to use halo cells to reflect the periodic boundary conditions
+    bool use_halo_cells;
 
   };
 

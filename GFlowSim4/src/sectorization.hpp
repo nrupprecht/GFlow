@@ -14,6 +14,10 @@ namespace GFlowSimulation {
     // Pre-integrate calls sectorize
     virtual void pre_integrate();
 
+    //! Exchange particles between processors. Sectorization is designed for 
+    //! single processor jobs, so this function does not do anything.
+    virtual void exchange_particles() {};
+
     // --- Accessors
 
     // Get a sector
@@ -41,9 +45,6 @@ namespace GFlowSimulation {
 
     // Create verlet lists for all forces
     inline void makeVerletLists();
-
-    // Given two particles, take care of whether they should exert forces on one another
-    inline void pairInteraction(int, int);
     
     // The id's of particles in each sector - these are the actual sectors
     Array< vector<int> > sectors;

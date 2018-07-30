@@ -2,12 +2,14 @@
 // Other files
 #include "vectormath.hpp"
 #include "simdata.hpp"
+#include "forcemaster.hpp"
+#include "force.hpp"
 
 namespace GFlowSimulation {
 
-  DomainBase::DomainBase(GFlow *gflow) : Base(gflow), skinDepth(0.025), cutoff(0), minCutoff(0), cutoffFactor(1.), 
+  DomainBase::DomainBase(GFlow *gflow) : Base(gflow), skinDepth(DEFAULT_SKIN_DEPTH ), cutoff(0), minCutoff(0), cutoffFactor(1.), 
     number_of_remakes(0), lastCheck(-1.), lastUpdate(-1.), updateDelay(1.0e-4), max_update_delay(DEFAULT_MAX_UPDATE_DELAY), 
-    mvRatioTollerance(1.5), xVL(nullptr), sizeXVL(0)
+    mvRatioTolerance(DEFAULT_MV_RATIO_TOLERANCE ), motionFactor(DEFAULT_MOTION_FACTOR), missed_target(0), xVL(nullptr), sizeXVL(0)
   {
     zeroVec(dims);
     zeroVec(widths);
@@ -53,8 +55,20 @@ namespace GFlowSimulation {
     return cutoff;
   }
 
+  RealType DomainBase::getMvRatioTolerance() const {
+    return mvRatioTolerance;
+  }
+
   int DomainBase::getNumberOfRemakes() const {
     return number_of_remakes;
+  }
+
+  int DomainBase::getMissedTarget() const {
+    return missed_target;
+  }
+
+  RealType DomainBase::getAverageMiss() const {
+    return missed_target>0 ? ave_miss / missed_target : 0;
   }
 
   void DomainBase::setSkinDepth(RealType s) {
@@ -81,7 +95,7 @@ namespace GFlowSimulation {
       xVL[i] = new RealType[DIMENSIONS];
 
     // If there are few particles, use a low move ratio tollerance
-    if (length<10) mvRatioTollerance = 1.;
+    if (length<10) mvRatioTolerance = 1.;
   }
 
   void DomainBase::fillXVL() {
@@ -96,6 +110,18 @@ namespace GFlowSimulation {
       #endif 
       for (int d=0; d<DIMENSIONS; ++d) 
         xVL[i][d] = Base::simData->x[i][d];
+  }
+
+  void DomainBase::pair_interaction(int id1, int id2) {
+    // --- Check to see if they are part of the same body. If so, they cannot exert force on each other
+    if (Base::simData->body && Base::simData->body[id1]>0 && Base::simData->body[id2]==Base::simData->body[id1])
+      return; // The particles are in the same body
+
+    // --- Check with force master
+    Force *force = Base::forceMaster->getForce(Base::simData->type[id1], Base::simData->type[id2]);
+
+    // A null force means no interaction
+    if (force) force->addVerletPair(id1, id2);
   }
 
   RealType DomainBase::maxMotion() {
@@ -124,17 +150,17 @@ namespace GFlowSimulation {
   bool DomainBase::check_needs_remake() {
     // Set time point
     lastCheck = Base::gflow->getElapsedTime();
-    // Get data from simdata and sectors array
+    // If there are more particles now, we need to resectorize
     if (sizeXVL<Base::simData->number) return true;
-    else {
-      // If there are more particles now, we need to resectorize
-      RealType maxmotion = maxMotion();
-      if (maxmotion>skinDepth) return true;
-      // Guess what the delay should be
-      else updateDelay = mvRatioTollerance*(lastCheck-lastUpdate)*skinDepth/maxmotion; // [lastCheck] is the current time
+    // Find the maximum possible motion
+    RealType max_motion = maxMotion();
+    RealType motion_ratio =skinDepth/max_motion;
+    updateDelay = motionFactor*mvRatioTolerance*(lastCheck-lastUpdate)*motion_ratio;
+    if (motion_ratio<1.) {
+      ++missed_target;
+      ave_miss += 1./motion_ratio;
     }
-    // No check needed
-    return false;
+    return (max_motion>motionFactor*skinDepth);
   }
 
 }

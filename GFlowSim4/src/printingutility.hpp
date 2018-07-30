@@ -46,7 +46,7 @@ namespace GFlowSimulation {
     static string toStrVec(const int*);
 
     template<typename T> static string toStrVec(const T* vec, int number) {
-      string str;
+      string str("");
       for (int i=0; i<number; ++i) {
         str += toStr(vec[i]);
         if (i!=number-1) str += ',';

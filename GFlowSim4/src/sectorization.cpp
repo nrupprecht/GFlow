@@ -161,8 +161,8 @@ namespace GFlowSimulation {
         for (uint q = p+1; q<pvec.size(); ++q) {
           int otherParticle = pvec.at(q);
           getDisplacement(x[currentHead], x[otherParticle], displacement, bounds, boundaryConditions);
-          if (sqr(displacement) < sigma + sg[otherParticle] + skinDepth)
-            pairInteraction(currentHead, otherParticle);
+          if (sqr(displacement) < sqr(sigma + sg[otherParticle] + skinDepth))
+            pair_interaction(currentHead, otherParticle);
         }
 
         // --- Look in the first half (rounded down) sectors only
@@ -210,26 +210,12 @@ namespace GFlowSimulation {
             // Get the displacement between particles
             getDisplacement(x[currentHead], x[otherParticle], displacement, bounds, boundaryConditions);
             // If close enough, they interact
-            if (sqr(displacement) < sigma + sg[otherParticle] + skinDepth)
-              pairInteraction(currentHead, otherParticle);
+            if (sqr(displacement) < sqr(sigma + sg[otherParticle] + skinDepth))
+              pair_interaction(currentHead, otherParticle);
           }
         }
       }
     }
   }
-
-  inline void Sectorization::pairInteraction(int id1, int id2) {
-    // --- Check to see if they are part of the same body. If so, they cannot exert force on each other
-    if (Base::simData->body && Base::simData->body[id1]>0 && Base::simData->body[id2]==Base::simData->body[id1])
-      return; // The particles are in the same body
-
-    // --- Check with force master
-    Force *force = Base::forceMaster->getForce(simData->type[id1], simData->type[id2]);
-    
-    // A null force means no interaction
-    if (force) force->addVerletPair(id1, id2);
-  }
-
-  
 
 }

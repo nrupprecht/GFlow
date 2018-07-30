@@ -46,6 +46,13 @@ namespace GFlowSimulation {
     for (int d=0; d<DIMENSIONS; ++d) x[d] = T(0);
   }
 
+  template<typename T> inline void setVec(T *x, const T val) {
+    #if _INTEL_ == 1
+    #pragma unroll(DIMENSIONS)
+    #endif 
+    for (int d=0; d<DIMENSIONS; ++d) x[d] = val;
+  }
+
   template<typename T> inline void addVec(const T *x, const T *y, T *z) {
     #if _INTEL_ == 1
     #pragma unroll(DIMENSIONS)
@@ -95,6 +102,10 @@ namespace GFlowSimulation {
     #pragma unroll(DIMENSIONS)
     #endif 
     for (int d=0; d<DIMENSIONS; ++d) target[d] = x[d];
+  }
+
+  template<typename T> inline void copyVec(const T *x, T *target, const unsigned int size) {
+    for (int d=0; d<size; ++d) target[d] = x[d];
   }
 
   template<typename T> inline T magnitudeVec(T *vec) {

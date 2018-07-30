@@ -260,8 +260,11 @@ namespace GFlowSimulation {
     fout << "\n";
     fout << "  - Cutoff:                   " << Base::domain->getCutoff() << "\n";
     fout << "  - Skin depth:               " << Base::domain->getSkinDepth() << "\n";
+    fout << "  - Move ratio tollerance:    " << Base::domain->getMvRatioTolerance() << "\n";
+    fout << "  - Delay missed target:      " << Base::domain->getMissedTarget() << "\n";
+    fout << "  - Average miss:             " << Base::domain->getAverageMiss() << "\n";
     if (run_time>0) {
-    fout << "  - Sector remakes:           " << Base::domain->getNumberOfRemakes() << "\n";
+      fout << "  - Sector remakes:           " << Base::domain->getNumberOfRemakes() << "\n";
       RealType re_ps = Base::domain->getNumberOfRemakes() / Base::gflow->getTotalTime();
       fout << "  - Remakes per second:       " << re_ps << "\n";
       fout << "  - Average remake delay:     " << 1./re_ps << "\n";

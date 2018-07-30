@@ -9,7 +9,7 @@ namespace GFlowSimulation {
   {
     simData      = new SimData(this);
     // Integrator will be created by the creator
-    domain       = new Sectorization(this);
+    domain       = new Sectorization(this); // Domain(this); // Sectorization(this);
     communicator = new Communicator(this);
     dataMaster   = new DataMaster(this);
     forceMaster  = new ForceMaster(this);
@@ -93,8 +93,7 @@ namespace GFlowSimulation {
     // Make sure we have initialized everything
     if (!initialize()) {
       // Some object was null
-      cout << "Some object was null. Exiting.\n";
-      return;
+      UnexpectedNullPointer("Error: Some object was null at GFlow initialization.");
     }
 
     // --> Pre-integrate
@@ -121,11 +120,13 @@ namespace GFlowSimulation {
       domain->pre_exchange();
 
       // --- Exchange particles (potentially) ---
+      domain->exchange_particles();
 
       // --> Pre-force
       for (auto m : modifiers) m->pre_forces();
       integrator->pre_forces(); // -- This is where VV first half kick happens
       dataMaster->pre_forces();
+
       domain->pre_forces(); // -- This is where resectorization / verlet list creation might happen
       // Wrap or reflect particles
       wrapPositions();

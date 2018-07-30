@@ -29,6 +29,9 @@ namespace GFlowSimulation {
 
     virtual void pre_forces();
 
+    //! Exchange particles between processors
+    virtual void exchange_particles()=0;
+
     // --- Accessors
 
     //! Get the array of the number of cells in each dimension
@@ -46,8 +49,16 @@ namespace GFlowSimulation {
     //! Get the cutoff
     RealType getCutoff() const;
 
+    //! Get the move ratio tollerance
+    RealType getMvRatioTolerance() const;
+
     //! Get the number of times the domain has made verlet lists
     int getNumberOfRemakes() const;
+
+    //! Get the number of times the update delay was too long
+    int getMissedTarget() const;
+
+    RealType getAverageMiss() const;
 
     // --- Mutators
 
@@ -76,6 +87,8 @@ namespace GFlowSimulation {
 
     //! Fill the xVL array with the positions
     void fillXVL();
+
+    void pair_interaction(int, int);
 
     //! Find the maximum amount two particles might have moved closer to one another
     virtual RealType maxMotion();
@@ -108,8 +121,16 @@ namespace GFlowSimulation {
     // Update timers and related
     RealType lastCheck, lastUpdate, updateDelay, max_update_delay;
 
+    //! What fraction of the skin depth should particles move before we remake
+    RealType motionFactor;
+
     //! The target move ratio for remake
-    RealType mvRatioTollerance;
+    RealType mvRatioTolerance;
+
+    //! The number of times max_motion / skinDepth was > 1
+    int missed_target;
+    //! The average (once divided by [missed_target]) amount the delay missed by
+    RealType ave_miss;
 
     //! An array storing the positions of the particles at the last verlet list creation
     RealType **xVL;

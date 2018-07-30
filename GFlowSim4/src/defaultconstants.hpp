@@ -19,7 +19,21 @@ namespace GFlowSimulation {
   const RealType DEFAULT_LENNARD_JONES_STRENGTH = 0.01;
   const RealType DEFAULT_LENNARD_JONES_CUTOFF = 2.5;
   const RealType DEFAULT_DAMPING_CONSTANT = 0.1;
+  
   const RealType DEFAULT_MAX_UPDATE_DELAY = 0.025;
+  const RealType DEFAULT_SKIN_DEPTH = 0.025;
+  
+  //! @brief The default move ratio for recalculating verlet lists
+  //!
+  //! Adjusting these parameters (namely, making them larger) will increase the performance
+  //! at the cost of possibly conserving energy more poorly.
+  const RealType DEFAULT_MV_RATIO_TOLERANCE = 1.1;
+  //! @brief The fraction of the skin depth the particles can move through before we remake the verlet lists
+  //!
+  //! Similarly to [DEFAULT_MV_RATIO_TOLLERANCE], increasing this parameter will increase the
+  //! performance of the program, but can cause energy non-conservation.
+  const RealType DEFAULT_MOTION_FACTOR = 1.;
+
   const RealType DEFAULT_SPRING_K = 10.;
   const RealType DEFAULT_VISCOSITY = 1.308e-3;
   const RealType DEFAULT_MAX_DT = 0.01;

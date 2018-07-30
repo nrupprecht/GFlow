@@ -1,10 +1,37 @@
 #ifndef __CELL_HPP__GFLOW__
 #define __CELL_HPP__GFLOW__
 
+#include "utility.hpp"
+//#include "printingutility.hpp"
+
 namespace GFlowSimulation {
 
   //! The types of cells we can have.
-  enum class CellType { Central, Harmonic, Ghost, Unassigned };
+  enum class CellType { Central, Halo, Ghost, Unassigned };
+
+  //! A stream operator for printing cell types
+  inline std::ostream& operator<<(std::ostream& out, CellType type) {
+    switch (type) {
+      case CellType::Central: {
+        out << "Central";
+        break;
+      }
+      case CellType::Halo: {
+        out << "Halo";
+        break;
+      }
+      case CellType::Ghost: {
+        out << "Ghost";
+        break;
+      }
+      default:
+      case CellType::Unassigned: {
+        out << "Unassigned";
+        break;
+      }
+    }
+    return out;
+  }
 
   /** @brief A single cell from a domain. Know's its adjacent cells
   *
@@ -26,6 +53,8 @@ namespace GFlowSimulation {
 
     // --- Data ---
 
+    //! @brief A list of adjacent cells.
+    //!
     //! A list of adjacent cells that particles in this cell should check with. This will in 
     //! general not be all the surrounding cells, just half of them.
     //! Adjacent cell list and its size have to be set at initializatoin
@@ -43,6 +72,12 @@ namespace GFlowSimulation {
 
     //! The type of cell this is
     CellType cellType;
+
+    //! @brief An indicator as to whether this is a boundary cell.
+    //!
+    //! Is this the boundary cell of a halo cell? If so, particles inserted into it will need to
+    //! create halo images of themselves in halo cells
+    bool is_boundary_cell;
 
   private:
     //! The capacity (as opposed to size) of the id_list
