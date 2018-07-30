@@ -20,6 +20,24 @@ namespace GFlowSimulation {
     }
   }
 
+  template<int D=DIMENSIONS> inline RealType getDistanceSqrNoWrap(const RealType *x, const RealType *y) {
+    RealType distance = 0;
+    for (int d=0; d<D; ++d) distance += (x[d] - y[d]);
+    return distance
+  }
+
+  template<> inline RealType getDistanceSqrNoWrap<1>(const RealType *x, const RealType *y) {
+    return x[0]-y[0];
+  }
+
+  template<> inline RealType getDistanceSqrNoWrap<2>(const RealType *x, const RealType *y) {
+    return (x[0]-y[0])*(x[0]-y[0]) + (x[1]-y[1])*(x[1]-y[1]);
+  }
+
+  template<> inline RealType getDistanceSqrNoWrap<3>(const RealType *x, const RealType *y) {
+    return (x[0]-y[0])*(x[0]-y[0]) + (x[1]-y[1])*(x[1]-y[1]) + (x[2]-y[2])*(x[2]-y[2]);
+  }
+
   template<typename T> T inline dotVec(const T *x, const T *y) {
     T dt(0);
     #if _INTEL_ == 1

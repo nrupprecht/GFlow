@@ -14,8 +14,11 @@ namespace GFlowSimulation {
     // Pre-integrate calls sectorize
     virtual void pre_integrate();
 
-    //! Exchange particles between processors. Sectorization is designed for 
-    //! single processor jobs, so this function does not do anything.
+    //! @brief Doesn't do anything, but must be overloaded.
+    //!
+    //! In theory, this exchanges particles between processors. Sectorization is 
+    //! designed for single processor jobs, so this function does not do anything.
+    //! Since it is purely virtual for DomainBase, it must be overloaded.
     virtual void exchange_particles() {};
 
     // --- Accessors

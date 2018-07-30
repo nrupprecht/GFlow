@@ -262,7 +262,7 @@ namespace GFlowSimulation {
 
     // --- Calculate verlet lists
     RealType displacement[DIMENSIONS];
-    for (auto &cell1 : cells) {
+    for (const auto &cell1 : cells) {
       // Loop through every particle in the cell
       for (auto i1 = cell1.id_list.cbegin(); i1!=cell1.id_list.cend(); ++i1) {
         const int id1 = *i1;

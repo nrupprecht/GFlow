@@ -52,13 +52,18 @@ namespace GFlowSimulation {
     //! Get the move ratio tollerance
     RealType getMvRatioTolerance() const;
 
-    //! Get the number of times the domain has made verlet lists
+    //! Get the number of times the domain has made verlet lists.
     int getNumberOfRemakes() const;
 
-    //! Get the number of times the update delay was too long
+    //! Get the number of times the update delay was too long.
     int getMissedTarget() const;
 
+    //! Get what the average amount by which we missed our target particle 
+    //! displacement was.
     RealType getAverageMiss() const;
+
+    //! Get the sample size variable
+    int getSampleSize() const;
 
     // --- Mutators
 
@@ -69,6 +74,9 @@ namespace GFlowSimulation {
     //! Set the cutoff factor. This function is virtual, as the inheriting class
     //! may need to remake itself after doing this.
     virtual void setCutoffFactor(RealType);
+
+    //! Set the sample size variable.
+    void setSampleSize(int);
 
     // GFlow is a friend class
     friend class GFlow;
@@ -136,6 +144,22 @@ namespace GFlowSimulation {
     RealType **xVL;
     //! The size of the xVL array
     int sizeXVL;
+    
+    //! @brief How many particles we should sample to estimate the maximum displacement of 
+    //! particles. An important parameter when "used for good."
+    //!
+    //! If [sample_size]>0, we should sample a subset of the particles for calculating the 
+    //! max and second largest displacements. Otherwise, use all the particles. For 
+    //! homogenous mixtures of particles, e.g. gasses, you only need to look at a few particle
+    //! to find a good representation of the maximum displacement of any particle. \n
+    //! Of course, it is likely that you didn't find the true maximum displacement, and so we 
+    //! should estimate that the true maximum dispacement is larger. How much larger should
+    //! depend on the total number of particles compared to how many we sampled. \n
+    //! If there is a non-homogenous mixture of particles, then there may be local regions
+    //! where some particles are moving very quickly, like an explosion, or a ball dropping
+    //! into particles, which means that we may miss this if we only sample a subset of the 
+    //! particles. In this case, set sample_size to zero. Or risk it. Your choice.
+    int sample_size;
 
   };
 

@@ -26,6 +26,7 @@ namespace GFlowSimulation {
 
     // Values
     int number = -1; // -1 means use volume density
+    int sample = 0;
     RealType dt = 0.001;
     RealType vsgma = 0.25;
     RealType skinDepth = -1.;
@@ -37,6 +38,7 @@ namespace GFlowSimulation {
     // Gather command line arguments
     if (parserPtr) {
       parserPtr->get("number", number);
+      parserPtr->get("sample", sample);
       parserPtr->get("dt", dt);
       parserPtr->get("radius", radius);
       parserPtr->get("phi", phi);
@@ -97,6 +99,7 @@ namespace GFlowSimulation {
 
     // Set skin depth
     if (skinDepth>0) gflow->domain->setSkinDepth(skinDepth);
+    if (sample>0) gflow->domain->setSampleSize(sample);
 
     // Relax the setup
     hs_relax(gflow);

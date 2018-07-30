@@ -2,7 +2,6 @@
 #define __CELL_HPP__GFLOW__
 
 #include "utility.hpp"
-//#include "printingutility.hpp"
 
 namespace GFlowSimulation {
 
