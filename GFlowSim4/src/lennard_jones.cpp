@@ -45,31 +45,6 @@ namespace GFlowSimulation {
     }
   }
 
-  void LennardJones::forceKernel(int id1, int id2) const {
-    RealType **x = Base::simData->x, **f = Base::simData->f;
-    RealType *sg = Base::simData->sg;
-    RealType displacement[DIMENSIONS]; // To calculate displacement, normal vector
-    RealType F[DIMENSIONS];
-
-    Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
-    BCFlag boundaryConditions[DIMENSIONS]; 
-    copyVec(Base::gflow->getBCs(), boundaryConditions); // Keep a local copy of the wrap frags
-
-    // Get displacement
-    getDisplacement(x[id1], x[id2], displacement, bounds, boundaryConditions);
-    // Check if the particles should interact
-    RealType dsqr = sqr(displacement);
-    if (dsqr < sqr(sg[id1] + sg[id2])) {
-      RealType distance = sqrt(dsqr);
-      scalarMultVec(1./distance, displacement);
-      // Calculate force strength - displacement is now the normal vector
-      forceStrength(F, displacement, distance, id1, id2);
-      // Add force
-      plusEqVec (f[id1], F);
-      minusEqVec(f[id2], F);
-    }
-  }
-
   void LennardJones::setStrength(RealType s) {
     strength = s;
   }

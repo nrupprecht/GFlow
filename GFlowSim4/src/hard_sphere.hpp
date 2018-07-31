@@ -7,13 +7,11 @@ namespace GFlowSimulation {
 
   class HardSphere : public Force {
   public:
-    // Constructor
+    //! Constructor
     HardSphere(GFlow *);
 
-    // Calculate all the forces between atoms in the verlet lists
+    //! Calculate all the forces between atoms in the verlet lists
     virtual void calculateForces() const final;
-
-    virtual void forceKernel(int, int) const final;
 
     void setRepulsion(RealType r);
 

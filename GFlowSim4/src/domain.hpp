@@ -27,6 +27,14 @@ namespace GFlowSimulation {
     //! Exchange particles between processors
     virtual void exchange_particles();
 
+    // --- Locator functions
+
+    //! @brief Get all the particles within a radius of another particle
+    //! Fills a passed in vector with the ids of all the particles that lie within
+    //! a specified distance of a given particle.\n
+    //! This function must be overloaded by all children of DomainBase.
+    virtual void getAllWithin(int, RealType, vector<int>&);
+
   private:
     // --- Helper functions
 
@@ -59,6 +67,8 @@ namespace GFlowSimulation {
     void find_adjacent_cells(int[DIMENSIONS], bool, vector<int>&);
 
     inline void fill_cells();
+
+    inline bool correct_index(int[DIMENSIONS], bool);
 
     // --- Data
 

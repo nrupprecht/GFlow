@@ -27,9 +27,6 @@ namespace GFlowSimulation {
     // Set sizes (but not capacities) to zero, effectively "clearing" out the data
     void clear();
 
-    //! Loops through pairs of interacting particles, passing them to the force interaction kernel
-    void forceLoop(const class Force*) const;
-
     // Return the total length of the verlet list 
     int vlSize() const;
 

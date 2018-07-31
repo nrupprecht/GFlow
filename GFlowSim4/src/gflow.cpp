@@ -229,6 +229,10 @@ namespace GFlowSimulation {
     return forces;
   }
 
+  DataMaster* GFlow::getDataMaster() const {
+    return dataMaster;
+  }
+
   void GFlow::setCommand(int argc, char **argv) {
     if (argv) {
       this->argc = argc;

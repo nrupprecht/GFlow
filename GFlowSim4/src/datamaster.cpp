@@ -136,6 +136,10 @@ namespace GFlowSimulation {
       dataObjects.at(obj_id)->setFPS(fps);
   }
 
+  RealType DataMaster::getRatio() const {
+    return Base::gflow->getTotalRequestedTime()/run_time;
+  }
+
   inline bool DataMaster::writeSummary(string writeDirectory) {
     std::ofstream fout(writeDirectory+"/run_summary.txt");
     if (fout.fail()) {

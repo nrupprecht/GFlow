@@ -71,6 +71,8 @@ namespace GFlowSimulation {
 
     const vector<class Force*>& getForces() const;
 
+    class DataMaster* getDataMaster() const;
+
     // --- Mutators
 
     //! Set the command info

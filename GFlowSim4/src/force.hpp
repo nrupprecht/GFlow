@@ -24,8 +24,6 @@ namespace GFlowSimulation {
     // Calculate all the forces between atoms in the verlet lists
     virtual void calculateForces() const = 0;
 
-    virtual void forceKernel(const int, const int) const = 0;
-
     // --- Accessors
 
     // Return the total length of the verlet list 

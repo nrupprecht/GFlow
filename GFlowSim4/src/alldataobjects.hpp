@@ -15,5 +15,6 @@
 #include "timestepdata.hpp"
 #include "averagedata.hpp"
 #include "mininteractingdistance.hpp"
+#include "percolationdata.hpp"
 
 #endif // __ALL_DATA_OBJECTS_HPP__GFLOW__

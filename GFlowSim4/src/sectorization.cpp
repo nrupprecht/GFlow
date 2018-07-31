@@ -77,6 +77,10 @@ namespace GFlowSimulation {
     return sectors.at(index);
   }
 
+  void Sectorization::getAllWithin(int, RealType, vector<int>&) {
+    // @todo Implement this
+  }
+
   void Sectorization::setSkinDepth(RealType s) {
     DomainBase::setSkinDepth(s);
     makeSectors();

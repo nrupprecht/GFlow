@@ -58,6 +58,8 @@ namespace GFlowSimulation {
     // Set the fps of particular data objects
     void setFPS(int, RealType);
 
+    RealType getRatio() const;
+
     // GFlow is a friend class
     friend class GFlow;
 

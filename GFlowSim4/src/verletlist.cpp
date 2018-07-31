@@ -34,15 +34,6 @@ namespace GFlowSimulation {
     verlet[vsize++] = id2;
   }
 
-  void VerletList::forceLoop(const Force *force) const {
-    if (vsize==0) return; // No forces to calculate
-
-    // --- Go through all particles
-    for (int i=0; i<vsize; i+=2) {
-      force->forceKernel(i, i+1); 
-    }
-  }
-
   int VerletList::vlSize() const {
     return vsize;
   }
