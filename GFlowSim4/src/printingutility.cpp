@@ -34,7 +34,6 @@ namespace GFlowSimulation {
     else 
       dirName += ("/"+fileName+"/");
     // --> Dir name is now the name of the directory we are creating
-
     // Create a directory for all the data
     mkdir(dirName.c_str(), 0777);
 

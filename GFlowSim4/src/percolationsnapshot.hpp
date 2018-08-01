@@ -10,6 +10,8 @@ namespace GFlowSimulation {
   public:
     //! Default constructor
     PercolationSnapshot(GFlow*);
+    //! Skin setting constructor
+    PercolationSnapshot(GFlow*, RealType);
     //! Destructor
     ~PercolationSnapshot();
 
@@ -22,13 +24,15 @@ namespace GFlowSimulation {
     void clearRecord();
 
     // --- Data
+    RealType skin;
+    bool same_type_clusters;
 
     Clustering clustering;
 
     //! The data for the particles
     vector<RealType*> record;
 
-    //! How many elements are in each cluster (# particles * (DIMENSIONS+1))
+    //! How many elements are in each cluster (# particles)
     vector<int> elements;
   };
 

@@ -9,8 +9,10 @@ namespace GFlowSimulation {
 
   class PercolationData : public DataObject {
   public:
-    //! Constructor
+    //! Default constructor
     PercolationData(GFlow*);
+    //! Skin setting constructor
+    PercolationData(GFlow*, RealType);
 
     //! Collect the position data from simdata --- happens during the post-step phase
     virtual void post_step();

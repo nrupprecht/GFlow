@@ -16,13 +16,21 @@ namespace GFlowSimulation {
     void findClusters();
 
     //! Get a vector of all the cluster sizes
-    vector<int> getClusterSizes() const;
+    const vector<int>& getClusterSizes() const;
 
     //! Get the clusters vector
     const vector<int>& getClusters() const;
 
     //! Get the number of clusters
     int getNumClusters() const;
+
+    int getMaxClusterSize() const;
+
+    // --- Mutators
+
+    void setSkin(RealType);
+
+    void setSameTypeClusters(bool);
 
   private:
     // --- Helper functions
@@ -34,8 +42,10 @@ namespace GFlowSimulation {
 
     //! A mapping from particle id to cluster #
     vector<int> clusters;
+    //! The sizes of the n-th cluster
+    vector<int> cluster_sizes;
     //! The number of clusters
-    int n_clusters;
+    int n_clusters, max_cluster_size;
 
     //! If true, we cluster particles of the same type. Otherwise, cluster
     //! all types of particles together

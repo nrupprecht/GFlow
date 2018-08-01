@@ -28,13 +28,6 @@ namespace GFlowSimulation {
   }
 
   bool EndingSnapshot::writeToFile(string fileName, bool useName) {
-    // The name of the directory for this data
-    string dirName = fileName;
-    if (*fileName.rbegin()=='/') // Make sure there is a /
-      dirName += dataName+"/";
-    else 
-      dirName += ("/"+dataName+"/");
-
     // Put data into vectors so we can use "PrintingUtility::writeVectorToDirectory"
     vector<RealType*> container; 
     container.push_back(positions);

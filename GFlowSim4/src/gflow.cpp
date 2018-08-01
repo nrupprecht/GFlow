@@ -203,6 +203,10 @@ namespace GFlowSimulation {
     return forces.size(); 
   }
 
+  int GFlow::getNumParticles() const {
+    return simData->number;
+  }
+
   Bounds GFlow::getBounds() const {
     return bounds;
   }

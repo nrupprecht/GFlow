@@ -2,8 +2,17 @@
 
 namespace GFlowSimulation {
 
-  PercolationSnapshot::PercolationSnapshot(GFlow *gflow) : DataObject(gflow, "PercolationSnapshot"), 
-    clustering(Clustering(gflow)) {};
+  PercolationSnapshot::PercolationSnapshot(GFlow *gflow) : DataObject(gflow, "PercolationSnapshot"), skin(0), same_type_clusters(true), 
+    clustering(Clustering(gflow)) {
+      clustering.setSkin(skin);
+      clustering.setSameTypeClusters(same_type_clusters);
+  };
+
+  PercolationSnapshot::PercolationSnapshot(GFlow *gflow, RealType s) : DataObject(gflow, "PercolationSnapshot"), skin(s), same_type_clusters(true), 
+    clustering(Clustering(gflow)) {
+      clustering.setSkin(skin);
+      clustering.setSameTypeClusters(same_type_clusters);
+  };
 
   PercolationSnapshot::~PercolationSnapshot() {
     clearRecord();
@@ -28,30 +37,24 @@ namespace GFlowSimulation {
       constituents[clus].push_back(Base::simData->sg[i]);
     }
 
-    // Fill [record] vector
-    vector<RealType*> record(n_clusters, nullptr);
+    // Fill [record] and [elements] vectors
+    clearRecord();
+    elements.clear();
+    record = vector<RealType*>(n_clusters, nullptr);
     for (int i=0; i<n_clusters; ++i) {
       record[i] = new RealType[ constituents[i].size() ];
       copyVec(&constituents[i][0], record.at(i), constituents[i].size());
+      elements.push_back(constituents[i].size()/(DIMENSIONS+1));
     }
-    // Fill the [elements] vector
-    for (int i=0; i<n_clusters; ++i) 
-      elements[i] = constituents[i].size();
 
+    // Clean up
+    delete [] constituents;
   }
   
 
 
   bool PercolationSnapshot::writeToFile(string fileName, bool useName) {
-    // The name of the directory for this data
-    string dirName = fileName;
-    if (*fileName.rbegin()=='/') // Make sure there is a /
-      dirName += dataName+"/";
-    else 
-      dirName += ("/"+dataName+"/");
-
-    if (!PrintingUtility::writeVectorToDirectory(record, elements, DIMENSIONS + 1, dirName, dataName)) return false;
-
+    if (!PrintingUtility::writeVectorToDirectory(record, elements, DIMENSIONS + 1, fileName, dataName)) return false;
     return true;
   }
 

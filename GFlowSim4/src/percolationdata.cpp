@@ -2,12 +2,18 @@
 
 namespace GFlowSimulation {
 
-  PercolationData::PercolationData(GFlow* gflow) : DataObject(gflow, "Percolation"), clustering(Clustering(gflow)), same_type_clusters(true), skin(0.) {};
+  PercolationData::PercolationData(GFlow* gflow) : DataObject(gflow, "Percolation"), clustering(Clustering(gflow)), 
+    same_type_clusters(true), skin(0.) {};
+
+  PercolationData::PercolationData(GFlow* gflow, RealType x) : DataObject(gflow, "Percolation"), clustering(Clustering(gflow)), 
+    same_type_clusters(true), skin(0.) {};
 
   void PercolationData::post_step() {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
 
+    clustering.setSkin(skin);
+    clustering.setSameTypeClusters(same_type_clusters);
     clustering.findClusters();
     // Store data
     vector<int> cluster_size = clustering.getClusterSizes();

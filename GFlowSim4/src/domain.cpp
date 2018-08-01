@@ -192,6 +192,9 @@ namespace GFlowSimulation {
   }
 
   void Domain::getAllWithin(int id, RealType radius, vector<int>& neighbors) {
+    // Clear the vector
+    neighbors.clear();
+
     // Find where particle [id] is
     RealType *X = Base::simData->x[id];
     RealType displacement[DIMENSIONS];
@@ -218,9 +221,10 @@ namespace GFlowSimulation {
       if (correct_index(other_index, is_special)) {
         tuple_to_linear(lin, other_index);
         for (const auto n_id : cells[lin].id_list) {
+          if (id==n_id) continue;
           getDisplacement(Base::simData->x[id], Base::simData->x[n_id], displacement, bounds, bcs);
           // Check that the particle is close enough
-          if (sqr(displacement)<sqr(radius) && n_id!=id)
+          if (sqr(displacement)<sqr(radius))
             neighbors.push_back(n_id);
         }
       }

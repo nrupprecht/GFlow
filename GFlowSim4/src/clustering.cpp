@@ -6,7 +6,7 @@
 
 namespace GFlowSimulation {
 
-  Clustering::Clustering(GFlow *gflow) : Base(gflow), same_type_clusters(true), skin(0.) {};
+  Clustering::Clustering(GFlow *gflow) : Base(gflow), same_type_clusters(true), skin(0.), n_clusters(0), max_cluster_size(0) {};
 
   void Clustering::findClusters() {
     // Look for clusters of particles
@@ -16,6 +16,7 @@ namespace GFlowSimulation {
     // Array used to see which particles are in which cluster - reset it
     // -1 means not on the stack
     clusters = vector<int>(number, -1);
+    cluster_sizes.clear();
     // Get the types
     const int *type = Base::simData->type;
     // Stack for clustering
@@ -30,14 +31,16 @@ namespace GFlowSimulation {
     while(head < number) {
       head_type = type[head];
       check_stack.push(head);
+      cluster_sizes.push_back(0);
       // Go through stack of neighbors, neighbors of neigbors, etc. until none are left
       while (!check_stack.empty()) {
         // ID of the particle to check the type of
         int id = check_stack.top();
         check_stack.pop(); // Pop off the stack
+        ++cluster_sizes[n_clusters]; // Another particle in in the cluster
         // Particle with id [id] belongs in the same cluster as particle with id [head]
         clusters[id] = n_clusters;
-        // Fill the neighbors array with 
+        // Fill the neighbors array with ids. The [getAllWithin] function clears [neighbors] before filling it.
         Base::domain->getAllWithin(id, 2*Base::simData->sg[id] + skin, neighbors);
         for (auto n : neighbors) {
           // Only put on the stack if it is not already on the stack, and has not had its
@@ -47,6 +50,9 @@ namespace GFlowSimulation {
           }
         }
       }
+      // Is this cluster the biggest so far?
+      if (cluster_sizes.at(n_clusters) > max_cluster_size) 
+        max_cluster_size = cluster_sizes.at(n_clusters);
       // Increment [head_count]
       ++n_clusters;
       // Get the next head
@@ -54,12 +60,8 @@ namespace GFlowSimulation {
     }
   }
 
-  vector<int> Clustering::getClusterSizes() const {
-    // Do staticstics on cluster size
-    vector<int> cluster_size(n_clusters, 0);
-    for (int n=0; n<clusters.size(); ++n) ++cluster_size[ clusters[n] ];
-    // Return the vector
-    return cluster_size;
+  const vector<int>& Clustering::getClusterSizes() const {
+    return cluster_sizes;
   }
 
   const vector<int>& Clustering::getClusters() const {
@@ -68,6 +70,18 @@ namespace GFlowSimulation {
 
   int Clustering::getNumClusters() const {
     return n_clusters;
+  }
+
+  int Clustering::getMaxClusterSize() const {
+    return max_cluster_size;
+  }
+
+  void Clustering::setSkin(RealType s) {
+    skin = s;
+  }
+
+  void Clustering::setSameTypeClusters(bool s) {
+    same_type_clusters = s;
   }
 
   void Clustering::get_next(int &head, const vector<int>& cluster) {
