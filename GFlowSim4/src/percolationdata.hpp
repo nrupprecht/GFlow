@@ -2,8 +2,8 @@
 #define __PERCOLATION_DATA_HPP__GFLOW__
 
 #include "dataobject.hpp"
-#include <stack>
-#include <map>
+// For the clustering object
+#include "clustering.hpp"
 
 namespace GFlowSimulation {
 
@@ -20,10 +20,11 @@ namespace GFlowSimulation {
     virtual bool writeToFile(string, bool=true);
 
   private:
-    // --- Helper functions
+    //! Record of the clusters that exist at various times
+    vector<vector<int> > cluster_size_record;
 
-    //! Get the next uncatagorized particle id
-    void get_next(int&, const vector<int>&);
+    //! Clustering object
+    Clustering clustering;
 
     //! If true, we cluster particles of the same type. Otherwise, cluster
     //! all types of particles together
@@ -31,8 +32,6 @@ namespace GFlowSimulation {
 
     //! How close to touching should particles be to be counted as being in the same cluster
     RealType skin;
-
-    vector<std::pair<RealType, vector<int> > > cluster_size_record;
 
   };
 

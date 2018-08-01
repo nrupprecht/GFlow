@@ -5,6 +5,19 @@
 
 namespace GFlowSimulation {
 
+  template<typename T> inline string toCSV(const vector<T>& vec) {
+    stringstream stream;
+    for (int i=0; i<vec.size(); ++i) {
+      stream << vec[i];
+      if (i!=vec.size()-1) stream << ",";
+    }
+    string str;
+    stream >> str;
+    return str;
+  }
+
+
+  //! @todo Turn all these functions into free-standing (inline) functions.
   struct PrintingUtility {
 
     template<typename T> static bool writeVectorToFile(vector<T>& vec, string fileName) {

@@ -38,9 +38,6 @@ namespace GFlowSimulation {
         scalarMultVec(1./distance, displacement, normal);
         // Calculate force strength
         forceStrength(F, normal, distance, id1, id2);
-        // Add force
-        plusEqVec (f[id1], F);
-        minusEqVec(f[id2], F);
       }
     }
   }
@@ -59,9 +56,12 @@ namespace GFlowSimulation {
     RealType gamma = (sg[id1]+sg[id2]) / (distance*cutoff);
     RealType g3 = gamma*gamma*gamma, g6 = sqr(g3), g12 = sqr(g6);
     // The c1*c2 makes sure the magnitude is zero if either particles are of type -1
-    RealType magnitude = c1*c2*24*strength*(2*g12 - g6)*(1./distance); 
+    RealType magnitude = c1*c2*24.*strength*(2.*g12 - g6)*(1./distance); 
     // Make vectorial
     scalarMultVec(magnitude, normal, F);
+    // Add forces
+    plusEqVec (Base::simData->f[id1], F);
+    minusEqVec(Base::simData->f[id2], F);
   }
 
 }

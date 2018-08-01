@@ -215,12 +215,12 @@ namespace GFlowSimulation {
 
       addVec(index, d_index, other_index);
 
-      if (correct_index(index, is_special)) {
+      if (correct_index(other_index, is_special)) {
         tuple_to_linear(lin, other_index);
         for (const auto n_id : cells[lin].id_list) {
           getDisplacement(Base::simData->x[id], Base::simData->x[n_id], displacement, bounds, bcs);
           // Check that the particle is close enough
-          if (sqr(displacement)<sqr(radius))
+          if (sqr(displacement)<sqr(radius) && n_id!=id)
             neighbors.push_back(n_id);
         }
       }

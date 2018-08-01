@@ -40,9 +40,6 @@ namespace GFlowSimulation {
         scalarMultVec(1./distance, displacement, normal);
         // Calculate force strength
         forceStrength(F, normal, distance, id1, id2);
-        // Add force
-        plusEqVec (f[id1], F);
-        minusEqVec(f[id2], F);
       }
     }
   }
@@ -57,6 +54,9 @@ namespace GFlowSimulation {
     RealType c2 = Base::simData->type[id2]<0 ? 0 : 1.; //--
 
     scalarMultVec(c1*c2*repulsion*(simData->Sg(id1) + simData->Sg(id2) - distance), normal, F);
+    // Add forces
+    plusEqVec (Base::simData->f[id1], F);
+    minusEqVec(Base::simData->f[id2], F);
   }
 
 }

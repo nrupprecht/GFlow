@@ -63,6 +63,7 @@ int main(int argc, char **argv) {
   bool averages = false;
   bool minDistances = false;
   bool percolation = false;
+  bool psnapshot = false;
   // Other options
   bool adjustDT = false;
   RealType startRecTime = 0;
@@ -95,6 +96,7 @@ int main(int argc, char **argv) {
   parser.get("averages", averages);
   parser.get("minDistances", minDistances);
   parser.get("percolation", percolation);
+  parser.get("psnapshot", psnapshot);
   parser.get("adjustDT", adjustDT);
   parser.get("lj", adjustDT); // Adjust DT if lj is true
   parser.get("startRec", startRecTime);
@@ -165,6 +167,7 @@ int main(int argc, char **argv) {
   if (averages)    gflow->addDataObject(new AverageData(gflow));
   if (minDistances) gflow->addDataObject(new MinInteractingDistance(gflow));
   if (percolation) gflow->addDataObject(new PercolationData(gflow));
+  if (psnapshot) gflow->addDataObject(new PercolationSnapshot(gflow));
   gflow->setFPS(fps); // Do after data objects are loaded
   gflow->setDMCmd(argc, argv);
 
