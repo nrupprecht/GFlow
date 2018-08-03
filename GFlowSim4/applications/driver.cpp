@@ -65,7 +65,9 @@ int main(int argc, char **argv) {
   bool percolation = false;
   bool psnapshot = false;
   RealType skin = 0.;
+
   // Other options
+  RealType gravity = 0.;
   bool adjustDT = false;
   RealType startRecTime = 0;
   RealType fps = 15.;
@@ -99,6 +101,7 @@ int main(int argc, char **argv) {
   parser.get("percolation", percolation);
   parser.get("psnapshot", psnapshot);
   parser.get("skin", skin);
+  parser.get("gravity", gravity);
   parser.get("adjustDT", adjustDT);
   parser.get("lj", adjustDT); // Adjust DT if lj is true
   parser.get("startRec", startRecTime);
@@ -177,6 +180,7 @@ int main(int argc, char **argv) {
   if (temperature>0) gflow->addModifier(new TemperatureModifier(gflow, temperature));
   // Timestep adjustment
   if (adjustDT) gflow->addModifier(new TimestepModifier(gflow));
+  if (gravity!=0) gflow->addModifier(new ConstantAcceleration(gflow, -1.));
 
   // Set time step and request time
   gflow->setDT(dt);

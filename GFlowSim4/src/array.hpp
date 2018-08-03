@@ -25,8 +25,7 @@ namespace GFlowSimulation {
   *  --> Linear address = i(0)*[d(1)*...*d(n-1)] + i(1)*[d(2)*...*d(n-1)] + ... + i(n-2)*d(n-1) + i(n-1) 
   */
 
-  /*
-  *  @class ArrayBase
+  /** @class Array
   *
   *  Primary template for ArrayBase
   *  Can be specialized to Linear, Rectangular, Rectangular prismic, etc arrays.
@@ -37,13 +36,13 @@ namespace GFlowSimulation {
   */
   template<class T, int D=DIMENSIONS> class Array {
   public:
-    // Default constructor
-    Array() : data(nullptr), alignment(64) {
+    //! Default constructor
+    Array() : data(nullptr) {
       dims = new int[D];
       for (int d=0; d<D; ++d) dims[d] = 0;
     }
 
-    // Constructor
+    //! Constructor
     Array(int *sizes) {
       dims = new int[D]; 
       for (int i=0; i<D; ++i) dims[i] = sizes[i];
@@ -51,39 +50,45 @@ namespace GFlowSimulation {
       for (int i=0; i<_product(0); ++i) data[i] = T();
     }
 
-    // Destructor
+    //! Destructor
     ~Array() {
       if (dims) delete [] dims;
       if (data) delete [] data;
     }
 
-    // Resize 
-    void resize(int *sizes) {
+    //! @brief Resize the array
+    //! Resize the array to have the shape specified by the parameter sizes
+    void resize(int sizes[D]) {
       uint total = _product(0);
       for (int i=0; i<D; ++i) dims[i] = sizes[i];
       uint newTotal = _product(0);
       // Reallocate if we don't have the correct amount of space
       if (total!=newTotal) {
         if (data) delete [] data;
-	data = new T[newTotal];
-	for (int i=0; i<newTotal; ++i) data[i] = T();
+      	data = new T[newTotal];
+      	for (int i=0; i<newTotal; ++i) data[i] = T();
       }
     }
 
+    //! Get an element by reference given a D-tuple index
     T& at(int *index) {
       int II = _get_index(index);
       return data[II];
     }
 
+    //! Get an element by const reference given a D-tuple index
     const T& at(int *index) const {
       int II = _get_index(index);
       return data[II];
     }
 
+    //! @brief Get an element by direct access.
+    //! Get an element by reference given a linear index (direct access)
     T& operator[] (int II) {
       return data[II];
     }
 
+    //! Return the total number of elements in the array
     int total() {
       return _product(0);
     }
@@ -98,27 +103,24 @@ namespace GFlowSimulation {
     }
 
   private:
-    // The lengths of the data
+    //! The lengths of the data
     int *dims;
 
-    // The data itself
+    //! The data itself
     T *data;
-
-    // Alignment
-    uint alignment;
 
     // --- Helper functions
 
-    // Find the product of some of the widths - up to, but not including, [n]
-    inline int _product(int n) {
+    //! Find the product of some of the widths - up to, but not including, [n]
+    inline int _product(const int n) const {
       // Do the product - will not be done if n>=D, so we will return 1
       int total = 1;
       for (int i=n; i<D; ++i) total *= dims[i];
       return total;
     }
 
-    // Find the linear index for an index set
-    inline int _get_index(int *index) {
+    //! Find the linear index for an index set
+    inline int _get_index(const int *index) const {
       int II = 0;
       for (int i=0; i<D; ++i)
         II += index[i]*_product(i+1);
@@ -126,27 +128,38 @@ namespace GFlowSimulation {
     }
   };
 
-  // Empty class for D=0
-  template<class T> class Array<T,0> {};
+  /**
+  *  @brief Zero dimensional array.
+  *
+  *  Empty class for D=0, throws the ZeroDimension exception
+  */
+  template<class T> class Array<T,0> {
+    //! Constructor. Throws the ZeroDimensional exception when called.
+    Array() {
+      throw ZeroDimension("Zero dimensional array created.");
+    }
+  };
 
-  // One dimensional array
+  //! @brief One dimensional array.
+  //! The template class Array specialized to 1-dimensional arrays.
   template<class T> class Array<T,1> {
   public:
-    // Default constructor
+    //! Default constructor
     Array() : data(nullptr), alignment(64), dims(0) {};
 
-    // Constructor
+    //! Size setting constructor
     Array(int s0) : dims(s0) {
       data = new T[dims];
       for (int i=0; i<s0; ++i) data[i] = T();
     }
 
-    // Destructor
+    //! Destructor
     ~Array() {
       if (data) delete [] data;
     }
 
-    // Resize 
+    //! @brief Resize the array.
+    //! Resize the array to have the shape specified by the parameter sizes.
     void resize(int *sizes) {
       uint oldDims = dims;
       dims = sizes[0];
@@ -154,8 +167,8 @@ namespace GFlowSimulation {
       if (oldDims!=dims) {
         //if (data) delete data;
         if (data) delete [] data;
-	data = new T[dims];
-	for (int i=0; i<dims; ++i) data[i] = T();
+      	data = new T[dims];
+      	for (int i=0; i<dims; ++i) data[i] = T();
       }
     }
 
@@ -177,10 +190,13 @@ namespace GFlowSimulation {
       return data[*index];
     }
 
+    //! @brief Get an element by direct access.
+    //! Get an element by reference given a linear index (direct access).
     T& operator[] (int II) {
       return data[II];
     }
 
+    //! The total number of elements in the array.
     int total() {
       return dims;
     }
@@ -248,9 +264,9 @@ namespace GFlowSimulation {
       uint newTotal = dims[0]*dims[1];
       // Reallocate if we don't have the correct amount of space
       if (total!=newTotal) {
-	if (data) delete [] data;
-	data = new T[newTotal];
-	for (int i=0; i<newTotal; ++i) data[i] = T();
+      	if (data) delete [] data;
+      	data = new T[newTotal];
+      	for (int i=0; i<newTotal; ++i) data[i] = T();
       }
     }
 
@@ -292,13 +308,13 @@ namespace GFlowSimulation {
     }
 
   private:
-    // The lengths of the data
+    //! The lengths of the data
     int dims[2];
 
-    // Alignment
+    //! Alignment
     uint alignment;
 
-    // The data itself
+    //! The data itself
     T *data;
   };
 
@@ -332,8 +348,8 @@ namespace GFlowSimulation {
       // Reallocate if we don't have the correct amount of space
       if (total!=newTotal) {
         if (data) delete [] data;
-	data = new T[newTotal];
-	for (int i=0; i<newTotal; ++i) data[i] = T();
+      	data = new T[newTotal];
+      	for (int i=0; i<newTotal; ++i) data[i] = T();
       }
     }
 
@@ -390,7 +406,10 @@ namespace GFlowSimulation {
   // ---> see <https://stackoverflow.com/questions/2996914/c-typedef-for-partial-templates>
   // template<typename T> using Array = ArrayBase<DIMENSIONS, T>;
 
-  // Address helping function
+  //! @brief A helper function that turns a linear address into a tuple address.
+  //!
+  //! This is the template dimension version of the function. It is overloaded for
+  //! the zero through three dimensional cases (at the time of this writing).
   template<int D=DIMENSIONS> inline void getAddress(int linear, int *dims, int *address) {
     // Lambda for the produce
     auto product = [&] (int c) -> int {
@@ -406,17 +425,33 @@ namespace GFlowSimulation {
     }
   }
 
-  template<> inline void getAddress<0>(int linear, int *dims, int *address) {};
+  //! @brief A helper function that turns a linear address into a tuple address.
+  //!
+  //! The zero dimensional version of this function - it doesn't do anything
+  //! except throw an exception, since we should never have a zero dimensional
+  //! anything.
+  template<> inline void getAddress<0>(int linear, int *dims, int *address) {
+    throw ZeroDimension("Get address is zero dimensional");
+  };
 
+  //! @brief A helper function that turns a linear address into a tuple address.
+  //!
+  //! The one dimensional template specialization.
   template<> inline void getAddress<1>(int linear, int *dims, int *address) {
     address[0] = linear;
   }
 
+  //! @brief A helper function that turns a linear address into a tuple address.
+  //!
+  //! The two dimensional template specialization.
   template<> inline void getAddress<2>(int linear, int *dims, int *address) {
     address[0] = linear / dims[1];
     address[1] = linear % dims[1];
   }
 
+  //! @brief A helper function that turns a linear address into a tuple address.
+  //!
+  //! The three dimensional template specialization.
   template<> inline void getAddress<3>(int linear, int *dims, int *address) {
     int s1 = dims[1]*dims[2];
     address[0] = linear/s1;

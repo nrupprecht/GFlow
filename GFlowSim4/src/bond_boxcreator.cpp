@@ -34,22 +34,29 @@ namespace GFlowSimulation {
     RealType width = 4.;
     RealType vsgma = 0.25;
     RealType skinDepth = -1.;
+    RealType repulsion = 1.;
     bool animate = false;;
     bool over_damped_flag = false;
+    bool lj_flag = false;
 
     // Gather command line arguments
-    parserPtr->get("number", number);
-    parserPtr->get("dt", dt);
-    parserPtr->get("radius", radius);
-    parserPtr->get("phi", phi);
-    parserPtr->get("width", width);
-    parserPtr->get("vsgma", vsgma);
-    parserPtr->get("skinDepth", skinDepth);
-    parserPtr->get("animate", animate);
-    parserPtr->get("overdamped", over_damped_flag);
+    if (parserPtr) {
+      parserPtr->get("number", number);
+      parserPtr->get("dt", dt);
+      parserPtr->get("radius", radius);
+      parserPtr->get("phi", phi);
+      parserPtr->get("width", width);
+      parserPtr->get("vsgma", vsgma);
+      parserPtr->get("skinDepth", skinDepth);
+      parserPtr->get("repulsion", repulsion);
+      parserPtr->get("animate", animate);
+      parserPtr->get("overdamped", over_damped_flag);
+      parserPtr->get("lj", lj_flag);
+    }
 
     // Create a new gflow object
     GFlow *gflow = new GFlow;
+    gflow->setAllBCs(bcFlag);
 
     // Set the bounds of the gflow object
     if (width<=0) width = 1.; // In case of bad argument
@@ -100,8 +107,20 @@ namespace GFlowSimulation {
 
     // --- Handle forces
     gflow->forceMaster->setNTypes(1); // Only one type of particle
-    Force *hard_sphere = new HardSphere(gflow);
-    gflow->forceMaster->setForce(0, 0, hard_sphere);
+    Force *force;
+    if(lj_flag) {
+      force = new LennardJones(gflow);
+      dynamic_cast<LennardJones*>(force)->setStrength(
+        repulsion*DEFAULT_LENNARD_JONES_STRENGTH
+      );
+    }
+    else {
+      force = new HardSphere(gflow);
+      dynamic_cast<HardSphere*>(force)->setRepulsion(
+        repulsion*DEFAULT_HARD_SPHERE_REPULSION
+      );
+    }
+    gflow->forceMaster->setForce(0, 0, force);
 
     // Set skin depth
     if (skinDepth>0) gflow->domain->setSkinDepth(skinDepth);

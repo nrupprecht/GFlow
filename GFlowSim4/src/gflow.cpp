@@ -4,12 +4,12 @@
 
 namespace GFlowSimulation {
 
-  GFlow::GFlow() : running(false), requested_time(0), elapsed_time(0), total_time(0), 
+  GFlow::GFlow() : running(false), useForces(true), requested_time(0), elapsed_time(0), total_time(0), 
     iter(0), argc(0), argv(nullptr), repulsion(DEFAULT_HARD_SPHERE_REPULSION) 
   {
     simData      = new SimData(this);
     // Integrator will be created by the creator
-    domain       = new Domain(this); // Sectorization(this); // 
+    domain       = new Domain(this); // new Sectorization(this); //  // 
     communicator = new Communicator(this);
     dataMaster   = new DataMaster(this);
     forceMaster  = new ForceMaster(this);
@@ -19,11 +19,11 @@ namespace GFlowSimulation {
   }
 
   GFlow::~GFlow() {
-    if (simData)       delete simData;
-    if (domain)        delete domain;
-    if (integrator)    delete integrator;
-    if (communicator)  delete communicator;
-    if (dataMaster)    delete dataMaster;
+    if (simData)      delete simData;
+    if (domain)       delete domain;
+    if (integrator)   delete integrator;
+    if (communicator) delete communicator;
+    if (dataMaster)   delete dataMaster;
     for (auto &md : modifiers) 
       if (md) delete md;
     for (auto &fr : forces)
@@ -93,7 +93,7 @@ namespace GFlowSimulation {
     // Make sure we have initialized everything
     if (!initialize()) {
       // Some object was null
-      UnexpectedNullPointer("Error: Some object was null at GFlow initialization.");
+      throw UnexpectedNullPointer("Error: Some object was null at GFlow initialization.");
     }
 
     // --> Pre-integrate
@@ -124,10 +124,10 @@ namespace GFlowSimulation {
 
       // --> Pre-force
       for (auto m : modifiers) m->pre_forces();
-      integrator->pre_forces(); // -- This is where VV first half kick happens
+      integrator->pre_forces(); // -- This is where VV first half kick happens (if applicable)
       dataMaster->pre_forces();
-
       domain->pre_forces(); // -- This is where resectorization / verlet list creation might happen
+      
       // Wrap or reflect particles
       wrapPositions();
       reflectPositions();
@@ -140,7 +140,7 @@ namespace GFlowSimulation {
 
       // --> Post-forces
       for (auto m : modifiers) m->post_forces(); // -- This is where modifiers should do forces (if they need to)
-      integrator->post_forces(); // -- This is where VV second half kick happens
+      integrator->post_forces(); // -- This is where VV second half kick happens (if applicable)
       dataMaster->post_forces();
       domain->post_forces();
 

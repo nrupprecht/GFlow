@@ -23,7 +23,7 @@ namespace GFlowSimulation {
   template<int D=DIMENSIONS> inline RealType getDistanceSqrNoWrap(const RealType *x, const RealType *y) {
     RealType distance = 0;
     for (int d=0; d<D; ++d) distance += (x[d] - y[d]);
-    return distance
+    return distance;
   }
 
   template<> inline RealType getDistanceSqrNoWrap<1>(const RealType *x, const RealType *y) {

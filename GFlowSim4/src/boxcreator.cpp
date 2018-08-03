@@ -33,6 +33,7 @@ namespace GFlowSimulation {
     RealType repulsion = 1.;
     bool animate = false;
     bool over_damped_flag = false;
+    RealType langevin_temp = 0.;
     bool lj_flag = false;
 
     // Gather command line arguments
@@ -48,6 +49,7 @@ namespace GFlowSimulation {
       parserPtr->get("repulsion", repulsion);
       parserPtr->get("animate", animate);
       parserPtr->get("overdamped", over_damped_flag);
+      parserPtr->get("langevin", langevin_temp);
       parserPtr->get("lj", lj_flag);
     }
 
@@ -71,13 +73,22 @@ namespace GFlowSimulation {
     // Add some objects
     SimData *simData = gflow->simData;
     simData->reserve(number);
-    simData->number = number;
+    //-- simData->number = number;
+    RealType X[DIMENSIONS], V[DIMENSIONS]; //-- 
+    zeroVec(V); //-- 
     for (int n=0; n<number; ++n) {
       // Give some random initial positions - we will allow these to relax
-      for (int d=0; d<DIMENSIONS; ++d) simData->X(n, d) = (drand48()-0.5)*width;
-      simData->Sg(n) = radius;
-      simData->Im(n) = 1.0 / (1.0 * PI*sqr(radius)); // Density of 1
-      simData->Type(n) = 0;
+      
+      for (int d=0; d<DIMENSIONS; ++d) {
+        X[d] = (drand48()-0.5)*width;
+        //-- simData->X(n, d) = (drand48()-0.5)*width;
+      }
+      //-- simData->Sg(n) = radius;
+      //-- simData->Im(n) = 1.0 / (1.0 * PI*sqr(radius)); // Density of 1
+      //-- simData->Type(n) = 0;
+
+      RealType im = 1.0 / (1.0 * PI*sqr(radius));
+      simData->addParticle(X, V, radius, im, 0); //--
     }
 
     // --- Handle forces
@@ -104,6 +115,7 @@ namespace GFlowSimulation {
     // Relax the setup
     hs_relax(gflow);
     if (over_damped_flag) gflow->integrator = new OverdampedIntegrator(gflow);
+    else if (langevin_temp>0) gflow->integrator = new LangevinIntegrator(gflow, langevin_temp);
     else gflow->integrator = new VelocityVerlet(gflow);
     // Set integrator initial time step
     gflow->integrator->setDT(dt);

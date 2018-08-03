@@ -1,3 +1,4 @@
+
 #include "domainbase.hpp"
 // Other files
 #include "vectormath.hpp"
@@ -7,7 +8,7 @@
 
 namespace GFlowSimulation {
 
-  DomainBase::DomainBase(GFlow *gflow) : Base(gflow), skinDepth(DEFAULT_SKIN_DEPTH ), cutoff(0), minCutoff(0), cutoffFactor(1.), 
+  DomainBase::DomainBase(GFlow *gflow) : Base(gflow), skinDepth(DEFAULT_SKIN_DEPTH), cutoff(0), minCutoff(0), cutoffFactor(1.), 
     number_of_remakes(0), lastCheck(-1.), lastUpdate(-1.), updateDelay(1.0e-4), max_update_delay(DEFAULT_MAX_UPDATE_DELAY), 
     mvRatioTolerance(DEFAULT_MV_RATIO_TOLERANCE ), motionFactor(DEFAULT_MOTION_FACTOR), missed_target(0), xVL(nullptr), sizeXVL(0),
     sample_size(0)

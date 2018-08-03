@@ -39,6 +39,12 @@ using std::chrono::duration_cast;
 
 #include <stdlib.h> // For aligned_alloc
 
+/**
+*  \namespace GFlowSimulation The GFlow simulation namespace
+*
+*  This namespace encapsulated all the objects, typedefs, etc. used by the
+*  GFlow simulation. Almost every object is contained within this namespace.
+*/
 namespace GFlowSimulation {
 
   // Define what type of floating point data to use
@@ -72,15 +78,18 @@ namespace GFlowSimulation {
     return str;
   }
 
+  //! Find the max of two objects
   template<typename T> inline T max(T a, T b) {
     return a>b ? a : b;
   }
 
+  //! Find the min of two objects
   template<typename T> inline T min(T a, T b) {
     return a<b ? a : b;
   }
 
-  template<typename T> inline bool contains(vector<T> vec, T obj) {
+  //! Check if a vector contains a specified object
+  template<typename T> inline bool contains(const vector<T>& vec, T obj) {
     return std::find(vec.begin(), vec.end(), obj) != vec.end();
   }
 
@@ -95,7 +104,7 @@ namespace GFlowSimulation {
     return span.count();
   }
 
-  //! Print as (hrs):(mins):(sec)
+  //! Print a time given in seconds as (hrs):(mins):(sec)
   inline string printAsTime(double seconds) {
     stringstream stream;
     string str;
@@ -142,6 +151,7 @@ namespace GFlowSimulation {
     global_generator = std::mt19937(seed);
   }
 
+  //! Returns a random normal double from the global normal distribution
   inline double randNormal() {
     return global_normal_dist(global_generator);
   }
@@ -159,8 +169,8 @@ namespace GFlowSimulation {
 
 namespace GFlowSimulation {
 
-  // The volume of a [D]-dimensional sphere - need PI
-  inline RealType sphere_volume(RealType radius, int D=DIMENSIONS) {
+  //! Computes the volume of a [D]-dimensional sphere - need PI
+  inline RealType sphere_volume(const RealType radius, const int D=DIMENSIONS) {
     return pow(PI, D/2.) * pow(radius, D) / tgamma(D/2. + 1.);
   }
 

@@ -20,8 +20,7 @@ int main(int argc, char **argv) {
   RealType minPhi = 0.;
   RealType maxPhi = 0.8;
   RealType dt = 0.001;
-  RealType time = 60.;
-  RealType startRec = 5.;
+  RealType time = 5.;
   RealType skin = 0.;
   bool adjustDT = false;
 
@@ -34,7 +33,6 @@ int main(int argc, char **argv) {
   parser.get("maxPhi", maxPhi);
   parser.get("dt", dt);
   parser.get("time", time);
-  parser.get("startRec", startRec);
   parser.get("adjustDT", adjustDT);
   parser.get("lj", adjustDT); // If using lj, adjust dt
 
@@ -71,7 +69,6 @@ int main(int argc, char **argv) {
       // Repulsion force boundary conditions
       gflow->setAllBCs(BCFlag::REPL);
       // Run
-
       Clustering clustering(gflow);
       clustering.setSkin(skin);
       gflow->setDT(dt);

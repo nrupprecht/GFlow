@@ -2,7 +2,7 @@ CC = icpc
 MPICC = mpic++
 COMP = $(CC)
 CFLAG = -std=c++11 -Wall
-OPTFLAGS = -O3 -funroll-loops
+OPTFLAGS = -O3 -funroll-loops $(OPTFLAGS2)
 OPTFLAGS2 = -xHost -no-prec-div -fp-model fast=2 -restrict -no-inline-max-size
 FLAGS = $(CFLAG) -g $(OPTFLAGS)
 
