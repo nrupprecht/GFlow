@@ -6,9 +6,9 @@
 namespace GFlowSimulation {
 
   HardSphere::HardSphere(GFlow *gflow) : Force(gflow), repulsion(DEFAULT_HARD_SPHERE_REPULSION) {
-    /*
     // --- TESTS
-    BLOCK_SIZE = 128;
+    /*
+    BLOCK_SIZE = 1024;
     const int n_particles = BLOCK_SIZE / DIMENSIONS; // Rounds down
     _x1   = new RealType[BLOCK_SIZE];
     _x2   = new RealType[BLOCK_SIZE];
@@ -19,8 +19,8 @@ namespace GFlowSimulation {
   };
 
   HardSphere::~HardSphere() {
-    /*
     // --- TESTS
+    /*
     if (_x1)   delete [] _x1;
     if (_x2)   delete [] _x2;
     if (_disp) delete [] _disp;
@@ -37,6 +37,7 @@ namespace GFlowSimulation {
     RealType **x = Base::simData->x, **f = Base::simData->f;
     RealType *sg = Base::simData->sg;
     int *type = Base::simData->type;
+
     RealType displacement[DIMENSIONS], normal[DIMENSIONS]; // To calculate displacement, normal vector
     Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
     BCFlag boundaryConditions[DIMENSIONS]; 
@@ -45,7 +46,6 @@ namespace GFlowSimulation {
     // Get verlet list data
     const int *verlet = verletList.getVerlet();
     RealType F[DIMENSIONS];
-
     // --- Go through all particles
     for (int i=0; i<nverlet; i+=2) {
       id1 = verlet[i];
@@ -62,8 +62,8 @@ namespace GFlowSimulation {
       }
     }
 
-    // --- START TESTS
     /*
+    // --- START TESTS
     // How many particles will fit in each block - each particle 
     // needs [DIMENSIONS] space
     const int n_particles = BLOCK_SIZE / DIMENSIONS; // Rounds down
@@ -74,72 +74,46 @@ namespace GFlowSimulation {
     // How much space is left over
     const int n_extra = nverlet - n_blocks*n_particles;
     
-    cout << n_particles << " " << n_blocks << " " << n_extra << endl;
+    //cout << n_particles << " " << n_blocks << " " << n_extra << endl;
 
-    // Copy particle positions to _x1, _x2
-    for (int i=0; i<n_particles; ++i) {
+    for (int block=0; block<n_blocks; ++block) {
 
-      //***
-      if (2*i+1>=nverlet) {
-        cout << "Big 0.";
-        exit(0);
+      // Copy particle positions to _x1, _x2
+      for (int i=0; i<n_particles; ++i) {
+	copyVec(x[verlet[ 2*i ]], &_x1[i*DIMENSIONS]);
+	copyVec(x[verlet[2*i+1]], &_x2[i*DIMENSIONS]);
       }
-      //***
-
-      copyVec(x[verlet[ 2*i ]], &_x1[i*DIMENSIONS]);
-      copyVec(x[verlet[2*i+1]], &_x2[i*DIMENSIONS]);
+      // Find particle displacements - should be vectorized
+      for (int b=0; b<block_steps; ++b) {
+	_disp[b] = _x1[b] - _x2[b];
+      }
+      // Find particle distances
+      for (int i=0; i<n_particles; ++i) {
+	// Unroll this
+	RealType distance = 0;
+	for (int d=0; d<DIMENSIONS; ++d) {
+	  distance += sqr(_disp[i*DIMENSIONS+d]);
+	}
+	// Calculate the distance factor. It is not just the distance.
+	_dist[i] = distance<0.1 ? 0 : repulsion*(0.1 - sqrt(distance));
+      } 
+      // Calculate components of force - should be vectorized
+      // _f    -> components of force 
+      // _dist -> distance
+      // _disp -> components of displacement
+      for (int b=0; b<block_steps; ++b) {
+	int id = b/DIMENSIONS;
+	// We have set _dist[id] = _mask[b]*repulsion*(0.1 - _dist[id])
+	_f[b] += _dist[id]*_disp[b];
+      }
+      
+      // Add force components to where they should be
+      for (int i=0; i<n_particles; ++i) {
+	copyVec(&_f[i*DIMENSIONS], f[verlet[ 2*i ]]);
+	copyVec(&_f[i*DIMENSIONS], f[verlet[2*i+1]]);
+      }
     }
-    // Find particle displacements - should be vectorized
-    for (int b=0; b<block_steps; ++b) {
-      //***
-      if (b>=BLOCK_SIZE) {
-        cout << "Big A.";
-        exit(0);
-      }
-      //***
-      _disp[b] = _x1[b] - _x2[b];
-    }
-    // Find particle distances
-    for (int i=0; i<n_particles; ++i) {
-      // Unroll this
-      RealType distance = 0;
-      for (int d=0; d<DIMENSIONS; ++d) {
-        //***
-        if (i*DIMENSIONS+d>=BLOCK_SIZE) {
-          cout << "Big B.\n";
-          cout << i << " " << n_particles << " " << i*DIMENSIONS << " " << i*DIMENSIONS+d << " " << BLOCK_SIZE << endl;
-          exit(0);
-        }
-        //***
-        distance += sqr(_disp[i*DIMENSIONS+d]);
-      }
-      // Calculate the distance factor. It is not just the distance.
-      _dist[i] = distance<0.1 ? 0 : repulsion*(0.1 - sqrt(distance));
-    } 
-    // Calculate components of force - should be vectorized
-    // _f    -> components of force 
-    // _dist -> distance
-    // _disp -> components of displacement
-    for (int b=0; b<block_steps; ++b) {
-      int id = b/DIMENSIONS;
-      //***
-      if (b>=BLOCK_SIZE) {
-        cout << "Big C.";
-        exit(0);
-      }
-      //***
-      //***
-      if (id>=n_particles) {
-        cout << "Big D.";
-        exit(0);
-      }
-      //***
-
-      // We have set _dist[id] = _mask[b]*repulsion*(0.1 - _dist[id])
-      _f[b] += _dist[id]*_disp[b];
-    }
-
-    // Add force components to where they should be
+    // ---> End
     */
   }
 
