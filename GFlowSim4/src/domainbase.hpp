@@ -5,7 +5,8 @@
 
 namespace GFlowSimulation {
 
-  /** @brief The base class for domain decomposition and sectorization classes.
+  /** 
+  *  @brief The base class for domain decomposition and sectorization classes.
   *
   *  DomainBase classes are responsible for a subvolume (possibly the whole volume)
   *  of the simulation, keeping track of where the particles are and where they need 
@@ -17,6 +18,8 @@ namespace GFlowSimulation {
   *  The natural way to do this is to divide the domain into sectors, or cells, and 
   *  slot particles into these cells so we can easily lookup potential neighbors of 
   *  each particle.\n
+  *
+  *  MPI tutorials: <http://mpitutorial.com/>
   *
   */
   class DomainBase : public Base {

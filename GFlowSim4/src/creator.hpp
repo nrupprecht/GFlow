@@ -15,65 +15,79 @@
 namespace GFlowSimulation {
 
   /*
-  *  @class Creator
+  *  @brief Base class for simulation creators
+  *
   *  Creates GFlow objects that can then be run. All creator objects inherit
   *  from this base class.
-  *
   */
   class Creator {
   public:
-    // Constructor -- pass in command line arguments
+    //! Constructor -- pass in command line arguments.
     Creator(int, char**);
 
-    // Constructor -- pass in an ArgParse
-    Creator(ArgParse *parser);
+    //! Constructor -- pass in a pointer to an ArgParse object.
+    Creator(ArgParse*);
 
-    // Destructor
+    //! Destructor.
     virtual ~Creator();
 
-    // Set the random seed
+    //! Set the random seed.
     void setSeed(uint);
 
-    // Get the random seed
+    //! Get the random seed.
     unsigned getSeed();
 
-    // Seed whatever random generators there are
+    //! Seed whatever random generators there are.
     virtual void seedGenerator(uint);
 
-    // Create a GFlow Object
+    //! Create a GFlow Object
     virtual class GFlow* createSimulation() = 0;
 
+    //! Set the boundary condition flags.
     void setBCFlag(BCFlag b) { bcFlag = b; }
 
   protected:
     // --- Helper functions
 
-    // Relax function - gives the simdata an overdamped integrator and hard sphere interactions, runs it for some amount
-    // of time, then discards the integrator and resets the timers
+    //! @brief Hard sphere version of the relaxation function.
+    //!
+    //! This function gives the simdata an overdamped integrator and hard sphere interactions, runs it for some amount
+    //! of time, then discards the integrator and resets the timers.
     void hs_relax(class GFlow*, RealType=0.25);
 
-    // Relax function - uses the native forces and an overdamped integrator
+    //! @brief Native version of the relaxation function.
+    //!
+    //! Relaxation function that uses the native forces and an overdamped integrator. It runs for some amount of time, 
+    //! the discards the integrator and resets the timers.
     void relax(class GFlow*, RealType=0.25);
 
     // Command line arguments
+    //! The number of command line arguments. Has to be set from the outside.
     int argc;
+    //! The command line arguments. Has to be set from the outside.
     char **argv;
 
     // --- Data that all creators will (likely) use
 
-    // Boundary condition
+    //! @brief Boundary condition flag.
+    //!
+    //! Use for when we want all the boundary conditions to be the same.
     BCFlag bcFlag;
 
-    // Bounds of the simulation to create
+    //! Bounds of the simulation we are creating.
     Bounds simBounds;
 
-    // Parser
+    //! Argument parser.
     ArgParse *parserPtr;
-    bool ourParser; // True if we allocated the parser
 
-    // Random seed
+    //! @brief Parser flag.
+    //!
+    //! True if we allocated the parser ourselves. False if a parser was passed in to us.
+    bool ourParser; 
+
+    //! The random seed.
     unsigned seed;
   };
 
 }
-#endif
+#endif // __CREATOR_HPP__GFLOW__

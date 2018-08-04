@@ -5,18 +5,19 @@
 
 namespace GFlowSimulation {
 
+  //! @todo Commentary.
   class BoxCreator : public Creator {
   public:
-    // Constructor
+    //! Constructor.
     BoxCreator(int, char**);
 
-    // Constructor
+    //! Constructor -- pass in a pointer to an ArgParse object.
     BoxCreator(ArgParse*);
 
-    // Seed generators
+    //! Seed random number generators.
     virtual void seedGenerator(uint);
 
-    // Create simulation
+    //! Create a simulation.
     virtual GFlow* createSimulation();
 
     void setPhi(RealType p) { phi = p; }
