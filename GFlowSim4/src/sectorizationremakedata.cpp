@@ -10,7 +10,7 @@ namespace GFlowSimulation {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
 
-    int remakes = Base::sectorization->getNumberOfRemakes();
+    int remakes = Base::domain->getNumberOfRemakes();
     RealType time = Base::gflow->getElapsedTime();
     remakeData.push_back(RIPair(time, remakes));
   }

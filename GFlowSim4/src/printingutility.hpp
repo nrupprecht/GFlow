@@ -5,6 +5,19 @@
 
 namespace GFlowSimulation {
 
+  template<typename T> inline string toCSV(const vector<T>& vec) {
+    stringstream stream;
+    for (int i=0; i<vec.size(); ++i) {
+      stream << vec[i];
+      if (i!=vec.size()-1) stream << ",";
+    }
+    string str;
+    stream >> str;
+    return str;
+  }
+
+
+  //! @todo Turn all these functions into free-standing (inline) functions.
   struct PrintingUtility {
 
     template<typename T> static bool writeVectorToFile(vector<T>& vec, string fileName) {
@@ -40,13 +53,13 @@ namespace GFlowSimulation {
     static bool writeVerletListToDirectory(const class VerletList&, const string);
 
     // Write a vector to a comma separated string
-    static string toStrVec(RealType*);
+    static string toStrVec(const RealType*);
 
     // Write an integer vector to a comma separated string
-    static string toStrVec(int*);
+    static string toStrVec(const int*);
 
-    template<typename T> static string toStrVec(T* vec, int number) {
-      string str;
+    template<typename T> static string toStrVec(const T* vec, int number) {
+      string str("");
       for (int i=0; i<number; ++i) {
         str += toStr(vec[i]);
         if (i!=number-1) str += ',';

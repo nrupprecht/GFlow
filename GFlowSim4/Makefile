@@ -2,7 +2,7 @@ CC = icpc
 MPICC = mpic++
 COMP = $(CC)
 CFLAG = -std=c++11 -Wall
-OPTFLAGS = -O3 -funroll-loops
+OPTFLAGS = -O3 -funroll-loops $(OPTFLAGS2)
 OPTFLAGS2 = -xHost -no-prec-div -fp-model fast=2 -restrict -no-inline-max-size
 FLAGS = $(CFLAG) -g $(OPTFLAGS) $(OPTFLAGS2)
 
@@ -12,13 +12,16 @@ OBJ_DIR := build
 SRC_FILES := $(wildcard $(SRC_DIR)/*.cpp)
 OBJ_FILES := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRC_FILES))
 
-all: bin/driver bin/pressureanalysis
+all: bin/driver bin/pressureanalysis bin/percolationanalysis
 
 ###### Executables #####
 bin/driver: build/driver.o $(OBJ_FILES)
 	$(COMP) $^ -o $@
 
 bin/pressureanalysis: build/pressureanalysis.o $(OBJ_FILES)
+	$(COMP) $^ -o $@
+
+bin/percolationanalysis: build/percolationanalysis.o $(OBJ_FILES)
 	$(COMP) $^ -o $@
 
 #####   Objects   #####

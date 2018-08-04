@@ -6,6 +6,8 @@ Fourth generation of the granular flow simulator.
 
 This generation was heavily inspired by LAMMPS, GROMACS, OpenMD, etc. to make improvements to the program structure. For example, most objects inherit from a base class that has pointers to the GFlow simulation object and all of its main objects (inspired by LAMMPS).
 
+This version also includes Doxygen style commenting which can be used to generate a users manual or reference.
+
 ## Useful sites
 
 [LAMMPS](https://github.com/lammps/lammps)
@@ -43,7 +45,7 @@ Run with
 
 * Bond/angle modifier
 
-* Time step monitoring
+* Time step monitoring --- Completed.
 
 * Vectorize integration step
 

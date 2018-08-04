@@ -62,7 +62,12 @@ int main(int argc, char **argv) {
   bool timestep = false;
   bool averages = false;
   bool minDistances = false;
+  bool percolation = false;
+  bool psnapshot = false;
+  RealType skin = 0.;
+
   // Other options
+  RealType gravity = 0.;
   bool adjustDT = false;
   RealType startRecTime = 0;
   RealType fps = 15.;
@@ -93,6 +98,10 @@ int main(int argc, char **argv) {
   parser.get("timestep", timestep);
   parser.get("averages", averages);
   parser.get("minDistances", minDistances);
+  parser.get("percolation", percolation);
+  parser.get("psnapshot", psnapshot);
+  parser.get("skin", skin);
+  parser.get("gravity", gravity);
   parser.get("adjustDT", adjustDT);
   parser.get("lj", adjustDT); // Adjust DT if lj is true
   parser.get("startRec", startRecTime);
@@ -162,6 +171,8 @@ int main(int argc, char **argv) {
   if (timestep)    gflow->addDataObject(new TimeStepData(gflow));
   if (averages)    gflow->addDataObject(new AverageData(gflow));
   if (minDistances) gflow->addDataObject(new MinInteractingDistance(gflow));
+  if (percolation) gflow->addDataObject(new PercolationData(gflow, skin));
+  if (psnapshot) gflow->addDataObject(new PercolationSnapshot(gflow, skin));
   gflow->setFPS(fps); // Do after data objects are loaded
   gflow->setDMCmd(argc, argv);
 
@@ -169,6 +180,7 @@ int main(int argc, char **argv) {
   if (temperature>0) gflow->addModifier(new TemperatureModifier(gflow, temperature));
   // Timestep adjustment
   if (adjustDT) gflow->addModifier(new TimestepModifier(gflow));
+  if (gravity!=0) gflow->addModifier(new ConstantAcceleration(gflow, -1.));
 
   // Set time step and request time
   gflow->setDT(dt);
@@ -182,6 +194,7 @@ int main(int argc, char **argv) {
     return 0;
   }
   cout << "Run is over:\t\t\t" << time_span(current_time(), start_time) << "\n";
+  cout << "Ratio was:  \t\t\t" << gflow->getDataMaster()->getRatio() << "\n";
 
   // Write accumulated data to files
   gflow->writeData(writeDirectory);

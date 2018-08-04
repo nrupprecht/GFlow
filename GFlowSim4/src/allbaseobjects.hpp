@@ -2,9 +2,14 @@
 #define __ALL_BASE_OBJECTS_HPP__GFLOW__
 
 #include "simdata.hpp"
+// Base class for integrators
 #include "integrator.hpp"
+// Base class for forces
 #include "force.hpp"
+// Specific domains
 #include "sectorization.hpp"
+#include "domain.hpp"
+// Other ...
 #include "verletlist.hpp"
 #include "communicator.hpp"
 #include "datamaster.hpp"

@@ -26,17 +26,20 @@ namespace GFlowSimulation {
 
     // Values
     int number = -1; // -1 means use volume density
+    int sample = 0;
     RealType dt = 0.001;
     RealType vsgma = 0.25;
     RealType skinDepth = -1.;
     RealType repulsion = 1.;
     bool animate = false;
     bool over_damped_flag = false;
+    RealType langevin_temp = -1.;
     bool lj_flag = false;
 
     // Gather command line arguments
     if (parserPtr) {
       parserPtr->get("number", number);
+      parserPtr->get("sample", sample);
       parserPtr->get("dt", dt);
       parserPtr->get("radius", radius);
       parserPtr->get("phi", phi);
@@ -46,6 +49,7 @@ namespace GFlowSimulation {
       parserPtr->get("repulsion", repulsion);
       parserPtr->get("animate", animate);
       parserPtr->get("overdamped", over_damped_flag);
+      parserPtr->get("langevin", langevin_temp);
       parserPtr->get("lj", lj_flag);
     }
 
@@ -67,45 +71,49 @@ namespace GFlowSimulation {
       number = phi*vol/sphere_volume(radius);
     }
     // Add some objects
-    gflow->simData->reserve(number);
-    gflow->simData->number = number;
-    // Get pointers to particle data
-    RealType **x = gflow->simData->x;
-    RealType **v = gflow->simData->v;
-    RealType *sg = gflow->simData->sg;
-    RealType *im = gflow->simData->im;
-    int *type    = gflow->simData->type;
+    SimData *simData = gflow->simData;
+    simData->reserve(number);
+    //-- simData->number = number;
+    RealType X[DIMENSIONS], V[DIMENSIONS]; //-- 
+    zeroVec(V); //-- 
     for (int n=0; n<number; ++n) {
       // Give some random initial positions - we will allow these to relax
-      for (int d=0; d<DIMENSIONS; ++d) x[n][d] = (drand48()-0.5)*width;
-      sg[n] = radius;
-      im[n] = 1.0 / (1.0 * PI*sqr(radius)); // Density of 1
-      type[n] = 0;
+      
+      for (int d=0; d<DIMENSIONS; ++d) {
+        X[d] = (drand48()-0.5)*width;
+        //-- simData->X(n, d) = (drand48()-0.5)*width;
+      }
+      //-- simData->Sg(n) = radius;
+      //-- simData->Im(n) = 1.0 / (1.0 * PI*sqr(radius)); // Density of 1
+      //-- simData->Type(n) = 0;
+
+      RealType im = 1.0 / (1.0 * PI*sqr(radius));
+      simData->addParticle(X, V, radius, im, 0); //--
     }
 
     // --- Handle forces
     gflow->forceMaster->setNTypes(1); // Only one type of particle
     Force *force;
     if(lj_flag) {
-      force = new LennardJones(gflow);
-      dynamic_cast<LennardJones*>(force)->setStrength(
-        repulsion*DEFAULT_LENNARD_JONES_STRENGTH
-      );
+      auto *LJ = new LennardJones(gflow);
+      LJ->setStrength(repulsion*DEFAULT_LENNARD_JONES_STRENGTH);
+      force = LJ;
     }
     else {
-      force = new HardSphere(gflow);
-      dynamic_cast<HardSphere*>(force)->setRepulsion(
-        repulsion*DEFAULT_HARD_SPHERE_REPULSION
-      );
+      auto *HS = new HardSphere(gflow);
+      HS->setRepulsion(repulsion*DEFAULT_HARD_SPHERE_REPULSION);
+      force = HS;
     }
     gflow->forceMaster->setForce(0, 0, force);
 
     // Set skin depth
-    if (skinDepth>0) gflow->sectorization->setSkinDepth(skinDepth);
+    if (skinDepth>0) gflow->domain->setSkinDepth(skinDepth);
+    if (sample>0) gflow->domain->setSampleSize(sample);
 
     // Relax the setup
     hs_relax(gflow);
     if (over_damped_flag) gflow->integrator = new OverdampedIntegrator(gflow);
+    else if (langevin_temp>=0) gflow->integrator = new LangevinIntegrator(gflow, langevin_temp);
     else gflow->integrator = new VelocityVerlet(gflow);
     // Set integrator initial time step
     gflow->integrator->setDT(dt);
@@ -115,12 +123,12 @@ namespace GFlowSimulation {
     for (int n=0; n<number; ++n) {
       // Give some random velocities
       double ke = fabs(vsgma*normal_dist(generator));
-      double velocity = sqrt(2*im[n]*ke/127.324);
+      double velocity = sqrt(2*simData->Im(n)*ke/127.324);
       // Random normal vector
       randomNormalVec(normal);
       // Set the velocity
-      scalarMultVec(velocity, normal, v[n]);
-      sg[n] = radius;
+      scalarMultVec(velocity, normal, simData->V(n));
+      simData->Sg(n) = radius;
     }
 
     return gflow;

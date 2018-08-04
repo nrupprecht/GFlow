@@ -34,7 +34,6 @@ namespace GFlowSimulation {
     else 
       dirName += ("/"+fileName+"/");
     // --> Dir name is now the name of the directory we are creating
-
     // Create a directory for all the data
     mkdir(dirName.c_str(), 0777);
 
@@ -51,34 +50,12 @@ namespace GFlowSimulation {
   }
 
   bool PrintingUtility::writeVerletListToDirectory(const VerletList &vl, const string fileName) {
-    // Open file stream
-    ofstream fout(fileName);
-    if (fout.fail()) return false;
-
-    // Get the data
-    const int hsize = vl.vlHSize(), vsize = vl.vlSize();
-    const int *heads = vl.getHeads(), *verlet = vl.getVerlet();
-    // Write the data
-    for (int h=0; h<hsize-1; ++h) {
-      fout << verlet[heads[h]] << ",";
-      for (int p=heads[h]+1; p<heads[h+1]; ++p) {
-        fout << verlet[p];
-        if (p!=heads[h+1]-1) fout << ",";
-      }
-      fout << endl;
-    }
-    // Last one
-    fout << verlet[heads[hsize-1]] << ",";
-    for (int p=heads[hsize-1]+1; p<vsize; ++p) {
-      fout << verlet[p];
-      if (p!=vsize-1) fout << ",";
-    }
-
-    // Return success
+    throw Unimplemented("writeVerletListToDirectory - Sorry.");
+    
     return true;
   }
 
-  string PrintingUtility::toStrVec(RealType *x) {
+  string PrintingUtility::toStrVec(const RealType *x) {
     string str;
     for (int d=0; d<DIMENSIONS; ++d) {
       str += toStr(x[d]);
@@ -87,7 +64,7 @@ namespace GFlowSimulation {
     return str;
   }
 
-  string PrintingUtility::toStrVec(int *x) {
+  string PrintingUtility::toStrVec(const int *x) {
     string str;
     for (int d=0; d<DIMENSIONS; ++d) {
       str += toStr(x[d]);

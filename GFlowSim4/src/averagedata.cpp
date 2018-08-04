@@ -21,14 +21,11 @@ namespace GFlowSimulation {
     dat[2] = 0;
     dat[3] = 0;
     // Get and store data
-    RealType **x = Base::simData->x;
-    RealType **v = Base::simData->v;
-    RealType **f = Base::simData->f;
     int number = Base::simData->number;
     for (int n=0; n<number; ++n) {
-      dat[1] += magnitudeVec(x[n]);
-      dat[2] += magnitudeVec(v[n]);
-      dat[3] += magnitudeVec(f[n]);
+      dat[1] += magnitudeVec(Base::simData->X(n));
+      dat[2] += magnitudeVec(Base::simData->V(n));
+      dat[3] += magnitudeVec(Base::simData->F(n));
     }
     // Put in values
     dat[1] /= number;

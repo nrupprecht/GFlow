@@ -9,6 +9,10 @@ namespace GFlowSimulation {
   void SectorizationData::post_step() {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
+
+    throw Unimplemented("Sorry");
+
+    /*
     // Get the data
     auto &sectors = Base::sectorization->sectors;
     // Get the occupation numbers
@@ -16,6 +20,7 @@ namespace GFlowSimulation {
     for (int i=0; i<sectors.total(); ++i) occupation.push_back(sectors[i].size());
     // Add to the record
     sectorOccupation.push_back(occupation);
+    */
   }
 
   bool SectorizationData::writeToFile(string fileName, bool useName) {
@@ -33,7 +38,7 @@ namespace GFlowSimulation {
 
     ofstream fout(dirName+"dims.csv");
     if (fout.fail()) return false;
-    fout << PrintingUtility::toStrVec(Base::sectorization->dims) << endl;
+    fout << PrintingUtility::toStrVec(Base::domain->getDims()) << endl;
     fout.close();
 
     return true;

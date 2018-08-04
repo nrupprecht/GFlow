@@ -14,46 +14,57 @@ namespace GFlowSimulation {
   */
   class GFlow {
   public:
-    // Constructor
+    //! Constructor.
     GFlow();
 
-    // Destructor
+    //! Destructor.
     ~GFlow();
 
-    // Initialize - returns true if all pointers are non-null
+    //! Initialize - returns true if all pointers are non-null.
     bool initialize();
 
-    // Initialize a base object to point at GFlow's data
+    //! Initialize a base object to point at GFlow's data.
     void initializeBase(Base *);
 
-    // Run the simulation for some amount of time
+    // Run the simulation for some amount of time.
     void run(RealType=-1);
 
-    // Write data from data master to file
+    // Write data from data master to file.
     void writeData(string);
 
     // --- Accessors
 
-    // Get the requested time
+    //! Get the requested time.
     RealType getRequestedTime() const;
 
+    //! @brief Get the total amount of time ever requested.
+    //!
+    //! Get the total amount of time that has ever been requested of this
+    //! GFlow object. Time can be requested and run, and then more time can
+    //! be requested and run, so the most recent amount of requested time is
+    //! not necessarily the total amount of time ever requested.
     RealType getTotalRequestedTime() const;
     
-    // Get fulfilled time
+    //! Get fulfilled time.
     RealType getElapsedTime() const;
 
-    // Get all the time the simulation ran for
+    //! Get all the time the simulation ran for.
     RealType getTotalTime() const;
 
+    //! Get the strength of the boundary force.
     RealType getBoundaryForce() const;
 
+    //! Get the current time step.
     RealType getDT() const;
 
-    // Get the number of iterations
+    //! Get the number of iterations the simulation had run for.
     int getIter() const;
 
     // Get the number of forces
     int getNumForces() const;
+
+    // Get the number of particles
+    int getNumParticles() const;
 
     // Get the bounds
     Bounds getBounds() const;
@@ -70,6 +81,8 @@ namespace GFlowSimulation {
     pair<int, char**> getCommand() const;
 
     const vector<class Force*>& getForces() const;
+
+    class DataMaster* getDataMaster() const;
 
     // --- Mutators
 
@@ -142,7 +155,7 @@ namespace GFlowSimulation {
     // --- Data - public so anyone can access it
     class SimData *simData;             // Particle data
     class Integrator *integrator;       // Integrator
-    class Sectorization *sectorization; // Sectorization of particles
+    class DomainBase *domain;           // Domain
     class Communicator *communicator;   // Inter-process communicator
     class DataMaster *dataMaster;       // DataMaster object for unified data collection  
     class ForceMaster *forceMaster;     // ForceMaster object for defining and storing interparticle forces  
@@ -156,6 +169,9 @@ namespace GFlowSimulation {
 
     //! If true, the simulation should continue to run
     bool running;
+
+    //! If true, do tasks related to force computation
+    bool useForces;
 
     //! How much time we have been requested to run for
     RealType requested_time;

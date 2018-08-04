@@ -5,25 +5,31 @@
 
 namespace GFlowSimulation {
 
+  /** 
+  *  @brief A hard sphere force where all particles have the same repulsion.
+  *
+  *  The force between particles is proportional to their overlap, (r1 + r2 - distance),
+  *  with a constant of proportionality [repulsion] which is a parameter of this class.
+  *  In other words, all hard spheres have the same constant of repulsion.
+  *
+  *  @see HardSphereA
+  */
   class HardSphere : public Force {
   public:
-    // Constructor
+    //! Constructor
     HardSphere(GFlow *);
 
-    // Calculate all the forces between atoms in the verlet lists
-    virtual void calculateForces();
+    //! Calculate all the forces between atoms in the verlet lists.
+    virtual void calculateForces() const final;
 
-    // Find the force given two particle ids
-    virtual void forceKernel(int, int) final;
-
-    virtual void forceKernel(int, int) final;
-
+    //! Set the repulsion parameter.
     void setRepulsion(RealType r);
 
   private:
-    // Calculate force strength
-    void forceStrength(RealType*, RealType*, RealType, int, int);
+    //! Calculate force strength
+    inline void forceStrength(RealType*, const RealType*, const RealType, const int, const int) const;
 
+    //! The repulsion of the hard spheres. This is assumed to be the same for all hard spheres.
     RealType repulsion;
   };
 

@@ -1,7 +1,7 @@
 #include "datamaster.hpp"
 #include "simdata.hpp"
 #include "integrator.hpp"
-#include "sectorization.hpp"
+#include "domain.hpp"
 #include "force.hpp"
 
 namespace GFlowSimulation {
@@ -136,6 +136,10 @@ namespace GFlowSimulation {
       dataObjects.at(obj_id)->setFPS(fps);
   }
 
+  RealType DataMaster::getRatio() const {
+    return Base::gflow->getTotalRequestedTime()/run_time;
+  }
+
   inline bool DataMaster::writeSummary(string writeDirectory) {
     std::ofstream fout(writeDirectory+"/run_summary.txt");
     if (fout.fail()) {
@@ -172,7 +176,9 @@ namespace GFlowSimulation {
     fout << "  - Run Time:                 " << run_time;
     if (run_time>60) fout << " ( h:m:s - "   << printAsTime(run_time) << " )";
     fout << "\n";
-    fout << "  - Iters x Particles / Time: " << toStrRT(iterations*particles/run_time) << "\n";
+    fout << "  - Iters x Particles / Time: ";
+    if (run_time>0) fout << static_cast<int>(iterations*particles/run_time) << "\n";
+    else fout << "--\n";
     fout << "  - Ratio x Particles:        " << toStrRT(ratio*particles) << "\n";
     fout << "  - Ratio:                    " << toStrRT(ratio) << "\n";
     fout << "  - Inverse Ratio:            " << toStrRT(1./ratio) << "\n";
@@ -219,15 +225,14 @@ namespace GFlowSimulation {
     if (types>1) {
       int *count = new int[types];
       for (int ty=0; ty<types; ++ty) count[ty] = 0;
-      for (int n=0; n<Base::simData->number; ++n) ++count[Base::simData->type[n]];
+      for (int n=0; n<Base::simData->number; ++n) ++count[Base::simData->Type(n)];
       for (int ty=0; ty<types; ++ty)
         fout << "     Type " << toStr(ty) << ":                  " << count[ty] << " (" << 
           count[ty] / static_cast<RealType>(Base::simData->number) << "%)\n";
       delete [] count;
     }
     RealType vol = 0;
-    RealType *sg = Base::simData->sg;
-    for (int n=0; n<Base::simData->number; ++n) vol += pow(sg[n], DIMENSIONS);
+    for (int n=0; n<Base::simData->number; ++n) vol += pow(simData->Sg(n), DIMENSIONS);
     vol *= pow(PI, DIMENSIONS/2.) / tgamma(DIMENSIONS/2. + 1.);
     RealType phi = vol/Base::gflow->getBounds().vol();
     fout << "  - Packing fraction:         " << phi << "\n";
@@ -244,35 +249,38 @@ namespace GFlowSimulation {
     fout << "  - Time step (at end):       " << integrator->getTimeStep() << "\n";
     fout << "\n";
     
-    // --- Print the sectorization summary
-    fout << "Sectorization summary (as of end of simulation):\n";
+    // --- Print the domain summary
+    fout << "Domain summary (as of end of simulation):\n";
     fout << "  - Grid dimensions:          ";
     for (int d=0; d<DIMENSIONS; ++d) {
-      fout << Base::sectorization->getDims()[d];
+      fout << Base::domain->getDims()[d];
       if (d!=DIMENSIONS-1) fout << ", ";
     }
     fout << "\n";
-    fout << "  - Total sectors:            " << Base::sectorization->getNumSectors() << "\n";
+    fout << "  - Total sectors:            " << Base::domain->getNumCells() << "\n";
     fout << "  - Grid lengths:             ";
     for (int d=0; d<DIMENSIONS; ++d) {
-      fout << Base::sectorization->getWidths()[d];
+      fout << Base::domain->getWidths()[d];
       if (d!=DIMENSIONS-1) fout << ", ";
     }
     fout << "\n";
-    fout << "  - Cutoff:                   " << Base::sectorization->getCutoff() << "\n";
-    fout << "  - Skin depth:               " << Base::sectorization->getSkinDepth() << "\n";
+    fout << "  - Cutoff:                   " << Base::domain->getCutoff() << "\n";
+    fout << "  - Skin depth:               " << Base::domain->getSkinDepth() << "\n";
+    fout << "  - Move ratio tollerance:    " << Base::domain->getMvRatioTolerance() << "\n";
+    fout << "  - Delay missed target:      " << Base::domain->getMissedTarget() << "\n";
+    fout << "  - Average miss:             " << Base::domain->getAverageMiss() << "\n";
     if (run_time>0) {
-    fout << "  - Sector remakes:           " << Base::sectorization->getNumberOfRemakes() << "\n";
-      RealType re_ps = Base::sectorization->getNumberOfRemakes() / Base::gflow->getTotalTime();
+      fout << "  - Sector remakes:           " << Base::domain->getNumberOfRemakes() << "\n";
+      RealType re_ps = Base::domain->getNumberOfRemakes() / Base::gflow->getTotalTime();
       fout << "  - Remakes per second:       " << re_ps << "\n";
       fout << "  - Average remake delay:     " << 1./re_ps << "\n";
-      fout << "  - Average iters per delay:  " << static_cast<RealType>(iterations) / Base::sectorization->getNumberOfRemakes() <<"\n";
+      fout << "  - Average iters per delay:  " << static_cast<RealType>(iterations) / Base::domain->getNumberOfRemakes() <<"\n";
     }
     fout << "\n";
-    fout << "Verlet lists: [Total #], [# heads], [Ave per list].\n";
+    fout << "Verlet lists:\n";
     int c=0;
     for (auto &f : gflow->getForces()) {
-      fout << "     Force " << c << ":                 " << f->vlSize() << ", " << f->vlHSize() << ", " << f->vlSize()/f->vlHSize() << "\n";
+      fout << "     Force " << c << ":                 " << f->vlSize()/2 << " pairs\n";
       ++c;
     }
     
@@ -285,12 +293,12 @@ namespace GFlowSimulation {
   inline void DataMaster::writeParticleData(std::ostream& out) {
     RealType asigma(0), amass(0), aden(0), aspeed(0), ake(0);
     for (int n=0; n<Base::simData->number; ++n) {
-      RealType sig = Base::simData->sg[n];
-      asigma += sig;
-      amass  += 1./Base::simData->im[n];
-      aden   += 1./(Base::simData->im[n]*sphere_volume(sig));
-      aspeed += magnitudeVec(Base::simData->v[n]);
-      ake    += sqr(magnitudeVec(Base::simData->v[n]))*(1./Base::simData->im[n]);
+      RealType sig = Base::simData->Sg(n);
+      asigma += sig; 
+      amass  += 1./Base::simData->Im(n);
+      aden   += 1./(Base::simData->Im(n)*sphere_volume(sig));
+      aspeed += magnitudeVec(Base::simData->V(n));
+      ake    += sqr(magnitudeVec(Base::simData->V(n)))*(1./Base::simData->Im(n));
     }
     // Normalize
     RealType invN = 1./static_cast<RealType>(Base::simData->number);

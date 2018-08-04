@@ -10,13 +10,7 @@
 
 namespace GFlowSimulation {
 
-  Sectorization::Sectorization(GFlow *gflow) : Base(gflow), xVL(nullptr), sizeXVL(0), skinDepth(0.025), currentHead(-1), 
-    cutoff(0), minCutoff(0), cutoffFactor(1.), number_of_remakes(0), lastCheck(-1.), lastUpdate(-1.), updateDelay(1.0e-4), 
-    max_update_delay(DEFAULT_MAX_UPDATE_DELAY), mvRatioTollerance(1.5) {};
-
-  Sectorization::~Sectorization() {
-    nullXVL();
-  }
+  Sectorization::Sectorization(GFlow *gflow) : DomainBase(gflow), currentHead(-1) {};
 
   void Sectorization::pre_integrate() {
     // ---> If time is requested twice on the same simulation, these steps are unnecessary. 
@@ -27,26 +21,19 @@ namespace GFlowSimulation {
     updateDelay = 1.0e-4;
     // Get the bounds from gflow
     bounds = Base::gflow->getBounds();
+    // This is for single processor, so the domain bounds is the same
+    domain_bounds = bounds;
     // Make the sectors
     makeSectors();
   }
 
-  void Sectorization::pre_forces() {
-    // If there are no forces, there is no need to check sectors
-    if (Base::gflow->getNumForces()==0) return;
-
-    // Get the current simulation time
-    RealType current_time = Base::gflow->getElapsedTime();
-    // Check whether we should check sectors
-    if (current_time-lastUpdate>updateDelay) checkSectors();
-  }
-
-  void Sectorization::sectorize() {
+  void Sectorization::remake_verlet() {
     // Increment counter
     ++number_of_remakes;
-
     // Set timer
     lastUpdate = Base::gflow->getElapsedTime();
+    // Reset the verlet lists of all the forces
+    Base::forceMaster->clearVerletLists();
 
     // Get data from simdata and sectors array
     RealType **x = Base::simData->x;
@@ -79,16 +66,8 @@ namespace GFlowSimulation {
       sectors.at(index).push_back(n);
     }
 
-    // --- Record where the particles were
-    // Check if our array is the correct size
-    if (number!=sizeXVL) setupXVL(number);
-    // Fill array
-    for (int i=0; i<number; ++i)
-      #if _INTEL_ == 1
-      #pragma unroll(DIMENSIONS)
-      #endif 
-      for (int d=0; d<DIMENSIONS; ++d) 
-        xVL[i][d] = x[i][d];
+    // Record where the particles were
+    fillXVL();
 
     // Create verlet lists
     makeVerletLists();
@@ -98,42 +77,17 @@ namespace GFlowSimulation {
     return sectors.at(index);
   }
 
-  const int* Sectorization::getDims() const {
-    return dims;
-  }
-
-  const RealType* Sectorization::getWidths() const {
-    return widths;
-  }
-
-  int Sectorization::getNumSectors() const {
-    int total = 1;
-    #if _INTEL_ == 1
-    #pragma unroll(DIMENSIONS)
-    #endif 
-    for (int d=0; d<DIMENSIONS; ++d) total *= dims[d];
-    return total;
-  }
-
-  RealType Sectorization::getSkinDepth() const {
-    return skinDepth;
-  }
-
-  RealType Sectorization::getCutoff() const {
-    return cutoff;
-  }
-
-  int Sectorization::getNumberOfRemakes() const {
-    return number_of_remakes;
+  void Sectorization::getAllWithin(int, RealType, vector<int>&) {
+    // @todo Implement this
   }
 
   void Sectorization::setSkinDepth(RealType s) {
-    skinDepth = s;
+    DomainBase::setSkinDepth(s);
     makeSectors();
   }
 
   void Sectorization::setCutoffFactor(RealType f) {
-    cutoffFactor = f;
+    DomainBase::setCutoffFactor(f);
     makeSectors();
   }
 
@@ -179,55 +133,10 @@ namespace GFlowSimulation {
     sectors.resize(dims);
 
     // Sectorize and create verlet lists
-    sectorize();
-  }
-
-  inline RealType Sectorization::maxMotion() {
-    // Get data from simdata and sectors array
-    RealType **x = Base::simData->x;
-    int number = Base::simData->number;
-    const BCFlag *boundaryConditions = gflow->getBCs();
-
-    // Check if re-sectorization is required --- see how far particles have traveled
-    RealType dsqr(0), maxDSqr(0), secDSqr(0), displacement[DIMENSIONS];
-    for (int n=0; n<number; ++n) {
-      getDisplacement(xVL[n], x[n], displacement, bounds, boundaryConditions);
-      dsqr = sqr(displacement);
-      // Check if this is the largest or second largest displacement (squared)
-      if (dsqr>secDSqr) {
-        if (dsqr>maxDSqr){
-          secDSqr = maxDSqr;
-          maxDSqr = dsqr;
-        }
-        else secDSqr = dsqr;
-      }
-    }
-    return sqrt(maxDSqr)+sqrt(secDSqr);
-  }
-
-  // Checks whether sectors need to be refilled. This happens when the max distance traveled
-  // by two particles, relative to one another, is > skinDepth
-  inline void Sectorization::checkSectors() {
-    // Set time point
-    lastCheck = Base::gflow->getElapsedTime();
-    // Get data from simdata and sectors array
-    if (sizeXVL<Base::simData->number) sectorize();
-    else {
-      // If there are more particles now, we need to resectorize
-      RealType maxmotion = maxMotion();
-      if (maxmotion>skinDepth) {
-        sectorize();
-      }
-      else { // Guess what the delay should be
-        updateDelay = mvRatioTollerance*(lastCheck-lastUpdate)*skinDepth/maxmotion; // [lastCheck] is the current time
-      }
-    }
+    remake_verlet();
   }
 
   inline void Sectorization::makeVerletLists() {
-    // Reset the verlet lists of all the forces
-    Base::forceMaster->clearVerletLists();
-
     // What the central sector we're looking at is, where the other sector is relative to that,
     // and what that sector's actual address is
     int sectorAdd[DIMENSIONS], dSectorAdd[DIMENSIONS], otherAdd[DIMENSIONS];
@@ -254,8 +163,8 @@ namespace GFlowSimulation {
         for (uint q = p+1; q<pvec.size(); ++q) {
           int otherParticle = pvec.at(q);
           getDisplacement(x[currentHead], x[otherParticle], displacement, bounds, boundaryConditions);
-          if (sqr(displacement) < sigma + sg[otherParticle] + skinDepth)
-            pairInteraction(currentHead, otherParticle);
+          if (sqr(displacement) < sqr(sigma + sg[otherParticle] + skinDepth))
+            pair_interaction(currentHead, otherParticle);
         }
 
         // --- Look in the first half (rounded down) sectors only
@@ -303,43 +212,12 @@ namespace GFlowSimulation {
             // Get the displacement between particles
             getDisplacement(x[currentHead], x[otherParticle], displacement, bounds, boundaryConditions);
             // If close enough, they interact
-            if (sqr(displacement) < sigma + sg[otherParticle] + skinDepth)
-              pairInteraction(currentHead, otherParticle);
+            if (sqr(displacement) < sqr(sigma + sg[otherParticle] + skinDepth))
+              pair_interaction(currentHead, otherParticle);
           }
         }
       }
     }
-  }
-
-  inline void Sectorization::pairInteraction(int id1, int id2) {
-    // --- Check to see if they are part of the same body. If so, they cannot exert force on each other
-    if (Base::simData->body && Base::simData->body[id1]>0 && Base::simData->body[id2]==Base::simData->body[id1])
-      return; // The particles are in the same body
-
-    // --- Check with force master
-    Force *force = Base::forceMaster->getForce(simData->type[id1], simData->type[id2]);
-    
-    // A null force means no interaction
-    if (force) force->addVerletPair(id1, id2);
-  }
-
-  inline void Sectorization::nullXVL() {
-    if (xVL) {
-      for (int i=0; i<sizeXVL; ++i)
-        if (xVL[i]) delete [] xVL[i];
-      delete [] xVL;
-    }
-  }
-
-  inline void Sectorization::setupXVL(int length) {
-    if (xVL!=nullptr) nullXVL();
-    sizeXVL = length;
-    xVL = new RealType*[sizeXVL];
-    for (int i=0; i<sizeXVL; ++i)
-      xVL[i] = new RealType[DIMENSIONS];
-
-    // If there are few particles, use a low move ratio tollerance
-    if (length<10) mvRatioTollerance = 1.;
   }
 
 }

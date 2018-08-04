@@ -42,24 +42,20 @@ namespace GFlowSimulation {
     gflow->simData->reserve(2);
 
     // Get pointers to particle data
-    RealType **x   = gflow->simData->x;
-    RealType **v   = gflow->simData->v;
-    RealType *sg   = gflow->simData->sg;
-    RealType *im   = gflow->simData->im;
-    int      *type = gflow->simData->type;
+    SimData *simData = gflow->simData;
 
     // Rightwards ball
-    x[0][0] = 0.3; x[1][0] = 0.7;
-    v[0][0] = velocity;  v[1][0] = -velocity;
-    x[0][1] = 0.5*(1.-radius); x[1][1] = 0.5*(1.+radius);
+    simData->X(0, 0) = 0.3; simData->X(1, 0) = 0.7;
+    simData->V(0, 0) = velocity;  simData->V(1, 0) = -velocity;
+    simData->X(0, 1) = 0.5*(1.-radius); simData->X(1,1) = 0.5*(1.+radius);
     for (int d=2; d<DIMENSIONS; ++d) {
-      x[0][d] = x[1][d] = 0.5;
-      v[0][d] = v[1][d] = 0;
+      simData->X(0, d) = simData->X(1, 1) = 0.5;
+      simData->V(0, d) = simData->V(1, d) = 0;
     }
     for (int n=0; n<2; ++n) {
-      sg[n] = radius;
-      im[n] = 1.0 / (1.0 * PI*sqr(radius)); // Density of 1
-      type[n] = 0;
+      simData->Sg(n) = radius;
+      simData->Im(n) = 1.0 / (1.0 * PI*sqr(radius)); // Density of 1
+      simData->Type(n) = 0;
     }
 
     // Set the correct number of particles
@@ -71,7 +67,7 @@ namespace GFlowSimulation {
     gflow->forceMaster->setForce(0, 0, force);
 
     // Set skin depth
-    if (skinDepth>0) gflow->sectorization->setSkinDepth(skinDepth);
+    if (skinDepth>0) gflow->domain->setSkinDepth(skinDepth);
 
     // Make sure all forces are zero
     gflow->simData->clearF();
