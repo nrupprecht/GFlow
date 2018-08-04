@@ -7,7 +7,7 @@
 namespace GFlowSimulation {
 
   LangevinIntegrator::LangevinIntegrator(GFlow *gflow) : Integrator(gflow), viscosity(DEFAULT_VISCOSITY), 
-  temperature(1.), lastUpdate(0), updateDelay(DEFAULT_TEMPERATURE_UPDATE_DELAY)
+    temperature(0.025), lastUpdate(0), updateDelay(DEFAULT_TEMPERATURE_UPDATE_DELAY)
   {
     drift1 = temperature/(6.*viscosity*PI);
   }
@@ -67,7 +67,7 @@ namespace GFlowSimulation {
 
     // Add random noise - we don't need to do this every time
     RealType time = Base::gflow->getElapsedTime();
-    if (updateDelay<time-lastUpdate) {
+    if (updateDelay<time-lastUpdate && temperature>0) {
       // Precomputed values, assumes Kb = 1
       RealType Df1 = sqrt(2.*drift1*(time-lastUpdate));
       // Add a random force to all spatial degrees of freedom
@@ -83,7 +83,7 @@ namespace GFlowSimulation {
         int id = i/DIMENSIONS;
         RealType Df2 = sqrt(1./sg[id]);
         // Random strength - 'temperature' is from the viscous medium
-        RealType strength = (drand48()-0.5); //randNormal();
+        RealType strength = drand48()-0.5; //randNormal();
         f[i] += Df1*Df2*strength;
       }
       lastUpdate = time;

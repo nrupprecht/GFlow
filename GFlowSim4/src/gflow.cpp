@@ -5,7 +5,7 @@
 namespace GFlowSimulation {
 
   GFlow::GFlow() : running(false), useForces(true), requested_time(0), elapsed_time(0), total_time(0), 
-    iter(0), argc(0), argv(nullptr), repulsion(DEFAULT_HARD_SPHERE_REPULSION) 
+    iter(0), argc(0), argv(nullptr), repulsion(DEFAULT_HARD_SPHERE_REPULSION)
   {
     simData      = new SimData(this);
     // Integrator will be created by the creator
@@ -126,7 +126,9 @@ namespace GFlowSimulation {
       for (auto m : modifiers) m->pre_forces();
       integrator->pre_forces(); // -- This is where VV first half kick happens (if applicable)
       dataMaster->pre_forces();
-      domain->pre_forces(); // -- This is where resectorization / verlet list creation might happen
+      if (useForces) {
+        domain->pre_forces();   // -- This is where resectorization / verlet list creation might happen
+      }
       
       // Wrap or reflect particles
       wrapPositions();
@@ -136,7 +138,9 @@ namespace GFlowSimulation {
       // --- Do forces
       clearForces(); // Clear force buffers
       // Calculate current forces
-      for (auto &f : forces) f->calculateForces();
+      if (useForces) {
+        for (auto &f : forces) f->calculateForces();
+      }
 
       // --> Post-forces
       for (auto m : modifiers) m->post_forces(); // -- This is where modifiers should do forces (if they need to)

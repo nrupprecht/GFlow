@@ -4,7 +4,7 @@
 namespace GFlowSimulation {
 
   Base::Base(GFlow *gf) {
-    gf->initializeBase(this);
+    if (gf) gf->initializeBase(this);
   }
 
   void Base::initialize() {

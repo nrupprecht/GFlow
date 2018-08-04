@@ -6,13 +6,14 @@
 namespace GFlowSimulation {
 
   /*
-  *  @class LennardJones
+  *  @class LennardJones where all particles have the same force strength.
   *
   *  Lennard Jones force. The particle sigma will represent the force cutoff,
   *  generally 2.5*sig, where sig is the inter-particle distance where V=0.
   *  We use cutoff=2.5 by default, but it can be changed. Strength is the
   *  "epsilon" parameter in LJ.
   *
+  *  @see LennardJonesA
   */
   class LennardJones : public Force {
   public:

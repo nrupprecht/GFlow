@@ -19,7 +19,6 @@ namespace GFlowSimulation {
     Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
     BCFlag boundaryConditions[DIMENSIONS]; 
     copyVec(Base::gflow->getBCs(), boundaryConditions); // Keep a local copy of the wrap frags
-    RealType sigma; // Will hold the interaction radius of the head particle
 
     // Get verlet list data
     const int *verlet = verletList.getVerlet();

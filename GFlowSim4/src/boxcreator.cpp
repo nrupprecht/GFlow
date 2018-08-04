@@ -33,7 +33,7 @@ namespace GFlowSimulation {
     RealType repulsion = 1.;
     bool animate = false;
     bool over_damped_flag = false;
-    RealType langevin_temp = 0.;
+    RealType langevin_temp = -1.;
     bool lj_flag = false;
 
     // Gather command line arguments
@@ -95,16 +95,14 @@ namespace GFlowSimulation {
     gflow->forceMaster->setNTypes(1); // Only one type of particle
     Force *force;
     if(lj_flag) {
-      force = new LennardJones(gflow);
-      dynamic_cast<LennardJones*>(force)->setStrength(
-        repulsion*DEFAULT_LENNARD_JONES_STRENGTH
-      );
+      auto *LJ = new LennardJones(gflow);
+      LJ->setStrength(repulsion*DEFAULT_LENNARD_JONES_STRENGTH);
+      force = LJ;
     }
     else {
-      force = new HardSphere(gflow);
-      dynamic_cast<HardSphere*>(force)->setRepulsion(
-        repulsion*DEFAULT_HARD_SPHERE_REPULSION
-      );
+      auto *HS = new HardSphere(gflow);
+      HS->setRepulsion(repulsion*DEFAULT_HARD_SPHERE_REPULSION);
+      force = HS;
     }
     gflow->forceMaster->setForce(0, 0, force);
 
@@ -115,7 +113,7 @@ namespace GFlowSimulation {
     // Relax the setup
     hs_relax(gflow);
     if (over_damped_flag) gflow->integrator = new OverdampedIntegrator(gflow);
-    else if (langevin_temp>0) gflow->integrator = new LangevinIntegrator(gflow, langevin_temp);
+    else if (langevin_temp>=0) gflow->integrator = new LangevinIntegrator(gflow, langevin_temp);
     else gflow->integrator = new VelocityVerlet(gflow);
     // Set integrator initial time step
     gflow->integrator->setDT(dt);
