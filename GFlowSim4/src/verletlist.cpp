@@ -1,5 +1,6 @@
 #include "verletlist.hpp"
 #include "utility.hpp"
+#include "force.hpp"
 
 #include "force.hpp"
 

@@ -189,7 +189,8 @@ Cell[BoxData[{
    3.739985993735704*^9, 3.739986027082876*^9}, {3.7399861933652287`*^9, 
    3.7399861934209633`*^9}, {3.739986867103183*^9, 3.739986869284115*^9}, {
    3.74015802130199*^9, 3.740158023569433*^9}, {3.740172150622229*^9, 
-   3.7401721521288958`*^9}}],
+   3.7401721521288958`*^9}, {3.7403214594852667`*^9, 
+   3.7403214780208073`*^9}, {3.740412606887394*^9, 3.740412607842021*^9}}],
 
 Cell[BoxData[{
  RowBox[{
@@ -201,14 +202,14 @@ Cell[BoxData[{
 
 Cell[BoxData[
  RowBox[{
-  RowBox[{"maxRes", "=", "1024"}], ";"}]], "Input",
+  RowBox[{"maxRes", "=", "2048"}], ";"}]], "Input",
  CellChangeTimes->CompressedData["
-1:eJxTTMoPSmViYGAQBmIQrWdxjy161mvHrPIP7CA67kTRPBAddWQGmI6JztSb
+1:eJxTTMoPSmViYGAQAWIQrWdxjy161mvHrPIP7CA67kTRPBAddWQGmI6JztSb
 DKQXdZ0yBNErcsUjQXS+rCGY9o4oywHRLF6tYNqE2c9yI5A+tC0TTDvVeMTt
 BtJrWlLAtEzrilMHgHQb9y4wvapR49g9kLpmczB9n5vlA4iW2ioPpjdukbxq
 PPu1YzqvC5gWuMt3qxZIh7xTBtMsDcWfS+a9diwXbgfTZp6rDi4G0m2SJ8H0
 ucUqmz8D6X/LzcD0kx2FPEXzgfKz94Bph217uopuv3Y0d34Mpm9FNPaD6D2G
-3WBa7K7wltN3Xjtuy9YE0wDTOqSV
+3WBa7K7wltN3Xjtuy9YE01dbb+tK3Xvt+IDhJ5gGAGrerUY=
   "]],
 
 Cell[BoxData[{
@@ -821,6 +822,35 @@ Cell[BoxData[{
  CellChangeTimes->{{3.742059883031219*^9, 3.7420599023226337`*^9}, {
    3.74206062656406*^9, 3.74206062672248*^9}, 3.742120301421887*^9}]
 }, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Subset of all particles", "Section",
+ CellChangeTimes->{{3.740321756155456*^9, 3.7403217599940453`*^9}}],
+
+Cell[BoxData[
+ RowBox[{"(*", "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{"subset", "=", 
+    RowBox[{"Select", "[", 
+     RowBox[{"snapshot", ",", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"Max", "[", 
+         RowBox[{"Abs", "[", 
+          RowBox[{"#", "\[LeftDoubleBracket]", 
+           RowBox[{"1", ";;", "3"}], "\[RightDoubleBracket]"}], "]"}], "]"}], 
+        ">", "7.8"}], "&"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"Length", "[", "subset", "]"}], "\[IndentingNewLine]", 
+     "snapshot"}], "=", "subset"}], ";"}], "\[IndentingNewLine]", 
+  "*)"}]], "Input",
+ CellChangeTimes->{{3.740321526520968*^9, 3.7403216027053423`*^9}, {
+  3.740321730800571*^9, 3.74032173119637*^9}, {3.74032177907773*^9, 
+  3.740321816637446*^9}, {3.740322650675452*^9, 3.7403226760788937`*^9}, {
+  3.7403230542540503`*^9, 3.740323058723358*^9}}]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -1798,22 +1828,22 @@ Cell[558, 20, 310, 6, 28, "Input"],
 Cell[CellGroupData[{
 Cell[893, 30, 292, 3, 64, "Section"],
 Cell[1188, 35, 158, 2, 30, "Text"],
-Cell[1349, 39, 11071, 152, 46, "Input"],
-Cell[12423, 193, 262, 6, 46, "Input"],
-Cell[12688, 201, 452, 10, 28, "Input"],
-Cell[13143, 213, 447, 9, 63, "Input"],
-Cell[13593, 224, 334, 9, 28, "Input"],
-Cell[13930, 235, 957, 24, 131, "Input"]
+Cell[1349, 39, 11171, 153, 46, "Input"],
+Cell[12523, 194, 262, 6, 46, "Input"],
+Cell[12788, 202, 472, 10, 28, "Input"],
+Cell[13263, 214, 447, 9, 63, "Input"],
+Cell[13713, 225, 334, 9, 28, "Input"],
+Cell[14050, 236, 957, 24, 131, "Input"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[14924, 264, 148, 2, 64, "Section"],
-Cell[15075, 268, 453, 11, 28, "Input"]
+Cell[15044, 265, 148, 2, 64, "Section"],
+Cell[15195, 269, 453, 11, 28, "Input"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[15565, 284, 122, 1, 64, "Section"],
-Cell[15690, 287, 138, 1, 37, "Text"],
-Cell[15831, 290, 1696, 42, 97, "Input"],
-Cell[17530, 334, 1137, 23, 46, "Input"],
+Cell[15685, 285, 122, 1, 64, "Section"],
+Cell[15810, 288, 138, 1, 37, "Text"],
+Cell[15951, 291, 1696, 42, 97, "Input"],
+Cell[17650, 335, 1137, 23, 46, "Input"],
 Cell[CellGroupData[{
 Cell[18692, 361, 115, 1, 35, "Subsubsection"],
 Cell[18810, 364, 771, 20, 63, "Input"],

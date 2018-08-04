@@ -53,7 +53,7 @@ namespace GFlowSimulation {
 
     // Return the width of the bounds
     RealType wd(int d) {
-      return max[d] - min[d];
+      return max[0] - min[0];
     }
 
     RealType vol() {

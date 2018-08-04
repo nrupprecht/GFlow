@@ -21,8 +21,12 @@ namespace GFlowSimulation {
     // Destructor
     ~Force();
 
+    // Overload force to update [bounds] and [boundaryConditions]
+    virtual void initialize();
+
     // Calculate all the forces between atoms in the verlet lists
     virtual void calculateForces() const = 0;
+
 
     // --- Accessors
 
