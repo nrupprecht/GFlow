@@ -20,7 +20,7 @@ This version also includes Doxygen style commenting which can be used to generat
 
 * Parallel decompositions [paper](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.35.6047&rep=rep1&type=pdf)
 
-* GROMACS: High performance molecular simulations through multi-level parallelism from laptops to supercomputers - Paper on GROMACS
+* GROMACS: High performance molecular simulations through multi-level parallelism from laptops to supercomputers - Paper on GROMACS ([here](https://ac.els-cdn.com/S2352711015000059/1-s2.0-S2352711015000059-main.pdf?_tid=172b148a-bf48-40e9-8fb3-c210caa2a2a7&acdnat=1533416934_b748d45793aa0d659b50d701157ada1a))
 
 * ls1 mardyne: Current record holder for largest md simulation - over 10^12 particles. See this [paper](https://arxiv.org/pdf/1408.4599.pdf)
 

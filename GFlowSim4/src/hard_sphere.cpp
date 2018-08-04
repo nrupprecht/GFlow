@@ -74,43 +74,40 @@ namespace GFlowSimulation {
     // How much space is left over
     const int n_extra = nverlet - n_blocks*n_particles;
     
-    //cout << n_particles << " " << n_blocks << " " << n_extra << endl;
-
     for (int block=0; block<n_blocks; ++block) {
-
       // Copy particle positions to _x1, _x2
       for (int i=0; i<n_particles; ++i) {
-	copyVec(x[verlet[ 2*i ]], &_x1[i*DIMENSIONS]);
-	copyVec(x[verlet[2*i+1]], &_x2[i*DIMENSIONS]);
+      	copyVec(x[verlet[ 2*i ]], &_x1[i*DIMENSIONS]);
+      	copyVec(x[verlet[2*i+1]], &_x2[i*DIMENSIONS]);
       }
       // Find particle displacements - should be vectorized
       for (int b=0; b<block_steps; ++b) {
-	_disp[b] = _x1[b] - _x2[b];
+	      _disp[b] = _x1[b] - _x2[b];
       }
       // Find particle distances
       for (int i=0; i<n_particles; ++i) {
-	// Unroll this
-	RealType distance = 0;
-	for (int d=0; d<DIMENSIONS; ++d) {
-	  distance += sqr(_disp[i*DIMENSIONS+d]);
-	}
-	// Calculate the distance factor. It is not just the distance.
-	_dist[i] = distance<0.1 ? 0 : repulsion*(0.1 - sqrt(distance));
+      	// Unroll this
+      	RealType distance = 0;
+      	for (int d=0; d<DIMENSIONS; ++d) {
+      	  distance += sqr(_disp[i*DIMENSIONS+d]);
+      	}
+      	// Calculate the distance factor. It is not just the distance.
+      	_dist[i] = distance<0.1 ? 0 : repulsion*(0.1 - sqrt(distance));
       } 
       // Calculate components of force - should be vectorized
       // _f    -> components of force 
       // _dist -> distance
       // _disp -> components of displacement
       for (int b=0; b<block_steps; ++b) {
-	int id = b/DIMENSIONS;
-	// We have set _dist[id] = _mask[b]*repulsion*(0.1 - _dist[id])
-	_f[b] += _dist[id]*_disp[b];
+      	int id = b/DIMENSIONS;
+      	// We have set _dist[id] = _mask[b]*repulsion*(0.1 - _dist[id])
+      	_f[b] += _dist[id]*_disp[b];
       }
       
       // Add force components to where they should be
       for (int i=0; i<n_particles; ++i) {
-	copyVec(&_f[i*DIMENSIONS], f[verlet[ 2*i ]]);
-	copyVec(&_f[i*DIMENSIONS], f[verlet[2*i+1]]);
+	      copyVec(&_f[i*DIMENSIONS], f[verlet[ 2*i ]]);
+	      copyVec(&_f[i*DIMENSIONS], f[verlet[2*i+1]]);
       }
     }
     // ---> End

@@ -261,7 +261,7 @@ namespace GFlowSimulation {
     zeroVec(domain_index); // For now ...
 
     // Calculate which domains are adjacent to us
-  // @todo Actually calculate these
+    // @todo Actually calculate these
     setVec(domains_up, -1);   // For now ...
     setVec(domains_down, -1); // For now ...
 
@@ -310,8 +310,8 @@ namespace GFlowSimulation {
         for (auto i2 = i1+1; i2!=cell1.id_list.cend(); ++i2) {
           // Get the id of the second particle
           int id2 = *i2;
-          // Get the displacement
-          Displacement(Base::simData->x[id1], Base::simData->x[id2], displacement, bounds, bcs);
+          // Get the displacement - we never need to wrap, since its the same cell.
+          subtractVec(Base::simData->x[id1], Base::simData->x[id2], displacement);
           // Check the displacement
           if (sqr(displacement) < sqr(sigma + Base::simData->sg[id2] + skinDepth))
             pair_interaction(id1, id2);

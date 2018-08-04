@@ -162,7 +162,8 @@ namespace GFlowSimulation {
         // --- Look at other particles in the same sector
         for (uint q = p+1; q<pvec.size(); ++q) {
           int otherParticle = pvec.at(q);
-          getDisplacement(x[currentHead], x[otherParticle], displacement, bounds, boundaryConditions);
+          // Get the displacement - we never need to wrap, since its the same cell.
+          subtractVec(x[currentHead], x[otherParticle], displacement);
           if (sqr(displacement) < sqr(sigma + sg[otherParticle] + skinDepth))
             pair_interaction(currentHead, otherParticle);
         }
