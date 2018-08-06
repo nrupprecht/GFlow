@@ -65,10 +65,13 @@ namespace GFlowSimulation {
   }
 
   template<typename T> inline void setVec(T *x, const T val) {
+  /*
     #if _INTEL_ == 1
     #pragma unroll(DIMENSIONS)
     #endif 
     for (int d=0; d<DIMENSIONS; ++d) x[d] = val;
+  */
+    std::fill(x, x+DIMENSIONS, val);
   }
 
   template<typename T> inline void addVec(const T *x, const T *y, T *z) {
@@ -116,10 +119,13 @@ namespace GFlowSimulation {
   }
 
   template<typename T> inline void copyVec(const T *x, T *target) {
+    /*
     #if _INTEL_ == 1
     #pragma unroll(DIMENSIONS)
     #endif 
     for (int d=0; d<DIMENSIONS; ++d) target[d] = x[d];
+    */
+    std::copy(x, x+DIMENSIONS, target);
   }
 
   template<typename T> inline void copyVec(const T *x, T *target, const unsigned int size) {

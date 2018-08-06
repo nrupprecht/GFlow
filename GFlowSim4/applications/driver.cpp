@@ -64,6 +64,7 @@ int main(int argc, char **argv) {
   bool minDistances = false;
   bool percolation = false;
   bool psnapshot = false;
+  bool memdist = false;
   RealType skin = 0.;
 
   // Other options
@@ -100,6 +101,7 @@ int main(int argc, char **argv) {
   parser.get("minDistances", minDistances);
   parser.get("percolation", percolation);
   parser.get("psnapshot", psnapshot);
+  parser.get("memdist", memdist);
   parser.get("skin", skin);
   parser.get("gravity", gravity);
   parser.get("adjustDT", adjustDT);
@@ -173,6 +175,7 @@ int main(int argc, char **argv) {
   if (minDistances) gflow->addDataObject(new MinInteractingDistance(gflow));
   if (percolation) gflow->addDataObject(new PercolationData(gflow, skin));
   if (psnapshot) gflow->addDataObject(new PercolationSnapshot(gflow, skin));
+  if (memdist)  gflow->addDataObject(new MemoryDistance(gflow));
   gflow->setFPS(fps); // Do after data objects are loaded
   gflow->setDMCmd(argc, argv);
 

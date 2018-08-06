@@ -17,5 +17,6 @@
 #include "mininteractingdistance.hpp"
 #include "percolationdata.hpp"
 #include "percolationsnapshot.hpp"
+#include "memorydistance.hpp"
 
 #endif // __ALL_DATA_OBJECTS_HPP__GFLOW__

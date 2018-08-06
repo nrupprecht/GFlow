@@ -39,6 +39,8 @@ using std::chrono::duration_cast;
 
 #include <stdlib.h> // For aligned_alloc
 
+#include <algorithm> // For std::copy, std::fill, etc.
+
 /**
 *  \namespace GFlowSimulation The GFlow simulation namespace
 *

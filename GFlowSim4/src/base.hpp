@@ -6,7 +6,7 @@
 namespace GFlowSimulation {
 
   /*
-  *  @class Base
+  *  @brief The base class for simulation object that have to interact with other simulation objects.
   * 
   *  Having every class inherit from this gives everyone access to all data.
   *  This idea was inspired by LAMMPS.
@@ -33,13 +33,13 @@ namespace GFlowSimulation {
     friend class GFlow;
 
   protected:
-    GFlow *gflow;
-    class SimData *simData;
-    class Integrator *integrator;
-    class DomainBase *domain;
+    class GFlow        *gflow;
+    class SimData      *simData;
+    class Integrator   *integrator;
+    class DomainBase   *domain;
     class Communicator *communicator;
-    class DataMaster *dataMaster; 
-    class ForceMaster *forceMaster; 
+    class DataMaster   *dataMaster; 
+    class ForceMaster  *forceMaster; 
     // References to vectors
     vector<class Modifier*> *modifiersPtr;
     vector<class Force*>    *forcesPtr;
