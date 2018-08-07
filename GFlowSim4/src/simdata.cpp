@@ -2,6 +2,7 @@
 // Other files
 #include "memory.hpp"
 #include "vectormath.hpp"
+#include "memoryoptimizer.hpp"
 
 namespace GFlowSimulation {
 
@@ -11,6 +12,13 @@ namespace GFlowSimulation {
 
   SimData::~SimData() {
     clean();
+  }
+
+  void SimData::initialize() {
+    // Call base initialization
+    Base::initialize();
+    // Reorder memory
+    // MemoryOptimizer::GridParticles(*this, Base::gflow->getBounds());
   }
 
   void SimData::clean() {

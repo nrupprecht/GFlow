@@ -18,5 +18,6 @@
 #include "percolationdata.hpp"
 #include "percolationsnapshot.hpp"
 #include "memorydistance.hpp"
+#include "pressuredata.hpp"
 
 #endif // __ALL_DATA_OBJECTS_HPP__GFLOW__

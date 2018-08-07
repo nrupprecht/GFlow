@@ -7,7 +7,7 @@
 namespace GFlowSimulation {
 
   /*
-  *  @class Force
+  *  \brief The base class for all interparticle forces.
   *
   *  A pair force between particles. This is the base class for forces. Forces keep a 
   *  verlet list of all the particles that might experience it.
@@ -15,29 +15,32 @@ namespace GFlowSimulation {
   */
   class Force : public Base {
   public:
-    // Constructor
+    //! Constructor
     Force(GFlow *);
 
-    // Destructor
+    //! Destructor
     ~Force();
 
-    // Calculate all the forces between atoms in the verlet lists
+    //! Calculate all the forces between atoms in the verlet lists
     virtual void calculateForces() const = 0;
 
     // --- Accessors
 
-    // Return the total length of the verlet list 
+    //! Return the total length of the verlet list 
     int vlSize() const;
 
-    // Get the verlet list (get it as a const reference)
+    //! Get the verlet list (get it as a const reference)
     const VerletList& getVerletList() const;
+
+    //! Get the virial, used for calculating pressure
+    int getVirial() const;
 
     // --- Mutators
 
-    // Clear this force's verlet list
+    //! Clear this force's verlet list
     void clearVerletList();
 
-    // Add a pair pf particles - the first is the head
+    //! Add a pair pf particles - the first is the head
     void addVerletPair(int, int);
 
     // GFlow is a friend class
@@ -46,11 +49,16 @@ namespace GFlowSimulation {
   protected:
     // --- Helper functions
 
-    // Children can override this to use the default force loop
+    //! Children can override this to use the default force loop
     void forceStrength(RealType*, const RealType*, const RealType, const int, const int) const {};
 
-    // The neighbor (verlet) lists for all the pairs of atoms between which this force is active
+    //! The neighbor (verlet) lists for all the pairs of atoms between which this force is active
     VerletList verletList;
+
+    //! The virial, for calculating pressure.
+    //! The pressure formula is: P = N k T/V + 1/(DIMENSIONS*V) \sum_i (r_i \dot F_i)
+    //! This term should be used like: virial = \sum_i (r_i \dot F_i)
+    mutable RealType virial;
   };
 
 }

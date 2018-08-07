@@ -29,14 +29,14 @@ namespace GFlowSimulation {
 
   private:
     //! Calculate force strength
-    inline void forceStrength(RealType*, const RealType*, const RealType, const int, const int) const;
+    inline void forceStrength(RealType*, const RealType, const int, const int) const;
 
     //! The repulsion of the hard spheres. This is assumed to be the same for all hard spheres.
     RealType repulsion;
 
     // --- TESTS
-    RealType *_x1, *_x2, *_disp, *_dist, *_f;
-    int BLOCK_SIZE;
+    //RealType *_x1, *_x2, *_disp, *_dist, *_f;
+    //int BLOCK_SIZE;
   };
 
 }

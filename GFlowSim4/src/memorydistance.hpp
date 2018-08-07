@@ -7,17 +7,18 @@ namespace GFlowSimulation {
 
   class MemoryDistance : public DataObject {
   public:
-    // Constructor
+    //! Constructor
     MemoryDistance(GFlow*);
 
-    // Collect the position data from simdata --- happens during the post-step phase
+    //! Collect the position data from simdata --- happens during the post-step phase
     virtual void post_step();
 
-    // Write data to a file - if true, the string is a path, and you should use your own name as the file name
-    // Returns true for success
+    //! Write data to a file - if true, the string is a path, and you should use your own name as the file name.
+    //! Returns true for success.
     virtual bool writeToFile(string, bool=true);
 
   private:
+    //! The vector of data.
     vector<RPair> data;
   };
 

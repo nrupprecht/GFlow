@@ -27,7 +27,7 @@ namespace GFlowSimulation {
     // Store data
     RealType time = Base::gflow->getElapsedTime();
     // Store the average L1 distance between (potentially) interacting particles
-    data.push_back(RPair(time, static_cast<RealType>(dist)/count));
+    data.push_back(RPair(time, count>0 ? static_cast<RealType>(dist)/count : 0));
   }
 
   bool MemoryDistance::writeToFile(string fileName, bool) {

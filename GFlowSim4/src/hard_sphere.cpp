@@ -33,6 +33,9 @@ namespace GFlowSimulation {
     int nverlet = verletList.vlSize(), id1(0), id2(0); // List length, id pointers
     if (nverlet==0) return; // No forces to calculate
 
+    // Reset the virial
+    virial = 0;
+
     // Get the data we need
     RealType **x = Base::simData->x, **f = Base::simData->f;
     RealType *sg = Base::simData->sg;
@@ -58,7 +61,7 @@ namespace GFlowSimulation {
         RealType distance = sqrt(dsqr);
         scalarMultVec(1./distance, displacement, normal);
         // Calculate force strength
-        forceStrength(F, normal, distance, id1, id2);
+        forceStrength(normal, distance, id1, id2);
       }
     }
 
@@ -118,15 +121,23 @@ namespace GFlowSimulation {
     repulsion = r; 
   }
 
-  inline void HardSphere::forceStrength(RealType *F, const RealType *normal, const RealType distance, const int id1, const int id2) const {
+  //! \param[in] normal The normal of the displacement between the particles. Points from id2 to id1 (?). It is safe
+  //! to change this parameter.
+  //! \param[in] distance The distance between the particles.
+  //! \param[in] id1 The id of the first particle.
+  //! \param[in] id2 The id of the second particle.
+  inline void HardSphere::forceStrength(RealType *normal, const RealType distance, const int id1, const int id2) const {
     // This should make sure that forces are zero if either object is of type -1. This does not seem to add much (any?) overhead
-    RealType c1 = Base::simData->type[id1]<0 ? 0 : 1.; //--
-    RealType c2 = Base::simData->type[id2]<0 ? 0 : 1.; //--
-
-    scalarMultVec(c1*c2*repulsion*(simData->Sg(id1) + simData->Sg(id2) - distance), normal, F);
-    // Add forces
-    plusEqVec (Base::simData->f[id1], F);
-    minusEqVec(Base::simData->f[id2], F);
+    RealType c1 = Base::simData->type[id1]<0 ? 0 : 1.;
+    RealType c2 = Base::simData->type[id2]<0 ? 0 : 1.;
+    // Calculate force strength
+    RealType force = c1*c2*repulsion*(simData->Sg(id1) + simData->Sg(id2) - distance);
+    virial += force;
+    // Force strength x Normal vector -> Sets normal to be the vectorial force between the particles.
+    scalarMultVec(force, normal);
+    // Add forces to the particles.
+    plusEqVec (Base::simData->f[id1], normal);
+    minusEqVec(Base::simData->f[id2], normal);
   }
 
 }

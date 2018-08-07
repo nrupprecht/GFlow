@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
 
-  Force::Force(GFlow *gflow) : Base(gflow) {};
+  Force::Force(GFlow *gflow) : Base(gflow), virial(0) {};
 
   Force::~Force() {}
 
@@ -15,6 +15,10 @@ namespace GFlowSimulation {
 
   const VerletList& Force::getVerletList() const {
     return verletList;
+  }
+
+  int Force::getVirial() const {
+    return virial;
   }
 
   void Force::clearVerletList() {

@@ -153,6 +153,11 @@ namespace GFlowSimulation {
       for (int i=0; i<s0; ++i) data[i] = T();
     }
 
+    Array(const int *sizes) : dims(sizes[0]) {
+      data = new T[dims];
+      for (int i=0; i<s0; ++i) data[i] = T();
+    }
+
     //! Destructor
     ~Array() {
       if (data) delete [] data;
@@ -237,6 +242,12 @@ namespace GFlowSimulation {
       for (int i=0; i<s0*s1; ++i) data[i] = T();
     }
 
+    Array(const int *sizes) {
+      dims[0] = sizes[0]; dims[1] = sizes[1];
+      data = new T[dims[0]*dims[1]];
+      for (int i=0; i<dims[0]*dims[1]; ++i) data[i] = T();
+    }
+
     // Destructor
     ~Array() {
       if (data) delete [] data;
@@ -250,9 +261,9 @@ namespace GFlowSimulation {
       uint newTotal = dims[0]*dims[1];
       // Reallocate if we don't have the correct amount of space
       if (total!=newTotal) {
-	if (data) delete [] data;
-	data = new T[newTotal];
-	for (int i=0; i<newTotal; ++i) data[i] = T();
+      	if (data) delete [] data;
+      	data = new T[newTotal];
+      	for (int i=0; i<newTotal; ++i) data[i] = T();
       }
     }
 
@@ -329,6 +340,12 @@ namespace GFlowSimulation {
     // Constructor
     Array(int s0, int s1, int s2) {
       dims[0] = s0; dims[1] = s1; dims[2] = s2;
+      data = new T[s0*s1*s2];
+      for (int i=0; i<s0*s1*s2; ++i) data[i] = T();
+    }
+
+    Array(const int *sizes) {
+      dims[0] = sizes[0]; dims[1] = sizes[1]; dims[2] = sizes[2];
       data = new T[s0*s1*s2];
       for (int i=0; i<s0*s1*s2; ++i) data[i] = T();
     }

@@ -3,6 +3,7 @@
 
 #include "gflow.hpp"
 #include "utility.hpp"
+#include "vectormath.hpp"
 
 #include <set> // For storing sets of holes in the arrays
 
@@ -33,7 +34,6 @@ namespace GFlowSimulation {
   */
   enum class ParticleOwnership { Owned, Halo, Ghost };
 
-
   /**
   *  @brief A class that contains particle data.
   *
@@ -53,6 +53,11 @@ namespace GFlowSimulation {
 
     //! Destructor
     ~SimData();
+
+    //! @brief Initialize function.
+    //!
+    //! Sets up the particles so they are in a memory efficient configuration.
+    virtual void initialize();
 
     //! Clean all pointers
     void clean();
@@ -254,6 +259,16 @@ namespace GFlowSimulation {
     int *body;  
   };
 
+  // --- Defined after simdata
+
+  //! @brief A helper function for copying a particles data
+  inline void copyParticle(SimData& simData, int id, RealType *x, RealType *v, RealType &sg, RealType &im, int &type) {
+    copyVec(simData.x[id], x);
+    copyVec(simData.v[id], v);
+    sg = simData.sg[id];
+    im = simData.im[id];
+    type = simData.type[id];
+  }
 
 }
 #endif // __SIM_DATA_HPP__GFLOW__
