@@ -258,7 +258,10 @@ namespace GFlowSimulation {
 
   //! \param id The id (place in the data lists) of the particle that should be removed.
   void SimData::removeParticle(int id) {
-    
+    if (type[id]>-1) {
+      holes.emplace(id);
+      type[id] = -1;
+    }
   }
 
   void SimData::addHaloParticle(const RealType *X, const RealType *V, const RealType Sg, 
@@ -294,6 +297,18 @@ namespace GFlowSimulation {
     // Set flag
     needs_remake = true;
   }
+
+  template<int width, typename T> inline void SimData::copyHelper(int resize_owned, int resize_halo, int resize_ghost, T *old_array, T *new_array) {
+      // Move owned particle data
+      for (int i=0; i<number*width; ++i) 
+        new_array[i] = old_array[i];
+      // Move halo data
+      for (int i=end_owned*width; i<(end_owned+number_halo)*width; ++i) 
+        new_array[i+resize_owned*width] = old_array[i];
+      // Move ghost data
+      for (int i=end_halo*width; i<(end_halo+number_ghost)*width; ++i)
+        new_array[i+(resize_owned+resize_halo)*width] = old_array[i];
+    }
 
   void SimData::clearHaloParticles() {
     for (int i=end_owned; i<end_owned+number_halo; ++i) type[i] = -1;

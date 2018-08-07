@@ -130,11 +130,11 @@ namespace GFlowSimulation {
   }
 
   void DomainBase::pair_interaction(int id1, int id2) {
-    // --- Check to see if they are part of the same body. If so, they cannot exert force on each other
+    // Check to see if they are part of the same body. If so, they cannot exert force on each other
     if (Base::simData->body && Base::simData->body[id1]>0 && Base::simData->body[id2]==Base::simData->body[id1])
       return; // The particles are in the same body
 
-    // --- Check with force master
+    // Check with force master
     Force *force = Base::forceMaster->getForce(Base::simData->type[id1], Base::simData->type[id2]);
 
     // A null force means no interaction
@@ -158,7 +158,6 @@ namespace GFlowSimulation {
       dsqr = getDistanceSqrNoWrap<>(xVL[n], Base::simData->x[n]);
       if (dsqr<max_plausible && dsqr>maxDSqr) maxDSqr = dsqr;
     }
-    // return sqrt(maxDSqr)+sqrt(secDSqr);
     return 2*sqrt(maxDSqr);
   }
 

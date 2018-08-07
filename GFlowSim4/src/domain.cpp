@@ -306,8 +306,11 @@ namespace GFlowSimulation {
       for (auto i1 = cell1.id_list.cbegin(); i1!=cell1.id_list.cend(); ++i1) {
         const int id1 = *i1;
         RealType sigma = Base::simData->sg[id1];
-        // Verlet lists for particles in the same cell
-        for (auto i2 = i1+1; i2!=cell1.id_list.cend(); ++i2) {
+        // --- Verlet lists for particles in the same cell
+        // This works for list iterators too
+        auto i2 = i1;
+        ++i2;
+        for (; i2!=cell1.id_list.cend(); ++i2) {
           // Get the id of the second particle
           int id2 = *i2;
           // Get the displacement - we never need to wrap, since its the same cell.
@@ -353,7 +356,7 @@ namespace GFlowSimulation {
       linear += tuple[d]*product(d+1);
   }
 
-  void Domain::find_adjacent_cells(int index[DIMENSIONS], bool is_special, vector<int>& neighbors) {
+  void Domain::find_adjacent_cells(int index[DIMENSIONS], bool is_special, CellContainer& neighbors) {
     // Helper arrays
     int d_index[DIMENSIONS], other_index[DIMENSIONS], linear;
 

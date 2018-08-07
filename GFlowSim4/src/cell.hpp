@@ -32,6 +32,9 @@ namespace GFlowSimulation {
     return out;
   }
 
+  //! What type of container the cell structure uses
+  typedef vector<int> CellContainer;
+
   /** @brief A single cell from a domain. Know's its adjacent cells
   *
   *  The domain decomposition is divided into (hyper) rectangular cells. Each cell
@@ -57,11 +60,11 @@ namespace GFlowSimulation {
     //! A list of adjacent cells that particles in this cell should check with. This will in 
     //! general not be all the surrounding cells, just half of them.
     //! Adjacent cell list and its size have to be set at initializatoin
-    vector<int> adjacent_cell_id;
+    CellContainer adjacent_cell_id;
 
     //! A list of the ids of the particles whose centers fall within this cell. The id 
     //! corresponds to the index in the simdata object for this processor.
-    vector<int> id_list;
+    CellContainer id_list;
 
     //! The type of cell this is
     CellType cellType;
@@ -71,6 +74,9 @@ namespace GFlowSimulation {
     //! Is this the boundary cell of a halo cell? If so, particles inserted into it will need to
     //! create halo images of themselves in halo cells
     bool is_boundary_cell;
+
+    // --- For vectorized forces : THIS IS A TEST
+    RealType **x, **f, *sg, *im;
   };
 
 }

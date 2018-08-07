@@ -47,25 +47,27 @@ namespace GFlowSimulation {
     //! actual particle in the simdata.
     void addToCell(int);
 
-    //! Get the (linear) index of the cell the position falls in
+    //! @brief Get the (linear) index of the cell the position falls in
     int getCellIndex(RealType *);
 
-    //! Calculate the data neccessary to run domains in parallel e.g. domain index, which domain this is, etc.
+    //! @brief Calculate the data neccessary to run domains in parallel e.g. domain index, which domain this is, etc.
     void parallel_assignments();
 
-    //! @brief Remake the verlet lists for all the forces
+    //! @brief Remake the verlet lists for all the forces.
     //!
     //! Resectorizes the particles into cells and calculates verlet lists from the cell decomposition.
     virtual void remake_verlet();
 
-    // Turns a linear cell index into a (DIMENSIONS)-dimensional index
+    //! @brief Turns a linear cell index into a (DIMENSIONS)-dimensional index
     void linear_to_tuple(const int, int*);
 
-    // Turns a (DIMENSIONS)-dimensional index into a linear cell index
+    //! @brief Turns a (DIMENSIONS)-dimensional index into a linear cell index.
     void tuple_to_linear(int&, const int*);
 
-    void find_adjacent_cells(int[DIMENSIONS], bool, vector<int>&);
+    //! @brief Find the linear indices of the cells adjacent to a given cell.
+    void find_adjacent_cells(int[DIMENSIONS], bool, CellContainer&);
 
+    //! @brief Fill the cells with particle ids.
     inline void fill_cells();
 
     inline bool correct_index(int[DIMENSIONS], bool);

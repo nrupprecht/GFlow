@@ -6,6 +6,7 @@
 #include "vectormath.hpp"
 
 #include <set> // For storing sets of holes in the arrays
+#include <map> // For mapping owned particles to halo particles
 
 namespace GFlowSimulation {
 
@@ -156,17 +157,7 @@ namespace GFlowSimulation {
     //! @brief Helps copy data when we resize arrays.
     //!
     //! Each array needs to be copied in this way, so we have this private helper function to help us
-    template<int width, typename T> inline void copyHelper(int resize_owned, int resize_halo, int resize_ghost, T *old_array, T *new_array) {
-      // Move owned particle data
-      for (int i=0; i<number*width; ++i) 
-        new_array[i] = old_array[i];
-      // Move halo data
-      for (int i=end_owned*width; i<(end_owned+number_halo)*width; ++i) 
-        new_array[i+resize_owned*width] = old_array[i];
-      // Move ghost data
-      for (int i=end_halo*width; i<(end_halo+number_ghost)*width; ++i)
-        new_array[i+(resize_owned+resize_halo)*width] = old_array[i];
-    }
+    template<int width, typename T> inline void copyHelper(int, int, int, T*, T*);
 
     //! @brief Clear out the halo particles
     //!
@@ -186,6 +177,16 @@ namespace GFlowSimulation {
     //! new object. Does not need to be set if a particle is removed, since updates can continue with the 
     //! particle indicated as being not-a-particle through the type flag being set to -1.
     bool needs_remake;
+
+    //! @brief Record where "holes" are in the particle array
+    std::set<int> holes;
+
+    //! @brief Maps owned particle to halo particles
+    //!
+    //! Each element is a pair, { id of particle, id of halo image }. Since the array for halo particles is just
+    //! the part of the arrays after the owned particle data, we can access particles and halo particles through
+    //! the same arrays.
+    std::map<int, int> halo_map;
 
   public:
 

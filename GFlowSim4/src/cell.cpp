@@ -9,10 +9,10 @@ namespace GFlowSimulation {
   Cell::~Cell() {}
 
   void Cell::clear() {
-    id_list.clear();
+    id_list.clear() ;
   }
 
   void Cell::add(int id) {
-    id_list.push_back(id);
+    id_list.push_back(id) ;
   }
 }
