@@ -9,10 +9,11 @@ namespace GFlowSimulation {
   LennardJones::LennardJones(GFlow *gflow) : Force(gflow), strength(DEFAULT_LENNARD_JONES_STRENGTH), cutoff(DEFAULT_LENNARD_JONES_CUTOFF) {};
 
   void LennardJones::calculateForces() const {
-    int nverlet = verletList.vlSize(), id1, id2; // List length, id pointers
-    if (nverlet==0) return; // No forces to calculate
+    // Check if there are forces to calculate. Virial is reset.
+    if (!Force::initCalculation()) return; 
 
     // Get the data we need
+    int nverlet = verletList.vlSize(), id1, id2; // List length, id pointers
     RealType **x = Base::simData->x, **f = Base::simData->f;
     RealType *sg = Base::simData->sg;
     RealType displacement[DIMENSIONS], normal[DIMENSIONS]; // To calculate displacement, normal vector
@@ -36,7 +37,7 @@ namespace GFlowSimulation {
         RealType distance = sqrt(dsqr);
         scalarMultVec(1./distance, displacement, normal);
         // Calculate force strength
-        forceStrength(F, normal, distance, id1, id2);
+        forceStrength(normal, distance, id1, id2);
       }
     }
   }
@@ -45,7 +46,12 @@ namespace GFlowSimulation {
     strength = s;
   }
 
-  inline void LennardJones::forceStrength(RealType *F, const RealType *normal, const RealType distance, const int id1, const int id2) const {
+  //! \param[in] normal The normal of the displacement between the particles. Points from id2 to id1 (?). It is safe
+  //! to change this parameter.
+  //! \param[in] distance The distance between the particles.
+  //! \param[in] id1 The id of the first particle.
+  //! \param[in] id2 The id of the second particle.
+  inline void LennardJones::forceStrength(RealType *normal, const RealType distance, const int id1, const int id2) const {
     // This should make sure that forces are zero if either object is of type -1. This does not seem to add much (any?) overhead
     RealType c1 = Base::simData->type[id1]<0 ? 0 : 1.; //--
     RealType c2 = Base::simData->type[id2]<0 ? 0 : 1.; //--
@@ -56,11 +62,12 @@ namespace GFlowSimulation {
     RealType g3 = gamma*gamma*gamma, g6 = sqr(g3), g12 = sqr(g6);
     // The c1*c2 makes sure the magnitude is zero if either particles are of type -1
     RealType magnitude = c1*c2*24.*strength*(2.*g12 - g6)*(1./distance); 
+    Force::virial += magnitude;
     // Make vectorial
-    scalarMultVec(magnitude, normal, F);
+    scalarMultVec(magnitude, normal);
     // Add forces
-    plusEqVec (Base::simData->f[id1], F);
-    minusEqVec(Base::simData->f[id2], F);
+    plusEqVec (Base::simData->f[id1], normal);
+    minusEqVec(Base::simData->f[id2], normal);
   }
 
 }

@@ -119,12 +119,18 @@ namespace GFlowSimulation {
     int*      DataI(int n)    { return dataI[n]; }
     int&      Body(int n)     { return body[n]; }
 
-    //! @brief Add an owned particle to the simulation.
+    //! @brief Add an owned particle to the simdata.
     //!
     //! Add a particle to the simdata. This is the public version of the function, so we can only add owned particles. 
     //! Depending on how many particles are in the array, and the array capacities, it may be necessary to resize the array 
     //! to add the particle.
     void addParticle(const RealType*, const RealType*, const RealType, const RealType, const int);
+
+    //! @brief Remove a particle from the simdata.
+    //!
+    //! Mark a particle for removal. The basic thing we need to do is set type[id] = -1. We may do a number of things behind 
+    //! the scenes, like store the fact that there is now a hole at id. 
+    void removeParticle(const int);
 
   private:
 
@@ -182,6 +188,12 @@ namespace GFlowSimulation {
     bool needs_remake;
 
   public:
+
+    //! @brief Returns whether the simdata needs to be remade or not
+    bool getNeedsRemake() { return needs_remake; }
+
+    //! @brief Set the needs_remake flag
+    void setNeedsRemake(bool r) { needs_remake = r; }
 
     //! GFlow is a friend class -- this allows it to access protected Base members.
     friend class GFlow;

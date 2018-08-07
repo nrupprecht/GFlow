@@ -23,7 +23,7 @@ namespace GFlowSimulation {
     // An array we can use to sort particles
     Array<vector<int> > grid(sizes);
 
-    auto getLinearIndex = [&] (RealType *x) -> int {
+    auto getLinearIndex = [&] (RealType *x)->int {
       int index = 0;
       int product = 1;
       for (int d=0; d<DIMENSIONS; ++d) {
@@ -38,9 +38,6 @@ namespace GFlowSimulation {
 
     for (int i=0; i<number; ++i) {
       int index = getLinearIndex(simData.x[i]);
-
-      cout << index << " " << total << endl;
-
       grid[index].push_back(i);
     }
 
@@ -60,15 +57,20 @@ namespace GFlowSimulation {
       }
     }
 
-    // Destroy old data, set new data
+    // --- Destroy old data, set new data
+    // Position
     dealloc_array_2d(simData.x);
     simData.x = x;
+    // Velcity
     dealloc_array_2d(simData.v);
     simData.v = v;
+    // Radius
     delete [] simData.sg;
-    simData.type = type;
+    simData.sg = sg;
+    // Inverse mass
     delete [] simData.im;
     simData.im = im;
+    // Particle type
     delete [] simData.type;
     simData.type = type;
   }

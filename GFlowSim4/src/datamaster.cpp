@@ -315,4 +315,8 @@ namespace GFlowSimulation {
     out << "  - Average speed:            " << aspeed << "\n";
   }
 
+  inline void DataMaster::writeDomainData(std::ostream&) {
+    
+  }
+
 }

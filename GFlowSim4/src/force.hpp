@@ -18,11 +18,13 @@ namespace GFlowSimulation {
     //! Constructor
     Force(GFlow *);
 
-    //! Destructor
-    ~Force();
-
     //! Calculate all the forces between atoms in the verlet lists
     virtual void calculateForces() const = 0;
+
+    //! \brief Initialize for force calculation
+    //!
+    //! Resets the virial and returns whether forces should be calculated.
+    bool initCalculation() const;
 
     // --- Accessors
 
@@ -47,10 +49,6 @@ namespace GFlowSimulation {
     friend class GFlow;
 
   protected:
-    // --- Helper functions
-
-    //! Children can override this to use the default force loop
-    void forceStrength(RealType*, const RealType*, const RealType, const int, const int) const {};
 
     //! The neighbor (verlet) lists for all the pairs of atoms between which this force is active
     VerletList verletList;

@@ -17,6 +17,10 @@ namespace GFlowSimulation {
     //! Returns true for success.
     virtual bool writeToFile(string, bool=true);
 
+    //! @brief This executes the statistic, finding the average distance in memory between potentially
+    //! interacting particles.
+    RealType getAverageDistance();
+
   private:
     //! The vector of data.
     vector<RPair> data;

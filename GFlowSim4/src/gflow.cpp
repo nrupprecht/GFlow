@@ -1,11 +1,14 @@
 #include "gflow.hpp"
 // Other files
 #include "allbaseobjects.hpp"
+#include "memorydistance.hpp"
+#include "memoryoptimizer.hpp"
 
 namespace GFlowSimulation {
 
   GFlow::GFlow() : running(false), useForces(true), requested_time(0), elapsed_time(0), total_time(0), 
-    iter(0), argc(0), argv(nullptr), repulsion(DEFAULT_HARD_SPHERE_REPULSION)
+    iter(0), argc(0), argv(nullptr), repulsion(DEFAULT_HARD_SPHERE_REPULSION), last_memory_optimization(0),
+    memory_check_delay(1.), do_memory_optimization(true)
   {
     simData      = new SimData(this);
     // Integrator will be created by the creator
@@ -32,9 +35,14 @@ namespace GFlowSimulation {
 
   bool GFlow::initialize() {
     bool non_null = true;
-    // Initialize all the subobjects
+    // --- Initialize all the subobjects
     if (simData) simData->initialize();
     else non_null = false;
+
+    if (do_memory_optimization) {
+      MemoryDistance md(this);
+      target_memory_distance = md.getAverageDistance();
+    }
 
     if(integrator) integrator->initialize();
     else non_null = false;
@@ -112,6 +120,20 @@ namespace GFlowSimulation {
       integrator->pre_step();
       dataMaster->pre_step();
       domain->pre_step();
+
+      // --- Potentially optimize memory. Do this before resectorization happens, so we can resectorize
+      if (do_memory_optimization && elapsed_time-last_memory_optimization>memory_check_delay) {
+        // Set last_memory_optimization
+        last_memory_optimization = elapsed_time;
+        // Look at the average memory distance
+        MemoryDistance md(this);
+        RealType aveDist = md.getAverageDistance();
+        // If the distance is large enough, rearrange memory
+        if (aveDist > 1.5*target_memory_distance)
+          MemoryOptimizer::GridParticles(*simData, bounds);
+        // The verlet lists will have to be remade
+        simData->setNeedsRemake(true);
+      }
 
       // --> Pre-exchange
         for (auto m : modifiers) m->pre_exchange();

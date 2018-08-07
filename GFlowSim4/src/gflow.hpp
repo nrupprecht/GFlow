@@ -202,6 +202,20 @@ namespace GFlowSimulation {
     // The command info (optional)
     int argc;
     char **argv;
+
+    //! The last time we did memory optimization
+    RealType last_memory_optimization;
+
+    //! The delay between checking if we need to do memory optimization
+    RealType memory_check_delay;
+
+    //! Whether we do memory optimization
+    bool do_memory_optimization;
+
+    //! What the target memory distance is. We use the memory distance at the beginning of 
+    //! the run for this, and optimize the memory when we get more than some factor larger
+    //! than this.
+    RealType target_memory_distance;
   };
 
 }

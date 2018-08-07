@@ -29,7 +29,14 @@ namespace GFlowSimulation {
     // Get the current simulation time
     RealType current_time = Base::gflow->getElapsedTime();
     // Check whether we should check sectors
-    if (current_time-lastUpdate>updateDelay && check_needs_remake()) remake_verlet();
+    if (
+      Base::simData->getNeedsRemake() || 
+      ( current_time-lastUpdate>updateDelay && check_needs_remake() )
+    ) {
+      remake_verlet();
+      // SimData does not need to be remade anymore
+      Base::simData->setNeedsRemake(false);
+    }
   }
 
   const int* DomainBase::getDims() const {

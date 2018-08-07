@@ -57,7 +57,7 @@ namespace GFlowSimulation {
 
     #if _INTEL_ == 1
     #pragma vector aligned
-    #pragma simd
+    // #pragma simd
     #endif
     #if _CLANG_ == 1
     #pragma clang loop vectorize(enable)

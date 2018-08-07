@@ -15,22 +15,22 @@ namespace GFlowSimulation {
   */
   class DataMaster : public Base {
   public:
-    // Constructor
+    //! Constructor
     DataMaster(GFlow *);
 
-    // Destructor
+    //! Destructor
     ~DataMaster();
     
-    // Add a data object - we are subsequently in charge of the data object
+    //! Add a data object - we are subsequently in charge of the data object
     void addDataObject(DataObject*);
 
-    // Set the command data
+    //! Set the command data
     void setCommand(int, char**);
 
-    // Start a timer
+    //! Start a timer
     void startTimer();
 
-    // End the timer and add the new time to the record
+    //! End the timer and add the new time to the record
     void endTimer();
 
     // Call the corresponding routeens of the managed data objects - data
@@ -43,19 +43,19 @@ namespace GFlowSimulation {
     virtual void post_step();
     virtual void post_integrate();
 
-    // Do a coordinated write to a directory. Returns true if all writes were successful
+    //! Do a coordinated write to a directory. Returns true if all writes were successful
     bool writeToDirectory(string);
 
-    // Reset the time - use e.g. after relaxation step
+    //! Reset the time - use e.g. after relaxation step
     void resetTimer();
 
-    // Set start recording time
+    //! Set start recording time
     void setStartRecTime(RealType);
 
-    // Set the fps of all the data objects
+    //! Set the fps of all the data objects
     void setFPS(RealType);
 
-    // Set the fps of particular data objects
+    //! Set the fps of particular data objects
     void setFPS(int, RealType);
 
     RealType getRatio() const;
@@ -66,28 +66,30 @@ namespace GFlowSimulation {
   protected:
     // --- Helper functions
 
-    // Write a summary of the run to a text file
+    //! @brief Write a summary of the run to a text file.
     inline bool writeSummary(string);
 
-    // Write particle data to a stream
+    //! @brief Write particle data to a stream.
     inline void writeParticleData(std::ostream&);
+
+    //! @brief Compute and write data concerning the domain to a stream.
+    inline void writeDomainData(std::ostream&);
 
     // Command line arguments
     int argc;
     char **argv;
 
-    // Run time (real time)
+    //! Run time (real time)
     RealType run_time;
-    // When the timer started
+    //! When the timer started
     high_resolution_clock::time_point start_time;
-    // Whether the timer is running
+    //! Whether the timer is running
     bool timing; 
-    // Time to start taking data
+    //! Time to start taking data
     RealType startRecTime;
 
-    // The data objects we are responsible for
+    //! The data objects we are responsible for
     vector<DataObject*> dataObjects;
-
   };
 
 }

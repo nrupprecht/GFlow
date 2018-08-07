@@ -18,7 +18,7 @@ namespace GFlowSimulation {
     // Call base initialization
     Base::initialize();
     // Reorder memory
-    // MemoryOptimizer::GridParticles(*this, Base::gflow->getBounds());
+    MemoryOptimizer::GridParticles(*this, Base::gflow->getBounds());
   }
 
   void SimData::clean() {
@@ -254,6 +254,11 @@ namespace GFlowSimulation {
     }
     // Set flag
     needs_remake = true;
+  }
+
+  //! \param id The id (place in the data lists) of the particle that should be removed.
+  void SimData::removeParticle(int id) {
+    
   }
 
   void SimData::addHaloParticle(const RealType *X, const RealType *V, const RealType Sg, 

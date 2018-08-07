@@ -7,7 +7,12 @@ namespace GFlowSimulation {
 
   Force::Force(GFlow *gflow) : Base(gflow), virial(0) {};
 
-  Force::~Force() {}
+  bool Force::initCalculation() const {
+    // Reset the virial
+    virial = 0;
+    // Return whether we should calculate forces
+    return verletList.vlSize()>0;
+  }
 
   int Force::vlSize() const {
     return verletList.vlSize();

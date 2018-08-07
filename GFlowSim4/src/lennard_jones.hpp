@@ -6,28 +6,29 @@
 namespace GFlowSimulation {
 
   /*
-  *  @class LennardJones where all particles have the same force strength.
+  *  \brief LennardJones where all particles have the same force strength.
   *
   *  Lennard Jones force. The particle sigma will represent the force cutoff,
   *  generally 2.5*sig, where sig is the inter-particle distance where V=0.
   *  We use cutoff=2.5 by default, but it can be changed. Strength is the
   *  "epsilon" parameter in LJ.
   *
-  *  @see LennardJonesA
+  *  \see LennardJonesA
   */
   class LennardJones : public Force {
   public:
-    // Constructor
+    //! Constructor
     LennardJones(GFlow *);
 
-    // Calculate all the forces between atoms in the verlet lists
+    //! Calculate all the forces between atoms in the verlet lists.
     virtual void calculateForces() const final;
 
+    //! Set the lennard jones interaction strength.
     void setStrength(RealType);
 
   private:
-    // Calculate force strength
-    void forceStrength(RealType*, const RealType*, const RealType, const int, const int) const;
+    //! Calculate force strength
+    void forceStrength(RealType*, const RealType, const int, const int) const;
 
     // LJ strength, cuttoff
     RealType strength, cutoff;

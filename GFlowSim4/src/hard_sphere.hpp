@@ -18,8 +18,6 @@ namespace GFlowSimulation {
   public:
     //! Constructor
     HardSphere(GFlow *);
-    //! Destructor
-    ~HardSphere();
 
     //! Calculate all the forces between atoms in the verlet lists.
     virtual void calculateForces() const final;
@@ -33,10 +31,6 @@ namespace GFlowSimulation {
 
     //! The repulsion of the hard spheres. This is assumed to be the same for all hard spheres.
     RealType repulsion;
-
-    // --- TESTS
-    //RealType *_x1, *_x2, *_disp, *_dist, *_f;
-    //int BLOCK_SIZE;
   };
 
 }

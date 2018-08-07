@@ -5,38 +5,14 @@
 
 namespace GFlowSimulation {
 
-  HardSphere::HardSphere(GFlow *gflow) : Force(gflow), repulsion(DEFAULT_HARD_SPHERE_REPULSION) {
-    // --- TESTS
-    /*
-    BLOCK_SIZE = 1024;
-    const int n_particles = BLOCK_SIZE / DIMENSIONS; // Rounds down
-    _x1   = new RealType[BLOCK_SIZE];
-    _x2   = new RealType[BLOCK_SIZE];
-    _disp = new RealType[BLOCK_SIZE];
-    _dist = new RealType[n_particles];
-    _f    = new RealType[BLOCK_SIZE];
-    */
-  };
-
-  HardSphere::~HardSphere() {
-    // --- TESTS
-    /*
-    if (_x1)   delete [] _x1;
-    if (_x2)   delete [] _x2;
-    if (_disp) delete [] _disp;
-    if (_dist) delete [] _dist;
-    if (_f)    delete [] _f;
-    */
-  }
+  HardSphere::HardSphere(GFlow *gflow) : Force(gflow), repulsion(DEFAULT_HARD_SPHERE_REPULSION) {};
 
   void HardSphere::calculateForces() const {
-    int nverlet = verletList.vlSize(), id1(0), id2(0); // List length, id pointers
-    if (nverlet==0) return; // No forces to calculate
-
-    // Reset the virial
-    virial = 0;
+    // Check if there are forces to calculate. Virial is reset.
+    if (!Force::initCalculation()) return; 
 
     // Get the data we need
+    int nverlet = verletList.vlSize(), id1(0), id2(0); // List length, id pointers
     RealType **x = Base::simData->x, **f = Base::simData->f;
     RealType *sg = Base::simData->sg;
     int *type = Base::simData->type;
@@ -64,57 +40,6 @@ namespace GFlowSimulation {
         forceStrength(normal, distance, id1, id2);
       }
     }
-
-    /*
-    // --- START TESTS
-    // How many particles will fit in each block - each particle 
-    // needs [DIMENSIONS] space
-    const int n_particles = BLOCK_SIZE / DIMENSIONS; // Rounds down
-
-    const int block_steps = n_particles*DIMENSIONS;
-    // How many complete blocks we need
-    const int n_blocks = (nverlet * DIMENSIONS) / BLOCK_SIZE; // Rounds down
-    // How much space is left over
-    const int n_extra = nverlet - n_blocks*n_particles;
-    
-    for (int block=0; block<n_blocks; ++block) {
-      // Copy particle positions to _x1, _x2
-      for (int i=0; i<n_particles; ++i) {
-      	copyVec(x[verlet[ 2*i ]], &_x1[i*DIMENSIONS]);
-      	copyVec(x[verlet[2*i+1]], &_x2[i*DIMENSIONS]);
-      }
-      // Find particle displacements - should be vectorized
-      for (int b=0; b<block_steps; ++b) {
-	      _disp[b] = _x1[b] - _x2[b];
-      }
-      // Find particle distances
-      for (int i=0; i<n_particles; ++i) {
-      	// Unroll this
-      	RealType distance = 0;
-      	for (int d=0; d<DIMENSIONS; ++d) {
-      	  distance += sqr(_disp[i*DIMENSIONS+d]);
-      	}
-      	// Calculate the distance factor. It is not just the distance.
-      	_dist[i] = distance<0.1 ? 0 : repulsion*(0.1 - sqrt(distance));
-      } 
-      // Calculate components of force - should be vectorized
-      // _f    -> components of force 
-      // _dist -> distance
-      // _disp -> components of displacement
-      for (int b=0; b<block_steps; ++b) {
-      	int id = b/DIMENSIONS;
-      	// We have set _dist[id] = _mask[b]*repulsion*(0.1 - _dist[id])
-      	_f[b] += _dist[id]*_disp[b];
-      }
-      
-      // Add force components to where they should be
-      for (int i=0; i<n_particles; ++i) {
-	      copyVec(&_f[i*DIMENSIONS], f[verlet[ 2*i ]]);
-	      copyVec(&_f[i*DIMENSIONS], f[verlet[2*i+1]]);
-      }
-    }
-    // ---> End
-    */
   }
 
   void HardSphere::setRepulsion(RealType r) { 
@@ -131,10 +56,10 @@ namespace GFlowSimulation {
     RealType c1 = Base::simData->type[id1]<0 ? 0 : 1.;
     RealType c2 = Base::simData->type[id2]<0 ? 0 : 1.;
     // Calculate force strength
-    RealType force = c1*c2*repulsion*(simData->Sg(id1) + simData->Sg(id2) - distance);
-    virial += force;
+    RealType magnitude = c1*c2*repulsion*(simData->Sg(id1) + simData->Sg(id2) - distance);
+    Force::virial += magnitude;
     // Force strength x Normal vector -> Sets normal to be the vectorial force between the particles.
-    scalarMultVec(force, normal);
+    scalarMultVec(magnitude, normal);
     // Add forces to the particles.
     plusEqVec (Base::simData->f[id1], normal);
     minusEqVec(Base::simData->f[id2], normal);
