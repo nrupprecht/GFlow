@@ -179,16 +179,13 @@ namespace GFlowSimulation {
     // Get the boundary conditions
     const BCFlag *bcs = gflow->getBCs();
 
-    // Two possible displacement functions
+    // A simple displacement function that we might get to use
     auto Displacement_Halo = [] (const RealType x1[DIMENSIONS], const RealType x2[DIMENSIONS], 
       RealType d[DIMENSIONS], const Bounds bounds, const BCFlag *bcs) 
     {
-      subtractVec(x1, x2, d);
-    };
-    auto Displacement_No_Halo = [] (const RealType x1[DIMENSIONS], const RealType x2[DIMENSIONS], 
-      RealType d[DIMENSIONS], const Bounds bounds, const BCFlag *bcs) 
-    {
-      getDisplacement(x1, x2, d, bounds, bcs);
+      for (int i=0; i<DIMENSIONS; ++i)
+        d[i] = x1[i] - x2[i];
+      // subtractVec(x1, x2, d);
     };
 
     // Decide which if we can use a simple displacement function
