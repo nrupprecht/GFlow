@@ -78,9 +78,15 @@ namespace GFlowSimulation {
 
     // --- Mutators
 
-    //! Set the skin depth. This function is virtual, as the inheriting class
+    //! @brief Set the skin depth. This function is virtual, as the inheriting class
     //! may need to remake itself after doing this.
     virtual void setSkinDepth(RealType);
+
+    //! @brief Set the cell size. 
+    //!
+    //! Really, this suggests a cell size. It must be larger than the minimum possible cell size, 
+    //! and must evenly divide the size of the domain.
+    virtual void setCellSize(RealType)=0;
 
     //! Set the cutoff factor. This function is virtual, as the inheriting class
     //! may need to remake itself after doing this.
@@ -117,43 +123,71 @@ namespace GFlowSimulation {
 
     // --- Data
 
-    //! The bounds of the domain
+    //! @brief The bounds of the domain
     Bounds domain_bounds;
-    //! The bounds of the entire simulation
+    //! @brief The bounds of the entire simulation
     Bounds bounds;
 
-    //! The number of times we have remade the sectors
+    //! @brief The number of times we have remade the sectors
     int number_of_remakes;
 
-    //! Number of cells in each dimension
+    //! @brief Number of cells in each dimension
     int dims[DIMENSIONS];
 
-    //! The widths of a cell in each dimension
+    //! @brief The widths of a cell in each dimension
     RealType widths[DIMENSIONS];
 
-    //! The inverse widths of a cell in each dimension
+    //! @brief The inverse widths of a cell in each dimension
     RealType inverseW[DIMENSIONS];
 
-    // Sectorization constants
-    RealType skinDepth, cutoff, minCutoff, cutoffFactor;
+    // --- Sectorization constants
+
+    //! @brief The skin depth.
+    //!
+    //! The extra amount around a particle that we should count as being a particle neighbor. So if
+    //! d(x, y) < rx + ry + skin_depth, the particles are neighbors.
+    RealType skin_depth;
+
+    //! @brief The maximum cutoff radius a particle can have and be guarenteed to only have to look in 
+    //! adjacent cells for neighbors.
+    //!
+    //! How domains decide to determine max_small_sigma is up to them.
+    RealType max_small_sigma;
+
+    //! @brief The target cell size. 
+    //!
+    //! Cells will be at least this wide in each dimension, but since an integral number of them have
+    //! to fit in the domain in each dimension, the actual widths will be different. They will be at
+    //! least this large though.
+    RealType cutoff;
+
+    //! @brief The minimum allowable cutoff, 2*max_small_sigma + skin_depth
+    RealType minCutoff; 
+
+    //! @brief How much larger than the minimum cutoff should the default cutoff be.
+    RealType cutoffFactor;
+
+    // --- Timers
 
     // Update timers and related
     RealType lastCheck, lastUpdate, updateDelay, max_update_delay;
 
-    //! What fraction of the skin depth should particles move before we remake
+    //! @brief What fraction of the skin depth should particles move before we remake
     RealType motionFactor;
 
-    //! The target move ratio for remake
+    //! @brief The target move ratio for remake
     RealType mvRatioTolerance;
 
-    //! The number of times max_motion / skinDepth was > 1
+    //! @brief The number of times max_motion / skinDepth was > 1
     int missed_target;
-    //! The average (once divided by [missed_target]) amount the delay missed by
+
+    //! @brief The average (once divided by [missed_target]) amount the delay missed by
     RealType ave_miss;
 
-    //! An array storing the positions of the particles at the last verlet list creation
+    //! @brief An array storing the positions of the particles at the last verlet list creation
     RealType **xVL;
-    //! The size of the xVL array
+
+    //! @brief The size of the xVL array
     int sizeXVL;
     
     //! @brief How many particles we should sample to estimate the maximum displacement of 
@@ -171,7 +205,6 @@ namespace GFlowSimulation {
     //! into particles, which means that we may miss this if we only sample a subset of the 
     //! particles. In this case, set sample_size to zero. Or risk it. Your choice.
     int sample_size;
-
   };
 
 }

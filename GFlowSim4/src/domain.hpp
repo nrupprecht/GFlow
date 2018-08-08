@@ -35,6 +35,16 @@ namespace GFlowSimulation {
     //! This function must be overloaded by all children of DomainBase.
     virtual void getAllWithin(int, RealType, vector<int>&);
 
+    // --- Mutators
+
+    virtual void setSkinDepth(RealType);
+
+    //! @brief Set the cell size. 
+    //!
+    //! Really, this suggests a cell size. It must be larger than the minimum possible cell size, 
+    //! and must evenly divide the size of the domain. Inherited from DomainBase.
+    virtual void setCellSize(RealType);
+
   private:
     // --- Helper functions
 
@@ -59,13 +69,16 @@ namespace GFlowSimulation {
     virtual void remake_verlet();
 
     //! @brief Turns a linear cell index into a (DIMENSIONS)-dimensional index
-    void linear_to_tuple(const int, int*);
+    inline void linear_to_tuple(const int, int*);
 
     //! @brief Turns a (DIMENSIONS)-dimensional index into a linear cell index.
-    void tuple_to_linear(int&, const int*);
+    inline void tuple_to_linear(int&, const int*);
 
     //! @brief Find the linear indices of the cells adjacent to a given cell.
-    void find_adjacent_cells(int[DIMENSIONS], bool, CellContainer&);
+    inline void find_adjacent_cells(int[DIMENSIONS], bool, vector<Cell*>&);
+
+    //! @brief Based on the cutoff distance, reate new cells, assign them their types, etc.
+    inline void create_cells();
 
     //! @brief Fill the cells with particle ids.
     inline void fill_cells();

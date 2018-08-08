@@ -86,6 +86,15 @@ namespace GFlowSimulation {
     makeSectors();
   }
 
+  void Sectorization::setCellSize(RealType cell_size) {
+    // We don't set a cutoff less than the minimum
+    if (cell_size<minCutoff) return;
+    // Set the target cutoff
+    cutoff = cell_size;
+    // Recreate cells
+    create_cells();
+  }
+
   void Sectorization::setCutoffFactor(RealType f) {
     DomainBase::setCutoffFactor(f);
     makeSectors();
@@ -94,22 +103,30 @@ namespace GFlowSimulation {
   inline void Sectorization::makeSectors() {
     // If bounds are unset, then don't make sectors
     if (bounds.wd(0) == 0) return;
+    
     // Calculate cutoff
     RealType *sg = simData->sg;
     int number = simData->number;
 
-    // Largest and second largest radii
-    RealType maxCutR(0), secCutR(0);
+    // Largest radius
+    RealType maxSigma(0);
     // Look for largest and second largest radii
-    for (int i=0; i<number; ++i) {
-      if (sg[i]>maxCutR) maxCutR = sg[i];
-      else if (sg[i]>secCutR) secCutR = sg[i];
-    }
-    minCutoff = maxCutR + secCutR + skinDepth; // Cutoff radius
+    for (int i=0; i<number; ++i)
+      if (sg[i]>maxSigma) maxSigma = sg[i];
+    max_small_sigma = maxSigma;
+    minCutoff = 2*max_small_sigma + skin_depth; // Cutoff radius
 
     // The actual cutoff is some multiple of the minimum cutoff
     cutoff = minCutoff*cutoffFactor;
 
+    // Create the sectors
+    create_cells();
+
+    // Sectorize and create verlet lists
+    remake_verlet();
+  }
+
+  inline void Sectorization::create_cells() {
     // First estimate of sdx, sdy
     #if _INTEL_ == 1
     #pragma unroll(DIMENSIONS)
@@ -131,9 +148,6 @@ namespace GFlowSimulation {
 
     // Remake sectors
     sectors.resize(dims);
-
-    // Sectorize and create verlet lists
-    remake_verlet();
   }
 
   inline void Sectorization::makeVerletLists() {
@@ -164,7 +178,7 @@ namespace GFlowSimulation {
           int otherParticle = pvec.at(q);
           // Get the displacement - we never need to wrap, since its the same cell.
           subtractVec(x[currentHead], x[otherParticle], displacement);
-          if (sqr(displacement) < sqr(sigma + sg[otherParticle] + skinDepth))
+          if (sqr(displacement) < sqr(sigma + sg[otherParticle] + skin_depth))
             pair_interaction(currentHead, otherParticle);
         }
 
@@ -213,7 +227,7 @@ namespace GFlowSimulation {
             // Get the displacement between particles
             getDisplacement(x[currentHead], x[otherParticle], displacement, bounds, boundaryConditions);
             // If close enough, they interact
-            if (sqr(displacement) < sqr(sigma + sg[otherParticle] + skinDepth))
+            if (sqr(displacement) < sqr(sigma + sg[otherParticle] + skin_depth))
               pair_interaction(currentHead, otherParticle);
           }
         }

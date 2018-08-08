@@ -324,7 +324,7 @@ namespace GFlowSimulation {
   }
 
   inline bool DataMaster::writeLogFile(string writeDirectory) {
-    std::ofstream fout(writeDirectory+"/run_log.txt");
+    std::ofstream fout(writeDirectory+"/log.txt");
     if (fout.fail()) {
       // Write error message
       std::cerr << "Failed to open file [" << writeDirectory << "/run_log.txt]." << endl;

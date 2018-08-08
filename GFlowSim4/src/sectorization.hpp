@@ -11,7 +11,7 @@ namespace GFlowSimulation {
     //! Constructor
     Sectorization(GFlow *);
 
-    // Pre-integrate calls sectorize
+    //! @brief Pre-integrate calls sectorize
     virtual void pre_integrate();
 
     //! @brief Doesn't do anything, but must be overloaded.
@@ -23,12 +23,13 @@ namespace GFlowSimulation {
 
     // --- Accessors
 
-    // Get a sector
+    //! @brief Get a sector
     const vector<int>& getSector(int *) const;
 
     // --- Locator functions
 
     //! @brief Get all the particles within a radius of another particle
+    //!
     //! Fills a passed in vector with the ids of all the particles that lie within
     //! a specified distance of a given particle.\n
     //! This function must be overloaded by all children of DomainBase.
@@ -36,10 +37,16 @@ namespace GFlowSimulation {
 
     // --- Mutators
 
-    //! Set the skin depth, and remake the sectors
+    //! @brief Set the skin depth, and remake the sectors
     virtual void setSkinDepth(RealType);
 
-    //! Set the cutoff factor, and remake the sectors
+    //! @brief Set the cell size. 
+    //!
+    //! Really, this suggests a cell size. It must be larger than the minimum possible cell size, 
+    //! and must evenly divide the size of the domain.
+    virtual void setCellSize(RealType);
+
+    //! @brief Set the cutoff factor, and remake the sectors
     virtual void setCutoffFactor(RealType);
     
     // GFlow is a friend class
@@ -49,18 +56,22 @@ namespace GFlowSimulation {
   private:
     // --- Helper functions
 
+    //! @brief Remake the verlet lists
     virtual void remake_verlet();
 
-    // Create sectors
+    //! @brief Create sectors
     inline void makeSectors();
 
-    // Create verlet lists for all forces
+    //! @brief Create the sectors
+    inline void create_cells();
+
+    //! @brief Create verlet lists for all forces
     inline void makeVerletLists();
     
-    // The id's of particles in each sector - these are the actual sectors
+    //! @brief The id's of particles in each sector - these are the actual sectors
     Array< vector<int> > sectors;
 
-    // Current head - for verlet list creation
+    //! @brief Current head - for verlet list creation
     int currentHead;
   };
 

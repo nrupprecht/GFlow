@@ -60,7 +60,7 @@ namespace GFlowSimulation {
     //! A list of adjacent cells that particles in this cell should check with. This will in 
     //! general not be all the surrounding cells, just half of them.
     //! Adjacent cell list and its size have to be set at initializatoin
-    CellContainer adjacent_cell_id;
+    vector<Cell*> adjacent_cells;
 
     //! A list of the ids of the particles whose centers fall within this cell. The id 
     //! corresponds to the index in the simdata object for this processor.
@@ -76,7 +76,7 @@ namespace GFlowSimulation {
     bool is_boundary_cell;
 
     // --- For vectorized forces : THIS IS A TEST
-    RealType **x, **f, *sg, *im;
+    // RealType **x, **f, *sg, *im;
   };
 
 }

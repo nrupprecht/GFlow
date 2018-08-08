@@ -52,7 +52,7 @@ namespace GFlowSimulation {
   //! The default viscosity for the overdamped integragor. This is the viscosity of water.
   const RealType DEFAULT_VISCOSITY = 1.308e-3;
   //! The default maximum time step the simulation will use.
-  const RealType DEFAULT_MAX_DT = 0.01;
+  const RealType DEFAULT_MAX_DT = 0.005;
   //! The default minimum time step the simulaiton will use.
   const RealType DEFAULT_MIN_DT = 1e-6;
 

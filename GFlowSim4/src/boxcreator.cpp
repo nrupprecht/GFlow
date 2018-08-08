@@ -30,6 +30,7 @@ namespace GFlowSimulation {
     RealType dt = 0.001;
     RealType vsgma = 0.25;
     RealType skinDepth = -1.;
+    RealType cell_size = -1;
     RealType repulsion = 1.;
     bool animate = false;
     bool over_damped_flag = false;
@@ -46,6 +47,7 @@ namespace GFlowSimulation {
       parserPtr->get("width", width);
       parserPtr->get("vsgma", vsgma);
       parserPtr->get("skinDepth", skinDepth);
+      parserPtr->get("cell_size", cell_size);
       parserPtr->get("repulsion", repulsion);
       parserPtr->get("animate", animate);
       parserPtr->get("overdamped", over_damped_flag);
@@ -90,6 +92,8 @@ namespace GFlowSimulation {
       RealType im = 1.0 / (1.0 * PI*sqr(radius));
       simData->addParticle(X, V, radius, im, 0); //--
     }
+    // --- Initialize domain
+    gflow->domain->initialize();
 
     // --- Handle forces
     gflow->forceMaster->setNTypes(1); // Only one type of particle
@@ -108,6 +112,7 @@ namespace GFlowSimulation {
 
     // Set skin depth
     if (skinDepth>0) gflow->domain->setSkinDepth(skinDepth);
+    if (cell_size>0) gflow->domain->setCellSize(cell_size);
     if (sample>0) gflow->domain->setSampleSize(sample);
 
     // Relax the setup

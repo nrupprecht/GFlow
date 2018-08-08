@@ -8,9 +8,9 @@
 
 namespace GFlowSimulation {
 
-  DomainBase::DomainBase(GFlow *gflow) : Base(gflow), skinDepth(DEFAULT_SKIN_DEPTH), cutoff(0), minCutoff(0), cutoffFactor(1.), 
+  DomainBase::DomainBase(GFlow *gflow) : Base(gflow), skin_depth(DEFAULT_SKIN_DEPTH), max_small_sigma(0.), cutoff(0.), minCutoff(0.), cutoffFactor(1.), 
     number_of_remakes(0), lastCheck(-1.), lastUpdate(-1.), updateDelay(1.0e-4), max_update_delay(DEFAULT_MAX_UPDATE_DELAY), 
-    mvRatioTolerance(DEFAULT_MV_RATIO_TOLERANCE ), motionFactor(DEFAULT_MOTION_FACTOR), missed_target(0), xVL(nullptr), sizeXVL(0),
+    mvRatioTolerance(DEFAULT_MV_RATIO_TOLERANCE), motionFactor(DEFAULT_MOTION_FACTOR), missed_target(0), xVL(nullptr), sizeXVL(0),
     sample_size(0)
   {
     zeroVec(dims);
@@ -57,7 +57,7 @@ namespace GFlowSimulation {
   }
 
   RealType DomainBase::getSkinDepth() const {
-    return skinDepth;
+    return skin_depth;
   }
 
   RealType DomainBase::getCutoff() const {
@@ -85,7 +85,7 @@ namespace GFlowSimulation {
   }
 
   void DomainBase::setSkinDepth(RealType s) {
-    skinDepth = s;
+    skin_depth = s;
   }
 
   void DomainBase::setCutoffFactor(RealType f) {
@@ -145,7 +145,7 @@ namespace GFlowSimulation {
     // We will use regular subtraction to calculate distance. If we get a very large number, we assume
     // it corresponds to a value that got wrapped after passing over the boundary, and ignore it, hoping
     // for the best.
-    RealType max_plausible = sqr(10.*skinDepth);
+    RealType max_plausible = sqr(10.*skin_depth);
 
     // Check if re-sectorization is required --- see how far particles have traveled
     RealType dsqr(0), maxDSqr(0), displacement[DIMENSIONS];
@@ -168,14 +168,14 @@ namespace GFlowSimulation {
     if (sizeXVL<Base::simData->number) return true;
     // Find the maximum possible motion
     RealType max_motion = maxMotion();
-    RealType motion_ratio = skinDepth/max_motion;
+    RealType motion_ratio = skin_depth/max_motion;
     updateDelay = min(motionFactor*mvRatioTolerance*(lastCheck-lastUpdate)*motion_ratio, max_update_delay); 
     if (motion_ratio<1.) {
       ++missed_target;
       ave_miss += 1./motion_ratio;
     }
     // Criteria for whether we need a remake
-    return (max_motion>motionFactor*skinDepth);
+    return (max_motion>motionFactor*skin_depth);
   }
 
 }
