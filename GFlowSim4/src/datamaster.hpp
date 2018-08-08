@@ -75,6 +75,9 @@ namespace GFlowSimulation {
     //! @brief Compute and write data concerning the domain to a stream.
     inline void writeDomainData(std::ostream&);
 
+    //! @brief Write more technical data to a separate file.
+    inline bool writeLogFile(string);
+
     // Command line arguments
     int argc;
     char **argv;

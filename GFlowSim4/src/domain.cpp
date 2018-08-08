@@ -208,16 +208,15 @@ namespace GFlowSimulation {
     // --- DO THIS FOR NOW
     // Go through all adjacent cells
     for (int c=0; c<pow(3, DIMENSIONS); ++c) {
-
       // Convert to a base 3 number (-1, 0, 1)
       int c0=c;
       for (uint d=0; d<DIMENSIONS; ++d) {
         d_index[d] = (c0%3) - 1;
         c0 /= 3;
       }
-
+      // Add the index displacement to the index to get a (potentially) adjacent index
       addVec(index, d_index, other_index);
-
+      // Check if this cell really should be adjacent and if its a real cell
       if (correct_index(other_index, is_special)) {
         tuple_to_linear(lin, other_index);
         for (const auto n_id : cells[lin].id_list) {

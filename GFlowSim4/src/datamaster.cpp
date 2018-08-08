@@ -287,6 +287,10 @@ namespace GFlowSimulation {
     // Close the stream
     fout.close();
 
+    // Write the log file
+    writeLogFile(writeDirectory);
+
+    // Return success
     return true;
   }
 
@@ -317,6 +321,41 @@ namespace GFlowSimulation {
 
   inline void DataMaster::writeDomainData(std::ostream&) {
     
+  }
+
+  inline bool DataMaster::writeLogFile(string writeDirectory) {
+    std::ofstream fout(writeDirectory+"/run_log.txt");
+    if (fout.fail()) {
+      // Write error message
+      std::cerr << "Failed to open file [" << writeDirectory << "/run_log.txt]." << endl;
+      return false;
+    }
+    // Print Header
+    fout << "**********          RUN LOG          **********\n";
+    fout << "*******  GFlow Granular Simulator v 4.0 *******\n";
+    fout << "********** 2018, Nathaniel Rupprecht **********\n";
+    fout << "***********************************************\n\n";
+
+    // --- Print version related data
+    fout << "Github and version info:\n";
+    // Get the github version. 
+    std::ifstream fin("../.git/refs/heads/master");
+    if (fin.fail()) {
+      fout << "  - Github version:            --\n";
+    }
+    else {
+      string commit_hash;
+      fin >> commit_hash;
+      fin.close();
+      fout << "  - Github version:           " << commit_hash << "\n";
+    }
+    fout << "\n";
+
+    // Close file stream
+    fout.close();
+
+    // Return success
+    return true;
   }
 
 }

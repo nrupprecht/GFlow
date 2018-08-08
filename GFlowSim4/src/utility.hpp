@@ -140,7 +140,8 @@ namespace GFlowSimulation {
 
   //! Copy an array of size [size] from [source] to [destination]
   template<typename T> inline void copyArray(const T *source, T *destination, int size) {
-    for (int i=0; i<size; ++i) destination[i] = source[i];
+    //  for (int i=0; i<size; ++i) destination[i] = source[i];
+    std::copy(source, source+size, destination);
   }
 
   //! Global random number generator
