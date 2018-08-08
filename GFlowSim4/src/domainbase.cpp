@@ -154,6 +154,7 @@ namespace GFlowSimulation {
     // homogenous simulation. If there is a localized area of fast moving particles, this would not
     // pick this up.
     int samples = sample_size>0 ? sample_size : Base::simData->number;
+    #pragma loop count min(64)
     for (int n=0; n<samples; ++n) {
       dsqr = getDistanceSqrNoWrap<>(xVL[n], Base::simData->x[n]);
       if (dsqr<max_plausible && dsqr>maxDSqr) maxDSqr = dsqr;

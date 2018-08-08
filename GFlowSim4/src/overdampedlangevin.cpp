@@ -31,6 +31,8 @@ namespace GFlowSimulation {
       #if _INTEL_ == 1
       //#pragma vector aligned
       //#pragma simd
+      #pragma parallel
+      #pragma loop count min(16)
       #endif
       #if _CLANG_ == 1
       #pragma clang loop vectorize(enable)
@@ -50,6 +52,8 @@ namespace GFlowSimulation {
     #if _INTEL_ == 1
     //#pragma vector aligned
     //#pragma simd
+    #pragma parallel
+    #pragma loop count min(128)
     #endif
     #if _CLANG_ == 1
     #pragma clang loop vectorize(enable)

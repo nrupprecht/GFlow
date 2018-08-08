@@ -277,7 +277,8 @@ namespace GFlowSimulation {
       if (total!=newTotal) {
       	if (data) delete [] data;
       	data = new T[newTotal];
-      	for (int i=0; i<newTotal; ++i) data[i] = T();
+      	#pragma parallel
+	for (int i=0; i<newTotal; ++i) data[i] = T();
       }
     }
 

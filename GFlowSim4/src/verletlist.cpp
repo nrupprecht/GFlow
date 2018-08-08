@@ -51,7 +51,13 @@ namespace GFlowSimulation {
   inline void VerletList::resizeVerlet() {
     int newCapacity = vcapacity>0 ? static_cast<int>(1.5*vcapacity) : 1024;
     int *newVerlet = new int[newCapacity];
-    for (int i=0; i<vcapacity; ++i) newVerlet[i] = verlet[i];
+    if (1024<=vcapacity) {
+    #pragma loop count min(1024)
+      for (int i=0; i<vcapacity; ++i) newVerlet[i] = verlet[i];
+    }
+    else {
+      for (int i=0; i<vcapacity; ++i) newVerlet[i] = verlet[i];
+    }
     vcapacity = newCapacity;
     // Set new verlet array
     if (verlet) delete [] verlet;

@@ -28,6 +28,8 @@ namespace GFlowSimulation {
       int product = 1;
       for (int d=0; d<DIMENSIONS; ++d) {
         int X = static_cast<int>((x[d] - bounds.min[d])/width[d]);
+	X = X<0 ? 0 : X;
+	X = X>=sizes[d] ? sizes[d]-1 : X;
         index += (X*product); 
         product *= sizes[d];
       }
