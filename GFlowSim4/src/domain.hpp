@@ -50,11 +50,7 @@ namespace GFlowSimulation {
 
     //! @brief Adds particles to the correct position(s) in the sectorization cells.
     //!
-    //! Add a particle to the cell(s) it belongs in. A particle and its images can only 
-    //! be in one central cell, but can also be in multiple harmonic cells. If it needs
-    //! to be in a harmonic cell, we create a ghost particle in simdata, and put the
-    //! ghost in the the harmonic cell. We also add an alias mapping from the ghost to the
-    //! actual particle in the simdata.
+    //! We do not add halo particles when we inset the particle.
     void addToCell(int);
 
     //! @brief Get the (linear) index of the cell the position falls in

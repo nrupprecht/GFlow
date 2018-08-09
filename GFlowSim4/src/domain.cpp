@@ -36,7 +36,7 @@ namespace GFlowSimulation {
     parallel_assignments();
 
     // If bounds are unset, then don't make sectors
-    if (domain_bounds.wd(0) == 0) return;
+    if (domain_bounds.wd(0)==0) return;
 
     // --- Calculate cutoff
     RealType *sg = simData->sg;
@@ -131,15 +131,23 @@ namespace GFlowSimulation {
     int index = getCellIndex(simData->X(id));
     Cell &cell = cells[index];
     cell.add(id);
-    // @todo Create halo particles if necessary
   }
 
   int Domain::getCellIndex(RealType *x) {
-    int index[DIMENSIONS];
-    for (int d=0; d<DIMENSIONS; ++d)
+    int index[DIMENSIONS], linear;
+    #if _INTEL_ == 1
+    #pragma unroll(DIMENSIONS)
+    #endif 
+    for (int d=0; d<DIMENSIONS; ++d) {
       index[d] = static_cast<int>((x[d] - extended_domain_bounds.min[d])*inverseW[d]);
-    // Return the linear index
-    int linear;
+      // Even when wrapping, rounding errors (I assume) can cause index to be too large.
+      // When not wrapping, particles could be outside the sectorization grid
+      // This also may be useful later for parallel things, if a particle should interact with
+      // particles in this domain, but is so big that it is outside of the ghost cells.
+      if (index[d]>=dims[d]) index[d] = dims[d]-1; 
+      else if (index[d]<0)   index[d] = 0;
+    }
+    // Add particle to the appropriate sector
     tuple_to_linear(linear, index);
     return linear;
   }
@@ -448,9 +456,13 @@ namespace GFlowSimulation {
     // @todo Clear ghost index mapping in simData
 
     // --- Place particles in their cells
-    int index[DIMENSIONS], linear;
+    int linear;
     for (int n=0; n<Base::simData->number; ++n) {
       // Calculate the (DIMENSION)-tuple cell coordinate
+
+      int linear = getCellIndex(Base::simData->x[n]);
+
+      /*
       #if _INTEL_ == 1
       #pragma unroll(DIMENSIONS)
       #endif 
@@ -466,10 +478,38 @@ namespace GFlowSimulation {
 
       // Add particle to the appropriate sector
       tuple_to_linear(linear, index);
+      */
       cells[linear].add(n);
 
-      // @todo Add cell to halo cells if neccessary
+      /*
+      // Add cell to halo cells if neccessary
+      if (cells[linear].is_boundary_cell) {
+        // In what dimensions do we need to make halo particles
+        vector<int> changes;
+        vector<RealType> displacement;
+        for (int d=0; d<DIMENSIONS; ++d) {
+          if (halo_down[d]) { // If halo_down[d], then halo_up[d]
+            // Upwards displacent
+            if (index[d]==1) {
+              displacement.push_back(domain_bounds.wd(d));
+              changes.push_back(d);
+            }
+            else if (index[d]==dims[d]-2) {
+              displacement.push_back(-domain_bounds.wd(d));
+              changes.push_back(d);
+            }
+          }
+        }
+        // Create halo particles
+        for (int i=0; i<pow(2, changes.size())-1; ++i) {
+          RealType Xd[DIMENSIONS];
+          copyVec(Base::simData->x[n], Xd);
 
+        }
+        
+        // Done making halo particles
+      }
+      */
     }
   }
 

@@ -12,7 +12,7 @@ namespace GFlowSimulation {
     if (!Force::initCalculation()) return; 
 
     verletList.forceKernel(&force, &repulsion, virial);
-
+    
     /*
     // Get the data we need
     int nverlet = verletList.vlSize(), id1(0), id2(0); // List length, id pointers
