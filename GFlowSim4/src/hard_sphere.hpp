@@ -25,6 +25,16 @@ namespace GFlowSimulation {
     //! Set the repulsion parameter.
     void setRepulsion(RealType r);
 
+    //! @param[in] normal
+    //! @param[in] distance
+    //! @param[in] id1
+    //! @param[in] id2
+    //! @param[in] simData
+    //! @param[in] param_pack A parameter pack, passed in from force. Contains characteristic 
+    //! constants of the force, and extra data the force needs.
+    //! @param[in,out] virial The virial, to be updated by this functiton.
+    static void force(RealType*, const RealType, const int, const int, const SimData*, const RealType*, RealType&);
+
   private:
     //! Calculate force strength
     inline void forceStrength(RealType*, const RealType, const int, const int) const;

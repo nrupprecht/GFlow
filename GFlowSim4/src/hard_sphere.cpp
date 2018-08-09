@@ -11,6 +11,9 @@ namespace GFlowSimulation {
     // Check if there are forces to calculate. Virial is reset.
     if (!Force::initCalculation()) return; 
 
+    verletList.forceKernel(&force, &repulsion, virial);
+
+    /*
     // Get the data we need
     int nverlet = verletList.vlSize(), id1(0), id2(0); // List length, id pointers
     RealType **x = Base::simData->x, **f = Base::simData->f;
@@ -25,6 +28,7 @@ namespace GFlowSimulation {
     // Get verlet list data
     const int *verlet = verletList.getVerlet();
     RealType F[DIMENSIONS];
+
     // --- Go through all particles
     for (int i=0; i<nverlet; i+=2) {
       id1 = verlet[i];
@@ -40,10 +44,31 @@ namespace GFlowSimulation {
         forceStrength(normal, distance, id1, id2);
       }
     }
+    */
   }
 
   void HardSphere::setRepulsion(RealType r) { 
     repulsion = r; 
+  }
+
+  //! @param[in,out] normal
+  //! @param[in] distance
+  //! @param[in] id1
+  //! @param[in] id2
+  //! @param[in] simData
+  //! @param[in] param_pack A parameter pack, passed in from force. Should be of the form { repulsion } (length 1).
+  //! @param[in,out] virial The virial. Add the f_i \dot r_i to this.
+  void HardSphere::force(RealType* normal, const RealType distance, const int id1, const int id2, const SimData *simData, 
+    const RealType *param_pack, RealType &virial) 
+  {
+    RealType c1 = simData->type[id1]<0 ? 0 : 1.;
+    c1 = simData->type[id2]<0 ? 0 : c1;
+    // Calculate force strength
+    RealType magnitude = c1*(*param_pack)*(simData->sg[id1] + simData->sg[id2] - distance);
+    // Update the virial
+    virial += magnitude;
+    // Force strength x Normal vector -> Sets normal to be the vectorial force between the particles.
+    scalarMultVec(magnitude, normal);
   }
 
   //! \param[in] normal The normal of the displacement between the particles. Points from id2 to id1 (?). It is safe
@@ -54,9 +79,9 @@ namespace GFlowSimulation {
   inline void HardSphere::forceStrength(RealType *normal, const RealType distance, const int id1, const int id2) const {
     // This should make sure that forces are zero if either object is of type -1. This does not seem to add much (any?) overhead
     RealType c1 = Base::simData->type[id1]<0 ? 0 : 1.;
-    RealType c2 = Base::simData->type[id2]<0 ? 0 : 1.;
+    c1 = Base::simData->type[id2]<0 ? 0 : c1;
     // Calculate force strength
-    RealType magnitude = c1*c2*repulsion*(simData->Sg(id1) + simData->Sg(id2) - distance);
+    RealType magnitude = c1*repulsion*(simData->Sg(id1) + simData->Sg(id2) - distance);
     Force::virial += magnitude;
     // Force strength x Normal vector -> Sets normal to be the vectorial force between the particles.
     scalarMultVec(magnitude, normal);

@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
 
-  Force::Force(GFlow *gflow) : Base(gflow), virial(0) {};
+  Force::Force(GFlow *gflow) : Base(gflow), virial(0), verletList(VerletList(gflow)) {};
 
   bool Force::initCalculation() const {
     // Reset the virial

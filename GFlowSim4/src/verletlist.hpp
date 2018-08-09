@@ -1,37 +1,46 @@
 #ifndef __VERLET_LIST_HPP__GFLOW__
 #define __VERLET_LIST_HPP__GFLOW__ 
 
-#include <functional>
+#include "gflow.hpp"
+#include "vectormath.hpp"
 
 namespace GFlowSimulation {
 
-  class VerletList {
-  public:
-    // Constructor
-    VerletList();
+  typedef void (*ForceKernel) (RealType*, const RealType, const int, const int, const class SimData*, const RealType*, RealType&);
 
-    // Copy Constructor
+  class VerletList : public Base {
+  public:
+    //! @brief Constructor.
+    VerletList(GFlow*);
+
+    //! @brief Copy Constructor.
     VerletList(const VerletList&);
 
-    // Destructor
+    //! @brief Destructor.
     ~VerletList();
 
-    // Equals operator
+    //! @brief Equals operator.
     VerletList& operator=(const VerletList&);
 
     // --- Mutators
 
-    // Add a pair of interacting particles
+    //! @brief Add a pair of interacting particles.
     void addPair(const int, const int);
 
-    // Set sizes (but not capacities) to zero, effectively "clearing" out the data
+    //! @brief Set sizes (but not capacities) to zero, effectively "clearing" out the data.
     void clear();
 
-    // Return the total length of the verlet list 
+    //! @brief Return the total length of the verlet list.
     int vlSize() const;
 
-    // Get a (const) pointer to the verlet array
+    //! @brief Get a (const) pointer to the verlet array.
     const int* getVerlet() const;
+
+    //! @brief THIS IS A TEST
+    //! @param force A function static function that tells how to evaluate the force between particles.
+    //! @param param_pack Parameters used to evaluate the force.
+    //! @param virial The virial. Should be updated to by the force function.
+    void forceKernel(ForceKernel, const RealType*, RealType&) const;
 
   private:
 
@@ -41,9 +50,6 @@ namespace GFlowSimulation {
     // --- Data
     int *verlet;
     int vsize, vcapacity;
-
-    // --- For iteration through pairs of interacting particles
-    mutable int _current_point;    // The current address in [verlet] that we are to look at
   };
 
 }
