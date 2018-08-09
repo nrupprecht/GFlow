@@ -65,7 +65,7 @@ namespace GFlowSimulation {
       if (dsqr < sqr(sg[id1] + sg[id2])) {
         RealType distance = sqrt(dsqr);
         scalarMultVec(1./distance, displacement, normal);
-        // Calculate force strength
+        // Calculate force strength. Normal will hold the force strength after the function is called.
         force(normal, distance, id1, id2, simData, param_pack, virial);
         // Add the force to the buffers
         plusEqVec (simData->f[id1], normal);

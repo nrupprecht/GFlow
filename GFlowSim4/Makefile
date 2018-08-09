@@ -2,9 +2,10 @@ CC = icpc
 MPICC = mpic++
 COMP = $(CC)
 CFLAG = -std=c++11 -Wall
+# WARNING: DO NOT USE -xHost IT MAKES THINGS SLOWER! -fast uses -xHost, so don't use that either
 OPTFLAGS = -O3 -funroll-loops $(OPTFLAGS2)
-OPTFLAGS2 = -xHost -no-prec-div -fp-model fast=2 -restrict -no-inline-max-size
-FLAGS = $(CFLAG) -g $(OPTFLAGS) $(OPTFLAGS2) # -qopt-report 5
+OPTFLAGS2 = -no-prec-div -fp-model fast=2 -restrict -no-inline-max-size
+FLAGS = $(CFLAG) -g $(OPTFLAGS) # -qopt-report 5
 
 # Get all object files
 SRC_DIR := src

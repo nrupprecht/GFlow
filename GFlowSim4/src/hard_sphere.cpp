@@ -61,6 +61,7 @@ namespace GFlowSimulation {
   void HardSphere::force(RealType* normal, const RealType distance, const int id1, const int id2, const SimData *simData, 
     const RealType *param_pack, RealType &virial) 
   {
+    // This should make sure that forces are zero if either object is of type -1. This does not seem to add much (any?) overhead
     RealType c1 = simData->type[id1]<0 ? 0 : 1.;
     c1 = simData->type[id2]<0 ? 0 : c1;
     // Calculate force strength
@@ -82,6 +83,7 @@ namespace GFlowSimulation {
     c1 = Base::simData->type[id2]<0 ? 0 : c1;
     // Calculate force strength
     RealType magnitude = c1*repulsion*(simData->Sg(id1) + simData->Sg(id2) - distance);
+    // Update the virial
     Force::virial += magnitude;
     // Force strength x Normal vector -> Sets normal to be the vectorial force between the particles.
     scalarMultVec(magnitude, normal);
