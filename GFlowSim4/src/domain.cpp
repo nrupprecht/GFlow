@@ -211,7 +211,8 @@ namespace GFlowSimulation {
         for (auto i2=i1+1; i2!=cell1.id_list.cend(); ++i2) {
           // Get the id of the second particle
           int id2 = *i2;
-          // Get the displacement - we never need to wrap, since its the same cell.
+          // Get the displacement - we never need to wrap, since its the same cell (and particle positions dont wrap 
+          // until remake_verlet is called again).
           subtractVec(Base::simData->x[id1], Base::simData->x[id2], displacement);
           // Check the displacement
           if (sqr(displacement) < sqr(sigma + Base::simData->sg[id2] + skin_depth))
@@ -224,7 +225,7 @@ namespace GFlowSimulation {
           for (auto id2 : cell_ptr->id_list) {
             // Get the displacement
             // Displacement(Base::simData->x[id1], Base::simData->x[id2], displacement, bounds, bcs);
-            getDisplacement(Base::simData->x[id1], Base::simData->x[id2], displacement, bounds, bcs); //**
+            getDisplacement(Base::simData->x[id1], Base::simData->x[id2], displacement, bounds, bcs); // Faster to just do this
             // Check the displacement
             if (sqr(displacement) < sqr(sigma + Base::simData->sg[id2] + skin_depth))
               pair_interaction(id1, id2);

@@ -100,8 +100,8 @@ namespace GFlowSimulation {
     //! This function should be overridden by each child to remake the verlet lists as they
     //! see fit. It should, however, be called first in each child function (VerletList::remake_verlet()).
     //! This function (1) Increments the number_of_remakes counter, (2) Sets the lastUpdate timer,
-    //! (3) Calls the ForceMaster clearVerletList() function, and (4) Calls fillXVL() to record the 
-    //! positions of the particles.
+    //! (3) Calls the ForceMaster clearVerletList() function, (4) Calls fillXVL() to record the 
+    //! positions of the particles, and (5) Wrap particle positions to their cannonical form.
     virtual void remake_verlet();
 
     // GFlow is a friend class

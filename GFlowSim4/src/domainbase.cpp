@@ -102,6 +102,9 @@ namespace GFlowSimulation {
     Base::forceMaster->clearVerletLists();
     // Record where the particles were
     fillXVL();
+    // Wrap the particles, so they are in their cannonical positions for 
+    // sectorization
+    Base::gflow->wrapPositions();
   }
 
   void DomainBase::nullXVL() {

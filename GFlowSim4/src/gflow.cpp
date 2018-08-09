@@ -152,8 +152,7 @@ namespace GFlowSimulation {
         domain->pre_forces();   // -- This is where resectorization / verlet list creation might happen
       }
       
-      // Wrap or reflect particles
-      wrapPositions();
+      // Reflect or repulse particles. We only need to wrap before sectorizing particles.
       reflectPositions();
       repulsePositions();
 
