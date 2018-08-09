@@ -29,10 +29,7 @@ namespace GFlowSimulation {
     // Get the current simulation time
     RealType current_time = Base::gflow->getElapsedTime();
     // Check whether we should check sectors
-    if (
-      Base::simData->getNeedsRemake() || 
-      ( current_time-lastUpdate>updateDelay && check_needs_remake() )
-    ) {
+    if (Base::simData->getNeedsRemake() || (current_time-lastUpdate>updateDelay && check_needs_remake())) {
       remake_verlet();
       // SimData does not need to be remade anymore
       Base::simData->setNeedsRemake(false);
@@ -94,6 +91,17 @@ namespace GFlowSimulation {
 
   void DomainBase::setSampleSize(int s) {
     sample_size = s;
+  }
+
+  void DomainBase::remake_verlet() {
+    // Increment counter
+    ++number_of_remakes;
+    // Set timer
+    lastUpdate = Base::gflow->getElapsedTime();
+    // Reset the verlet lists of all the forces
+    Base::forceMaster->clearVerletLists();
+    // Record where the particles were
+    fillXVL();
   }
 
   void DomainBase::nullXVL() {

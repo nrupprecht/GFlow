@@ -71,7 +71,7 @@ namespace GFlowSimulation {
   }
 
   void Domain::exchange_particles() {
-    // @todo Implement this
+    //! @todo Implement this
   }
 
   void Domain::getAllWithin(int id, RealType radius, vector<int>& neighbors) {
@@ -174,12 +174,8 @@ namespace GFlowSimulation {
   }
 
   void Domain::remake_verlet() {
-    // Increment counter
-    ++number_of_remakes;
-    // Record where the particles were
-    fillXVL();
-    // Clear old verlet lists
-    Base::forceMaster->clearVerletLists();
+    // Setup and common tasks
+    DomainBase::remake_verlet();
 
     // Fill the linked cells
     fill_cells();

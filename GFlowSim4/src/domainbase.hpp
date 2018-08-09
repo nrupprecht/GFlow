@@ -88,12 +88,21 @@ namespace GFlowSimulation {
     //! and must evenly divide the size of the domain.
     virtual void setCellSize(RealType)=0;
 
-    //! Set the cutoff factor. This function is virtual, as the inheriting class
+    //! @brief Set the cutoff factor. This function is virtual, as the inheriting class
     //! may need to remake itself after doing this.
     virtual void setCutoffFactor(RealType);
 
-    //! Set the sample size variable.
+    //! @brief Set the sample size variable.
     void setSampleSize(int);
+
+    //! @brief Remake the verlet lists.
+    //!
+    //! This function should be overridden by each child to remake the verlet lists as they
+    //! see fit. It should, however, be called first in each child function (VerletList::remake_verlet()).
+    //! This function (1) Increments the number_of_remakes counter, (2) Sets the lastUpdate timer,
+    //! (3) Calls the ForceMaster clearVerletList() function, and (4) Calls fillXVL() to record the 
+    //! positions of the particles.
+    virtual void remake_verlet();
 
     // GFlow is a friend class
     friend class GFlow;
@@ -101,9 +110,6 @@ namespace GFlowSimulation {
   protected:
     // --- Helper functions
 
-    //! Remake the verlet lists
-    virtual void remake_verlet()=0;
-    
     //! Delete and set as null the xVL array
     void nullXVL();
 

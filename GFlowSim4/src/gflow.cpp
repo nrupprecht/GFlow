@@ -132,11 +132,11 @@ namespace GFlowSimulation {
         if (aveDist > 1.5*target_memory_distance)
           MemoryOptimizer::GridParticles(*simData, bounds);
         // The verlet lists will have to be remade
-        simData->setNeedsRemake(true);
+        domain->remake_verlet();
       }
 
       // --> Pre-exchange
-        for (auto m : modifiers) m->pre_exchange();
+      for (auto m : modifiers) m->pre_exchange();
       integrator->pre_exchange();
       dataMaster->pre_exchange();
       domain->pre_exchange();

@@ -275,9 +275,10 @@ namespace GFlowSimulation {
   // --- Defined after simdata
 
   //! @brief A helper function for copying a particles data
-  inline void copyParticle(SimData& simData, int id, RealType *x, RealType *v, RealType &sg, RealType &im, int &type) {
+  inline void copyParticle(const SimData& simData, int id, RealType *x, RealType *v, RealType *f, RealType &sg, RealType &im, int &type) {
     copyVec(simData.x[id], x);
     copyVec(simData.v[id], v);
+    copyVec(simData.f[id], f);
     sg = simData.sg[id];
     im = simData.im[id];
     type = simData.type[id];

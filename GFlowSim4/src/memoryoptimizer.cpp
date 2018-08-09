@@ -28,8 +28,8 @@ namespace GFlowSimulation {
       int product = 1;
       for (int d=0; d<DIMENSIONS; ++d) {
         int X = static_cast<int>((x[d] - bounds.min[d])/width[d]);
-	X = X<0 ? 0 : X;
-	X = X>=sizes[d] ? sizes[d]-1 : X;
+      	X = X<0 ? 0 : X;
+      	X = X>=sizes[d] ? sizes[d]-1 : X;
         index += (X*product); 
         product *= sizes[d];
       }
@@ -47,14 +47,17 @@ namespace GFlowSimulation {
     // Reserve new arrays and arrays-of-arrays
     RealType **x = alloc_array_2d<RealType>(number, DIMENSIONS);
     RealType **v = alloc_array_2d<RealType>(number, DIMENSIONS);
+    RealType **f = alloc_array_2d<RealType>(number, DIMENSIONS);
     RealType *sg   = new RealType[number];
     RealType *im   = new RealType[number];
     int      *type = new int[number];
+    //! @todo Copy auxilary data too.
+
     // Sort
     int count = 0;
     for (int i=0; i<total; ++i) {
       for (auto id : grid[i]) {
-        copyParticle(simData, id, x[count], v[count], sg[count], im[count], type[count]);
+        copyParticle(simData, id, x[count], v[count], f[count], sg[count], im[count], type[count]);
         ++count;
       }
     }
@@ -66,6 +69,9 @@ namespace GFlowSimulation {
     // Velcity
     dealloc_array_2d(simData.v);
     simData.v = v;
+    // Force
+    dealloc_array_2d(simData.f);
+    simData.f = f;
     // Radius
     delete [] simData.sg;
     simData.sg = sg;
