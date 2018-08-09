@@ -21,7 +21,6 @@ namespace GFlowSimulation {
     // Update velocities
     #if _INTEL_ == 1
     #pragma vector aligned
-    // #pragma simd
     #endif
     #if _CLANG_ == 1
     #pragma clang loop vectorize(enable)
@@ -30,19 +29,30 @@ namespace GFlowSimulation {
     for (int i=0; i<number*DIMENSIONS; ++i) {
       int id = i/DIMENSIONS;
       v[i] += hdt*im[id]*f[i];
+      // Debug mode asserts
+      #if DEBUG==1
+      assert(!isnan(f[i]));
+      assert(!isnan(v[i]));
+      assert(fabs(v[i])<MAX_REASONABLE_V);
+      assert(fabs(f[i])<MAX_REASONABLE_F);
+      #endif 
     }
 
-    // Update positions
+    // Update positions -- It seems to be marginally faster to have this in a separate loop.
     #if _INTEL_ == 1
     #pragma vector aligned
-    // #pragma simd
     #endif
     #if _CLANG_ == 1
     #pragma clang loop vectorize(enable)
     #pragma clang loop interleave(enable)
     #endif
-    for (int i=0; i<number*DIMENSIONS; ++i)
+    for (int i=0; i<number*DIMENSIONS; ++i) {
       x[i] += dt*v[i];
+      // Debug mode asserts
+      #if DEBUG==1
+      assert(!isnan(x[i]));
+      #endif 
+    }
   }
 
   void VelocityVerlet::post_forces() {
@@ -57,7 +67,6 @@ namespace GFlowSimulation {
 
     #if _INTEL_ == 1
     #pragma vector aligned
-    // #pragma simd
     #endif
     #if _CLANG_ == 1
     #pragma clang loop vectorize(enable)
@@ -66,6 +75,13 @@ namespace GFlowSimulation {
     for (int i=0; i<number*DIMENSIONS; ++i) {
       int id = i/DIMENSIONS;
       v[i] += hdt*im[id]*f[i];
+      // Debug mode asserts
+      #if DEBUG==1
+      assert(!isnan(f[i]));
+      assert(!isnan(v[i]));
+      assert(v[i]<MAX_REASONABLE_V);
+      assert(f[i]<MAX_REASONABLE_F);
+      #endif 
     }
   }
 

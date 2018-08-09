@@ -18,7 +18,6 @@ namespace GFlowSimulation {
     // Update positions (there are no velocities)
     #if _INTEL_ == 1
     #pragma vector aligned
-    // #pragma simd
     #endif
     #if _CLANG_ == 1
     #pragma clang loop vectorize(enable)
@@ -27,6 +26,12 @@ namespace GFlowSimulation {
     for (int i=0; i<number*DIMENSIONS; ++i) {
       int id = i/DIMENSIONS;
       x[i] += dampingConstant*im[id]*f[i]*Integrator::dt;
+      // Debug mode asserts
+      #if DEBUG==1
+      assert(!isnan(f[i]));
+      assert(!isnan(x[i]));
+      assert(fabs(f[i])<MAX_REASONABLE_F);
+      #endif 
     }
   }
 

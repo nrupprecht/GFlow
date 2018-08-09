@@ -4,7 +4,7 @@
 //! For aligned memory. We set this to 1 if we are using posiz memalign as our
 //! aligned alloc function.
 #define POSIX_MEMALIGN 1
-//! We set this to 1 if we are debugging. I'm not sure this does anything.
+//! We set this to 1 if we are debugging. This uncovers debugging asserts.
 #define DEBUG 0
 
 //! We define this to be 1 if we are compiling for MPI parallel.
@@ -58,6 +58,10 @@ namespace GFlowSimulation {
 
   //! The value of Pi.
   const RealType PI = 3.14159265;
+
+  //! Constants for debugging
+  const RealType MAX_REASONABLE_V = 100;
+  const RealType MAX_REASONABLE_F = 100;
 
   /** @brief Maximum packings array.
   *

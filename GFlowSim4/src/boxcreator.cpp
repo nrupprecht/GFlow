@@ -110,13 +110,15 @@ namespace GFlowSimulation {
     }
     gflow->forceMaster->setForce(0, 0, force);
 
-    // Set skin depth
+    // --- Set some parameters
     if (skinDepth>0) gflow->domain->setSkinDepth(skinDepth);
     if (cell_size>0) gflow->domain->setCellSize(cell_size);
     if (sample>0) gflow->domain->setSampleSize(sample);
 
-    // Relax the setup
-    hs_relax(gflow);
+    // Relax the setup in two steps
+    hs_relax(gflow, 0.1); // 1) To make sure particles don't stop on top of one another
+    relax(gflow, 0.15);   // 2) To let particles relax naturally
+    // Set the integrator
     if (over_damped_flag) gflow->integrator = new OverdampedIntegrator(gflow);
     else if (langevin_temp>=0) gflow->integrator = new LangevinIntegrator(gflow, langevin_temp);
     else gflow->integrator = new VelocityVerlet(gflow);

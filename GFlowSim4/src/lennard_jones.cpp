@@ -60,7 +60,11 @@ namespace GFlowSimulation {
     // Calculate the magnitude
     RealType gamma = (sg[id1]+sg[id2]) / (distance*cutoff);
     RealType g3 = gamma*gamma*gamma, g6 = sqr(g3), g12 = sqr(g6);
-    // The c1*c2 makes sure the magnitude is zero if either particles are of type -1
+    // Debugging assertion
+    #if DEBUG==1
+    assert(distance>0)
+    #endif
+    // The c1 factor makes sure the magnitude is zero if either particles are of type -1
     RealType magnitude = c1*strength*(2.*g12 - g6)*(1./distance); 
     Force::virial += magnitude;
     // Make vectorial
