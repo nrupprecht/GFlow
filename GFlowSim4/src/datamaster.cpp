@@ -177,7 +177,7 @@ namespace GFlowSimulation {
     if (run_time>60) fout << " ( h:m:s - "   << printAsTime(run_time) << " )";
     fout << "\n";
     fout << "  - Iters x Particles / Time: ";
-    if (run_time>0) fout << (iterations*particles/run_time) << "\n";
+    if (run_time>0) fout << (iterations*particles/static_cast<double>(run_time)) << "\n";
     else fout << "--\n";
     fout << "  - Ratio x Particles:        " << toStrRT(ratio*particles) << "\n";
     fout << "  - Ratio:                    " << toStrRT(ratio) << "\n";

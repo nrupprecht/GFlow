@@ -34,6 +34,7 @@ namespace GFlowSimulation {
       id2 = verlet[i+1];
       // Get the displacement between the particles
       getDisplacement(x[id1], x[id2], displacement, bounds, boundaryConditions);
+
       // Check if the particles should interact
       RealType dsqr = sqr(displacement);
       if (dsqr < sqr(sg[id1] + sg[id2])) {
@@ -43,7 +44,6 @@ namespace GFlowSimulation {
         forceStrength(normal, distance, id1, id2);
       }
     }
-    
   }
 
   void HardSphere::setRepulsion(RealType r) { 

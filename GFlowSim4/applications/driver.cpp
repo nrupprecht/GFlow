@@ -47,6 +47,7 @@ int main(int argc, char **argv) {
   bool bond_flag = false;
   bool bipartite_flag = false;
   bool debug_flag = false;
+  bool flow_flag = false;
 
   // Data to gather
   bool animate = false; // Record positions
@@ -87,6 +88,7 @@ int main(int argc, char **argv) {
   parser.get("bondbox", bond_flag);
   parser.get("bipartite", bipartite_flag);
   parser.get("debug", debug_flag); 
+  parser.get("flow", flow_flag);
   parser.get("animate", animate);
   parser.get("snapshot", snapshot);
   parser.get("vlData", vlData);
@@ -122,6 +124,7 @@ int main(int argc, char **argv) {
   if      (bond_flag)      creator = new BondBoxCreator(&parser);
   else if (bipartite_flag) creator = new BipartiteBoxCreator(&parser);
   else if (debug_flag)     creator = new DebugCreator(&parser);
+  else if (flow_flag)      creator = new FlowCreator(&parser);
   else                     creator = new BoxCreator(&parser);
 
   // --- Set boundary conditions
