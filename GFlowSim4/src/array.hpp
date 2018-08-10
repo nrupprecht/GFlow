@@ -347,8 +347,9 @@ namespace GFlowSimulation {
 
     Array(const int *sizes) {
       dims[0] = sizes[0]; dims[1] = sizes[1]; dims[2] = sizes[2];
-      data = new T[s0*s1*s2];
-      for (int i=0; i<s0*s1*s2; ++i) data[i] = T();
+      int total = dims[0]*dims[1]*dims[2];
+      data = new T[total];
+      for (int i=0; i<total; ++i) data[i] = T();
     }
 
     // Destructor

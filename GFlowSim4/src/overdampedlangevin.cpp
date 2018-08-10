@@ -63,6 +63,12 @@ namespace GFlowSimulation {
       int id = i/DIMENSIONS;
       v[i] = viscosity*im[id]*f[i]*Integrator::dt;
       x[i] += v[i];
+      // Debug mode asserts
+      #if DEBUG==1
+      assert(!isnan(x[i]));
+      assert(!isnan(v[i]));
+      assert(fabs(v[i])<MAX_REASONABLE_V);
+      #endif 
     }
 
   }

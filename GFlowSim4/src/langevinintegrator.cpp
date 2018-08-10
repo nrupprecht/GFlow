@@ -40,6 +40,13 @@ namespace GFlowSimulation {
     for (int i=0; i<number*DIMENSIONS; ++i) {
       int id = i/DIMENSIONS;
       v[i] += hdt*im[id]*f[i];
+      // Debug mode asserts
+      #if DEBUG==1
+      assert(!isnan(f[i]));
+      assert(!isnan(v[i]));
+      assert(fabs(v[i])<MAX_REASONABLE_V);
+      assert(fabs(f[i])<MAX_REASONABLE_F);
+      #endif 
     }
 
     // Update positions
@@ -103,6 +110,13 @@ namespace GFlowSimulation {
       f[i] -= 6.*PI*viscosity*sg[id]*v[i];
       // Update velocity
       v[i] += hdt*im[id]*f[i];
+      // Debug mode asserts
+      #if DEBUG==1
+      assert(!isnan(f[i]));
+      assert(!isnan(v[i]));
+      assert(fabs(v[i])<MAX_REASONABLE_V);
+      assert(fabs(f[i])<MAX_REASONABLE_F);
+      #endif 
     }
   }
 

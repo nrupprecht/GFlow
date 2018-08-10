@@ -5,5 +5,6 @@
 #include "temperaturemodifier.hpp"
 #include "timestepmodifier.hpp"
 #include "constantacceleration.hpp"
+#include "flow.hpp"
 
 #endif // __ALL_MODIFIERS_HPP__GFLOW__

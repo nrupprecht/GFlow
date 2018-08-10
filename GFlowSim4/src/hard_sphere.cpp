@@ -11,9 +11,8 @@ namespace GFlowSimulation {
     // Check if there are forces to calculate. Virial is reset.
     if (!Force::initCalculation()) return; 
 
-    verletList.forceKernel(&force, &repulsion, virial);
+    //verletList.forceKernel(&force, &repulsion, virial);
     
-    /*
     // Get the data we need
     int nverlet = verletList.vlSize(), id1(0), id2(0); // List length, id pointers
     RealType **x = Base::simData->x, **f = Base::simData->f;
@@ -44,7 +43,7 @@ namespace GFlowSimulation {
         forceStrength(normal, distance, id1, id2);
       }
     }
-    */
+    
   }
 
   void HardSphere::setRepulsion(RealType r) { 

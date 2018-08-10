@@ -35,7 +35,7 @@ namespace GFlowSimulation {
       assert(!isnan(v[i]));
       assert(fabs(v[i])<MAX_REASONABLE_V);
       assert(fabs(f[i])<MAX_REASONABLE_F);
-      #endif 
+      #endif
     }
 
     // Update positions -- It seems to be marginally faster to have this in a separate loop.
@@ -79,8 +79,8 @@ namespace GFlowSimulation {
       #if DEBUG==1
       assert(!isnan(f[i]));
       assert(!isnan(v[i]));
-      assert(v[i]<MAX_REASONABLE_V);
-      assert(f[i]<MAX_REASONABLE_F);
+      assert(fabs(v[i])<MAX_REASONABLE_V);
+      assert(fabs(f[i])<MAX_REASONABLE_F);
       #endif 
     }
   }

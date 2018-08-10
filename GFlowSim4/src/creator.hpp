@@ -11,6 +11,7 @@
 #include "allforces.hpp"
 #include "alldataobjects.hpp"
 #include "allintegrators.hpp"
+#include "allmodifiers.hpp"
 
 namespace GFlowSimulation {
 

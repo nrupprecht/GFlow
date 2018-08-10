@@ -1,26 +1,25 @@
-#include "boxcreator.hpp"
-#include "gflow.hpp"
+#include "flowcreator.hpp"
 
 namespace GFlowSimulation {
 
-  BoxCreator::BoxCreator(int argc, char **argv) : Creator(argc, argv), phi(0.5), width(4.), radius(0.05) {
+  FlowCreator::FlowCreator(int argc, char **argv) : Creator(argc, argv), phi(0.5), width(4.), radius(0.05) {
     seed = std::chrono::system_clock::now().time_since_epoch().count();
     seedGenerator(seed);
     normal_dist = std::normal_distribution<RealType>(0., 1.);
   };
 
-  BoxCreator::BoxCreator(ArgParse *p) : Creator(p), phi(0.5), width(4.), radius(0.05) {
+  FlowCreator::FlowCreator(ArgParse *p) : Creator(p), phi(0.5), width(4.), radius(0.05) {
     seed = std::chrono::system_clock::now().time_since_epoch().count();
     seedGenerator(seed);
     normal_dist = std::normal_distribution<RealType>(0., 1.);
   };
 
-  void BoxCreator::seedGenerator(uint s) {
+  void FlowCreator::seedGenerator(uint s) {
     Creator::seedGenerator(s);
     generator = std::mt19937(seed);
   }
 
-  GFlow* BoxCreator::createSimulation() {
+  GFlow* FlowCreator::createSimulation() {
     // Seed random number generators
     srand48(time(0));
 
@@ -28,6 +27,7 @@ namespace GFlowSimulation {
     int number = -1; // -1 means use volume density
     int sample = 0;
     RealType dt = 0.001;
+    RealType length = 4.;
     RealType vsgma = 0.25;
     RealType skinDepth = -1.;
     RealType cell_size = -1;
@@ -57,11 +57,18 @@ namespace GFlowSimulation {
 
     // Create a new gflow object
     GFlow *gflow = new GFlow;
-    gflow->setAllBCs(bcFlag);
+    gflow->setAllBCs(BCFlag::REPL); // All boundaries but the first are repulsive
+    // Make the first dimension wrapping. This is the direction of flow.
+    gflow->setBC(0, BCFlag::WRAP);
 
     // Set the bounds of the gflow object
-    if (width<=0) width = 1.; // In case of bad argument
-    for (int d=0; d<DIMENSIONS; ++d) {
+    if (width<=0)  width = 1.; // In case of bad argument
+    if (length<=0) length = 1.;
+    // Set length
+    gflow->bounds.min[0] = -0.5*length;
+    gflow->bounds.max[0] =  0.5*length;
+    // Set remaining widths
+    for (int d=1; d<DIMENSIONS; ++d) {
       gflow->bounds.min[d] = -0.5*width;
       gflow->bounds.max[d] =  0.5*width;
     }
@@ -69,28 +76,23 @@ namespace GFlowSimulation {
     // --- Set initial particle data
     // Find how many objects to use
     if (number<0) {
-      RealType vol = pow(width, DIMENSIONS);  
+      RealType vol = gflow->bounds.vol();
       number = phi*vol/sphere_volume(radius);
     }
     // Add some objects
     SimData *simData = gflow->simData;
     simData->reserve(number);
     //-- simData->number = number;
-    RealType X[DIMENSIONS], V[DIMENSIONS]; //-- 
-    zeroVec(V); //-- 
+    RealType X[DIMENSIONS], V[DIMENSIONS]; 
+    zeroVec(V); // Give them zero velocity (for now)
     for (int n=0; n<number; ++n) {
       // Give some random initial positions - we will allow these to relax
-      
-      for (int d=0; d<DIMENSIONS; ++d) {
+      X[0] = (drand48()-0.5)*length;
+      for (int d=1; d<DIMENSIONS; ++d) {
         X[d] = (drand48()-0.5)*width;
-        //-- simData->X(n, d) = (drand48()-0.5)*width;
       }
-      //-- simData->Sg(n) = radius;
-      //-- simData->Im(n) = 1.0 / (1.0 * PI*sqr(radius)); // Density of 1
-      //-- simData->Type(n) = 0;
-
       RealType im = 1.0 / (1.0 * PI*sqr(radius));
-      simData->addParticle(X, V, radius, im, 0); //--
+      simData->addParticle(X, V, radius, im, 0);
     }
     // --- Initialize domain
     gflow->domain->initialize();
@@ -126,6 +128,7 @@ namespace GFlowSimulation {
     gflow->integrator->setDT(dt);
 
     // --- Set velocities
+    /*
     RealType normal[DIMENSIONS];
     for (int n=0; n<number; ++n) {
       // Give some random velocities
@@ -137,6 +140,10 @@ namespace GFlowSimulation {
       scalarMultVec(velocity, normal, simData->V(n));
       simData->Sg(n) = radius;
     }
+    */
+
+    // --- Add a flow object
+    gflow->addModifier(new Flow(gflow));
 
     return gflow;
   }

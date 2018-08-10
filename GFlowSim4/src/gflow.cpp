@@ -279,6 +279,10 @@ namespace GFlowSimulation {
       boundaryConditions[d] = type;
   }
 
+  void GFlow::setBC(const int d, const BCFlag type) {
+    boundaryConditions[d] = type;
+  }
+
   void GFlow::setRepulsion(RealType r) {
     if (r<0) return;
     repulsion = r;

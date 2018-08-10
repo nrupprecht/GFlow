@@ -1,18 +1,18 @@
-#ifndef __BOX_CREATOR_HPP__GFLOW__
-#define __BOX_CREATOR_HPP__GFLOW__
+#ifndef __FLOW_CREATOR_HPP__GFLOW__
+#define __FLOW_CREATOR_HPP__GFLOW__
 
 #include "creator.hpp"
 
 namespace GFlowSimulation {
 
   //! @todo Commentary.
-  class BoxCreator : public Creator {
+  class FlowCreator : public Creator {
   public:
     //! Constructor.
-    BoxCreator(int, char**);
+    FlowCreator(int, char**);
 
     //! Constructor -- pass in a pointer to an ArgParse object.
-    BoxCreator(ArgParse*);
+    FlowCreator(ArgParse*);
 
     //! Seed random number generators.
     virtual void seedGenerator(uint);
@@ -34,4 +34,4 @@ namespace GFlowSimulation {
   };
 
 }
-#endif // __BOX_CREATOR_HPP__GFLOW__
+#endif // __FLOW_CREATOR_HPP__GFLOW__

@@ -23,7 +23,6 @@ namespace GFlowSimulation {
 
     // Get verlet list data
     const int *verlet = verletList.getVerlet();
-    RealType F[DIMENSIONS];
 
     // --- Go through all particles
     for (int i=0; i<nverlet; i+=2) {
