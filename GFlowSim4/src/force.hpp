@@ -18,8 +18,11 @@ namespace GFlowSimulation {
     //! Constructor
     Force(GFlow *);
 
+    //! Destructor
+    ~Force();
+
     //! Calculate all the forces between atoms in the verlet lists
-    virtual void calculateForces() const = 0;
+    virtual void calculateForces() const;
 
     //! \brief Initialize for force calculation
     //!
@@ -51,7 +54,13 @@ namespace GFlowSimulation {
   protected:
 
     //! The neighbor (verlet) lists for all the pairs of atoms between which this force is active
-    VerletList verletList;
+    VerletList *verletList;
+
+    //! A pointer to the force function
+    ForceKernel forcePtr;
+
+    //! An array of force parameters. The length of this array will vary by force.
+    RealType *parameters;
 
     //! The virial, for calculating pressure.
     //! The pressure formula is: P = N k T/V + 1/(DIMENSIONS*V) \sum_i (r_i \dot F_i)

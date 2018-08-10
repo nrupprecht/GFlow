@@ -6,7 +6,7 @@
 
 namespace GFlowSimulation {
 
-  typedef void (*ForceKernel) (RealType*, const RealType, const int, const int, const class SimData*, const RealType*, RealType&);
+  typedef void (*ForceKernel) (RealType*, const RealType, const int, const int, const class SimData*, const RealType*, RealType*);
 
   class VerletList : public Base {
   public:
@@ -39,8 +39,8 @@ namespace GFlowSimulation {
     //! @brief THIS IS A TEST
     //! @param force A function static function that tells how to evaluate the force between particles.
     //! @param param_pack Parameters used to evaluate the force.
-    //! @param virial The virial. Should be updated to by the force function.
-    void forceKernel(ForceKernel, const RealType*, RealType&) const;
+    //! @param data_pack Data to be updated by the function.
+    void forceKernel(ForceKernel, const RealType*, RealType*) const;
 
   private:
 

@@ -43,7 +43,7 @@ namespace GFlowSimulation {
     return verlet;
   }
 
-  void VerletList::forceKernel(ForceKernel force, const RealType *param_pack, RealType &virial) const 
+  void VerletList::forceKernel(ForceKernel force, const RealType *param_pack, RealType *data_pack) const 
   {
     // Get the data we need
     int id1(0), id2(0); // List length, id pointers
@@ -66,7 +66,7 @@ namespace GFlowSimulation {
         RealType distance = sqrt(dsqr);
         scalarMultVec(1./distance, displacement, normal);
         // Calculate force strength. Normal will hold the force strength after the function is called.
-        force(normal, distance, id1, id2, simData, param_pack, virial);
+        force(normal, distance, id1, id2, Base::simData, param_pack, data_pack);
         // Add the force to the buffers
         plusEqVec (simData->f[id1], normal);
         minusEqVec(simData->f[id2], normal);

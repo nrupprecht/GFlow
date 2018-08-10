@@ -5,16 +5,22 @@
 
 namespace GFlowSimulation {
 
-  HardSphere::HardSphere(GFlow *gflow) : Force(gflow), repulsion(DEFAULT_HARD_SPHERE_REPULSION) {};
+  HardSphere::HardSphere(GFlow *gflow) : Force(gflow) {
+    parameters = new RealType;
+    *parameters = DEFAULT_HARD_SPHERE_REPULSION;
+    // Set the force function
+    forcePtr = &force;
+  };
 
+  /*
   void HardSphere::calculateForces() const {
     // Check if there are forces to calculate. Virial is reset.
     if (!Force::initCalculation()) return; 
 
-    //verletList.forceKernel(&force, &repulsion, virial);
+    //verletList->forceKernel(&force, parameters, &virial);
     
     // Get the data we need
-    int nverlet = verletList.vlSize(), id1(0), id2(0); // List length, id pointers
+    int nverlet = verletList->vlSize(), id1(0), id2(0); // List length, id pointers
     RealType **x = Base::simData->x, **f = Base::simData->f;
     RealType *sg = Base::simData->sg;
     int *type = Base::simData->type;
@@ -25,7 +31,7 @@ namespace GFlowSimulation {
     copyVec(Base::gflow->getBCs(), boundaryConditions); // Keep a local copy of the wrap frags
 
     // Get verlet list data
-    const int *verlet = verletList.getVerlet();
+    const int *verlet = verletList->getVerlet();
     RealType F[DIMENSIONS];
 
     // --- Go through all particles
@@ -45,9 +51,10 @@ namespace GFlowSimulation {
       }
     }
   }
+  */
 
   void HardSphere::setRepulsion(RealType r) { 
-    repulsion = r; 
+    parameters[0] = r; 
   }
 
   //! @param[in,out] normal
@@ -56,17 +63,17 @@ namespace GFlowSimulation {
   //! @param[in] id2
   //! @param[in] simData
   //! @param[in] param_pack A parameter pack, passed in from force. Should be of the form { repulsion } (length 1).
-  //! @param[in,out] virial The virial. Add the f_i \dot r_i to this.
+  //! @param[in,out] data_pack Data to update in the function. Should be of the form  { virial } (length 1). 
+  //! Add the f_i \dot r_i to this.
   void HardSphere::force(RealType* normal, const RealType distance, const int id1, const int id2, const SimData *simData, 
-    const RealType *param_pack, RealType &virial) 
+    const RealType *param_pack, RealType *data_pack) 
   {
     // This should make sure that forces are zero if either object is of type -1. This does not seem to add much (any?) overhead
-    RealType c1 = simData->type[id1]<0 ? 0 : 1.;
-    c1 = simData->type[id2]<0 ? 0 : c1;
+    RealType c1 = (simData->type[id1]<0 || simData->type[id2]<0) ? 0 : 1.;
     // Calculate force strength
-    RealType magnitude = c1*(*param_pack)*(simData->sg[id1] + simData->sg[id2] - distance);
+    RealType magnitude = c1*param_pack[0]*(simData->sg[id1] + simData->sg[id2] - distance);
     // Update the virial
-    virial += magnitude;
+    data_pack[0] += magnitude;
     // Force strength x Normal vector -> Sets normal to be the vectorial force between the particles.
     scalarMultVec(magnitude, normal);
   }
@@ -81,7 +88,7 @@ namespace GFlowSimulation {
     RealType c1 = Base::simData->type[id1]<0 ? 0 : 1.;
     c1 = Base::simData->type[id2]<0 ? 0 : c1;
     // Calculate force strength
-    RealType magnitude = c1*repulsion*(simData->Sg(id1) + simData->Sg(id2) - distance);
+    RealType magnitude = c1*parameters[0]*(simData->sg[id1] + simData->sg[id2] - distance);
     // Update the virial
     Force::virial += magnitude;
     // Force strength x Normal vector -> Sets normal to be the vectorial force between the particles.

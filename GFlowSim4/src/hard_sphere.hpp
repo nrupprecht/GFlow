@@ -12,7 +12,6 @@ namespace GFlowSimulation {
   *  with a constant of proportionality [repulsion] which is a parameter of this class.
   *  In other words, all hard spheres have the same constant of repulsion.
   *
-  *  @see HardSphereA
   */
   class HardSphere : public Force {
   public:
@@ -20,7 +19,7 @@ namespace GFlowSimulation {
     HardSphere(GFlow *);
 
     //! Calculate all the forces between atoms in the verlet lists.
-    virtual void calculateForces() const final;
+    //virtual void calculateForces() const final;
 
     //! Set the repulsion parameter.
     void setRepulsion(RealType r);
@@ -32,15 +31,14 @@ namespace GFlowSimulation {
     //! @param[in] simData
     //! @param[in] param_pack A parameter pack, passed in from force. Contains characteristic 
     //! constants of the force, and extra data the force needs.
-    //! @param[in,out] virial The virial, to be updated by this functiton.
-    static void force(RealType*, const RealType, const int, const int, const SimData*, const RealType*, RealType&);
+    //! @param[in,out] data_pack Data to be updated by the function.
+    static void force(RealType*, const RealType, const int, const int, const SimData*, const RealType*, RealType*);
 
   private:
     //! Calculate force strength
     inline void forceStrength(RealType*, const RealType, const int, const int) const;
 
-    //! The repulsion of the hard spheres. This is assumed to be the same for all hard spheres.
-    RealType repulsion;
+    //! The repulsion of the hard spheres is stored as parameters[0]. The repulsion is assumed to be the same for all hard spheres.
   };
 
 }

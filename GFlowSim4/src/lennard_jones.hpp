@@ -13,25 +13,36 @@ namespace GFlowSimulation {
   *  We use cutoff=2.5 by default, but it can be changed. Strength is the
   *  "epsilon" parameter in LJ.
   *
-  *  \see LennardJonesA
   */
   class LennardJones : public Force {
   public:
-    //! Constructor
+    //! @brief Constructor
     LennardJones(GFlow *);
 
-    //! Calculate all the forces between atoms in the verlet lists.
-    virtual void calculateForces() const final;
+    //! @brief Calculate all the forces between atoms in the verlet lists.
+    // virtual void calculateForces() const final;
 
-    //! Set the lennard jones interaction strength.
+    //! @brief Set the lennard jones interaction strength. Must be non-negative.
     void setStrength(RealType);
 
+    //! @brief Set the lennard jones cutoff range. Must be at least 1.
+    void setCutoff(RealType);
+
+    //! @param[in] normal
+    //! @param[in] distance
+    //! @param[in] id1
+    //! @param[in] id2
+    //! @param[in] simData
+    //! @param[in] param_pack A parameter pack, passed in from force. Contains characteristic 
+    //! constants of the force, and extra data the force needs.
+    //! @param[in,out] data_pack Data to be updated by the function.
+    static void force(RealType*, const RealType, const int, const int, const SimData*, const RealType*, RealType*);
+
   private:
-    //! Calculate force strength
+    //! @brief Calculate force strength
     void forceStrength(RealType*, const RealType, const int, const int) const;
 
-    // LJ strength, cuttoff
-    RealType strength, cutoff;
+    // The parameters for LJ are the LJ strength (parameters[0]), and the cuttoff (parameters[1]).
   };
 
 }
