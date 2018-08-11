@@ -2,7 +2,7 @@
 #define __FORCE_HPP__
 
 #include "gflow.hpp"
-#include "verletlist.hpp"
+#include "interactionhandler.hpp"
 
 namespace GFlowSimulation {
 
@@ -24,6 +24,9 @@ namespace GFlowSimulation {
     //! Calculate all the forces between atoms in the verlet lists
     virtual void calculateForces() const;
 
+    //! Run an externally given kernel through this interaction's interaction handler
+    virtual void executeKernel(Kernel, RealType*, RealType*) const;
+
     //! \brief Initialize for force calculation
     //!
     //! Resets the virial and returns whether forces should be calculated.
@@ -32,21 +35,21 @@ namespace GFlowSimulation {
     // --- Accessors
 
     //! Return the total length of the verlet list 
-    int vlSize() const;
+    int size() const;
 
     //! Get the verlet list (get it as a const reference)
-    const VerletList& getVerletList() const;
+    const InteractionHandler* getInteractionHandler() const;
 
     //! Get the virial, used for calculating pressure
     int getVirial() const;
 
     // --- Mutators
 
-    //! Clear this force's verlet list
-    void clearVerletList();
+    //! Clear this force's interaction handler
+    void clear();
 
     //! Add a pair pf particles - the first is the head
-    void addVerletPair(int, int);
+    void addPair(int, int);
 
     // GFlow is a friend class
     friend class GFlow;
@@ -54,10 +57,10 @@ namespace GFlowSimulation {
   protected:
 
     //! The neighbor (verlet) lists for all the pairs of atoms between which this force is active
-    VerletList *verletList;
+    InteractionHandler *handler;
 
     //! A pointer to the force function
-    ForceKernel forcePtr;
+    Kernel forcePtr;
 
     //! An array of force parameters. The length of this array will vary by force.
     RealType *parameters;

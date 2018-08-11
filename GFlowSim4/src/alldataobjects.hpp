@@ -5,8 +5,6 @@
 
 #include "positiondata.hpp"
 #include "ending_snapshot.hpp"
-#include "verletlistdata.hpp"
-#include "verletlistnumberdata.hpp"
 #include "sectorizationdata.hpp"
 #include "kineticenergydata.hpp"
 #include "kineticenergytypesdata.hpp"

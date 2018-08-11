@@ -5,9 +5,9 @@
 
 namespace GFlowSimulation {
 
-  VerletList::VerletList(GFlow *gflow) : Base(gflow), verlet(nullptr), vsize(0), vcapacity(0) {};
+  VerletList::VerletList(GFlow *gflow) : InteractionHandler(gflow), verlet(nullptr), vsize(0), vcapacity(0) {};
 
-  VerletList::VerletList(const VerletList& vl) : Base(vl.gflow), vsize(vl.vsize), vcapacity(vl.vcapacity) {
+  VerletList::VerletList(const VerletList& vl) : InteractionHandler(vl.gflow), vsize(vl.vsize), vcapacity(vl.vcapacity) {
     // Allocate and copy arrays
     verlet = new int[vcapacity];
     copyArray(vl.verlet, verlet, vsize); // Only the first [vsize] elements matter
@@ -29,21 +29,24 @@ namespace GFlowSimulation {
   }
 
   void VerletList::addPair(const int id1, const int id2) {
+    // There has to be enough room to add two items
     if (vcapacity<vsize+2) resizeVerlet();
+    // Add the items
     verlet[vsize++] = id1;
     verlet[vsize++] = id2;
   }
 
-  int VerletList::vlSize() const {
+  void VerletList::clear() {
+    // Reset the size to zero. This doesn't actually erase any information, but it marks it as not being there
+    // which is even better, because you don't have to spend time erasing anything.
+    vsize = 0;
+  }
+
+  int VerletList::size() const {
     return vsize;
   }
 
-  // Get a (const) pointer to the verlet array
-  const int* VerletList::getVerlet() const {
-    return verlet;
-  }
-
-  void VerletList::forceKernel(ForceKernel force, const RealType *param_pack, RealType *data_pack) const 
+  void VerletList::executeKernel(Kernel kernel, const RealType *param_pack, RealType *data_pack) const 
   {
     // Get the data we need
     int id1(0), id2(0); // List length, id pointers
@@ -66,16 +69,14 @@ namespace GFlowSimulation {
         RealType distance = sqrt(dsqr);
         scalarMultVec(1./distance, displacement, normal);
         // Calculate force strength. Normal will hold the force strength after the function is called.
-        force(normal, distance, id1, id2, Base::simData, param_pack, data_pack);
-        // Add the force to the buffers
-        plusEqVec (simData->f[id1], normal);
-        minusEqVec(simData->f[id2], normal);
+        kernel(normal, distance, id1, id2, Base::simData, param_pack, data_pack);
       }
     }
   }
 
-  void VerletList::clear() {
-    vsize = 0;
+  // Get a (const) pointer to the verlet array
+  const int* VerletList::getVerlet() const {
+    return verlet;
   }
 
   inline void VerletList::resizeVerlet() {

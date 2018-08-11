@@ -149,7 +149,7 @@ namespace GFlowSimulation {
     Force *force = Base::forceMaster->getForce(Base::simData->type[id1], Base::simData->type[id2]);
 
     // A null force means no interaction
-    if (force) force->addVerletPair(id1, id2);
+    if (force) force->addPair(id1, id2);
   }
 
   RealType DomainBase::maxMotion() {

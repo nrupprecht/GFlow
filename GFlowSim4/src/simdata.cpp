@@ -175,6 +175,14 @@ namespace GFlowSimulation {
     for (int i=0; i<number*DIMENSIONS; ++i) _f[i] = 0;
   }
 
+  const BCFlag* SimData::getBCs() const {
+    return Base::gflow->getBCs();
+  }
+
+  Bounds SimData::getBounds() const {
+    return Base::gflow->getBounds();
+  }
+
   //! @param x The position of the particle.
   //! @param v The velocity of the particle.
   //! @param sg The cutoff radius of the particle.

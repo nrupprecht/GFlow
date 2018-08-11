@@ -1,14 +1,11 @@
 #ifndef __VERLET_LIST_HPP__GFLOW__
 #define __VERLET_LIST_HPP__GFLOW__ 
 
-#include "gflow.hpp"
-#include "vectormath.hpp"
+#include "interactionhandler.hpp"
 
 namespace GFlowSimulation {
 
-  typedef void (*ForceKernel) (RealType*, const RealType, const int, const int, const class SimData*, const RealType*, RealType*);
-
-  class VerletList : public Base {
+  class VerletList : public InteractionHandler {
   public:
     //! @brief Constructor.
     VerletList(GFlow*);
@@ -22,25 +19,29 @@ namespace GFlowSimulation {
     //! @brief Equals operator.
     VerletList& operator=(const VerletList&);
 
-    // --- Mutators
+    // --- Inherited members
 
     //! @brief Add a pair of interacting particles.
-    void addPair(const int, const int);
+    virtual void addPair(const int, const int);
 
     //! @brief Set sizes (but not capacities) to zero, effectively "clearing" out the data.
-    void clear();
+    virtual void clear();
 
     //! @brief Return the total length of the verlet list.
-    int vlSize() const;
+    virtual int size() const;
+
+    //! @brief Iterate through interacting particles, executing the given kernel between them.
+    //!
+    //! @param kernel A function that is executed on all pairs of particles within cutoff distance
+    //! of each other.
+    //! @param param_pack Parameters used to evaluate the force.
+    //! @param data_pack Data to be updated by the function.
+    virtual void executeKernel(Kernel, const RealType*, RealType*) const;
+
+    // --- Accessors
 
     //! @brief Get a (const) pointer to the verlet array.
     const int* getVerlet() const;
-
-    //! @brief THIS IS A TEST
-    //! @param force A function static function that tells how to evaluate the force between particles.
-    //! @param param_pack Parameters used to evaluate the force.
-    //! @param data_pack Data to be updated by the function.
-    void forceKernel(ForceKernel, const RealType*, RealType*) const;
 
   private:
 

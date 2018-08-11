@@ -1,51 +1,55 @@
 #include "force.hpp"
 // Other files
-#include "simdata.hpp"
-#include "vectormath.hpp"
+#include "verletlist.hpp"
 
 namespace GFlowSimulation {
 
-  Force::Force(GFlow *gflow) : Base(gflow), virial(0), verletList(new VerletList(gflow)), parameters(nullptr), forcePtr(nullptr) {};
+  Force::Force(GFlow *gflow) : Base(gflow), virial(0), handler(new VerletList(gflow)), parameters(nullptr), forcePtr(nullptr) {};
 
   Force::~Force() {
-    if (verletList) delete verletList;
+    if (handler)    delete handler;
     if (parameters) delete parameters;
   }
 
   void Force::calculateForces() const {
-    // Check if there are forces to calculate. Virial is reset.
-    if (!Force::initCalculation() || forcePtr==nullptr) return; 
+    // Reset virial
+    virial = 0;
+    // Check if there are forces to calculate
+    if (handler->size()==0 || forcePtr==nullptr) return; 
+    // Execute the interaction
+    handler->executeKernel(forcePtr, parameters, &virial);
+  }
 
-    //RealType param_pack[] = { strength, cutoff };
-    verletList->forceKernel(forcePtr, parameters, &virial);
+  void Force::executeKernel(Kernel kernel, RealType *param_pack, RealType *data_pack) const {
+    if (handler) handler->executeKernel(kernel, param_pack, data_pack);
   }
 
   bool Force::initCalculation() const {
     // Reset the virial
     virial = 0;
     // Return whether we should calculate forces
-    return verletList->vlSize()>0;
+    return handler->size()>0;
   }
 
-  int Force::vlSize() const {
-    return verletList->vlSize();
+  int Force::size() const {
+    return handler->size();
   }
 
-  const VerletList& Force::getVerletList() const {
-    return *verletList;
+  const InteractionHandler* Force::getInteractionHandler() const {
+    return handler;
   }
 
   int Force::getVirial() const {
     return virial;
   }
 
-  void Force::clearVerletList() {
-    verletList->clear();
+  void Force::clear() {
+    handler->clear();
   }
 
-  void Force::addVerletPair(int id1, int id2) {
+  void Force::addPair(int id1, int id2) {
     // Add the head if it is new
-    verletList->addPair(id1, id2);
+    handler->addPair(id1, id2);
   }
 
 }

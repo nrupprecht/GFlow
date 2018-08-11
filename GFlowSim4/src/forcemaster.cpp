@@ -17,7 +17,7 @@ namespace GFlowSimulation {
   }
 
   void ForceMaster::clearVerletLists() {
-    for (auto f : forces) f->clearVerletList();
+    for (auto f : forces) f->clear();
   }
 
   int ForceMaster::getNTypes() const {

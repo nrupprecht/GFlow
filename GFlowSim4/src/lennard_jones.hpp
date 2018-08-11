@@ -19,9 +19,6 @@ namespace GFlowSimulation {
     //! @brief Constructor
     LennardJones(GFlow *);
 
-    //! @brief Calculate all the forces between atoms in the verlet lists.
-    // virtual void calculateForces() const final;
-
     //! @brief Set the lennard jones interaction strength. Must be non-negative.
     void setStrength(RealType);
 

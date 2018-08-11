@@ -18,9 +18,6 @@ namespace GFlowSimulation {
     //! Constructor
     HardSphere(GFlow *);
 
-    //! Calculate all the forces between atoms in the verlet lists.
-    //virtual void calculateForces() const final;
-
     //! Set the repulsion parameter.
     void setRepulsion(RealType r);
 

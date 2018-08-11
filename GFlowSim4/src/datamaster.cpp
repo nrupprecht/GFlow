@@ -280,7 +280,7 @@ namespace GFlowSimulation {
     fout << "Verlet lists:\n";
     int c=0;
     for (auto &f : gflow->getForces()) {
-      fout << "     Force " << c << ":                 " << f->vlSize()/2 << " pairs\n";
+      fout << "     Force " << c << ":                 " << f->size()/2 << " pairs\n";
       ++c;
     }
     

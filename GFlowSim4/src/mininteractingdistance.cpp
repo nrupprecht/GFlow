@@ -11,38 +11,16 @@ namespace GFlowSimulation {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
     
-    RealType minDistance = 10.; // Random "large" number
+    RealType data_pack[] = { 10. }; // Random "large" number
     // Check each verlet list
     for (const auto f : gflow->getForces()) {
-      const VerletList &verletList = f->getVerletList();
-      int vsize = verletList.vlSize();
-      if (vsize==0) continue; // No forces to calculate
-      int id1, id2; // Head pointers, id pointers
-
-      // Get the data we need
-      RealType **x = Base::simData->x;
-      RealType displacement[DIMENSIONS]; // To calculate displacement, normal vector
-      Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
-      BCFlag boundaryConditions[DIMENSIONS]; 
-      copyVec(Base::gflow->getBCs(), boundaryConditions); // Keep a local copy of the wrap frags
-
-      // Get verlet list data
-      const int *verlet = verletList.getVerlet();
-      // --- Go through all particles
-      for (int i=0; i<vsize; i+=2) {
-        id1 = verlet[i]; // First particle head might interact with is the one after the head
-        id2 = verlet[i+1];
-        // Get the displacement between the particles
-        getDisplacement(x[id1], x[id2], displacement, bounds, boundaryConditions);
-        // Check if the particles should interact
-        RealType dist = magnitudeVec(displacement);
-        if (dist < minDistance) minDistance = dist;
-      }
+      // Pass in a null pointer for the param_pack, since we don't have any parameters
+      f->executeKernel(&minimumDistanceKernel, nullptr, data_pack);
     }
 
     // Store data
     RealType time = Base::gflow->getElapsedTime();
-    data.push_back(RPair(time, minDistance));
+    data.push_back(RPair(time, data_pack[0]));
   }
 
   bool MinInteractingDistance::writeToFile(string fileName, bool useName) {
@@ -64,6 +42,19 @@ namespace GFlowSimulation {
 
     // Return success
     return true;
+  }
+
+  //! @param id1
+  //! @param id2
+  //! @param data_pack A data pack of the form { minDistance }, to be updated with fabs(id1 - id2), ++count
+  void MinInteractingDistance::minimumDistanceKernel(RealType*, const RealType, const int id1, const int id2, 
+    const SimData *simData, const RealType*, RealType *data_pack) 
+  {
+    RealType displacement[DIMENSIONS];
+    getDisplacement(simData->x[id1], simData->x[id2], displacement, simData->getBounds(), simData->getBCs());
+    // Check if distance is smaller
+    RealType dist = magnitudeVec(displacement);
+    if (dist < data_pack[0]) data_pack[0] = dist;
   }
 
 }

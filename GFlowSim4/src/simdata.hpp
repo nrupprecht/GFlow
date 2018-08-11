@@ -120,6 +120,18 @@ namespace GFlowSimulation {
     int*      DataI(int n)    { return dataI[n]; }
     int&      Body(int n)     { return body[n]; }
 
+    //! @brief Get the boundary conditions.
+    //!
+    //! These are actually stored in the gflow object, so we pass them on from gflow.
+    const BCFlag* getBCs() const;
+
+    //! @brief Get the simulation bounds
+    //!
+    //! These are actually stored in the gflow object, so we pass them on from gflow.
+    Bounds getBounds() const;
+
+    //! @brief Get the 
+
     //! @brief Add an owned particle to the simdata.
     //!
     //! Add a particle to the simdata. This is the public version of the function, so we can only add owned particles. 

@@ -16,6 +16,9 @@ namespace GFlowSimulation {
 
   private:
     vector<RPair> data;
+
+    //! A function we can use to compute the memory distance
+    static void minimumDistanceKernel(RealType*, const RealType, const int, const int, const class SimData*, const RealType*, RealType*);
   };
 
 }

@@ -11,12 +11,16 @@ namespace GFlowSimulation {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
     
-    // We will look at the L1 distance between particles that potentially interact
-    RealType dist = getAverageDistance();
+    // We will look at the L1 distance between particles that potentially interact by
+    // passing in an interaction kernel that only computes data
+    RealType data_pack[] = { 0., 0. };
+    for (auto f : *Base::forcesPtr) {
+      f->executeKernel(&memoryDistanceKernel, nullptr, data_pack);
+    }
     // Store data
     RealType time = Base::gflow->getElapsedTime();
     // Store the average L1 distance between (potentially) interacting particles
-    data.push_back(RPair(time, dist));
+    data.push_back(RPair(time, data_pack[1]>0 ? data_pack[0]/data_pack[1] : 0));
   }
 
   bool MemoryDistance::writeToFile(string fileName, bool) {
@@ -40,21 +44,25 @@ namespace GFlowSimulation {
   }
 
   RealType MemoryDistance::getAverageDistance() {
-    // We will look at the L1 distance between particles that potentially interact
-    int dist = 0;
-    int count = 0; // How many interaction checks there are
-    // Go through forces
+    // We will look at the L1 distance between particles that potentially interact by
+    // passing in an interaction kernel that only computes data
+    RealType data_pack[] = { 0., 0. };
     for (auto f : *Base::forcesPtr) {
-      auto vl = f->getVerletList();
-      const int *verlet = vl.getVerlet();
-      int nverlet = vl.vlSize();
-      for (int i=0; i<nverlet; i+=2) {
-        dist += abs(verlet[i] - verlet[i+1]);
-        ++count;
-      }
+      f->executeKernel(&memoryDistanceKernel, nullptr, data_pack);
     }
     // Return the average distance
-    return (count>0 ? static_cast<RealType>(dist)/count : 0);
+    return (data_pack[0]>0 ? static_cast<RealType>(data_pack[0])/data_pack[1] : 0);
+  }
+
+  //! @param id1
+  //! @param id2
+  //! @param data_pack A data pack of the form { totaldistance , count}, to be updated with fabs(id1 - id2), ++count
+  void MemoryDistance::memoryDistanceKernel(RealType*, const RealType, const int id1, const int id2, const SimData*, 
+    const RealType*, RealType *data_pack) 
+  {
+    // Update distance and counts
+    data_pack[0] += abs(id1-id2);
+    data_pack[1] += 1;
   }
 
 }

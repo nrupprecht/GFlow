@@ -14,44 +14,6 @@ namespace GFlowSimulation {
     forcePtr = force;
   };
 
-  /*
-  void LennardJones::calculateForces() const {
-    // Check if there are forces to calculate. Virial is reset.
-    if (!Force::initCalculation()) return; 
-
-    //RealType param_pack[] = { strength, cutoff };
-    //verletList->forceKernel(&force, parameters, &virial);
-
-    // Get the data we need
-    int nverlet = verletList->vlSize(), id1, id2; // List length, id pointers
-    RealType **x = Base::simData->x, **f = Base::simData->f;
-    RealType *sg = Base::simData->sg;
-    RealType displacement[DIMENSIONS], normal[DIMENSIONS]; // To calculate displacement, normal vector
-    Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
-    BCFlag boundaryConditions[DIMENSIONS]; 
-    copyVec(Base::gflow->getBCs(), boundaryConditions); // Keep a local copy of the wrap frags
-
-    // Get verlet list data
-    const int *verlet = verletList->getVerlet();
-
-    // --- Go through all particles
-    for (int i=0; i<nverlet; i+=2) {
-      id1 = verlet[i];
-      id2 = verlet[i+1];
-      // Get the displacement between the particles
-      getDisplacement(x[id1], x[id2], displacement, bounds, boundaryConditions);
-      // Check if the particles should interact
-      RealType dsqr = sqr(displacement);
-      if (dsqr < sqr(sg[id1] + sg[id2])) {
-        RealType distance = sqrt(dsqr);
-        scalarMultVec(1./distance, displacement, normal);
-        // Calculate force strength
-        forceStrength(normal, distance, id1, id2);
-      }
-    }
-  }
-  */
-
   void LennardJones::setStrength(RealType s) {
     if (s>=0) parameters[0] = s;
   }
@@ -86,32 +48,9 @@ namespace GFlowSimulation {
     data_pack[0] += magnitude;
     // Make vectorial
     scalarMultVec(magnitude, normal);
+    // Add the force to the buffers
+    plusEqVec (simData->f[id1], normal);
+    minusEqVec(simData->f[id2], normal);
   }
-
-  //! \param[in] normal The normal of the displacement between the particles. Points from id2 to id1 (?). It is safe
-  //! to change this parameter.
-  //! \param[in] distance The distance between the particles.
-  //! \param[in] id1 The id of the first particle.
-  //! \param[in] id2 The id of the second particle.
-  inline void LennardJones::forceStrength(RealType *normal, const RealType distance, const int id1, const int id2) const {
-    // This should make sure that forces are zero if either object is of type -1. This does not seem to add much (any?) overhead
-    RealType c1 = (simData->type[id1]<0 || simData->type[id2]<0) ? 0 : 24.; //--
-
-    // Calculate the magnitude
-    RealType gamma = (Base::simData->sg[id1]+Base::simData->sg[id2]) / (distance*parameters[1]);
-    RealType g3 = gamma*gamma*gamma, g6 = sqr(g3), g12 = sqr(g6);
-    // Debugging assertion
-    #if DEBUG==1
-    assert(distance>0)
-    #endif
-    // The c1 factor makes sure the magnitude is zero if either particles are of type -1
-    RealType magnitude = c1*parameters[0]*(2.*g12 - g6)*(1./distance); 
-    Force::virial += magnitude;
-    // Make vectorial
-    scalarMultVec(magnitude, normal);
-    // Add forces
-    plusEqVec (Base::simData->f[id1], normal);
-    minusEqVec(Base::simData->f[id2], normal);
-  }
-
+  
 }
