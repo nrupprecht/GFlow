@@ -1,22 +1,14 @@
 #ifndef __GENERIC_FORCE_HPP__GFLOW__
 #define __GENERIC_FORCE_HPP__GFLOW__
 
-#include "force.hpp"
+#include "interaction.hpp"
 
 namespace GFlowSimulation {
 
-  template<int NTerms> class GenericForce : public Force {
-     // Constructor
+  //! @todo Implement this
+  template<int NTerms> class GenericForce : public Interaction {
+    // Constructor
     GenericForce(GFlow *);
-
-    //! Calculate all the forces between atoms in the verlet lists
-    virtual void calculateForces() const final;
-
-  private:
-    // Calculate force strength
-    inline void forceStrength(RealType*, const RealType*, const RealType, const int, const int) const;
-
-    RealType coefficients[NTerms];
   };
 
 }

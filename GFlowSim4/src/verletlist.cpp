@@ -1,7 +1,4 @@
 #include "verletlist.hpp"
-// Other Files
-#include "simData.hpp"
-#include "force.hpp"
 
 namespace GFlowSimulation {
 
@@ -61,10 +58,13 @@ namespace GFlowSimulation {
     for (int i=0; i<vsize; i+=2) {
       id1 = verlet[i];
       id2 = verlet[i+1];
+      // Type mask
+      RealType c1 = (simData->type[id1]<0 || simData->type[id2]<0) ? 0. : 1.;
       // Get the displacement between the particles
       getDisplacement(x[id1], x[id2], displacement, bounds, boundaryConditions);
+      // Mast the distance squared with the "particles are real" type mask, c1
+      RealType dsqr = c1*sqr(displacement);
       // Check if the particles should interact
-      RealType dsqr = sqr(displacement);
       if (dsqr < sqr(sg[id1] + sg[id2])) {
         RealType distance = sqrt(dsqr);
         scalarMultVec(1./distance, displacement, normal);

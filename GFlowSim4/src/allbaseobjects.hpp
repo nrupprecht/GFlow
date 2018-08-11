@@ -4,8 +4,8 @@
 #include "simdata.hpp"
 // Base class for integrators
 #include "integrator.hpp"
-// Base class for forces
-#include "force.hpp"
+// Base class for interactions/forces
+#include "interaction.hpp"
 // Specific domains
 #include "sectorization.hpp"
 #include "domain.hpp"

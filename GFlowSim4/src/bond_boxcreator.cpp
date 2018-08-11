@@ -107,7 +107,7 @@ namespace GFlowSimulation {
 
     // --- Handle forces
     gflow->forceMaster->setNTypes(1); // Only one type of particle
-    Force *force;
+    Interaction *force;
     if(lj_flag) {
       force = new LennardJones(gflow);
       dynamic_cast<LennardJones*>(force)->setStrength(

@@ -1,7 +1,7 @@
 #include "memorydistance.hpp"
 // Other files
-#include "force.hpp"
-#include "verletlist.hpp"
+#include "interaction.hpp"
+#include "interactionhandler.hpp"
 
 namespace GFlowSimulation {
 
@@ -11,16 +11,12 @@ namespace GFlowSimulation {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
     
-    // We will look at the L1 distance between particles that potentially interact by
-    // passing in an interaction kernel that only computes data
-    RealType data_pack[] = { 0., 0. };
-    for (auto f : *Base::forcesPtr) {
-      f->executeKernel(&memoryDistanceKernel, nullptr, data_pack);
-    }
-    // Store data
+    // Get the average distance
+    RealType average = getAverageDistance();
+    // Get the current time
     RealType time = Base::gflow->getElapsedTime();
     // Store the average L1 distance between (potentially) interacting particles
-    data.push_back(RPair(time, data_pack[1]>0 ? data_pack[0]/data_pack[1] : 0));
+    data.push_back(RPair(time, average));
   }
 
   bool MemoryDistance::writeToFile(string fileName, bool) {
@@ -47,8 +43,8 @@ namespace GFlowSimulation {
     // We will look at the L1 distance between particles that potentially interact by
     // passing in an interaction kernel that only computes data
     RealType data_pack[] = { 0., 0. };
-    for (auto f : *Base::forcesPtr) {
-      f->executeKernel(&memoryDistanceKernel, nullptr, data_pack);
+    for (auto it : *Base::interactionsPtr) {
+      it->executeKernel(&memoryDistanceKernel, nullptr, data_pack);
     }
     // Return the average distance
     return (data_pack[0]>0 ? static_cast<RealType>(data_pack[0])/data_pack[1] : 0);

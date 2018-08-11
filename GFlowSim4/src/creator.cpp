@@ -36,8 +36,8 @@ namespace GFlowSimulation {
     int ntypes = gflow->getNTypes();
     HardSphere hsForce(gflow);
     ForceMaster *master = gflow->forceMaster; // Save old master
-    vector<Force*> forces = gflow->forces; // Save old forces
-    gflow->forces.clear(); // Clear old forces
+    vector<Interaction*> interactions = gflow->interactions; // Save old forces
+    gflow->interactions.clear(); // Clear old forces
     // New force master - for hard sphere forces only.
     ForceMaster forceMaster(gflow, ntypes);
     gflow->forceMaster = &forceMaster; // Give it to gflow
@@ -62,7 +62,7 @@ namespace GFlowSimulation {
 
     // Reset forces
     gflow->forceMaster = master;
-    gflow->forces = forces;
+    gflow->interactions = interactions;
     gflow->simData->clearF();
   }
 

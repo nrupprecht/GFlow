@@ -1,7 +1,7 @@
 #ifndef __HARD_SPHERE__GFLOW__
 #define __HARD_SPHERE__GFLOW__
 
-#include "force.hpp"
+#include "interaction.hpp"
 
 namespace GFlowSimulation {
 
@@ -13,7 +13,7 @@ namespace GFlowSimulation {
   *  In other words, all hard spheres have the same constant of repulsion.
   *
   */
-  class HardSphere : public Force {
+  class HardSphere : public Interaction {
   public:
     //! Constructor
     HardSphere(GFlow *);

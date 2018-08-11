@@ -99,7 +99,7 @@ namespace GFlowSimulation {
 
     // --- Handle forces
     gflow->forceMaster->setNTypes(1); // Only one type of particle
-    Force *force;
+    Interaction *force;
     if(lj_flag) {
       auto *LJ = new LennardJones(gflow);
       LJ->setStrength(repulsion*DEFAULT_LENNARD_JONES_STRENGTH);

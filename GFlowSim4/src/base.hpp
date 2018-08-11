@@ -42,7 +42,7 @@ namespace GFlowSimulation {
     class ForceMaster  *forceMaster; 
     // References to vectors
     vector<class Modifier*> *modifiersPtr;
-    vector<class Force*>    *forcesPtr;
+    vector<class Interaction*> *interactionsPtr;
   };
 
 }

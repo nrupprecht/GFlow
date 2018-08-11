@@ -4,7 +4,7 @@
 #include "vectormath.hpp"
 #include "simdata.hpp"
 #include "forcemaster.hpp"
-#include "force.hpp"
+#include "interaction.hpp"
 
 namespace GFlowSimulation {
 
@@ -24,7 +24,7 @@ namespace GFlowSimulation {
 
   void DomainBase::pre_forces() {
     // If there are no forces, there is no need to check sectors
-    if (Base::gflow->getNumForces()==0) return;
+    if (Base::gflow->getNumInteractions()==0) return;
 
     // Get the current simulation time
     RealType current_time = Base::gflow->getElapsedTime();
@@ -146,10 +146,10 @@ namespace GFlowSimulation {
       return; // The particles are in the same body
 
     // Check with force master
-    Force *force = Base::forceMaster->getForce(Base::simData->type[id1], Base::simData->type[id2]);
+    Interaction *force = Base::forceMaster->getForce(Base::simData->type[id1], Base::simData->type[id2]);
 
     // A null force means no interaction
-    if (force) force->addPair(id1, id2);
+    if (force && force->needsConstruction()) force->addPair(id1, id2);
   }
 
   RealType DomainBase::maxMotion() {

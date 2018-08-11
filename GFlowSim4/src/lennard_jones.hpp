@@ -1,7 +1,7 @@
 #ifndef __LENNARD_JONES__GFLOW__
 #define __LENNARD_JONES__GFLOW__
 
-#include "force.hpp"
+#include "interaction.hpp"
 
 namespace GFlowSimulation {
 
@@ -14,7 +14,7 @@ namespace GFlowSimulation {
   *  "epsilon" parameter in LJ.
   *
   */
-  class LennardJones : public Force {
+  class LennardJones : public Interaction {
   public:
     //! @brief Constructor
     LennardJones(GFlow *);

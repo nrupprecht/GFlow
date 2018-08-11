@@ -100,7 +100,7 @@ namespace GFlowSimulation {
     // --- Handle forces
 
     gflow->forceMaster->setNTypes(ntypes);
-    Force *force;
+    Interaction *force;
     if (lj_flag) force = new LennardJones(gflow);
     else {
       force = new HardSphere(gflow);

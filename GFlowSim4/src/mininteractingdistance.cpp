@@ -1,6 +1,6 @@
 #include "mininteractingdistance.hpp"
 // Other files
-#include "force.hpp"
+#include "interaction.hpp"
 #include "verletlist.hpp"
 
 namespace GFlowSimulation {
@@ -13,9 +13,9 @@ namespace GFlowSimulation {
     
     RealType data_pack[] = { 10. }; // Random "large" number
     // Check each verlet list
-    for (const auto f : gflow->getForces()) {
+    for (const auto it : gflow->getInteractions()) {
       // Pass in a null pointer for the param_pack, since we don't have any parameters
-      f->executeKernel(&minimumDistanceKernel, nullptr, data_pack);
+      it->executeKernel(&minimumDistanceKernel, nullptr, data_pack);
     }
 
     // Store data

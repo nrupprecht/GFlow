@@ -3,7 +3,6 @@
 #include "vectormath.hpp"
 #include "verletlist.hpp"
 #include "forcemaster.hpp"
-#include "force.hpp"
 
 #include "printingutility.hpp" // For debugging
 #include "vectormath.hpp"

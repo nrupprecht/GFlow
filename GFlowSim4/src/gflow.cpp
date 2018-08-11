@@ -29,8 +29,8 @@ namespace GFlowSimulation {
     if (dataMaster)   delete dataMaster;
     for (auto &md : modifiers) 
       if (md) delete md;
-    for (auto &fr : forces)
-      if (fr) delete fr;
+    for (auto &it : interactions)
+      if (it) delete it;
   }
 
   bool GFlow::initialize() {
@@ -63,8 +63,8 @@ namespace GFlowSimulation {
       if (md) md->initialize();
       else non_null = false; 
     }
-    for (auto &fr: forces) {
-      if (fr) fr->initialize();
+    for (auto &it: interactions) {
+      if (it) it->initialize();
       else non_null = false;
     }
     // Return whether pointers were non-null
@@ -85,7 +85,7 @@ namespace GFlowSimulation {
     base->forceMaster  = forceMaster;
     // Set vectors
     base->modifiersPtr = &modifiers;
-    base->forcesPtr    = &forces;
+    base->interactionsPtr = &interactions;
   }
 
   void GFlow::run(RealType rt) {
@@ -160,7 +160,7 @@ namespace GFlowSimulation {
       clearForces(); // Clear force buffers
       // Calculate current forces
       if (useForces) {
-        for (auto &f : forces) f->calculateForces();
+        for (auto &it : interactions) it->calculateForces();
       }
 
       // --> Post-forces
@@ -224,8 +224,8 @@ namespace GFlowSimulation {
     return iter;
   }
 
-  int GFlow::getNumForces() const { 
-    return forces.size(); 
+  int GFlow::getNumInteractions() const { 
+    return interactions.size(); 
   }
 
   int GFlow::getNumParticles() const {
@@ -254,8 +254,8 @@ namespace GFlowSimulation {
     return pair<int, char**>(argc, argv);
   }
 
-  const vector<class Force*>& GFlow::getForces() const {
-    return forces;
+  const vector<class Interaction*>& GFlow::getInteractions() const {
+    return interactions;
   }
 
   DataMaster* GFlow::getDataMaster() const {

@@ -1,6 +1,6 @@
 #include "pressuredata.hpp"
 // Other files
-#include "force.hpp"
+#include "interaction.hpp"
 
 namespace GFlowSimulation {
 
@@ -32,10 +32,10 @@ namespace GFlowSimulation {
     pressures.push_back(T); 
     // Compute pressures for each force.
     RealType Ptot = 0;
-    for (auto f : *Base::forcesPtr) {
+    for (auto it : *Base::interactionsPtr) {
       //! P = N k T/V + 1/(DIMENSIONS*V) \sum_i (r_i \dot F_i)
       // virial = \sum_i (r_i \dot F_i)
-      RealType virial = f->getVirial();
+      RealType virial = it->getVirial();
       RealType P = number*T/V + virial/(DIMENSIONS*V);
       // Subsequent entries are pressures
       pressures.push_back(P);

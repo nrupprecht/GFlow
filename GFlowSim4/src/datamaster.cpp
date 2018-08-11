@@ -2,7 +2,7 @@
 #include "simdata.hpp"
 #include "integrator.hpp"
 #include "domain.hpp"
-#include "force.hpp"
+#include "interaction.hpp"
 
 namespace GFlowSimulation {
 
@@ -279,8 +279,8 @@ namespace GFlowSimulation {
     fout << "\n";
     fout << "Verlet lists:\n";
     int c=0;
-    for (auto &f : gflow->getForces()) {
-      fout << "     Force " << c << ":                 " << f->size()/2 << " pairs\n";
+    for (auto &it : gflow->interactions) {
+      fout << "     Interaction " << c << ":                 length " << it->size()/2 << "\n";
       ++c;
     }
     

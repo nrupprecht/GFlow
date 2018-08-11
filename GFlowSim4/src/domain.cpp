@@ -5,7 +5,6 @@
 #include "vectormath.hpp"
 #include "verletlist.hpp"
 #include "forcemaster.hpp"
-#include "force.hpp"
 
 namespace GFlowSimulation {
 

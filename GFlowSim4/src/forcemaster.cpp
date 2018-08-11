@@ -1,6 +1,6 @@
 #include "forcemaster.hpp"
 // Other files
-#include "force.hpp"
+#include "interaction.hpp"
 #include "simdata.hpp"
 
 namespace GFlowSimulation {
@@ -11,7 +11,7 @@ namespace GFlowSimulation {
     setNTypes(nt);
   };
 
-  Force* ForceMaster::getForce(int type1, int type2) {
+  Interaction* ForceMaster::getForce(int type1, int type2) {
     if (ntypes<=type1 || ntypes<=type2 || type1<0 || type2<0) return nullptr;
     return forceGrid.at(type1, type2);
   }
@@ -34,11 +34,14 @@ namespace GFlowSimulation {
     forceGrid.setAll(nullptr);
   }
 
-  void ForceMaster::setForce(int type1, int type2, Force *f) {
+  void ForceMaster::setForce(int type1, int type2, Interaction *f) {
     forceGrid.at(type1, type2) = f;
     // Add to the list if it is not already there
-    if (!contains(forces, f)) forces.push_back(f);
-    if (!contains(gflow->forces, f)) gflow->forces.push_back(f);
+    if (!contains(forces, f)) 
+      forces.push_back(f);
+    // Add to gflow's list if it is not already there
+    if (!contains(gflow->interactions, f)) 
+      gflow->interactions.push_back(f);
   }
 
 }

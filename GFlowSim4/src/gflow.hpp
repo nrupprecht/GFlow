@@ -61,7 +61,7 @@ namespace GFlowSimulation {
     int getIter() const;
 
     // Get the number of forces
-    int getNumForces() const;
+    int getNumInteractions() const;
 
     // Get the number of particles
     int getNumParticles() const;
@@ -80,7 +80,7 @@ namespace GFlowSimulation {
 
     pair<int, char**> getCommand() const;
 
-    const vector<class Force*>& getForces() const;
+    const vector<class Interaction*>& getInteractions() const;
 
     class DataMaster* getDataMaster() const;
 
@@ -169,7 +169,7 @@ namespace GFlowSimulation {
 
     //! All the forces that can happen - which ones correspond to which pairs of particles is controlled by
     // the ForceMaster object.
-    vector<class Force*> forces;
+    vector<class Interaction*> interactions;
 
     //! If true, the simulation should continue to run.
     bool running;

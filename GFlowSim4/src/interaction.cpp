@@ -1,17 +1,17 @@
-#include "force.hpp"
+#include "interaction.hpp"
 // Other files
 #include "verletlist.hpp"
 
 namespace GFlowSimulation {
 
-  Force::Force(GFlow *gflow) : Base(gflow), virial(0), handler(new VerletList(gflow)), parameters(nullptr), forcePtr(nullptr) {};
+  Interaction::Interaction(GFlow *gflow) : Base(gflow), virial(0), handler(new VerletList(gflow)), parameters(nullptr), forcePtr(nullptr) {};
 
-  Force::~Force() {
+  Interaction::~Interaction() {
     if (handler)    delete handler;
     if (parameters) delete parameters;
   }
 
-  void Force::calculateForces() const {
+  void Interaction::calculateForces() const {
     // Reset virial
     virial = 0;
     // Check if there are forces to calculate
@@ -20,34 +20,38 @@ namespace GFlowSimulation {
     handler->executeKernel(forcePtr, parameters, &virial);
   }
 
-  void Force::executeKernel(Kernel kernel, RealType *param_pack, RealType *data_pack) const {
+  void Interaction::executeKernel(Kernel kernel, RealType *param_pack, RealType *data_pack) const {
     if (handler) handler->executeKernel(kernel, param_pack, data_pack);
   }
 
-  bool Force::initCalculation() const {
+  bool Interaction::initCalculation() const {
     // Reset the virial
     virial = 0;
     // Return whether we should calculate forces
     return handler->size()>0;
   }
 
-  int Force::size() const {
+  int Interaction::size() const {
     return handler->size();
   }
 
-  const InteractionHandler* Force::getInteractionHandler() const {
+  const InteractionHandler* Interaction::getInteractionHandler() const {
     return handler;
   }
 
-  int Force::getVirial() const {
+  int Interaction::getVirial() const {
     return virial;
   }
 
-  void Force::clear() {
+  bool Interaction::needsConstruction() const {
+    return true;
+  }
+
+  void Interaction::clear() {
     handler->clear();
   }
 
-  void Force::addPair(int id1, int id2) {
+  void Interaction::addPair(int id1, int id2) {
     // Add the head if it is new
     handler->addPair(id1, id2);
   }
