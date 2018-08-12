@@ -12,14 +12,15 @@ namespace GFlowSimulation {
   *  with a constant of proportionality [repulsion] which is a parameter of this class.
   *  In other words, all hard spheres have the same constant of repulsion.
   *
+  *  The repulsion of the hard spheres is stored as parameters[0]. The repulsion is assumed to be the same for all hard spheres.
   */
   class HardSphere : public Interaction {
   public:
-    //! Constructor
+    //! @brief Constructor
     HardSphere(GFlow *);
 
-    //! Set the repulsion parameter.
-    void setRepulsion(RealType r);
+    //! @brief Set the repulsion parameter.
+    void setRepulsion(RealType);
 
     //! @param[in] normal
     //! @param[in] distance
@@ -30,12 +31,6 @@ namespace GFlowSimulation {
     //! constants of the force, and extra data the force needs.
     //! @param[in,out] data_pack Data to be updated by the function.
     static void force(RealType*, const RealType, const int, const int, const SimData*, const RealType*, RealType*);
-
-  private:
-    //! Calculate force strength
-    inline void forceStrength(RealType*, const RealType, const int, const int) const;
-
-    //! The repulsion of the hard spheres is stored as parameters[0]. The repulsion is assumed to be the same for all hard spheres.
   };
 
 }

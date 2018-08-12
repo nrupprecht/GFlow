@@ -110,7 +110,7 @@ namespace GFlowSimulation {
       HS->setRepulsion(repulsion*DEFAULT_HARD_SPHERE_REPULSION);
       force = HS;
     }
-    gflow->forceMaster->setForce(0, 0, force);
+    gflow->forceMaster->setInteraction(0, 0, force);
 
     // --- Set some parameters
     if (skinDepth>0) gflow->domain->setSkinDepth(skinDepth);

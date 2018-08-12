@@ -132,7 +132,7 @@ namespace GFlowSimulation {
         if (aveDist > 1.5*target_memory_distance)
           MemoryOptimizer::GridParticles(*simData, bounds);
         // The verlet lists will have to be remade
-        domain->remake_verlet();
+        domain->construct();
       }
 
       // --> Pre-exchange
@@ -160,7 +160,7 @@ namespace GFlowSimulation {
       clearForces(); // Clear force buffers
       // Calculate current forces
       if (useForces) {
-        for (auto &it : interactions) it->calculateForces();
+        for (auto &it : interactions) it->interact();
       }
 
       // --> Post-forces

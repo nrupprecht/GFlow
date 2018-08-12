@@ -26,9 +26,9 @@ namespace GFlowSimulation {
     makeSectors();
   }
 
-  void Sectorization::remake_verlet() {
+  void Sectorization::construct() {
     // Setup and common tasks
-    DomainBase::remake_verlet();
+    DomainBase::construct();
 
     // Get data from simdata and sectors array
     RealType **x = Base::simData->x;
@@ -36,9 +36,6 @@ namespace GFlowSimulation {
 
     // Clear particles from sectors
     for (int i=0; i<total; ++i) sectors[i].clear();
-
-    // No need to resectorize
-    if (number<1) return;
 
     // --- Place particles in their sectors
     // An index for placing particles in the sectors
@@ -115,7 +112,7 @@ namespace GFlowSimulation {
     create_cells();
 
     // Sectorize and create verlet lists
-    remake_verlet();
+    construct();
   }
 
   inline void Sectorization::create_cells() {

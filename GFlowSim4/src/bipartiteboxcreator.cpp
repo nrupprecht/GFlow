@@ -109,7 +109,7 @@ namespace GFlowSimulation {
     for (int t1=0; t1<ntypes; ++t1) 
       for (int t2 = 0; t2<ntypes; ++t2) 
         if (t1!=t2)
-          gflow->forceMaster->setForce(t1, t2, force);
+          gflow->forceMaster->setInteraction(t1, t2, force);
 
     // Set skin depth
     if (skinDepth>0) gflow->domain->setSkinDepth(skinDepth);

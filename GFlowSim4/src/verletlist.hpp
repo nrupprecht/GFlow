@@ -10,14 +10,8 @@ namespace GFlowSimulation {
     //! @brief Constructor.
     VerletList(GFlow*);
 
-    //! @brief Copy Constructor.
-    VerletList(const VerletList&);
-
     //! @brief Destructor.
     ~VerletList();
-
-    //! @brief Equals operator.
-    VerletList& operator=(const VerletList&);
 
     // --- Inherited members
 
@@ -37,11 +31,6 @@ namespace GFlowSimulation {
     //! @param param_pack Parameters used to evaluate the force.
     //! @param data_pack Data to be updated by the function.
     virtual void executeKernel(Kernel, const RealType*, RealType*) const;
-
-    // --- Accessors
-
-    //! @brief Get a (const) pointer to the verlet array.
-    const int* getVerlet() const;
 
   private:
 

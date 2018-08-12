@@ -57,7 +57,7 @@ namespace GFlowSimulation {
     // --- Helper functions
 
     //! @brief Remake the verlet lists
-    virtual void remake_verlet();
+    virtual void construct();
 
     //! @brief Create sectors
     inline void makeSectors();

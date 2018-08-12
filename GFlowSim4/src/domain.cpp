@@ -59,7 +59,7 @@ namespace GFlowSimulation {
     }
 
     // Make verlet lists
-    remake_verlet();
+    construct();
   }
 
   void Domain::pre_integrate() {
@@ -172,9 +172,9 @@ namespace GFlowSimulation {
     domain_bounds = bounds; // For now ...
   }
 
-  void Domain::remake_verlet() {
+  void Domain::construct() {
     // Setup and common tasks
-    DomainBase::remake_verlet();
+    DomainBase::construct();
 
     // Fill the linked cells
     fill_cells();

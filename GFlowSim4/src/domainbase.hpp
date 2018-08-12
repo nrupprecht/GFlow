@@ -95,14 +95,19 @@ namespace GFlowSimulation {
     //! @brief Set the sample size variable.
     void setSampleSize(int);
 
-    //! @brief Remake the verlet lists.
+    //! @brief Remakes interactionhandlers (if neccessary).
     //!
-    //! This function should be overridden by each child to remake the verlet lists as they
-    //! see fit. It should, however, be called first in each child function (VerletList::remake_verlet()).
-    //! This function (1) Increments the number_of_remakes counter, (2) Sets the lastUpdate timer,
-    //! (3) Calls the ForceMaster clearVerletList() function, (4) Calls fillXVL() to record the 
-    //! positions of the particles, and (5) Wrap particle positions to their cannonical form.
-    virtual void remake_verlet();
+    //! This function should be overridden by each child to remake the interaction handlers of the forces as they
+    //! see fit. It should, however, be called first in each child function (DomainBase::construct()). This function
+    //! will only be called if the handlers need to be constructed.
+    //!
+    //! This function:
+    //! (1) Wraps particle positions to their cannonical form.
+    //! (2) Sets the lastUpdate timer
+    //! (3) Increments the number_of_remakes counter
+    //! (5) Calls the ForceMaster clear() function
+    //! (6) Calls fillXVL() to record the positions of the particles
+    virtual void construct();
 
     // GFlow is a friend class
     friend class GFlow;

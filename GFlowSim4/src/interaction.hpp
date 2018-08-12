@@ -24,7 +24,7 @@ namespace GFlowSimulation {
     ~Interaction();
 
     //! @brief Calculate all the forces between atoms in the verlet lists
-    virtual void calculateForces() const;
+    virtual void interact() const;
 
     //! @brief Run an externally given kernel through this interaction's interaction handler
     virtual void executeKernel(Kernel, RealType*, RealType*) const;
@@ -47,7 +47,7 @@ namespace GFlowSimulation {
 
     //! @brief Return whether this interaction needs to be constructed from the outside. 
     //!
-    //! In other words, does "add pair" do anything. This is true by default.
+    //! In other words, does "add pair" do anything. It is actually determined by the interaction handler.
     virtual bool needsConstruction() const;
 
     // --- Mutators
@@ -67,7 +67,7 @@ namespace GFlowSimulation {
     InteractionHandler *handler;
 
     //! @brief A pointer to the force function
-    Kernel forcePtr;
+    Kernel kernelPtr;
 
     //! @brief An array of force parameters. The length of this array will vary by force.
     RealType *parameters;

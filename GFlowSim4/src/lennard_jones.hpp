@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
 
-  /*
+  /**
   *  \brief LennardJones where all particles have the same force strength.
   *
   *  Lennard Jones force. The particle sigma will represent the force cutoff,
@@ -13,6 +13,7 @@ namespace GFlowSimulation {
   *  We use cutoff=2.5 by default, but it can be changed. Strength is the
   *  "epsilon" parameter in LJ.
   *
+  *  The parameters for LJ are the LJ strength (parameters[0]), and the cuttoff (parameters[1]).
   */
   class LennardJones : public Interaction {
   public:
@@ -31,15 +32,9 @@ namespace GFlowSimulation {
     //! @param[in] id2
     //! @param[in] simData
     //! @param[in] param_pack A parameter pack, passed in from force. Contains characteristic 
-    //! constants of the force, and extra data the force needs.
-    //! @param[in,out] data_pack Data to be updated by the function.
+    //! constants of the force, and extra data the force needs. Should be of the form { strength, cutoff } (length 2).
+    //! @param[in,out] data_pack Data to be updated by the function. Should be of the form  { virial } (length 1). 
     static void force(RealType*, const RealType, const int, const int, const SimData*, const RealType*, RealType*);
-
-  private:
-    //! @brief Calculate force strength
-    void forceStrength(RealType*, const RealType, const int, const int) const;
-
-    // The parameters for LJ are the LJ strength (parameters[0]), and the cuttoff (parameters[1]).
   };
 
 }

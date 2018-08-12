@@ -11,17 +11,29 @@ namespace GFlowSimulation {
     setNTypes(nt);
   };
 
-  Interaction* ForceMaster::getForce(int type1, int type2) {
-    if (ntypes<=type1 || ntypes<=type2 || type1<0 || type2<0) return nullptr;
-    return forceGrid.at(type1, type2);
+  void ForceMaster::initialize() {
+    Base::initialize();
+    // Initialize needs_construction - if any force needs this, we set it to true
+    needs_construction = false;
+    for (auto it : interactions) 
+      needs_construction |= it->needsConstruction();
   }
 
-  void ForceMaster::clearVerletLists() {
-    for (auto f : forces) f->clear();
+  Interaction* ForceMaster::getInteraction(int type1, int type2) {
+    if (ntypes<=type1 || ntypes<=type2 || type1<0 || type2<0) return nullptr;
+    return grid.at(type1, type2);
+  }
+
+  void ForceMaster::clear() {
+    for (auto it : interactions) it->clear();
   }
 
   int ForceMaster::getNTypes() const {
     return ntypes;
+  }
+
+  bool ForceMaster::needsConstruction() const {
+    return needs_construction;
   }
 
   void ForceMaster::setNTypes(int n) {
@@ -30,18 +42,18 @@ namespace GFlowSimulation {
     // Set ntypes for the simdata
     Base::simData->ntypes = n;
     // Resize and erase array
-    forceGrid.resize(n, n);
-    forceGrid.setAll(nullptr);
+    grid.resize(n, n);
+    grid.setAll(nullptr);
   }
 
-  void ForceMaster::setForce(int type1, int type2, Interaction *f) {
-    forceGrid.at(type1, type2) = f;
+  void ForceMaster::setInteraction(int type1, int type2, Interaction *it) {
+    grid.at(type1, type2) = it;
     // Add to the list if it is not already there
-    if (!contains(forces, f)) 
-      forces.push_back(f);
+    if (!contains(interactions, it)) 
+      interactions.push_back(it);
     // Add to gflow's list if it is not already there
-    if (!contains(gflow->interactions, f)) 
-      gflow->interactions.push_back(f);
+    if (!contains(gflow->interactions, it)) 
+      gflow->interactions.push_back(it);
   }
 
 }

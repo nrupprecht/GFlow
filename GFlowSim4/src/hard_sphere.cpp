@@ -9,7 +9,7 @@ namespace GFlowSimulation {
     parameters = new RealType;
     *parameters = DEFAULT_HARD_SPHERE_REPULSION;
     // Set the force function
-    forcePtr = &force;
+    kernelPtr = &force;
   };
 
   void HardSphere::setRepulsion(RealType r) { 

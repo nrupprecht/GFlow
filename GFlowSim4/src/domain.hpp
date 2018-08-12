@@ -62,7 +62,7 @@ namespace GFlowSimulation {
     //! @brief Remake the verlet lists for all the forces.
     //!
     //! Resectorizes the particles into cells and calculates verlet lists from the cell decomposition.
-    virtual void remake_verlet();
+    virtual void construct();
 
     //! @brief Turns a linear cell index into a (DIMENSIONS)-dimensional index
     inline void linear_to_tuple(const int, int*);

@@ -3,11 +3,12 @@
 namespace GFlowSimulation {
 
   LennardJones::LennardJones(GFlow *gflow) : Interaction(gflow) {
+    // Set up parameters
     parameters = new RealType[2];
     parameters[0] = DEFAULT_LENNARD_JONES_STRENGTH;
     parameters[1] = DEFAULT_LENNARD_JONES_CUTOFF;
     // Set the force function
-    forcePtr = force;
+    kernelPtr = force;
   };
 
   void LennardJones::setStrength(RealType s) {
@@ -18,26 +19,16 @@ namespace GFlowSimulation {
     if (cut>1.) parameters[1] = cut;
   }
 
-  //! @param[in,out] normal
-  //! @param[in] distance
-  //! @param[in] id1
-  //! @param[in] id2
-  //! @param[in] simData
-  //! @param[in] param_pack A parameter pack, passed in from force. Should be of the form { strength, cutoff } (length 2).
-   //! @param[in,out] data_pack Data to update in the function. Should be of the form  { virial } (length 1). 
-  //! Add the f_i \dot r_i to this.
+  // param_pack Should be of the form { strength, cutoff } (length 2).
+  // data_pack Should be of the form  { virial } (length 1). 
   void LennardJones::force(RealType* normal, const RealType distance, const int id1, const int id2, const SimData *simData, 
     const RealType *param_pack, RealType *data_pack)
   {
-    // Calculate the magnitude
+    // Calculate the magnitude of the force
     RealType gamma = (simData->sg[id1]+simData->sg[id2]) / (distance*param_pack[1]);
     RealType g3 = gamma*gamma*gamma, g6 = sqr(g3), g12 = sqr(g6);
-    // Debugging assertion
-    #if DEBUG==1
-    assert(distance>0)
-    #endif
-    // The c1 factor makes sure the magnitude is zero if either particles are of type -1
     RealType magnitude = 24*param_pack[0]*(2.*g12 - g6)*(1./distance); 
+    // Update the virial
     data_pack[0] += magnitude;
     // Make vectorial
     scalarMultVec(magnitude, normal);

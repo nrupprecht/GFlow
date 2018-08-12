@@ -1,23 +1,26 @@
 #include "interaction.hpp"
 // Other files
-#include "verletlist.hpp"
+#include "allinteractionhandlers.hpp"
 
 namespace GFlowSimulation {
 
-  Interaction::Interaction(GFlow *gflow) : Base(gflow), virial(0), handler(new VerletList(gflow)), parameters(nullptr), forcePtr(nullptr) {};
+  Interaction::Interaction(GFlow *gflow) : Base(gflow), virial(0), parameters(nullptr), kernelPtr(nullptr) {
+    // Set the interaction handler
+    handler = new VerletListB(gflow);
+  };
 
   Interaction::~Interaction() {
     if (handler)    delete handler;
     if (parameters) delete parameters;
   }
 
-  void Interaction::calculateForces() const {
+  void Interaction::interact() const {
     // Reset virial
     virial = 0;
     // Check if there are forces to calculate
-    if (handler->size()==0 || forcePtr==nullptr) return; 
+    if (handler->size()==0 || kernelPtr==nullptr) return; 
     // Execute the interaction
-    handler->executeKernel(forcePtr, parameters, &virial);
+    handler->executeKernel(kernelPtr, parameters, &virial);
   }
 
   void Interaction::executeKernel(Kernel kernel, RealType *param_pack, RealType *data_pack) const {
@@ -44,7 +47,7 @@ namespace GFlowSimulation {
   }
 
   bool Interaction::needsConstruction() const {
-    return true;
+    return handler->needsConstruction();
   }
 
   void Interaction::clear() {

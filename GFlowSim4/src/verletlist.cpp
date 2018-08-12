@@ -4,25 +4,8 @@ namespace GFlowSimulation {
 
   VerletList::VerletList(GFlow *gflow) : InteractionHandler(gflow), verlet(nullptr), vsize(0), vcapacity(0) {};
 
-  VerletList::VerletList(const VerletList& vl) : InteractionHandler(vl.gflow), vsize(vl.vsize), vcapacity(vl.vcapacity) {
-    // Allocate and copy arrays
-    verlet = new int[vcapacity];
-    copyArray(vl.verlet, verlet, vsize); // Only the first [vsize] elements matter
-  }
-
   VerletList::~VerletList() {
     if (verlet) delete [] verlet;
-  }
-
-  VerletList& VerletList::operator=(const VerletList& vl) {
-    vsize = vl.vsize;
-    vcapacity = vl.vcapacity;
-    // Deallocate old arrays
-    if (verlet) delete [] verlet;
-    // Allocate and copy arrays
-    verlet = new int[vcapacity];
-    copyArray(vl.verlet, verlet, vsize); // Only the first [vsize] elements matter
-    return *this;
   }
 
   void VerletList::addPair(const int id1, const int id2) {
@@ -45,10 +28,11 @@ namespace GFlowSimulation {
 
   void VerletList::executeKernel(Kernel kernel, const RealType *param_pack, RealType *data_pack) const 
   {
+    // If the kernel is null, then there is no point looping through everything
+    if (kernel==nullptr) return;
     // Get the data we need
     int id1(0), id2(0); // List length, id pointers
     RealType **x = Base::simData->x, **f = Base::simData->f, *sg = Base::simData->sg;
-
     RealType displacement[DIMENSIONS], normal[DIMENSIONS]; // To calculate displacement, normal vector
     Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
     BCFlag boundaryConditions[DIMENSIONS]; 
@@ -59,24 +43,19 @@ namespace GFlowSimulation {
       id1 = verlet[i];
       id2 = verlet[i+1];
       // Type mask
-      RealType c1 = (simData->type[id1]<0 || simData->type[id2]<0) ? 0. : 1.;
+      bool mask = (simData->type[id1]>-1 || simData->type[id2]>-1);
       // Get the displacement between the particles
       getDisplacement(x[id1], x[id2], displacement, bounds, boundaryConditions);
       // Mast the distance squared with the "particles are real" type mask, c1
-      RealType dsqr = c1*sqr(displacement);
+      RealType dsqr = sqr(displacement);
       // Check if the particles should interact
-      if (dsqr < sqr(sg[id1] + sg[id2])) {
+      if (mask && dsqr < sqr(sg[id1] + sg[id2])) {
         RealType distance = sqrt(dsqr);
         scalarMultVec(1./distance, displacement, normal);
         // Calculate force strength. Normal will hold the force strength after the function is called.
         kernel(normal, distance, id1, id2, Base::simData, param_pack, data_pack);
       }
     }
-  }
-
-  // Get a (const) pointer to the verlet array
-  const int* VerletList::getVerlet() const {
-    return verlet;
   }
 
   inline void VerletList::resizeVerlet() {

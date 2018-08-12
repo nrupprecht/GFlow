@@ -42,6 +42,11 @@ namespace GFlowSimulation {
     //! through linked cells, and don't have an accurate guess of how many interactions there will be.
     virtual int size() const = 0;
 
+    //! @brief Return whether this handler needs to be constructed from the outside. 
+    //!
+    //! In other words, does "add pair" do anything. This is true by default.
+    virtual bool needsConstruction() { return true; }
+
     //! @brief Iterate through interacting particles, executing the given kernel between them.
     //!
     //! @param kernel A function that is executed on all pairs of particles within cutoff distance

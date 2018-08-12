@@ -23,16 +23,23 @@ namespace GFlowSimulation {
   }
 
   void DomainBase::pre_forces() {
-    // If there are no forces, there is no need to check sectors
-    if (Base::gflow->getNumInteractions()==0) return;
+    // If there are no particles there is no need to continue
+    if (simData->number<1) 
+      return;
 
     // Get the current simulation time
     RealType current_time = Base::gflow->getElapsedTime();
     // Check whether we should check sectors
-    if (Base::simData->getNeedsRemake() || (current_time-lastUpdate>updateDelay && check_needs_remake())) {
-      remake_verlet();
-      // SimData does not need to be remade anymore
-      Base::simData->setNeedsRemake(false);
+    if (Base::simData->getNeedsRemake() || (current_time-lastUpdate>updateDelay)) {
+      // If there are no interactions, or particles haven't moved that far, there is no need to reconstruct
+      // the interaction handlers
+      if (Base::gflow->getNumInteractions()>0 && check_needs_remake()) {
+        construct();
+        // SimData does not need to be remade anymore
+        Base::simData->setNeedsRemake(false);
+      }
+      // Make sure positions are wrapped every so often, even if we don't need remake
+      else Base::gflow->wrapPositions();
     }
   }
 
@@ -93,18 +100,20 @@ namespace GFlowSimulation {
     sample_size = s;
   }
 
-  void DomainBase::remake_verlet() {
-    // Increment counter
-    ++number_of_remakes;
+  void DomainBase::construct() {
+    // Wrap the particles, so they are in their cannonical positions for 
+    Base::gflow->wrapPositions();
     // Set timer
     lastUpdate = Base::gflow->getElapsedTime();
-    // Reset the verlet lists of all the forces
-    Base::forceMaster->clearVerletLists();
-    // Record where the particles were
-    fillXVL();
-    // Wrap the particles, so they are in their cannonical positions for 
-    // sectorization
-    Base::gflow->wrapPositions();
+    // We have to check this, since construct can be called from the outside
+    if (Base::forceMaster->needsConstruction()) {
+      // Increment counter
+      ++number_of_remakes;
+      // Reset the verlet lists of all the forces
+      Base::forceMaster->clear();
+      // Record where the particles were
+      fillXVL();
+    }
   }
 
   void DomainBase::nullXVL() {
@@ -146,10 +155,10 @@ namespace GFlowSimulation {
       return; // The particles are in the same body
 
     // Check with force master
-    Interaction *force = Base::forceMaster->getForce(Base::simData->type[id1], Base::simData->type[id2]);
+    Interaction *it = Base::forceMaster->getInteraction(Base::simData->type[id1], Base::simData->type[id2]);
 
     // A null force means no interaction
-    if (force && force->needsConstruction()) force->addPair(id1, id2);
+    if (it && it->needsConstruction()) it->addPair(id1, id2);
   }
 
   RealType DomainBase::maxMotion() {

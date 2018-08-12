@@ -64,7 +64,7 @@ namespace GFlowSimulation {
     // --- Handle forces
     gflow->forceMaster->setNTypes(1);
     Interaction *force = new LennardJones(gflow);
-    gflow->forceMaster->setForce(0, 0, force);
+    gflow->forceMaster->setInteraction(0, 0, force);
 
     // Set skin depth
     if (skinDepth>0) gflow->domain->setSkinDepth(skinDepth);

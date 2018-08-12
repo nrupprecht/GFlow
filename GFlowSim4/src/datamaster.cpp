@@ -277,10 +277,10 @@ namespace GFlowSimulation {
       fout << "  - Average iters per delay:  " << static_cast<RealType>(iterations) / Base::domain->getNumberOfRemakes() <<"\n";
     }
     fout << "\n";
-    fout << "Verlet lists:\n";
+    fout << "Interactions:\n";
     int c=0;
     for (auto &it : gflow->interactions) {
-      fout << "     Interaction " << c << ":                 length " << it->size()/2 << "\n";
+      fout << "     Interaction " << c << ":           length " << it->size()/2 << "\n";
       ++c;
     }
     
