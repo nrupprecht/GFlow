@@ -53,7 +53,7 @@ namespace GFlowSimulation {
   //! @param id1
   //! @param id2
   //! @param data_pack A data pack of the form { totaldistance , count}, to be updated with fabs(id1 - id2), ++count
-  void MemoryDistance::memoryDistanceKernel(RealType*, const RealType, const int id1, const int id2, const SimData*, 
+  void MemoryDistance::memoryDistanceKernel(RealType*, const RealType, const int id1, const int id2, SimData*, 
     const RealType*, RealType *data_pack) 
   {
     // Update distance and counts

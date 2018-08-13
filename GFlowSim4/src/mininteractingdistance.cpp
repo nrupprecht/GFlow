@@ -48,7 +48,7 @@ namespace GFlowSimulation {
   //! @param id2
   //! @param data_pack A data pack of the form { minDistance }, to be updated with fabs(id1 - id2), ++count
   void MinInteractingDistance::minimumDistanceKernel(RealType*, const RealType, const int id1, const int id2, 
-    const SimData *simData, const RealType*, RealType *data_pack) 
+    SimData *simData, const RealType*, RealType *data_pack) 
   {
     RealType displacement[DIMENSIONS];
     getDisplacement(simData->x[id1], simData->x[id2], displacement, simData->getBounds(), simData->getBCs());

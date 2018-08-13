@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
   parser.get("skin", skin);
   parser.get("gravity", gravity);
   parser.get("adjustDT", adjustDT);
-  parser.get("lj", adjustDT); // Adjust DT if lj is true
+  // parser.get("lj", adjustDT); // Adjust DT if lj is true
   parser.get("startRec", startRecTime);
   parser.get("fps", fps);
   parser.get("dt", dt);

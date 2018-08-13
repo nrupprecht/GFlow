@@ -29,7 +29,7 @@ namespace GFlowSimulation {
     //! @param[in] param_pack A parameter pack, passed in from force. Contains characteristic 
     //! constants of the force, and extra data the force needs. Of the form { strength, cutoff } (length 2).
     //! @param[in,out] data_pack Data to be updated by the function.
-    static void force(RealType*, const RealType, const int, const int, const SimData*, const RealType*, RealType*);
+    static void force(RealType*, const RealType, const int, const int, SimData*, const RealType*, RealType*);
   };
   
 }

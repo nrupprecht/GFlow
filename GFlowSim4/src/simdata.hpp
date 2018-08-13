@@ -10,21 +10,6 @@
 
 namespace GFlowSimulation {
 
-  /**
-  *  @brief Specify a particle's memory layout.
-  *
-  *  A way of encoding how the data should be laid out.
-  */
-  struct ParticleLayout {
-    ParticleLayout(string n, int t, int ndf, int ndi) : name(n), type(t), n_dataF(ndf), n_dataI(ndi) {};
-
-    // --- Data
-    string name;          // A name for the particle
-    int type;             // What type this atom is denoted by
-    int n_dataF, n_dataI; // The amount of dataF and dataI space allocated
-  };
-
-
   /** 
   *  @brief The ownership of particle - either owned, halo, or ghost.
   *
@@ -139,13 +124,19 @@ namespace GFlowSimulation {
     //! to add the particle.
     void addParticle(const RealType*, const RealType*, const RealType, const RealType, const int);
 
+    // @brief mark a particle for removal.
+    void markForRemoval(const int);
+
+    //! @brief Remove all the particles that need to be removed, consolidate data.
+    void doParticleRemoval();
+
+  private:
+
     //! @brief Remove a particle from the simdata.
     //!
     //! Mark a particle for removal. The basic thing we need to do is set type[id] = -1. We may do a number of things behind 
     //! the scenes, like store the fact that there is now a hole at id. 
     void removeParticle(const int);
-
-  private:
 
     //! @brief Add a particle to the simulation.
     //!
@@ -171,6 +162,9 @@ namespace GFlowSimulation {
     //! Each array needs to be copied in this way, so we have this private helper function to help us
     template<int width, typename T> inline void copyHelper(int, int, int, T*, T*);
 
+    //! @brief Move a particle from one address to another.
+    void moveParticle(int, int);
+
     //! @brief Clear out the halo particles
     //!
     //! Actually works by setting number_halo to zero and the types to -1. The fact that we don't reset the
@@ -191,7 +185,7 @@ namespace GFlowSimulation {
     bool needs_remake;
 
     //! @brief Record where "holes" are in the particle array
-    std::set<int> holes;
+    std::set<int> remove_list;
 
     //! @brief Maps owned particle to halo particles
     //!

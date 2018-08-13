@@ -21,7 +21,7 @@ namespace GFlowSimulation {
 
   // param_pack Should be of the form { strength, cutoff } (length 2).
   // data_pack Should be of the form  { virial } (length 1). 
-  void LennardJones::force(RealType* normal, const RealType distance, const int id1, const int id2, const SimData *simData, 
+  void LennardJones::force(RealType* normal, const RealType distance, const int id1, const int id2, SimData *simData, 
     const RealType *param_pack, RealType *data_pack)
   {
     // Calculate the magnitude of the force

@@ -24,7 +24,7 @@ namespace GFlowSimulation {
     // Get the data we need
     int id1(0), id2(0); // List length, id pointers
     RealType **x = Base::simData->x, **f = Base::simData->f, *sg = Base::simData->sg;
-    RealType displacement[DIMENSIONS], normal[DIMENSIONS]; // To calculate displacement, normal vector
+    RealType displacement[DIMENSIONS]; // To calculate displacement, normal vector
     Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
     BCFlag boundaryConditions[DIMENSIONS]; 
     copyVec(Base::gflow->getBCs(), boundaryConditions); // Keep a local copy of the wrap frags
@@ -42,9 +42,9 @@ namespace GFlowSimulation {
       // Check if the particles should interact
       if (mask && dsqr < sqr(sg[id1] + sg[id2])) {
         RealType distance = sqrt(dsqr);
-        scalarMultVec(1./distance, displacement, normal);
+        scalarMultVec(1./distance, displacement);
         // Calculate force strength. Normal will hold the force strength after the function is called.
-        kernel(normal, distance, id1, id2, Base::simData, param_pack, data_pack);
+        kernel(displacement, distance, id1, id2, Base::simData, param_pack, data_pack);
       }
     }
   }

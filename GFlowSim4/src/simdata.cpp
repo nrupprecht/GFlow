@@ -264,11 +264,48 @@ namespace GFlowSimulation {
     needs_remake = true;
   }
 
-  //! \param id The id (place in the data lists) of the particle that should be removed.
+  void SimData::markForRemoval(const int id) {
+    remove_list.insert(id);
+  }
+
+  void SimData::doParticleRemoval() {
+    // If there is nothing to remove, we're done
+    if (remove_list.empty()) return;
+    // Variables
+    int count = 0, count_back = number-1;
+    // Set all types to -1
+    for(auto id : remove_list) type[id] = -1;
+    // Fill in all holes
+    for(auto id : remove_list) {
+      // Find the next valid particle (counting back from the end) to fill for the particle we want to remove
+      // C++ 20 has a std::set contains() function.
+      while (remove_list.find(count_back)==remove_list.end() && count_back>id) --count_back;
+      // Move the particle to fill the particle we want to remove
+      moveParticle(count_back, id);
+      // If all the particles we want to remove are after the 
+      if (count_back<=id) break; // We are done
+    }
+    // Update count - assumes
+    number -= remove_list.size();
+    // Clear list
+    remove_list.clear();
+    // We need to update
+    needs_remake = true;
+  }
+
+  //! @param id The id (place in the data lists) of the particle that should be removed.
   void SimData::removeParticle(int id) {
-    if (type[id]>-1) {
-      holes.emplace(id);
-      type[id] = -1;
+    // We assume that this happens infrequently, so fill in the hole now. Move the last particle
+    // in the array to this place. We must remake the verlet list though.
+    if (id>=number || id<0) return; // Not a valid spot
+    else if (number>1) {
+      moveParticle(number-1, id);
+      // We need to remake
+      needs_remake = true;
+    }
+    else { // This was the only particle
+      type[0] = -1;
+      // We don't actually need to remake
     }
   }
 
@@ -307,16 +344,30 @@ namespace GFlowSimulation {
   }
 
   template<int width, typename T> inline void SimData::copyHelper(int resize_owned, int resize_halo, int resize_ghost, T *old_array, T *new_array) {
-      // Move owned particle data
-      for (int i=0; i<number*width; ++i) 
-        new_array[i] = old_array[i];
-      // Move halo data
-      for (int i=end_owned*width; i<(end_owned+number_halo)*width; ++i) 
-        new_array[i+resize_owned*width] = old_array[i];
-      // Move ghost data
-      for (int i=end_halo*width; i<(end_halo+number_ghost)*width; ++i)
-        new_array[i+(resize_owned+resize_halo)*width] = old_array[i];
-    }
+    // Move owned particle data
+    for (int i=0; i<number*width; ++i) 
+      new_array[i] = old_array[i];
+    // Move halo data
+    for (int i=end_owned*width; i<(end_owned+number_halo)*width; ++i) 
+      new_array[i+resize_owned*width] = old_array[i];
+    // Move ghost data
+    for (int i=end_halo*width; i<(end_halo+number_ghost)*width; ++i)
+      new_array[i+(resize_owned+resize_halo)*width] = old_array[i];
+  }
+
+  void SimData::moveParticle(int id_source, int id_dest) {
+    copyVec(x[id_source], x[id_dest]);
+    copyVec(v[id_source], v[id_dest]);
+    copyVec(f[id_source], f[id_dest]);
+    sg[id_dest] = sg[id_source];
+    im[id_dest] = im[id_source];
+    type[id_dest] = type[id_source];
+    // FOR NOW, IT DOES NOT MOVE AUXILARY DATA
+    // @todo Move auxilary data
+
+    // Set id of source to -1
+    type[id_source] = -1;
+  }
 
   void SimData::clearHaloParticles() {
     for (int i=end_owned; i<end_owned+number_halo; ++i) type[i] = -1;

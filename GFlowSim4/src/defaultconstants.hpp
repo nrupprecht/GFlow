@@ -23,7 +23,7 @@ namespace GFlowSimulation {
   //! A default value for hard sphere repulsion strengths.
   const RealType DEFAULT_HARD_SPHERE_REPULSION = 50.;
   //! A default value for the Lennard Jones interaction strength.
-  const RealType DEFAULT_LENNARD_JONES_STRENGTH = 0.01;
+  const RealType DEFAULT_LENNARD_JONES_STRENGTH = 0.001;
   //! A default value for at what multiple of the zero force point we cut off the LJ force.
   const RealType DEFAULT_LENNARD_JONES_CUTOFF = 2.5;
   //! A default value for the damping constant of the overdamped integrator.

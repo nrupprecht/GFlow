@@ -24,7 +24,7 @@ namespace GFlowSimulation {
   //! @param[in] param_pack A parameter pack, passed in from force. Should be of the form { repulsion } (length 1).
   //! @param[in,out] data_pack Data to update in the function. Should be of the form  { virial } (length 1). 
   //! Add the f_i \dot r_i to this.
-  void HardSphere::force(RealType* normal, const RealType distance, const int id1, const int id2, const SimData *simData, 
+  void HardSphere::force(RealType* normal, const RealType distance, const int id1, const int id2, SimData *simData, 
     const RealType *param_pack, RealType *data_pack) 
   {
     // Calculate force strength
