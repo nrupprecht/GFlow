@@ -10,9 +10,6 @@ namespace GFlowSimulation {
     //! @brief Constructor.
     VerletList(GFlow*);
 
-    //! @brief Destructor.
-    ~VerletList();
-
     // --- Inherited members
 
     //! @brief Add a pair of interacting particles.
@@ -34,12 +31,8 @@ namespace GFlowSimulation {
 
   private:
 
-    // --- Helper functions
-    inline void resizeVerlet(); 
-
-    // --- Data
-    int *verlet;
-    int vsize, vcapacity;
+    //! @brief The verlet list
+    vector<int> verlet;
   };
 
 }

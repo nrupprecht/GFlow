@@ -2,28 +2,19 @@
 
 namespace GFlowSimulation {
 
-  VerletList::VerletList(GFlow *gflow) : InteractionHandler(gflow), verlet(nullptr), vsize(0), vcapacity(0) {};
-
-  VerletList::~VerletList() {
-    if (verlet) delete [] verlet;
-  }
+  VerletList::VerletList(GFlow *gflow) : InteractionHandler(gflow) {};
 
   void VerletList::addPair(const int id1, const int id2) {
-    // There has to be enough room to add two items
-    if (vcapacity<vsize+2) resizeVerlet();
-    // Add the items
-    verlet[vsize++] = id1;
-    verlet[vsize++] = id2;
+    verlet.push_back(id1);
+    verlet.push_back(id2);
   }
 
   void VerletList::clear() {
-    // Reset the size to zero. This doesn't actually erase any information, but it marks it as not being there
-    // which is even better, because you don't have to spend time erasing anything.
-    vsize = 0;
+    verlet.clear();
   }
 
   int VerletList::size() const {
-    return vsize;
+    return verlet.size();
   }
 
   void VerletList::executeKernel(Kernel kernel, const RealType *param_pack, RealType *data_pack) const 
@@ -39,7 +30,7 @@ namespace GFlowSimulation {
     copyVec(Base::gflow->getBCs(), boundaryConditions); // Keep a local copy of the wrap frags
 
     // --- Go through all particles
-    for (int i=0; i<vsize; i+=2) {
+    for (int i=0; i<verlet.size(); i+=2) {
       id1 = verlet[i];
       id2 = verlet[i+1];
       // Type mask
@@ -56,22 +47,6 @@ namespace GFlowSimulation {
         kernel(normal, distance, id1, id2, Base::simData, param_pack, data_pack);
       }
     }
-  }
-
-  inline void VerletList::resizeVerlet() {
-    int newCapacity = vcapacity>0 ? static_cast<int>(1.5*vcapacity) : 1024;
-    int *newVerlet = new int[newCapacity];
-    if (1024<=vcapacity) {
-    #pragma loop count min(1024)
-      for (int i=0; i<vcapacity; ++i) newVerlet[i] = verlet[i];
-    }
-    else {
-      for (int i=0; i<vcapacity; ++i) newVerlet[i] = verlet[i];
-    }
-    vcapacity = newCapacity;
-    // Set new verlet array
-    if (verlet) delete [] verlet;
-    verlet = newVerlet;
   }
 
 }
