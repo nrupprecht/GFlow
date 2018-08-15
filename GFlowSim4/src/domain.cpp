@@ -48,6 +48,8 @@ namespace GFlowSimulation {
     // Calculate data about the domain decomposition, and this domain's place in it
     #if USE_MPI==1
     if (!parallel_init) parallel_assignments();
+    #else
+    domain_bounds = bounds;
     #endif
 
     // If bounds are unset, then don't make sectors
