@@ -8,7 +8,7 @@
 #define DEBUG 0
 
 //! We define this to be 1 if we are compiling for MPI parallel.
-#define USE_MPI 1
+#define USE_MPI 0
 
 #if USE_MPI==1
 #include <mpi.h>

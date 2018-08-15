@@ -56,8 +56,10 @@ namespace GFlowSimulation {
     //! @brief Get the (linear) index of the cell the position falls in
     int getCellIndex(RealType *);
 
+    #if USE_MPI==1
     //! @brief Calculate the data neccessary to run domains in parallel e.g. domain index, which domain this is, etc.
     void parallel_assignments();
+    #endif
 
     //! @brief Remake the verlet lists for all the forces.
     //!
