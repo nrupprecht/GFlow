@@ -34,6 +34,12 @@ namespace GFlowSimulation {
 
     // --- Accessors
 
+    //! Get argc
+    int getArgC() const { return argc; }
+
+    //! @brief Get argv
+    const char** getArgV() const { return argv; }
+
     //! Get the requested time.
     RealType getRequestedTime() const;
 

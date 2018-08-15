@@ -22,6 +22,21 @@ namespace GFlowSimulation {
     setVec(halo_down, false);
     setVec(ghost_up, false);
     setVec(ghost_down, false);
+
+    #if USE_MPI==1
+    int argc = Base::gflow->getArgC();
+    const char **argv = Base::gflow->getArgV();
+    #if _CLANG_ == 1
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &numProc);
+    #else
+    MPI::Init(argc, argv);
+    rank = MPI::COMM_WORLD.Get_rank();
+    numProc = MPI::COMM_WORLD.Get_size();
+    #endif
+    cout << "Initialized MPI.\n";
+    #endif
   };
 
   void Domain::initialize() {
