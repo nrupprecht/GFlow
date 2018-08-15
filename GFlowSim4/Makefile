@@ -1,6 +1,6 @@
 CC = icpc
 MPICC = mpic++
-COMP = $(CC)
+COMP = $(MPICC)
 CFLAG = -std=c++11 -Wall
 # WARNING: DO NOT USE -xHost IT MAKES THINGS SLOWER! -fast uses -xHost, so don't use that either
 OPTFLAGS = -O3 -funroll-loops $(OPTFLAGS2)

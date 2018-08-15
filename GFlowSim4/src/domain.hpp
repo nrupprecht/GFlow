@@ -113,11 +113,17 @@ namespace GFlowSimulation {
     //! Whether to use halo cells to reflect the periodic boundary conditions
     bool use_halo_cells;
 
+    // MPI related varibles
     #if USE_MPI==1
+
     //! @brief The rank of this processor
     int rank;
+
     //! @brief The total number of MPI processors
     int numProc;
+
+    bool parallel_init;
+    
     #endif 
 
   };

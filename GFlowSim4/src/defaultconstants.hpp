@@ -8,13 +8,17 @@
 #define DEBUG 0
 
 //! We define this to be 1 if we are compiling for MPI parallel.
-#define USE_MPI 0
+#define USE_MPI 1
+
+#if USE_MPI==1
+#include <mpi.h>
+#endif 
 
 // Compiler type
 //! Set to 1 if the intel compiler being used.
 #define _INTEL_ 1
 //! Set to 1 if the gnu compiler being used.
-#define _CLANG_ 0
+#define _CLANG_ 1
 
 namespace GFlowSimulation {
 

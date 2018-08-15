@@ -8,7 +8,7 @@
 
 namespace GFlowSimulation {
 
-  Domain::Domain(GFlow *gflow) : DomainBase(gflow), use_halo_cells(false) {
+  Domain::Domain(GFlow *gflow) : DomainBase(gflow), use_halo_cells(false), parallel_init(false) {
     // --- Find what the domain bounds are
     // For now, we are only running on one core, this is the only domain
     domain_bounds = gflow->getBounds();
@@ -24,18 +24,15 @@ namespace GFlowSimulation {
     setVec(ghost_down, false);
 
     #if USE_MPI==1
-    int argc = Base::gflow->getArgC();
-    const char **argv = Base::gflow->getArgV();
     #if _CLANG_ == 1
-    MPI_Init(&argc, &argv);
+    // MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &numProc);
     #else
-    MPI::Init(argc, argv);
+    // MPI::Init(argc, argv);
     rank = MPI::COMM_WORLD.Get_rank();
     numProc = MPI::COMM_WORLD.Get_size();
     #endif
-    cout << "Initialized MPI.\n";
     #endif
   };
 
@@ -47,7 +44,7 @@ namespace GFlowSimulation {
     bounds = Base::gflow->getBounds();
 
     // Calculate data about the domain decomposition, and this domain's place in it
-    parallel_assignments();
+    if (!parallel_init) parallel_assignments();
 
     // If bounds are unset, then don't make sectors
     if (domain_bounds.wd(0)==0) return;
@@ -174,17 +171,62 @@ namespace GFlowSimulation {
     // @todo Actually calculate this
     setVec(domain_dims, 1); // For now ...
 
-    // Calculate which domain we are
-    // @todo Actually calculate this
-    zeroVec(domain_index); // For now ...
+    #if USE_MPI==1
+    // ---> SET UP FOR FOUR DOMAINS, IN A SQUARE, IN 2D
+    switch (numProc) {
+    default:
+    case 1: 
+    case 2: 
+    case 3: {
+      domain_dims[0] = numProc;
+      break;
+    }
+    case 4: {
+      domain_dims[0] = 2;
+      domain_dims[1] = 2;
+      break;
+    }
 
-    // Calculate which domains are adjacent to us
-    // @todo Actually calculate these
-    setVec(domains_up, -1);   // For now ...
-    setVec(domains_down, -1); // For now ...
+    }
+    #endif
+
+    // --- Calculate which domain we are
+    #if USE_MPI==1
+    // --->
+    int linear = rank;
+    for (int d=0; d<DIMENSIONS; ++d) {
+      domain_index[d] = linear % domain_dims[d];
+      linear /= domain_dims[d];
+    }
+    #endif
+
+    // --- Calculate which domains are adjacent to us
+    setVec(domains_up, -1);   // By default
+    setVec(domains_down, -1); // By default
+    // How far (in linear index) an adjacent sector is
+    int ds = 1;
+    for (int d=0; d<DIMENSIONS; ++d) {
+      if (domain_index[d]+1<domain_dims[d])
+        domains_up[d] = rank + ds;
+      if (-1<domain_index[d]-1)
+        domains_down[d] = rank - ds;
+      // Change ds
+      ds *= domain_dims[d];
+    }
+
+    //**** DEBUGGING MESSAGES
+    cout << "Proc " << rank << ", index: " << toStrVec(domain_index) << endl;
+    for (int d=0; d<DIMENSIONS; ++d) {
+    cout << "Proc " << rank << " reporting: d=" << d << ", neighbor: " << domains_up[d] << ", " << domains_down[d] << endl;
+  }
+    //****
 
     // Calculate the bounds of this domain
     domain_bounds = bounds; // For now ...
+
+    // Notify that we have initialized the parallel data
+    parallel_init = true;
+
   }
 
   void Domain::construct() {
