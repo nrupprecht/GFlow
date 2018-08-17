@@ -351,6 +351,35 @@ namespace GFlowSimulation {
     }
     fout << "\n";
 
+    fout << "SIMD info:\n";
+    fout << "  - SIMD type:                ";
+    switch (SIMD_TYPE) {
+      case 0: {
+        fout << "No SIMD\n";
+        break;
+      }
+      case 1: {
+        fout << "SSE\n";
+        break;
+      }
+      case 2: {
+        fout << "AVX\n";
+        break;
+      }
+      case 3: {
+        fout << "AVX2\n";
+        break;
+      }
+      case 4: {
+        fout << "MIC\n";
+        break;
+      }
+      default: {
+        fout << "Unrecognized\n";
+        break;
+      }
+    }
+
     // Close file stream
     fout.close();
 

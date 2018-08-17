@@ -22,13 +22,12 @@
 #include <emmintrin.h> // Streaming SIMD Extensions 2 (SSE2)
 */
 
-// This I took straight from ls1 mardyn's "SIMD_TYPE.h" file.
-#define VCP_NOVEC 0
-#define VCP_VEC_SSE3 1
-#define VCP_VEC_AVX 2
-#define VCP_VEC_AVX2 3
-#define VCP_VEC_MIC 4
-#define VCP_VEC_MIC_GATHER 5
+// This I took straight from ls1 mardyn's "SIMD_TYPE.h" file, with small name modifications.
+#define SIMD_NONE 0
+#define SIMD_SSE3 1
+#define SIMD_AVX  2
+#define SIMD_AVX2 3
+#define SIMD_MIC  4
 
 #if defined(__AVX2__) && not defined(__FMA__)//fma should always be existent alongside avx2!!!
   #warn AVX2 enabled, but no FMA found. Please enable fma to use avx2.
@@ -36,35 +35,31 @@
 
 // define symbols for vectorization
 #if defined(__MIC__)
-  #if defined(__VCP_GATHER__)
-    #define VCP_VEC_TYPE VCP_VEC_MIC_GATHER
-  #else
-    #define VCP_VEC_TYPE VCP_VEC_MIC
-  #endif
+  #define SIMD_TYPE SIMD_MIC
 #elif defined(__AVX2__) && defined(__FMA__)
-  #define VCP_VEC_TYPE VCP_VEC_AVX2
+  #define SIMD_TYPE SIMD_AVX2
 #elif defined(__AVX__) && not defined(AVX128)
-  #define VCP_VEC_TYPE VCP_VEC_AVX
+  #define SIMD_TYPE SIMD_AVX
 #elif defined(__AVX__) && defined(AVX128)
-  #define VCP_VEC_TYPE VCP_VEC_SSE3
+  #define SIMD_TYPE SIMD_SSE3
 #elif defined(__SSE3__)
-  #define VCP_VEC_TYPE VCP_VEC_SSE3
+  #define SIMD_TYPE SIMD_SSE3
 #else
-  #define VCP_VEC_TYPE VCP_NOVEC
+  #define SIMD_TYPE SIMD_NONE
 #endif
 
 #ifdef NOVEC
-  #ifdef VCP_VEC_TYPE
+  #ifdef SIMD_TYPE
     #warn Multiple vectorization methods specified. Will not use vectorization at all!
-    #undef VCP_VEC_TYPE
+    #undef SIMD_TYPE
   #endif
-  #define VCP_VEC_TYPE VCP_NOVEC
+  #define SIMD_TYPE SIMD_NONE
 #endif
 
 // Include necessary files if we vectorize.
-#if VCP_VEC_TYPE==VCP_VEC_AVX or VCP_VEC_TYPE==VCP_VEC_AVX2 or VCP_VEC_TYPE==VCP_VEC_MIC or VCP_VEC_TYPE==VCP_VEC_MIC_GATHER
+#if SIMD_TYPE==SIMD_AVX or SIMD_TYPE==SIMD_AVX2 or SIMD_TYPE==VCP_VEC_MIC
   #include "immintrin.h"
-#elif VCP_VEC_TYPE==VCP_VEC_SSE3
+#elif SIMD_TYPE==SIMD_SSE3
   #include "pmmintrin.h"
 #endif
 

@@ -3,8 +3,8 @@ MPICC = mpic++
 COMP = $(CC)
 CFLAG = -std=c++11 -Wall
 # WARNING: DO NOT USE -xHost IT MAKES THINGS SLOWER! -fast uses -xHost, so don't use that either
-OPTFLAGS = -O3 -funroll-loops $(OPTFLAGS2)
-OPTFLAGS2 = -no-prec-div -restrict -no-inline-max-size #-fp-model fast=2
+OPTFLAGS = -O3 -funroll-loops $(OPTFLAGS2) #-mavx
+OPTFLAGS2 = -no-prec-div -restrict -no-inline-max-size -ffast-math #-fp-model fast=2
 FLAGS = $(CFLAG) -g $(OPTFLAGS) # -qopt-report 5
 
 # Option: -vec-report : Reports if loops were vectorized

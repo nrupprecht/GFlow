@@ -18,7 +18,7 @@ namespace GFlowSimulation {
     // Get arrays
     RealType *x = simData->x[0], *v = simData->v[0], *f = simData->f[0], *im = simData->im;
     
-    /*
+    #if SIMD_TYPE==SIMD_NONE
     // Update velocities
     for (int i=0; i<number*DIMENSIONS; ++i) {
       int id = i/DIMENSIONS;
@@ -31,18 +31,17 @@ namespace GFlowSimulation {
       assert(fabs(f[i])<MAX_REASONABLE_F);
       #endif
     }
-    */
-  
+    #else
     // Get inverse mass time 1/2 dt
-    __m256 im_hdt = _mm256_set1_ps(im[0]*hdt);
+    simd_float im_hdt = simd_set1(im[0]*hdt);
     // vectorized
     int i;
-    for (i=0; i+8<number*DIMENSIONS; i+=8) {
-      __m256 vec1 = _mm256_loadu_ps(&f[i]);
-      __m256 V = _mm256_loadu_ps(&v[i]);
-      __m256 im_hdt_f = _mm256_mul_ps(im_hdt, vec1);
-      vec1 = _mm256_add_ps(im_hdt_f, V);
-      _mm256_storeu_ps(&v[i], vec1);
+    for (i=0; i<number*DIMENSIONS-simd_data_size; i+=simd_data_size) {
+      simd_float vec1 = simd_load(&f[i]);
+      simd_float V    = simd_load(&v[i]);
+      simd_float im_hdt_f = simd_mult(im_hdt, vec1);
+      vec1 = simd_add(im_hdt_f, V);
+      simd_store(vec1, &v[i]);
     }
     // Left overs
     for (; i<number*DIMENSIONS; ++i) {
@@ -56,10 +55,11 @@ namespace GFlowSimulation {
       assert(fabs(f[i])<MAX_REASONABLE_F);
       #endif
     }
+    #endif
 
     
     // Update positions -- It seems to be marginally faster to have this in a separate loop.
-    /*
+    #if SIMD_TYPE==SIMD_NONE
     for (int i=0; i<number*DIMENSIONS; ++i) {
       x[i] += dt*v[i];
       // Debug mode asserts
@@ -67,12 +67,11 @@ namespace GFlowSimulation {
       assert(!isnan(x[i]));
       #endif 
     }
-    */
-    
+    #else
     // Set dt
-    __m256 dt_vec = _mm256_set1_ps(dt);
-    // vectorized
-    for (i=0; i+8<=number*DIMENSIONS; i+=8) {
+    simd_float dt_vec = simd_set1(dt);
+    for (i=0; i<=number*DIMENSIONS-simd_data_size; i+=simd_data_size) {
+      /*
       __m256 X = _mm256_loadu_ps(&x[i]);
       __m256 V = _mm256_loadu_ps(&v[i]);
       // vec2[i] = v[i]*dt
@@ -81,6 +80,13 @@ namespace GFlowSimulation {
       __m256 X_new = _mm256_add_ps(dX, X);
       // Set x
       _mm256_storeu_ps(&x[i], X_new);
+      */
+
+      simd_float X = simd_load(&x[i]);
+      simd_float V = simd_load(&v[i]);
+      simd_float dX = simd_mult(V, dt_vec);
+      simd_float X_new = simd_add(X, dX);
+      simd_store(X_new, &x[i]);
     }
     // Left overs
     for (; i<number*DIMENSIONS; ++i) {
@@ -90,6 +96,7 @@ namespace GFlowSimulation {
       assert(!isnan(x[i]));
       #endif 
     }
+    #endif
     
   }
 
@@ -103,7 +110,7 @@ namespace GFlowSimulation {
     // Get arrays
     RealType *x = simData->x[0], *v = simData->v[0], *f = simData->f[0], *im = simData->im;
 
-    /*
+    #if SIMD_TYPE==SIMD_NONE
     for (int i=0; i<number*DIMENSIONS; ++i) {
       int id = i/DIMENSIONS;
       v[i] += hdt*im[id]*f[i];
@@ -115,31 +122,30 @@ namespace GFlowSimulation {
       assert(fabs(f[i])<MAX_REASONABLE_F);
       #endif 
     }
-    */
-    
+    #else
     // Get inverse mass time 1/2 dt
-    __m256 im_hdt = _mm256_set1_ps(im[0]*hdt);
-    // vectorized
+    simd_float im_hdt = simd_set1(im[0]*hdt);
     int i;
-    for (i=0; i+8<number*DIMENSIONS; i+=8) {
+    for (i=0; i<number*DIMENSIONS-simd_data_size; i+=simd_data_size) {
+      /*
       __m256 vec1 = _mm256_loadu_ps(&f[i]);
       __m256 V = _mm256_loadu_ps(&v[i]);
       __m256 im_hdt_f = _mm256_mul_ps(im_hdt, vec1);
       vec1 = _mm256_add_ps(im_hdt_f, V);
       _mm256_storeu_ps(&v[i], vec1);
+      */
+      simd_float vec1 = simd_load(&f[i]);
+      simd_float V    = simd_load(&v[i]);
+      simd_float im_hdt_f = simd_mult(im_hdt, vec1);
+      vec1 = simd_add(im_hdt_f, V);
+      simd_store(vec1, &v[i]);
     }
     // Left overs
     for (; i<number*DIMENSIONS; ++i) {
       int id = i/DIMENSIONS;
       v[i] += hdt*im[id]*f[i];
-      // Debug mode asserts
-      #if DEBUG==1
-      assert(!isnan(f[i]));
-      assert(!isnan(v[i]));
-      assert(fabs(v[i])<MAX_REASONABLE_V);
-      assert(fabs(f[i])<MAX_REASONABLE_F);
-      #endif 
     }
+    #endif
   }
 
 }

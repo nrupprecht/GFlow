@@ -10,6 +10,8 @@
 // All the modifiers
 #include "../src/allmodifiers.hpp"
 
+#include "../src/simd.hpp"
+
 /*
 *  --- NOTES:
 *  Running functions dynamically:
@@ -21,7 +23,7 @@
 using namespace GFlowSimulation;
 
 int main(int argc, char **argv) {
-
+  // Record the time at which the program started.
   auto start_time = current_time();
   cout << "Starting up simulation...\n";
 
