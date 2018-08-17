@@ -6,7 +6,8 @@ namespace GFlowSimulation {
 
   Interaction::Interaction(GFlow *gflow) : Base(gflow), virial(0), parameters(nullptr), kernelPtr(nullptr) {
     // Set the interaction handler
-    handler = new VerletList(gflow);
+    handler = new DomainInteraction(gflow); // VerletList(gflow);
+    cout << "Setting the interaction handler to be a DomainInteraction. This is a test class.\n";
   };
 
   Interaction::~Interaction() {

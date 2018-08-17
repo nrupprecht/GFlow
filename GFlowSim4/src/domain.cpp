@@ -49,6 +49,7 @@ namespace GFlowSimulation {
     #if USE_MPI==1
     if (!parallel_init) parallel_assignments();
     #else
+    // This is the only domain
     domain_bounds = bounds;
     #endif
 
@@ -175,7 +176,7 @@ namespace GFlowSimulation {
     // parallel decomposition. It only works with single processor simulations.
 
     // --- Calculate how the divison of the simulation into domains
-    // @todo Actually calculate this
+    // @todo Actually calculate this in a smart way.
     setVec(domain_dims, 1);
     switch (numProc) {
     default:
@@ -267,7 +268,7 @@ namespace GFlowSimulation {
         for (auto i2=i1+1; i2!=cell1.id_list.cend(); ++i2) {
           // Get the id of the second particle
           int id2 = *i2;
-          // Get the displacement - we never need to wrap, since its the same cell (and particle positions dont wrap 
+          // Get the displacement - we never need to wrap, since its the same cell (and particle positions don't wrap 
           // until remake_verlet is called again).
           subtractVec(Base::simData->x[id1], Base::simData->x[id2], displacement);
           // Check the displacement
@@ -479,8 +480,6 @@ namespace GFlowSimulation {
           else if (ghost_up[d])
             cells[ind].cellType = CellType::Ghost;
         }
-
-        /// @todo Maybe do something about checking if cells are adjacent to 
       }
       // Do this after this cell's type has been assigned
       if (cells[ind].cellType==CellType::Central) 
@@ -512,26 +511,7 @@ namespace GFlowSimulation {
     int linear;
     for (int n=0; n<Base::simData->number; ++n) {
       // Calculate the (DIMENSION)-tuple cell coordinate
-
       int linear = getCellIndex(Base::simData->x[n]);
-
-      /*
-      #if _INTEL_ == 1
-      #pragma unroll(DIMENSIONS)
-      #endif 
-      for (int d=0; d<DIMENSIONS; ++d) {
-        index[d] = static_cast<int>((Base::simData->X(n, d) - extended_domain_bounds.min[d])*inverseW[d]);
-        // Even when wrapping, rounding errors (I assume) can cause index to be too large.
-        // When not wrapping, particles could be outside the sectorization grid
-        // This also may be useful later for parallel things, if a particle should interact with
-        // particles in this domain, but is so big that it is outside of the ghost cells.
-        if (index[d]>=dims[d]) index[d] = dims[d]-1; 
-        else if (index[d]<0)   index[d] = 0;
-      }
-
-      // Add particle to the appropriate sector
-      tuple_to_linear(linear, index);
-      */
       cells[linear].add(n);
 
       /*

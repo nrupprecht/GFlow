@@ -9,6 +9,9 @@
 // Specific domains
 #include "sectorization.hpp"
 #include "domain.hpp"
+
+#include "domain2d_test.hpp" // A test
+
 // Other ...
 #include "verletlist.hpp"
 #include "communicator.hpp"
