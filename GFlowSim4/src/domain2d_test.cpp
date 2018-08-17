@@ -3,6 +3,9 @@
 #include "simdata.hpp"
 #include "vectormath.hpp"
 #include "memoryoptimizer.hpp"
+#include "printingutility.hpp" // For debugging
+
+#include <assert.h>
 
 namespace GFlowSimulation {
 
@@ -70,84 +73,85 @@ namespace GFlowSimulation {
     load_cell(0, 0);
 
     // Go through all the cells
-    for (int x=0; x<dims[0]; ++x) {
-      for (int y=0; y<dims[1]; ++y) {
+    for (int x1=0; x1<dims[0]; ++x1) {
+      for (int y1=0; y1<dims[1]; ++y1) {
         // Load the required cell data
-        if (y!=dims[1]-1) { // We don't have to load the row above if there is no row above
-          int address = (y*dims[0] + x) + dims[0] + 1;
+        if (y1!=dims[1]-1) { // We don't have to load the row above if there is no row above
+          int address = (y1*dims[0] + x1) + dims[0] + 1;
           release_cell(address);
         }
 
         // Get the current cell
-        Cell2d &cell = getCell(x, y);
-        int size = cell.size();
+        Cell2d &cell1 = getCell(x1, y1);
+        int size1 = cell1.size();
         // Check if there are any particles in ths cell
-        if (size==0) {
+        if (size1==0) {
           // Release the old data
-          if (y!=0) { // We don't have to release the row below if there is no row below
-            int address = (y*dims[0] + x) - dims[0] - 1;
+          if (y1!=0) { // We don't have to release the row below if there is no row below
+            int address = (y1*dims[0] + x1) - dims[0] - 1;
             release_cell(address);
           }
           continue;
         }
 
-        cout << "Size: " << size << endl;
+	if (!cell1.loaded) load_cell(cell1);
 
         // Do interactions for this cell
-        for (int i=0; i<size; ++i) 
-          for (int j=i+1; j<size; ++j) {
-
-            // Find displacements
-            subtractVec(cell.x[i], cell.x[j], cell.dx[j]);
-            RealType dsqr    = sqr(cell.dx[j]);
-            RealType dsg2    = sqr( cell.sg[i] + cell.sg[j] );
-            RealType distance = sqrt(dsqr);
-            // The 1./distance will turn dx into a normal vector in the scalarMultVec multiplication
-            RealType c1      = dsqr - dsg2 < 0. ? 1./distance : 0.;
-            RealType magnitude = c1*(dsg2 - dsqr);
-            // Find the (vectorial) force, place in cell2.dx array
-            scalarMultVec(magnitude, cell.dx[j]);
-            // Add force to accumulators
-            plusEqVec (cell.f[i], cell.dx[j]);
-            minusEqVec(cell.f[j], cell.dx[j]);
+        for (int i=0; i<size1; ++i) 
+          for (int j=i+1; j<size1; ++j) {
+	    subtractVec(cell1.x[i], cell1.x[j], cell1.dx[j]);
+	    RealType dsqr = sqr(cell1.dx[j]);
+	    RealType dsg  = cell1.sg[i] + cell1.sg[j];
+	    RealType distance = sqrt(dsqr);
+	    // The 1./distance will turn dx into a normal vector in the scalarMultVec multiplication
+	    RealType c1 = distance - dsg < 0. ? 1./distance : 0.;
+	    RealType magnitude = DEFAULT_HARD_SPHERE_REPULSION*c1*(dsg - distance);
+	    // Find the (vectorial) force, place in cell2.dx array
+	    scalarMultVec(magnitude, cell1.dx[j]);
+	    // Add force to accumulators
+	    plusEqVec (cell1.f[i], cell1.dx[j]);
+	    minusEqVec(cell1.f[j], cell1.dx[j]);
           }
         // Done with the interactions for just this cell
 
         // Look at all surrounding cells
-        for (int y1=-1; y1<=1; ++y1) {
+        for (int dy2=-1; dy2<=1; ++dy2) {
+	  int y2 = y1+dy2;
           // Keep cell indices in bounds
-          y1 = y<0 ? y1+dims[1] : y1;
-          y1 = dims[1]<=y1 ? y1-dims[1] : y1;
-          for (int x1=-1; x1<=1; ++x1) {
+          y2 = (y2<0 ? y2+dims[1] : y2);
+          y2 = (dims[1]<=y2 ? y2-dims[1] : y2);
+	  
+          for (int dx2=-1; dx2<=1; ++dx2) {
+	    int x2 = x1+dx2;
             // Keep cell indices in bounds
-            x1 = x1<0 ? x1+dims[0] : x1;
-            x1 = dims[0]<=x1 ? x1-dims[0] : x1;
+            x2 = x2<0 ? x2+dims[0] : x2;
+            x2 = dims[0]<=x2 ? x2-dims[0] : x2;
+
+	    // Do not interact with yourself here - we already did that.
+	    if (dy2==0 && dx2==0) continue;
 
             // Get cell
+            Cell2d &cell2 = getCell(x2, y2);
 
-            cout << x1 << " " << y1 << endl;
-
-            Cell2d &cell2 = getCell(x1, y1);
-
-            if (!cell2.loaded) load_cell(cell);
+            if (!cell2.loaded) load_cell(cell2);
 
             int size2 = cell2.size();
             if (size2==0) continue;
 
             // Interactions:
-            for (int i=0; i<size; ++i)
+            for (int i=0; i<size1; ++i)
               for (int j=0; j<size2; ++j) {
-                subtractVec(cell.x[i], cell2.x[j], cell2.dx[j]);
-                RealType dsqr    = sqr(cell2.dx[j]);
-                RealType dsg2    = sqr( cell.sg[i] + cell2.sg[j] );
+                subtractVec(cell1.x[i], cell2.x[j], cell2.dx[j]);
+                RealType dsqr = sqr(cell2.dx[j]);
+                RealType dsg  = cell1.sg[i] + cell2.sg[j];
                 RealType distance = sqrt(dsqr);
                 // The 1./distance will turn dx into a normal vector in the scalarMultVec multiplication
-                RealType c1      = dsqr - dsg2 < 0. ? 1./distance : 0.;
-                RealType magnitude = c1*(dsg2 - dsqr);
+                RealType c1      = distance - dsg < 0. ? 1./distance : 0.;
+                RealType magnitude = DEFAULT_HARD_SPHERE_REPULSION*c1*(dsg - distance);
                 // Find the (vectorial) force, place in cell2.dx array
                 scalarMultVec(magnitude, cell2.dx[j]);
                 // Add force to accumulators
-                plusEqVec (cell.f[i],  cell2.dx[j]);
+                plusEqVec (cell1.f[i], cell2.dx[j]);
                 minusEqVec(cell2.f[j], cell2.dx[j]);
               }
             // Done with interactions between cell, cell2
@@ -155,8 +159,8 @@ namespace GFlowSimulation {
         }
 
         // Release the old data
-        if (y!=0) { // We don't have to release the row below if there is no row below
-          int address = (y*dims[0] + x) - dims[0] - 1;
+        if (y1!=0) { // We don't have to release the row below if there is no row below
+          int address = (y1*dims[0] + x1) - dims[0] - 1;
           release_cell(address);
         }
 
@@ -164,10 +168,15 @@ namespace GFlowSimulation {
     }
 
     // Finish - release the remaining cells
+    /*
     for (int y=dims[1]-2; y<dims[1]; ++y)
       for (int x=0; x<dims[0]; ++x) {
         release_cell(x, y);
       }
+    */
+
+    // Release *all* the cells, just in case.
+    for (int i=0; i<dims[0]*dims[1]; ++i) release_cell(i);
 
   }
 
@@ -212,44 +221,13 @@ namespace GFlowSimulation {
   inline void Domain2d::load_cell(int x, int y) {
     // Fetch cell
     Cell2d &cell = getCell(x, y);
-    int size = cell.size();
-    // Potentially allocate data arrays
-    if (size>0 && !cell.loaded) {
-      cell.x = alloc_array_2d<RealType>(size, DIMENSIONS);
-      cell.dx = alloc_array_2d<RealType>(size, DIMENSIONS);
-      cell.f = alloc_array_2d<RealType>(size, DIMENSIONS);
-      cell.sg = new RealType[size];
-      for (int i=0; i<size; ++i) {
-        int id = cell.id_list[i];
-        copyVec(Base::simData->x[id], cell.x[i]);
-        zeroVec(cell.f[i]);
-        cell.sg[i] = Base::simData->sg[id];
-      }
-    }
-    // Set loaded to true
-    cell.loaded = true;
+    load_cell(cell);
   }
 
   inline void Domain2d::load_cell(int linear) {
     // Fetch cell
     Cell2d &cell = cells[linear];
-    int size = cell.size();
-    // Potentially allocate data arrays
-    if (size>0 && !cell.loaded) {
-      cell.x = alloc_array_2d<RealType>(size, DIMENSIONS);
-      cell.dx = alloc_array_2d<RealType>(size, DIMENSIONS);
-      cell.f = alloc_array_2d<RealType>(size, DIMENSIONS);
-      cell.sg = new RealType[size];
-      // Load data from simData to local copies in the cell
-      for (int i=0; i<size; ++i) {
-        int id = cell.id_list[i];
-        copyVec(Base::simData->x[id], cell.x[i]);
-        zeroVec(cell.f[i]);
-        cell.sg[i] = Base::simData->sg[id];
-      }
-    }
-    // Set loaded to true
-    cell.loaded = true;
+    load_cell(cell);
   }
 
   inline void Domain2d::load_cell(Cell2d& cell) {
