@@ -4,7 +4,7 @@
 
 namespace GFlowSimulation {
 
-  Cell::Cell() : cellType(CellType::Unassigned), is_boundary_cell(false) {};
+  Cell::Cell() : cellType(CellType::Unassigned), is_boundary_cell(false), x(nullptr), dx(nullptr), f(nullptr), sg(nullptr) {};
 
   Cell::~Cell() {}
 

@@ -41,6 +41,8 @@ using std::chrono::duration_cast;
 
 #include <algorithm> // For std::copy, std::fill, etc.
 
+#include "simd.hpp"
+
 /**
 *  \namespace GFlowSimulation The GFlow simulation namespace
 *

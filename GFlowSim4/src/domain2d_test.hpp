@@ -77,7 +77,7 @@ namespace GFlowSimulation {
     //! Resectorizes the particles into cells and calculates verlet lists from the cell decomposition.
     virtual void construct();
 
-    virtual bool check_needs_remake() { return false; }
+    virtual bool check_needs_remake();
 
     inline void create_cells();
 

@@ -51,7 +51,8 @@ namespace GFlowSimulation {
       create_cells();
     }
 
-    // Here is where we would usually call construct. There is no need to.
+    // Construct
+    construct();
   }
 
   void Domain2d::pre_integrate() {
@@ -62,12 +63,8 @@ namespace GFlowSimulation {
   }
 
   void Domain2d::calculateForces() {
-    if (dims[0]<2 || dims[1]<2) {
-      cout << "Dims[0] or Dims[1] are < 2. This is an uncovered case.\n";
-      exit(1);
-    }
-
-    // --- Initialize
+    // Get the boundary conditions
+    const BCFlag *bcs = gflow->getBCs();
     
     // Load the initial cell
     load_cell(0, 0);
@@ -78,7 +75,7 @@ namespace GFlowSimulation {
         // Load the required cell data
         if (y1!=dims[1]-1) { // We don't have to load the row above if there is no row above
           int address = (y1*dims[0] + x1) + dims[0] + 1;
-          release_cell(address);
+          load_cell(address);
         }
 
         // Get the current cell
@@ -94,57 +91,73 @@ namespace GFlowSimulation {
           continue;
         }
 
-	if (!cell1.loaded) load_cell(cell1);
+        // Load cell 1 if neccessary
+	      if (!cell1.loaded) load_cell(cell1);
 
         // Do interactions for this cell
-        for (int i=0; i<size1; ++i) 
-          for (int j=i+1; j<size1; ++j) {
-	    subtractVec(cell1.x[i], cell1.x[j], cell1.dx[j]);
-	    RealType dsqr = sqr(cell1.dx[j]);
-	    RealType dsg  = cell1.sg[i] + cell1.sg[j];
-	    RealType distance = sqrt(dsqr);
-	    // The 1./distance will turn dx into a normal vector in the scalarMultVec multiplication
-	    RealType c1 = distance - dsg < 0. ? 1./distance : 0.;
-	    RealType magnitude = DEFAULT_HARD_SPHERE_REPULSION*c1*(dsg - distance);
-	    // Find the (vectorial) force, place in cell2.dx array
-	    scalarMultVec(magnitude, cell1.dx[j]);
-	    // Add force to accumulators
-	    plusEqVec (cell1.f[i], cell1.dx[j]);
-	    minusEqVec(cell1.f[j], cell1.dx[j]);
+        for (int j=0; j<size1; ++j) {
+          for (int i=j+1; i<size1; ++i) {
+            // x[i] - x[j] --> dx[j]
+      	    //subtractVec(cell1.x[i], cell1.x[j], cell1.dx[j]);
+
+            //**
+            getDisplacement(cell1.x[i], cell1.x[j], cell1.dx[j], bounds, bcs);
+            //**
+
+      	    RealType dsqr = sqr(cell1.dx[j]);
+      	    RealType dsg  = cell1.sg[i] + cell1.sg[j];
+      	    // The 1./distance will turn dx into a normal vector in the scalarMultVec multiplication
+      	    RealType magnitude = dsqr < sqr(dsg) ? DEFAULT_HARD_SPHERE_REPULSION*(dsg - sqrt(dsqr))/sqrt(dsqr) : 0.;
+      	    // Find the (vectorial) force, place in cell2.dx array
+      	    scalarMultVec(magnitude, cell1.dx[j]);
+      	    // Add force to accumulators
+      	    plusEqVec (cell1.f[i], cell1.dx[j]);
+      	    minusEqVec(cell1.f[j], cell1.dx[j]);
           }
+        }
         // Done with the interactions for just this cell
+
+        // If only one was ==1, this would be a problem.
+        if (dims[0]==1 || dims[1]==1) continue;
 
         // Look at all surrounding cells
         for (int dy2=-1; dy2<=1; ++dy2) {
-	  int y2 = y1+dy2;
+	         int y2 = y1+dy2;
           // Keep cell indices in bounds
           y2 = (y2<0 ? y2+dims[1] : y2);
           y2 = (dims[1]<=y2 ? y2-dims[1] : y2);
 	  
           for (int dx2=-1; dx2<=1; ++dx2) {
-	    int x2 = x1+dx2;
+	          int x2 = x1+dx2;
             // Keep cell indices in bounds
             x2 = x2<0 ? x2+dims[0] : x2;
             x2 = dims[0]<=x2 ? x2-dims[0] : x2;
 
-	    // Do not interact with yourself here - we already did that.
-	    if (dy2==0 && dx2==0) continue;
+      	    // Do not interact with yourself here - we already did that.
+      	    if (dy2==0 && dx2==0) continue;
 
             // Get cell
             Cell2d &cell2 = getCell(x2, y2);
-
             if (!cell2.loaded) load_cell(cell2);
 
+            // Check if there are any particles in cell 2
             int size2 = cell2.size();
             if (size2==0) continue;
 
             // Interactions:
             for (int i=0; i<size1; ++i)
               for (int j=0; j<size2; ++j) {
-                subtractVec(cell1.x[i], cell2.x[j], cell2.dx[j]);
+
+                //subtractVec(cell1.x[i], cell2.x[j], cell2.dx[j]);
+
+                //**
+                getDisplacement(cell1.x[i], cell2.x[j], cell2.dx[j], bounds, bcs);
+                //**
+
                 RealType dsqr = sqr(cell2.dx[j]);
                 RealType dsg  = cell1.sg[i] + cell2.sg[j];
                 RealType distance = sqrt(dsqr);
+
                 // The 1./distance will turn dx into a normal vector in the scalarMultVec multiplication
                 RealType c1      = distance - dsg < 0. ? 1./distance : 0.;
                 RealType magnitude = DEFAULT_HARD_SPHERE_REPULSION*c1*(dsg - distance);
@@ -184,7 +197,16 @@ namespace GFlowSimulation {
     fill_cells();
   }
 
+  bool Domain2d::check_needs_remake() { 
+    return true; 
+  }
+
   inline void Domain2d::create_cells() {
+
+    //**
+    cutoff = 0.25*max(bounds.wd(0), bounds.wd(1));
+    //**
+
     // Correct estimate so sectors are no smaller than our estimation
     #if _INTEL_ == 1
     #pragma unroll(DIMENSIONS)

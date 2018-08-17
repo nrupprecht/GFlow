@@ -76,7 +76,7 @@ namespace GFlowSimulation {
     bool is_boundary_cell;
 
     // --- For vectorized forces : THIS IS A TEST
-    // RealType **x, **f, *sg, *im;
+    RealType **x, **f, **dx, *sg;
   };
 
 }
