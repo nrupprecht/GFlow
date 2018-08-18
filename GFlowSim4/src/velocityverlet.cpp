@@ -34,7 +34,6 @@ namespace GFlowSimulation {
     #else
     // Get inverse mass time 1/2 dt
     simd_float im_hdt = simd_set1(im[0]*hdt);
-    // vectorized
     int i;
     for (i=0; i<number*DIMENSIONS-simd_data_size; i+=simd_data_size) {
       simd_float vec1 = simd_load(&f[i]);
@@ -47,13 +46,6 @@ namespace GFlowSimulation {
     for (; i<number*DIMENSIONS; ++i) {
       int id = i/DIMENSIONS;
       v[i] += hdt*im[id]*f[i];
-      // Debug mode asserts
-      #if DEBUG==1
-      assert(!isnan(f[i]));
-      assert(!isnan(v[i]));
-      assert(fabs(v[i])<MAX_REASONABLE_V);
-      assert(fabs(f[i])<MAX_REASONABLE_F);
-      #endif
     }
     #endif
 
@@ -71,17 +63,6 @@ namespace GFlowSimulation {
     // Set dt
     simd_float dt_vec = simd_set1(dt);
     for (i=0; i<=number*DIMENSIONS-simd_data_size; i+=simd_data_size) {
-      /*
-      __m256 X = _mm256_loadu_ps(&x[i]);
-      __m256 V = _mm256_loadu_ps(&v[i]);
-      // vec2[i] = v[i]*dt
-      __m256 dX = _mm256_mul_ps(V, dt_vec);
-      // vec1[i] = vec2[i] + X[i]
-      __m256 X_new = _mm256_add_ps(dX, X);
-      // Set x
-      _mm256_storeu_ps(&x[i], X_new);
-      */
-
       simd_float X = simd_load(&x[i]);
       simd_float V = simd_load(&v[i]);
       simd_float dX = simd_mult(V, dt_vec);

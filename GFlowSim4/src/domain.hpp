@@ -115,19 +115,19 @@ namespace GFlowSimulation {
     //! Whether to use halo cells to reflect the periodic boundary conditions
     bool use_halo_cells;
 
-    // MPI related varibles
+    // --- MPI related varibles
     #if USE_MPI==1
-
-    //! @brief The rank of this processor
+    //! @brief The rank of this processor.
     int rank;
-
-    //! @brief The total number of MPI processors
+    //! @brief The total number of MPI processors.
     int numProc;
-
+    //! @brief This is true when we have done the parallel initialization.
     bool parallel_init;
-    
     #endif 
 
+    // --- Linked cell force related
+    inline void load_cell(Cell&);
+    inline void release_cell(Cell&);
   };
 
 }

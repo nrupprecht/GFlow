@@ -41,17 +41,20 @@ namespace GFlowSimulation {
   *  knows the ids of particles within it, and the surrounding cells
   */
   struct Cell {
-    //! Default constructor. Creates an empty cell with no neighbors
+    //! @brief Default constructor. Creates an empty cell with no neighbors.
     Cell();
 
-    //! Destructor
+    //! @brief Destructor.
     ~Cell();
 
-    //! Clear the ids in the cell
+    //! @brief Clear the ids in the cell.
     void clear(); 
 
-    //! Add a particle id to the cell
+    //! @brief Add a particle id to the cell.
     void add(int);
+
+    //! @brief The number of particles in this cell.
+    int size();
 
     // --- Data ---
 
@@ -62,11 +65,12 @@ namespace GFlowSimulation {
     //! Adjacent cell list and its size have to be set at initializatoin
     vector<Cell*> adjacent_cells;
 
-    //! A list of the ids of the particles whose centers fall within this cell. The id 
-    //! corresponds to the index in the simdata object for this processor.
+    //! @brief A list of the ids of the particles whose centers fall within this cell. 
+    //!
+    //! The id corresponds to the index in the simdata object for this processor.
     CellContainer id_list;
 
-    //! The type of cell this is
+    //! @brief The type of cell this is.
     CellType cellType;
 
     //! @brief An indicator as to whether this is a boundary cell.
@@ -76,7 +80,11 @@ namespace GFlowSimulation {
     bool is_boundary_cell;
 
     // --- For vectorized forces : THIS IS A TEST
-    RealType **x, **f, **dx, *sg;
+    RealType *x, *f, *sg;
+    int *mask;
+    int capacity;
+    // @brief Whether the cell data is loaded or not.
+    bool loaded;
   };
 
 }

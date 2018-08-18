@@ -15,6 +15,7 @@
   inline void       simd_store(const simd_float src, float *dest)      { *dest = src; }
   inline simd_float simd_add  (const simd_float a, const simd_float b) { return a+b; }
   inline simd_float simd_mult (const simd_float a, const simd_float b) { return a*b; }
+  inline void    simd_plus_eq (simd_float &a, const simd_float b)      { a += b; }
 
 #elif SIMD_TYPE==SIMD_SSE3
   // The number of floats per vector
@@ -28,6 +29,7 @@
   inline void       simd_store(const simd_float src, float *dest)      { _mm_store_ps(dest, src); }
   inline simd_float simd_add  (const simd_float a, const simd_float b) { return _mm_add_ps(a, b); }
   inline simd_float simd_mult (const simd_float a, const simd_float b) { return _mm_mul_ps(a, b); }
+  inline void    simd_plus_eq (simd_float &a, const simd_float b)      { a = _mm_add_ps(a, b); }
 
 #elif SIMD_TYPE==SIMD_AVX or SIMD_TYPE==SIMD_AVX2
   // The number of floats per vector
@@ -41,6 +43,7 @@
   inline void       simd_store(const simd_float src, float *dest)      { _mm256_store_ps(dest, src); }
   inline simd_float simd_add  (const simd_float a, const simd_float b) { return _mm256_add_ps(a, b); }
   inline simd_float simd_mult (const simd_float a, const simd_float b) { return _mm256_mul_ps(a, b); }
+  inline void    simd_plus_eq (simd_float &a, const simd_float b)      { a = _mm256_add_ps(a, b); }
 
 
 #elif SIMD_TYPE==SIMD_MIC
@@ -55,12 +58,29 @@
   inline void       simd_store(const simd_float src, float *dest)      { _mm512_store_ps(dest, src); }
   inline simd_float simd_add  (const simd_float a, const simd_float b) { _mm512_add_ps(dest, src); }
   inline simd_float simd_mult (const simd_float a, const simd_float b) { return _mm512_mul_ps(a, b); }
+  inline void    simd_plus_eq (simd_float &a, const simd_float b)      { a = _mm512_add_ps(a, b); }
 
 #endif
 
 #if SIMD_TYPE!=SIMD_NONE
 // Operators go here
 #endif
+
+// --- Functions that only depend on the simd names --- //
+
+// Compute dot products
+// { a_x1, a_x2, ... }, { a_y1, a_y2, ... }, ... * { a_x1, a_x2, ... }, { a_y1, a_y2, ... }, ... 
+// --> { a_x1 * b_x1 + a_y1*b_y1 + ... , a_x2 * b_x2 + a_y2 * b_y2 + ... , ... }
+//
+// So a[0] is a simd_float of all the x components of the first set of vectors, a[1] is a simd_float of all 
+// the y components of the first set of vectors, etc.
+template<int dimensions> inline simd_float simd_dot_product(const simd_float *a, const simd_float *b) {
+  for (int i=0; i<dimensions; ++i) {
+    simd_float di = simd_mult(a[i], b[i]);
+    simd_plus_eq(acc, di);
+  }
+  return acc;
+}
 
 
 #endif // __SIMD_TYPES_HPP__GFLOW__

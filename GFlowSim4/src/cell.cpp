@@ -4,7 +4,8 @@
 
 namespace GFlowSimulation {
 
-  Cell::Cell() : cellType(CellType::Unassigned), is_boundary_cell(false), x(nullptr), dx(nullptr), f(nullptr), sg(nullptr) {};
+  Cell::Cell() : cellType(CellType::Unassigned), is_boundary_cell(false), x(nullptr), f(nullptr), sg(nullptr), 
+    mask(nullptr), capacity(0), loaded(false) {};
 
   Cell::~Cell() {}
 
@@ -15,4 +16,9 @@ namespace GFlowSimulation {
   void Cell::add(int id) {
     id_list.push_back(id) ;
   }
+
+  int Cell::size() {
+    return id_list.size();
+  }
+
 }
