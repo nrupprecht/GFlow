@@ -105,6 +105,20 @@ namespace GFlowSimulation {
     int*      DataI(int n)    { return dataI[n]; }
     int&      Body(int n)     { return body[n]; }
 
+    // Const versions
+    const RealType& X(int n, int d) const { return x[n][d]; }
+    const RealType* X(int n)        const { return x[n]; }
+    const RealType& V(int n, int d) const { return v[n][d]; }
+    const RealType* V(int n)        const { return v[n]; }
+    const RealType& F(int n, int d) const { return f[n][d]; }
+    const RealType* F(int n)        const { return f[n]; }
+    const RealType& Sg(int n)       const { return sg[n]; }
+    const RealType& Im(int n)       const { return im[n]; }
+    const int&      Type(int n)     const { return type[n]; }
+    const RealType* DataF(int n)    const { return dataF[n]; }
+    const int*      DataI(int n)    const { return dataI[n]; }
+    const int&      Body(int n)     const { return body[n]; }
+
     //! @brief Get the boundary conditions.
     //!
     //! These are actually stored in the gflow object, so we pass them on from gflow.
@@ -226,7 +240,7 @@ namespace GFlowSimulation {
     //!
     //! The number of types of particles in the simulation. They will be labeled 0, 1, ... , [ntypes].
     int ntypes;
-
+ 
     // All particles have position, force - this data is used for integration, calculating verlet lists, etc.
     //! @brief An array of position vectors.
     //!
@@ -282,12 +296,12 @@ namespace GFlowSimulation {
 
   //! @brief A helper function for copying a particles data
   inline void copyParticle(const SimData& simData, int id, RealType *x, RealType *v, RealType *f, RealType &sg, RealType &im, int &type) {
-    copyVec(simData.x[id], x);
-    copyVec(simData.v[id], v);
-    copyVec(simData.f[id], f);
-    sg = simData.sg[id];
-    im = simData.im[id];
-    type = simData.type[id];
+    copyVec(simData.X(id), x);
+    copyVec(simData.V(id), v);
+    copyVec(simData.F(id), f);
+    sg = simData.Sg(id);
+    im = simData.Im(id);
+    type = simData.Type(id);
   }
 
 }

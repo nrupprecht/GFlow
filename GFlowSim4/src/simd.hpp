@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef __SIMD_HPP__GFLOW__
 #define __SIMD_HPP__GFLOW__
 

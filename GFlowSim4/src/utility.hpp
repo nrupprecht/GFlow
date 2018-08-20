@@ -184,4 +184,7 @@ namespace GFlowSimulation {
 // Include this after so string is defined
 #include "exceptions.hpp"
 
+// Other
+#include "vector_array.hpp"
+
 #endif // __UTILITY_HPP__GFLOW__

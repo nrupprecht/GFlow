@@ -1,5 +1,5 @@
 #include "base.hpp"
-#include "gflow.hpp"
+#include "../gflow.hpp"
 
 namespace GFlowSimulation {
 

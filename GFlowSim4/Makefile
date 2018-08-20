@@ -1,41 +1,47 @@
+# Makefile snatched from <https://ubuntuforums.org/showthread.php?t=1204739>
+
 CC = icpc
 MPICC = mpic++
 COMP = $(CC)
 CFLAG = -std=c++11 -Wall
-# WARNING: DO NOT USE -xHost IT MAKES THINGS SLOWER! -fast uses -xHost, so don't use that either
-OPTFLAGS = -O3 -funroll-loops $(OPTFLAGS2) #-mavx
-OPTFLAGS2 = -no-prec-div -restrict -no-inline-max-size -ffast-math #-fp-model fast=2
-FLAGS = $(CFLAG) -g $(OPTFLAGS) # -qopt-report 5
 
-# Option: -vec-report : Reports if loops were vectorized
+APP   = driver
 
-# Get all object files
-SRC_DIR := src
-OBJ_DIR := build
-SRC_FILES := $(wildcard $(SRC_DIR)/*.cpp)
-OBJ_FILES := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRC_FILES))
+SRC   = src
+OBJ   = obj
+BIN   = bin
 
-all: bin/driver bin/pressureanalysis bin/percolationanalysis
+SRCS    := $(shell find $(SRC) -name '*.cpp')
+SRCDIRS := $(shell find . -name '*.cpp' -exec dirname {} \; | uniq)
+OBJS    := $(patsubst %.cpp,$(OBJ)/%.o,$(SRCS))
 
-###### Executables #####
-bin/driver: build/driver.o $(OBJ_FILES)
-	$(COMP) $^ -o $@
+CSTD     = -std=c++11
+DEBUG    = -g -Wall
+OPTIMIZE = -O3 -funroll-loops -no-prec-div -restrict -no-inline-max-size -ffast-math
+CFLAGS   = -c $(CSTD) $(DEBUG) $(OPTIMIZE)
 
-bin/pressureanalysis: build/pressureanalysis.o $(OBJ_FILES)
-	$(COMP) $^ -o $@
+all: $(BIN)/$(APP)
 
-bin/percolationanalysis: build/percolationanalysis.o $(OBJ_FILES)
-	$(COMP) $^ -o $@
+$(BIN)/$(APP): obj/driver.o $(OBJS)
+	@mkdir -p `dirname $@`
+	@echo "Linking $@..."
+	@$(CC) obj/driver.o $(OBJS) $(LDFLAGS) -o $@
 
-#####   Objects   #####
-# In /src/
-build/%.o: src/%.cpp
-	$(COMP) -c -o $@ $< $(FLAGS)
+obj/driver.o: applications/driver.cpp
+	@mkdir -p `dirname $@`
+	@$(CC) $(CFLAGS) $< -o $@
 
-build/%.o: applications/%.cpp
-	$(COMP) -c -o $@ $< $(FLAGS)
+$(OBJ)/%.o: %.cpp
+	@mkdir -p `dirname $@`
+	@echo "Compiling $<..."
+	$(CC) $(CFLAGS) $< -o $@
+
+
+#@echo "Generating dependencies for $<..."
+#@$(call make-depend,$<,$@,$(subst .o,.d,$@))
+
 
 #####   Clean    #####
 .PHONY : clean
 clean:
-	rm -f build/*.o build/*.optrpt *.o *.optrpt bin/*
+	$(RM) -r $(OBJ)

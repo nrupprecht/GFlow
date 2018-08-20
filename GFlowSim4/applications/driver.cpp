@@ -10,8 +10,6 @@
 // All the modifiers
 #include "../src/allmodifiers.hpp"
 
-#include "../src/simd.hpp"
-
 /*
 *  --- NOTES:
 *  Running functions dynamically:
@@ -23,6 +21,66 @@
 using namespace GFlowSimulation;
 
 int main(int argc, char **argv) {
+  /*
+  vector_array<float, 4, false> varray;
+  varray.resize(4);
+  varray.clear();
+  float V[4];
+  V[0] = 0.; V[1] = 1.; V[2] = 2.; V[3] = 4.;
+  cout << toStr(varray[0]) << endl;
+  varray[0] = V;
+  cout << varray[0] << endl;
+  cout << endl;
+  */
+
+  /*
+  const int n_particles = 4, n_dims = 6;
+  float x1[n_dims][n_particles], x2[n_dims][n_particles];
+
+  float discard = drand48(); // To get rid of the first drand
+
+  for (int i=0; i<n_particles; ++i) {
+    for (int d=0; d<n_dims; ++d) {
+      x1[d][i] = drand48();
+      x2[d][i] = drand48();
+    }
+    cout << "c1P" << i << "={";
+    for (int d=0; d<n_dims; ++d) {
+      cout << x1[d][i];
+      if (d!=n_dims-1) cout << ",";
+    }
+    cout << "};\n";
+    cout << "c2P" << i << "={";
+    for (int d=0; d<n_dims; ++d) {
+      cout << x2[d][i];
+      if (d!=n_dims-1) cout << ",";
+    }
+    cout << "};\n";
+  }
+
+  simd_float X1[n_dims], X2[n_dims];
+  for (int d=0; d<n_dims; ++d) {
+    X1[d] = simd_load_u(x1[d]);
+    X2[d] = simd_load_u(x2[d]);
+  }
+
+  simd_float dX2 = simd_distance_sqr<n_dims>(X1, X2);
+
+  // Check if the distances are less than 1
+  simd_float Sg = simd_set1(1.);
+  simd_int mask = simd_less_than(dX2, Sg);
+  // Zero out entries that are >= 1.
+  simd_float masked_dX2 = simd_mask(dX2, mask);
+
+  // Print to check
+  cout << simd_to_str(dX2) << endl;
+  cout << simd_to_str(masked_dX2) << endl;
+
+
+  return 0;
+
+  // ------------------------------------------------------ */
+
   // Record the time at which the program started.
   auto start_time = current_time();
   cout << "Starting up simulation...\n";

@@ -1,7 +1,7 @@
 #ifndef __BASE_HPP__GFLOW__
 #define __BASE_HPP__GFLOW__
 
-#include "utility.hpp"
+#include "../utility.hpp"
 
 namespace GFlowSimulation {
 

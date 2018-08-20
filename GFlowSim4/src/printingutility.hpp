@@ -5,6 +5,20 @@
 
 namespace GFlowSimulation {
 
+  template<typename T, int dimensions>
+  string toStr(const vec<T, dimensions> v) {
+    stringstream stream;
+    stream << "{";
+    for (int d=0; d<dimensions; ++d) {
+      stream << v[d];
+      if (d!=dimensions-1) stream << ",";
+    }
+    stream << "}";
+    string str;
+    stream >> str;
+    return str;
+  }
+
   template<typename T> inline string toCSV(const vector<T>& vec) {
     stringstream stream;
     for (int i=0; i<vec.size(); ++i) {
@@ -15,7 +29,6 @@ namespace GFlowSimulation {
     stream >> str;
     return str;
   }
-
 
   //! @todo Turn all these functions into free-standing (inline) functions.
   struct PrintingUtility {
