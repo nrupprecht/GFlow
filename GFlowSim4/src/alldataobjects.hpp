@@ -3,19 +3,19 @@
 
 // Includes for all the [DataObject] objects' header files -- This may or may not end up being necessary
 
-#include "positiondata.hpp"
-#include "ending_snapshot.hpp"
-#include "sectorizationdata.hpp"
-#include "kineticenergydata.hpp"
-#include "kineticenergytypesdata.hpp"
-#include "sectorizationremakedata.hpp"
-#include "boundaryforcedata.hpp"
-#include "timestepdata.hpp"
-#include "averagedata.hpp"
-#include "mininteractingdistance.hpp"
-#include "percolationdata.hpp"
-#include "percolationsnapshot.hpp"
-#include "memorydistance.hpp"
-#include "pressuredata.hpp"
+#include "dataobjects/positiondata.hpp"
+#include "dataobjects/ending_snapshot.hpp"
+#include "dataobjects/sectorizationdata.hpp"
+#include "dataobjects/kineticenergydata.hpp"
+#include "dataobjects/kineticenergytypesdata.hpp"
+#include "dataobjects/sectorizationremakedata.hpp"
+#include "dataobjects/boundaryforcedata.hpp"
+#include "dataobjects/timestepdata.hpp"
+#include "dataobjects/averagedata.hpp"
+#include "dataobjects/mininteractingdistance.hpp"
+#include "dataobjects/percolationdata.hpp"
+#include "dataobjects/percolationsnapshot.hpp"
+#include "dataobjects/memorydistance.hpp"
+#include "dataobjects/pressuredata.hpp"
 
 #endif // __ALL_DATA_OBJECTS_HPP__GFLOW__

@@ -1,10 +1,8 @@
 #ifndef __ALL_INTERACTION_HANDLERS_HPP__GFLOW__
 #define __ALL_INTERACTION_HANDLERS_HPP__GFLOW__
 
-#include "verletlist.hpp"
-#include "verletlist-b.hpp"
-#include "alltoallhandler.hpp"
-
-#include "domaininteraction_test.hpp"
+#include "interactionhandlers/verletlist.hpp"
+#include "interactionhandlers/verletlist-b.hpp"
+#include "interactionhandlers/alltoallhandler.hpp"
 
 #endif // __ALL_INTERACTION_HANDLERS_HPP__GFLOW__

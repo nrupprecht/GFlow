@@ -1,7 +1,7 @@
 #ifndef __BASE_HPP__GFLOW__
 #define __BASE_HPP__GFLOW__
 
-#include "../utility.hpp"
+#include "../utility/utility.hpp"
 
 namespace GFlowSimulation {
 
@@ -37,7 +37,6 @@ namespace GFlowSimulation {
     class SimData      *simData;
     class Integrator   *integrator;
     class DomainBase   *domain;
-    class Communicator *communicator;
     class DataMaster   *dataMaster; 
     class ForceMaster  *forceMaster; 
     // References to vectors

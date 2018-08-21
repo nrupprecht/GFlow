@@ -1,10 +1,10 @@
 #ifndef __ALL_MODIFIERS_HPP__GFLOW__
 #define __ALL_MODIFIERS_HPP__GFLOW__
 
-#include "harmonicbond.hpp"
-#include "temperaturemodifier.hpp"
-#include "timestepmodifier.hpp"
-#include "constantacceleration.hpp"
-#include "flow.hpp"
+#include "modifiers/harmonicbond.hpp"
+#include "modifiers/temperaturemodifier.hpp"
+#include "modifiers/timestepmodifier.hpp"
+#include "modifiers/constantacceleration.hpp"
+#include "modifiers/flow.hpp"
 
 #endif // __ALL_MODIFIERS_HPP__GFLOW__

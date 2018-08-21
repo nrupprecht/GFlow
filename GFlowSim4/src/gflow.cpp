@@ -1,8 +1,8 @@
 #include "gflow.hpp"
 // Other files
 #include "allbaseobjects.hpp"
-#include "memorydistance.hpp"
-#include "memoryoptimizer.hpp"
+#include "dataobjects/memorydistance.hpp"
+#include "utility/memoryoptimizer.hpp"
 
 namespace GFlowSimulation {
 
@@ -13,7 +13,6 @@ namespace GFlowSimulation {
     simData      = new SimData(this);
     // Integrator will be created by the creator
     domain       = new Domain(this); // new Sectorization(this); //
-    communicator = new Communicator(this);
     dataMaster   = new DataMaster(this);
     forceMaster  = new ForceMaster(this);
 
@@ -25,7 +24,6 @@ namespace GFlowSimulation {
     if (simData)      delete simData;
     if (domain)       delete domain;
     if (integrator)   delete integrator;
-    if (communicator) delete communicator;
     if (dataMaster)   delete dataMaster;
     for (auto &md : modifiers) 
       if (md) delete md;
@@ -48,9 +46,6 @@ namespace GFlowSimulation {
     else non_null = false;
 
     if (domain) domain->initialize();
-    else non_null = false;
-
-    if (communicator) communicator->initialize();
     else non_null = false;
 
     if (dataMaster) dataMaster->initialize();
@@ -80,7 +75,6 @@ namespace GFlowSimulation {
     base->simData      = simData;
     base->integrator   = integrator;
     base->domain       = domain;
-    base->communicator = communicator;
     base->dataMaster   = dataMaster;
     base->forceMaster  = forceMaster;
     // Set vectors

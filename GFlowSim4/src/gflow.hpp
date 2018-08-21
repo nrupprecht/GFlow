@@ -2,7 +2,7 @@
 #define __GFLOW_HPP__GFLOW__
 
 #include "base/base.hpp"
-#include "utility.hpp"
+#include "utility/utility.hpp"
 
 namespace GFlowSimulation {
 
