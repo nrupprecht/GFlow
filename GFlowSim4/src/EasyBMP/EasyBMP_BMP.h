@@ -24,8 +24,8 @@
 bool SafeFread( char* buffer, int size, int number, FILE* fp );
 bool EasyBMPcheckDataSize( void );
 
-class BMP
-{private:
+class BMP {
+private:
 
  int BitDepth;
  int Width;

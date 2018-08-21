@@ -8,7 +8,7 @@ namespace GFlowSimulation {
 
   GFlow::GFlow() : running(false), useForces(true), requested_time(0), elapsed_time(0), total_time(0), 
     iter(0), argc(0), argv(nullptr), repulsion(DEFAULT_HARD_SPHERE_REPULSION), last_memory_optimization(0),
-    memory_check_delay(1.), do_memory_optimization(true)
+    memory_check_delay(1.), do_memory_optimization(false)
   {
     simData      = new SimData(this);
     // Integrator will be created by the creator

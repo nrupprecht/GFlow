@@ -1,6 +1,9 @@
 #include "positiondata.hpp"
+// Other files
 #include "../utility/printingutility.hpp"
 #include "../base/simdata.hpp"
+
+#include "../utility/visualization.hpp"
 
 namespace GFlowSimulation {
   // Constructor
@@ -51,7 +54,11 @@ namespace GFlowSimulation {
     else 
       dirName += ("/"+dataName+"/");
 
-    if(!PrintingUtility::writeVectorToDirectory(positions, numbers, dataWidth, fileName, dataName)) return false;
+    // if(!PrintingUtility::writeVectorToDirectory(positions, numbers, dataWidth, fileName, dataName)) return false;
+
+    Visualization vis;
+    Bounds bounds = Base::gflow->getBounds();
+    vis.createBMPs(dirName, positions, numbers, dataWidth, bounds, DIMENSIONS);
 
     // Return success
     return true;
