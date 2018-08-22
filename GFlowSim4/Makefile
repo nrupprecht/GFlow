@@ -30,6 +30,8 @@ SRCS    := $(filter-out $(EXCLUDE), $(SRCS1))
 SRCDIRS := $(shell find . -name '*.cpp' -exec dirname {} \; | uniq)
 OBJS    := $(patsubst %.cpp,$(OBJ)/%.o,$(SRCS))
 
+#OPENCV  := $(shell pkg-config --cflags --libs opencv)
+
 CSTD     = -std=c++11
 DEBUG    = -g -Wall
 OPTIMIZE = -O3 -funroll-loops -no-prec-div -restrict -no-inline-max-size -ffast-math

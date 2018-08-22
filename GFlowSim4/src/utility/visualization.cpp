@@ -1,7 +1,108 @@
 #include "visualization.hpp"
 #include "vectormath.hpp"
 
+#include <opencv2/opencv.hpp>
+
 namespace GFlowSimulation {
+
+  Palette::Palette(int width, int height) {
+    // Set the bounds
+    owned[0] = bounds[0] = 0;
+    owned[1] = bounds[1] = width;
+    owned[2] = bounds[2] = 0;
+    owned[3] = bounds[3] = height;
+    // Create the image
+    image = new BMP;
+    image->SetSize(width, height);
+    // References
+    refs = new int(1);
+  }
+    
+  Palette::~Palette() {
+    // Clean up if we are the last palette to reference the object
+    if (refs[0]==1) {
+      --refs[0];
+      delete image;
+      delete refs;
+    }
+  }
+
+  Palette& Palette::operator=(const Palette&& p) {
+    for (int i=0; i<4; ++i) {
+      owned[i] = p.owned[i];
+      bounds[i] = p.bounds[i];
+    }
+    // Image and refs
+    image = p.image;
+    refs = p.refs;
+    ++refs[0];
+    // Return
+    return *this;
+  }
+
+  void Palette::writeToFile(string fileName) {
+    image->WriteToFile(fileName.c_str());
+  }
+
+  Palette Palette::getSubPalette(int mx, int Mx, int my, int My) {
+    return Palette(mx, Mx, my, My, image, refs, bounds);
+  }
+
+  void Palette::drawCircleByFactors(float xf, float yf, float rf, ColorFunction colorF, bool wrap) {
+    // Width of owned region
+    int wx = owned[1] - owned[0];
+    int wy = owned[3] - owned[2];
+    // Find the center
+    int px = xf*wx + owned[0];
+    int py = yf*wy + owned[2];
+    // Find dp's
+    int dpx = ceil(rf*(owned[1] - owned[0]));
+    int dpy = ceil(rf*(owned[3] - owned[2]));
+
+    // Radius factor squared
+    float rsqr = sqr(rf);
+
+    for (int dy=-dpy; dy<dpy; ++dy) {
+      for (int dx=-dpx; dx<dpx; ++dx) {
+        if (sqr(static_cast<float>(dx)/wx) + sqr(static_cast<float>(dy)/wy) <= rsqr) {
+          // The potential pixel
+          int w_px = px + dx, w_py = py + dy;
+          // Wrap pixel
+          if (wrap) {
+            w_px = w_px >= owned[1] ? w_px-wx : w_px;
+            w_px = w_px <  owned[0] ? w_px+wx : w_px;
+            w_py = w_py >= owned[3] ? w_py-wy : w_py;
+            w_py = w_py <  owned[2] ? w_py+wy : w_py;
+            // Set pixel
+            image->SetPixel(w_px, w_py, 
+              colorF(static_cast<float>(dx)/wx, static_cast<float>(dy)/wy)
+            );
+          }
+          else if (owned[0]<=w_px && w_px<owned[1] && owned[2]<=w_py && w_py<owned[3]) {
+            image->SetPixel(w_px, w_py, 
+              colorF(static_cast<float>(dx)/wx, static_cast<float>(dy)/wy)
+            );
+          }
+        }
+      }
+    }
+  }
+
+  Palette::Palette(int mx, int Mx, int my, int My, BMP *img, int *rfs, int *bnds) {
+    // Set sub-bounds
+    owned[0] = mx;
+    owned[1] = Mx;
+    owned[2] = my;
+    owned[3] = My;
+    // Copy full bounds
+    for (int i=0; i<4; ++i) bounds[i] = bnds[i];
+    // Image and refs
+    image = img;
+    refs = rfs;
+    ++refs[0];
+  }
+
+  //-------------
 
   Visualization::Visualization() : sg_place(DIMENSIONS), resolution(1024), do_wrap(true), background(Black) {
     colorBank = new RGBApixel[10];

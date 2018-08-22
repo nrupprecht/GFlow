@@ -56,6 +56,8 @@ namespace GFlowSimulation {
 
     // if(!PrintingUtility::writeVectorToDirectory(positions, numbers, dataWidth, fileName, dataName)) return false;
 
+    mkdir(dirName.c_str(), 0777);
+
     Visualization vis;
     Bounds bounds = Base::gflow->getBounds();
     vis.createBMPs(dirName, positions, numbers, dataWidth, bounds, DIMENSIONS);
