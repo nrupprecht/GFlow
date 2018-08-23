@@ -6,6 +6,13 @@
 #include <map>
 
 template<int dimensions> struct PData {
+  PData(RealType *x, RealType *v, RealType s, int t) {
+    copyVec(x, X);
+    copyVec(v, V);
+    sg = s;
+    type = t;
+  }
+
   RealType X[dimensions];
   RealType V[dimensions];
   RealType sg;
@@ -30,8 +37,8 @@ namespace GFlowSimulation {
 
   private:
 
-    //! @brief Map of particle id, data
-    std::map<int, vector<PData> > data;
+    //! @brief Vector of particle id, list of data
+    vector< list<PData> > data;
 
   };
 

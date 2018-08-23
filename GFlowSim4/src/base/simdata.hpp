@@ -241,6 +241,12 @@ namespace GFlowSimulation {
     int ntypes;
  
     // All particles have position, force - this data is used for integration, calculating verlet lists, etc.
+
+    //! @brief The global id of the particles.
+    int *global_id;
+    //! @brief Which id will be issued next.
+    int next_global_id;
+
     //! @brief An array of position vectors.
     //!
     //! Under the hood, there is a single contiguous array at &x[0], and the pointers x[i] point to every

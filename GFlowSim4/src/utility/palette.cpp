@@ -1,6 +1,7 @@
 #include "palette.hpp"
 // Other files
 #include "vectormath.hpp"
+#include <algorithm> // For swap
 
 namespace GFlowSimulation {
 
@@ -97,6 +98,14 @@ namespace GFlowSimulation {
     }
   }
 
+  void Palette::drawLineByFactors(float xf0, float yf0, float xf1, float yf1, ColorFunction colorF, float w) {
+    // The algorithm takes coordinates where pixels have integer coordinates. Convert to that basis.
+    int x0 = xf0*getWidth(),  x1 = xf1*getWidth();
+    int y0 = yf0*getHeight(), y1 = yf1*getHeight();
+    // Draw a line using Wu's algorithm
+    drawLine_WuAlgorithm(x0, y0, x1, x1, RGB_Blue);
+  }
+
   void Palette::coverPalette(RGBApixel color) {
     for (int y=owned[2]; y<owned[3]; ++y)
       for (int x=owned[0]; x<owned[1]; ++x) 
@@ -125,7 +134,7 @@ namespace GFlowSimulation {
     ++refs[0];
   }
 
-  std::pair<float, float> Palette::pixelFactor(int x, int y) const {
+  inline std::pair<float, float> Palette::pixelFactor(int x, int y) const {
     // Create a pair to set and return
     std::pair<float, float> pf;
     // We need to find where the centers of pixels are
@@ -138,16 +147,142 @@ namespace GFlowSimulation {
     return pf;
   }
 
+  inline float Palette::pixelFactorX(int x) const {
+    int X = owned[1]-owned[0]+1;
+    return static_cast<float>(x)/X;
+  }
+
+  inline float Palette::pixelFactorY(int y) const {
+    int Y = owned[3]-owned[2]+1;
+    return static_cast<float>(y)/Y;
+  }
+
   //! @brief Set a pixel relative to the owned coordinates (origin is {owned[0], owned[2]})
   //!
   //! EasyBMP has the top left corner as its origin, it would be easier to use the bottom left, so
   //! this function also takes care of that.
-  void Palette::setPixel(int x, int y, RGBApixel color) {
+  inline void Palette::setPixel(int x, int y, RGBApixel color) {
     int X = x+owned[0], Y = owned[3]-y-1;
     // Check the bounds
-    if (X<0 || bounds[1]<=X || Y<0 || bounds[3]<=Y) throw PaletteOutOfBounds();
+    if (X<0 || bounds[1]<=X || Y<0 || bounds[3]<=Y) {
+
+      cout << x << " " << y << " :: " << X << " " << Y << endl;
+
+      throw PaletteOutOfBounds();
+    }
     // Set the pixel
     image->SetPixel(X, Y, color);
+  }
+
+  inline void drawLine_BresenhamAlgorithm(int x0, int y0, int x1, int y1, RGBApixel color) {
+
+  }
+
+  inline void Palette::drawLine_WuAlgorithm(int x0, int y0, int x1, int y1, RGBApixel color) {
+    // Is the line steep?
+    bool isSteep = fabs(y1-y0) > fabs(x1-x0);
+
+    if (isSteep) {
+      std::swap(x0, y0);
+      std::swap(x1, y1);
+    }
+    if (x0>x1) {
+      std::swap(x0, x1);
+      std::swap(y0, y1);
+    }
+
+    float dx = x1 - x0;
+    float dy = y1 - y0;
+    float gradient = dx==0 ? 1.0 : dy/dx;
+
+    // Some helpful lambdas
+    auto fpart = [] (float x) -> float {
+      return x - floor(x);
+    };
+    auto rfpart = [] (float x) -> float {
+      return 1. - x + floor(x);
+    };
+
+    // handle first endpoint
+    float xend = round(x0);
+    float yend = y0 + gradient * (xend - x0);
+    float xgap = rfpart(x0 + 0.5);
+    float xpxl1 = xend; // this will be used in the main loop
+    float ypxl1 = floor(yend);
+    if (isSteep) {
+      setPixel(ypxl1,   xpxl1, rfpart(yend) * xgap * color);
+      setPixel(ypxl1+1, xpxl1,  fpart(yend) * xgap * color);
+    }
+    else {
+      setPixel(xpxl1, ypxl1  , rfpart(yend) * xgap * color);
+      setPixel(xpxl1, ypxl1+1,  fpart(yend) * xgap * color);
+    }
+
+    float intery = yend + gradient; // first y-intersection for the main loop
+    
+    // handle second endpoint
+    xend = round(x1);
+    yend = y1 + gradient * (xend - x1);
+    xgap = fpart(x1 + 0.5);
+    float xpxl2 = xend; //this will be used in the main loop
+    float ypxl2 = floor(yend);
+    if (isSteep) {
+      setPixel(ypxl2  , xpxl2, rfpart(yend) * xgap * color);
+      setPixel(ypxl2+1, xpxl2,  fpart(yend) * xgap * color);
+    }
+    else {
+      setPixel(xpxl2, ypxl2,  rfpart(yend) * xgap * color);
+      setPixel(xpxl2, ypxl2+1, fpart(yend) * xgap * color);
+    }
+    
+    // main loop
+    if (isSteep) {
+      for (int x=xpxl1 + 1; x<=xpxl2 - 1; ++x) {
+        setPixel(floor(intery)  , x, rfpart(intery) * color);
+        setPixel(floor(intery)+1, x,  fpart(intery) * color);
+        intery += gradient;
+      }
+    }
+    else {
+      for (int x=xpxl1 + 1; x<=xpxl2 - 1; ++x) {
+        setPixel(x, floor(intery),  rfpart(intery) * color);
+        setPixel(x, floor(intery)+1, fpart(intery) * color);
+        intery += gradient;
+      }
+    }
+    // Thanks, Wikipedia!
+  }
+
+  inline void Palette::drawCircle_MidpointAlgorithm(int x0, int y0, int radius, RGBApixel color) {
+    int x = radius-1;
+    int y = 0;
+    int dx = 1;
+    int dy = 1;
+    int err = dx - (radius << 1);
+
+    while (x >= y) {
+      setPixel(x0 + x, y0 + y, color);
+      setPixel(x0 + y, y0 + x, color);
+      setPixel(x0 - y, y0 + x, color);
+      setPixel(x0 - x, y0 + y, color);
+      setPixel(x0 - x, y0 - y, color);
+      setPixel(x0 - y, y0 - x, color);
+      setPixel(x0 + y, y0 - x, color);
+      setPixel(x0 + x, y0 - y, color);
+
+      if (err <= 0) {
+        y++;
+        err += dy;
+        dy += 2;
+      }
+      
+      if (err > 0) {
+        x--;
+        dx += 2;
+        err += dx - (radius << 1);
+      }
+    }
+    // Thanks, Wikipedia! <https://en.wikipedia.org/wiki/Midpoint_circle_algorithm>
   }
 
 }

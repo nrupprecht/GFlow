@@ -5,7 +5,7 @@
 namespace GFlowSimulation {
 
   Visualization::Visualization() : pos_place(0), vel_place(DIMENSIONS), sg_place(2*DIMENSIONS), type_place(2*DIMENSIONS+1), 
-    resolution(1024*1.5), do_wrap(true), background(RGB_Black), maxVsqr(0), color_option(1)
+    resolution(1024*1.5), do_wrap(true), background(RGB_Black), maxVsqr(0), color_option(3)
   {
     colorBank = new RGBApixel[10];
     for (int i=0; i<10; ++i)
@@ -103,6 +103,7 @@ namespace GFlowSimulation {
             return color*makePixel(floor(s)); 
           }
         };
+
       // Draw the particle
       image.drawCircleByFactors(xf, yf, rf, colorF, do_wrap); 
     }

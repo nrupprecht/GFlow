@@ -7,7 +7,7 @@
 namespace GFlowSimulation {
 
   SimData::SimData(GFlow *gflow) : Base(gflow), number(0), end_owned(0), number_halo(0), end_halo(0), 
-    number_ghost(0), end_ghost(0), x(nullptr), v(nullptr), f(nullptr), sg(nullptr), im(nullptr), type(nullptr), 
+    number_ghost(0), end_ghost(0), global_id(nullptr), next_global_id(0), x(nullptr), v(nullptr), f(nullptr), sg(nullptr), im(nullptr), type(nullptr), 
     dataF(nullptr), dataI(nullptr), body(nullptr) {};
 
   SimData::~SimData() {
@@ -27,6 +27,12 @@ namespace GFlowSimulation {
     if (v) dealloc_array_2d(v);
     if (f) dealloc_array_2d(f);
     // These are just arrays
+    if (global_id) {
+      delete [] global_id;
+      global_id = nullptr;
+      // Also reset this
+      next_global_id = 0;
+    }
     if (sg) {
       delete [] sg;
       sg = nullptr;
@@ -77,6 +83,7 @@ namespace GFlowSimulation {
     f = alloc_array_2d<RealType>(num, DIMENSIONS);
 
     // Reserve new arrays
+    global_id = new int[num];
     sg   = new RealType[num];
     im   = new RealType[num];
     type = new int[num];
@@ -105,6 +112,7 @@ namespace GFlowSimulation {
     f = alloc_array_2d<RealType>(num, DIMENSIONS);
 
     // Reserve new arrays
+    global_id = new int[num];
     sg   = new RealType[num];
     im   = new RealType[num];
     type = new int[num];
@@ -138,6 +146,7 @@ namespace GFlowSimulation {
     RealType **nx  = alloc_array_2d<RealType>(size, DIMENSIONS);
     RealType **nv  = alloc_array_2d<RealType>(size, DIMENSIONS);
     RealType **nf  = alloc_array_2d<RealType>(size, DIMENSIONS);
+    int *ngid = new int[size];
     RealType *nsg = new RealType[size];
     RealType *nim  = new RealType[size];
     int *ntype = new int[size];
@@ -149,6 +158,7 @@ namespace GFlowSimulation {
     copyHelper<DIMENSIONS>(resize_owned, resize_halo, resize_ghost, x[0], nx[0]);
     copyHelper<DIMENSIONS>(resize_owned, resize_halo, resize_ghost, v[0], nv[0]);
     copyHelper<DIMENSIONS>(resize_owned, resize_halo, resize_ghost, f[0], nf[0]);
+    copyHelper<1>(resize_owned, resize_halo, resize_ghost, global_id, ngid);
     copyHelper<1>(resize_owned, resize_halo, resize_ghost, sg, nsg);
     copyHelper<1>(resize_owned, resize_halo, resize_ghost, im, nim);
     copyHelper<1>(resize_owned, resize_halo, resize_ghost, type, ntype);
@@ -196,6 +206,8 @@ namespace GFlowSimulation {
     // Copy data
     copyVec(X, x[number]);
     copyVec(V, v[number]);
+    // Assign a flobal id - this assumes that this is a *new* particle
+    global_id[number] = ++next_global_id;
     sg[number]   = Sg;
     im[number]   = Im;
     type[number] = Type;
@@ -214,6 +226,7 @@ namespace GFlowSimulation {
   void SimData::addParticle(const RealType *X, const RealType *V, const RealType Sg, 
     const RealType Im, const int Type, const ParticleOwnership own_type) 
   {
+    // @todo Global ID transfer
     switch (own_type) {
       default:
       case ParticleOwnership::Owned: {
@@ -312,6 +325,8 @@ namespace GFlowSimulation {
   void SimData::addHaloParticle(const RealType *X, const RealType *V, const RealType Sg, 
     const RealType Im, const int Type)
   {
+    // @todo Global ID transfer
+
     // Check if we need to resize the array
     if (end_halo - end_owned <= number_halo) resize(0, ceil(0.25*number_halo), 0);
     // Copy data
@@ -329,6 +344,8 @@ namespace GFlowSimulation {
   void SimData::addGhostParticle(const RealType *X, const RealType *V, const RealType Sg, 
     const RealType Im, const int Type)
   {
+    // @todo Global ID transfer
+
     // Check if we need to resize the array
     if (end_ghost - end_halo <= number_ghost) resize(0, 0, ceil(0.25*number_ghost));
     // Copy data
@@ -359,9 +376,11 @@ namespace GFlowSimulation {
     copyVec(x[id_source], x[id_dest]);
     copyVec(v[id_source], v[id_dest]);
     copyVec(f[id_source], f[id_dest]);
+    global_id[id_dest] = global_id[id_source];
     sg[id_dest] = sg[id_source];
     im[id_dest] = im[id_source];
     type[id_dest] = type[id_source];
+
     // FOR NOW, IT DOES NOT MOVE AUXILARY DATA
     // @todo Move auxilary data
 

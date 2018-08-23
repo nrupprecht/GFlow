@@ -4,8 +4,11 @@
 //! For aligned memory. We set this to 1 if we are using posiz memalign as our
 //! aligned alloc function.
 #define POSIX_MEMALIGN 1
+
 //! We set this to 1 if we are debugging. This uncovers debugging asserts.
+#ifndef DEBUG
 #define DEBUG 0
+#endif
 
 //! We define this to be 1 if we are compiling for MPI parallel.
 
@@ -19,9 +22,13 @@
 
 // Compiler type
 //! Set to 1 if the intel compiler being used.
+#if !defined(_INTEL)
 #define _INTEL_ 1
+#endif
 //! Set to 1 if the gnu compiler being used.
+#if !defined(_INTEL_) && !defined(_CLANG_)
 #define _CLANG_ 1
+#endif 
 
 namespace GFlowSimulation {
 

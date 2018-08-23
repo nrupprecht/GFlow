@@ -9,7 +9,7 @@ namespace GFlowSimulation {
   // Note --- Allinea map cannot be used with memalign functions, it causese it
   // to break. See e.g. <https://github.com/gperftools/gperftools/issues/909>
    template<typename T> inline void alignedAlloc(T *& pointer, size_t alignment, size_t size) {
-    #if DEBUG == 1
+    #if DEBUG==1
     pointer = new T[size];
     #else
     #if POSIX_MEMALIGN == 1

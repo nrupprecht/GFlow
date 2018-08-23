@@ -41,11 +41,28 @@ namespace GFlowSimulation {
       simd_float im_hdt_f = simd_mult(im_hdt, vec1);
       vec1 = simd_add(im_hdt_f, V);
       simd_store(vec1, &v[i]);
+      // Debug mode asserts
+      #if DEBUG==1
+      for (int j=0; j<simd_data_size; ++j) {
+        assert(!isnan(f[i+j]));
+        assert(!isnan(v[i+j]));
+        assert(fabs(v[i+j])<MAX_REASONABLE_V);
+        assert(fabs(f[i+j])<MAX_REASONABLE_F);
+        cout << "D";
+      }
+      #endif
     }
     // Left overs
     for (; i<number*DIMENSIONS; ++i) {
       int id = i/DIMENSIONS;
       v[i] += hdt*im[id]*f[i];
+      // Debug mode asserts
+      #if DEBUG==1
+      assert(!isnan(f[i]));
+      assert(!isnan(v[i]));
+      assert(fabs(v[i])<MAX_REASONABLE_V);
+      assert(fabs(f[i])<MAX_REASONABLE_F);
+      #endif
     }
     #endif
 
@@ -68,6 +85,11 @@ namespace GFlowSimulation {
       simd_float dX = simd_mult(V, dt_vec);
       simd_float X_new = simd_add(X, dX);
       simd_store(X_new, &x[i]);
+      #if DEBUG==1
+      for (int j=0; j<simd_data_size; ++j) {
+        assert(!isnan(v[i+j]));
+      }
+      #endif
     }
     // Left overs
     for (; i<number*DIMENSIONS; ++i) {
@@ -108,13 +130,6 @@ namespace GFlowSimulation {
     simd_float im_hdt = simd_set1(im[0]*hdt);
     int i;
     for (i=0; i<number*DIMENSIONS-simd_data_size; i+=simd_data_size) {
-      /*
-      __m256 vec1 = _mm256_loadu_ps(&f[i]);
-      __m256 V = _mm256_loadu_ps(&v[i]);
-      __m256 im_hdt_f = _mm256_mul_ps(im_hdt, vec1);
-      vec1 = _mm256_add_ps(im_hdt_f, V);
-      _mm256_storeu_ps(&v[i], vec1);
-      */
       simd_float vec1 = simd_load(&f[i]);
       simd_float V    = simd_load(&v[i]);
       simd_float im_hdt_f = simd_mult(im_hdt, vec1);

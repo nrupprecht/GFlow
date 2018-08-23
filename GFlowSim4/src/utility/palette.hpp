@@ -31,12 +31,27 @@ namespace GFlowSimulation {
     return x<T(0) ? T(0) : x;
   }
 
-  // @brief Returns a color based on how far a point is from the center of a circle
+  // @brief Returns a color based on a two number parameterization.
   typedef std::function<RGBApixel(float, float, bool&)> ColorFunction;
 
-  // @brief Dot product of colors
-  inline RGBApixel operator*(RGBApixel a, RGBApixel b) {
+  //! @brief Color something white.
+  inline RGBApixel colorWhite(float, float, bool doColor) {
+    doColor = true;
+    return RGB_White;
+  }
+
+  // @brief Dot product of colors.
+  inline RGBApixel operator*(const RGBApixel a, const RGBApixel b) {
     return RGBApixel(a.Red*b.Red/255, a.Green*b.Green/255, a.Blue*b.Blue/255);
+  }
+
+  //! @brief Scale a color by a float.
+  inline RGBApixel operator*(float a, const RGBApixel c) {
+    return RGBApixel(
+      static_cast<ebmpBYTE>(a*c.Red), 
+      static_cast<ebmpBYTE>(a*c.Green), 
+      static_cast<ebmpBYTE>(a*c.Blue)
+    );
   }
 
   struct PixL {
@@ -108,6 +123,8 @@ namespace GFlowSimulation {
     //! @brief Draw a circle by giving scaled coordinates and radius
     void drawCircleByFactors(float, float, float, ColorFunction, bool=true);
 
+    void drawLineByFactors(float, float, float, float, ColorFunction, float);
+
     //! @brief Cover the entire palette with a single color.
     void coverPalette(RGBApixel);
 
@@ -128,10 +145,22 @@ namespace GFlowSimulation {
     Palette(int, int, int, int, BMP*, int*, int*);
 
     //! @brief Gives the factor of a pixel
-    std::pair<float, float> pixelFactor(int, int) const;
+    inline std::pair<float, float> pixelFactor(int, int) const;
+
+    inline float pixelFactorX(int) const;
+    inline float pixelFactorY(int) const;
 
     //! @brief Set a pixel relative to the owned coordinates (origin is {owned[0], owned[2]})
-    void setPixel(int, int, RGBApixel);
+    inline void setPixel(int, int, RGBApixel);
+
+    //! @brief Draw a line using Bresenham's algorithm.
+    inline void drawLine_BresenhamAlgorithm(int, int, int, int, RGBApixel);
+
+    //! @brief Draw a line using Wu's algorithm.
+    inline void drawLine_WuAlgorithm(int, int, int, int, RGBApixel);
+
+    //! @brief Draw a circle using the midpoint algorithm
+    inline void drawCircle_MidpointAlgorithm(int, int, int, RGBApixel);
 
     //! @brief The image data.
     BMP *image;

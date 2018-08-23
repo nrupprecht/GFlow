@@ -1,6 +1,7 @@
 # Makefile snatched from <https://ubuntuforums.org/showthread.php?t=1204739>
 
 USE_MPI ?= 0
+DEBUG   ?= 0
 
 # Compiler options
 CC = icpc
@@ -8,6 +9,10 @@ MPICC = mpic++
 
 # Add flags to this variable as neccessary
 FLAGS = 
+
+ifeq (DEBUG, 1)
+FLAGS += -D DEBUG=1
+endif
 
 # Whether to use MPI or not
 #ifneq (USE_MPI, 1)

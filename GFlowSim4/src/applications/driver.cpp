@@ -81,6 +81,10 @@ int main(int argc, char **argv) {
 
   // ------------------------------------------------------ */
 
+  #if DEBUG==1
+  cout << "Running in Debug mode.\n";
+  #endif
+
   // Record the time at which the program started.
   auto start_time = current_time();
   cout << "Starting up simulation...\n";
