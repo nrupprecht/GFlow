@@ -1,68 +1,9 @@
 #ifndef __VISUALIZATION_HPP__GFLOW__
 #define __VISUALIZATION_HPP__GFLOW__
 
-#include "../EasyBMP/EasyBMP.h"
-#include "../utility/utility.hpp"
+#include "palette.hpp"
 
 namespace GFlowSimulation {
-
-  const RGBApixel Black(0,0,0);
-  const RGBApixel White(255,255,255);
-  const RGBApixel Red(255,0,0);
-  const RGBApixel Green(0,255,0);
-  const RGBApixel Blue(0,0,255);
-
-  inline RGBApixel randomColor() {
-    int r = static_cast<int>(drand48()*255);
-    int g = static_cast<int>(drand48()*255);
-    int b = static_cast<int>(drand48()*255);
-    return RGBApixel(r, g, b);
-  }
-
-  // @brief Returns a color based on how far a point is from the center of a circle
-  typedef RGBApixel (*ColorFunction) (float, float);
-
-  /**
-  *  @brief The Palette class, used to draw images
-  *
-  */
-  class Palette {
-    //! @brief Constructor.
-    Palette(int, int);
-
-    //! @brief Destructor.
-    ~Palette();
-
-    //! @brief Move equals operator.
-    Palette& operator=(const Palette&&);
-
-    //! @brief Draw the pallate to a bmp image.
-    void writeToFile(string);
-
-    //! @brief Get a subset of the palette to draw on.
-    Palette getSubPalette(int, int, int, int);
-
-    // --- Drawing functions
-
-    void drawCircleByFactors(float, float, float, ColorFunction, bool=true);
-
-  private:
-    //! @brief Private constructor for use in making subpalettes
-    Palette(int, int, int, int, BMP*, int*, int*);
-
-    //! @brief The image data.
-    BMP *image;
-
-    //! @brief The number of references to the image data.
-    int *refs;
-
-    //! @brief Bounds - left, right, bottom, top.
-    int bounds[4];
-
-    //! @brief Owned bounds - the subset of the pixels this palette owns.
-    int owned[4];
-
-  };
 
   /**
   *  @brief Creates visualization from
@@ -82,13 +23,22 @@ namespace GFlowSimulation {
     void createBMPs(string, const vector<RealType*>&, const vector<int>&, int, Bounds&, int) const;
 
   private:
-
+    //! @brief Creates a single frame.
     inline void createImage(string, RealType*, int, int, Bounds&, int) const;
 
-    inline void circle(BMP&, int, int, int, RGBApixel, bool) const;
+    inline void findMaxVSqr(const vector<RealType*>&, const vector<int>&, int) const;
 
-    //! @brief Where in the data for a particle is the radius
+    //! @brief Where the position data starts.
+    int pos_place;
+
+    //! @brief Where the velocity data starts.
+    int vel_place;
+
+    //! @brief Where in the data for a particle is the radius.
     int sg_place;
+
+    //! @brief Where in the data for a particle is its type.
+    int type_place;
 
     //! @brief The dimensions of the image (it will be the same in x and y)
     int resolution;
@@ -96,7 +46,11 @@ namespace GFlowSimulation {
     //! @brief Whether to wrap at the boundaries or not
     bool do_wrap;
 
+    mutable RealType maxVsqr;
+
     RGBApixel background;
+
+    unsigned int color_option;
 
     RGBApixel *colorBank;
   };

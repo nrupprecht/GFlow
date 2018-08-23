@@ -7,7 +7,7 @@
 
 namespace GFlowSimulation {
   // Constructor
-  PositionData::PositionData(GFlow *gflow) : DataObject(gflow, "Pos"), dataWidth(DIMENSIONS+2) {};
+  PositionData::PositionData(GFlow *gflow) : DataObject(gflow, "Pos"), dataWidth(2*DIMENSIONS+2) {};
 
   // Destructor
   PositionData::~PositionData() {
@@ -41,6 +41,8 @@ namespace GFlowSimulation {
       int d=0;
       for (; d<DIMENSIONS; ++d)
         array[dataWidth*i+d] = Base::simData->x[i][d];
+      for (; d<2*DIMENSIONS; ++d)
+        array[dataWidth*i+d] = Base::simData->v[i][d-DIMENSIONS];
       array[dataWidth*i+d++] = Base::simData->sg[i];
       array[dataWidth*i+d++] = Base::simData->type[i];
     }

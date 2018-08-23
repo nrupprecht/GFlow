@@ -131,7 +131,7 @@ int main(int argc, char **argv) {
   RealType gravity = 0.;
   bool adjustDT = false;
   RealType startRecTime = 0;
-  RealType fps = 15.;
+  RealType fps = -1.;
   RealType dt = 0.001;
   RealType time = 10.;
   string writeDirectory = "RunData";
@@ -236,14 +236,14 @@ int main(int argc, char **argv) {
   if (psnapshot) gflow->addDataObject(new PercolationSnapshot(gflow, skin));
   if (memdist)  gflow->addDataObject(new MemoryDistance(gflow));
   if (pressure) gflow->addDataObject(new PressureData(gflow));
-  gflow->setFPS(fps); // Do after data objects are loaded
+  if (fps>0)    gflow->setFPS(fps); // Do after data objects are loaded
   gflow->setDMCmd(argc, argv);
 
   // --- Add modifiers
   if (temperature>0) gflow->addModifier(new TemperatureModifier(gflow, temperature));
   // Timestep adjustment
   if (adjustDT) gflow->addModifier(new TimestepModifier(gflow));
-  if (gravity!=0) gflow->addModifier(new ConstantAcceleration(gflow, -1.));
+  if (gravity!=0) gflow->addModifier(new ConstantAcceleration(gflow, gravity));
 
   // Set time step and request time
   gflow->setDT(dt);

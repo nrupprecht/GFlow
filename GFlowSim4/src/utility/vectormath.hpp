@@ -65,12 +65,6 @@ namespace GFlowSimulation {
   }
 
   template<typename T> inline void setVec(T *x, const T val) {
-  /*
-    #if _INTEL_ == 1
-    #pragma unroll(DIMENSIONS)
-    #endif 
-    for (int d=0; d<DIMENSIONS; ++d) x[d] = val;
-  */
     std::fill(x, x+DIMENSIONS, val);
   }
 

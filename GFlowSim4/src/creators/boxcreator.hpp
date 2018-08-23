@@ -21,12 +21,11 @@ namespace GFlowSimulation {
     virtual GFlow* createSimulation();
 
     void setPhi(RealType p) { phi = p; }
-    void setWidth(RealType w) { width = w; }
     void setRadius(RealType r) { radius = r; }
 
   private:
     // Data
-    RealType phi, width, radius;
+    RealType phi, radius;
 
     // Normal distribution
     std::mt19937 generator;

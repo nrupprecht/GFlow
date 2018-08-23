@@ -1,110 +1,12 @@
 #include "visualization.hpp"
+// Other files
 #include "vectormath.hpp"
-
-#include <opencv2/opencv.hpp>
 
 namespace GFlowSimulation {
 
-  Palette::Palette(int width, int height) {
-    // Set the bounds
-    owned[0] = bounds[0] = 0;
-    owned[1] = bounds[1] = width;
-    owned[2] = bounds[2] = 0;
-    owned[3] = bounds[3] = height;
-    // Create the image
-    image = new BMP;
-    image->SetSize(width, height);
-    // References
-    refs = new int(1);
-  }
-    
-  Palette::~Palette() {
-    // Clean up if we are the last palette to reference the object
-    if (refs[0]==1) {
-      --refs[0];
-      delete image;
-      delete refs;
-    }
-  }
-
-  Palette& Palette::operator=(const Palette&& p) {
-    for (int i=0; i<4; ++i) {
-      owned[i] = p.owned[i];
-      bounds[i] = p.bounds[i];
-    }
-    // Image and refs
-    image = p.image;
-    refs = p.refs;
-    ++refs[0];
-    // Return
-    return *this;
-  }
-
-  void Palette::writeToFile(string fileName) {
-    image->WriteToFile(fileName.c_str());
-  }
-
-  Palette Palette::getSubPalette(int mx, int Mx, int my, int My) {
-    return Palette(mx, Mx, my, My, image, refs, bounds);
-  }
-
-  void Palette::drawCircleByFactors(float xf, float yf, float rf, ColorFunction colorF, bool wrap) {
-    // Width of owned region
-    int wx = owned[1] - owned[0];
-    int wy = owned[3] - owned[2];
-    // Find the center
-    int px = xf*wx + owned[0];
-    int py = yf*wy + owned[2];
-    // Find dp's
-    int dpx = ceil(rf*(owned[1] - owned[0]));
-    int dpy = ceil(rf*(owned[3] - owned[2]));
-
-    // Radius factor squared
-    float rsqr = sqr(rf);
-
-    for (int dy=-dpy; dy<dpy; ++dy) {
-      for (int dx=-dpx; dx<dpx; ++dx) {
-        if (sqr(static_cast<float>(dx)/wx) + sqr(static_cast<float>(dy)/wy) <= rsqr) {
-          // The potential pixel
-          int w_px = px + dx, w_py = py + dy;
-          // Wrap pixel
-          if (wrap) {
-            w_px = w_px >= owned[1] ? w_px-wx : w_px;
-            w_px = w_px <  owned[0] ? w_px+wx : w_px;
-            w_py = w_py >= owned[3] ? w_py-wy : w_py;
-            w_py = w_py <  owned[2] ? w_py+wy : w_py;
-            // Set pixel
-            image->SetPixel(w_px, w_py, 
-              colorF(static_cast<float>(dx)/wx, static_cast<float>(dy)/wy)
-            );
-          }
-          else if (owned[0]<=w_px && w_px<owned[1] && owned[2]<=w_py && w_py<owned[3]) {
-            image->SetPixel(w_px, w_py, 
-              colorF(static_cast<float>(dx)/wx, static_cast<float>(dy)/wy)
-            );
-          }
-        }
-      }
-    }
-  }
-
-  Palette::Palette(int mx, int Mx, int my, int My, BMP *img, int *rfs, int *bnds) {
-    // Set sub-bounds
-    owned[0] = mx;
-    owned[1] = Mx;
-    owned[2] = my;
-    owned[3] = My;
-    // Copy full bounds
-    for (int i=0; i<4; ++i) bounds[i] = bnds[i];
-    // Image and refs
-    image = img;
-    refs = rfs;
-    ++refs[0];
-  }
-
-  //-------------
-
-  Visualization::Visualization() : sg_place(DIMENSIONS), resolution(1024), do_wrap(true), background(Black) {
+  Visualization::Visualization() : pos_place(0), vel_place(DIMENSIONS), sg_place(2*DIMENSIONS), type_place(2*DIMENSIONS+1), 
+    resolution(1024*1.5), do_wrap(true), background(RGB_Black), maxVsqr(0), color_option(1)
+  {
     colorBank = new RGBApixel[10];
     for (int i=0; i<10; ++i)
       colorBank[i] = randomColor();
@@ -117,6 +19,10 @@ namespace GFlowSimulation {
   void Visualization::createBMPs(string dirName, const vector<RealType*>& data, const vector<int>& number, 
     int dataWidth, Bounds& bounds, int dimensions) const 
   {
+    // Find the maximum velocity (if needed)
+    if (color_option==2)
+      findMaxVSqr(data, number, dataWidth);
+    // Create frames
     for (int i=0; i<data.size(); ++i) {
       string fileName = dirName + "/frame" + toStr(i) + ".bmp";
       createImage(fileName, data[i], number[i], dataWidth, bounds, dimensions);
@@ -125,57 +31,100 @@ namespace GFlowSimulation {
 
   inline void Visualization::createImage(string fileName, RealType *data, int number, int dataWidth, Bounds& bounds, int dimensions) const {
     // Get some data from the bounds
-    double wx = bounds.wd(0)/resolution;
-    double wy = bounds.wd(1)/resolution;
-    double left = bounds.min[0];
-    double bott = bounds.min[1];
+    float wx = bounds.wd(0); ///resolution;
+    float wy = bounds.wd(1); ///resolution;
+    float left = bounds.min[0];
+    float bott = bounds.min[1];
 
-    BMP image;
-    image.SetSize(resolution, resolution);
+    // Create the main palette
+    Palette palette(resolution, resolution);
+    palette.coverPalette(RGB_Black);
+    // Get a subpallete on which to write the image
+    Palette image = palette.getSubPalette(10, resolution-10, 10, resolution-10);
 
     // Set background
-    for (int j=0; j<resolution; ++j)
-      for (int i=0; i<resolution; ++i)
-        image.SetPixel(i, j, background);
+    image.coverPalette(background);
 
     // Print all particles
     for (int i=0; i<number; ++i) {
       // Get the data for this particle
       RealType *pdata = &data[i*dataWidth];
+      // Get individual entries
+      RealType *vel  = vel_place>-1 ? &pdata[vel_place] : nullptr;
+      RealType sigma = sg_place>-1 ? pdata[sg_place] : 0;
+      int type       = type_place > -1 ? static_cast<int>(pdata[type_place]) : 0;
       // Find the center of the particle
-      int px = (pdata[0] - left)/wx;
-      int py = (pdata[1] - bott)/wy;
-      int dp = pdata[sg_place]/wx;
-      // Draw a circle
-      circle(image, px, py, dp, colorBank[i%10], do_wrap);
-    }
+      float xf = (pdata[0] - left)/wx;
+      float yf = (pdata[1] - bott)/wy;
+      float rf = sigma/wx;
 
-    // Save image
-    image.WriteToFile(fileName.c_str());
-  }
-
-  inline void Visualization::circle(BMP& image, int x, int y, int r, RGBApixel color, bool wrap) const {
-    for (int dy=-r; dy<r; ++dy) {
-      for (int dx=-r; dx<r; ++dx) {
-        if (sqr(dx) + sqr(dy) <= sqr(r)) {
-          // The potential pixel
-          int w_px = x + dx, w_py = y + dy;
-          // Wrap pixel
-          if (wrap) {
-            w_px = w_px>=resolution ? w_px-resolution : w_px;
-            w_px = w_px<0 ? w_px+resolution : w_px;
-            w_py = w_py>=resolution ? w_py-resolution : w_py;
-            w_py = w_py<0 ? w_py+resolution : w_py;
-            // Set pixel
-            image.SetPixel(w_px, w_py, color);
+      // --- Determine the color
+      RGBApixel color = RGB_Green;
+      if (colorBank) {
+        switch (color_option) {
+          default:
+          case 0: { // Color by type
+            color = colorBank[type];
+            break;
           }
-          else if (0<=w_px && w_px<resolution && 0<=w_py && w_py<resolution) {
-            image.SetPixel(w_px, w_py, color);
+          case 1: { // Color randomly
+            int id = i%10;
+            color = colorBank[id];
+            break;
+          }
+          case 2: { // Color by velocity
+            if (vel) {
+              float V = magnitudeVec(vel)/maxVsqr;
+              color = RGBApixel(floor(255*V), 0, 200*(1-V));
+            }
+            break;
+          }
+          case 3: { // Color by orientation
+            if (vel) {
+              float theta = atan2(vel[1], vel[0]);
+              color = colorAngle(theta);
+            }
+            break;
           }
         }
       }
+
+      // --- Create the color function.
+      // xf, yf \in [-1, 1] (roughly - could be a bit larger)
+      std::function<RGBApixel(float, float, bool&)> colorF = 
+        [&] (float xf, float yf, bool &doColor)  {
+          float s = 255.f*(1.f - 0.5f*(sqr(xf) + sqr(yf)));
+          if (s<0) {
+            doColor = false;
+            return RGB_White;
+          }
+          else {
+            doColor = true;
+            return color*makePixel(floor(s)); 
+          }
+        };
+      // Draw the particle
+      image.drawCircleByFactors(xf, yf, rf, colorF, do_wrap); 
     }
+
+    // Save image
+    palette.writeToFile(fileName);
   }
 
+  inline void Visualization::findMaxVSqr(const vector<RealType*>& dataVector, const vector<int>& numbers, int dataWidth) const {
+    // Reset
+    maxVsqr = 0;
+    // Look for max vsqr
+    for (int iter=0; iter<dataVector.size(); ++iter) {
+      RealType *data = dataVector.at(iter);
+      int number = numbers.at(iter);
+      for (int i=0; i<number; ++i) {
+        float V = sqr(data[i*dataWidth + vel_place]);
+        if (V>maxVsqr) maxVsqr = V;
+      }
+    }
+    // Take the sqrt
+    maxVsqr = sqrt(maxVsqr);
+  }
 
 }

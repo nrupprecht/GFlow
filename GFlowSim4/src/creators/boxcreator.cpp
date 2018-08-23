@@ -3,13 +3,13 @@
 
 namespace GFlowSimulation {
 
-  BoxCreator::BoxCreator(int argc, char **argv) : Creator(argc, argv), phi(0.5), width(4.), radius(0.05) {
+  BoxCreator::BoxCreator(int argc, char **argv) : Creator(argc, argv), phi(0.5), radius(0.05) {
     seed = std::chrono::system_clock::now().time_since_epoch().count();
     seedGenerator(seed);
     normal_dist = std::normal_distribution<RealType>(0., 1.);
   };
 
-  BoxCreator::BoxCreator(ArgParse *p) : Creator(p), phi(0.5), width(4.), radius(0.05) {
+  BoxCreator::BoxCreator(ArgParse *p) : Creator(p), phi(0.5), radius(0.05) {
     seed = std::chrono::system_clock::now().time_since_epoch().count();
     seedGenerator(seed);
     normal_dist = std::normal_distribution<RealType>(0., 1.);
@@ -27,6 +27,8 @@ namespace GFlowSimulation {
     // Values
     int number = -1; // -1 means use volume density
     int sample = 0;
+    RealType width = 4.;
+    RealType height = -1.;
     RealType dt = 0.001;
     RealType vsgma = 0.25;
     RealType skinDepth = -1.;
@@ -45,6 +47,7 @@ namespace GFlowSimulation {
       parserPtr->get("radius", radius);
       parserPtr->get("phi", phi);
       parserPtr->get("width", width);
+      parserPtr->get("height", height);
       parserPtr->get("vsgma", vsgma);
       parserPtr->get("skinDepth", skinDepth);
       parserPtr->get("cell_size", cell_size);
@@ -61,9 +64,16 @@ namespace GFlowSimulation {
 
     // Set the bounds of the gflow object
     if (width<=0) width = 1.; // In case of bad argument
+    if (height<=0) height = width;
     for (int d=0; d<DIMENSIONS; ++d) {
-      gflow->bounds.min[d] = -0.5*width;
-      gflow->bounds.max[d] =  0.5*width;
+      if (d!=1) {
+        gflow->bounds.min[d] = -0.5*width;
+        gflow->bounds.max[d] =  0.5*width;
+      }
+      else {
+        gflow->bounds.min[d] = -0.5*height;
+        gflow->bounds.max[d] = 0.5*height;
+      }
     }
 
     // --- Set initial particle data
