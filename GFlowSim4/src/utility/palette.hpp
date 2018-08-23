@@ -81,6 +81,12 @@ namespace GFlowSimulation {
     RealType x, y, z;
   };
 
+  struct GraphOptions {
+    GraphOptions() : useMaxX(false), useMinX(false), useMaxY(false), useMinY(false) {};
+    bool useMaxX, useMinX, useMaxY, useMinY;
+    float minX, maxX, minY, maxY;
+  };
+
   inline RGBApixel colorAngle(float theta) {
     const static Vec3 C(1./3., 1./3., 1./3.);
     const static Vec3 N1(0.4*sqrt(2./3.), -0.2*sqrt(2./3.), 0.2*sqrt(2./3.));
@@ -103,6 +109,12 @@ namespace GFlowSimulation {
     //! @brief Constructor.
     Palette(int, int);
 
+    //! @brief Copy constructor.
+    Palette(const Palette&);
+
+    //! @brief Move constructor.
+    Palette(const Palette&&);
+
     //! @brief Destructor.
     ~Palette();
 
@@ -120,13 +132,17 @@ namespace GFlowSimulation {
 
     // --- Drawing functions
 
-    //! @brief Draw a circle by giving scaled coordinates and radius
+    //! @brief Draw a circle by giving scaled coordinates and radius.
     void drawCircleByFactors(float, float, float, ColorFunction, bool=true);
 
+    // @brief Draw a line by giving scaled coordinates.
     void drawLineByFactors(float, float, float, float, ColorFunction, float);
 
     //! @brief Cover the entire palette with a single color.
     void coverPalette(RGBApixel);
+
+    //! @brief Draw a 2d plot
+    void drawGraph2d(vector<pair<float, float> >&, GraphOptions&);
 
     // --- Accessors
 

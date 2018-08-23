@@ -12,8 +12,8 @@
   typedef int simd_int;
 
   // Setting, loading, storing
-  inline simd_float simd_load (const float const *a)                   { return *a; }
-  inline simd_float simd_load_u(const float const *a)                  { return *a; }
+  inline simd_float simd_load (const float *a)                   { return *a; }
+  inline simd_float simd_load_u(const float *a)                  { return *a; }
   inline simd_float simd_set1 (const float a)                          { return a; }
   inline simd_float simd_set_zero ()                                   { return 0; }
   inline void       simd_store(const simd_float src, float *dest)      { *dest = src; }
@@ -47,8 +47,8 @@
   inline simd_float simd_mask(const simd_float a, const simd_int m) { return simd_cast_float(simd_and(simd_cast_int(a), m)); }
 
   // Setting, loading, storing
-  inline simd_float simd_load (const float const *a)                   { return _mm_load_ps(a); }
-  inline simd_float simd_load_u(const float const *a)                  { return _mm_loadu_ps(a); }
+  inline simd_float simd_load (const float *a)                   { return _mm_load_ps(a); }
+  inline simd_float simd_load_u(const float *a)                  { return _mm_loadu_ps(a); }
   inline simd_float simd_set1 (const float a)                          { return _mm_set1_ps(a); }
   inline simd_float simd_set_zero ()                                   { return _mm_setzero_ps(); }
   inline void       simd_store(const simd_float src, float *dest)      { _mm_store_ps(dest, src); }
@@ -72,8 +72,8 @@
   typedef __m256i simd_int;
 
   // Setting, loading, storing
-  inline simd_float simd_load (const float const *a)                   { return _mm256_load_ps(a); }
-  inline simd_float simd_load_u(const float const *a)                  { return _mm256_loadu_ps(a); }
+  inline simd_float simd_load (const float *a)                   { return _mm256_load_ps(a); }
+  inline simd_float simd_load_u(const float *a)                  { return _mm256_loadu_ps(a); }
   inline simd_float simd_set1 (const float a)                          { return _mm256_set1_ps(a); }
   inline simd_float simd_set_zero ()                                   { return _mm256_setzero_ps(); }
   inline void       simd_store(const simd_float src, float *dest)      { _mm256_store_ps(dest, src); }
@@ -141,7 +141,7 @@ inline std::string simd_to_str(const simd_float a) {
 }
 
 //! @brief Store a vector in all simd coordinates
-template<typename dimensions> inline void simd_broadcast_vector(float *v, simd_float *sv) {
+template<int dimensions> inline void simd_broadcast_vector(float *v, simd_float *sv) {
   for (int d=0; d<dimensions; ++d) sv[d] = simd_set1(v[d]);
 }
 

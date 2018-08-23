@@ -48,7 +48,6 @@ namespace GFlowSimulation {
         assert(!isnan(v[i+j]));
         assert(fabs(v[i+j])<MAX_REASONABLE_V);
         assert(fabs(f[i+j])<MAX_REASONABLE_F);
-        cout << "D";
       }
       #endif
     }

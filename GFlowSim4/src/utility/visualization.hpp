@@ -17,6 +17,8 @@ namespace GFlowSimulation {
     //! @brief Destructor.
     ~Visualization();
 
+    void createVideo2d(string, const vector<RealType*>&);
+
     //! @brief Create a directory filled with BMP renderings of the system.
     //!
     //! This can be used to create a movie.

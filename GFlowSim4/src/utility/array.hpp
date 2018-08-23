@@ -155,7 +155,7 @@ namespace GFlowSimulation {
 
     Array(const int *sizes) : dims(sizes[0]) {
       data = new T[dims];
-      for (int i=0; i<s0; ++i) data[i] = T();
+      for (int i=0; i<dims; ++i) data[i] = T();
     }
 
     //! Destructor

@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
   #if DEBUG==1
   cout << "Running in Debug mode.\n";
   #endif
-
+  
   // Record the time at which the program started.
   auto start_time = current_time();
   cout << "Starting up simulation...\n";
@@ -269,7 +269,7 @@ int main(int argc, char **argv) {
 
   // Delete creator, gflow
   if (creator) delete creator;
-  if (gflow) delete gflow;
+  if (gflow)   delete gflow;
   
   // Finalize mpi
   #if USE_MPI == 1

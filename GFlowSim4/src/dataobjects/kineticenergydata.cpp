@@ -2,6 +2,7 @@
 // Other files
 #include "../base/simdata.hpp"
 #include "../utility/vectormath.hpp"
+#include "../utility/palette.hpp"
 
 namespace GFlowSimulation {
   // Constructor
@@ -33,6 +34,15 @@ namespace GFlowSimulation {
       dirName += dataName+"/";
     else 
       dirName += ("/"+dataName+"/");
+
+
+    // Draw a graph using a palette object
+    Palette graph(1024,512);
+    GraphOptions options;
+    options.useMinY = true;
+    options.minY = 0;
+    graph.drawGraph2d(keData, options);
+    graph.writeToFile(fileName+"/KE.bmp");
 
     // Write the data
     // Create a directory for all the data

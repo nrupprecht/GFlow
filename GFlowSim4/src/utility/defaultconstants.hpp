@@ -3,7 +3,9 @@
 
 //! For aligned memory. We set this to 1 if we are using posiz memalign as our
 //! aligned alloc function.
+#ifndef POSIX_MEMALIGN
 #define POSIX_MEMALIGN 1
+#endif
 
 //! We set this to 1 if we are debugging. This uncovers debugging asserts.
 #ifndef DEBUG
@@ -22,7 +24,7 @@
 
 // Compiler type
 //! Set to 1 if the intel compiler being used.
-#if !defined(_INTEL)
+#ifndef _INTEL
 #define _INTEL_ 1
 #endif
 //! Set to 1 if the gnu compiler being used.
@@ -82,7 +84,7 @@ namespace GFlowSimulation {
   *  The maximum (known) hypersphere packing densities in d dimensions, these are also all
   *  the densest lattice packings (provably), and some are the provably densest packings.
   */
-  const RealType MaxPackings[] = { 
+  const double MaxPackings[] = { 
     1.,                     // d=1 -> Optimal
     PI*sqrt(3.)/6.,         // d=2 -> Optimal
     PI*sqrt(2.)/6.,         // d=3 -> Optimal

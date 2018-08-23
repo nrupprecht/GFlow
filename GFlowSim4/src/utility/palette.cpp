@@ -17,6 +17,28 @@ namespace GFlowSimulation {
     // References
     refs = new int(1);
   }
+
+  Palette::Palette(const Palette& p) {
+    for (int i=0; i<4; ++i) {
+      owned[i] = p.owned[i];
+      bounds[i] = p.bounds[i];
+    }
+    // Image and refs
+    image = p.image;
+    refs = p.refs;
+    ++refs[0];
+  }
+
+  Palette::Palette(const Palette&& p) {
+    for (int i=0; i<4; ++i) {
+      owned[i] = p.owned[i];
+      bounds[i] = p.bounds[i];
+    }
+    // Image and refs
+    image = p.image;
+    refs = p.refs;
+    ++refs[0];
+  }
     
   Palette::~Palette() {
     // Clean up if we are the last palette to reference the object
@@ -103,13 +125,53 @@ namespace GFlowSimulation {
     int x0 = xf0*getWidth(),  x1 = xf1*getWidth();
     int y0 = yf0*getHeight(), y1 = yf1*getHeight();
     // Draw a line using Wu's algorithm
-    drawLine_WuAlgorithm(x0, y0, x1, x1, RGB_Blue);
+    drawLine_WuAlgorithm(x0, y0, x1, y1, RGB_Blue);
   }
 
   void Palette::coverPalette(RGBApixel color) {
     for (int y=owned[2]; y<owned[3]; ++y)
       for (int x=owned[0]; x<owned[1]; ++x) 
         image->SetPixel(x, y, color);
+  }
+
+  void Palette::drawGraph2d(vector<pair<float, float> >& data, GraphOptions& options) {
+    // Check if there is anything to draw
+    if (data.empty()) return;
+    // Find bounds
+    float mx, Mx, my, My;
+    pair<float, float> first = *data.begin();
+    mx = Mx = first.first;
+    my = My = first.second;
+    for (auto p : data) {
+      if (p.first>Mx)  Mx = p.first;
+      if (p.first<mx)  mx = p.first;
+      if (p.second>My) My = p.second;
+      if (p.second<my) my = p.second;
+    }
+    // Set options
+    if (options.useMinX) mx = options.minX;
+    if (options.useMaxX) Mx = options.maxX;
+    if (options.useMinY) my = options.minY;
+    if (options.useMaxY) My = options.maxY;
+
+    // Set widths
+    float wx = Mx - mx;
+    float wy = My - my;
+    // Draw graph
+    pair<float, float> last = first;
+    auto p = data.begin();
+    float xf0, xf1, yf0, yf1;
+    xf0 = (p->first  - mx)/wx;
+    yf0 = (p->second - my)/wy;
+    ++p; // Increment p
+    // Go through all data
+    for (; p!=data.end(); ++p) {
+      float xf1 = (p->first - mx)/wx;
+      float yf1 = (p->second - my)/wy;
+      drawLineByFactors(xf0, yf0, xf1, yf1, nullptr, 0);
+      xf0 = xf1;
+      yf0 = yf1;
+    }
   }
 
   int Palette::getWidth() const {
@@ -164,14 +226,9 @@ namespace GFlowSimulation {
   inline void Palette::setPixel(int x, int y, RGBApixel color) {
     int X = x+owned[0], Y = owned[3]-y-1;
     // Check the bounds
-    if (X<0 || bounds[1]<=X || Y<0 || bounds[3]<=Y) {
-
-      cout << x << " " << y << " :: " << X << " " << Y << endl;
-
-      throw PaletteOutOfBounds();
-    }
+    if (X<0 || bounds[1]<=X || Y<0 || bounds[3]<=Y) return;
     // Set the pixel
-    image->SetPixel(X, Y, color);
+    else image->SetPixel(X, Y, color);
   }
 
   inline void drawLine_BresenhamAlgorithm(int x0, int y0, int x1, int y1, RGBApixel color) {
