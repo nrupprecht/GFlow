@@ -12,6 +12,7 @@ namespace GFlowSimulation {
   {
     simData      = new SimData(this);
     // Integrator will be created by the creator
+    integrator   = nullptr;
     domain       = new Domain(this); // new Sectorization(this); //
     dataMaster   = new DataMaster(this);
     forceMaster  = new ForceMaster(this);

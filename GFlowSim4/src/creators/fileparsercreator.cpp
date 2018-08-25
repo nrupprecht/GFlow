@@ -39,7 +39,9 @@ namespace GFlowSimulation {
 
     // We treat the file as one giant body. Get that body.
     level = 0; 
+    cout << "Starting file parse... ";
     getBody(fin); // Parsing happens here
+    cout << "Done.\n";
 
         // Sort and collect options
     std::multimap<string, HeadNode*> options;
@@ -49,7 +51,9 @@ namespace GFlowSimulation {
 
     // Create the scenario from the options
     gflow = new GFlow;
+    cout << "Starting simulation setup... ";
     createFromOptions(gflow, options);
+    cout << "Done.\n";
     return gflow;
   }
 
@@ -174,7 +178,7 @@ namespace GFlowSimulation {
       if (it->first==token) {
         HeadNode *h = it->second;
         // If a parameter is given, it is the BC for all sides
-        if (!h->params.empty()) gflow->setAllBCs(choose_bc(h->params[0]->partA));
+        if (h && !h->params.empty()) gflow->setAllBCs(choose_bc(h->params[0]->partA));
         else {
           for (auto bc : h->subHeads) {
             if (!h->heading.empty() || h->params.size()==1) { // A specific dimension must be choosen, the (one) parameter is the flag
@@ -194,9 +198,12 @@ namespace GFlowSimulation {
     // Look for options
     for (; it!=options.end() && good; ++it) {
       if (it->first==token) {
+
+        cout << "Fill" << endl;
+
         HeadNode *h = it->second;
         // This is complicated enough that we give it it's own function. Fill area has its own options.
-        fillArea(h);
+        if (h) fillArea(h);
       }
       else good = false;
     }
@@ -212,7 +219,8 @@ namespace GFlowSimulation {
   }
 
   inline Interaction* FileParseCreator::choose_interaction(string& token) const {
-    if (token=="HardSphere") return new HardSphere(gflow);
+    if (token=="HardSphere")        return new HardSphere(gflow);
+    else if (token=="LennardJones") return new LennardJones(gflow);
     else throw UnexpectedOption();
   }
 
@@ -321,12 +329,12 @@ namespace GFlowSimulation {
     if (select_type==nullptr || select_sigma==nullptr || select_mass==nullptr || select_velocity==nullptr) return;
 
     // --- We have found all the options. Fill the area.
-    GFlow *filler = new GFlow;
-    filler->setBounds(bounds);
-    filler->setAllBCs(BCFlag::WRAP);
-    filler->forceMaster = gflow->forceMaster; // Make sure the particles treat each other in the same way
+    GFlow filler;
+    filler.setBounds(bounds);
+    filler.setAllBCs(BCFlag::WRAP);
+    filler.forceMaster = gflow->forceMaster; // Make sure the particles treat each other in the same way
     // Get the simdata
-    SimData *simData = filler->simData;
+    SimData *simData = filler.simData;
     // --- Fill with particles
     RealType X[DIMENSIONS], V[DIMENSIONS];
     zeroVec(V);
@@ -364,11 +372,12 @@ namespace GFlowSimulation {
       }
     }
     // Initialize domain
-    filler->domain->initialize();
+    filler.domain->initialize();
+    filler.integrator = new VelocityVerlet(&filler);
 
     // --- Relax the simulation
-    hs_relax(filler, 0.1); // 1) To make sure particles don't stop on top of one another
-    relax(filler, 0.15);
+    hs_relax(&filler, 0.1); // 1) To make sure particles don't stop on top of one another
+    relax(&filler, 0.15);
 
     // --- Fill gflow with the particles
     for (int i=0; i<simData->number; ++i) {
@@ -384,8 +393,10 @@ namespace GFlowSimulation {
       }
     }
 
-    // Delete 
-    delete filler;
+    cout << "Ready to delete\n";
+
+    // So we don't delete the force master when filler cleans up
+    filler.forceMaster = nullptr; 
   }
 
   inline void FileParseCreator::passComment(std::ifstream& fin, bool mline) {
