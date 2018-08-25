@@ -7,7 +7,7 @@
 namespace GFlowSimulation {
 
   /*
-  *  @class GFlow
+  *  @brief GFlow
   *
   *  The simulation class
   *
@@ -26,10 +26,10 @@ namespace GFlowSimulation {
     //! Initialize a base object to point at GFlow's data.
     void initializeBase(Base *);
 
-    // Run the simulation for some amount of time.
+    //! Run the simulation for some amount of time.
     void run(RealType=-1);
 
-    // Write data from data master to file.
+    //! Write data from data master to file.
     void writeData(string);
 
     // --- Accessors
@@ -150,6 +150,7 @@ namespace GFlowSimulation {
     friend class BipartiteBoxCreator;
     friend class DebugCreator;
     friend class FlowCreator;
+    friend class FileParseCreator;
 
     // Force master is a friend class
     friend class ForceMaster;
@@ -166,7 +167,6 @@ namespace GFlowSimulation {
     class SimData *simData;             // Particle data
     class Integrator *integrator;       // Integrator
     class DomainBase *domain;           // Domain
-    class Communicator *communicator;   // Inter-process communicator
     class DataMaster *dataMaster;       // DataMaster object for unified data collection  
     class ForceMaster *forceMaster;     // ForceMaster object for defining and storing interparticle forces  
 

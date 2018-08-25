@@ -3,6 +3,7 @@
 COMPILER ?= 0
 USE_MPI  ?= 0
 DEBUG    ?= 0
+NO_SIMD  ?= 0
 
 # Add flags to this variable as neccessary
 FLAGS = 
@@ -19,6 +20,10 @@ MPICC = mpic++
 
 ifeq ($(DEBUG), 1)
 FLAGS += -D DEBUG=1
+endif
+
+ifeq ($(NO_SIMD), 1)
+FLAGS += -D SIMD_TYPE=0
 endif
 
 # Whether to use MPI or not
@@ -50,7 +55,7 @@ OPTIMIZE := -O3 -funroll-loops -no-prec-div -restrict -no-inline-max-size -ffast
 else
 OPTIMIZE := -O3
 endif
-OPENCV   := $(shell pkg-config --cflags --libs opencv)
+#OPENCV   := $(shell pkg-config --cflags --libs opencv)
 CFLAGS   := -c $(CSTD) $(DEBUG) $(OPTIMIZE) $(FLAGS)
 
 all: $(BIN)/$(APP)
@@ -58,12 +63,12 @@ all: $(BIN)/$(APP)
 $(BIN)/$(APP): $(OBJS) obj/driver.o
 	@mkdir -p `dirname $@`
 	@echo "Linking $@..."
-	$(CC) -o $@ obj/driver.o $(OBJS) $(LDFLAGS) $(OPENCV)
+	@$(CC) -o $@ obj/driver.o $(OBJS) $(LDFLAGS) #$(OPENCV)
 
 $(OBJ)/%.o: %.cpp
 	@mkdir -p `dirname $@`
 	@echo "Compiling $<..."
-	$(CC) $(CFLAGS) $< -o $@
+	@$(CC) $(CFLAGS) $< -o $@
 
 obj/driver.o: src/applications/driver.cpp
 	@mkdir -p `dirname $@`

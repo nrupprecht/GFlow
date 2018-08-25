@@ -79,10 +79,31 @@ int main(int argc, char **argv) {
 
   return 0;
 
+
   // ------------------------------------------------------ */
 
   #if DEBUG==1
   cout << "Running in Debug mode.\n";
+  #endif
+
+  #if SIMD_TYPE==SIMD_NONE
+  cout << "Not using SIMD.\n";
+  #endif
+
+  #if SIMD_TYPE==SIMD_SSE
+  cout << "Using SSE.\n";
+  #endif
+
+  #if SIMD_TYPE==SIMD_AVX
+  cout << "Using AVX.\n";
+  #endif
+
+  #if SIMD_TYPE==SIMD_AVX2
+  cout << "Using AVX2.\n";
+  #endif
+
+  #if SIMD_TYPE==SIMD_MIC
+  cout << "Using MIC.\n";
   #endif
   
   // Record the time at which the program started.
@@ -112,6 +133,7 @@ int main(int argc, char **argv) {
   bool bipartite_flag = false;
   bool debug_flag = false;
   bool flow_flag = false;
+  string load = "";
 
   // Data to gather
   bool animate = false; // Record positions
@@ -151,6 +173,7 @@ int main(int argc, char **argv) {
   parser.get("bipartite", bipartite_flag);
   parser.get("debug", debug_flag); 
   parser.get("flow", flow_flag);
+  parser.get("load", load);
   parser.get("animate", animate);
   parser.get("snapshot", snapshot);
   parser.get("sectorData", sectorData);
@@ -185,7 +208,11 @@ int main(int argc, char **argv) {
   else if (bipartite_flag) creator = new BipartiteBoxCreator(&parser);
   else if (debug_flag)     creator = new DebugCreator(&parser);
   else if (flow_flag)      creator = new FlowCreator(&parser);
+  else if (load!="") {
+    creator = new FileParseCreator(&parser, load);
+  }
   else                     creator = new BoxCreator(&parser);
+
 
   // --- Set boundary conditions
   switch (boundary) {

@@ -30,6 +30,22 @@ namespace GFlowSimulation {
     return str;
   }
 
+  inline int toInt(string s) {
+    stringstream stream;
+    int i;
+    stream << s;
+    stream >> i;
+    return i;
+  }
+
+  template<typename T> inline T convert(string s) {
+    stringstream stream;
+    T data;
+    stream << s;
+    stream >> data;
+    return data;
+  }
+
   //! @todo Turn all these functions into free-standing (inline) functions.
   struct PrintingUtility {
 

@@ -6,5 +6,6 @@
 #include "creators/bipartiteboxcreator.hpp"
 #include "creators/debugcreator.hpp"
 #include "creators/flowcreator.hpp"
+#include "creators/fileparsecreator.hpp"
 
 #endif // __ALL_CREATORS_HPP__GFLOW__

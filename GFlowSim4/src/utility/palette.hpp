@@ -82,9 +82,13 @@ namespace GFlowSimulation {
   };
 
   struct GraphOptions {
-    GraphOptions() : useMaxX(false), useMinX(false), useMaxY(false), useMinY(false) {};
-    bool useMaxX, useMinX, useMaxY, useMinY;
+    GraphOptions() : useMaxX(false), useMinX(false), useMaxY(false), useMinY(false), useBcgd(false), 
+      minX(0), maxX(0), minY(0), maxY(0), bcgd(255, 255, 255) {
+    };
+
+    bool useMaxX, useMinX, useMaxY, useMinY, useBcgd;
     float minX, maxX, minY, maxY;
+    RGBApixel bcgd;
   };
 
   inline RGBApixel colorAngle(float theta) {
@@ -177,6 +181,8 @@ namespace GFlowSimulation {
 
     //! @brief Draw a circle using the midpoint algorithm
     inline void drawCircle_MidpointAlgorithm(int, int, int, RGBApixel);
+
+    inline void drawGraphData2d(vector<pair<float, float> >&, GraphOptions&);
 
     //! @brief The image data.
     BMP *image;

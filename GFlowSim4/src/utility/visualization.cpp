@@ -2,13 +2,10 @@
 // Other files
 #include "vectormath.hpp"
 
-#include "opencv2/core/core.hpp"        // Basic OpenCV structures (cv::Mat)
-#include "opencv2/highgui/highgui.hpp"  // Video write
-
 namespace GFlowSimulation {
 
   Visualization::Visualization() : pos_place(0), vel_place(DIMENSIONS), sg_place(2*DIMENSIONS), type_place(2*DIMENSIONS+1), 
-    resolution(1024*1.5), do_wrap(true), background(RGB_Black), maxVsqr(0), color_option(0)
+    resolution(1024*1.5), do_wrap(true), background(RGB_Black), maxVsqr(0), color_option(3)
   {
     colorBank = new RGBApixel[10];
     for (int i=0; i<10; ++i)
@@ -32,8 +29,8 @@ namespace GFlowSimulation {
     }
   }
 
-  void Visualization::createVideo2d(string, const vector<RealType*>&) {
-    cv::Mat cnt_img = cv::Mat::zeros(resolution, resolution, CV_8UC3);
+  void Visualization::createVideo2d(string fileName, const vector<RealType*>&) {
+
   }
 
   inline void Visualization::createImage(string fileName, RealType *data, int number, int dataWidth, Bounds& bounds, int dimensions) const {

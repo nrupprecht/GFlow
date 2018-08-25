@@ -9,7 +9,8 @@ namespace GFlowSimulation {
   Creator::Creator(ArgParse *p) : argc(p->getArgc()), argv(p->getArgv()), parserPtr(p), ourParser(false) {};
 
   Creator::~Creator() {
-    if (ourParser && parserPtr) delete parserPtr;
+    if (ourParser && parserPtr) 
+      if (parserPtr) delete parserPtr;
   }
 
   void Creator::setSeed(uint s) {
@@ -24,7 +25,7 @@ namespace GFlowSimulation {
     seed = s;
   };
 
-  void Creator::hs_relax(GFlow* gflow, RealType time) {
+  void Creator::hs_relax(GFlow* gflow, RealType time) const {
     // Check for valid object
     if (gflow==nullptr) return;
 
@@ -66,7 +67,7 @@ namespace GFlowSimulation {
     gflow->simData->clearF();
   }
 
-  void Creator::relax(class GFlow *gflow, RealType time) {
+  void Creator::relax(class GFlow *gflow, RealType time) const {
     // Check for valid object
     if (gflow==nullptr) return;
 

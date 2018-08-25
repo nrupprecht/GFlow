@@ -41,6 +41,8 @@ namespace GFlowSimulation {
     GraphOptions options;
     options.useMinY = true;
     options.minY = 0;
+    options.useBcgd = true;
+    options.bcgd = RGB_White;
     graph.drawGraph2d(keData, options);
     graph.writeToFile(fileName+"/KE.bmp");
 

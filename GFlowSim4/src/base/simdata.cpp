@@ -155,16 +155,27 @@ namespace GFlowSimulation {
     if (dataF) ndataF = new RealType*[size];
     if (dataI) ndataI = new int*[size];
     // Copy over data
-    copyHelper<DIMENSIONS>(resize_owned, resize_halo, resize_ghost, x[0], nx[0]);
-    copyHelper<DIMENSIONS>(resize_owned, resize_halo, resize_ghost, v[0], nv[0]);
-    copyHelper<DIMENSIONS>(resize_owned, resize_halo, resize_ghost, f[0], nf[0]);
-    copyHelper<1>(resize_owned, resize_halo, resize_ghost, global_id, ngid);
-    copyHelper<1>(resize_owned, resize_halo, resize_ghost, sg, nsg);
-    copyHelper<1>(resize_owned, resize_halo, resize_ghost, im, nim);
-    copyHelper<1>(resize_owned, resize_halo, resize_ghost, type, ntype);
+    if (x) copyHelper<DIMENSIONS>(resize_owned, resize_halo, resize_ghost, x[0], nx[0]);
+    if (v) copyHelper<DIMENSIONS>(resize_owned, resize_halo, resize_ghost, v[0], nv[0]);
+    if (f) copyHelper<DIMENSIONS>(resize_owned, resize_halo, resize_ghost, f[0], nf[0]);
+    if (global_id) copyHelper<1>(resize_owned, resize_halo, resize_ghost, global_id, ngid);
+    if (sg) copyHelper<1>(resize_owned, resize_halo, resize_ghost, sg, nsg);
+    if (im) copyHelper<1>(resize_owned, resize_halo, resize_ghost, im, nim);
+    if (type) copyHelper<1>(resize_owned, resize_halo, resize_ghost, type, ntype);
     // Potentially copy auxilary data
     if (dataF) copyHelper<1>(resize_owned, resize_halo, resize_ghost, dataF, ndataF);
     if (dataF) copyHelper<1>(resize_owned, resize_halo, resize_ghost, dataI, ndataI);
+    // Delete old arrays, set new ones
+    clean();
+    x = nx;
+    v = nv;
+    f = nf;
+    global_id = ngid;
+    sg = nsg;
+    im = nim;
+    type = ntype;
+    dataF = ndataF;
+    dataI = ndataI;
   }
 
   void SimData::clearX() {
@@ -198,14 +209,13 @@ namespace GFlowSimulation {
   //! @param sg The cutoff radius of the particle.
   //! @param im The inverse mass of the particle.
   //! @param type The type of the particle.
-  void SimData::addParticle(const RealType *X, const RealType *V, const RealType Sg, 
-    const RealType Im, const int Type) 
+  void SimData::addParticle(const RealType *X, const RealType *V, const RealType Sg, const RealType Im, const int Type) 
   {
-    if (end_owned<=number) 
-      resize(ceil(0.25*number), 0, 0);
+    if (end_owned<=number) resize(max(static_cast<int>(ceil(1.25*number)), 32), 0, 0);
     // Copy data
     copyVec(X, x[number]);
     copyVec(V, v[number]);
+    zeroVec(f[number]);
     // Assign a flobal id - this assumes that this is a *new* particle
     global_id[number] = ++next_global_id;
     sg[number]   = Sg;
@@ -223,8 +233,7 @@ namespace GFlowSimulation {
   //! @param Im The inverse mass of the particle.
   //! @param Type The type of the particle.
   //! @param own_type What type of ownership the processor has over this particle. @see ParticleType
-  void SimData::addParticle(const RealType *X, const RealType *V, const RealType Sg, 
-    const RealType Im, const int Type, const ParticleOwnership own_type) 
+  void SimData::addParticle(const RealType *X, const RealType *V, const RealType Sg, const RealType Im, const int Type, const ParticleOwnership own_type) 
   {
     // @todo Global ID transfer
     switch (own_type) {

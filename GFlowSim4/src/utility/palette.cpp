@@ -135,43 +135,9 @@ namespace GFlowSimulation {
   }
 
   void Palette::drawGraph2d(vector<pair<float, float> >& data, GraphOptions& options) {
-    // Check if there is anything to draw
-    if (data.empty()) return;
-    // Find bounds
-    float mx, Mx, my, My;
-    pair<float, float> first = *data.begin();
-    mx = Mx = first.first;
-    my = My = first.second;
-    for (auto p : data) {
-      if (p.first>Mx)  Mx = p.first;
-      if (p.first<mx)  mx = p.first;
-      if (p.second>My) My = p.second;
-      if (p.second<my) my = p.second;
-    }
-    // Set options
-    if (options.useMinX) mx = options.minX;
-    if (options.useMaxX) Mx = options.maxX;
-    if (options.useMinY) my = options.minY;
-    if (options.useMaxY) My = options.maxY;
-
-    // Set widths
-    float wx = Mx - mx;
-    float wy = My - my;
-    // Draw graph
-    pair<float, float> last = first;
-    auto p = data.begin();
-    float xf0, xf1, yf0, yf1;
-    xf0 = (p->first  - mx)/wx;
-    yf0 = (p->second - my)/wy;
-    ++p; // Increment p
-    // Go through all data
-    for (; p!=data.end(); ++p) {
-      float xf1 = (p->first - mx)/wx;
-      float yf1 = (p->second - my)/wy;
-      drawLineByFactors(xf0, yf0, xf1, yf1, nullptr, 0);
-      xf0 = xf1;
-      yf0 = yf1;
-    }
+    coverPalette(RGB_Black);
+    Palette face = getSubPalette(0.01f, 0.99f, 0.02f, 0.98f);
+    face.drawGraphData2d(data, options);
   }
 
   int Palette::getWidth() const {
@@ -232,7 +198,7 @@ namespace GFlowSimulation {
   }
 
   inline void drawLine_BresenhamAlgorithm(int x0, int y0, int x1, int y1, RGBApixel color) {
-
+    throw Unimplemented();
   }
 
   inline void Palette::drawLine_WuAlgorithm(int x0, int y0, int x1, int y1, RGBApixel color) {
@@ -340,6 +306,52 @@ namespace GFlowSimulation {
       }
     }
     // Thanks, Wikipedia! <https://en.wikipedia.org/wiki/Midpoint_circle_algorithm>
+  }
+
+  inline void Palette::drawGraphData2d(vector<pair<float, float> >& data, GraphOptions& options) {
+    // Check if there is anything to draw
+    if (data.empty()) return;
+    // Find bounds
+    float mx, Mx, my, My;
+    pair<float, float> first = *data.begin();
+    mx = Mx = first.first;
+    my = My = first.second;
+    for (auto p : data) {
+      if (p.first>Mx)  Mx = p.first;
+      if (p.first<mx)  mx = p.first;
+      if (p.second>My) My = p.second;
+      if (p.second<my) my = p.second;
+    }
+    // Set options
+    RGBApixel background = RGB_White;
+    if (options.useMinX) mx = options.minX;
+    if (options.useMaxX) Mx = options.maxX;
+    if (options.useMinY) my = options.minY;
+    if (options.useMaxY) My = options.maxY;
+    if (options.useBcgd) background = options.bcgd;
+
+    // Set widths
+    float wx = Mx - mx;
+    float wy = My - my;
+
+    // Set the background
+    coverPalette(background);
+    
+    // Draw graph
+    pair<float, float> last = first;
+    auto p = data.begin();
+    float xf0, xf1, yf0, yf1;
+    xf0 = (p->first  - mx)/wx;
+    yf0 = (p->second - my)/wy;
+    ++p; // Increment p
+    // Go through all data
+    for (; p!=data.end(); ++p) {
+      float xf1 = (p->first - mx)/wx;
+      float yf1 = (p->second - my)/wy;
+      drawLineByFactors(xf0, yf0, xf1, yf1, nullptr, 0);
+      xf0 = xf1;
+      yf0 = yf1;
+    }
   }
 
 }
