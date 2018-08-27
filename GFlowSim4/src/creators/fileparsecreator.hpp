@@ -2,11 +2,13 @@
 #define __FILE_PARSE_CREATOR_HPP__GFLOW__
 
 #include "../base/creator.hpp"
+#include "../utility/fileparse.hpp"
 
 #include <map>
 
 namespace GFlowSimulation {
 
+  /*
   struct ParamNode {
     ParamNode() : partA(""), partB("") {};
     ParamNode(string a) : partA(a), partB("") {};
@@ -39,6 +41,30 @@ namespace GFlowSimulation {
     //! @brief The parent of the head node.
     HeadNode *parent;
   };
+  */
+
+  struct ParticleTemplate {
+
+    // Create particle data.
+    void createParticle(RealType *X, RealType& radius, RealType &im, int& type, int n) {
+      type = select_type(n);
+      radius = select_radius(type, n);
+      RealType mass = select_mass(radius, n);
+      im = mass>0 ? 1./mass : 0;
+    }
+
+    // Type can only depend on the #
+    std::function<int(int)> select_type;
+    // Radius can only depend on the particle type and #
+    std::function<RealType(int, int)> select_radius;
+    // Mass can depend on the radius and #
+    std::function<RealType(RealType, int)> select_mass;
+
+    // Velocity is the first argument. Can depend on position, radius, (inverse) mass, and type.
+    std::function<void(RealType*, RealType*, RealType, RealType, int)> select_velocity;
+
+    RealType params[10]; // This seems like a decent number of parameters
+  };
 
   /**
   *  @brief A creator that creates a simulation from a file.
@@ -63,7 +89,6 @@ namespace GFlowSimulation {
     virtual GFlow* createSimulation();
 
     //! @brief Exception class.
-    class UnexpectedToken {};
     class UnexpectedOption {};
     class BadStructure {};
 
@@ -83,42 +108,18 @@ namespace GFlowSimulation {
 
     inline void fillArea(HeadNode*) const;
 
-    // --- File parsing
+    //! @brief Get all the headers with a certain heading, put into the supplied vector.
+    inline void getAllMatches(string, vector<HeadNode*>&, std::map<string, HeadNode*>&) const;
 
-    //! @brief Advance the stream past a comment.
-    inline void passComment(std::ifstream&, bool);
-
-    //! @brief Advance the stream past spaces (not "\n", "\r"), returns true if we end with a "\n" or "\r"
-    inline bool passSpaces(std::ifstream&);
-
-    //! @brief Advance the stream past whitespaces
-    inline void passWhiteSpaces(std::ifstream&);
-
-    //! @brief Get the body of a head
-    inline void getBody(std::ifstream&);
-
-    //! @brief Get a head.
-    inline void getHead(std::ifstream&);
-
-    //! @brief Get the parameters of a heading. Return true if se expect a body.
-    inline bool getParameters(std::ifstream&);
-
-    inline void getParam(std::ifstream&, bool&, bool&);
-
-    inline void checkComment(std::ifstream&);
+    inline void getParticleTemplate(HeadNode*, std::map<string, ParticleTemplate>&) const;
 
     //! @brief The name of the file to load from
     string configFile;
 
-    //! @brief The root for all the heads
-    HeadNode *root;
-
-    //! @brief The current head node we are building off of.
-    HeadNode *currentHead;
-
-    int level;
-
     GFlow *gflow;
+
+    //! @brief The message the parser writes as it parses the configuration file
+    string message;
 
     // Normal distribution
     mutable std::mt19937 generator;

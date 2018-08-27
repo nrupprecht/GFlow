@@ -4,21 +4,21 @@
 
 namespace GFlowSimulation {
 
-  FileParseCreator::FileParseCreator(int argc, char **argv) : Creator(argc, argv), configFile(""), root(nullptr), currentHead(nullptr), gflow(nullptr) {
+  FileParseCreator::FileParseCreator(int argc, char **argv) : Creator(argc, argv), configFile(""), gflow(nullptr) {
     seed = std::chrono::system_clock::now().time_since_epoch().count();
     seedGenerator(seed);
     // Seed generators here
     normal_dist = std::normal_distribution<RealType>(0., 1.);
   }
 
-  FileParseCreator::FileParseCreator(ArgParse *p) : Creator(p), configFile(""), root(nullptr), currentHead(nullptr), gflow(nullptr) {
+  FileParseCreator::FileParseCreator(ArgParse *p) : Creator(p), configFile(""), gflow(nullptr) {
     seed = std::chrono::system_clock::now().time_since_epoch().count();
     seedGenerator(seed);
     // Seed generators here
     normal_dist = std::normal_distribution<RealType>(0., 1.);
   }
 
-  FileParseCreator::FileParseCreator(ArgParse *p, string f) : Creator(p), configFile(f), root(nullptr), currentHead(nullptr), gflow(nullptr) {
+  FileParseCreator::FileParseCreator(ArgParse *p, string f) : Creator(p), configFile(f), gflow(nullptr) {
     seed = std::chrono::system_clock::now().time_since_epoch().count();
     seedGenerator(seed);
     // Seed generators here
@@ -26,24 +26,16 @@ namespace GFlowSimulation {
   }
 
   GFlow* FileParseCreator::createSimulation() {
-    // Create filestream
-    std::ifstream fin(configFile);
-    if (fin.fail()) {
-      cout << "File parse creator failed to open file [" << configFile << "].\nExiting.\n";
-      return nullptr;
-    }
-
-    // Set up head node
-    root = new HeadNode;
-    currentHead = root;
-
     // We treat the file as one giant body. Get that body.
-    level = 0; 
     cout << "Starting file parse... ";
-    getBody(fin); // Parsing happens here
+    FileParse parser;
+    HeadNode *root = parser.parseFile(configFile); // A file parse class does the parsing
     cout << "Done.\n";
 
-        // Sort and collect options
+    // Get the message from the parser.
+    message = parser.getMessage();
+
+    // Sort and collect options
     std::multimap<string, HeadNode*> options;
     for (const auto &op : root->subHeads) {
       options.insert(std::pair<string, HeadNode*> (op->heading, op));
@@ -54,6 +46,9 @@ namespace GFlowSimulation {
     cout << "Starting simulation setup... ";
     createFromOptions(gflow, options);
     cout << "Done.\n";
+
+    // Clean up and return
+    //delete [] root;
     return gflow;
   }
 
@@ -64,7 +59,7 @@ namespace GFlowSimulation {
 
     // Look for dimensions
     good = true;
-    token = "Dimensions:";
+    token = "Dimensions";
     it = options.find(token);
     for (; it!=options.end() && good; ++it) {
       if (it->first==token) {
@@ -77,7 +72,7 @@ namespace GFlowSimulation {
     }
 
     // Look for bounds
-    token = "Bounds:";
+    token = "Bounds";
     good = true;
     it = options.find(token);
     for (; it!=options.end() && good; ++it) {
@@ -98,7 +93,7 @@ namespace GFlowSimulation {
     }
 
     // Look for Integrator
-    token = "Integrator:";
+    token = "Integrator";
     good = true;
     it = options.find(token);
     if (it==options.end()) { // No integrator was specified. Use a velocity verlet integrator.
@@ -118,7 +113,7 @@ namespace GFlowSimulation {
     }
 
     // Look for number of particle types
-    token = "NTypes:";
+    token = "NTypes";
     good = true;
     it = options.find(token);
     if (it==options.end()) { // No integrator was specified. Use a velocity verlet integrator.
@@ -136,7 +131,7 @@ namespace GFlowSimulation {
     }
 
     // Look for a force grid
-    token = "Force-grid:";
+    token = "Force-grid";
     good = true;
     it = options.find(token);
     if (it==options.end()) { // No integrator was specified. Use a velocity verlet integrator.
@@ -168,7 +163,7 @@ namespace GFlowSimulation {
     }
 
     // Look for boundary conditions
-    token = "Boundary-conditions:";
+    token = "Boundary-conditions";
     good = true;
     it = options.find(token);
     // Default option is all wrapped boundaries
@@ -192,7 +187,7 @@ namespace GFlowSimulation {
     }
 
     // Look for fill areas
-    token = "Fill-area:";
+    token = "Fill-area";
     good = true;
     it = options.find(token);
     // Look for options
@@ -240,6 +235,8 @@ namespace GFlowSimulation {
     int number = 0; // We must initialize a positive number of particles
     bool usePhi = false;
     RealType phi = 0;
+    // Particle Templates
+    std::map<string, ParticleTemplate> particle_templates;
     // Selection functions
     std::function<int(int)> select_type = nullptr;
     std::function<RealType(int)> select_sigma = nullptr;
@@ -252,48 +249,57 @@ namespace GFlowSimulation {
     std::map<string, HeadNode*> options;
     for (auto h : head->subHeads)
       options.insert(std::pair<string, HeadNode*>(h->heading, h));
+    // Container to collect options in
+    std::vector<HeadNode*> container;
 
     // --- Look for options
 
-    token = "Bounds:";
-    good = true;
-    it = options.find(token);
-    // Look for options
-    for (; it!=options.end() && good; ++it) {
-      if (it->first==token) {
-        HeadNode *h = it->second;
-        // The body of bounds contains the actual bounds
-        if (h->subHeads.size()!=DIMENSIONS) throw BadStructure();
-        // Set bounds
-        for (int d=0; d<h->subHeads.size(); ++d) {
-          if (h->subHeads[d]->params.size()!=2) throw BadStructure();
-          bounds.min[d] = convert<float>( h->subHeads[d]->params[0]->partA );
-          bounds.max[d] = convert<float>( h->subHeads[d]->params[1]->partA );
-        }
+    // --- Look for bounds
+    getAllMatches("Bounds", container, options);
+    // We only care about the first bounds. We can only define the bounds once.
+    if (container.empty()) {
+      cout << "We need bounds!\n";
+      throw BadStructure();
+    }
+    else {
+      // We want there to only be one set of bounds
+      if (container.size()>1) cout << "Multiple bounds found! Ignoring all but the first instance.\n";
+      // Get the bounds from the first instance
+      HeadNode *h = container[0];
+      if (h->subHeads.size()!=DIMENSIONS) throw BadStructure();
+      // Set bounds
+      for (int d=0; d<h->subHeads.size(); ++d) {
+        // Check for well formed options.
+        if (h->subHeads[d]->params.size()!=2 || !h->subHeads[d]->subHeads.empty()) throw BadStructure();
+        // Extract the bounds.
+        bounds.min[d] = convert<float>( h->subHeads[d]->params[0]->partA );
+        bounds.max[d] = convert<float>( h->subHeads[d]->params[1]->partA );
       }
-      else good = false;
     }
 
-    token = "Number:";
-    good = true;
-    it = options.find(token);
-    // Look for options
-    for (; it!=options.end() && good; ++it) {
-      if (it->first==token) {
-        HeadNode *h = it->second;
-        if (h->params.size()!=1) throw BadStructure();
-        string a = h->params[0]->partA, b = h->params[0]->partB;
-        if (!b.empty()) { // There is an option
-          if (a=="Phi") {
-            usePhi = true;
-            phi = convert<RealType>(b);
-          }
-          else throw UnexpectedOption();
+    // --- Particle Template. Defines "types" of particles, e.g. radius distribution, density/mass, etc.
+    getAllMatches("Template", container, options);
+    for (auto h : container) {
+      getParticleTemplate(h, particle_templates);
+    }
+
+    // --- Number. Options are:
+    // 1) Phi - fill untill we reach
+    getAllMatches("Number", container, options);
+    for (auto h : container) {
+      if (h->params.size()!=1) throw BadStructure();
+      string a = h->params[0]->partA, b = h->params[0]->partB;
+      if (!b.empty()) { // There is an option
+        // Look for all options
+        if (a=="Phi") {
+          usePhi = true;
+          phi = convert<RealType>(b);
         }
-        // Just read the number
-        else number = convert<int>(a);
+        // Unrecognized option
+        else throw UnexpectedOption();
       }
-      else good = false;
+      // Just read the number
+      else number = convert<int>(a);
     }
 
     // FOR NOW 
@@ -393,180 +399,23 @@ namespace GFlowSimulation {
       }
     }
 
-    cout << "Ready to delete\n";
-
     // So we don't delete the force master when filler cleans up
     filler.forceMaster = nullptr; 
   }
 
-  inline void FileParseCreator::passComment(std::ifstream& fin, bool mline) {
-    // Start right after "//" or "/*"
-    char c;
-    fin.get(c);
-    while (!fin.eof()) {
-      if (mline && c=='*') {
-        fin.get(c);
-        if (fin.eof()) return; // Check end of file
-        if (c=='/') return; // End of the comment
-      }
-      else if (c=='\n' || c=='\r') {// Single line comments end with at newline
-        fin.putback(c); // In case a newline signifies something for whoever called this function
-        return;
-      }
-      // Get next character
-      fin.get(c);
+  inline void FileParseCreator::getAllMatches(string heading, vector<HeadNode*>& container, std::map<string, HeadNode*>& options) const {
+    // Clear container in case there is stuff left over in it.
+    container.clear();
+    // Look for options
+    bool good = true;
+    for (auto it=options.find(heading); it!=options.end() && good; ++it) {
+      // If the head has the propper heading, store it.
+      if (it->first==heading) container.push_back(it->second);
     }
   }
 
-  inline bool FileParseCreator::passSpaces(std::ifstream& fin) {
-    char c;
-    // Get first character
-    fin.get(c);
-    // Loop
-    while (!fin.eof()) {
-      if (c==' ');
-      else if (c=='\n' || c=='\r') return true;
-      else { // Encountered a non-whitespace
-        fin.putback(c);
-        return false;
-      }
-      // Get next character
-      fin.get(c);
-    }
-  }
+  inline void FileParseCreator::getParticleTemplate(HeadNode *head, std::map<string, ParticleTemplate>& particle_templates) const {
 
-  inline void FileParseCreator::passWhiteSpaces(std::ifstream& fin) {
-    char c;
-    // Get first character
-    fin.get(c);
-    // Loop
-    while (!fin.eof()) {
-      if (c==' ' || c=='\n' || c=='\r');
-      else { // Encountered a non-whitespace
-        fin.putback(c);
-        return;
-      }
-      // Get next character
-      fin.get(c);
-    }
-  }
-
-  inline void FileParseCreator::getBody(std::ifstream& fin) {
-    // Look for heads
-    char c;
-    bool end = false;
-    while (!fin.eof() && !end) {
-      passWhiteSpaces(fin);
-
-      if (!fin.eof()) fin.get(c);
-      else return;
-
-      if (c=='}') // End of a body
-        return;
-      else if (c=='/') { // Could be the start of a comment
-        checkComment(fin);
-      }
-      else {
-        fin.putback(c);
-        getHead(fin);
-      }
-    }
-  }
-
-  inline void FileParseCreator::getHead(std::ifstream& fin) {
-    if (fin.eof()) return;
-    // Create a new head node
-    HeadNode *node = new HeadNode;
-
-    // Get the heading
-    string str;
-    fin >> str;
-    // Should end with a ":"
-    node->heading = str;
-
-    // Set node as the current head
-    node->parent = currentHead;
-    currentHead = node;
-
-    // Look for parameters
-    bool newLine = passSpaces(fin);
-    bool body = false;
-
-    // Get the parameters - adds them to the current head node
-    if (!fin.eof() && !newLine)
-      body = getParameters(fin);
-
-    ++level;
-    if (body && !fin.eof()) getBody(fin);
-    --level;
-
-    // Add this node to the parent node
-    node->parent->subHeads.push_back(node);
-
-    // Return to parent node
-    currentHead = node->parent;
-  }
-
-  inline bool FileParseCreator::getParameters(std::ifstream& fin) {    
-    bool more = true, body = false;
-    while (more) getParam(fin, more, body);
-    // Return whether we expect a body or not
-    return body;
-  }
-
-  inline void FileParseCreator::getParam(std::ifstream& fin, bool& more, bool& body) {
-    char c;
-    bool end = false, a_part = true;
-    fin.get(c);
-    string a(""), b("");
-    while (!fin.eof()) {
-      if (c=='/') {
-        checkComment(fin);
-      }
-      else if (c=='=') {
-        a_part = false;
-      }
-      else if (c==',') {
-        more = true;
-        break;
-      }
-      else if (c=='{') {
-        more = false;
-        body = true;
-        break;
-      }
-      else if (c=='\n' || c=='\r') {
-        body = false;
-        more = false;
-        break;
-      }
-      else if (c==' ');
-      else if (c=='\n' || c=='\r') {
-        more = false;
-        body = false;
-        break;
-      }
-      else {
-        if (a_part) a.push_back(c);
-        else        b.push_back(c);
-      }
-
-      // Get next character
-      if (!fin.eof()) fin.get(c);
-    }
-    // Set param
-    if (!a.empty() || !b.empty()) currentHead->params.push_back(new ParamNode(a, b));
-  }
-
-  inline void FileParseCreator::checkComment(std::ifstream& fin) {
-    char c;
-    fin.get(c);
-    // Make sure we are not at eof
-    if (fin.eof()) return;
-    // Check what kind of comment this is
-    if (c=='/')      passComment(fin, false);
-    else if (c=='*') passComment(fin, true);
-    else             throw UnexpectedToken();
   }
 
 }
