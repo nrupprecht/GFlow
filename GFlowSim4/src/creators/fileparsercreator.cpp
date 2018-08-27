@@ -44,7 +44,13 @@ namespace GFlowSimulation {
     // Create the scenario from the options
     gflow = new GFlow;
     cout << "Starting simulation setup... ";
-    createFromOptions(gflow, options);
+    try {
+      createFromOptions(gflow, options);
+    }
+    catch (BadStructure bs) {
+      cout << bs.message << endl;
+      throw;
+    }
     cout << "Done.\n";
 
     // Clean up and return
@@ -65,7 +71,7 @@ namespace GFlowSimulation {
       if (it->first==token) {
         HeadNode *h = it->second;
         // For now, we can only check whether the dimensions are consistent, DIMENSIONS is a global constant.
-        if (h->params.size()!=1) throw UnexpectedOption();
+        if (h->params.size()!=1) throw BadStructure("Dimensions should be a single argument, we found "+toStr(h->params.size()));
         if (convert<int>(h->params[0]->partA)!=DIMENSIONS) throw BadDimension();
       }
       else good = false;
@@ -80,10 +86,12 @@ namespace GFlowSimulation {
         HeadNode *h = it->second;
         Bounds bounds;
         // The body of bounds contains the actual bounds
-        if (h->subHeads.size()!=DIMENSIONS) throw BadStructure();
+        if (h->subHeads.size()!=DIMENSIONS) 
+          throw BadStructure("For bounds, we need "+toStr(DIMENSIONS)+" conditions, we found "+toStr(h->subHeads.size()));
         // Set bounds
         for (int d=0; d<h->subHeads.size(); ++d) {
-          if (h->subHeads[d]->params.size()!=2) throw BadStructure();
+          if (h->subHeads[d]->params.size()!=2) 
+            throw BadStructure("Bounds need a min and a max, we found "+toStr(h->subHeads[d]->params.size()+" parameters."));
           bounds.min[d] = convert<float>( h->subHeads[d]->params[0]->partA );
           bounds.max[d] = convert<float>( h->subHeads[d]->params[1]->partA );
         }
@@ -103,7 +111,7 @@ namespace GFlowSimulation {
       if (it->first==token) {
         HeadNode *h = it->second;
         // We expect a single option: the name of the type of integrator to use
-        if (h->params.size()!=1) throw BadStructure();
+        if (h->params.size()!=1) throw BadStructure("In Integrator we found more than one word.");
         // Get rid of old integrator if necessary
         if (gflow->integrator) delete gflow->integrator;
         // Set new integrator
@@ -123,7 +131,8 @@ namespace GFlowSimulation {
       if (it->first==token) {
         HeadNode *h = it->second;
         // We expect a single option: the number of particle types
-        if (h->params.size()!=1) throw BadStructure();
+        if (h->params.size()!=1) 
+          throw BadStructure("In NTypes we found more than one number.");
         // Set particle types
         gflow->forceMaster->setNTypes(convert<int>(h->params[0]->partA));
       }
@@ -145,7 +154,8 @@ namespace GFlowSimulation {
         // The body specifies the force grid
         for (auto fg : h->subHeads) {
           // Look for type1, type2, interaction-type
-          if (fg->params.size()!=3) throw BadStructure();
+          if (fg->params.size()!=3) 
+            throw BadStructure("Force grid needs three parameters per line to specify interaction, found "+toStr(fg->params.size())+".");
           // What type of interaction do we need
           string i_token = fg->params[2]->partA;
           if (interactions.find(i_token)==interactions.end()) { // New interaction type
@@ -179,7 +189,7 @@ namespace GFlowSimulation {
             if (!h->heading.empty() || h->params.size()==1) { // A specific dimension must be choosen, the (one) parameter is the flag
               gflow->setBC(convert<int>(h->heading), choose_bc(h->params[0]->partA));
             }
-            else throw BadStructure();
+            else throw BadStructure("We need one parameter to be the boundary condition flag, we found "+toStr(h->params.size()));
           }
         }
       }
@@ -193,9 +203,6 @@ namespace GFlowSimulation {
     // Look for options
     for (; it!=options.end() && good; ++it) {
       if (it->first==token) {
-
-        cout << "Fill" << endl;
-
         HeadNode *h = it->second;
         // This is complicated enough that we give it it's own function. Fill area has its own options.
         if (h) fillArea(h);
@@ -226,15 +233,6 @@ namespace GFlowSimulation {
   }
 
   inline void FileParseCreator::fillArea(HeadNode *head) const {
-    string token;
-    bool good = true;
-    std::multimap<string, HeadNode*>::iterator it;
-
-    // --- Necessary data
-    Bounds bounds; // We must have bounds
-    int number = 0; // We must initialize a positive number of particles
-    bool usePhi = false;
-    RealType phi = 0;
     // Particle Templates
     std::map<string, ParticleTemplate> particle_templates;
     // Selection functions
@@ -242,11 +240,9 @@ namespace GFlowSimulation {
     std::function<RealType(int)> select_sigma = nullptr;
     std::function<RealType(int, RealType)> select_mass = nullptr;
     std::function<void(RealType*, RealType*, RealType, RealType, int)> select_velocity = nullptr;
-    // Data vector for lambda functions to reference
-    vector<RealType> data;
 
     // --- Sort options
-    std::map<string, HeadNode*> options;
+    std::multimap<string, HeadNode*> options;
     for (auto h : head->subHeads)
       options.insert(std::pair<string, HeadNode*>(h->heading, h));
     // Container to collect options in
@@ -256,21 +252,23 @@ namespace GFlowSimulation {
 
     // --- Look for bounds
     getAllMatches("Bounds", container, options);
+    // We must have bounds
+    Bounds bounds; 
     // We only care about the first bounds. We can only define the bounds once.
-    if (container.empty()) {
-      cout << "We need bounds!\n";
-      throw BadStructure();
-    }
+    if (container.empty())
+      throw BadStructure("We need bounds!");
     else {
       // We want there to only be one set of bounds
       if (container.size()>1) cout << "Multiple bounds found! Ignoring all but the first instance.\n";
       // Get the bounds from the first instance
       HeadNode *h = container[0];
-      if (h->subHeads.size()!=DIMENSIONS) throw BadStructure();
+      if (h->subHeads.size()!=DIMENSIONS) 
+        throw BadStructure("Expected "+toStr(DIMENSIONS)+" arguments, found "+toStr(h->subHeads.size()));
       // Set bounds
       for (int d=0; d<h->subHeads.size(); ++d) {
         // Check for well formed options.
-        if (h->subHeads[d]->params.size()!=2 || !h->subHeads[d]->subHeads.empty()) throw BadStructure();
+        if (h->subHeads[d]->params.size()!=2 || !h->subHeads[d]->subHeads.empty()) 
+          throw BadStructure("Bounds need a min and a max, we found "+toStr(h->subHeads[d]->params.size())+" parameters.");
         // Extract the bounds.
         bounds.min[d] = convert<float>( h->subHeads[d]->params[0]->partA );
         bounds.max[d] = convert<float>( h->subHeads[d]->params[1]->partA );
@@ -283,11 +281,54 @@ namespace GFlowSimulation {
       getParticleTemplate(h, particle_templates);
     }
 
-    // --- Number. Options are:
-    // 1) Phi - fill untill we reach
+    // --- Number. How to choose which particles to fill the space with.
     getAllMatches("Number", container, options);
+    if (container.empty()) 
+      throw BadStructure("We need number information!");
+    // Create a structure for recording probabilities or numbers
+    std::map<string, double> particle_template_probabilities;
+    std::map<string, double> particle_template_numbers;
+    bool useNumber = false, usePhi = false;
+    int number; 
+    double phi;
+    // Find options
+    if (container.size()>1) cout << "Multiple number directives found. Ignoring all but the first instance.\n";
+    HeadNode *hd = container[0];
+    if (hd->subHeads.size()==0) { // No body
+      if (particle_templates.size()>1) 
+        throw BadStructure("More than one type of particle has been defined, but how probable they are is ill defined.");
+      if (hd->params[0]->partB.empty()) {
+        useNumber = true;
+        number = convert<int>(hd->params[0]->partA);
+      }
+      else if (hd->params[0]->partA=="Phi") {
+        usePhi = true;
+        phi = convert<double>(hd->params[0]->partB);
+      }
+      else throw BadStructure("Expect either a number or 'Phi=#'");
+    }
+    // Mutiple particle templates are defined. There must be a body
+    else {
+      if (hd->params[0]->partA=="Phi") {
+        usePhi = true;
+        phi = convert<double>(hd->params[0]->partB);
+      }
+      else {
+        useNumber = true;
+      }
+      // Look in the body for the probabilities or frequencies
+      for (auto sh : hd->subHeads) {
+        if (sh->params.size()!=1)
+          throw BadStructure("Expect two options in template - number definition. Found "+toStr(sh->params.size())+".");
+        particle_template_numbers.insert(
+          std::pair<string, double>(sh->heading, convert<double>(sh->params[0]->partA))
+        );
+      }
+    }
+
+    // --- Old number option
     for (auto h : container) {
-      if (h->params.size()!=1) throw BadStructure();
+      if (h->params.size()!=1) throw BadStructure("Number option should have one parameter, found "+toStr(h->params.size())+".");
       string a = h->params[0]->partA, b = h->params[0]->partB;
       if (!b.empty()) { // There is an option
         // Look for all options
@@ -403,7 +444,7 @@ namespace GFlowSimulation {
     filler.forceMaster = nullptr; 
   }
 
-  inline void FileParseCreator::getAllMatches(string heading, vector<HeadNode*>& container, std::map<string, HeadNode*>& options) const {
+  inline void FileParseCreator::getAllMatches(string heading, vector<HeadNode*>& container, std::multimap<string, HeadNode*>& options) const {
     // Clear container in case there is stuff left over in it.
     container.clear();
     // Look for options
@@ -414,8 +455,128 @@ namespace GFlowSimulation {
     }
   }
 
+  //! Valid headers for particle templates are:
+  //! Radius: [Random | Uniform | Normal | #]
+  //! Mass:   [Density=# | #]
+  //! Type:   [Random | #]
   inline void FileParseCreator::getParticleTemplate(HeadNode *head, std::map<string, ParticleTemplate>& particle_templates) const {
+    // Create a particle template to set
+    ParticleTemplate p_template;
 
+    // --- Sort options
+    std::multimap<string, HeadNode*> options;
+    for (auto h : head->subHeads)
+      options.insert(std::pair<string, HeadNode*>(h->heading, h));
+    // For collecting options
+    std::vector<HeadNode*> container;
+    string type;
+
+    // --- Look for options
+    
+    // --- Look for Radius option
+    getAllMatches("Radius", container, options);
+    if (container.empty()) 
+      throw BadStructure("We need some radius information!");
+    if (container.size()>1) {
+      cout << "We only need one radius information block. Ignoring all but the first instance.\n";
+    }
+    // Get the random engine
+    p_template.radius_engine = getRandomEngine(container[0], type);
+    
+      
+    // --- Look for Mass option
+    getAllMatches("Mass", container, options);
+    if (container.empty())
+      throw BadStructure("We need some mass information!");
+    if (container.size()>1) {
+      cout << "We only need one mass information block. Ignoring all but the first instance.\n";
+    }
+    p_template.mass_engine = getRandomEngine(container[0], type);
+
+    // --- Look for Type option
+    getAllMatches("Type", container, options);
+    if (container.empty())
+      throw BadStructure("We need some mass information!");
+    if (container.size()>1) {
+      cout << "We only need one mass information block. Ignoring all but the first instance.\n";
+    }
+    p_template.type_engine = getRandomEngine(container[0], type);
+
+    // Add to particle templates
+    particle_templates.insert(std::pair<string, ParticleTemplate>(head->heading, p_template));
+  }
+
+  inline RandomEngine* FileParseCreator::getRandomEngine(HeadNode *h, string &type) const {
+    // Clear type string
+    type.clear();
+    // Check structure
+    if (h->params.size()!=1)
+      throw BadStructure("Random engine needs one parameter, found "+toStr(h->params.size())+".");
+    else if (!h->params[0]->partB.empty()) {
+      // A type is specified
+      type = h->params[0]->partA;
+      // We expect a number in partB
+      return new DeterministicEngine(convert<double>(h->params[0]->partB));
+    }
+    else if (h->subHeads.empty()) {
+      // We expect a number in partA
+      return new DeterministicEngine(convert<double>(h->params[0]->partA));
+    }
+
+    // Parameter string
+    string param = h->params[0]->partA;
+
+    // Check for options:
+    if (param=="Random") {
+      vector<double> probabilities, values;
+      for (auto sh : h->subHeads) {
+        if (sh->heading!="P")
+          throw BadStructure("Discrete probability should be indicated with a 'P.'");
+        if (sh->params.size()!=2)
+          throw BadStructure("Expect value and probability, encountered "+toStr(sh->params.size())+" options.");
+        if (!sh->params[0]->partB.empty() || !sh->params[1]->partB.empty())
+          throw BadStructure("Expected one part parameters in discrete probability specification.");
+        // Store the value and its probability
+        values.push_back(convert<double>(sh->params[0]->partA)); 
+        probabilities.push_back(convert<double>(sh->params[1]->partB));
+      }
+
+    }
+    else if (param=="Uniform") {
+      if (h->subHeads.size()!=2) 
+        throw BadStructure("Uniform distribution needs a min and a max. Found "+toStr(h->subHeads.size())+" parameters.");
+      HeadNode *lwr = h->subHeads[0], *upr = h->subHeads[1];
+      // Swap if necessary
+      if (lwr->heading!="Lower") std::swap(lwr, upr);
+      // Check structure
+      if (lwr->heading!="Lower" || upr->heading!="Upper") 
+        throw BadStructure("Headings incorrect for uniform distribution.");
+      if (lwr->params.size()!=1 || upr->params.size()!=1) 
+        throw BadStructure("More than one parameter for uniform distribution.");
+      // Set the uniform random engine
+      return new UniformRandomEngine(
+        convert<double>(lwr->params[0]->partA), convert<double>(upr->params[0]->partA)
+      );
+    }
+    else if (param=="Normal") {
+      if (h->subHeads.size()!=2) 
+        throw BadStructure("Normal distribution needs average and variance. Found "+toStr(h->subHeads.size())+" parameters.");
+      HeadNode *ave = h->subHeads[0], *var = h->subHeads[1];
+      // Swap if necessary
+      if (ave->heading!="Ave") std::swap(ave, var);
+      // Check structure
+      if (ave->heading!="Ave" || var->heading!="Var")
+        throw BadStructure("Headings incorrect for normal distribution.");
+      if (ave->params.size()!=1 || var->params.size()!=1) 
+        throw BadStructure("More than one parameter for normal distribution.");
+      // Set the uniform random engine
+      return new NormalRandomEngine(
+        convert<double>(ave->params[0]->partA), convert<double>(var->params[0]->partA)
+      );
+    }
+    else throw BadStructure("Unrecognized choice for a random engine.");
+    // Token return
+    return nullptr;
   }
 
 }
