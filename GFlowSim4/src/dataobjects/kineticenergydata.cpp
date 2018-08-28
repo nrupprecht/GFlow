@@ -32,6 +32,8 @@ namespace GFlowSimulation {
   }
 
   bool KineticEnergyData::writeToFile(string fileName, bool useName) {
+    // Check if there's anything to do
+    if (keData.empty()) return true;
     // The name of the directory for this data
     string dirName = fileName;
     if (*fileName.rbegin()=='/') // Make sure there is a /

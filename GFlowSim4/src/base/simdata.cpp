@@ -179,18 +179,24 @@ namespace GFlowSimulation {
   }
 
   void SimData::clearX() {
+    // Check if there are particles
+    if (number==0) return;
     // Set all positions to zero
     RealType *_x = x[0];
     for (int i=0; i<number*DIMENSIONS; ++i) _x[i] = 0;
   }
 
   void SimData::clearV() {
+    // Check if there are particles
+    if (number==0) return;
     // Set all velocities to zero
     RealType *_v = v[0];
     for (int i=0; i<number*DIMENSIONS; ++i) _v[i] = 0;
   }
 
   void SimData::clearF() {
+    // Check if there are particles
+    if (number==0) return;
     // Set all forces to zero
     RealType *_f = f[0];
     for (int i=0; i<number*DIMENSIONS; ++i) _f[i] = 0;

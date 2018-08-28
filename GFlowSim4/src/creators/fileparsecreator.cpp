@@ -235,12 +235,16 @@ namespace GFlowSimulation {
   inline Integrator* FileParseCreator::choose_integrator(string& token) const {
     if (token=="VelocityVerlet")            return new VelocityVerlet(gflow);
     else if (token=="OverdampedIntegrator") return new OverdampedIntegrator(gflow);
+    else if (token=="OverdampedLangevin")   return new OverdampedLangevinIntegrator(gflow);
+    else if (token=="LangevinIntegrator")   return new LangevinIntegrator(gflow);
     else throw UnexpectedOption();
   }
 
   inline Interaction* FileParseCreator::choose_interaction(string& token) const {
     if (token=="HardSphere")        return new HardSphere(gflow);
     else if (token=="LennardJones") return new LennardJones(gflow);
+    else if (token=="Coulomb")      return new CoulumbForce(gflow);
+    else if (token=="Consumption")  return new Consumption(gflow);
     else throw UnexpectedOption();
   }
 
@@ -303,12 +307,15 @@ namespace GFlowSimulation {
     // Create a structure for recording probabilities or numbers
     std::map<string, double> particle_template_numbers;
     bool useNumber = false, usePhi = false, singleType = false;
-    int number; 
-    double phi;
+    int number(0); 
+    double phi(0);
     // Find options
     if (container.size()>1) build_message += "Multiple number directives found. Ignoring all but the first instance.\n";
     HeadNode *hd = container[0];
-    if (hd->subHeads.size()==0) { // No body
+    // No body - we must have something in one of two forms:
+    // Number: #
+    // Number: Phi=#
+    if (hd->subHeads.size()==0) { 
       if (particle_templates.size()>1) 
         throw BadStructure("More than one type of particle has been defined, but how probable they are is ill defined.");
       if (hd->params.empty())
@@ -328,12 +335,10 @@ namespace GFlowSimulation {
     }
     // Mutiple particle templates are defined. There must be a body
     else {
-      if (!hd->params.empty() && hd->params[0]->partA=="Phi") {
-        usePhi = true;
-        phi = convert<double>(hd->params[0]->partB);
-      }
+      // Either phi or number
+      if (!hd->params.empty() && hd->params[0]->partA=="Phi") usePhi = true;
       else useNumber = true;
-      // Look in the body for the probabilities or frequencies
+      // Look in the body for the probabilities or numbers
       for (auto sh : hd->subHeads) {
         if (sh->params.size()!=1)
           throw BadStructure("Expect two options in template - number definition. Found "+toStr(sh->params.size())+".");
@@ -360,7 +365,7 @@ namespace GFlowSimulation {
     // --- Check that we have defined a good area
     for (int d=0; d<DIMENSIONS; ++d)
       if (bounds.wd(d)==0) 
-	throw BadStructure("We need valid bounds. The width of dimension "+toStr(d)+" was 0.");
+	 throw BadStructure("We need valid bounds. The width of dimension "+toStr(d)+" was 0.");
     if (!usePhi && number<=0 && singleType)
       throw BadStructure("If using a single type, we need a nonzero number of particles.");
 
@@ -378,36 +383,62 @@ namespace GFlowSimulation {
 
     // If we are filling to a specified packing fraction
     if (usePhi) {
-      // Create discrete distribution
-      vector<double> probabilities;
-      vector<ParticleTemplate> template_vector;
-      // Map particle type to probability
-      for (auto &pr : particle_template_numbers) {
-        auto it = particle_templates.find(pr.first);
-        if (it==particle_templates.end())
-          throw BadStructure("An undefined particle type was encountered: "+pr.first);
-        template_vector.push_back(it->second);
-        probabilities.push_back(pr.second);
+      // One type of particle
+      if (phi>0) {
+        // We expect there to only be one particle template
+        if (particle_templates.size()!=1)
+          throw BadStructure("We expect there to be 1 particle template, there are "+toStr(particle_templates.size()));
+        // Get the particle template
+        ParticleTemplate &particle_creator = particle_templates.begin()->second;
+        int i(0);
+        RealType vol = 0, Vol = bounds.vol();
+        while (vol/Vol < phi) {
+          // Select a position for the particle (random uniform)
+          for (int d=0; d<DIMENSIONS; ++d)
+            X[d] = drand48()*bounds.wd(d) + bounds.min[d];
+          // Select other characteristics
+          particle_creator.createParticle(X, sigma, im, type, i);
+          // Add the particle
+          simData->addParticle(X, V, sigma, im, type);
+          // Increment volume and counter
+          vol += sphere_volume(sigma);
+          ++i;
+        }
       }
+      // Multiple types of particles, each must have different target phi's
+      else {
+        // Create discrete distribution
+        vector<double> probabilities;
+        vector<ParticleTemplate> template_vector;
 
-      // A discrete distribution we use to choose which particle template to use next
-      std::discrete_distribution<int> choice(probabilities.begin(), probabilities.end());
-      int i(0);
-      RealType vol = 0, Vol = bounds.vol();
-      while (vol/Vol < phi) {
-        // Select a position for the particle (random uniform)
-        for (int d=0; d<DIMENSIONS; ++d)
-          X[d] = drand48()*bounds.wd(d) + bounds.min[d];
-        // Choose a type of particle to create
-        int pt = choice(global_generator);
-        ParticleTemplate &particle_creator = template_vector.at(pt);
-        // Select other characteristics
-        particle_creator.createParticle(X, sigma, im, type, i);
-        // Add the particle
-        simData->addParticle(X, V, sigma, im, type);
-        // Increment volume and counter
-        vol += sphere_volume(sigma);
-        ++i;
+        // Map particle type to probability
+        for (auto &pr : particle_template_numbers) {
+          auto it = particle_templates.find(pr.first);
+          if (it==particle_templates.end())
+            throw BadStructure("An undefined particle type was encountered: "+pr.first);
+          template_vector.push_back(it->second);
+          probabilities.push_back(pr.second);
+        }
+
+        // A discrete distribution we use to choose which particle template to use next
+        std::discrete_distribution<int> choice(probabilities.begin(), probabilities.end());
+        int i(0);
+        RealType vol = 0, Vol = bounds.vol();
+        while (vol/Vol < phi) {
+          // Select a position for the particle (random uniform)
+          for (int d=0; d<DIMENSIONS; ++d)
+            X[d] = drand48()*bounds.wd(d) + bounds.min[d];
+          // Choose a type of particle to create
+          int pt = choice(global_generator);
+          ParticleTemplate &particle_creator = template_vector.at(pt);
+          // Select other characteristics
+          particle_creator.createParticle(X, sigma, im, type, i);
+          // Add the particle
+          simData->addParticle(X, V, sigma, im, type);
+          // Increment volume and counter
+          vol += sphere_volume(sigma);
+          ++i;
+        }
       }
     }
     // If we are filling to a specified number

@@ -29,12 +29,14 @@ namespace GFlowSimulation {
       #endif 
     }
     #else
-    // Get inverse mass * dt * dampingConstant
-    simd_float g_im_dt = simd_set1(dampingConstant*im[0]*dt);
+    // Get dampingConstant * dt
+    simd_float g_dt = simd_set1(dampingConstant*dt);
     int i=0;
     for (; i<number*DIMENSIONS-simd_data_size; i+=simd_data_size) {
       simd_float X = simd_load(&x[i]);
+      simd_float _im = simd_load_constant<DIMENSIONS>(im, i);
       simd_float F = simd_load(&f[i]);
+      simd_float g_im_dt = simd_mult(g_dt, _im);
       simd_float dX = simd_mult(g_im_dt, F);
       simd_float X_new = simd_add(X, dX);
       simd_store(X_new, &x[i]);

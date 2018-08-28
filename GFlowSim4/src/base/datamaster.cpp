@@ -246,7 +246,7 @@ namespace GFlowSimulation {
     fout << "Integration:\n";
     fout << "  - Iterations:               " << iterations << "\n";
     fout << "  - Time per iteration:       " << toStrRT(run_time / static_cast<RealType>(iterations)) << "\n";
-    fout << "  - Time step (at end):       " << integrator->getTimeStep() << "\n";
+    if (integrator) fout << "  - Time step (at end):       " << integrator->getTimeStep() << "\n";
     fout << "\n";
     
     // --- Print the domain summary
@@ -264,17 +264,19 @@ namespace GFlowSimulation {
       if (d!=DIMENSIONS-1) fout << ", ";
     }
     fout << "\n";
-    fout << "  - Cutoff:                   " << Base::domain->getCutoff() << "\n";
-    fout << "  - Skin depth:               " << Base::domain->getSkinDepth() << "\n";
-    fout << "  - Move ratio tollerance:    " << Base::domain->getMvRatioTolerance() << "\n";
-    fout << "  - Delay missed target:      " << Base::domain->getMissedTarget() << "\n";
-    fout << "  - Average miss:             " << Base::domain->getAverageMiss() << "\n";
-    if (run_time>0) {
-      fout << "  - Sector remakes:           " << Base::domain->getNumberOfRemakes() << "\n";
-      RealType re_ps = Base::domain->getNumberOfRemakes() / Base::gflow->getTotalTime();
-      fout << "  - Remakes per second:       " << re_ps << "\n";
-      fout << "  - Average remake delay:     " << 1./re_ps << "\n";
-      fout << "  - Average iters per delay:  " << static_cast<RealType>(iterations) / Base::domain->getNumberOfRemakes() <<"\n";
+    if (Base::domain) {
+      fout << "  - Cutoff:                   " << Base::domain->getCutoff() << "\n";
+      fout << "  - Skin depth:               " << Base::domain->getSkinDepth() << "\n";
+      fout << "  - Move ratio tollerance:    " << Base::domain->getMvRatioTolerance() << "\n";
+      fout << "  - Delay missed target:      " << Base::domain->getMissedTarget() << "\n";
+      fout << "  - Average miss:             " << Base::domain->getAverageMiss() << "\n";
+      if (run_time>0) {
+        fout << "  - Sector remakes:           " << Base::domain->getNumberOfRemakes() << "\n";
+        RealType re_ps = Base::domain->getNumberOfRemakes() / Base::gflow->getTotalTime();
+        fout << "  - Remakes per second:       " << re_ps << "\n";
+        fout << "  - Average remake delay:     " << 1./re_ps << "\n";
+        fout << "  - Average iters per delay:  " << static_cast<RealType>(iterations) / Base::domain->getNumberOfRemakes() <<"\n";
+      }
     }
     fout << "\n";
     fout << "Interactions:\n";

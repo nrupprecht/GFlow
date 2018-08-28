@@ -6,6 +6,7 @@
 namespace GFlowSimulation {
 
   class Consumption : public Interaction {
+  public:
     //! @brief Constructor
     Consumption(GFlow *);
 

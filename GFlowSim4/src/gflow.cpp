@@ -93,6 +93,13 @@ namespace GFlowSimulation {
     // Record this request
     total_requested_time += requested_time;
 
+    // If there are no particles, we are done
+    if (simData->number==0) {
+      elapsed_time += requested_time;
+      total_time   += requested_time;
+      return;
+    }
+
     // Make sure we have initialized everything
     if (!initialize()) {
       // Some object was null
@@ -163,8 +170,6 @@ namespace GFlowSimulation {
       if (useForces) {
         for (auto &it : interactions) it->interact();
       }
-
-      simData->markForRemoval(0);
 
       // Do particle removal
       simData->doParticleRemoval();
