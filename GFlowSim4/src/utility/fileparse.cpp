@@ -34,24 +34,27 @@ namespace GFlowSimulation {
         fin.get(c);
         if (fin.eof()) {
           // Message
-          message += (tabs() + "<" + comment +">\n");
+          message += (tabs() + (mline ? "ML" : "SL") + " <" + comment +">\n");
           message += "--> EOF\n";
           // End of file encountered
           return; // Check end of file
         }
         if (c=='/') {
           // Message
-          message += (tabs() + "<" + comment +">\n");
+          message += (tabs() + (mline ? "ML" : "SL") + " <" + comment +">\n");
           // End of the comment
           return; 
         }
       }
       else if (c=='\n' || c=='\r') {// Single line comments end with at newline
-        // Message
-        message += (tabs() + "<" + comment +">\n");
-        // In case a newline signifies something for whoever called this function
-        fin.putback(c); 
-        return;
+        if (mline) comment += "[\\n]";
+        else {
+          // Message
+          message += (tabs() + (mline ? "ML" : "SL") + " <" + comment +">\n");
+          // In case a newline signifies something for whoever called this function
+          fin.putback(c); 
+          return;
+        }
       }
       else comment.push_back(c);
       // Get next character

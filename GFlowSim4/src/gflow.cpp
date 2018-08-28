@@ -157,12 +157,15 @@ namespace GFlowSimulation {
       reflectPositions();
       repulsePositions();
 
-      // --- Do forces
+      // --- Do interactions
       clearForces(); // Clear force buffers
       // Calculate current forces
       if (useForces) {
         for (auto &it : interactions) it->interact();
       }
+
+      // Do particle removal
+      simData->doParticleRemoval();
 
       // --> Post-forces
       for (auto m : modifiers) m->post_forces(); // -- This is where modifiers should do forces (if they need to)

@@ -52,21 +52,24 @@ namespace GFlowSimulation {
   }
 
   void ParticleTemplate::createParticle(RealType *X, RealType& radius, RealType &im, int& type, int n) {
+    // Check that our constituents are non-null
     if (type_engine==nullptr || radius_engine==nullptr || mass_engine==nullptr) {
       cout << type_engine << " " << radius_engine << " " << mass_engine << endl;
       throw NullEngine();
     }
+    // Create type
     type = static_cast<int>(type_engine->generate());
+    // Create radius
     radius = radius_engine->generate();
-    double m = mass_engine->generate();
-
-    cout << m << endl;
-
-    if (mass_string=="Density") m = sphere_volume(radius)*m;
-
-    cout << mass_string << " " << m << " " << sphere_volume(radius) << " " << radius << endl;
-
-    im = m>0 ? 1./m : 0;
+    // Create (inverse) mass
+    if (mass_string=="Inf") {
+      im = 0;
+    }
+    else {
+      double m = mass_engine->generate();
+      if (mass_string=="Density") m = sphere_volume(radius)*m;
+      im = m>0 ? 1./m : 0;
+    }
   }
 
 }

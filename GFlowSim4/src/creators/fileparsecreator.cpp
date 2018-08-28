@@ -29,7 +29,15 @@ namespace GFlowSimulation {
     // We treat the file as one giant body. Get that body.
     build_message = "Starting file parse... ";
     FileParse parser;
-    HeadNode *root = parser.parseFile(configFile); // A file parse class does the parsing
+    HeadNode *root = nullptr;
+    try {
+      root = parser.parseFile(configFile); // A file parse class does the parsing
+    }
+    catch (FileParse::UnexpectedToken ut) {
+      cout << "Caught unexpected token error from file parsing. Trace:\n";
+      cout << parser.getMessage();
+      throw;
+    }
     build_message += "Done.\n";
 
     // Get the message from the parser.
@@ -522,8 +530,16 @@ namespace GFlowSimulation {
       return new DeterministicEngine(convert<double>(h->params[0]->partB));
     }
     else if (h->subHeads.empty()) {
-      // We expect a number in partA
-      return new DeterministicEngine(convert<double>(h->params[0]->partA));
+      string token = h->params[0]->partA;
+      // We expect either a number in partA, or a string (e.g. "Inf").
+      if (isdigit(token.at(0))) {
+        return new DeterministicEngine(convert<double>(token));
+      }
+      else {
+        type = token;
+        // The engine will not matter
+        return new DeterministicEngine(0);
+      }
     }
 
     // Parameter string
