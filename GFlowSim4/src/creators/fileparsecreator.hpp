@@ -68,7 +68,7 @@ namespace GFlowSimulation {
     GFlow *gflow;
 
     //! @brief The message the parser writes as it parses the configuration file
-    string parse_message, build_message;
+    mutable string parse_message, build_message;
 
     // Normal distribution
     mutable std::mt19937 generator;

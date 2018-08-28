@@ -53,7 +53,7 @@ namespace GFlowSimulation {
   public:
     DiscreteRandomEngine(vector<double>& prbs, vector<double>& vals) : probabilities(prbs), values(vals) {
       if (prbs.size()>vals.size()) throw false;
-      discrete_dist = std::discrete_distribution<double>(prbs.begin(), prbs.end());
+      discrete_dist = std::discrete_distribution<int>(prbs.begin(), prbs.end());
     };
     //! @brief Generate a number.
     virtual double generate() {
@@ -64,7 +64,7 @@ namespace GFlowSimulation {
     }
   private:
     vector<double> probabilities, values;
-    std::discrete_distribution<double> discrete_dist;
+    std::discrete_distribution<int> discrete_dist;
   };
 
   class DeterministicEngine : public RandomEngine {

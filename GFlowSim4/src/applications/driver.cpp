@@ -85,24 +85,16 @@ int main(int argc, char **argv) {
   #if DEBUG==1
   cout << "Running in Debug mode.\n";
   #endif
-
+  
   #if SIMD_TYPE==SIMD_NONE
   cout << "Not using SIMD.\n";
-  #endif
-
-  #if SIMD_TYPE==SIMD_SSE
+  #elif SIMD_TYPE==SIMD_SSE
   cout << "Using SSE.\n";
-  #endif
-
-  #if SIMD_TYPE==SIMD_AVX
+  #elif SIMD_TYPE==SIMD_AVX
   cout << "Using AVX.\n";
-  #endif
-
-  #if SIMD_TYPE==SIMD_AVX2
+  #elif SIMD_TYPE==SIMD_AVX2
   cout << "Using AVX2.\n";
-  #endif
-
-  #if SIMD_TYPE==SIMD_MIC
+  #elif SIMD_TYPE==SIMD_MIC
   cout << "Using MIC.\n";
   #endif
   

@@ -27,33 +27,34 @@ namespace GFlowSimulation {
 
   GFlow* FileParseCreator::createSimulation() {
     // We treat the file as one giant body. Get that body.
-    cout << "Starting file parse... ";
+    build_message = "Starting file parse... ";
     FileParse parser;
     HeadNode *root = parser.parseFile(configFile); // A file parse class does the parsing
-    cout << "Done.\n";
+    build_message += "Done.\n";
 
     // Get the message from the parser.
     parse_message = parser.getMessage();
 
     // Sort and collect options
-    cout << "Collecting options... ";
+    build_message += "Collecting options... ";
     std::multimap<string, HeadNode*> options;
     for (const auto &op : root->subHeads) {
       options.insert(std::pair<string, HeadNode*> (op->heading, op));
     }
-    cout << "Done collecting options.\n";
+    build_message += "Done.\n";
 
     // Create the scenario from the options
     gflow = new GFlow;
-    cout << "Starting simulation setup... ";
+    build_message += "Starting simulation setup... ";
     try {
       createFromOptions(gflow, options);
     }
     catch (BadStructure bs) {
-      cout << bs.message << endl;
+      cout << build_message << endl;
+      cout << "Caught Bad Structure error: " << bs.message << endl;
       throw;
     }
-    cout << "Done.\n";
+    build_message += "Done.\n";
 
     // Clean up and return
     //delete [] root;
@@ -258,7 +259,7 @@ namespace GFlowSimulation {
       throw BadStructure("We need bounds!");
     else {
       // We want there to only be one set of bounds
-      if (container.size()>1) cout << "Multiple bounds found! Ignoring all but the first instance.\n";
+      if (container.size()>1) build_message += "Multiple bounds found! Ignoring all but the first instance.\n";
       // Get the bounds from the first instance
       HeadNode *h = container[0];
       if (h->subHeads.size()!=DIMENSIONS) 
@@ -286,17 +287,20 @@ namespace GFlowSimulation {
       throw BadStructure("We need number information!");
     // Create a structure for recording probabilities or numbers
     std::map<string, double> particle_template_numbers;
-    bool useNumber = false, usePhi = false;
+    bool useNumber = false, usePhi = false, singleType = false;
     int number; 
     double phi;
     // Find options
-    if (container.size()>1) cout << "Multiple number directives found. Ignoring all but the first instance.\n";
+    if (container.size()>1) build_message += "Multiple number directives found. Ignoring all but the first instance.\n";
     HeadNode *hd = container[0];
     if (hd->subHeads.size()==0) { // No body
       if (particle_templates.size()>1) 
         throw BadStructure("More than one type of particle has been defined, but how probable they are is ill defined.");
       if (hd->params.empty())
         throw BadStructure("Expected parameters in number directive, since there is no body.");
+      // Single type scenario
+      singleType = true;
+      // Phi or number?
       if (hd->params[0]->partB.empty()) {
         useNumber = true;
         number = convert<int>(hd->params[0]->partA);
@@ -325,6 +329,8 @@ namespace GFlowSimulation {
       }
     }
 
+    
+
     // Select a velocity
     auto select_velocity = [&] (RealType *V, RealType *X, RealType sigma, RealType im, int type) -> void {
       RealType vsgma = 0.25;
@@ -340,8 +346,10 @@ namespace GFlowSimulation {
 
     // --- Check that we have defined a good area
     for (int d=0; d<DIMENSIONS; ++d)
-      if (bounds.wd(d)==0) return;
-    if (number<=0 && !usePhi) return;
+      if (bounds.wd(d)==0) 
+	throw BadStructure("We need valid bounds. The width of dimension "+toStr(d)+" was 0.");
+    if (!usePhi && number<=0 && singleType)
+      throw BadStructure("If using a single type, we need a nonzero number of particles.");
 
     // --- We have found all the options. Fill the area.
     GFlow filler;
@@ -412,7 +420,7 @@ namespace GFlowSimulation {
     }
 
     // Print status
-    cout << "Done with initial particle assigmnemt.\n"; 
+    build_message += "From Fill Area: Done with initial particle assigmnemt.\n"; 
 
     // Initialize domain
     filler.domain->initialize();
@@ -435,7 +443,7 @@ namespace GFlowSimulation {
         gflow->simData->addParticle(X, V, sigma, im, type);
       }
     }
-
+    
     // So we don't delete the force master when filler cleans up
     filler.forceMaster = nullptr; 
   }
@@ -473,9 +481,8 @@ namespace GFlowSimulation {
     getAllMatches("Radius", container, options);
     if (container.empty()) 
       throw BadStructure("We need some radius information!");
-    if (container.size()>1) {
-      cout << "We only need one radius information block. Ignoring all but the first instance.\n";
-    }
+    if (container.size()>1)
+      build_message += "We only need one radius information block. Ignoring all but the first instance.\n";
     // Get the random engine
     p_template.radius_engine = getRandomEngine(container[0], type);
     
@@ -484,18 +491,16 @@ namespace GFlowSimulation {
     getAllMatches("Mass", container, options);
     if (container.empty())
       throw BadStructure("We need some mass information!");
-    if (container.size()>1) {
-      cout << "We only need one mass information block. Ignoring all but the first instance.\n";
-    }
+    if (container.size()>1)
+      build_message += "We only need one mass information block. Ignoring all but the first instance.\n";
     p_template.mass_engine = getRandomEngine(container[0], type);
 
     // --- Look for Type option
     getAllMatches("Type", container, options);
     if (container.empty())
       throw BadStructure("We need some mass information!");
-    if (container.size()>1) {
-      cout << "We only need one mass information block. Ignoring all but the first instance.\n";
-    }
+    if (container.size()>1)
+      build_message += "We only need one mass information block. Ignoring all but the first instance.\n";
     p_template.type_engine = getRandomEngine(container[0], type);
 
     // Add to particle templates
