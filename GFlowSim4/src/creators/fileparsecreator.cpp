@@ -485,8 +485,8 @@ namespace GFlowSimulation {
       build_message += "We only need one radius information block. Ignoring all but the first instance.\n";
     // Get the random engine
     p_template.radius_engine = getRandomEngine(container[0], type);
+    p_template.radius_string = type;
     
-      
     // --- Look for Mass option
     getAllMatches("Mass", container, options);
     if (container.empty())
@@ -494,6 +494,7 @@ namespace GFlowSimulation {
     if (container.size()>1)
       build_message += "We only need one mass information block. Ignoring all but the first instance.\n";
     p_template.mass_engine = getRandomEngine(container[0], type);
+    p_template.mass_string = type;
 
     // --- Look for Type option
     getAllMatches("Type", container, options);
@@ -502,6 +503,7 @@ namespace GFlowSimulation {
     if (container.size()>1)
       build_message += "We only need one mass information block. Ignoring all but the first instance.\n";
     p_template.type_engine = getRandomEngine(container[0], type);
+    p_template.type_string = type;
 
     // Add to particle templates
     particle_templates.insert(std::pair<string, ParticleTemplate>(head->params[0]->partA, p_template));

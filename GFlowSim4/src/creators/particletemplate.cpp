@@ -59,7 +59,13 @@ namespace GFlowSimulation {
     type = static_cast<int>(type_engine->generate());
     radius = radius_engine->generate();
     double m = mass_engine->generate();
+
+    cout << m << endl;
+
     if (mass_string=="Density") m = sphere_volume(radius)*m;
+
+    cout << mass_string << " " << m << " " << sphere_volume(radius) << " " << radius << endl;
+
     im = m>0 ? 1./m : 0;
   }
 
