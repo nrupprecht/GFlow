@@ -60,6 +60,13 @@ namespace GFlowSimulation {
     catch (BadStructure bs) {
       cout << build_message << endl;
       cout << "Caught Bad Structure error: " << bs.message << endl;
+      // Print the parse tree to a file so we can debug
+      ofstream fout("ParseTrace.txt");
+      if (fout.fail());
+      else {
+        fout << parse_message;
+        fout.close();
+      }
       throw;
     }
     build_message += "Done.\n";
@@ -449,7 +456,7 @@ namespace GFlowSimulation {
         // Select the velocity for the final particle
         select_velocity(V, X, sigma, im, type);
 
-        if (im==0) zeroVec(V);
+        if (im==0) zeroVec(V); //** FOR NOW
 
         gflow->simData->addParticle(X, V, sigma, im, type);
       }
@@ -560,7 +567,7 @@ namespace GFlowSimulation {
           throw BadStructure("Expected one part parameters in discrete probability specification.");
         // Store the value and its probability
         values.push_back(convert<double>(sh->params[0]->partA)); 
-        probabilities.push_back(convert<double>(sh->params[1]->partB));
+        probabilities.push_back(convert<double>(sh->params[1]->partA));
       }
       return new DiscreteRandomEngine(probabilities, values);
     }

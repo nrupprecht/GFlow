@@ -164,6 +164,8 @@ namespace GFlowSimulation {
         for (auto &it : interactions) it->interact();
       }
 
+      simData->markForRemoval(0);
+
       // Do particle removal
       simData->doParticleRemoval();
 

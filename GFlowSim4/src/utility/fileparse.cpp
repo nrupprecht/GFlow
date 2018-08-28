@@ -45,6 +45,7 @@ namespace GFlowSimulation {
           // End of the comment
           return; 
         }
+        else message += ('*' + c);
       }
       else if (c=='\n' || c=='\r') {// Single line comments end with at newline
         if (mline) comment += "[\\n]";
@@ -56,7 +57,10 @@ namespace GFlowSimulation {
           return;
         }
       }
-      else comment.push_back(c);
+      else {
+        if (c=='\t') comment += "[\\t]";
+        else comment.push_back(c);
+      }
       // Get next character
       fin.get(c);
     }

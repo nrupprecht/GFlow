@@ -292,27 +292,38 @@ namespace GFlowSimulation {
 
   void SimData::doParticleRemoval() {
     // If there is nothing to remove, we're done
-    if (remove_list.empty()) return;
+    if (remove_list.empty() || number==0) return;
     // Variables
     int count = 0, count_back = number-1;
-    // Set all types to -1
-    for(auto id : remove_list) type[id] = -1;
     // Fill in all holes
+    int removed = 0;
     for(auto id : remove_list) {
+      // No point removing particles that are not real
+      if (type[id]<0) continue;
+      // Particle is no longer valid
+      type[id] = -1;
+      // We have removed a particle
+      ++removed;
+
+      auto contains = [] (std::set<int>& s, int id) -> bool {
+        return s.find(id)!=s.end();
+      };
+
       // Find the next valid particle (counting back from the end) to fill for the particle we want to remove
       // C++ 20 has a std::set contains() function.
-      while (remove_list.find(count_back)==remove_list.end() && count_back>id) --count_back;
+      while ( contains(remove_list, count_back) && count_back>id) --count_back;
       // Move the particle to fill the particle we want to remove
-      moveParticle(count_back, id);
+      if (count_back>0) moveParticle(count_back, id);
+      else break;
       // If all the particles we want to remove are after the 
       if (count_back<=id) break; // We are done
     }
-    // Update count - assumes
-    number -= remove_list.size();
+    // Decrease number
+    number -= removed;
     // Clear list
     remove_list.clear();
     // We need to update
-    needs_remake = true;
+    if (removed>0) needs_remake = true;
   }
 
   //! @param id The id (place in the data lists) of the particle that should be removed.

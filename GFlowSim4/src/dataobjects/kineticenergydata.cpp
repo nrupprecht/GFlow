@@ -17,11 +17,15 @@ namespace GFlowSimulation {
     RealType **v = Base::simData->v;
     RealType *im = Base::simData->im;
     int number = Base::simData->number;
+    int count = 0;
     for (int n=0; n<number; ++n)
-      ke += sqr(v[n])/im[n];
+      if (im[n]>0) {
+        ke += sqr(v[n])/im[n];
+        ++count;
+      }
     ke *= 0.5;
     // If we want the average
-    if (useAve) ke /= number;
+    if (useAve) ke /= count;
     // Store data
     RealType time = Base::gflow->getElapsedTime();
     keData.push_back(RPair(time, ke));
