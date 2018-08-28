@@ -7,10 +7,12 @@ namespace GFlowSimulation {
   OverdampedIntegrator::OverdampedIntegrator(GFlow *gflow) : Integrator(gflow), dampingConstant(DEFAULT_DAMPING_CONSTANT) {};
 
   void OverdampedIntegrator::post_forces() {
-    // Time step
-    RealType dt = Integrator::dt;
     // Number of (real - non ghost) particles
     int number = simData->number;
+    if (number==0) return;
+
+    // Time step
+    RealType dt = Integrator::dt;
     // Get arrays
     RealType *x = simData->x[0], *v = simData->v[0], *f = simData->f[0], *im = simData->im;
 
@@ -29,8 +31,8 @@ namespace GFlowSimulation {
     #else
     // Get inverse mass * dt * dampingConstant
     simd_float g_im_dt = simd_set1(dampingConstant*im[0]*dt);
-    int i;
-    for (i=0; i<number*DIMENSIONS-simd_data_size; i+=simd_data_size) {
+    int i=0;
+    for (; i<number*DIMENSIONS-simd_data_size; i+=simd_data_size) {
       simd_float X = simd_load(&x[i]);
       simd_float F = simd_load(&f[i]);
       simd_float dX = simd_mult(g_im_dt, F);

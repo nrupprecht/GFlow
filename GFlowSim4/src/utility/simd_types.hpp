@@ -5,7 +5,7 @@
 
 #if   SIMD_TYPE==SIMD_NONE
 // The number of floats per vector
-  const unsigned int simd_data_size = 1u;
+  const int simd_data_size = 1u;
   // What type we use as the vector of floats
   typedef float simd_float;
   // What type we use as the vector of integers
@@ -36,7 +36,7 @@
 
 #elif SIMD_TYPE==SIMD_SSE3
   // The number of floats per vector
-  const unsigned int simd_data_size = 4u;
+  const int simd_data_size = 4u;
   // What type we use as the vector of floats
   typedef __m128 simd_float;
   // What type we use as the vector of integers
@@ -90,7 +90,7 @@
 
 #elif SIMD_TYPE==SIMD_AVX or SIMD_TYPE==SIMD_AVX2
   // The number of floats per vector
-  const unsigned int simd_data_size = 8u;
+  const int simd_data_size = 8u;
   // What type we use as the vector of floats
   typedef __m256 simd_float;
   // What type we use as the vector of integers
@@ -143,7 +143,7 @@
 
 #elif SIMD_TYPE==SIMD_MIC
   // The number of floats per vector
-  const unsigned int simd_data_size = 16u;
+  const int simd_data_size = 16u;
   // What type we use as the vector of floats
   typedef __m512d simd_float;
   // What type we use as the vector of integers

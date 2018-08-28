@@ -21,10 +21,11 @@ namespace GFlowSimulation {
   void LangevinIntegrator::pre_forces() {
     // --- First half kick
 
-    // Half a timestep
-    RealType hdt = 0.5*Integrator::dt;
     // Number of (real - non ghost) particles
     int number = simData->number;
+    if (number==0) return;
+    // Half a timestep
+    RealType hdt = 0.5*Integrator::dt;
     // Get arrays
     RealType *x = simData->x[0], *v = simData->v[0], *f = simData->f[0], *im = simData->im;
 
