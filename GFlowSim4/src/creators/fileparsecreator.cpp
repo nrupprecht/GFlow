@@ -344,8 +344,6 @@ namespace GFlowSimulation {
       }
     }
 
-    
-
     // Select a velocity
     auto select_velocity = [&] (RealType *V, RealType *X, RealType sigma, RealType im, int type) -> void {
       RealType vsgma = 0.25;

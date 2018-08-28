@@ -137,6 +137,8 @@ namespace GFlowSimulation {
 
     // --- Set velocities
     RealType normal[DIMENSIONS];
+    // In case the number of particles has changed
+    number = gflow->simData->number;
     for (int n=0; n<number; ++n) {
       // Give some random velocities
       double ke = fabs(vsgma*normal_dist(generator));
@@ -147,7 +149,6 @@ namespace GFlowSimulation {
       scalarMultVec(velocity, normal, simData->V(n));
       simData->Sg(n) = radius;
     }
-
     return gflow;
   }
 

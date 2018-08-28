@@ -4,6 +4,7 @@ COMPILER ?= 0
 USE_MPI  ?= 0
 DEBUG    ?= 0
 NO_SIMD  ?= 0
+DO_OPTIMIZE ?= 1
 
 # Add flags to this variable as neccessary
 FLAGS = 
@@ -51,9 +52,13 @@ OBJS    := $(patsubst %.cpp,$(OBJ)/%.o,$(SRCS))
 CSTD     = -std=c++11
 DEBUG    = -g
 ifeq ($(COMPILER), 0)
+ifeq ($(DO_OPTIMIZE), 1)
 OPTIMIZE := -O3 -funroll-loops -no-prec-div -restrict -no-inline-max-size -ffast-math
+endif
 else
+ifeq ($(DO_OPTIMIZE), 1)
 OPTIMIZE := -O3
+endif
 endif
 #OPENCV   := $(shell pkg-config --cflags --libs opencv)
 CFLAGS   := -c $(CSTD) $(DEBUG) $(OPTIMIZE) $(FLAGS)
