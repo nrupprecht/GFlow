@@ -448,6 +448,9 @@ namespace GFlowSimulation {
       if (type!=-1) {
         // Select the velocity for the final particle
         select_velocity(V, X, sigma, im, type);
+
+        if (im==0) zeroVec(V);
+
         gflow->simData->addParticle(X, V, sigma, im, type);
       }
     }

@@ -32,14 +32,16 @@ namespace GFlowSimulation {
       #endif
     }
     #else
-    // Get inverse mass time 1/2 dt
-    simd_float im_hdt = simd_set1(im[0]*hdt);
+    // Put hdt into a simd vector
+    simd_float _hdt = simd_set1(hdt);
     int i;
     for (i=0; i<number*DIMENSIONS-simd_data_size; i+=simd_data_size) {
-      simd_float vec1 = simd_load(&f[i]);
-      simd_float V    = simd_load(&v[i]);
-      simd_float im_hdt_f = simd_mult(im_hdt, vec1);
-      vec1 = simd_add(im_hdt_f, V);
+      simd_float vec1   = simd_load(&f[i]);
+      simd_float V      = simd_load(&v[i]);
+      simd_float _im    = simd_load_constant<DIMENSIONS>(im, i);
+      simd_float im_hdt = simd_mult(_im, _hdt);
+      simd_float im_h_f = simd_mult(im_hdt, vec1);
+      vec1 = simd_add(im_h_f, V);
       simd_store(vec1, &v[i]);
       // Debug mode asserts
       #if DEBUG==1
@@ -125,14 +127,16 @@ namespace GFlowSimulation {
       #endif 
     }
     #else
-    // Get inverse mass time 1/2 dt
-    simd_float im_hdt = simd_set1(im[0]*hdt);
+    // Put hdt into a simd vector
+    simd_float _hdt = simd_set1(hdt);
     int i;
     for (i=0; i<number*DIMENSIONS-simd_data_size; i+=simd_data_size) {
-      simd_float vec1 = simd_load(&f[i]);
-      simd_float V    = simd_load(&v[i]);
-      simd_float im_hdt_f = simd_mult(im_hdt, vec1);
-      vec1 = simd_add(im_hdt_f, V);
+      simd_float vec1   = simd_load(&f[i]);
+      simd_float V      = simd_load(&v[i]);
+      simd_float _im    = simd_load_constant<DIMENSIONS>(im, i);
+      simd_float im_hdt = simd_mult(_im, _hdt);
+      simd_float im_h_f = simd_mult(im_hdt, vec1);
+      vec1 = simd_add(im_h_f, V);
       simd_store(vec1, &v[i]);
     }
     // Left overs

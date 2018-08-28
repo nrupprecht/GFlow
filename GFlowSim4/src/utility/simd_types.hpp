@@ -63,6 +63,26 @@
   // Comparisons
   inline simd_int simd_less_than(const simd_float a, const simd_float b) { return _mm_castps_si128(_mm_cmplt_ps(a, b)); }
 
+  // Special load
+
+  template<int dimensions> inline simd_float simd_load_constant(const float *a, const int i) {
+    // Need to set in "reverse" order
+    return _mm_set_ps(a[(i+3)/dimensions], a[(i+2)/dimensions], a[(i+1)/dimensions], a[i/dimensions]);
+  }
+
+   template<> inline simd_float simd_load_constant<1>(const float *a, const int i) {
+    return simd_load_u(&a[i]);
+  }
+
+  template<> inline simd_float simd_load_constant<2>(const float *a, const int i) {
+    // Need to set in "reverse" order
+    return _mm_set_ps(a[i/2+1], a[i/2+1], a[i/2], a[i/2]);
+  }
+
+  template<> inline simd_float simd_load_constant<4>(const float *a, const int i) {
+    return simd_set1(a[i/4]);
+  }
+
 #elif SIMD_TYPE==SIMD_AVX or SIMD_TYPE==SIMD_AVX2
   // The number of floats per vector
   const unsigned int simd_data_size = 8u;
