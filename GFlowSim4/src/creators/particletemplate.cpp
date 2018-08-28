@@ -52,6 +52,10 @@ namespace GFlowSimulation {
   }
 
   void ParticleTemplate::createParticle(RealType *X, RealType& radius, RealType &im, int& type, int n) {
+    if (type_engine==nullptr || radius_engine==nullptr || mass_engine==nullptr) {
+      cout << type_engine << " " << radius_engine << " " << mass_engine << endl;
+      throw NullEngine();
+    }
     type = static_cast<int>(type_engine->generate());
     radius = radius_engine->generate();
     double m = mass_engine->generate();

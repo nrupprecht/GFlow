@@ -20,6 +20,8 @@ namespace GFlowSimulation {
 
     //! @brief Create particle data.
     void createParticle(RealType *X, RealType& radius, RealType &im, int& type, int n);
+
+    struct NullEngine {};
   
     // Random engines
     RandomEngine *type_engine, *radius_engine, *mass_engine, *velocity_engine;

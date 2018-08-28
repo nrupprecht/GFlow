@@ -33,13 +33,15 @@ namespace GFlowSimulation {
     cout << "Done.\n";
 
     // Get the message from the parser.
-    message = parser.getMessage();
+    parse_message = parser.getMessage();
 
     // Sort and collect options
+    cout << "Collecting options... ";
     std::multimap<string, HeadNode*> options;
     for (const auto &op : root->subHeads) {
       options.insert(std::pair<string, HeadNode*> (op->heading, op));
     }
+    cout << "Done collecting options.\n";
 
     // Create the scenario from the options
     gflow = new GFlow;
@@ -233,13 +235,10 @@ namespace GFlowSimulation {
   }
 
   inline void FileParseCreator::fillArea(HeadNode *head) const {
+    // Check if head is good
+    if (head==nullptr) return;
     // Particle Templates
     std::map<string, ParticleTemplate> particle_templates;
-    // Selection functions
-    std::function<int(int)> select_type = nullptr;
-    std::function<RealType(int)> select_sigma = nullptr;
-    std::function<RealType(int, RealType)> select_mass = nullptr;
-    std::function<void(RealType*, RealType*, RealType, RealType, int)> select_velocity = nullptr;
 
     // --- Sort options
     std::multimap<string, HeadNode*> options;
@@ -286,7 +285,6 @@ namespace GFlowSimulation {
     if (container.empty()) 
       throw BadStructure("We need number information!");
     // Create a structure for recording probabilities or numbers
-    std::map<string, double> particle_template_probabilities;
     std::map<string, double> particle_template_numbers;
     bool useNumber = false, usePhi = false;
     int number; 
@@ -297,6 +295,8 @@ namespace GFlowSimulation {
     if (hd->subHeads.size()==0) { // No body
       if (particle_templates.size()>1) 
         throw BadStructure("More than one type of particle has been defined, but how probable they are is ill defined.");
+      if (hd->params.empty())
+        throw BadStructure("Expected parameters in number directive, since there is no body.");
       if (hd->params[0]->partB.empty()) {
         useNumber = true;
         number = convert<int>(hd->params[0]->partA);
@@ -309,55 +309,24 @@ namespace GFlowSimulation {
     }
     // Mutiple particle templates are defined. There must be a body
     else {
-      if (hd->params[0]->partA=="Phi") {
+      if (!hd->params.empty() && hd->params[0]->partA=="Phi") {
         usePhi = true;
         phi = convert<double>(hd->params[0]->partB);
       }
-      else {
-        useNumber = true;
-      }
+      else useNumber = true;
       // Look in the body for the probabilities or frequencies
       for (auto sh : hd->subHeads) {
         if (sh->params.size()!=1)
           throw BadStructure("Expect two options in template - number definition. Found "+toStr(sh->params.size())+".");
+        // Insert numbers
         particle_template_numbers.insert(
           std::pair<string, double>(sh->heading, convert<double>(sh->params[0]->partA))
         );
       }
     }
 
-    // --- Old number option
-    for (auto h : container) {
-      if (h->params.size()!=1) throw BadStructure("Number option should have one parameter, found "+toStr(h->params.size())+".");
-      string a = h->params[0]->partA, b = h->params[0]->partB;
-      if (!b.empty()) { // There is an option
-        // Look for all options
-        if (a=="Phi") {
-          usePhi = true;
-          phi = convert<RealType>(b);
-        }
-        // Unrecognized option
-        else throw UnexpectedOption();
-      }
-      // Just read the number
-      else number = convert<int>(a);
-    }
-
-    // FOR NOW 
-    // All particles are of type 0
-    select_type = [] (int) -> int {
-      return 0;
-    };
-    // Constant radius - radius is 0.05
-    select_sigma = [] (int) -> RealType {
-      return 0.05;
-    };
-    // Constant density - density is 1
-    select_mass = [] (int, RealType sigma) -> RealType {
-      return 1.0 * sphere_volume(sigma);
-    };
     // Select a velocity
-    select_velocity = [&] (RealType *V, RealType *X, RealType sigma, RealType im, int type) -> void {
+    auto select_velocity = [&] (RealType *V, RealType *X, RealType sigma, RealType im, int type) -> void {
       RealType vsgma = 0.25;
       // Velocity based on KE
       double ke = fabs(vsgma*normal_dist(generator));
@@ -367,13 +336,12 @@ namespace GFlowSimulation {
       randomNormalVec(normal);
       // Set the velocity
       scalarMultVec(velocity, normal, V);
-    };
+    };    
 
     // --- Check that we have defined a good area
     for (int d=0; d<DIMENSIONS; ++d)
       if (bounds.wd(d)==0) return;
     if (number<=0 && !usePhi) return;
-    if (select_type==nullptr || select_sigma==nullptr || select_mass==nullptr || select_velocity==nullptr) return;
 
     // --- We have found all the options. Fill the area.
     GFlow filler;
@@ -383,20 +351,37 @@ namespace GFlowSimulation {
     // Get the simdata
     SimData *simData = filler.simData;
     // --- Fill with particles
-    RealType X[DIMENSIONS], V[DIMENSIONS];
+    RealType X[DIMENSIONS], V[DIMENSIONS], sigma(0.), im(0.);
+    int type(0);
     zeroVec(V);
+
     // If we are filling to a specified packing fraction
     if (usePhi) {
+      // Create discrete distribution
+      vector<double> probabilities;
+      vector<ParticleTemplate> template_vector;
+      // Map particle type to probability
+      for (auto &pr : particle_template_numbers) {
+        auto it = particle_templates.find(pr.first);
+        if (it==particle_templates.end())
+          throw BadStructure("An undefined particle type was encountered: "+pr.first);
+        template_vector.push_back(it->second);
+        probabilities.push_back(pr.second);
+      }
+
+      // A discrete distribution we use to choose which particle template to use next
+      std::discrete_distribution<int> choice(probabilities.begin(), probabilities.end());
+      int i(0);
       RealType vol = 0, Vol = bounds.vol();
-      int i=0; // A counter
       while (vol/Vol < phi) {
         // Select a position for the particle (random uniform)
         for (int d=0; d<DIMENSIONS; ++d)
           X[d] = drand48()*bounds.wd(d) + bounds.min[d];
+        // Choose a type of particle to create
+        int pt = choice(global_generator);
+        ParticleTemplate &particle_creator = template_vector.at(pt);
         // Select other characteristics
-        int type = select_type(i);
-        RealType sigma = select_sigma(i);
-        RealType im = 1./select_mass(i, sigma);
+        particle_creator.createParticle(X, sigma, im, type, i);
         // Add the particle
         simData->addParticle(X, V, sigma, im, type);
         // Increment volume and counter
@@ -406,18 +391,29 @@ namespace GFlowSimulation {
     }
     // If we are filling to a specified number
     else {
-      for (int i=0; i<number; ++i) {
-        // Select a position for the particle (random uniform)
-        for (int d=0; d<DIMENSIONS; ++d)
-          X[d] = drand48()*bounds.wd(d) + bounds.min[d];
-        // Select other characteristics
-        int type = select_type(i);
-        RealType sigma = select_sigma(i);
-        RealType im = 1./select_mass(i, sigma);
-        // Add the particle
-        simData->addParticle(X, V, sigma, im, type);
+      // Insert the requested number of each particle type
+      for (auto &pr : particle_template_numbers) {
+        auto it = particle_templates.find(pr.first);
+        if (it==particle_templates.end())
+          throw BadStructure("An undefined particle type was encountered: "+pr.first);
+        int num = static_cast<int>(pr.second);
+
+        ParticleTemplate &particle_creator = it->second;
+        for (int i=0; i<num; ++i) {
+          // Select a position for the particle (random uniform)
+          for (int d=0; d<DIMENSIONS; ++d)
+            X[d] = drand48()*bounds.wd(d) + bounds.min[d];
+          // Select other characteristics
+          particle_creator.createParticle(X, sigma, im, type, i);
+          // Add the particle
+          simData->addParticle(X, V, sigma, im, type);
+        }
       }
     }
+
+    // Print status
+    cout << "Done with initial particle assigmnemt.\n"; 
+
     // Initialize domain
     filler.domain->initialize();
     filler.integrator = new VelocityVerlet(&filler);
@@ -503,7 +499,7 @@ namespace GFlowSimulation {
     p_template.type_engine = getRandomEngine(container[0], type);
 
     // Add to particle templates
-    particle_templates.insert(std::pair<string, ParticleTemplate>(head->heading, p_template));
+    particle_templates.insert(std::pair<string, ParticleTemplate>(head->params[0]->partA, p_template));
   }
 
   inline RandomEngine* FileParseCreator::getRandomEngine(HeadNode *h, string &type) const {
@@ -540,7 +536,7 @@ namespace GFlowSimulation {
         values.push_back(convert<double>(sh->params[0]->partA)); 
         probabilities.push_back(convert<double>(sh->params[1]->partB));
       }
-
+      return new DiscreteRandomEngine(probabilities, values);
     }
     else if (param=="Uniform") {
       if (h->subHeads.size()!=2) 
@@ -575,6 +571,8 @@ namespace GFlowSimulation {
       );
     }
     else throw BadStructure("Unrecognized choice for a random engine.");
+    // We should never reach here
+    throw BadStructure("An unreachable part of code was reached!");
     // Token return
     return nullptr;
   }
