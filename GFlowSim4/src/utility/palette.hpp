@@ -162,7 +162,7 @@ namespace GFlowSimulation {
 
   private:
     //! @brief Private constructor for use in making subpalettes
-    Palette(int, int, int, int, BMP*, int*, int*);
+    Palette(int, int, int, int, BMP*, int*, int*, double);
 
     //! @brief Gives the factor of a pixel
     inline std::pair<float, float> pixelFactor(int, int) const;
@@ -196,6 +196,8 @@ namespace GFlowSimulation {
 
     //! @brief Owned bounds - the subset of the pixels this palette owns.
     int owned[4];
+
+    double aspect_ratio = 1;
 
     //! TEST
     PixL *pixelData;

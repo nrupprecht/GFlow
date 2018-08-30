@@ -11,6 +11,8 @@ namespace GFlowSimulation {
     memory_check_delay(1.), do_memory_optimization(false)
   {
     simData      = new SimData(this);
+    bondData     = new BondData(this);
+    angleData    = new AngleData(this);
     // Integrator will be created by the creator
     integrator   = nullptr;
     domain       = new Domain(this); // new Sectorization(this); //

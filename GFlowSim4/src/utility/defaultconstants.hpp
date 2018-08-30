@@ -43,7 +43,7 @@ namespace GFlowSimulation {
   //! A default value for at what multiple of the zero force point we cut off the LJ force.
   const RealType DEFAULT_LENNARD_JONES_CUTOFF = 2.5;
   //! A default value for the damping constant of the overdamped integrator.
-  const RealType DEFAULT_DAMPING_CONSTANT = 0.1;
+  const RealType DEFAULT_DAMPING_CONSTANT = 0.01;
   //! The default amount of time we wait between temperature perturbations
   const RealType DEFAULT_TEMPERATURE_UPDATE_DELAY = 0.05;
   

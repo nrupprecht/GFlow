@@ -16,6 +16,8 @@ namespace GFlowSimulation {
     image->SetSize(width, height);
     // References
     refs = new int(1);
+    // Aspect ratio
+    aspect_ratio = width/height;
   }
 
   Palette::Palette(const Palette& p) {
@@ -27,6 +29,8 @@ namespace GFlowSimulation {
     image = p.image;
     refs = p.refs;
     ++refs[0];
+    // Aspect ratio
+    aspect_ratio = p.aspect_ratio;
   }
 
   Palette::Palette(const Palette&& p) {
@@ -38,13 +42,16 @@ namespace GFlowSimulation {
     image = p.image;
     refs = p.refs;
     ++refs[0];
+    // Aspect ratio
+    aspect_ratio = p.aspect_ratio;
   }
     
   Palette::~Palette() {
+    if (!refs) return;
     // Clean up if we are the last palette to reference the object
     if (refs[0]==1) {
       --refs[0];
-      delete image;
+      if (image) delete image;
       delete refs;
     }
     else --refs[0];
@@ -59,6 +66,8 @@ namespace GFlowSimulation {
     image = p.image;
     refs = p.refs;
     ++refs[0];
+    // Aspect ratio
+    aspect_ratio = p.aspect_ratio;
     // Return
     return *this;
   }
@@ -68,11 +77,16 @@ namespace GFlowSimulation {
   }
 
   Palette Palette::getSubPalette(int mx, int Mx, int my, int My) {
-    return Palette(owned[0]+mx, owned[0]+Mx, owned[2]+my, owned[2]+My, image, refs, bounds);
+    if (owned[0]+Mx>owned[1]) mx = owned[1]-owned[0];
+    if (mx<0) mx = 0;
+    if (owned[2]+My>owned[3]) My = owned[3]-owned[1];
+    if (my<0) my = 0;
+    // Return a palatte
+    return Palette(owned[0]+mx, owned[0]+Mx, owned[2]+my, owned[2]+My, image, refs, bounds, aspect_ratio);
   }
 
   Palette Palette::getSubPalette(float mfx, float Mfx, float mfy, float Mfy) {
-    return Palette(owned[0]+mfx*getWidth(), owned[0]+Mfx*getWidth(), owned[2]+mfy*getHeight(), owned[2]+Mfy*getHeight(), image, refs, bounds);
+    return getSubPalette(owned[0]+mfx*getWidth(), owned[0]+Mfx*getWidth(), owned[2]+mfy*getHeight(), owned[2]+Mfy*getHeight());
   }
 
   void Palette::drawCircleByFactors(float xf, float yf, float rf, ColorFunction colorF, bool wrap) {
@@ -148,7 +162,7 @@ namespace GFlowSimulation {
     return owned[3] - owned[2];
   }
 
-  Palette::Palette(int mx, int Mx, int my, int My, BMP *img, int *rfs, int *bnds) {
+  Palette::Palette(int mx, int Mx, int my, int My, BMP *img, int *rfs, int *bnds, double aratio) {
     // Set sub-bounds
     owned[0] = mx;
     owned[1] = Mx;
@@ -160,6 +174,8 @@ namespace GFlowSimulation {
     image = img;
     refs = rfs;
     ++refs[0];
+    // Aspect ratio
+    aspect_ratio = aratio;
   }
 
   inline std::pair<float, float> Palette::pixelFactor(int x, int y) const {

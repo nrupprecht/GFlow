@@ -52,6 +52,7 @@ namespace GFlowSimulation {
     build_message += "Done.\n";
 
     // Create the scenario from the options
+    if (gflow) delete gflow;
     gflow = new GFlow;
     build_message += "Starting simulation setup... ";
     try {
@@ -76,11 +77,28 @@ namespace GFlowSimulation {
     return gflow;
   }
 
-  inline void FileParseCreator::createFromOptions(GFlow *gflow, std::multimap<string, HeadNode*>& options) const {
+  inline void FileParseCreator::createFromOptions(GFlow *gflow, std::multimap<string, HeadNode*>& options) {
     string token;
     bool good = true;
     std::multimap<string, HeadNode*>::iterator it;
 
+    // Container to collect options in
+    std::vector<HeadNode*> container;
+    // A head node we can use
+    HeadNode *head;
+
+    
+    // --- Look for dimensions
+    getAllMatches("Dimensions", container, options);
+    if (container.size()>1) cout << "We only need the number of dimensions specified once. Ignoring all but the first.";
+    if (container.size()==1) {
+      head = container[0];
+      if (head->params.size()!=1) 
+        throw BadStructure("Dimensions should be a single argument, we found "+toStr(head->params.size()));
+      if (convert<int>(head->params[0]->partA)!=DIMENSIONS) throw BadDimension();
+    }
+    
+    /*
     // Look for dimensions
     good = true;
     token = "Dimensions";
@@ -94,7 +112,25 @@ namespace GFlowSimulation {
       }
       else good = false;
     }
+    */
+    
 
+    // --- Look for bounds
+    getAllMatches("Bounds", container, options);
+    if (container.size()==0) throw BadStructure("We need bounds information.");
+    if (container.size()>1) cout << "We only need the number of dimensions specified once. Ignoring all but the first.";
+    head = container[0];
+    if (head->subHeads.size()!=DIMENSIONS) 
+      throw BadStructure("For bounds, we need "+toStr(DIMENSIONS)+" conditions, we found "+toStr(head->subHeads.size()));
+    for (int d=0; d<head->subHeads.size(); ++d) {
+      if (head->subHeads[d]->params.size()!=2) 
+        throw BadStructure("Bounds need a min and a max, we found "+toStr(head->subHeads[d]->params.size()+" parameters."));
+      bounds.min[d] = convert<float>( head->subHeads[d]->params[0]->partA );
+      bounds.max[d] = convert<float>( head->subHeads[d]->params[1]->partA );
+    }
+    gflow->setBounds(bounds);
+
+    /*
     // Look for bounds
     token = "Bounds";
     good = true;
@@ -117,7 +153,24 @@ namespace GFlowSimulation {
       }
       else good = false;
     }
+    */
 
+    // --- Look for integrator
+    getAllMatches("Integrator", container, options);
+    if (container.size()>1) cout << "We only need the integrator type specified once. Ignoring all but the first.";
+    // Default integrator is velocity verlet
+    if (container.size()==0) {
+      gflow->integrator = new VelocityVerlet(gflow);
+    }
+    else {
+      head = container[0];
+      // We expect a single option: the name of the type of integrator to use
+      if (head->params.size()!=1) throw BadStructure("In Integrator we found more than one word.");
+      // Set new integrator
+      gflow->integrator = choose_integrator(head->params[0]->partA);
+    }
+    
+    /*
     // Look for Integrator
     token = "Integrator";
     good = true;
@@ -137,6 +190,7 @@ namespace GFlowSimulation {
       }
       else good = false;
     }
+    */
 
     // Look for number of particle types
     token = "NTypes";
@@ -171,9 +225,11 @@ namespace GFlowSimulation {
         std::map<string, Interaction*> interactions;
         // The body specifies the force grid
         for (auto fg : h->subHeads) {
-          // Look for type1, type2, interaction-type
-          if (fg->params.size()!=3) 
-            throw BadStructure("Force grid needs three parameters per line to specify interaction, found "+toStr(fg->params.size())+".");
+          // Look for type1, type2, interaction-type [, possibly "R"]
+          if (fg->params.size()!=3 && fg->params.size()!=4) 
+            throw BadStructure("Force grid needs three or four parameters per line to specify interaction, found "+toStr(fg->params.size())+".");
+          if (fg->params.size()==4 && fg->params[3]->partA!="R")
+            throw BadStructure("Fourth argument must be 'R'.");
           // What type of interaction do we need
           string i_token = fg->params[2]->partA;
           if (interactions.find(i_token)==interactions.end()) { // New interaction type
@@ -185,6 +241,9 @@ namespace GFlowSimulation {
           int t1 = convert<int>(fg->params[0]->partA), t2 = convert<int>(fg->params[1]->partA);
           string i_token = fg->params[2]->partA;
           gflow->forceMaster->setInteraction(t1, t2, interactions.find(i_token)->second);
+          // We already checked that the fourth parameter is an 'R' if it exists. Only add if t1!=t2
+          if (fg->params.size()==4 && t1!=t2) 
+            gflow->forceMaster->setInteraction(t2, t1, interactions.find(i_token)->second);
         }
       }
       else good = false;
@@ -213,6 +272,14 @@ namespace GFlowSimulation {
       }
       else good = false;
     }
+
+    /*
+    // --- Global Particle Template. Defines "types" of particles, e.g. radius distribution, density/mass, etc.
+    getAllMatches("Template", container, options);
+    for (auto h : container) {
+      getParticleTemplate(h, global_templates);
+    }
+    */
 
     // Look for fill areas
     token = "Fill-area";
@@ -294,7 +361,7 @@ namespace GFlowSimulation {
       }
     }
 
-    // --- Particle Template. Defines "types" of particles, e.g. radius distribution, density/mass, etc.
+    // --- Local Particle Template. Defines "types" of particles, e.g. radius distribution, density/mass, etc.
     getAllMatches("Template", container, options);
     for (auto h : container) {
       getParticleTemplate(h, particle_templates);

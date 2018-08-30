@@ -5,6 +5,7 @@
 
 #include <map>
 
+/*
 template<int dimensions> struct PData {
   PData(RealType *x, RealType *v, RealType s, int t) {
     copyVec(x, X);
@@ -18,6 +19,7 @@ template<int dimensions> struct PData {
   RealType sg;
   int type;
 };
+*/
 
 namespace GFlowSimulation {
 
@@ -37,9 +39,12 @@ namespace GFlowSimulation {
 
   private:
 
-    //! @brief Vector of particle id, list of data
-    vector< list<PData> > data;
-
+    //! @brief Trajectory data for the particles, n-th entry corresponds to global id n.
+    //std::list< list<PData> > data;
+    //! @brief When particles first appear.
+    vector<RIPair> particle_creation; 
+    //! @brief When particles disappear.
+    vector<RIPair> particle_destruction; 
   };
 
 }

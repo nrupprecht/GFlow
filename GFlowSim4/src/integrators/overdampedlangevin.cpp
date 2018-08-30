@@ -5,7 +5,7 @@
 namespace GFlowSimulation {
 
   OverdampedLangevinIntegrator::OverdampedLangevinIntegrator(GFlow *gflow) : Integrator(gflow), viscosity(DEFAULT_VISCOSITY), 
-  temperature(1.), lastUpdate(0), updateDelay(0.01)
+  temperature(10.), lastUpdate(0), updateDelay(0.01)
   {
     drift1 = temperature/(6.*viscosity*PI);
   }
@@ -25,7 +25,7 @@ namespace GFlowSimulation {
 
     // Add random noise - we don't need to do this every time
     RealType time = Base::gflow->getElapsedTime();
-    if (updateDelay<time - lastUpdate && temperature>0) {
+    if (updateDelay<time-lastUpdate && temperature>0) {
       // Precomputed values, assumes Kb = 1
       RealType Df1 = sqrt(2.*drift1*(time-lastUpdate));
       // Add a random force to all spatial degrees of freedom
@@ -42,8 +42,8 @@ namespace GFlowSimulation {
     // Update positions (there are no velocities)
     for (int i=0; i<number*DIMENSIONS; ++i) {
       int id = i/DIMENSIONS;
-      v[i] = viscosity*im[id]*f[i]*Integrator::dt;
-      x[i] += v[i];
+      v[i] = viscosity*f[i]*im[id];
+      x[i] += v[i]*Integrator::dt;
       // Debug mode asserts
       #if DEBUG==1
       assert(!isnan(x[i]));

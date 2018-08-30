@@ -9,6 +9,44 @@
 
 namespace GFlowSimulation {
 
+  struct Molecule {
+    ~Molecule() {
+      for (auto &p : position) if (p) delete [] p;
+    }
+    //! @brief The position of the particles.
+    vector<RealType*> position;
+    //! @brief The mass of the particles.
+    vector<RealType> mass;
+    //! @brief The sigma of the particles.
+    vector<RealType> sigma;
+    //! @brief The type of the particle.
+    vector<int> type;
+    //! @brief Bond information. Comes in pairs.
+    vector<int> bond;
+    vector<RealType> relaxedLength;
+    vector<RealType> bondStrength;
+    //! @brief Angle information. Comes in triples.
+    vector<int> angle;
+    vector<RealType> relaxedAngle;
+    vector<RealType> angleStrength;
+
+    void set_com_coordinates() {
+      RealType displacement[DIMENSIONS], weighted[DIMENSIONS];
+      RealType totalMass(0);
+      for (int i=0; i<position.size(); ++i) {
+        copyVec(position[i], weighted);
+        scalarMultVec(mass[i], weighted);
+        plusEqVec(displacement, weighted);
+        totalMass += mass[i];
+      }
+      scalarMultVec(1./totalMass, displacement);
+      // Shift by center of mass
+      for (int i=0; i<position.size(); ++i) {
+        minusEqVec(position[i], displacement);
+      }
+    }
+  };
+
   /**
   *  @brief A creator that creates a simulation from a file.
   *
@@ -41,7 +79,7 @@ namespace GFlowSimulation {
 
   private:
 
-    inline void createFromOptions(GFlow*, std::multimap<string, HeadNode*>&) const;
+    inline void createFromOptions(GFlow*, std::multimap<string, HeadNode*>&);
 
     // --- Object selection
 
@@ -65,7 +103,14 @@ namespace GFlowSimulation {
     //! @brief The name of the file to load from
     string configFile;
 
+    //! @brief The GFlow object the creator is creating.
     GFlow *gflow;
+
+    //! @brief The bounds of the simulation we are creating
+    Bounds bounds;
+
+    //! @brief Particle templates usable anywhere in the configuration file.
+    std::map<string, ParticleTemplate> global_templates;
 
     //! @brief The message the parser writes as it parses the configuration file
     mutable string parse_message, build_message;

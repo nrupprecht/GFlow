@@ -2,8 +2,33 @@
 #define __VISUALIZATION_HPP__GFLOW__
 
 #include "palette.hpp"
+#include <map>
 
 namespace GFlowSimulation {
+
+  class DataLayout {
+  public:
+    //! @brief Constructor. Pass in data sizes and data names.
+    DataLayout(vector<int>& ds, vector<string>& dn) { 
+      if (ds.size()!=dn.size()) throw false;
+      data_width = 0;
+      for (int i=0; i<ds.size(); ++i) {
+        name_place_mapping.insert(std::pair<string, int>(dn.at(i), ds.at(i)));
+        data_width += ds[i];
+      }
+    }
+
+    RealType *access(RealType *data, string &name) {
+      auto f = name_place_mapping.find(name);
+      if (f==name_place_mapping.end()) return nullptr;
+      else return &data[f->second];
+    } 
+  private:
+    //! @brief The total length of a data entry.
+    int data_width;
+    //! @brief A mapping between data names, and the place where that data entry starts.
+    std::map<string, int> name_place_mapping;
+  };
 
   /**
   *  @brief Creates visualization from
@@ -17,7 +42,7 @@ namespace GFlowSimulation {
     //! @brief Destructor.
     ~Visualization();
 
-    void createVideo2d(string, const vector<RealType*>&);
+    void createVideo2d(string, const vector<RealType*>&, int);
 
     //! @brief Create a directory filled with BMP renderings of the system.
     //!

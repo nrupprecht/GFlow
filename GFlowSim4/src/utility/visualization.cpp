@@ -29,22 +29,28 @@ namespace GFlowSimulation {
     }
   }
 
-  void Visualization::createVideo2d(string fileName, const vector<RealType*>&) {
-
+  void Visualization::createVideo2d(string fileName, const vector<RealType*>& data, int dataWidth) {
+    vector<int> data_size = { 2, 2, 1 };
+    vector<string> data_name = { "x", "v", "sg" };
   }
 
   inline void Visualization::createImage(string fileName, RealType *data, int number, int dataWidth, Bounds& bounds, int dimensions) const {
     // Get some data from the bounds
-    float wx = bounds.wd(0); ///resolution;
-    float wy = bounds.wd(1); ///resolution;
+    float wx = bounds.wd(0);
+    float wy = bounds.wd(1);
     float left = bounds.min[0];
     float bott = bounds.min[1];
 
+    // Figure out the needed resolution
+    int res_x = resolution, res_y = resolution;
+    if (wx>wy) res_y = wy/wx*resolution;
+    else if (wy>wx) res_x = wx/wy*resolution;
+
     // Create the main palette
-    Palette palette(resolution, resolution);
+    Palette palette(res_x, res_y);
     palette.coverPalette(RGB_Black);
     // Get a subpallete on which to write the image
-    Palette image = palette.getSubPalette(10, resolution-10, 10, resolution-10);
+    Palette image = palette.getSubPalette(10, res_x-10, 10, res_y-10);
 
     // Set background
     image.coverPalette(background);

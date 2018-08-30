@@ -8,7 +8,8 @@
 namespace GFlowSimulation {
 
   //! @brief This defines what type of force kernel function the interaction handler expects to be passed in to it.
-  typedef void (*Kernel) (RealType*, const RealType, const int, const int, class SimData*, const RealType*, RealType*);
+  //typedef void (*Kernel) (RealType*, const RealType, const int, const int, class SimData*, const RealType*, RealType*);
+  using Kernel = auto (*) (RealType*, const RealType, const int, const int, class SimData*, const RealType*, RealType*) -> void;
 
   /**
   *  @brief Handles the storage and traversal of interacting particles.
