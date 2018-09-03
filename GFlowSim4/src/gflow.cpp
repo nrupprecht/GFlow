@@ -6,7 +6,7 @@
 
 namespace GFlowSimulation {
 
-  GFlow::GFlow() : running(false), useForces(true), requested_time(0), elapsed_time(0), total_time(0), 
+  GFlow::GFlow() : running(false), useForces(true), requested_time(0), total_requested_time(0), elapsed_time(0), total_time(0), 
     iter(0), argc(0), argv(nullptr), repulsion(DEFAULT_HARD_SPHERE_REPULSION), last_memory_optimization(0),
     memory_check_delay(1.), do_memory_optimization(false)
   {
@@ -158,11 +158,9 @@ namespace GFlowSimulation {
       for (auto m : modifiers) m->pre_forces();
       integrator->pre_forces(); // -- This is where VV first half kick happens (if applicable)
       dataMaster->pre_forces();
-      if (useForces) {
-        domain->pre_forces();   // -- This is where resectorization / verlet list creation might happen
-      }
+      if (useForces) domain->pre_forces();   // -- This is where resectorization / verlet list creation might happen
       
-      // Reflect or repulse particles. We only need to wrap before sectorizing particles.
+      // Reflect or repulse particles. We only need to wrap before sectorizing particles, but we need to apply forces at every timestep.
       reflectPositions();
       repulsePositions();
 
@@ -176,9 +174,12 @@ namespace GFlowSimulation {
       // Do particle removal
       simData->doParticleRemoval();
 
+      // Do modifier removal
+      handleModifiers();
+
       // --> Post-forces
       for (auto m : modifiers) m->post_forces(); // -- This is where modifiers should do forces (if they need to)
-      integrator->post_forces(); // -- This is where VV second half kick happens (if applicable)
+      integrator->post_forces();                 // -- This is where VV second half kick happens (if applicable)
       dataMaster->post_forces();
       domain->post_forces();
 
@@ -414,6 +415,38 @@ namespace GFlowSimulation {
 
   inline void GFlow::clearForces() {
     simData->clearF();
+  }
+
+  inline void GFlow::handleModifiers() {
+    // If there are no modifiers, there is nothing to do!
+    if (modifiers.empty()) return;
+    // List of modifiers to remove
+    std::set<int> remove;
+    // Find modifiers that need to be removed
+    for (int i=0; i<modifiers.size(); ++i) {
+      if (modifiers[i]->getRemove()) {
+        remove.insert(i);
+      }
+    }
+    // Remove modifiers - move good modifiers at the end to fill in for bad modifiers 
+    // nearer to the beginning
+    if (!remove.empty()) {
+      int count_back = modifiers.size();
+
+      for(auto id : remove) {
+        // We either need to start at (number-1), or moved the particle that was at count_back. Either way, decrement.
+        --count_back;
+        // Find the next valid particle (counting back from the end) to fill for the particle we want to remove
+        // C++ 20 has a std::set contains() function.
+        while ( contains(remove, count_back) && count_back>id) --count_back;
+
+        // Move the particle to fill the particle we want to remove
+        if (count_back>id) modifiers[id] = modifiers[count_back];
+        else break;
+      }
+      // Resize the array
+      modifiers.resize(modifiers.size() - remove.size());
+    }
   }
 
 }

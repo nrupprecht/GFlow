@@ -41,6 +41,8 @@ using std::chrono::duration_cast;
 
 #include <algorithm> // For std::copy, std::fill, etc.
 
+#include <set>
+
 #include "simd_types.hpp"
 
 /**
@@ -95,6 +97,10 @@ namespace GFlowSimulation {
   //! Check if a vector contains a specified object
   template<typename T> inline bool contains(const vector<T>& vec, T obj) {
     return std::find(vec.begin(), vec.end(), obj) != vec.end();
+  }
+
+  template<typename T> inline bool contains(const std::set<T> s, T obj) {
+    return s.find(obj)!=s.end();
   }
 
   //! Get the current time

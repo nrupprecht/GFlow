@@ -9,14 +9,6 @@ namespace GFlowSimulation {
   // Constructor
   PositionData::PositionData(GFlow *gflow) : DataObject(gflow, "Pos"), dataWidth(2*DIMENSIONS+2) {};
 
-  // Destructor
-  PositionData::~PositionData() {
-    // Erase data
-    for (auto &pd : positions)
-      if (pd) delete [] pd;
-    positions.clear();
-  }
-
   void PositionData::post_step() {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
@@ -27,25 +19,25 @@ namespace GFlowSimulation {
 
     // --- Record all data: { x[0], x[1], ... , sg}
 
+    vector<RealType> data;
+
     // Get the number of particles
     int number = Base::simData->number;
-    numbers.push_back(number); // Record number of particles
-    // Don't do anything if there are 0 or fewer particles
-    if (number<=0) return;
-    // Create an array for the data
-    RealType *array = new RealType[number*dataWidth];
-    positions.push_back(array);
-    // Fill the array of positions
+    // Fill the array of data
     for (int i=0; i<number; ++i) {
-      // Add data - [dataWidth]'s worth
-      int d=0;
-      for (; d<DIMENSIONS; ++d)
-        array[dataWidth*i+d] = Base::simData->x[i][d];
-      for (; d<2*DIMENSIONS; ++d)
-        array[dataWidth*i+d] = Base::simData->v[i][d-DIMENSIONS];
-      array[dataWidth*i+d++] = Base::simData->sg[i];
-      array[dataWidth*i+d++] = Base::simData->type[i];
+      if (Base::simData->type[i]!=-1) {
+        // Add data - [dataWidth]'s worth
+        int d=0;
+        for (; d<DIMENSIONS; ++d)
+          data.push_back(Base::simData->x[i][d]);
+        for (; d<2*DIMENSIONS; ++d)
+          data.push_back(Base::simData->v[i][d-DIMENSIONS]);
+        data.push_back(Base::simData->sg[i]);
+        data.push_back(Base::simData->type[i]);
+      }
     }
+    // Store this timestep's data
+    positions.push_back(data);
   }
 
   bool PositionData::writeToFile(string fileName, bool useName) {
@@ -62,7 +54,7 @@ namespace GFlowSimulation {
 
     Visualization vis;
     Bounds bounds = Base::gflow->getBounds();
-    vis.createBMPs(dirName, positions, numbers, dataWidth, bounds, DIMENSIONS);
+    vis.createBMPs(dirName, positions, dataWidth, bounds, DIMENSIONS);
 
     // Return success
     return true;

@@ -78,19 +78,14 @@ namespace GFlowSimulation {
   }
 
   inline void FileParseCreator::createFromOptions(GFlow *gflow, std::multimap<string, HeadNode*>& options) {
-    string token;
-    bool good = true;
-    std::multimap<string, HeadNode*>::iterator it;
-
     // Container to collect options in
     std::vector<HeadNode*> container;
     // A head node we can use
     HeadNode *head;
 
-    
     // --- Look for dimensions
     getAllMatches("Dimensions", container, options);
-    if (container.size()>1) cout << "We only need the number of dimensions specified once. Ignoring all but the first.";
+    if (container.size()>1) build_message +=  "We only need the number of dimensions specified once. Ignoring all but the first.\n";
     if (container.size()==1) {
       head = container[0];
       if (head->params.size()!=1) 
@@ -98,27 +93,10 @@ namespace GFlowSimulation {
       if (convert<int>(head->params[0]->partA)!=DIMENSIONS) throw BadDimension();
     }
     
-    /*
-    // Look for dimensions
-    good = true;
-    token = "Dimensions";
-    it = options.find(token);
-    for (; it!=options.end() && good; ++it) {
-      if (it->first==token) {
-        HeadNode *h = it->second;
-        // For now, we can only check whether the dimensions are consistent, DIMENSIONS is a global constant.
-        if (h->params.size()!=1) throw BadStructure("Dimensions should be a single argument, we found "+toStr(h->params.size()));
-        if (convert<int>(h->params[0]->partA)!=DIMENSIONS) throw BadDimension();
-      }
-      else good = false;
-    }
-    */
-    
-
     // --- Look for bounds
     getAllMatches("Bounds", container, options);
     if (container.size()==0) throw BadStructure("We need bounds information.");
-    if (container.size()>1) cout << "We only need the number of dimensions specified once. Ignoring all but the first.";
+    if (container.size()>1) build_message +=  "We only need the number of dimensions specified once. Ignoring all but the first.\n";
     head = container[0];
     if (head->subHeads.size()!=DIMENSIONS) 
       throw BadStructure("For bounds, we need "+toStr(DIMENSIONS)+" conditions, we found "+toStr(head->subHeads.size()));
@@ -130,185 +108,125 @@ namespace GFlowSimulation {
     }
     gflow->setBounds(bounds);
 
-    /*
-    // Look for bounds
-    token = "Bounds";
-    good = true;
-    it = options.find(token);
-    for (; it!=options.end() && good; ++it) {
-      if (it->first==token) {
-        HeadNode *h = it->second;
-        Bounds bounds;
-        // The body of bounds contains the actual bounds
-        if (h->subHeads.size()!=DIMENSIONS) 
-          throw BadStructure("For bounds, we need "+toStr(DIMENSIONS)+" conditions, we found "+toStr(h->subHeads.size()));
-        // Set bounds
-        for (int d=0; d<h->subHeads.size(); ++d) {
-          if (h->subHeads[d]->params.size()!=2) 
-            throw BadStructure("Bounds need a min and a max, we found "+toStr(h->subHeads[d]->params.size()+" parameters."));
-          bounds.min[d] = convert<float>( h->subHeads[d]->params[0]->partA );
-          bounds.max[d] = convert<float>( h->subHeads[d]->params[1]->partA );
-        }
-        gflow->setBounds(bounds);
-      }
-      else good = false;
-    }
-    */
-
     // --- Look for integrator
     getAllMatches("Integrator", container, options);
-    if (container.size()>1) cout << "We only need the integrator type specified once. Ignoring all but the first.";
+    if (container.size()>1) build_message +=  "We only need the integrator type specified once. Ignoring all but the first.\n";
     // Default integrator is velocity verlet
-    if (container.size()==0) {
-      gflow->integrator = new VelocityVerlet(gflow);
-    }
+    if (container.empty()) gflow->integrator = new VelocityVerlet(gflow);
     else {
       head = container[0];
       // We expect a single option: the name of the type of integrator to use
       if (head->params.size()!=1) throw BadStructure("In Integrator we found more than one word.");
       // Set new integrator
-      gflow->integrator = choose_integrator(head->params[0]->partA);
+      gflow->integrator = choose_integrator(head);
     }
     
-    /*
-    // Look for Integrator
-    token = "Integrator";
-    good = true;
-    it = options.find(token);
-    if (it==options.end()) { // No integrator was specified. Use a velocity verlet integrator.
-      gflow->integrator = new VelocityVerlet(gflow);
-    }
-    for (; it!=options.end() && good; ++it) {
-      if (it->first==token) {
-        HeadNode *h = it->second;
-        // We expect a single option: the name of the type of integrator to use
-        if (h->params.size()!=1) throw BadStructure("In Integrator we found more than one word.");
-        // Get rid of old integrator if necessary
-        if (gflow->integrator) delete gflow->integrator;
-        // Set new integrator
-        gflow->integrator = choose_integrator(h->params[0]->partA);
-      }
-      else good = false;
-    }
-    */
-
-    // Look for number of particle types
-    token = "NTypes";
-    good = true;
-    it = options.find(token);
-    if (it==options.end()) { // No integrator was specified. Use a velocity verlet integrator.
-      gflow->integrator = new VelocityVerlet(gflow);
-    }
-    for (; it!=options.end() && good; ++it) {
-      if (it->first==token) {
-        HeadNode *h = it->second;
-        // We expect a single option: the number of particle types
-        if (h->params.size()!=1) 
-          throw BadStructure("In NTypes we found more than one number.");
-        // Set particle types
-        gflow->forceMaster->setNTypes(convert<int>(h->params[0]->partA));
-      }
-      else good = false;
+    // --- Look for number of particle types
+    getAllMatches(Types_Token, container, options);
+    if (container.size()>1) build_message += "We only need the number of types specified once. Ignoring all but the first.\n";
+    // Default is 1 type
+    if (container.empty()) NTypes = 1;
+    else {
+      head = container[0];
+      if (head->params.size()!=1) 
+        throw BadStructure("In NTypes we found more than one number.");
+      // Set particle types
+      NTypes = convert<int>(head->params[0]->partA);
+      gflow->forceMaster->setNTypes(NTypes);
     }
 
-    // Look for a force grid
-    token = "Force-grid";
-    good = true;
-    it = options.find(token);
-    if (it==options.end()) { // No integrator was specified. Use a velocity verlet integrator.
-      gflow->integrator = new VelocityVerlet(gflow);
+    // --- Look for interactions
+    getAllMatches(Interactions_Token, container, options);
+    if (container.size()>1) build_message += "We only need the interactions specified once. Ignoring all but the first.\n";
+    head = container[0];
+    // Collect all the interactions we need
+    std::map<string, Interaction*> interactions;
+    // The body specifies the force grid
+    for (auto fg : head->subHeads) {
+      // Look for type1, type2, interaction-type [, possibly "R"]
+      if (fg->params.size()!=3 && fg->params.size()!=4) 
+        throw BadStructure("Force grid needs three or four parameters per line to specify interaction, found "+toStr(fg->params.size())+".");
+      // Check if we don't want reflexive forces
+      if (fg->params.size()==4 && fg->params[3]->partA!="NR")
+        throw BadStructure("Fourth argument must be 'NR' if anything.");
+      // What type of interaction do we need
+      string i_token = fg->params[2]->partA;
+      // Check if this is a new interaction type
+      if (interactions.find(i_token)==interactions.end()) 
+        interactions.insert(std::pair<string, Interaction*>(i_token, choose_interaction(fg)));
+      // Get the type ids
+      int t1 = convert<int>(fg->params[0]->partA), t2 = convert<int>(fg->params[1]->partA);
+      // Add the interaction
+      gflow->forceMaster->setInteraction(t1, t2, interactions.find(i_token)->second);
+      // We already checked that the fourth parameter is an 'R' if it exists. Only add if t1!=t2
+      if (fg->params.size()!=4 && t1!=t2) 
+        gflow->forceMaster->setInteraction(t2, t1, interactions.find(i_token)->second);
     }
-    for (; it!=options.end() && good; ++it) {
-      if (it->first==token) {
-        HeadNode *h = it->second;
-        // Collect all the interactions we need
-        std::map<string, Interaction*> interactions;
-        // The body specifies the force grid
-        for (auto fg : h->subHeads) {
-          // Look for type1, type2, interaction-type [, possibly "R"]
-          if (fg->params.size()!=3 && fg->params.size()!=4) 
-            throw BadStructure("Force grid needs three or four parameters per line to specify interaction, found "+toStr(fg->params.size())+".");
-          if (fg->params.size()==4 && fg->params[3]->partA!="R")
-            throw BadStructure("Fourth argument must be 'R'.");
-          // What type of interaction do we need
-          string i_token = fg->params[2]->partA;
-          if (interactions.find(i_token)==interactions.end()) { // New interaction type
-            interactions.insert(std::pair<string, Interaction*>(i_token, choose_interaction(i_token)));
+
+    // --- Look for boundary conditions
+    getAllMatches("Boundary-conditions", container, options);
+    if (container.size()>1) build_message += "We only need the boundary conditions specified once. Ignoring all but the first.\n";
+    if (container.size()>0) {
+      head = container[0];
+      // If a parameter is given, it is the BC for all sides
+      if (head && !head->params.empty()) gflow->setAllBCs(choose_bc(head->params[0]->partA));
+      else {
+        for (auto bc : head->subHeads) {
+          if (!head->heading.empty() || head->params.size()==1) { // A specific dimension must be choosen, the (one) parameter is the flag
+            if (head->params.empty()) throw BadStructure("Expected a parameter, found none.");
+            gflow->setBC(convert<int>(head->heading), choose_bc(head->params[0]->partA));
           }
-        }
-        // Now assign types to the interactions we have found. We have already checked for structure, no need to check again.
-        for (auto fg : h->subHeads) {
-          int t1 = convert<int>(fg->params[0]->partA), t2 = convert<int>(fg->params[1]->partA);
-          string i_token = fg->params[2]->partA;
-          gflow->forceMaster->setInteraction(t1, t2, interactions.find(i_token)->second);
-          // We already checked that the fourth parameter is an 'R' if it exists. Only add if t1!=t2
-          if (fg->params.size()==4 && t1!=t2) 
-            gflow->forceMaster->setInteraction(t2, t1, interactions.find(i_token)->second);
+          else throw BadStructure("We need one parameter to be the boundary condition flag, we found "+toStr(head->params.size()));
         }
       }
-      else good = false;
     }
 
-    // Look for boundary conditions
-    token = "Boundary-conditions";
-    good = true;
-    it = options.find(token);
-    // Default option is all wrapped boundaries
-    gflow->setAllBCs(BCFlag::WRAP);
-    // Look for options
-    for (; it!=options.end() && good; ++it) {
-      if (it->first==token) {
-        HeadNode *h = it->second;
-        // If a parameter is given, it is the BC for all sides
-        if (h && !h->params.empty()) gflow->setAllBCs(choose_bc(h->params[0]->partA));
-        else {
-          for (auto bc : h->subHeads) {
-            if (!h->heading.empty() || h->params.size()==1) { // A specific dimension must be choosen, the (one) parameter is the flag
-              gflow->setBC(convert<int>(h->heading), choose_bc(h->params[0]->partA));
-            }
-            else throw BadStructure("We need one parameter to be the boundary condition flag, we found "+toStr(h->params.size()));
-          }
-        }
-      }
-      else good = false;
-    }
-
-    /*
     // --- Global Particle Template. Defines "types" of particles, e.g. radius distribution, density/mass, etc.
     getAllMatches("Template", container, options);
     for (auto h : container) {
       getParticleTemplate(h, global_templates);
-    }
-    */
+    }    
 
-    // Look for fill areas
-    token = "Fill-area";
-    good = true;
-    it = options.find(token);
-    // Look for options
-    for (; it!=options.end() && good; ++it) {
-      if (it->first==token) {
-        HeadNode *h = it->second;
-        // This is complicated enough that we give it it's own function. Fill area has its own options.
-        if (h) fillArea(h);
-      }
-      else good = false;
+    getAllMatches("Fill-area", container, options);
+    for (auto h : container) {
+      fillArea(h);
     }
 
     // Initialize domain
     gflow->domain->initialize();
   }
 
-  inline Integrator* FileParseCreator::choose_integrator(string& token) const {
-    if (token=="VelocityVerlet")            return new VelocityVerlet(gflow);
+  inline Integrator* FileParseCreator::choose_integrator(HeadNode *head) const {
+    string token = head->params[0]->partA;
+    if      (token=="VelocityVerlet")       return new VelocityVerlet(gflow);
     else if (token=="OverdampedIntegrator") return new OverdampedIntegrator(gflow);
     else if (token=="OverdampedLangevin")   return new OverdampedLangevinIntegrator(gflow);
-    else if (token=="LangevinIntegrator")   return new LangevinIntegrator(gflow);
+    else if (token=="LangevinIntegrator") {
+      LangevinIntegrator *integrator = new LangevinIntegrator(gflow);
+      if (!head->subHeads.empty()) {
+        // Gather options
+        std::map<string, HeadNode*> options;
+        for (auto h : head->subHeads) 
+          options.insert(std::pair<string, HeadNode*>(h->heading, h));
+        // Check for temperature
+        auto it = options.find("Temperature");
+        if (it!=options.end()) {
+          integrator->setTemperature(convert<RealType>(it->second->params[0]->partA));
+        }
+        // Check for viscosity
+        it = options.find("Viscosity");
+        if (it!=options.end()) {
+          integrator->setViscosity(convert<RealType>(it->second->params[0]->partA));
+        }
+      }
+      return integrator;
+    }
     else throw UnexpectedOption();
   }
 
-  inline Interaction* FileParseCreator::choose_interaction(string& token) const {
-    if (token=="HardSphere")        return new HardSphere(gflow);
+  inline Interaction* FileParseCreator::choose_interaction(HeadNode *head) const {
+    string token = head->params[2]->partA;
+    if      (token=="HardSphere")   return new HardSphere(gflow);
     else if (token=="LennardJones") return new LennardJones(gflow);
     else if (token=="Coulomb")      return new CoulumbForce(gflow);
     else if (token=="Consumption")  return new Consumption(gflow);
@@ -316,7 +234,8 @@ namespace GFlowSimulation {
   }
 
   inline BCFlag FileParseCreator::choose_bc(string& token) const {
-    if (token=="Wrap")      return BCFlag::WRAP;
+    if      (token=="Wrap") return BCFlag::WRAP;
+    else if (token=="Refl") return BCFlag::REFL;
     else if (token=="Repl") return BCFlag::REPL;
     else throw UnexpectedOption();
   }
@@ -339,7 +258,7 @@ namespace GFlowSimulation {
     // --- Look for bounds
     getAllMatches("Bounds", container, options);
     // We must have bounds
-    Bounds bounds; 
+    Bounds bnds; 
     // We only care about the first bounds. We can only define the bounds once.
     if (container.empty())
       throw BadStructure("We need bounds!");
@@ -348,16 +267,22 @@ namespace GFlowSimulation {
       if (container.size()>1) build_message += "Multiple bounds found! Ignoring all but the first instance.\n";
       // Get the bounds from the first instance
       HeadNode *h = container[0];
-      if (h->subHeads.size()!=DIMENSIONS) 
-        throw BadStructure("Expected "+toStr(DIMENSIONS)+" arguments, found "+toStr(h->subHeads.size()));
-      // Set bounds
-      for (int d=0; d<h->subHeads.size(); ++d) {
-        // Check for well formed options.
-        if (h->subHeads[d]->params.size()!=2 || !h->subHeads[d]->subHeads.empty()) 
-          throw BadStructure("Bounds need a min and a max, we found "+toStr(h->subHeads[d]->params.size())+" parameters.");
-        // Extract the bounds.
-        bounds.min[d] = convert<float>( h->subHeads[d]->params[0]->partA );
-        bounds.max[d] = convert<float>( h->subHeads[d]->params[1]->partA );
+      // Check if we should use the full simulation bounds
+      if (h->subHeads.empty() && h->params.size()>0 && h->params[0]->partA=="Full") {
+        bnds = bounds;
+      }
+      else {
+        if (h->subHeads.size()!=DIMENSIONS) 
+          throw BadStructure("Expected "+toStr(DIMENSIONS)+" arguments, found "+toStr(h->subHeads.size()));
+        // Set bounds
+        for (int d=0; d<h->subHeads.size(); ++d) {
+          // Check for well formed options.
+          if (h->subHeads[d]->params.size()!=2 || !h->subHeads[d]->subHeads.empty()) 
+            throw BadStructure("Bounds need a min and a max, we found "+toStr(h->subHeads[d]->params.size())+" parameters.");
+          // Extract the bounds.
+          bnds.min[d] = convert<float>( h->subHeads[d]->params[0]->partA );
+          bnds.max[d] = convert<float>( h->subHeads[d]->params[1]->partA );
+        }
       }
     }
 
@@ -431,14 +356,14 @@ namespace GFlowSimulation {
 
     // --- Check that we have defined a good area
     for (int d=0; d<DIMENSIONS; ++d)
-      if (bounds.wd(d)==0) 
+      if (bnds.wd(d)==0) 
 	 throw BadStructure("We need valid bounds. The width of dimension "+toStr(d)+" was 0.");
     if (!usePhi && number<=0 && singleType)
       throw BadStructure("If using a single type, we need a nonzero number of particles.");
 
     // --- We have found all the options. Fill the area.
     GFlow filler;
-    filler.setBounds(bounds);
+    filler.setBounds(bnds);
     filler.setAllBCs(BCFlag::WRAP);
     filler.forceMaster = gflow->forceMaster; // Make sure the particles treat each other in the same way
     // Get the simdata
@@ -458,11 +383,11 @@ namespace GFlowSimulation {
         // Get the particle template
         ParticleTemplate &particle_creator = particle_templates.begin()->second;
         int i(0);
-        RealType vol = 0, Vol = bounds.vol();
+        RealType vol = 0, Vol = bnds.vol();
         while (vol/Vol < phi) {
           // Select a position for the particle (random uniform)
           for (int d=0; d<DIMENSIONS; ++d)
-            X[d] = drand48()*bounds.wd(d) + bounds.min[d];
+            X[d] = drand48()*bnds.wd(d) + bnds.min[d];
           // Select other characteristics
           particle_creator.createParticle(X, sigma, im, type, i);
           // Add the particle
@@ -490,11 +415,11 @@ namespace GFlowSimulation {
         // A discrete distribution we use to choose which particle template to use next
         std::discrete_distribution<int> choice(probabilities.begin(), probabilities.end());
         int i(0);
-        RealType vol = 0, Vol = bounds.vol();
+        RealType vol = 0, Vol = bnds.vol();
         while (vol/Vol < phi) {
           // Select a position for the particle (random uniform)
           for (int d=0; d<DIMENSIONS; ++d)
-            X[d] = drand48()*bounds.wd(d) + bounds.min[d];
+            X[d] = drand48()*bnds.wd(d) + bnds.min[d];
           // Choose a type of particle to create
           int pt = choice(global_generator);
           ParticleTemplate &particle_creator = template_vector.at(pt);
@@ -521,7 +446,7 @@ namespace GFlowSimulation {
         for (int i=0; i<num; ++i) {
           // Select a position for the particle (random uniform)
           for (int d=0; d<DIMENSIONS; ++d)
-            X[d] = drand48()*bounds.wd(d) + bounds.min[d];
+            X[d] = drand48()*bnds.wd(d) + bnds.min[d];
           // Select other characteristics
           particle_creator.createParticle(X, sigma, im, type, i);
           // Add the particle

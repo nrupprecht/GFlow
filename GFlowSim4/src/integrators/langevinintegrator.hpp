@@ -46,10 +46,10 @@ namespace GFlowSimulation {
     //! This part of the drift is equal to ( temperature/(6.*viscosity*PI) )
     RealType drift1;
 
-    //! The last time we applied random forces
+    //! @brief The last time we applied random forces
     RealType lastUpdate;
 
-    //! How long we should wait between using perturbations
+    //! @brief How long we should wait between using perturbations
     RealType updateDelay;
   };
 

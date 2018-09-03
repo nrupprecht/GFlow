@@ -58,6 +58,8 @@ namespace GFlowSimulation {
       delete [] dataI;
       dataI = nullptr;
     }
+    // Clear the global id map
+    id_map.clear();
   }
 
   void SimData::reserve(int num) {
@@ -206,6 +208,16 @@ namespace GFlowSimulation {
     return Base::gflow->getBCs();
   }
 
+  int SimData::getLocalID(int global) const {
+    auto it = id_map.find(global);
+    // Return the global iterator. We use -1 to mean "no such particle."
+    return it==id_map.end() ? -1 : it->second;
+  }
+
+  int SimData::getNextGlobalID() const {
+    return next_global_id;
+  }
+
   Bounds SimData::getBounds() const {
     return Base::gflow->getBounds();
   }
@@ -222,7 +234,9 @@ namespace GFlowSimulation {
     copyVec(X, x[number]);
     copyVec(V, v[number]);
     zeroVec(f[number]);
-    // Assign a flobal id - this assumes that this is a *new* particle
+    // Insert into the global id map
+    id_map.insert(IPair(number, next_global_id));
+    // Assign a global id - this assumes that this is a *new* particle
     global_id[number] = ++next_global_id;
     sg[number]   = Sg;
     im[number]   = Im;
@@ -245,17 +259,8 @@ namespace GFlowSimulation {
     switch (own_type) {
       default:
       case ParticleOwnership::Owned: {
-        // Check if we need to resize the array
-        if (end_owned<=number) 
-          resize(ceil(0.25*number), 0, 0);
-        // Copy data
-        copyVec(X, x[number]);
-        copyVec(V, v[number]);
-        sg[number]   = Sg;
-        im[number]   = Im;
-        type[number] = Type;
-        // There is now one more particle
-        ++number;
+        // Use the normal add particle function
+        addParticle(X, V, Sg, Im, Type);
         // Done.
         break;
       }
@@ -300,32 +305,32 @@ namespace GFlowSimulation {
     // If there is nothing to remove, we're done
     if (remove_list.empty() || number==0) return;
     // Variables
-    int count = 0, count_back = number-1;
+    int count = 0, count_back = number, need_removal = 0;
+    // Set all types to -1, remove global ids
+    for (auto id : remove_list) {
+      if (type[id]!=-1) ++need_removal;
+      type[id] = -1;
+    }
     // Fill in all holes
     int removed = 0;
     for(auto id : remove_list) {
-      // No point removing particles that are not real
-      if (type[id]<0) continue;
-      // Particle is no longer valid
-      type[id] = -1;
+      // We either need to start at (number-1), or moved the particle that was at count_back. Either way, decrement.
+      --count_back;
       // We have removed a particle
       ++removed;
-
-      auto contains = [] (std::set<int>& s, int id) -> bool {
-        return s.find(id)!=s.end();
-      };
 
       // Find the next valid particle (counting back from the end) to fill for the particle we want to remove
       // C++ 20 has a std::set contains() function.
       while ( contains(remove_list, count_back) && count_back>id) --count_back;
-      // Move the particle to fill the particle we want to remove
-      if (count_back>0) moveParticle(count_back, id);
+
+      // Move the particle to fill the particle we want to remove - moving the good particle to the hole erases the hole's 
+      // global id.
+      if (count_back>id) moveParticle(count_back, id);
       else break;
-      // If all the particles we want to remove are after the 
-      if (count_back<=id) break; // We are done
     }
     // Decrease number
-    number -= removed;
+    number -= need_removal;
+
     // Clear list
     remove_list.clear();
     // We need to update
@@ -337,8 +342,8 @@ namespace GFlowSimulation {
     // We assume that this happens infrequently, so fill in the hole now. Move the last particle
     // in the array to this place. We must remake the verlet list though.
     if (id>=number || id<0) return; // Not a valid spot
-    else if (number>1) {
-      moveParticle(number-1, id);
+    if (number>1) {
+      moveParticle(number-1, id); // Moving the particle erases the removed particle's global id
       // We need to remake
       needs_remake = true;
     }
@@ -402,10 +407,17 @@ namespace GFlowSimulation {
     copyVec(x[id_source], x[id_dest]);
     copyVec(v[id_source], v[id_dest]);
     copyVec(f[id_source], f[id_dest]);
-    global_id[id_dest] = global_id[id_source];
+    int gs = global_id[id_source];
+    int gd = global_id[id_dest];
+    global_id[id_dest] = gs;
     sg[id_dest] = sg[id_source];
     im[id_dest] = im[id_source];
     type[id_dest] = type[id_source];
+    
+    // Update id map - erases global id of the overwritten particle
+    auto it = id_map.find(gs);
+    if (id_map.end()!=it) it->second = id_dest;
+    id_map.erase(gd);
 
     // FOR NOW, IT DOES NOT MOVE AUXILARY DATA
     // @todo Move auxilary data

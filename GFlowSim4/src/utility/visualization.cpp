@@ -16,25 +16,26 @@ namespace GFlowSimulation {
     if (colorBank) delete [] colorBank;
   }
 
-  void Visualization::createBMPs(string dirName, const vector<RealType*>& data, const vector<int>& number,    
-    int dataWidth, Bounds& bounds, int dimensions) const 
+  void Visualization::createBMPs(string dirName, const vector<vector<RealType> >& data, int dataWidth, Bounds& bounds, int dimensions) const 
   {
     // Find the maximum velocity (if needed)
     if (color_option==2)
-      findMaxVSqr(data, number, dataWidth);
+      findMaxVSqr(data, dataWidth);
     // Create frames
     for (int i=0; i<data.size(); ++i) {
       string fileName = dirName + "/frame" + toStr(i) + ".bmp";
-      createImage(fileName, data[i], number[i], dataWidth, bounds, dimensions);
+      createImage(fileName, data[i], dataWidth, bounds, dimensions);
     }
   }
 
   void Visualization::createVideo2d(string fileName, const vector<RealType*>& data, int dataWidth) {
+    /*
     vector<int> data_size = { 2, 2, 1 };
     vector<string> data_name = { "x", "v", "sg" };
+    */
   }
 
-  inline void Visualization::createImage(string fileName, RealType *data, int number, int dataWidth, Bounds& bounds, int dimensions) const {
+  inline void Visualization::createImage(string fileName, const vector<RealType>& data, int dataWidth, Bounds& bounds, int dimensions) const {
     // Get some data from the bounds
     float wx = bounds.wd(0);
     float wy = bounds.wd(1);
@@ -47,25 +48,36 @@ namespace GFlowSimulation {
     else if (wy>wx) res_x = wx/wy*resolution;
 
     // Create the main palette
-    Palette palette(res_x, res_y);
+    Palette palette(resolution, resolution);
     palette.coverPalette(RGB_Black);
+
+    // Get a centered subset
+    Palette sub1 = palette.getSubPaletteCentered(0.01);
+    sub1.coverPalette(RGB_White);
+
     // Get a subpallete on which to write the image
-    Palette image = palette.getSubPalette(10, res_x-10, 10, res_y-10);
+    Palette image = sub1.getMaxCenteredSubPalette(wx, wy);
 
     // Set background
     image.coverPalette(background);
 
+    // A vector for holding data
+    RealType *pdata = new RealType[dataWidth];
     // Print all particles
-    for (int i=0; i<number; ++i) {
-      // Get the data for this particle
-      RealType *pdata = &data[i*dataWidth];
+    for (int i=0; i<data.size(); i+=dataWidth) {
+      // Extract data for the i-th particle
+      for (int j=0; j<dataWidth; ++j)
+        pdata[j] = data[i+j];
       // Get individual entries
-      RealType *vel  = vel_place>-1 ? &pdata[vel_place] : nullptr;
-      RealType sigma = sg_place>-1 ? pdata[sg_place] : 0;
-      int type       = type_place > -1 ? static_cast<int>(pdata[type_place]) : 0;
+      RealType *pos  = pdata;
+      RealType *vel  = vel_place>-1    ? &pdata[vel_place] : nullptr; // Point to start of velocity data
+      RealType sigma = sg_place>-1     ?  pdata[sg_place]  : 0; // Get sigma
+      int type       = type_place > -1 ? static_cast<int>(pdata[type_place]) : 0; // Get type
+      // If type<0, continue
+      if (type<0) continue;
       // Find the center of the particle
-      float xf = (pdata[0] - left)/wx;
-      float yf = (pdata[1] - bott)/wy;
+      float xf = (pos[0] - left)/wx;
+      float yf = (pos[1] - bott)/wy;
       float rf = sigma/wx;
 
       // --- Determine the color
@@ -118,17 +130,21 @@ namespace GFlowSimulation {
       image.drawCircleByFactors(xf, yf, rf, colorF, do_wrap); 
     }
 
+    // Clean up pdata
+    delete [] pdata;
+
     // Save image
     palette.writeToFile(fileName);
   }
 
-  inline void Visualization::findMaxVSqr(const vector<RealType*>& dataVector, const vector<int>& numbers, int dataWidth) const {
+  inline void Visualization::findMaxVSqr(const vector<vector<RealType> >& dataVector, int dataWidth) const {
     // Reset
     maxVsqr = 0;
     // Look for max vsqr
     for (int iter=0; iter<dataVector.size(); ++iter) {
-      RealType *data = dataVector.at(iter);
-      int number = numbers.at(iter);
+      if (dataVector[iter].empty()) continue;
+      const RealType *data = &dataVector[iter][0];
+      int number = dataVector[iter].size()/dataWidth;
       for (int i=0; i<number; ++i) {
         float V = sqr(data[i*dataWidth + vel_place]);
         if (V>maxVsqr) maxVsqr = V;

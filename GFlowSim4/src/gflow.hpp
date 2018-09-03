@@ -163,6 +163,9 @@ namespace GFlowSimulation {
     //! Clear all the force arrays.
     inline void clearForces();
 
+    //! @brief Check whether any modifiers need to be removed.
+    inline void handleModifiers();
+
     // --- Data - public so anyone can access it
     class SimData *simData;             // Particle data
     class Integrator *integrator;       // Integrator

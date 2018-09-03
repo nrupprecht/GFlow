@@ -16,9 +16,6 @@ namespace GFlowSimulation {
     //! @brief Constructor
     PositionData(GFlow*);
 
-    //! @brief Destructor
-    ~PositionData();
-
     //! @brief Collect the position data from simdata --- happens during the post-step phase
     virtual void post_step();
 
@@ -34,13 +31,10 @@ namespace GFlowSimulation {
     //!
     //! Each time step contains a length ( [number of particles] * [dataWidth] ) array 
     //! for the positions of the particles in [DIMENSIONS] dimensions, and any other data we want to store.
-    vector<RealType*> positions; 
+    vector<vector<RealType> > positions; 
 
     //! @brief The amount of data we collect per particle.
     int dataWidth;
-    
-    //! @brief The number of particles in the position enties.
-    vector<int> numbers;
   };
 
 }

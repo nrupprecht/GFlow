@@ -13,6 +13,7 @@ namespace GFlowSimulation {
   const RGBApixel RGB_Red(255,0,0);
   const RGBApixel RGB_Green(0,255,0);
   const RGBApixel RGB_Blue(0,0,255);
+  const RGBApixel RGB_Dark_Gray(169,169,169);
 
   //! @brief Function that creates a random color
   inline RGBApixel randomColor() {
@@ -134,6 +135,12 @@ namespace GFlowSimulation {
     //! @brief Get a subset of the palette to draw on, by scaled coordinates.
     Palette getSubPalette(float, float, float, float);
 
+    //! @brief Get a centered region as a sub-palette
+    Palette getSubPaletteCentered(float);
+
+    //! @brief Get the maximum centered subpalette with the specified x-y ratio
+    Palette getMaxCenteredSubPalette(float, float);
+
     // --- Drawing functions
 
     //! @brief Draw a circle by giving scaled coordinates and radius.
@@ -159,6 +166,7 @@ namespace GFlowSimulation {
     // --- Exception class
 
     class PaletteOutOfBounds {};
+    class BadPalette {};
 
   private:
     //! @brief Private constructor for use in making subpalettes
@@ -197,7 +205,7 @@ namespace GFlowSimulation {
     //! @brief Owned bounds - the subset of the pixels this palette owns.
     int owned[4];
 
-    double aspect_ratio = 1;
+    double aspect_ratio;
 
     //! TEST
     PixL *pixelData;

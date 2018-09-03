@@ -47,13 +47,13 @@ namespace GFlowSimulation {
     //! @brief Create a directory filled with BMP renderings of the system.
     //!
     //! This can be used to create a movie.
-    void createBMPs(string, const vector<RealType*>&, const vector<int>&, int, Bounds&, int) const;
+    void createBMPs(string, const vector<vector<RealType> >&, int, Bounds&, int) const;
 
   private:
     //! @brief Creates a single frame.
-    inline void createImage(string, RealType*, int, int, Bounds&, int) const;
+    inline void createImage(string, const vector<RealType>&, int, Bounds&, int) const;
 
-    inline void findMaxVSqr(const vector<RealType*>&, const vector<int>&, int) const;
+    inline void findMaxVSqr(const vector<vector<RealType> >&, int) const;
 
     //! @brief Where the position data starts.
     int pos_place;

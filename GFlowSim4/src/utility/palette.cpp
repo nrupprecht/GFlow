@@ -6,6 +6,7 @@
 namespace GFlowSimulation {
 
   Palette::Palette(int width, int height) {
+    if (width<=0 || height<=0) throw BadPalette();
     // Set the bounds
     owned[0] = bounds[0] = 0;
     owned[1] = bounds[1] = width;
@@ -17,10 +18,12 @@ namespace GFlowSimulation {
     // References
     refs = new int(1);
     // Aspect ratio
-    aspect_ratio = width/height;
+    aspect_ratio = 1;
   }
 
   Palette::Palette(const Palette& p) {
+    if (p.getWidth()<=0 || p.getHeight()<=0) throw BadPalette();
+    // Get bounds
     for (int i=0; i<4; ++i) {
       owned[i] = p.owned[i];
       bounds[i] = p.bounds[i];
@@ -34,6 +37,8 @@ namespace GFlowSimulation {
   }
 
   Palette::Palette(const Palette&& p) {
+    if (p.getWidth()<=0 || p.getHeight()<=0) throw BadPalette();
+    // Get bounds
     for (int i=0; i<4; ++i) {
       owned[i] = p.owned[i];
       bounds[i] = p.bounds[i];
@@ -58,6 +63,8 @@ namespace GFlowSimulation {
   }
 
   Palette& Palette::operator=(const Palette&& p) {
+    if (p.getWidth()<=0 || p.getHeight()<=0) throw BadPalette();
+    // Get bounds
     for (int i=0; i<4; ++i) {
       owned[i] = p.owned[i];
       bounds[i] = p.bounds[i];
@@ -77,19 +84,47 @@ namespace GFlowSimulation {
   }
 
   Palette Palette::getSubPalette(int mx, int Mx, int my, int My) {
-    if (owned[0]+Mx>owned[1]) mx = owned[1]-owned[0];
-    if (mx<0) mx = 0;
-    if (owned[2]+My>owned[3]) My = owned[3]-owned[1];
+    // Check for errors
+    if (Mx<mx || My<my) throw BadPalette();
+    // Correct
+    if (mx<0) mx=0;
+    else if (mx>=getWidth()) mx = getWidth();
     if (my<0) my = 0;
+    else if (my>getHeight()) my = getHeight();
     // Return a palatte
     return Palette(owned[0]+mx, owned[0]+Mx, owned[2]+my, owned[2]+My, image, refs, bounds, aspect_ratio);
   }
 
   Palette Palette::getSubPalette(float mfx, float Mfx, float mfy, float Mfy) {
-    return getSubPalette(owned[0]+mfx*getWidth(), owned[0]+Mfx*getWidth(), owned[2]+mfy*getHeight(), owned[2]+Mfy*getHeight());
+    return getSubPalette(mfx*getWidth(), Mfx*getWidth(), mfy*getHeight(), Mfy*getHeight());
   }
 
-  void Palette::drawCircleByFactors(float xf, float yf, float rf, ColorFunction colorF, bool wrap) {
+  Palette Palette::getSubPaletteCentered(float fx) {
+    if (fx>=0.5) throw BadPalette();
+    int pix = getWidth()*fx;
+    return getSubPalette(pix, getWidth()-pix, pix, getHeight()-pix);
+  }
+
+  Palette Palette::getMaxCenteredSubPalette(float rx, float ry) {
+    if (rx<=0 || ry<= 0) throw BadPalette();
+    double native_ratio = getWidth()/getHeight();
+    double requested_ratio = rx/ry;
+
+    if (native_ratio<requested_ratio) { // Fit to x. There will be extra y-space. 
+      int width = getWidth();
+      int height = width/requested_ratio;
+      int gap = (getHeight() - height)/2;
+      return getSubPalette(0, getWidth(), gap, getHeight()-gap);
+    }
+    else { // Fit to y. There will be extra x-space.
+      int height = getHeight();
+      int width = requested_ratio*height;
+      int gap = (getWidth() - width)/2;
+      return getSubPalette(gap, getWidth()-gap, 0, getHeight());
+    }
+  }
+
+  void Palette::drawCircleByFactors(float xf, float yf, float rfx, ColorFunction colorF, bool wrap) {
     // Width of owned region
     int wx = getWidth();
     int wy = getHeight();
@@ -98,11 +133,11 @@ namespace GFlowSimulation {
     int px = xf*wx;
     int py = yf*wy;
     // Find dp's (radius in pixel coordinates)
-    int dpx = ceil(rf*wx);
-    int dpy = ceil(rf*wy);
+    int dpx = ceil(rfx*wx);
+    int dpy = aspect_ratio*dpx;
 
     // Radius factor squared
-    float rsqr = sqr(rf);
+    float rsqr = sqr(rfx);
     bool doColor = true;
     // Go through pixels
     for (int dy=-dpy; dy<=dpy; ++dy) {
@@ -112,8 +147,8 @@ namespace GFlowSimulation {
           int w_px = px + dx, w_py = py + dy;
           // Get the pixel factor
           std::pair<float, float> pF = pixelFactor(w_px, w_py);
-          float pfx = (pF.first - xf)/rf;
-          float pfy = (pF.second - yf)/rf;
+          float pfx = (pF.first - xf)/rfx;
+          float pfy = (pF.second - yf)/rfx;
           // Wrap pixel
           if (wrap) {
             w_px = w_px >= wx ? w_px-wx : w_px;
@@ -163,6 +198,7 @@ namespace GFlowSimulation {
   }
 
   Palette::Palette(int mx, int Mx, int my, int My, BMP *img, int *rfs, int *bnds, double aratio) {
+    if (Mx<=mx || My<=my) throw BadPalette();
     // Set sub-bounds
     owned[0] = mx;
     owned[1] = Mx;

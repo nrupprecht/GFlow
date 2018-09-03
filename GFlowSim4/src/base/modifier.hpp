@@ -12,8 +12,15 @@ namespace GFlowSimulation {
     // Constructor
     Modifier(GFlow *);
 
+    bool getRemove();
+
+    void setRemove(bool);
+
     // GFlow is a friend class
     friend class GFlow;
+
+  protected:
+    bool remove;
   };
 
 }

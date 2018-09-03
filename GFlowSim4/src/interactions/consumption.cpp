@@ -22,10 +22,11 @@ namespace GFlowSimulation {
     const RealType *param_pack, RealType *data_pack) 
   {
     RealType random = drand48();
+    const RealType probability = 0.001;
     // Smaller type eats larger type
-    if (simData->type[id1]<simData->type[id2] && random<0.01)
+    if (simData->type[id1]<simData->type[id2] && random<probability)
       simData->markForRemoval(id2);
-    else if (random<0.01) 
+    else if (random<probability) 
       simData->markForRemoval(id1);
   }
 

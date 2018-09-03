@@ -118,6 +118,16 @@ namespace GFlowSimulation {
     const int*      DataI(int n)    const { return dataI[n]; }
     const int&      Body(int n)     const { return body[n]; }
 
+
+    //! @brief Get the local id of a particle given the global id.
+    //!
+    //! The local id is where in the array is the particle stored. The global id is a unique identifier for
+    //! every particle that has ever existed in the simulation.
+    int getLocalID(int) const;
+
+    //! @brief Get what will be the global id of the next particle added to the system.
+    int getNextGlobalID() const;
+
     //! @brief Get the boundary conditions.
     //!
     //! These are actually stored in the gflow object, so we pass them on from gflow.
@@ -287,7 +297,7 @@ namespace GFlowSimulation {
     //! Generic integer type data.
     int **dataI; 
 
-    //! Which body a particle belongs to.
+    //! @brief Which body a particle belongs to.
     //!
     //! A particle can only belong to one body (with this setup). If there are no bodies in the simulation,
     //! then body = nullptr. If there are bodies, then if a particle is not in a body, then body = -1 for it. \n
@@ -295,6 +305,9 @@ namespace GFlowSimulation {
     //! If we ever have a simulation where we are running in parallel, it could be irritating to have particles
     //! from the same body on different processors.
     int *body;  
+
+    //! @brief A map between global and local ids
+    std::map<int, int> id_map;
   };
 
   // --- Defined after simdata

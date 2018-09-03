@@ -9,6 +9,15 @@
 
 namespace GFlowSimulation {
 
+  const string Dimensions_Token = "Dimensions";
+  const string Bounds_Token = "Bounds";
+  const string Integrator_Token = "Integrator";
+  const string Types_Token = "NTypes";
+  const string Interactions_Token = "Force-grid";
+  const string Boundary_Token = "Boundary-conditions";
+  const string Fill_Token = "Fill-area";
+
+
   struct Molecule {
     ~Molecule() {
       for (auto &p : position) if (p) delete [] p;
@@ -83,9 +92,9 @@ namespace GFlowSimulation {
 
     // --- Object selection
 
-    inline Integrator* choose_integrator(string&) const;
+    inline Integrator* choose_integrator(HeadNode*) const;
 
-    inline Interaction* choose_interaction(string&) const;
+    inline Interaction* choose_interaction(HeadNode*) const;
 
     inline BCFlag choose_bc(string&) const;
 
@@ -108,6 +117,9 @@ namespace GFlowSimulation {
 
     //! @brief The bounds of the simulation we are creating
     Bounds bounds;
+
+    //! @brief The number of particle types in the simulation
+    int NTypes;
 
     //! @brief Particle templates usable anywhere in the configuration file.
     std::map<string, ParticleTemplate> global_templates;
