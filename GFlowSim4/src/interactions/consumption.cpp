@@ -21,13 +21,20 @@ namespace GFlowSimulation {
   void Consumption::consume(RealType* normal, const RealType distance, const int id1, const int id2, SimData *simData, 
     const RealType *param_pack, RealType *data_pack) 
   {
-    RealType random = drand48();
-    const RealType probability = 0.001;
+    //RealType random = drand48();
+    //const RealType probability = 0.001;
+
+    if (simData->type[id1]<simData->type[id2])
+      simData->markForRemoval(id2);
+    else  simData->markForRemoval(id1);
+
+    /*
     // Smaller type eats larger type
     if (simData->type[id1]<simData->type[id2] && random<probability)
       simData->markForRemoval(id2);
     else if (random<probability) 
       simData->markForRemoval(id1);
+    */
   }
 
 }

@@ -2,8 +2,12 @@
 
 namespace GFlowSimulation {
 
-  GrowRadius::GrowRadius(GFlow *gflow) : Modifier(gflow) {
+  GrowRadius::GrowRadius(GFlow *gflow, int global, RealType r0, RealType rf, RealType time) : Modifier(gflow), global_id(global) {
+    if (r0<0) throw BadRadius();
     time0 = gflow->getElapsedTime();
+    sigma0 = r0;
+    sigmaf = rf;
+    rdot = (rf-r0)/time;
   };
 
   void GrowRadius::post_forces() {
@@ -18,7 +22,8 @@ namespace GFlowSimulation {
       remove = true;
     }
     // Set the radius
-    simData->Sg(id) = sigma;
+    if (id>-1) simData->sg[id] = sigma;
+    else remove = true;
   }
 
 }

@@ -12,9 +12,12 @@ namespace GFlowSimulation {
   */
   class GrowRadius : public Modifier {
   public:
-    GrowRadius(GFlow*);
+    GrowRadius(GFlow*, int, RealType, RealType, RealType);
 
     virtual void post_forces() override;
+
+    //! @brief An exception class indicating that a negative radius has been indicated.
+    class BadRadius {};
 
   private:
     //! @brief The global id of the particle we are tracking

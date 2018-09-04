@@ -177,7 +177,7 @@ namespace GFlowSimulation {
     class AngleData *angleData;
 
     //! A vector of objects that should modify the simulation at some point(s) during execution.
-    vector<class Modifier*> modifiers;
+    std::list<class Modifier*> modifiers;
 
     //! All the forces that can happen - which ones correspond to which pairs of particles is controlled by
     // the ForceMaster object.

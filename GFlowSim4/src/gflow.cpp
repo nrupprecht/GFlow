@@ -4,6 +4,11 @@
 #include "dataobjects/memorydistance.hpp"
 #include "utility/memoryoptimizer.hpp"
 
+//****
+#include "modifiers/birth.hpp"
+#include "modifiers/death.hpp"
+//****
+
 namespace GFlowSimulation {
 
   GFlow::GFlow() : running(false), useForces(true), requested_time(0), total_requested_time(0), elapsed_time(0), total_time(0), 
@@ -114,6 +119,14 @@ namespace GFlowSimulation {
       throw UnexpectedNullPointer("Some array in simdata was null that shouldn't be.");
     }
 
+    //******
+    /*
+    vector<RealType> rates(1, 0.01);
+    addModifier(new BirthRate(this, rates));
+    addModifier(new DeathRate(this, rates));
+    */
+    //******
+
     // --> Pre-integrate
     running = true;
     elapsed_time = 0;
@@ -121,6 +134,7 @@ namespace GFlowSimulation {
     integrator->pre_integrate();
     dataMaster->pre_integrate();
     domain->pre_integrate();
+
     for (auto m : modifiers) m->pre_integrate();
 
     // Do integration for the requested amount of time
@@ -421,32 +435,13 @@ namespace GFlowSimulation {
     // If there are no modifiers, there is nothing to do!
     if (modifiers.empty()) return;
     // List of modifiers to remove
-    std::set<int> remove;
+    vector< std::list<Modifier*>::iterator > remove;
     // Find modifiers that need to be removed
-    for (int i=0; i<modifiers.size(); ++i) {
-      if (modifiers[i]->getRemove()) {
-        remove.insert(i);
-      }
+    for (auto it = modifiers.begin(); it!=modifiers.end(); ++it) {
+      if ((*it)->getRemove()) remove.push_back(it);
     }
-    // Remove modifiers - move good modifiers at the end to fill in for bad modifiers 
-    // nearer to the beginning
-    if (!remove.empty()) {
-      int count_back = modifiers.size();
-
-      for(auto id : remove) {
-        // We either need to start at (number-1), or moved the particle that was at count_back. Either way, decrement.
-        --count_back;
-        // Find the next valid particle (counting back from the end) to fill for the particle we want to remove
-        // C++ 20 has a std::set contains() function.
-        while ( contains(remove, count_back) && count_back>id) --count_back;
-
-        // Move the particle to fill the particle we want to remove
-        if (count_back>id) modifiers[id] = modifiers[count_back];
-        else break;
-      }
-      // Resize the array
-      modifiers.resize(modifiers.size() - remove.size());
-    }
+    // Remove modifiers 
+    for (auto &m : remove) modifiers.erase(m);
   }
 
 }

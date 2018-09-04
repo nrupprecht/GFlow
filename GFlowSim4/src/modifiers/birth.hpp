@@ -12,14 +12,19 @@ namespace GFlowSimulation {
   */
   class BirthRate : public Modifier {
   public:
-    BirthRate(GFlow *);
+    BirthRate(GFlow*);
+    BirthRate(GFlow*, const vector<RealType>&);
 
     void setRate(const vector<RealType>&);
     
     virtual void pre_forces() override;
 
   private:
+    // A vector of birth rates for particles
     vector<RealType> birthRates;
+
+    //! @brief The smallest particle that can have children
+    RealType minSigma;
   };
 
 }

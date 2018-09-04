@@ -6,6 +6,8 @@ namespace GFlowSimulation {
 
   DeathRate::DeathRate(GFlow *gflow) : Modifier(gflow) {};
 
+  DeathRate::DeathRate(GFlow *gflow, const vector<RealType>& dr) : Modifier(gflow), deathRates(dr) {};
+
   void DeathRate::setRates(const vector<RealType>& rates) {
     deathRates = rates;
   }

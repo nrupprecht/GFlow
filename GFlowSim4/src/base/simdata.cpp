@@ -27,12 +27,6 @@ namespace GFlowSimulation {
     if (v) dealloc_array_2d(v);
     if (f) dealloc_array_2d(f);
     // These are just arrays
-    if (global_id) {
-      delete [] global_id;
-      global_id = nullptr;
-      // Also reset this
-      next_global_id = 0;
-    }
     if (sg) {
       delete [] sg;
       sg = nullptr;
@@ -58,8 +52,6 @@ namespace GFlowSimulation {
       delete [] dataI;
       dataI = nullptr;
     }
-    // Clear the global id map
-    id_map.clear();
   }
 
   void SimData::reserve(int num) {
@@ -229,13 +221,17 @@ namespace GFlowSimulation {
   //! @param type The type of the particle.
   void SimData::addParticle(const RealType *X, const RealType *V, const RealType Sg, const RealType Im, const int Type) 
   {
-    if (end_owned<=number) resize(max(static_cast<int>(ceil(1.25*number)), 32), 0, 0);
+    if (end_owned<=number) {
+      // Calculate the new amount of size we want
+      end_owned = max(static_cast<int>(ceil(1.25*number)), 32);
+      resize(end_owned, 0, 0);
+    }
     // Copy data
     copyVec(X, x[number]);
     copyVec(V, v[number]);
     zeroVec(f[number]);
     // Insert into the global id map
-    id_map.insert(IPair(number, next_global_id));
+    id_map.insert(IPair(next_global_id, number));
     // Assign a global id - this assumes that this is a *new* particle
     global_id[number] = ++next_global_id;
     sg[number]   = Sg;

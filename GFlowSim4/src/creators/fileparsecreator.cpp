@@ -1,6 +1,7 @@
 #include "fileparsecreator.hpp"
 // Other files
 #include "../utility/printingutility.hpp"
+#include "../allmodifiers.hpp"
 
 namespace GFlowSimulation {
 
@@ -192,6 +193,56 @@ namespace GFlowSimulation {
       fillArea(h);
     }
 
+    getAllMatches("Creation", container, options);
+    if (container.size()>1) build_message += "We only want one specification of particle creation. Ignoring all but the first";
+    if (container.size()>0) {
+      head = container[0];
+      // The subheads have no bodies, and are of the form: [type i] : [type j], [rate].
+      // For now, we only allow reproduction to create the same type.
+      std::map<int, RealType> birth;
+      for (auto s : head->subHeads) {
+        if (s->params.size()!=2) 
+          throw BadStructure("Expected a type and a rate (2 options). Found "+toStr(s->params.size())+".");
+        birth.insert(std::pair<int, RealType>(
+          convert<int>(s->heading), 
+          convert<RealType>(s->params[1]->partA)
+        ));
+      }
+      // Create a vector of birth rates - we must already know NTypes.
+      if (!birth.empty()) {
+        vector<RealType> birthRates(NTypes, 0);
+        for (int i=0; i<NTypes; ++i) {
+          if (contains(birth, i)) birthRates[i] = birth.find(i)->second;
+        }
+        gflow->addModifier(new BirthRate(gflow, birthRates));
+      }
+    }
+
+    getAllMatches("Destruction", container, options);
+    if (container.size()>1) build_message += "We only want one specification of particle destruction. Ignoring all but the first";
+    if (container.size()>0) {
+      head = container[0];
+      // The subheads have no bodies, and are of the form: [type i] : [rate].
+      // For now, we only allow reproduction to create the same type.
+      std::map<int, RealType> death;
+      for (auto s : head->subHeads) {
+        if (s->params.size()!=1) 
+          throw BadStructure("Expected a rate (1 option). Found "+toStr(s->params.size())+".");
+        death.insert(std::pair<int, RealType>(
+          convert<int>(s->heading),
+          convert<RealType>(s->params[0]->partA)
+        ));
+      }
+      // Create a vector of birth rates - we must already know NTypes.
+      if (!death.empty()) {
+        vector<RealType> deathRates(NTypes, 0);
+        for (int i=0; i<NTypes; ++i) {
+          if (contains(death, i)) deathRates[i] = death.find(i)->second;
+        }
+        gflow->addModifier(new DeathRate(gflow, deathRates));
+      }
+    }
+
     // Initialize domain
     gflow->domain->initialize();
   }
@@ -230,6 +281,7 @@ namespace GFlowSimulation {
     else if (token=="LennardJones") return new LennardJones(gflow);
     else if (token=="Coulomb")      return new CoulumbForce(gflow);
     else if (token=="Consumption")  return new Consumption(gflow);
+    else if (token=="None")         return nullptr;
     else throw UnexpectedOption();
   }
 
@@ -476,13 +528,11 @@ namespace GFlowSimulation {
       if (type!=-1) {
         // Select the velocity for the final particle
         select_velocity(V, X, sigma, im, type);
-
         if (im==0) zeroVec(V); //** FOR NOW
-
         gflow->simData->addParticle(X, V, sigma, im, type);
       }
     }
-    
+      
     // So we don't delete the force master when filler cleans up
     filler.forceMaster = nullptr; 
   }

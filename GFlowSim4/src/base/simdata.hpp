@@ -306,7 +306,7 @@ namespace GFlowSimulation {
     //! from the same body on different processors.
     int *body;  
 
-    //! @brief A map between global and local ids
+    //! @brief A map between global and local ids, <global, local>
     std::map<int, int> id_map;
   };
 

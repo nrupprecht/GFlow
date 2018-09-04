@@ -43,6 +43,8 @@ using std::chrono::duration_cast;
 
 #include <set>
 
+#include <map>
+
 #include "simd_types.hpp"
 
 /**
@@ -101,6 +103,10 @@ namespace GFlowSimulation {
 
   template<typename T> inline bool contains(const std::set<T> s, T obj) {
     return s.find(obj)!=s.end();
+  }
+
+  template<typename T, typename S> inline bool contains(const std::map<T, S> m, T key) {
+    return m.find(key)!=m.end();
   }
 
   //! Get the current time

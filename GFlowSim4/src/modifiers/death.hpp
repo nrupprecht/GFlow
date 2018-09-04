@@ -8,6 +8,8 @@ namespace GFlowSimulation {
   class DeathRate : public Modifier {
   public:
     DeathRate(GFlow*);
+
+    DeathRate(GFlow*, const vector<RealType>&);
     
     void setRates(const vector<RealType>&);
 

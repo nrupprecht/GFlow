@@ -40,7 +40,7 @@ namespace GFlowSimulation {
     class DataMaster   *dataMaster; 
     class ForceMaster  *forceMaster; 
     // References to vectors
-    vector<class Modifier*> *modifiersPtr;
+    std::list<class Modifier*> *modifiersPtr;
     vector<class Interaction*> *interactionsPtr;
   };
 
