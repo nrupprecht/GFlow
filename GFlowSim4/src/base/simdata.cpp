@@ -18,7 +18,7 @@ namespace GFlowSimulation {
     // Call base initialization
     Base::initialize();
     // Reorder memory
-    MemoryOptimizer::GridParticles(*this, Base::gflow->getBounds());
+    // MemoryOptimizer::GridParticles(*this, Base::gflow->getBounds());
   }
 
   void SimData::clean() {
@@ -127,14 +127,14 @@ namespace GFlowSimulation {
   //! @param aux_F If true, we reserve space in dataF.
   //! @param aux_I If true, we reserve space in dataI.
   void SimData::reserve(int num_owned, int num_halo, int num_ghost, bool aux_F, bool aux_I) {
-
+    throw Unimplemented();
   }
 
   //! @param resize_owned The amount of extra space to reserve for owned particls.
   //! @param resize_halo  The amount of extra space to reserve for halo particles.
   //! @param resize_ghost The amount of extra space to reserve for ghost particles.
   void SimData::resize(int resize_owned, int resize_halo, int resize_ghost) {
-    // Find the new total amount of space we need. End ghost is the size of the entire array
+    // Find the new total amount of space we need. End ghost is (currently) the size of the entire array.
     int size = end_ghost + resize_owned + resize_halo + resize_ghost; 
     // Allocate new arrays
     RealType **nx  = alloc_array_2d<RealType>(size, DIMENSIONS);
@@ -170,6 +170,10 @@ namespace GFlowSimulation {
     type = ntype;
     dataF = ndataF;
     dataI = ndataI;
+    // Update end_XYZ variables
+    end_owned += resize_owned;
+    end_halo  += (resize_owned + resize_halo);
+    end_ghost += (resize_owned + resize_halo + resize_ghost);
   }
 
   void SimData::clearX() {
@@ -223,8 +227,8 @@ namespace GFlowSimulation {
   {
     if (end_owned<=number) {
       // Calculate the new amount of size we want
-      end_owned = max(static_cast<int>(ceil(1.25*number)), 32);
-      resize(end_owned, 0, 0);
+      int resize_owned = max(static_cast<int>(ceil(0.25*number)), 32);
+      resize(resize_owned, 0, 0);
     }
     // Copy data
     copyVec(X, x[number]);
@@ -261,6 +265,8 @@ namespace GFlowSimulation {
         break;
       }
       case ParticleOwnership::Halo: {
+	// Temporary
+	throw false;
         // Check if we need to resize the array
         if (end_halo - end_owned <= number_halo) resize(0, ceil(0.25*number_halo), 0);
         // Copy data
@@ -275,6 +281,8 @@ namespace GFlowSimulation {
         break;
       }
       case ParticleOwnership::Ghost: {
+	// Temporary
+	throw false;
         // Check if we need to resize the array
         if (end_ghost - end_halo <= number_ghost) resize(0, 0, ceil(0.25*number_ghost));
         // Copy data
