@@ -4,6 +4,9 @@
 #include "../EasyBMP/EasyBMP.h"
 #include "../utility/utility.hpp"
 #include <functional>
+#include <ostream>
+
+#include "array.hpp"
 
 namespace GFlowSimulation {
 
@@ -33,7 +36,7 @@ namespace GFlowSimulation {
   }
 
   // @brief Returns a color based on a two number parameterization.
-  typedef std::function<RGBApixel(float, float, bool&)> ColorFunction;
+  using ColorFunction = std::function<RGBApixel(float, float, bool&)> ;
 
   //! @brief Color something white.
   inline RGBApixel colorWhite(float, float, bool doColor) {
@@ -55,16 +58,23 @@ namespace GFlowSimulation {
     );
   }
 
-  struct PixL {
-    //! @brief Default constructor.
-    PixL() {};
+  inline std::ostream& operator<<(std::ostream& out, const RGBApixel p) {
+    out << "(" << static_cast<int>(p.Red) << "," << static_cast<int>(p.Green) << "," << static_cast<int>(p.Blue) << ")";
+    return out;
+  }
 
-    //! @brief The colors that have been set for this PixL
-    vector<RGBApixel> colors;
-    //! @brief The depths of the colors.
-    vector<float> depths;
-    //! @brief The object that set the color.
-    vector<int> objects;
+  struct PixL {
+    //! @brief Pushback a color at a distance
+    void set(RGBApixel col, float dis) { data.insert(std::pair<float, RGBApixel>(dis, col)); }
+
+    bool empty() { return data.empty(); }
+
+    int size() { return data.size(); }
+
+    RGBApixel first() { return empty() ? RGB_Black : data.begin()->second; }
+
+    //! @brief The depth and colors
+    std::multimap<float, RGBApixel> data;
   };
 
   struct Vec3 {
@@ -83,13 +93,21 @@ namespace GFlowSimulation {
   };
 
   struct GraphOptions {
-    GraphOptions() : useMaxX(false), useMinX(false), useMaxY(false), useMinY(false), useBcgd(false), 
-      minX(0), maxX(0), minY(0), maxY(0), bcgd(255, 255, 255) {
-    };
+    void setMinX(float m) { useMinX = true; minX = m; }
+    void setMaxX(float m) { useMaxX = true; maxX = m; }
+    void setMinY(float m) { useMinY = true; minY = m; }
+    void setMaxY(float m) { useMaxY = true; maxY = m; }
+    void setLineColor(RGBApixel p) { useLineColor = true; lineColor = p; }
 
-    bool useMaxX, useMinX, useMaxY, useMinY, useBcgd;
-    float minX, maxX, minY, maxY;
-    RGBApixel bcgd;
+    //! @brief Whether the graph bounds have already been set
+    //!
+    //! Recording this will allow us to draw mutiple data sets on the same graph
+    bool hasBounds = false;
+
+    bool useMaxX = false, useMinX = false, useMaxY = false, useMinY = false, useBcgd = false, useLineColor = false;
+    float minX = 0, maxX = 0, minY = 0, maxY = 0;
+    RGBApixel bcgd = RGB_White, lineColor = RGB_Black;
+    bool paintBackground = true;
   };
 
   inline RGBApixel colorAngle(float theta) {
@@ -150,7 +168,7 @@ namespace GFlowSimulation {
     void drawLineByFactors(float, float, float, float, ColorFunction, float);
 
     //! @brief Cover the entire palette with a single color.
-    void coverPalette(RGBApixel);
+    void coverPalette(const RGBApixel);
 
     //! @brief Draw a 2d plot
     void drawGraph2d(vector<pair<float, float> >&, GraphOptions&);
@@ -168,9 +186,9 @@ namespace GFlowSimulation {
     class PaletteOutOfBounds {};
     class BadPalette {};
 
-  private:
+  //private:
     //! @brief Private constructor for use in making subpalettes
-    Palette(int, int, int, int, BMP*, int*, int*, double);
+    Palette(int, int, int, int, BMP*, int*, int*, double, Array<PixL, 2>*);
 
     //! @brief Gives the factor of a pixel
     inline std::pair<float, float> pixelFactor(int, int) const;
@@ -179,7 +197,7 @@ namespace GFlowSimulation {
     inline float pixelFactorY(int) const;
 
     //! @brief Set a pixel relative to the owned coordinates (origin is {owned[0], owned[2]})
-    inline void setPixel(int, int, RGBApixel);
+    inline void setPixel(int, int, RGBApixel, float=0.f);
 
     //! @brief Draw a line using Bresenham's algorithm.
     inline void drawLine_BresenhamAlgorithm(int, int, int, int, RGBApixel);
@@ -191,6 +209,8 @@ namespace GFlowSimulation {
     inline void drawCircle_MidpointAlgorithm(int, int, int, RGBApixel);
 
     inline void drawGraphData2d(vector<pair<float, float> >&, GraphOptions&);
+
+    inline void pixelsToImage(BMP*, int, int, int, int);
 
     //! @brief The image data.
     BMP *image;
@@ -207,8 +227,14 @@ namespace GFlowSimulation {
 
     double aspect_ratio;
 
-    //! TEST
-    PixL *pixelData;
+    //! TEST - Pixel data
+    Array<PixL, 2> *pixelData;
+    //! @brief How to combine pixel colors
+    //!
+    //! 0 - Pick color with the least depth. Pick first color if there is a tie in depth.
+    //! 1 - Take max of color channels
+    //! 2 - Color by number of colors in a pixel
+    unsigned int combinationRule;
 
   };
 

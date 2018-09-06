@@ -20,6 +20,9 @@ namespace GFlowSimulation {
     virtual void pre_forces() override;
 
   private:
+
+    inline void split(const int, const RealType) const;
+
     // A vector of birth rates for particles
     vector<RealType> birthRates;
 

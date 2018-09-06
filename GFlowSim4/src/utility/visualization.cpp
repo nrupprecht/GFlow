@@ -5,7 +5,7 @@
 namespace GFlowSimulation {
 
   Visualization::Visualization() : pos_place(0), vel_place(DIMENSIONS), sg_place(2*DIMENSIONS), type_place(2*DIMENSIONS+1), 
-    resolution(1024*1.5), do_wrap(true), background(RGB_Black), maxVsqr(0), color_option(0)
+    resolution(1024), do_wrap(true), background(RGB_Black), maxVsqr(0), color_option(0)
   {
     colorBank = new RGBApixel[10];
     for (int i=0; i<10; ++i)
@@ -28,11 +28,8 @@ namespace GFlowSimulation {
     }
   }
 
-  void Visualization::createVideo2d(string fileName, const vector<RealType*>& data, int dataWidth) {
-    /*
-    vector<int> data_size = { 2, 2, 1 };
-    vector<string> data_name = { "x", "v", "sg" };
-    */
+  void Visualization::createVideo3d(string fileName, const vector<vector<RealType> >& data, int dataWidth, Bounds& bounds, int dimensions) {
+    
   }
 
   inline void Visualization::createImage(string fileName, const vector<RealType>& data, int dataWidth, Bounds& bounds, int dimensions) const {

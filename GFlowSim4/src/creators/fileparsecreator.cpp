@@ -7,16 +7,16 @@ namespace GFlowSimulation {
 
   FileParseCreator::FileParseCreator(int argc, char **argv) : Creator(argc, argv), configFile(""), gflow(nullptr) {
     seed = std::chrono::system_clock::now().time_since_epoch().count();
-    seedGenerator(seed);
+    //seedGenerator(seed);
     // Seed generators here
-    normal_dist = std::normal_distribution<RealType>(0., 1.);
+    //normal_dist = std::normal_distribution<RealType>(0., 1.);
   }
 
   FileParseCreator::FileParseCreator(ArgParse *p) : Creator(p), configFile(""), gflow(nullptr) {
     seed = std::chrono::system_clock::now().time_since_epoch().count();
-    seedGenerator(seed);
+    //seedGenerator(seed);
     // Seed generators here
-    normal_dist = std::normal_distribution<RealType>(0., 1.);
+    //normal_dist = std::normal_distribution<RealType>(0., 1.);
   }
 
   FileParseCreator::FileParseCreator(ArgParse *p, string f) : Creator(p), configFile(f), gflow(nullptr) {
@@ -87,6 +87,21 @@ namespace GFlowSimulation {
     // --- Look for dimensions
     getAllMatches("Dimensions", container, options);
     if (container.size()>1) build_message +=  "We only need the number of dimensions specified once. Ignoring all but the first.\n";
+    head = container[0];
+    if (head->params.size()!=1) 
+      throw BadStructure("Dimensions should be a single argument, we found "+toStr(head->params.size()));
+    if (convert<int>(head->params[0]->partA)!=DIMENSIONS) throw BadDimension();
+
+    // --- Look for seed information for random generators
+    getAllMatches("Seed", container, options);
+    if (container.size()==0) {
+      // Default seeding
+      seed = std::chrono::system_clock::now().time_since_epoch().count();
+      seedGenerator(seed);
+      srand48(seed);
+      normal_dist = std::normal_distribution<RealType>(0., 1.);
+    }
+    if (container.size()>1) build_message +=  "We only need one random seed information block. Ignoring all but the first.\n";
     if (container.size()==1) {
       head = container[0];
       if (head->params.size()!=1) 
@@ -647,10 +662,10 @@ namespace GFlowSimulation {
         throw BadStructure("Uniform distribution needs a min and a max. Found "+toStr(h->subHeads.size())+" parameters.");
       HeadNode *lwr = h->subHeads[0], *upr = h->subHeads[1];
       // Swap if necessary
-      if (lwr->heading!="Lower") std::swap(lwr, upr);
+      if (lwr->heading!="Min") std::swap(lwr, upr);
       // Check structure
-      if (lwr->heading!="Lower" || upr->heading!="Upper") 
-        throw BadStructure("Headings incorrect for uniform distribution.");
+      if (lwr->heading!="Min" || upr->heading!="Max") 
+        throw BadStructure("Headings incorrect for uniform distribution. Need [Min] and [Max]");
       if (lwr->params.size()!=1 || upr->params.size()!=1) 
         throw BadStructure("More than one parameter for uniform distribution.");
       // Set the uniform random engine

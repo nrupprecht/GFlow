@@ -68,6 +68,9 @@ private:
  BMP( BMP& Input );
  ~BMP();
  RGBApixel* operator()(int i,int j);
+
+ int getWidth() { return Width; }
+ int getHeight() { return Height; }
  
  RGBApixel GetPixel( int i, int j ) const;
  bool SetPixel( int i, int j, RGBApixel NewPixel );

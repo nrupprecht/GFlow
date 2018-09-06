@@ -42,7 +42,7 @@ namespace GFlowSimulation {
     //! @brief Destructor.
     ~Visualization();
 
-    void createVideo2d(string, const vector<RealType*>&, int);
+    void createVideo3d(string, const vector<vector<RealType> >&, int, Bounds& bounds, int dimensions);
 
     //! @brief Create a directory filled with BMP renderings of the system.
     //!

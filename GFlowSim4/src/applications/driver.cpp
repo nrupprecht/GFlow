@@ -143,6 +143,7 @@ int main(int argc, char **argv) {
   bool psnapshot = false;
   bool memdist = false;
   bool pressure = false;
+  bool numberdata = false;
   RealType skin = 0.;
 
   // Other options
@@ -181,6 +182,7 @@ int main(int argc, char **argv) {
   parser.get("psnapshot", psnapshot);
   parser.get("memdist", memdist);
   parser.get("pressure", pressure);
+  parser.get("numberdata", numberdata);
   parser.get("skin", skin);
   parser.get("gravity", gravity);
   parser.get("adjustDT", adjustDT);
@@ -259,6 +261,7 @@ int main(int argc, char **argv) {
   if (psnapshot) gflow->addDataObject(new PercolationSnapshot(gflow, skin));
   if (memdist)  gflow->addDataObject(new MemoryDistance(gflow));
   if (pressure) gflow->addDataObject(new PressureData(gflow));
+  if (numberdata) gflow->addDataObject(new NumberData(gflow));
   if (fps>0)    gflow->setFPS(fps); // Do after data objects are loaded
   gflow->setDMCmd(argc, argv);
 

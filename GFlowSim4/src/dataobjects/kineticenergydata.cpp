@@ -45,8 +45,7 @@ namespace GFlowSimulation {
     // Draw a graph using a palette object
     Palette graph(1024,512);
     GraphOptions options;
-    options.useMinY = true;
-    options.minY = 0;
+    options.setMinY(0);
     options.useBcgd = true;
     options.bcgd = RGB_White;
     graph.drawGraph2d(keData, options);
