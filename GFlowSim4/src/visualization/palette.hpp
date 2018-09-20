@@ -6,8 +6,6 @@
 #include <functional>
 #include <ostream>
 
-#include "array.hpp"
-
 namespace GFlowSimulation {
 
   // Some common colors
@@ -58,23 +56,41 @@ namespace GFlowSimulation {
     );
   }
 
+  inline bool operator==(const RGBApixel c1, const RGBApixel c2) {
+    return c1.Red==c2.Red && c1.Green==c2.Green && c1.Blue==c2.Blue;
+  }
+
+  inline bool operator!=(const RGBApixel c1, const RGBApixel c2) {
+    return c1.Red!=c2.Red || c1.Green!=c2.Green ||c1.Blue!=c2.Blue;
+  }
+
   inline std::ostream& operator<<(std::ostream& out, const RGBApixel p) {
     out << "(" << static_cast<int>(p.Red) << "," << static_cast<int>(p.Green) << "," << static_cast<int>(p.Blue) << ")";
     return out;
   }
 
-  struct PixL {
-    //! @brief Pushback a color at a distance
-    void set(RGBApixel col, float dis) { data.insert(std::pair<float, RGBApixel>(dis, col)); }
+  
+  class Image {
+  public:
+    Image();
 
-    bool empty() { return data.empty(); }
+    Image(int w, int h);
 
-    int size() { return data.size(); }
+    ~Image();
 
-    RGBApixel first() { return empty() ? RGB_Black : data.begin()->second; }
+    void set(int x, int y, RGBApixel col, float depth);
 
-    //! @brief The depth and colors
-    std::multimap<float, RGBApixel> data;
+    void setBMP(BMP *image);
+
+  private:
+    //! @brief Takes [color], [new color], [depth], [new depth]
+    std::function<void(RGBApixel&, RGBApixel, float&, float)> blendFunction;
+
+    int width, height;
+    RGBApixel background;
+    RGBApixel *pixels;
+    float *depths;
+    bool *is_set;
   };
 
   struct Vec3 {
@@ -162,13 +178,13 @@ namespace GFlowSimulation {
     // --- Drawing functions
 
     //! @brief Draw a circle by giving scaled coordinates and radius.
-    void drawCircleByFactors(float, float, float, ColorFunction, bool=true);
+    void drawCircleByFactors(float, float, float, ColorFunction, bool=true, float=0.f);
 
     // @brief Draw a line by giving scaled coordinates.
-    void drawLineByFactors(float, float, float, float, ColorFunction, float);
+    void drawLineByFactors(float, float, float, float, ColorFunction, float, float=0.f);
 
     //! @brief Cover the entire palette with a single color.
-    void coverPalette(const RGBApixel);
+    void coverPalette(const RGBApixel, float=1000.f);
 
     //! @brief Draw a 2d plot
     void drawGraph2d(vector<pair<float, float> >&, GraphOptions&);
@@ -186,9 +202,9 @@ namespace GFlowSimulation {
     class PaletteOutOfBounds {};
     class BadPalette {};
 
-  //private:
+  private:
     //! @brief Private constructor for use in making subpalettes
-    Palette(int, int, int, int, BMP*, int*, int*, double, Array<PixL, 2>*);
+    Palette(int, int, int, int, BMP*, int*, int*, double, Image*);
 
     //! @brief Gives the factor of a pixel
     inline std::pair<float, float> pixelFactor(int, int) const;
@@ -200,13 +216,13 @@ namespace GFlowSimulation {
     inline void setPixel(int, int, RGBApixel, float=0.f);
 
     //! @brief Draw a line using Bresenham's algorithm.
-    inline void drawLine_BresenhamAlgorithm(int, int, int, int, RGBApixel);
+    inline void drawLine_BresenhamAlgorithm(int, int, int, int, RGBApixel, float=0.);
 
     //! @brief Draw a line using Wu's algorithm.
-    inline void drawLine_WuAlgorithm(int, int, int, int, RGBApixel);
+    inline void drawLine_WuAlgorithm(int, int, int, int, RGBApixel, float=0.);
 
     //! @brief Draw a circle using the midpoint algorithm
-    inline void drawCircle_MidpointAlgorithm(int, int, int, RGBApixel);
+    inline void drawCircle_MidpointAlgorithm(int, int, int, RGBApixel, float=0.);
 
     inline void drawGraphData2d(vector<pair<float, float> >&, GraphOptions&);
 
@@ -227,14 +243,14 @@ namespace GFlowSimulation {
 
     double aspect_ratio;
 
-    //! TEST - Pixel data
-    Array<PixL, 2> *pixelData;
     //! @brief How to combine pixel colors
     //!
     //! 0 - Pick color with the least depth. Pick first color if there is a tie in depth.
     //! 1 - Take max of color channels
     //! 2 - Color by number of colors in a pixel
     unsigned int combinationRule;
+
+    Image *baseImage;
 
   };
 

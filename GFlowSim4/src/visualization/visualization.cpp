@@ -1,11 +1,11 @@
 #include "visualization.hpp"
 // Other files
-#include "vectormath.hpp"
+#include "../utility/vectormath.hpp"
 
 namespace GFlowSimulation {
 
   Visualization::Visualization() : pos_place(0), vel_place(DIMENSIONS), sg_place(2*DIMENSIONS), type_place(2*DIMENSIONS+1), 
-    resolution(1024), do_wrap(true), background(RGB_Black), maxVsqr(0), color_option(0)
+    resolution(1.5*1024), do_wrap(true), background(RGB_Black), maxVsqr(0), color_option(0)
   {
     colorBank = new RGBApixel[10];
     for (int i=0; i<10; ++i)
@@ -16,7 +16,18 @@ namespace GFlowSimulation {
     if (colorBank) delete [] colorBank;
   }
 
-  void Visualization::createBMPs(string dirName, const vector<vector<RealType> >& data, int dataWidth, Bounds& bounds, int dimensions) const 
+  bool Visualization::load_and_create(string loadName, string dirName) const {
+    std::ifstream fin(loadName);
+    if (fin.fail()) return false;
+
+    // Get the data width, dimensions
+    int dataWidth, dimensions;
+    fin >> dataWidth >> dimensions;
+
+    return true;
+  }
+
+  void Visualization::createVideo2d(string dirName, const vector<vector<RealType> >& data, int dataWidth, Bounds& bounds, int dimensions) const 
   {
     // Find the maximum velocity (if needed)
     if (color_option==2)
@@ -28,8 +39,11 @@ namespace GFlowSimulation {
     }
   }
 
-  void Visualization::createVideo3d(string fileName, const vector<vector<RealType> >& data, int dataWidth, Bounds& bounds, int dimensions) {
-    
+  void Visualization::createVideo3d(string dirName, const vector<vector<RealType> >& data, int dataWidth, Bounds& bounds, int dimensions) {
+    for (int i=0; i<data.size(); ++i) {
+      string fileName = dirName + "/frame" + toStr(i) + ".bmp";
+      createImage3d(fileName, data[i], dataWidth, bounds, dimensions);
+    }
   }
 
   inline void Visualization::createImage(string fileName, const vector<RealType>& data, int dataWidth, Bounds& bounds, int dimensions) const {
@@ -57,7 +71,7 @@ namespace GFlowSimulation {
 
     // Set background
     image.coverPalette(background);
-
+    
     // A vector for holding data
     RealType *pdata = new RealType[dataWidth];
     // Print all particles
@@ -124,7 +138,7 @@ namespace GFlowSimulation {
         };
 
       // Draw the particle
-      image.drawCircleByFactors(xf, yf, rf, colorF, do_wrap); 
+      image.drawCircleByFactors(xf, yf, rf/2.5, colorF, do_wrap); 
     }
 
     // Clean up pdata
@@ -132,6 +146,10 @@ namespace GFlowSimulation {
 
     // Save image
     palette.writeToFile(fileName);
+  }
+
+  inline void Visualization::createImage3d(string fileName, const vector<RealType>& data, int dataWidth, Bounds& bounds, int dimensions) const {
+
   }
 
   inline void Visualization::findMaxVSqr(const vector<vector<RealType> >& dataVector, int dataWidth) const {

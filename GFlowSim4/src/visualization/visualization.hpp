@@ -42,16 +42,20 @@ namespace GFlowSimulation {
     //! @brief Destructor.
     ~Visualization();
 
-    void createVideo3d(string, const vector<vector<RealType> >&, int, Bounds& bounds, int dimensions);
+    bool load_and_create(string, string) const;
 
     //! @brief Create a directory filled with BMP renderings of the system.
     //!
     //! This can be used to create a movie.
-    void createBMPs(string, const vector<vector<RealType> >&, int, Bounds&, int) const;
+    void createVideo2d(string, const vector<vector<RealType> >&, int, Bounds&, int) const;
+
+    void createVideo3d(string, const vector<vector<RealType> >&, int, Bounds& bounds, int dimensions);
 
   private:
     //! @brief Creates a single frame.
     inline void createImage(string, const vector<RealType>&, int, Bounds&, int) const;
+
+    inline void createImage3d(string, const vector<RealType>&, int, Bounds&, int) const;
 
     inline void findMaxVSqr(const vector<vector<RealType> >&, int) const;
 

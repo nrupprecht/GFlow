@@ -295,10 +295,11 @@ namespace GFlowSimulation {
   // Turns a linear cell index into a (DIMENSIONS)-dimensional index
   inline void Domain::linear_to_tuple(int linear, int *tuple) {
     // Same as the get address function in
-    getAddress(linear, dims, tuple);
+    getAddressCM(linear, dims, tuple); // We need to use the column major form
   }
 
   // Turns a (DIMENSIONS)-dimensional index into a linear cell index
+  // This is column major form.
   inline void Domain::tuple_to_linear(int &linear, const int *tuple) {
     // Product lambda
     auto product = [&] (int n) -> int {

@@ -2,7 +2,7 @@
 // Other files
 #include "../base/simdata.hpp"
 #include "../utility/vectormath.hpp"
-#include "../utility/palette.hpp"
+#include "../visualization/palette.hpp"
 
 namespace GFlowSimulation {
   // Constructor

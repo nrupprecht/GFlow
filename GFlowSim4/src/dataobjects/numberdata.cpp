@@ -1,6 +1,6 @@
 #include "numberdata.hpp"
 // Other files
-#include "../utility/palette.hpp"
+#include "../visualization/palette.hpp"
 
 namespace GFlowSimulation {
 

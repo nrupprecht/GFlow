@@ -33,6 +33,7 @@ namespace GFlowSimulation {
   *  For more info, see <https://en.cppreference.com/w/cpp/language/template_specialization>,
   *  <https://en.cppreference.com/w/cpp/language/partial_specialization>
   *
+  *  Store data in a row major form.
   */
   template<class T, int D=DIMENSIONS> class Array {
   public:
@@ -46,8 +47,9 @@ namespace GFlowSimulation {
     Array(int *sizes) {
       dims = new int[D]; 
       for (int i=0; i<D; ++i) dims[i] = sizes[i];
-      data = new T[_product(0)];
-      for (int i=0; i<_product(0); ++i) data[i] = T();
+      int sz = _product(0);
+      data = new T[sz];
+      for (int i=0; i<sz; ++i) data[i] = T();
     }
 
     //! Destructor
@@ -111,9 +113,9 @@ namespace GFlowSimulation {
 
     // --- Helper functions
 
-    //! Find the product of some of the widths - up to, but not including, [n]
+    //! Mutiply dims[0] * dims[1] * ... * dims[n-1]
+    //! If n==0, returns 1
     inline int _product(const int n) const {
-      // Do the product - will not be done if n>=D, so we will return 1
       int total = 1;
       for (int i=n; i<D; ++i) total *= dims[i];
       return total;
@@ -121,9 +123,10 @@ namespace GFlowSimulation {
 
     //! Find the linear index for an index set
     inline int _get_index(const int *index) const {
+
       int II = 0;
       for (int i=0; i<D; ++i)
-        II += index[i]*_product(i+1);
+        II += _product(i)*index[i];
       return II;
     }
   };
@@ -277,28 +280,27 @@ namespace GFlowSimulation {
       if (total!=newTotal) {
       	if (data) delete [] data;
       	data = new T[newTotal];
-      	#pragma parallel
-	for (int i=0; i<newTotal; ++i) data[i] = T();
+	      for (int i=0; i<newTotal; ++i) data[i] = T();
       }
     }
 
     T& at(int i0, int i1) {
-      int II = i0*dims[0]+i1;
+      int II = i0 + dims[0]*i1;
       return data[II];
     }
 
     const T& at(int i0, int i1) const {
-      int II = i0*dims[0]+i1;
+      int II = i0 + dims[0]*i1;
       return data[II];
     }
 
     T& at(int *index) {
-      int II = index[0]*dims[0]+index[1];
+      int II = index[0] + dims[0]*index[1];
       return data[II];
     }
 
     const T& at(int *index) const {
-      int II = index[0]*dims[0]+index[1];
+      int II = index[0] + dims[0]*index[1];
       return data[II];
     }
 
@@ -373,22 +375,22 @@ namespace GFlowSimulation {
     }
 
     T& at(int i0, int i1, int i2) {
-      int II = i0*dims[1]*dims[2]+i1*dims[2]+i0;
+      int II = i0 + dims[0]*i1 + dims[0]*dims[1]*i2;
       return data[II];
     }
 
     const T& at(int i0, int i1, int i2) const {
-      int II = i0*dims[1]*dims[2]+i1*dims[2]+i0;
+      int II = i0 + dims[0]*i1 + dims[0]*dims[1]*i2;
       return data[II];
     }
 
     T& at(int *index) {
-      int II = index[2]*dims[1]*dims[2]+index[1]*dims[2]+index[0];
+      int II = index[0] + dims[0]*index[1] + dims[0]*dims[1]*index[2];
       return data[II];
     }
 
     const T& at(int *index) const {
-      int II = index[2]*dims[1]*dims[2]+index[1]*dims[2]+index[0];
+      int II = index[0] + dims[0]*index[1] + dims[0]*dims[1]*index[2];
       return data[II];
     }
 
@@ -420,17 +422,28 @@ namespace GFlowSimulation {
     T *data;
   };
 
-  // Which array base we will primarily use --- call this simply [Array]
-  // ---> This notation may not work on all compilers
-  // ---> see <https://stackoverflow.com/questions/2996914/c-typedef-for-partial-templates>
-  // template<typename T> using Array = ArrayBase<DIMENSIONS, T>;
-
   //! @brief A helper function that turns a linear address into a tuple address.
   //!
+  //! Store in [ [ x00 x01 ... ], [ x10, x11, ...] ... ] -> row major form
   //! This is the template dimension version of the function. It is overloaded for
   //! the zero through three dimensional cases (at the time of this writing).
   template<int D=DIMENSIONS> inline void getAddress(int linear, int *dims, int *address) {
-    // Lambda for the produce
+    // Multiply dims[0] * dims[1] * ... * dims[c-1]
+    // If c==0, returns 1
+    auto product = [&] (int c) -> int {
+      int p=1;
+      for (int i=0; i<c; ++i) p *= dims[i];
+      return p;
+    };
+
+    for (int d=D-1; d>=0; --d) {
+      int prod = product(d);
+      address[d] = linear / prod;
+      linear %= prod;
+    }
+  }
+
+  template<int D=DIMENSIONS> inline void getAddressCM(int linear, int *dims, int *address) {
     auto product = [&] (int c) -> int {
       int p = 1;
       for (int i=c; i<D; ++i) p*=dims[i];
@@ -464,19 +477,19 @@ namespace GFlowSimulation {
   //!
   //! The two dimensional template specialization.
   template<> inline void getAddress<2>(int linear, int *dims, int *address) {
-    address[0] = linear / dims[1];
-    address[1] = linear % dims[1];
+    address[1] = linear / dims[0];
+    address[0] = linear % dims[0];
   }
 
   //! @brief A helper function that turns a linear address into a tuple address.
   //!
   //! The three dimensional template specialization.
   template<> inline void getAddress<3>(int linear, int *dims, int *address) {
-    int s1 = dims[1]*dims[2];
-    address[0] = linear/s1;
+    int s1 = dims[0]*dims[1];
+    address[2] = linear/s1;
     linear %= s1;
-    address[1] = linear / dims[2];
-    address[2] = linear % dims[2];
+    address[1] = linear / dims[0];
+    address[0] = linear % dims[0];
   }
 
 }

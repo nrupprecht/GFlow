@@ -155,28 +155,60 @@ namespace GFlowSimulation {
     getAllMatches(Interactions_Token, container, options);
     if (container.size()>1) build_message += "We only need the interactions specified once. Ignoring all but the first.\n";
     head = container[0];
-    // Collect all the interactions we need
-    std::map<string, Interaction*> interactions;
-    // The body specifies the force grid
-    for (auto fg : head->subHeads) {
-      // Look for type1, type2, interaction-type [, possibly "R"]
-      if (fg->params.size()!=3 && fg->params.size()!=4) 
-        throw BadStructure("Force grid needs three or four parameters per line to specify interaction, found "+toStr(fg->params.size())+".");
-      // Check if we don't want reflexive forces
-      if (fg->params.size()==4 && fg->params[3]->partA!="NR")
-        throw BadStructure("Fourth argument must be 'NR' if anything.");
-      // What type of interaction do we need
-      string i_token = fg->params[2]->partA;
-      // Check if this is a new interaction type
-      if (interactions.find(i_token)==interactions.end()) 
-        interactions.insert(std::pair<string, Interaction*>(i_token, choose_interaction(fg)));
-      // Get the type ids
-      int t1 = convert<int>(fg->params[0]->partA), t2 = convert<int>(fg->params[1]->partA);
-      // Add the interaction
-      gflow->forceMaster->setInteraction(t1, t2, interactions.find(i_token)->second);
-      // We already checked that the fourth parameter is an 'R' if it exists. Only add if t1!=t2
-      if (fg->params.size()!=4 && t1!=t2) 
-        gflow->forceMaster->setInteraction(t2, t1, interactions.find(i_token)->second);
+    // If we expect something like ": Random" instead of a force grid
+    if (head->subHeads.empty()) {
+      if (head->params.size()!=1) 
+        throw BadStructure("Expect one parameter for force grid, since the body is empty.");
+      // Read the parameter and do what it says
+      if (head->params[0]->partA=="Random") {
+        // Assign random interactions, either LennardJones or HardSphere (for now), and with equal probability (for now)
+        Interaction *hardSphere = new HardSphere(gflow);
+        Interaction *lennardJones = new LennardJones(gflow);
+        // Assign random (but symmetric) interactions
+        for (int i=0; i<NTypes; ++i) {
+          // Self interaction
+          if (drand48()>0.5) gflow->forceMaster->setInteraction(i, i, hardSphere);
+          else gflow->forceMaster->setInteraction(i, i, lennardJones);
+
+          for (int j=i+1; j<NTypes; ++j) {
+            if (drand48()>0.5) {
+              gflow->forceMaster->setInteraction(i, j, hardSphere);
+              gflow->forceMaster->setInteraction(j, i, hardSphere);
+            }
+            else {
+              gflow->forceMaster->setInteraction(i, j, lennardJones);
+              gflow->forceMaster->setInteraction(j, i, lennardJones);
+            }
+          }
+        }
+      }
+      else throw BadStructure("Unrecognized force grid parameter.");
+    }
+    // Otherwise 
+    else {
+      // Collect all the interactions we need
+      std::map<string, Interaction*> interactions;
+      // The body specifies the force grid
+      for (auto fg : head->subHeads) {
+        // Look for type1, type2, interaction-type [, possibly "R"]
+        if (fg->params.size()!=3 && fg->params.size()!=4) 
+          throw BadStructure("Force grid needs three or four parameters per line to specify interaction, found "+toStr(fg->params.size())+".");
+        // Check if we don't want reflexive forces
+        if (fg->params.size()==4 && fg->params[3]->partA!="NR")
+          throw BadStructure("Fourth argument must be 'NR' if anything.");
+        // What type of interaction do we need
+        string i_token = fg->params[2]->partA;
+        // Check if this is a new interaction type
+        if (interactions.find(i_token)==interactions.end()) 
+          interactions.insert(std::pair<string, Interaction*>(i_token, choose_interaction(fg)));
+        // Get the type ids
+        int t1 = convert<int>(fg->params[0]->partA), t2 = convert<int>(fg->params[1]->partA);
+        // Add the interaction
+        gflow->forceMaster->setInteraction(t1, t2, interactions.find(i_token)->second);
+        // We already checked that the fourth parameter is an 'R' if it exists. Only add if t1!=t2
+        if (fg->params.size()!=4 && t1!=t2) 
+          gflow->forceMaster->setInteraction(t2, t1, interactions.find(i_token)->second);
+      }
     }
 
     // --- Look for boundary conditions
@@ -335,9 +367,8 @@ namespace GFlowSimulation {
       // Get the bounds from the first instance
       HeadNode *h = container[0];
       // Check if we should use the full simulation bounds
-      if (h->subHeads.empty() && h->params.size()>0 && h->params[0]->partA=="Full") {
+      if (h->subHeads.empty() && h->params.size()>0 && h->params[0]->partA=="Full")
         bnds = bounds;
-      }
       else {
         if (h->subHeads.size()!=DIMENSIONS) 
           throw BadStructure("Expected "+toStr(DIMENSIONS)+" arguments, found "+toStr(h->subHeads.size()));
@@ -395,8 +426,14 @@ namespace GFlowSimulation {
     // Mutiple particle templates are defined. There must be a body
     else {
       // Either phi or number
-      if (!hd->params.empty() && hd->params[0]->partA=="Phi") usePhi = true;
+      if (!hd->params.empty() && hd->params[0]->partA=="Phi") {
+        usePhi = true;
+        // Get phi - Expects "Phi=#"
+        phi = convert<double>(hd->params[0]->partB);
+
+      }
       else useNumber = true;
+
       // Look in the body for the probabilities or numbers
       for (auto sh : hd->subHeads) {
         if (sh->params.size()!=1)
@@ -419,7 +456,7 @@ namespace GFlowSimulation {
       randomNormalVec(normal);
       // Set the velocity
       scalarMultVec(velocity, normal, V);
-    };    
+    };
 
     // --- Check that we have defined a good area
     for (int d=0; d<DIMENSIONS; ++d)
@@ -442,65 +479,40 @@ namespace GFlowSimulation {
 
     // If we are filling to a specified packing fraction
     if (usePhi) {
-      // One type of particle
-      if (phi>0) {
-        // We expect there to only be one particle template
-        if (particle_templates.size()!=1)
-          throw BadStructure("We expect there to be 1 particle template, there are "+toStr(particle_templates.size()));
-        // Get the particle template
-        ParticleTemplate &particle_creator = particle_templates.begin()->second;
-        int i(0);
-        RealType vol = 0, Vol = bnds.vol();
-        while (vol/Vol < phi) {
-          // Select a position for the particle (random uniform)
-          for (int d=0; d<DIMENSIONS; ++d)
-            X[d] = drand48()*bnds.wd(d) + bnds.min[d];
-          // Select other characteristics
-          particle_creator.createParticle(X, sigma, im, type, i);
-          // Add the particle
-          simData->addParticle(X, V, sigma, im, type);
-          // Increment volume and counter
-          vol += sphere_volume(sigma);
-          ++i;
-        }
+      // Create discrete distribution
+      vector<double> probabilities;
+      vector<ParticleTemplate> template_vector;
+
+      // Map particle type to probability
+      for (auto &pr : particle_template_numbers) {
+        auto it = particle_templates.find(pr.first);
+        if (it==particle_templates.end())
+          throw BadStructure("An undefined particle type was encountered: "+pr.first);
+        template_vector.push_back(it->second);
+        probabilities.push_back(pr.second);
       }
-      // Multiple types of particles, each must have different target phi's
-      else {
-        // Create discrete distribution
-        vector<double> probabilities;
-        vector<ParticleTemplate> template_vector;
 
-        // Map particle type to probability
-        for (auto &pr : particle_template_numbers) {
-          auto it = particle_templates.find(pr.first);
-          if (it==particle_templates.end())
-            throw BadStructure("An undefined particle type was encountered: "+pr.first);
-          template_vector.push_back(it->second);
-          probabilities.push_back(pr.second);
-        }
-
-        // A discrete distribution we use to choose which particle template to use next
-        std::discrete_distribution<int> choice(probabilities.begin(), probabilities.end());
-        int i(0);
-        RealType vol = 0, Vol = bnds.vol();
-        while (vol/Vol < phi) {
-          // Select a position for the particle (random uniform)
-          for (int d=0; d<DIMENSIONS; ++d)
-            X[d] = drand48()*bnds.wd(d) + bnds.min[d];
-          // Choose a type of particle to create
-          int pt = choice(global_generator);
-          ParticleTemplate &particle_creator = template_vector.at(pt);
-          // Select other characteristics
-          particle_creator.createParticle(X, sigma, im, type, i);
-          // Add the particle
-          simData->addParticle(X, V, sigma, im, type);
-          // Increment volume and counter
-          vol += sphere_volume(sigma);
-          ++i;
-        }
+      // A discrete distribution we use to choose which particle template to use next
+      std::discrete_distribution<int> choice(probabilities.begin(), probabilities.end());
+      int i(0);
+      RealType vol = 0, Vol = bnds.vol();
+      while (vol/Vol < phi) {
+        // Select a position for the particle (random uniform)
+        for (int d=0; d<DIMENSIONS; ++d)
+          X[d] = drand48()*bnds.wd(d) + bnds.min[d];
+        // Choose a type of particle to create
+        int pt = choice(global_generator);
+        ParticleTemplate &particle_creator = template_vector.at(pt);
+        // Select other characteristics
+        particle_creator.createParticle(X, sigma, im, type, i);
+        // Add the particle
+        simData->addParticle(X, V, sigma, im, type);
+        // Increment volume and counter
+        vol += sphere_volume(sigma);
+        ++i;
       }
     }
-    // If we are filling to a specified number
+    // Else, we are filling to a specified number
     else {
       // Insert the requested number of each particle type
       for (auto &pr : particle_template_numbers) {
@@ -603,9 +615,9 @@ namespace GFlowSimulation {
     // --- Look for Type option
     getAllMatches("Type", container, options);
     if (container.empty())
-      throw BadStructure("We need some mass information!");
+      throw BadStructure("We need some type information!");
     if (container.size()>1)
-      build_message += "We only need one mass information block. Ignoring all but the first instance.\n";
+      build_message += "We only need one type information block. Ignoring all but the first instance.\n";
     p_template.type_engine = getRandomEngine(container[0], type);
     p_template.type_string = type;
 
@@ -625,11 +637,23 @@ namespace GFlowSimulation {
       // We expect a number in partB
       return new DeterministicEngine(convert<double>(h->params[0]->partB));
     }
+    // If there is no body
     else if (h->subHeads.empty()) {
       string token = h->params[0]->partA;
       // We expect either a number in partA, or a string (e.g. "Inf").
       if (isdigit(token.at(0))) {
         return new DeterministicEngine(convert<double>(token));
+      }
+      else if (h->heading=="Type" && token=="Equiprobable") {
+        type = token;
+        // Only for type - Create each type with equal probability
+        RealType p = 1./NTypes;
+        vector<double> probabilities, values;
+        for (int i=0; i<NTypes; ++i) {
+          probabilities.push_back(p);
+          values.push_back(i);
+        }
+        return new DiscreteRandomEngine(probabilities, values);
       }
       else {
         type = token;
@@ -640,9 +664,9 @@ namespace GFlowSimulation {
 
     // Parameter string
     string param = h->params[0]->partA;
-
     // Check for options:
     if (param=="Random") {
+      // Discrete Random, with specified values and probabilities
       vector<double> probabilities, values;
       for (auto sh : h->subHeads) {
         if (sh->heading!="P")

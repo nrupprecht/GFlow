@@ -247,7 +247,6 @@ int main(int argc, char **argv) {
 
   // --- Add data objects
   gflow->setStartRecTime(startRecTime);
-  if (animate)  gflow->addDataObject(new PositionData(gflow));
   if (snapshot) gflow->addDataObject(new EndingSnapshot(gflow));
   if (sectorData)  gflow->addDataObject(new SectorizationData(gflow));
   if (totalKE || ke) gflow->addDataObject(new KineticEnergyData(gflow, ke));
@@ -262,6 +261,8 @@ int main(int argc, char **argv) {
   if (memdist)  gflow->addDataObject(new MemoryDistance(gflow));
   if (pressure) gflow->addDataObject(new PressureData(gflow));
   if (numberdata) gflow->addDataObject(new NumberData(gflow));
+  // Add this last, as it takes the most time.
+  if (animate)  gflow->addDataObject(new PositionData(gflow));
   if (fps>0)    gflow->setFPS(fps); // Do after data objects are loaded
   gflow->setDMCmd(argc, argv);
 

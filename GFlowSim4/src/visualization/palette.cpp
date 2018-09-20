@@ -1,9 +1,65 @@
 #include "palette.hpp"
 // Other files
-#include "vectormath.hpp"
+#include "../utility/vectormath.hpp"
 #include <algorithm> // For swap
 
 namespace GFlowSimulation {
+
+  Image::Image() : pixels(nullptr), depths(nullptr), is_set(nullptr), width(0), height(0) {
+    blendFunction = [] (RGBApixel &pix, RGBApixel newPix, float &dpth, float newDpth) {
+      pix = dpth>newDpth ? newPix : pix;
+      dpth = dpth>newDpth ? newDpth : dpth;
+    };
+  };
+
+  Image::Image(int w, int h) : width(w), height(h) {
+    pixels = new RGBApixel[w*h];
+    depths = new float[w*h];
+    is_set = new bool [w*h];
+
+    // Set "set" to false
+    for (int i=0; i<w*h; ++i) is_set[i] = false;
+
+    // Default blend function - pick closest color
+    blendFunction = [] (RGBApixel &pix, RGBApixel newPix, float &dpth, float newDpth) {
+      pix = dpth>newDpth ? newPix : pix;
+      dpth = dpth>newDpth ? newDpth : dpth;
+    };
+  }
+
+  Image::~Image() {
+    if (pixels) delete [] pixels;
+    if (depths) delete [] depths;
+    if (is_set) delete [] is_set;
+  }
+
+  void Image::set(int x, int y, RGBApixel col, float depth) {
+    if (is_set[x+width*y])
+      blendFunction(pixels[x+width*y], col, depths[x+width*y], depth);
+    else {
+      pixels[x+width*y] = col;
+      depths[x+width*y] = depth;
+      is_set[x+width*y] = true;
+    }
+  }
+
+  void Image::setBMP(BMP *image) {
+    // Make sure image is nonnull
+    if (image==nullptr) return;
+    // Make sure image is the right size
+    if (image->getWidth()!=width || image->getHeight()!=height)
+      image->SetSize(width, height);
+    // Set the pixels in image
+    for (int y=0; y<height; ++y)
+      for (int x=0; x<width; ++x) {
+        if (is_set[x+width*y]) 
+          image->SetPixel(x, y, pixels[x+width*y]);
+        else
+          image->SetPixel(x, y, background);
+      }
+  }
+
+  //----------------------------------------------
 
   Palette::Palette(int width, int height) {
     if (width<=0 || height<=0) throw BadPalette();
@@ -15,12 +71,12 @@ namespace GFlowSimulation {
     // Create the image
     image = new BMP;
     image->SetSize(width, height);
-    pixelData = new Array<PixL, 2>(width, height);
+    baseImage = new Image(width, height);
     // References
     refs = new int(1);
     // Aspect ratio
     aspect_ratio = 1;
-    combinationRule = 0; // <-
+    combinationRule = 0;
   }
 
   Palette::Palette(const Palette& p) {
@@ -32,7 +88,7 @@ namespace GFlowSimulation {
     }
     // Image and refs
     image = p.image;
-    pixelData = p.pixelData; // <-
+    baseImage = p.baseImage;
     refs = p.refs;
     ++refs[0];
     // Aspect ratio
@@ -49,7 +105,7 @@ namespace GFlowSimulation {
     }
     // Image and refs
     image = p.image;
-    pixelData = p.pixelData; // <-
+    baseImage = p.baseImage;
     refs = p.refs;
     ++refs[0];
     // Aspect ratio
@@ -63,7 +119,7 @@ namespace GFlowSimulation {
     if (refs[0]==1) {
       --refs[0];
       if (image) delete image;
-      if (pixelData) delete pixelData; // <-
+      if (baseImage) delete baseImage;
       delete refs;
     }
     else --refs[0];
@@ -78,8 +134,8 @@ namespace GFlowSimulation {
     }
     // Image and refs
     image = p.image;
-    pixelData = p.pixelData; // <-
     combinationRule = p.combinationRule;
+    baseImage = p.baseImage;
     refs = p.refs;
     ++refs[0];
     // Aspect ratio
@@ -89,7 +145,7 @@ namespace GFlowSimulation {
   }
 
   void Palette::writeToFile(string fileName) {
-    pixelsToImage(image, 0, bounds[1], 0, bounds[3]);
+    baseImage->setBMP(image);
     image->WriteToFile(fileName.c_str());
   }
 
@@ -102,7 +158,7 @@ namespace GFlowSimulation {
     if (my<0) my = 0;
     else if (my>getHeight()) my = getHeight();
     // Return a palatte
-    return Palette(owned[0]+mx, owned[0]+Mx, owned[2]+my, owned[2]+My, image, refs, bounds, aspect_ratio, pixelData);
+    return Palette(owned[0]+mx, owned[0]+Mx, owned[2]+my, owned[2]+My, image, refs, bounds, aspect_ratio, baseImage);
   }
 
   Palette Palette::getSubPalette(float mfx, float Mfx, float mfy, float Mfy) {
@@ -139,7 +195,7 @@ namespace GFlowSimulation {
     }
   }
 
-  void Palette::drawCircleByFactors(float xf, float yf, float rfx, ColorFunction colorF, bool wrap) {
+  void Palette::drawCircleByFactors(float xf, float yf, float rfx, ColorFunction colorF, bool wrap, float depth) {
     // Width of owned region
     int wx = getWidth();
     int wy = getHeight();
@@ -177,29 +233,30 @@ namespace GFlowSimulation {
           else if (0<=w_px && w_px<wx && 0<=w_py && w_py<wy) {
             // Set pixel
             RGBApixel color = colorF(pfx, pfy, doColor);
-            if (doColor) setPixel(w_px, w_py, color);
+            if (doColor) setPixel(w_px, w_py, color, depth);
           }
         }
       }
     }
   }
 
-  void Palette::drawLineByFactors(float xf0, float yf0, float xf1, float yf1, ColorFunction colorF, float w) {
+  void Palette::drawLineByFactors(float xf0, float yf0, float xf1, float yf1, ColorFunction colorF, float w, float depth) {
     // The algorithm takes coordinates where pixels have integer coordinates. Convert to that basis.
     int x0 = xf0*getWidth(),  x1 = xf1*getWidth();
     int y0 = yf0*getHeight(), y1 = yf1*getHeight();
     // Draw a line using Wu's algorithm
     if (colorF!=nullptr) {
       bool bl;
-      drawLine_WuAlgorithm(x0, y0, x1, y1, colorF(0,0,bl));
+      drawLine_WuAlgorithm(x0, y0, x1, y1, colorF(0,0,bl), depth);
     }
-    else drawLine_WuAlgorithm(x0, y0, x1, y1, RGB_Blue);
+    else drawLine_WuAlgorithm(x0, y0, x1, y1, RGB_Blue, depth);
   }
 
-  void Palette::coverPalette(const RGBApixel color) {
+  void Palette::coverPalette(const RGBApixel color, float depth) {
     for (int y=owned[2]; y<owned[3]; ++y)
-      for (int x=owned[0]; x<owned[1]; ++x) 
-        image->SetPixel(x, y, color);
+      for (int x=owned[0]; x<owned[1]; ++x) {
+        setPixel(x, y, color, depth);
+      }
   }
 
   void Palette::drawGraph2d(vector<pair<float, float> >& data, GraphOptions& options) {
@@ -216,7 +273,7 @@ namespace GFlowSimulation {
     return owned[3] - owned[2];
   }
 
-  Palette::Palette(int mx, int Mx, int my, int My, BMP *img, int *rfs, int *bnds, double aratio, Array<PixL, 2> *pxlData) {
+  Palette::Palette(int mx, int Mx, int my, int My, BMP *img, int *rfs, int *bnds, double aratio, Image *baseI) {
     if (Mx<=mx || My<=my) throw BadPalette();
     // Set sub-bounds
     owned[0] = mx;
@@ -227,7 +284,7 @@ namespace GFlowSimulation {
     for (int i=0; i<4; ++i) bounds[i] = bnds[i];
     // Image and refs
     image = img;
-    pixelData = pxlData; // <-
+    baseImage = baseI;
     combinationRule = 0;
     refs = rfs;
     ++refs[0];
@@ -268,16 +325,15 @@ namespace GFlowSimulation {
     if (X<0 || bounds[1]<=X || Y<0 || bounds[3]<=Y) return;
     // Set the pixel
     else {
-      // image->SetPixel(X, Y, color);
-      pixelData->at(X, Y).set(color, depth);
+      baseImage->set(X, Y, color, depth);
     }
   }
 
-  inline void drawLine_BresenhamAlgorithm(int x0, int y0, int x1, int y1, RGBApixel color) {
+  inline void drawLine_BresenhamAlgorithm(int x0, int y0, int x1, int y1, RGBApixel color, float depth) {
     throw Unimplemented();
   }
 
-  inline void Palette::drawLine_WuAlgorithm(int x0, int y0, int x1, int y1, RGBApixel color) {
+  inline void Palette::drawLine_WuAlgorithm(int x0, int y0, int x1, int y1, RGBApixel color, float depth) {
     // Is the line steep?
     bool isSteep = fabs(y1-y0) > fabs(x1-x0);
 
@@ -309,12 +365,12 @@ namespace GFlowSimulation {
     float xpxl1 = xend; // this will be used in the main loop
     float ypxl1 = floor(yend);
     if (isSteep) {
-      setPixel(ypxl1,   xpxl1, rfpart(yend) * xgap * color);
-      setPixel(ypxl1+1, xpxl1,  fpart(yend) * xgap * color);
+      setPixel(ypxl1,   xpxl1, rfpart(yend) * xgap * color, depth);
+      setPixel(ypxl1+1, xpxl1,  fpart(yend) * xgap * color, depth);
     }
     else {
-      setPixel(xpxl1, ypxl1  , rfpart(yend) * xgap * color);
-      setPixel(xpxl1, ypxl1+1,  fpart(yend) * xgap * color);
+      setPixel(xpxl1, ypxl1  , rfpart(yend) * xgap * color, depth);
+      setPixel(xpxl1, ypxl1+1,  fpart(yend) * xgap * color, depth);
     }
 
     float intery = yend + gradient; // first y-intersection for the main loop
@@ -326,33 +382,33 @@ namespace GFlowSimulation {
     float xpxl2 = xend; //this will be used in the main loop
     float ypxl2 = floor(yend);
     if (isSteep) {
-      setPixel(ypxl2  , xpxl2, rfpart(yend) * xgap * color);
-      setPixel(ypxl2+1, xpxl2,  fpart(yend) * xgap * color);
+      setPixel(ypxl2  , xpxl2, rfpart(yend) * xgap * color, depth);
+      setPixel(ypxl2+1, xpxl2,  fpart(yend) * xgap * color, depth);
     }
     else {
-      setPixel(xpxl2, ypxl2,  rfpart(yend) * xgap * color);
-      setPixel(xpxl2, ypxl2+1, fpart(yend) * xgap * color);
+      setPixel(xpxl2, ypxl2,  rfpart(yend) * xgap * color, depth);
+      setPixel(xpxl2, ypxl2+1, fpart(yend) * xgap * color, depth);
     }
     
     // main loop
     if (isSteep) {
       for (int x=xpxl1 + 1; x<=xpxl2 - 1; ++x) {
-        setPixel(floor(intery)  , x, rfpart(intery) * color);
-        setPixel(floor(intery)+1, x,  fpart(intery) * color);
+        setPixel(floor(intery)  , x, rfpart(intery) * color, depth);
+        setPixel(floor(intery)+1, x,  fpart(intery) * color, depth);
         intery += gradient;
       }
     }
     else {
       for (int x=xpxl1 + 1; x<=xpxl2 - 1; ++x) {
-        setPixel(x, floor(intery),  rfpart(intery) * color);
-        setPixel(x, floor(intery)+1, fpart(intery) * color);
+        setPixel(x, floor(intery),  rfpart(intery) * color, depth);
+        setPixel(x, floor(intery)+1, fpart(intery) * color, depth);
         intery += gradient;
       }
     }
     // Thanks, Wikipedia!
   }
 
-  inline void Palette::drawCircle_MidpointAlgorithm(int x0, int y0, int radius, RGBApixel color) {
+  inline void Palette::drawCircle_MidpointAlgorithm(int x0, int y0, int radius, RGBApixel color, float depth) {
     int x = radius-1;
     int y = 0;
     int dx = 1;
@@ -360,14 +416,14 @@ namespace GFlowSimulation {
     int err = dx - (radius << 1);
 
     while (x >= y) {
-      setPixel(x0 + x, y0 + y, color);
-      setPixel(x0 + y, y0 + x, color);
-      setPixel(x0 - y, y0 + x, color);
-      setPixel(x0 - x, y0 + y, color);
-      setPixel(x0 - x, y0 - y, color);
-      setPixel(x0 - y, y0 - x, color);
-      setPixel(x0 + y, y0 - x, color);
-      setPixel(x0 + x, y0 - y, color);
+      setPixel(x0 + x, y0 + y, color, depth);
+      setPixel(x0 + y, y0 + x, color, depth);
+      setPixel(x0 - y, y0 + x, color, depth);
+      setPixel(x0 - x, y0 + y, color, depth);
+      setPixel(x0 - x, y0 - y, color, depth);
+      setPixel(x0 - y, y0 - x, color, depth);
+      setPixel(x0 + y, y0 - x, color, depth);
+      setPixel(x0 + x, y0 - y, color, depth);
 
       if (err <= 0) {
         y++;
@@ -394,6 +450,7 @@ namespace GFlowSimulation {
     // Set options
     RGBApixel background = RGB_White, lineColor = RGB_Black;
     if (options.useLineColor) lineColor = options.lineColor;
+
     // Check bounds
     if (!options.hasBounds) { 
       // Find the min/max bounds
@@ -432,7 +489,7 @@ namespace GFlowSimulation {
     float wy = My - my;
 
     // Set the background
-    if (options.paintBackground) coverPalette(background);
+    if (options.paintBackground) coverPalette(background, 500.);
     options.paintBackground = false;
 
     auto colorF = [=] (float, float, bool&) -> RGBApixel {
@@ -454,41 +511,6 @@ namespace GFlowSimulation {
       xf0 = xf1;
       yf0 = yf1;
     }
-  }
-
-  void Palette::pixelsToImage(BMP *photo, int mx, int Mx, int my, int My) {
-    if (photo==nullptr) return;
-    // Set photo's pixels
-    for (int y=my; y<My; ++y)
-      for (int x=mx; x<Mx; ++x) {
-        // Get the pixel data 
-        PixL &p = pixelData->at(x, y);
-        if (p.empty()) photo->SetPixel(x-mx, y-my, RGB_Black);
-        else {
-          // Combine pixel data
-          switch (combinationRule) {
-            default:
-            case 0: {
-              photo->SetPixel(x-mx, y-my, p.first());
-              break;
-            }
-            case 1: {
-              int r(0), g(0), b(0);
-              for (auto c : p.data) {
-                if (c.second.Red>r)   r = c.second.Red;
-                if (c.second.Green>g) g = c.second.Green;
-                if (c.second.Blue>b)  b = c.second.Blue;
-              }
-              photo->SetPixel(x-mx, y-my, RGBApixel(r, g, b));
-              break;
-            }
-            case 2: {
-              photo->SetPixel(x-mx, y-my, RGBApixel(p.size()*80, 155, p.size()*100));
-              break;
-            }
-          }
-        }
-      }
   }
 
 }

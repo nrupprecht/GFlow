@@ -42,7 +42,7 @@ SRC   = src
 OBJ   = obj
 BIN   = bin
 
-EXCLUDE = src/applications/percolationanalysis.cpp src/applications/pressureanalysis.cpp src/applications/driver.cpp
+EXCLUDE = src/applications/percolationanalysis.cpp src/applications/pressureanalysis.cpp src/applications/driver.cpp src/applications/vistools.cpp
 
 SRCS1   := $(shell find $(SRC) -name '*.cpp')
 SRCS    := $(filter-out $(EXCLUDE), $(SRCS1))

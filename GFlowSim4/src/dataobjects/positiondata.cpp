@@ -3,7 +3,7 @@
 #include "../utility/printingutility.hpp"
 #include "../base/simdata.hpp"
 
-#include "../utility/visualization.hpp"
+#include "../visualization/visualization.hpp"
 
 namespace GFlowSimulation {
   // Constructor
@@ -52,9 +52,21 @@ namespace GFlowSimulation {
 
     mkdir(dirName.c_str(), 0777);
 
+    
     Visualization vis;
     Bounds bounds = Base::gflow->getBounds();
-    vis.createBMPs(dirName, positions, dataWidth, bounds, DIMENSIONS);
+    vis.createVideo2d(dirName, positions, dataWidth, bounds, DIMENSIONS);
+    
+    /*
+    // Print data to csv
+    ofstream fout(dirName+"data.csv");
+    if (fout.fail()) return false;
+    // Print data width, dimensions
+    fout << dataWidth << "," << DIMENSIONS << "\n";
+    // Print out the actual data
+    for (auto &v : positions) fout << toCSV(v) << "\n";
+    fout.close();
+    */
 
     // Return success
     return true;

@@ -154,7 +154,7 @@ namespace GFlowSimulation {
     int total = sectors.total();
     for (int sec=0; sec<total; ++sec) {
       // Get the address of the sector with linear address [sec]
-      getAddress<>(sec, dims, sectorAdd);
+      getAddressCM<>(sec, dims, sectorAdd); // We need to use the column major form.
       // Look at all the particles in the sector
       auto &pvec = sectors.at(sectorAdd);
       for (uint p=0; p<pvec.size(); ++p) {
