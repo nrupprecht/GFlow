@@ -1,74 +1,85 @@
+# Makefile snatched from <https://ubuntuforums.org/showthread.php?t=1204739>
+
+COMPILER ?= 0
+USE_MPI  ?= 0
+DEBUG    ?= 0
+NO_SIMD  ?= 0
+DO_OPTIMIZE ?= 1
+
+# Add flags to this variable as neccessary
+FLAGS = 
+
+# Compiler options
+ifeq ($(COMPILER), 0)
 CC = icpc
+FLAGS += -D _INTEL_=1
+else
+CC = g++
+FLAGS += -D _CLANG_=1
+endif 
 MPICC = mpic++
+
+ifeq ($(DEBUG), 1)
+FLAGS += -D DEBUG=1
+endif
+
+ifeq ($(NO_SIMD), 1)
+FLAGS += -D SIMD_TYPE=0
+endif
+
+# Whether to use MPI or not
+ifeq (USE_MPI, 0)
 COMP = $(CC)
-CFLAG = -std=c++14 -Wall
-OPTFLAGS = -xHost -O3 -no-prec-div -static -fp-model fast=2 -restrict -funroll-loops -no-inline-max-size
+FLAGS += -D USE_MPI=1
+else
+COMP = $(MPICC)
+endif
 
-#QOPT = -qopt-report 5
-#OPTFLAGS = -O3 -static -funroll-loops -mllvm -vectorize-slp -mllvm -bb-vectorize-aligned-only -ffast-math -ffinite-math-only -freciprocal-math -ftree-vectorize -fslp-vectorize-aggressive -fstrict-vtable-pointers -fwhole-program-vtables -flto
-#QOPT = -Rpass=loop-vectorize -Rpass-analysis=loop-vectorize
+# Name of the application to compile
+APP   = driver
+# Directories for source, object, bin files
+SRC   = src
+OBJ   = obj
+BIN   = bin
 
-FLAGS = $(CFLAG) -g $(OPTFLAGS) $(QOPT)
+EXCLUDE = src/applications/percolationanalysis.cpp src/applications/pressureanalysis.cpp src/applications/driver.cpp src/applications/vistools.cpp
 
-# All object files needed
-CONTROL_OBJECTS = build/Sectorization.o build/SimData.o build/StatusObject.o build/TerminationCondition.o build/ForceHandler.o build/Characteristic.o
-SIMULATION_OBJECTS = build/FractureSimulation.o build/StandardSimulation.o build/SimulationBase.o
-CREATION_OBJECTS = build/Creator.o build/FileParser.o build/DataCreator.o
-DATA_OBJECTS    = build/DataRecord.o build/Watcher.o
-INT_OBJECTS     = build/VelocityVerletIntegrator.o build/Integrator.o build/StandardSectorization.o
-OBJ_OBJECTS     = build/Particle.o build/Wall.o build/ScalarField.o
-INC_OBJECTS     = build/vec2d.o
-FORCE_OBJECTS   = build/ViscousDrag.o build/ConstantAcceleration.o build/TemperatureForce.o
+SRCS1   := $(shell find $(SRC) -name '*.cpp')
+SRCS    := $(filter-out $(EXCLUDE), $(SRCS1))
+SRCDIRS := $(shell find . -name '*.cpp' -exec dirname {} \; | uniq)
+OBJS    := $(patsubst %.cpp,$(OBJ)/%.o,$(SRCS))
 
-ALL_OBJECTS     = $(CONTROL_OBJECTS) $(SIMULATION_OBJECTS) $(CREATION_OBJECTS) $(DATA_OBJECTS) $(INT_OBJECTS) $(OBJ_OBJECTS) $(INC_OBJECTS) $(FORCE_OBJECTS) $(TEST_OBJECTS)
+CSTD     = -std=c++11
+DEBUG    = -g
+ifeq ($(COMPILER), 0)
+ifeq ($(DO_OPTIMIZE), 1)
+OPTIMIZE := -O3 -funroll-loops -no-prec-div -restrict -no-inline-max-size -ffast-math
+endif
+else
+ifeq ($(DO_OPTIMIZE), 1)
+OPTIMIZE := -O3
+endif
+endif
+#OPENCV   := $(shell pkg-config --cflags --libs opencv)
+CFLAGS   := -c $(CSTD) $(DEBUG) $(OPTIMIZE) $(FLAGS)
 
-all: bin/gflow
+all: $(BIN)/$(APP)
 
-###### Executables #####
-bin/gflow: build/gflow.o $(ALL_OBJECTS) | bin
-	$(COMP) $^ -o $@
+$(BIN)/$(APP): $(OBJS) obj/driver.o
+	@mkdir -p `dirname $@`
+	@echo "Linking $@..."
+	@$(CC) -o $@ obj/driver.o $(OBJS) $(LDFLAGS) #$(OPENCV)
 
-# Create directories if they don't exist
-bin:
-	mkdir -p $@
+$(OBJ)/%.o: %.cpp
+	@mkdir -p `dirname $@`
+	@echo "Compiling $<..."
+	@$(CC) $(CFLAGS) $< -o $@
 
-build:
-	mkdir -p $@
+obj/driver.o: src/applications/driver.cpp
+	@mkdir -p `dirname $@`
+	@echo "Compiling $<..."
+	@$(CC) $(CFLAGS) $< -o $@
 
-#####   Objects   #####
-# In /src/
-build/%.o: src/applications/%.cpp | build
-	$(COMP) -c -o $@ $< $(FLAGS)
-
-build/%.o: src/control/%.cpp | build
-	$(COMP) -c -o $@ $< $(FLAGS)
-
-build/%.o: src/simulation/%.cpp | build
-	$(COMP) -c -o $@ $< $(FLAGS)
-
-build/%.o: src/creation/%.cpp | build
-	$(COMP) -c -o $@ $< $(FLAGS)
-
-build/%.o: src/data/%.cpp | build
-	$(COMP) -c -o $@ $< $(FLAGS)
-
-build/%.o: src/forces/%.cpp | build
-	$(COMP) -c -o $@ $< $(FLAGS)
-
-build/%.o: src/integrators/%.cpp | build
-	$(COMP) -c -o $@ $< $(FLAGS)
-
-build/%.o: src/objects/%.cpp | build
-	$(COMP) -c -o $@ $< $(FLAGS)
-
-# Not in /src/
-build/%.o: include/%.cpp | build
-	$(COMP) $(FLAGS) -c -o $@ $<
-
-build/%.o: test/%.cpp | build
-	$(COMP) $(FLAGS) -c -o $@ $<
-
-#####   Clean    #####
 .PHONY : clean
 clean:
-	rm -f build/*.o build/*.optrpt *.o *.optrpt bin/*
+	rm -r -f $(OBJ) $(BIN)/*
