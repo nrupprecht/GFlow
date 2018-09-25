@@ -149,7 +149,7 @@ namespace GFlowSimulation {
   }
 
   inline void Visualization::createImage3d(string fileName, const vector<RealType>& data, int dataWidth, Bounds& bounds, int dimensions) const {
-
+    
   }
 
   inline void Visualization::findMaxVSqr(const vector<vector<RealType> >& dataVector, int dataWidth) const {

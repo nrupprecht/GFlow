@@ -240,6 +240,10 @@ namespace GFlowSimulation {
     }
   }
 
+  void Palette::drawSphereByFactors(float xf, float yf, float rfx, ColorFunction colorF, float distance) {
+
+  }
+
   void Palette::drawLineByFactors(float xf0, float yf0, float xf1, float yf1, ColorFunction colorF, float w, float depth) {
     // The algorithm takes coordinates where pixels have integer coordinates. Convert to that basis.
     int x0 = xf0*getWidth(),  x1 = xf1*getWidth();
@@ -253,14 +257,14 @@ namespace GFlowSimulation {
   }
 
   void Palette::coverPalette(const RGBApixel color, float depth) {
-    for (int y=owned[2]; y<owned[3]; ++y)
-      for (int x=owned[0]; x<owned[1]; ++x) {
+    for (int y=0; y<getHeight(); ++y)
+      for (int x=0; x<getWidth(); ++x) {
         setPixel(x, y, color, depth);
       }
   }
 
   void Palette::drawGraph2d(vector<pair<float, float> >& data, GraphOptions& options) {
-    if (options.paintBackground) coverPalette(RGB_Black);
+    if (options.paintBackground) coverPalette(RGB_Black, 1000.);
     Palette face = getSubPalette(0.01f, 0.99f, 0.02f, 0.98f);
     face.drawGraphData2d(data, options);
   }
@@ -271,6 +275,10 @@ namespace GFlowSimulation {
 
   int Palette::getHeight() const {
     return owned[3] - owned[2];
+  }
+
+  const int* Palette::getOwned() const {
+    return owned;
   }
 
   Palette::Palette(int mx, int Mx, int my, int My, BMP *img, int *rfs, int *bnds, double aratio, Image *baseI) {
@@ -443,13 +451,14 @@ namespace GFlowSimulation {
   inline void Palette::drawGraphData2d(vector<pair<float, float> >& data, GraphOptions& options) {
     // Check if there is anything to draw and if it is possible to draw.
     if (image==nullptr || data.empty()) return;
-    // Find bounds
-    float mx, Mx, my, My;
-    pair<float, float> first = *data.begin();
-
+    
     // Set options
     RGBApixel background = RGB_White, lineColor = RGB_Black;
     if (options.useLineColor) lineColor = options.lineColor;
+
+    // Find bounds
+    float mx, Mx, my, My;
+    pair<float, float> first = *data.begin();
 
     // Check bounds
     if (!options.hasBounds) { 

@@ -3,6 +3,7 @@
 
 #include "../EasyBMP/EasyBMP.h"
 #include "../utility/utility.hpp"
+#include "vec3.hpp"
 #include <functional>
 #include <ostream>
 
@@ -93,27 +94,13 @@ namespace GFlowSimulation {
     bool *is_set;
   };
 
-  struct Vec3 {
-    Vec3() : x(0), y(0), z(0) {};
-    Vec3(RealType _x, RealType _y, RealType _z) : x(_x), y(_y), z(_z) {};
-
-    Vec3 operator+(const Vec3 v) const {
-      return Vec3(x+v.x, y+v.y, z+v.z);
-    }
-
-    Vec3 operator*(RealType s) const {
-      return Vec3(s*x, s*y, s*z);
-    }
-
-    RealType x, y, z;
-  };
-
   struct GraphOptions {
     void setMinX(float m) { useMinX = true; minX = m; }
     void setMaxX(float m) { useMaxX = true; maxX = m; }
     void setMinY(float m) { useMinY = true; minY = m; }
     void setMaxY(float m) { useMaxY = true; maxY = m; }
     void setLineColor(RGBApixel p) { useLineColor = true; lineColor = p; }
+    void setBackground(RGBApixel p) { useBcgd = true; bcgd = p; }
 
     //! @brief Whether the graph bounds have already been set
     //!
@@ -180,6 +167,9 @@ namespace GFlowSimulation {
     //! @brief Draw a circle by giving scaled coordinates and radius.
     void drawCircleByFactors(float, float, float, ColorFunction, bool=true, float=0.f);
 
+    //! @brief Draw a sphere by giving scaled coordinates, radius, and distance
+    void drawSphereByFactors(float, float, float, ColorFunction, float);
+
     // @brief Draw a line by giving scaled coordinates.
     void drawLineByFactors(float, float, float, float, ColorFunction, float, float=0.f);
 
@@ -196,6 +186,8 @@ namespace GFlowSimulation {
 
     //! @brief Get the height (in pixels) of the area the palette covers.
     int getHeight() const;
+
+    const int* getOwned() const;
 
     // --- Exception class
 

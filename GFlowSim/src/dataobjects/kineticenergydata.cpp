@@ -46,8 +46,8 @@ namespace GFlowSimulation {
     Palette graph(1024,512);
     GraphOptions options;
     options.setMinY(0);
-    options.useBcgd = true;
-    options.bcgd = RGB_White;
+    options.setBackground(RGB_White);
+    options.setLineColor(RGB_Red);
     graph.drawGraph2d(keData, options);
     graph.writeToFile(fileName+"/KE.bmp");
 
