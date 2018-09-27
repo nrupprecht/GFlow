@@ -10,6 +10,10 @@ namespace GFlowSimulation {
     //! @brief Constructor
     Consumption(GFlow *);
 
+    //! @brief Initialize the force, check if all the special data (dataF, dataI) the force needs exists, make
+    //! sure parameter packs are up to date.
+    virtual void initialize() override;
+
     //! @param[in] normal
     //! @param[in] distance
     //! @param[in] id1

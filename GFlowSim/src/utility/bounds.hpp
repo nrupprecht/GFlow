@@ -6,6 +6,36 @@
 namespace GFlowSimulation {
 
   /*
+  *  @struct BoundsPack
+  *
+  *  For use when the dimensions are not known, and therefore can not be hard-coded in (templates
+  *  require constant values).
+  *
+  */
+   struct BoundsPack {
+    BoundsPack(int dim) {
+      min = vector<double>(dim, 0);
+      max = vector<double>(dim, 0);
+    }
+
+    BoundsPack(RealType *m, RealType *M, int d) {
+      min = vector<double>(d, 0);
+      max = vector<double>(d, 0);
+      for (int i=0; i<d; ++i) {
+        min[i] = m[i];
+        max[i] = M[i];
+      }
+    }
+
+    //! @brief Get the widths in various dimensions of the bounds.
+    double wd(int d) { return max[d] - min[d]; }
+    //! @brief Get the dimensionality of the BoundsPack.
+    int dims() { return min.size(); }
+
+    vector<double> min, max;
+  };
+
+  /*
   *  @struct BoundsBase
   *
   *  Primary template to BoundsBase
@@ -17,7 +47,7 @@ namespace GFlowSimulation {
   */
   template <int D> struct BoundsBase {
     BoundsBase() {
-      for (int d=0; d<DIMENSIONS; ++d) {
+      for (int d=0; d<D; ++d) {
         min[d] = 0; max[d] = 0;
       }
     }
@@ -33,7 +63,11 @@ namespace GFlowSimulation {
       return V;
     }
 
-    RealType min[DIMENSIONS], max[DIMENSIONS];
+    BoundsPack pack_up() {
+      return BoundsPack(min, max, D);
+    }
+
+    RealType min[D], max[D];
   };
 
   // Zero dimensional bounds - empty class
@@ -58,6 +92,10 @@ namespace GFlowSimulation {
 
     RealType vol() {
       return (max[0] - min[0]);
+    }
+
+    BoundsPack pack_up() {
+      return BoundsPack(min, max, 1);
     }
 
     // Data
@@ -87,6 +125,10 @@ namespace GFlowSimulation {
       return (max[0] - min[0])*(max[1] - min[1]);
     }
 
+    BoundsPack pack_up() {
+      return BoundsPack(min, max, 2);
+    }
+
     // Data
     RealType min[2], max[2];
   };
@@ -113,6 +155,10 @@ namespace GFlowSimulation {
 
     RealType vol() {
       return (max[0] - min[0])*(max[1] - min[1])*(max[2] - min[2]);
+    }
+
+    BoundsPack pack_up() {
+      return BoundsPack(min, max, 3);
     }
 
     // Data

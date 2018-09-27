@@ -23,6 +23,10 @@ namespace GFlowSimulation {
     //! @brief Destructor
     ~Interaction();
 
+    //! @brief Initialize the force, check if all the special data (dataF, dataI) the force needs exists, make
+    //! sure parameter packs are up to date.
+    virtual void initialize()=0;
+
     //! @brief Calculate all the forces between atoms in the verlet lists
     virtual void interact() const;
 

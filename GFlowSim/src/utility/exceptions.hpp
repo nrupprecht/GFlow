@@ -94,5 +94,15 @@ namespace GFlowSimulation {
     Unimplemented(const string& m) : Exception(m) {};
   };
 
+  /**
+  *  @brief Exception for when a dataF or dataI array is missing.
+  */
+  struct DataEntryNotFound : public Exception {
+    //! Default constructor.
+    DataEntryNotFound() {};
+    //! Message constructor.
+    DataEntryNotFound(const string& m) : Exception(m) {};
+  };  
+
 }
 #endif // __EXCEPTIONS_HPP__GFLOW__

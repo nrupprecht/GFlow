@@ -8,7 +8,7 @@ namespace GFlowSimulation {
 
   SimData::SimData(GFlow *gflow) : Base(gflow), number(0), end_owned(0), number_halo(0), end_halo(0), 
     number_ghost(0), end_ghost(0), global_id(nullptr), next_global_id(0), x(nullptr), v(nullptr), f(nullptr), sg(nullptr), im(nullptr), type(nullptr), 
-    dataF(nullptr), dataI(nullptr), body(nullptr) {};
+    body(nullptr) {};
 
   SimData::~SimData() {
     clean();
@@ -39,25 +39,19 @@ namespace GFlowSimulation {
       delete [] type;
       type = nullptr;
     }
-    // Delete additional data - these are arrays of arrays
-    if (dataF) {
-      for (int i=0; i<DIMENSIONS; ++i) 
-        if(dataF[i]) delete [] dataF[i];
-      delete [] dataF;
-      dataF = nullptr;
-    }
-    if (dataI) {
-      for (int i=0; i<DIMENSIONS; ++i) 
-        if(dataI[i]) delete [] dataI[i];
-      delete [] dataI;
-      dataI = nullptr;
-    }
+    // --- Delete additional data - these are vectors of arrays
+    for (auto &ar : dataF)
+      if (ar) delete [] ar;
+    dataF.clear();
+    for (auto &ar : dataI)
+      if (ar) delete [] ar;
+    dataI.clear();
   }
 
   void SimData::reserve(int num) {
     // Clear old pointers
     clean();
-    // At this point, dataF, dataI are both nullptr.
+    // At this point, dataF, dataI are both empty.
 
     // Don't allocate for a zero or negative number of particles
     if (num<=0) return;
@@ -115,10 +109,10 @@ namespace GFlowSimulation {
     for (int n=0; n<num; ++n) type[n] = -1;
 
     // Reserve for extra data
-    dataF = new RealType*[num];
-    for (int n=0; n<num; ++n) dataF[n] = nullptr;
-    dataI = new int*[num];
-    for (int n=0; n<num; ++n) dataI[n] = nullptr;
+    for (int i=0; i<dataF.size(); ++i)
+      dataF[i] = new RealType[num];
+    for (int i=0; i<dataI.size(); ++i)
+      dataI[i] = new int[num];
   }
 
   //! @param num_owned The number of owned particles to make space for.
@@ -144,11 +138,17 @@ namespace GFlowSimulation {
     RealType *nsg = new RealType[size];
     RealType *nim  = new RealType[size];
     int *ntype = new int[size];
-    RealType **ndataF = nullptr;
-    int **ndataI = nullptr;
-    if (dataF) ndataF = new RealType*[size];
-    if (dataI) ndataI = new int*[size];
-    // Copy over data
+    vector<RealType*> ndataF;
+    vector<int*> ndataI;
+    if (!dataF.empty()) {
+      ndataF = vector<RealType*>(dataF.size());
+      for (auto &ar : ndataF) ar = new RealType[end_ghost];
+    }
+    if (!dataI.empty()) {
+      ndataI = vector<int*>(dataI.size());
+      for (auto &ar : ndataI) ar = new int[end_ghost];
+    }
+    // --- Copy over data
     if (x) copyHelper<DIMENSIONS>(resize_owned, resize_halo, resize_ghost, x[0], nx[0]);
     if (v) copyHelper<DIMENSIONS>(resize_owned, resize_halo, resize_ghost, v[0], nv[0]);
     if (f) copyHelper<DIMENSIONS>(resize_owned, resize_halo, resize_ghost, f[0], nf[0]);
@@ -157,10 +157,13 @@ namespace GFlowSimulation {
     if (im) copyHelper<1>(resize_owned, resize_halo, resize_ghost, im, nim);
     if (type) copyHelper<1>(resize_owned, resize_halo, resize_ghost, type, ntype);
     // Potentially copy auxilary data
-    if (dataF) copyHelper<1>(resize_owned, resize_halo, resize_ghost, dataF, ndataF);
-    if (dataF) copyHelper<1>(resize_owned, resize_halo, resize_ghost, dataI, ndataI);
-    // Delete old arrays, set new ones
+    for (int i=0; i<dataF.size(); ++i)
+      copyHelper<1>(resize_owned, resize_halo, resize_ghost, dataF[i], ndataF[i]);
+    for (int i=0; i<dataI.size(); ++i)
+      copyHelper<1>(resize_owned, resize_halo, resize_ghost, dataI[i], ndataI[i]);
+    // --- Delete old arrays, set new ones
     clean();
+    // Old arrays are cleaned, safe to set the new ones
     x = nx;
     v = nv;
     f = nf;
@@ -265,8 +268,8 @@ namespace GFlowSimulation {
         break;
       }
       case ParticleOwnership::Halo: {
-	// Temporary
-	throw false;
+      	// Temporary
+      	throw false;
         // Check if we need to resize the array
         if (end_halo - end_owned <= number_halo) resize(0, ceil(0.25*number_halo), 0);
         // Copy data
@@ -281,8 +284,8 @@ namespace GFlowSimulation {
         break;
       }
       case ParticleOwnership::Ghost: {
-	// Temporary
-	throw false;
+      	// Temporary
+      	throw false;
         // Check if we need to resize the array
         if (end_ghost - end_halo <= number_ghost) resize(0, 0, ceil(0.25*number_ghost));
         // Copy data
@@ -439,5 +442,53 @@ namespace GFlowSimulation {
     for (int i=end_halo; i<end_halo+number_ghost; ++i) type[i] = -1;
     number_ghost = 0;
   }
+
+  //! @brief Returns whether the simdata needs to be remade or not
+  bool SimData::getNeedsRemake() { 
+    return needs_remake; 
+  }
+
+  //! @brief Set the needs_remake flag
+  void SimData::setNeedsRemake(bool r) { 
+    needs_remake = r; 
+  }
   
+  void SimData::addDataFEntry(const string entry_name, float default_value) {
+    // Allocate the new array
+    RealType *new_array = nullptr;
+    if (end_ghost>0) new_array = new RealType[end_ghost];
+    dataF.push_back(new_array);
+    // Find the place of the array we just added
+    int place = dataF.size()-1;
+    // Set default value
+    for (int i=0; i<end_ghost; ++i) dataF[place][i] = default_value;
+    // Store name
+    dataFIndex.insert(pair<string, int>(entry_name, place));
+  }
+
+  void SimData::addDataIEntry(const string entry_name, int default_value) {
+    // Allocate the new array
+    int *new_array = nullptr;
+    if (end_ghost>0) new_array = new int[end_ghost];
+    dataI.push_back(new_array);
+    // Find the place of the array we just added
+    int place = dataF.size()-1;
+    // Set default value
+    for (int i=0; i<end_ghost; ++i) dataI[place][i] = default_value;
+    // Store name
+    dataFIndex.insert(pair<string, int>(entry_name, place));
+  }
+
+  int SimData::getDataFEntry(const string entry_name) {
+    auto p = dataFIndex.find(entry_name);
+    if (p!=dataFIndex.end()) return p->second;
+    return -1;
+  }
+
+  int SimData::getDataIEntry(const string entry_name) {
+    auto p = dataIIndex.find(entry_name);
+    if (p!=dataIIndex.end()) return p->second;
+    return -1;
+  }
+
 }

@@ -11,6 +11,11 @@ namespace GFlowSimulation {
     kernelPtr = force;
   };
 
+  void LennardJones::initialize() {
+    parameters[0] = DEFAULT_LENNARD_JONES_STRENGTH;
+    parameters[1] = DEFAULT_LENNARD_JONES_CUTOFF;
+  }
+
   void LennardJones::setStrength(RealType s) {
     if (s>=0) parameters[0] = s;
   }

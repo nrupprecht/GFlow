@@ -7,27 +7,82 @@ namespace GFlowSimulation {
   Visualization::Visualization() : pos_place(0), vel_place(DIMENSIONS), sg_place(2*DIMENSIONS), type_place(2*DIMENSIONS+1), 
     resolution(1.5*1024), do_wrap(true), background(RGB_Black), maxVsqr(0), color_option(0)
   {
-    colorBank = new RGBApixel[10];
-    for (int i=0; i<10; ++i)
-      colorBank[i] = randomColor();
+    // Default size - 10
+    createColorBank(10);
   };
 
-  Visualization::~Visualization() {
-    if (colorBank) delete [] colorBank;
-  }
+  Visualization::~Visualization() {}
 
-  bool Visualization::load_and_create(string loadName, string dirName) const {
+  bool Visualization::load_and_create(string loadName, string saveName) {
+    // Open file
     std::ifstream fin(loadName);
     if (fin.fail()) return false;
 
-    // Get the data width, dimensions
-    int dataWidth, dimensions;
-    fin >> dataWidth >> dimensions;
+    // Get the data width, dimensions, number of times sampled, and the number of types
+    int dataWidth, dimensions, samples, ntypes;
+    dataWidth = getNextNumber<int>(fin);
+    dimensions = getNextNumber<int>(fin);
+    samples = getNextNumber<int>(fin);
+    ntypes = getNextNumber<int>(fin);
+
+    // Get the dimensions - mins first, then maxes
+    BoundsPack bounds(dimensions);
+    for (int i=0; i<dimensions; ++i) 
+      bounds.min[i] = getNextNumber<RealType>(fin);
+    for (int i=0; i<dimensions; ++i)
+      bounds.max[i] = getNextNumber<RealType>(fin);
+
+    // Vector to hold data
+    vector<vector<RealType> > data;
+
+    // The first number in each line is the number of particles to expect
+    for (int iter=0; iter<samples; ++iter) {
+      // Get the length of data to expect
+      int data_length = getNextNumber<int>( fin);
+      // Get this iter's data
+      vector<RealType> pdata;
+      for (int i=0; i<data_length; ++i) {
+        RealType datum = getNextNumber<RealType>(fin);
+        pdata.push_back(datum);
+      }
+      // Store this iter's data vector
+      data.push_back(pdata);
+    }
+
+    // Close the file stream
+    fin.close();
+
+    // If we are coloring by type, we need a large enough color bank
+    if (color_option==0 && colorBank.size()<ntypes) setColorBankSize(ntypes);
+
+    // Create a video from the data
+    if (dimensions==2) createVideo2d(saveName, data, dataWidth, bounds, dimensions);
+    if (dimensions>2)  createVideo3d(saveName, data, dataWidth, bounds, dimensions);
 
     return true;
   }
 
-  void Visualization::createVideo2d(string dirName, const vector<vector<RealType> >& data, int dataWidth, Bounds& bounds, int dimensions) const 
+  void Visualization::setColorBankSize(int cbs) {
+    if (cbs!=colorBank.size() && cbs>0) {
+      colorBank = vector<RGBApixel>(cbs);
+      for (int i=0; i<cbs; ++i)
+      colorBank[i] = randomColor();
+    }
+  }
+
+  void Visualization::setRadiusMultiple(RealType r) {
+    radius_multiple = r;
+  }
+
+  void Visualization::setColorOption(int opt) {
+    color_option = opt;
+  }
+
+  void Visualization::setResolution(int r) {
+    resolution = r;
+  }
+
+  void Visualization::createVideo2d(string dirName, const vector<vector<RealType> >& data, int dataWidth, BoundsPack& bounds, int dimensions) const 
   {
     // Find the maximum velocity (if needed)
     if (color_option==2)
@@ -39,14 +94,14 @@ namespace GFlowSimulation {
     }
   }
 
-  void Visualization::createVideo3d(string dirName, const vector<vector<RealType> >& data, int dataWidth, Bounds& bounds, int dimensions) {
+  void Visualization::createVideo3d(string dirName, const vector<vector<RealType> >& data, int dataWidth, BoundsPack& bounds, int dimensions) const {
     for (int i=0; i<data.size(); ++i) {
       string fileName = dirName + "/frame" + toStr(i) + ".bmp";
       createImage3d(fileName, data[i], dataWidth, bounds, dimensions);
     }
   }
 
-  inline void Visualization::createImage(string fileName, const vector<RealType>& data, int dataWidth, Bounds& bounds, int dimensions) const {
+  inline void Visualization::createImage(string fileName, const vector<RealType>& data, int dataWidth, BoundsPack& bounds, int dimensions) const {
     // Get some data from the bounds
     float wx = bounds.wd(0);
     float wy = bounds.wd(1);
@@ -93,16 +148,15 @@ namespace GFlowSimulation {
 
       // --- Determine the color
       RGBApixel color = RGB_Green;
-      if (colorBank) {
+      if (!colorBank.empty()) {
         switch (color_option) {
           default:
           case 0: { // Color by type
-            color = colorBank[type];
+            color = getColor(type);
             break;
           }
           case 1: { // Color randomly
-            int id = i%10;
-            color = colorBank[id];
+            color = getColor(i);
             break;
           }
           case 2: { // Color by velocity
@@ -138,7 +192,7 @@ namespace GFlowSimulation {
         };
 
       // Draw the particle
-      image.drawCircleByFactors(xf, yf, rf/2.5, colorF, do_wrap); 
+      image.drawCircleByFactors(xf, yf, rf*radius_multiple, colorF, do_wrap); 
     }
 
     // Clean up pdata
@@ -148,7 +202,7 @@ namespace GFlowSimulation {
     palette.writeToFile(fileName);
   }
 
-  inline void Visualization::createImage3d(string fileName, const vector<RealType>& data, int dataWidth, Bounds& bounds, int dimensions) const {
+  inline void Visualization::createImage3d(string fileName, const vector<RealType>& data, int dataWidth, BoundsPack& bounds, int dimensions) const {
     
   }
 
@@ -167,6 +221,18 @@ namespace GFlowSimulation {
     }
     // Take the sqrt
     maxVsqr = sqrt(maxVsqr);
+  }
+
+  inline void Visualization::createColorBank(int size) {
+    if (size>0) {
+      colorBank.clear();
+      for (int i=0; i<size; ++i)
+        colorBank.push_back(randomColor());
+    }
+  }
+
+  inline RGBApixel Visualization::getColor(int c) const {
+    return colorBank[ c%colorBank.size() ];
   }
 
 }

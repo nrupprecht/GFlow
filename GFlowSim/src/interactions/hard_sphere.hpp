@@ -19,6 +19,10 @@ namespace GFlowSimulation {
     //! @brief Constructor
     HardSphere(GFlow *);
 
+    //! @brief Initialize the force, check if all the special data (dataF, dataI) the force needs exists, make
+    //! sure parameter packs are up to date.
+    virtual void initialize() override;
+
     //! @brief Set the repulsion parameter.
     void setRepulsion(RealType);
 

@@ -12,6 +12,10 @@ namespace GFlowSimulation {
     kernelPtr = &force;
   };
 
+  void HardSphere::initialize() {
+    *parameters = DEFAULT_HARD_SPHERE_REPULSION;
+  }
+
   void HardSphere::setRepulsion(RealType r) { 
     parameters[0] = r; 
   }

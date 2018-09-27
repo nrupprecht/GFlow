@@ -18,10 +18,27 @@ namespace GFlowSimulation {
   const RGBApixel RGB_Dark_Gray(169,169,169);
 
   //! @brief Function that creates a random color
-  inline RGBApixel randomColor() {
+  inline RGBApixel randomColor(int min=50) {
     int r = static_cast<int>(drand48()*255);
     int g = static_cast<int>(drand48()*255);
     int b = static_cast<int>(drand48()*255);
+
+    // If color is not bright enough, correct it
+    if (min>0 && r<min && g<min && b<min) {
+      int s = static_cast<int>(3*drand48());
+      switch(s) {
+        case 0:
+          r = min;
+          break;
+        case 1:
+          g = min;
+          break;
+        case 2:
+          b = min;
+          break;
+      }
+    }
+
     return RGBApixel(r, g, b);
   }
 

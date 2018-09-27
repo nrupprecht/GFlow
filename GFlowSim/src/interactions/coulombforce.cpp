@@ -10,6 +10,11 @@ namespace GFlowSimulation {
     // Set the force function
     kernelPtr = force;
   }
+  
+  void CoulumbForce::initialize() {
+    parameters[0] = 1.;
+    parameters[1] = 2.5;
+  }
 
   void CoulumbForce::force(RealType* normal, const RealType distance, const int id1, const int id2, SimData *simData, 
     const RealType *param_pack, RealType *data_pack)

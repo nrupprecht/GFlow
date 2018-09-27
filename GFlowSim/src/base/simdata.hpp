@@ -118,7 +118,6 @@ namespace GFlowSimulation {
     const int*      DataI(int n)    const { return dataI[n]; }
     const int&      Body(int n)     const { return body[n]; }
 
-
     //! @brief Get the local id of a particle given the global id.
     //!
     //! The local id is where in the array is the particle stored. The global id is a unique identifier for
@@ -220,10 +219,18 @@ namespace GFlowSimulation {
   public:
 
     //! @brief Returns whether the simdata needs to be remade or not
-    bool getNeedsRemake() { return needs_remake; }
+    bool getNeedsRemake();
 
     //! @brief Set the needs_remake flag
-    void setNeedsRemake(bool r) { needs_remake = r; }
+    void setNeedsRemake(bool r);
+
+    void addDataFEntry(const string, RealType=0.);
+
+    void addDataIEntry(const string, int=0);
+
+    int getDataFEntry(const string);
+
+    int getDataIEntry(const string);
 
     //! GFlow is a friend class -- this allows it to access protected Base members.
     friend class GFlow;
@@ -278,10 +285,12 @@ namespace GFlowSimulation {
     //! e.g. RealType *F = f[0]; and then iterating through X.
     RealType **f;
 
-    // All particles also have a characteristic length (sg - for sigma), (inverse) mass.
-    //! The cutoff radius of the particles.
+    
+    //! @brief The cutoff radius of the particles.
+    //!
+    //! All particles also have a characteristic length (sg - for sigma), (inverse) mass.
     RealType *sg;
-    //! The inverse mass of the the particles.
+    //! @brief The inverse mass of the the particles.
     RealType *im;
 
     //! @brief Stores the type of each atom
@@ -291,11 +300,17 @@ namespace GFlowSimulation {
     int *type;
 
     // More data, for more complex objects
-    //! Generic floading point data.
-    RealType **dataF; 
+    //! @brief Generic floading point data.
+    vector<RealType*> dataF; 
 
-    //! Generic integer type data.
-    int **dataI; 
+    //! @brief A mapping between the name of the float data and the float data's place.
+    std::map<string, int> dataFIndex;
+
+    //! @brief Generic integer type data.
+    vector<int*> dataI; 
+
+    //! @brief A mapping between the name of the int data and the int data's place.
+    std::map<string, int> dataIIndex;
 
     //! @brief Which body a particle belongs to.
     //!

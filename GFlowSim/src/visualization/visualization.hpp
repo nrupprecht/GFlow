@@ -42,22 +42,50 @@ namespace GFlowSimulation {
     //! @brief Destructor.
     ~Visualization();
 
-    bool load_and_create(string, string) const;
+    bool load_and_create(string, string);
+
+    void setColorBankSize(int);
+
+    void setRadiusMultiple(RealType);
+
+    void setColorOption(int);
+
+    void setResolution(int);
 
     //! @brief Create a directory filled with BMP renderings of the system.
     //!
     //! This can be used to create a movie.
-    void createVideo2d(string, const vector<vector<RealType> >&, int, Bounds&, int) const;
+    void createVideo2d(string, const vector<vector<RealType> >&, int, BoundsPack&, int) const;
 
-    void createVideo3d(string, const vector<vector<RealType> >&, int, Bounds& bounds, int dimensions);
+    void createVideo3d(string, const vector<vector<RealType> >&, int, BoundsPack&, int) const;
 
   private:
     //! @brief Creates a single frame.
-    inline void createImage(string, const vector<RealType>&, int, Bounds&, int) const;
+    inline void createImage(string, const vector<RealType>&, int, BoundsPack&, int) const;
 
-    inline void createImage3d(string, const vector<RealType>&, int, Bounds&, int) const;
+    inline void createImage3d(string, const vector<RealType>&, int, BoundsPack&, int) const;
 
     inline void findMaxVSqr(const vector<vector<RealType> >&, int) const;
+
+    inline void createColorBank(int);
+
+    inline RGBApixel getColor(int) const;
+
+    template<typename T> inline T getNextNumber(std::ifstream& fin) const {
+      char c;
+      fin.get(c);
+      stringstream stream;
+      while (!fin.eof() && c!=',' && c!='\n') {
+        if (isdigit(c) || c=='.' || c=='-') stream << c;
+        else;
+        // Get the next character
+        fin.get(c);
+      }
+      // Convert to a type T and return
+      T val;
+      stream >> val;
+      return val;
+    }
 
     //! @brief Where the position data starts.
     int pos_place;
@@ -83,7 +111,9 @@ namespace GFlowSimulation {
 
     unsigned int color_option;
 
-    RGBApixel *colorBank;
+    vector<RGBApixel> colorBank;
+
+    double radius_multiple = 1.;
   };
 
 }

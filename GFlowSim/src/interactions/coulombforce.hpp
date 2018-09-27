@@ -18,6 +18,10 @@ namespace GFlowSimulation {
     //! Constructor
     CoulumbForce(GFlow*);
 
+    //! @brief Initialize the force, check if all the special data (dataF, dataI) the force needs exists, make
+    //! sure parameter packs are up to date.
+    virtual void initialize() override;
+
     //! Set the repulsion parameter.
     void setConstant(RealType);
 

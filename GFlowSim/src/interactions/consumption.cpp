@@ -10,6 +10,8 @@ namespace GFlowSimulation {
     kernelPtr = &consume;
   }
 
+  void Consumption::initialize() {}
+
   //! @param[in] normal
   //! @param[in] distance
   //! @param[in] id1

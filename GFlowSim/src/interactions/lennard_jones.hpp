@@ -20,6 +20,10 @@ namespace GFlowSimulation {
     //! @brief Constructor
     LennardJones(GFlow *);
 
+    //! @brief Initialize the force, check if all the special data (dataF, dataI) the force needs exists, make
+    //! sure parameter packs are up to date.
+    virtual void initialize() override;
+
     //! @brief Set the lennard jones interaction strength. Must be non-negative.
     void setStrength(RealType);
 

@@ -52,21 +52,34 @@ namespace GFlowSimulation {
 
     mkdir(dirName.c_str(), 0777);
 
-    
+    /*
     Visualization vis;
     Bounds bounds = Base::gflow->getBounds();
+    vis.setColorBankSize(simData->ntypes);
     vis.createVideo2d(dirName, positions, dataWidth, bounds, DIMENSIONS);
+    */
     
-    /*
     // Print data to csv
     ofstream fout(dirName+"data.csv");
     if (fout.fail()) return false;
+
     // Print data width, dimensions
-    fout << dataWidth << "," << DIMENSIONS << "\n";
-    // Print out the actual data
-    for (auto &v : positions) fout << toCSV(v) << "\n";
+    fout << dataWidth << "," << DIMENSIONS << "," << positions.size() << "," << Base::simData->ntypes << "\n";
+
+    // Print bounds - mins, then maxes
+    Bounds bounds = Base::gflow->getBounds();
+    for (int i=0; i<DIMENSIONS; ++i) 
+      fout << bounds.min[i] << ",";
+    for (int i=0; i<DIMENSIONS; ++i) {
+      fout << bounds.max[i];
+      if (i!=DIMENSIONS-1) fout << ",";
+    }
+    fout << "\n";
+
+    // Print out the actual data - first the number of particles, then the particle data
+    for (auto &v : positions) fout << v.size() << "," << toCSV(v) << "\n";
     fout.close();
-    */
+    
 
     // Return success
     return true;

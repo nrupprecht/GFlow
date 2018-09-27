@@ -9,6 +9,10 @@ namespace GFlowSimulation {
   template<int NTerms> class GenericForce : public Interaction {
     // Constructor
     GenericForce(GFlow *);
+
+    //! @brief Initialize the force, check if all the special data (dataF, dataI) the force needs exists, make
+    //! sure parameter packs are up to date.
+    virtual void initialize() override;
   };
 
 }
