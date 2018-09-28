@@ -11,8 +11,6 @@ namespace GFlowSimulation {
     createColorBank(10);
   };
 
-  Visualization::~Visualization() {}
-
   bool Visualization::load_and_create(string loadName, string saveName) {
     // Open file
     std::ifstream fin(loadName);

@@ -63,19 +63,35 @@ endif
 #OPENCV   := $(shell pkg-config --cflags --libs opencv)
 CFLAGS   := -c $(CSTD) $(DEBUG) $(OPTIMIZE) $(FLAGS)
 
-all: $(BIN)/$(APP)
+all: $(BIN)/$(APP) $(BIN)/vistools
 
-$(BIN)/$(APP): $(OBJS) obj/driver.o
+# Executables
+
+$(BIN)/$(APP): obj/driver.o $(OBJS)
 	@mkdir -p `dirname $@`
 	@echo "Linking $@..."
-	@$(CC) -o $@ obj/driver.o $(OBJS) $(LDFLAGS) #$(OPENCV)
+	@$(CC) -o $@ obj/driver.o $(OBJS) $(LDFLAGS)
+
+$(BIN)/vistools: obj/vistools.o $(OBJS)
+	@mkdir -p `dirname $@`
+	@echo "Linking $@..."
+	@$(CC) -o $@ obj/vistools.o $(OBJS) $(LDFLAGS)
+
+# General object files
 
 $(OBJ)/%.o: %.cpp
 	@mkdir -p `dirname $@`
 	@echo "Compiling $<..."
 	@$(CC) $(CFLAGS) $< -o $@
 
+# Excluded object files
+
 obj/driver.o: src/applications/driver.cpp
+	@mkdir -p `dirname $@`
+	@echo "Compiling $<..."
+	@$(CC) $(CFLAGS) $< -o $@
+
+obj/vistools.o: src/applications/vistools.cpp
 	@mkdir -p `dirname $@`
 	@echo "Compiling $<..."
 	@$(CC) $(CFLAGS) $< -o $@

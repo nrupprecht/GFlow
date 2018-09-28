@@ -5,12 +5,10 @@
 using namespace GFlowSimulation;
 
 int main(int argc, char** argv) {
-
   // --- Seed random numbers
   srand48(time(0));
 
   // --- Options
-
   string directory = "RunData";
   string subdirectory = "Pos";
   string saveDirectory = "RunData";
@@ -18,7 +16,7 @@ int main(int argc, char** argv) {
   int colorOption = 0;
   int resolution = 1.5*1024;
 
-  // Argument parsing
+  // --- Argument parsing
   ArgParse parser(argc, argv);
   parser.get("directory", directory);
   parser.get("directory", saveDirectory); // By default, save to the same directory
@@ -36,14 +34,15 @@ int main(int argc, char** argv) {
     exit(1);
   }
 
-  // Create visualization object
+  // --- Create visualization object
   Visualization visualization;
   visualization.setRadiusMultiple(radius_multiple);
   visualization.setColorOption(colorOption);
   visualization.setResolution(resolution);
 
+  // --- Load the data and create an image
   visualization.load_and_create(directory+"/"+subdirectory+"/data.csv", saveDirectory+"/"+subdirectory);
 
-
+  // --- End
   return 0;
 }

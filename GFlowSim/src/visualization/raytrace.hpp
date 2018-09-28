@@ -6,19 +6,36 @@
 #include "vec3.hpp"
 #include "kdtree-sphere.hpp"
 
+struct Ray {
+
+  double intersect(Vec3 center, double radius);
+
+  Vec3 origin, orientation;
+};
+
 class RayTracer {
 public:
 
+  void setBounds(BoundsPack&);
+
   void addSphere(Vec3, double);
+
+  void addSphere(vector<Vec3>&, vector<double>&);
 
   const BMP& trace();
 
 private:
 
+  // --- Helper functions
+  void partitionSpace();
+
+  BoundsPack bounds;
+
+  //! @brief The image that the tracer creates.
   BMP image;
 
-  //! @brief The position of the camera, or "eye."
-  Vec3 eye;
+  //! @brief The position of the camera.
+  Vec3 camera;
 
   //! @brief The direction of maximum light
   Vec3 lightDirection;

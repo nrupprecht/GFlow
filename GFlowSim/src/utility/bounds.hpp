@@ -13,6 +13,8 @@ namespace GFlowSimulation {
   *
   */
    struct BoundsPack {
+    BoundsPack() {};
+
     BoundsPack(int dim) {
       min = vector<double>(dim, 0);
       max = vector<double>(dim, 0);

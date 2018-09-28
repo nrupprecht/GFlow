@@ -39,9 +39,6 @@ namespace GFlowSimulation {
     //! @brief Constructor.
     Visualization();
 
-    //! @brief Destructor.
-    ~Visualization();
-
     bool load_and_create(string, string);
 
     void setColorBankSize(int);
