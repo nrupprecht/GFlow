@@ -8,6 +8,18 @@
 
 namespace GFlowSimulation {
 
+  template<typename float_type> struct Particle_Pack {
+    float_type *X1, *X2;
+    float_type *V1, *V2;
+    float_type *F1, *F2;
+    float_type *normals;
+    //! @brief Cutoff mask is 0 or 1 based on whether the particles are within cutoff distance
+    float_type cutoff_mask; 
+
+    //! @brief Extra data
+    float_type *dataF;
+  };
+
   /*
   *  \brief The base class for all interparticle forces.
   *

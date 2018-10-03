@@ -54,7 +54,7 @@ namespace GFlowSimulation {
     #endif
 
     // If bounds are unset, then don't make sectors
-    if (domain_bounds.wd(0)==0) return;
+    if (domain_bounds.vol()<=0) return;
 
     // --- Calculate cutoff
     RealType *sg = simData->sg;
@@ -72,11 +72,9 @@ namespace GFlowSimulation {
 
       // The actual cutoff distance is some multiple of the minimum cutoff
       cutoff = minCutoff*cutoffFactor;
-
       // Create the cells
       create_cells();
     }
-
     // Make verlet lists
     construct();
   }
@@ -246,7 +244,6 @@ namespace GFlowSimulation {
     {
       for (int i=0; i<DIMENSIONS; ++i)
         d[i] = x1[i] - x2[i];
-      // subtractVec(x1, x2, d);
     };
 
     // Decide which if we can use a simple displacement function

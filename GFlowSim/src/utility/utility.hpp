@@ -96,6 +96,14 @@ namespace GFlowSimulation {
     return a<b ? a : b;
   }
 
+  template<typename T> inline T clamp(T a) {
+    return a<0 ? T(0) : a;
+  }
+
+  template<typename T> inline T sign(T a) {
+    return a<0 ? T(-1.) : T(1.);
+  }
+
   //! Check if a vector contains a specified object
   template<typename T> inline bool contains(const vector<T>& vec, T obj) {
     return std::find(vec.begin(), vec.end(), obj) != vec.end();

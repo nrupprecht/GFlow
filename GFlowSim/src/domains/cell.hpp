@@ -54,7 +54,7 @@ namespace GFlowSimulation {
     void add(int);
 
     //! @brief The number of particles in this cell.
-    int size();
+    int size() const;
 
     // --- Data ---
 

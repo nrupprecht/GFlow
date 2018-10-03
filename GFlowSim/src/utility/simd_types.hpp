@@ -3,7 +3,7 @@
 
 #include "simd.hpp"
 
-#if   SIMD_TYPE==SIMD_NONE
+#if SIMD_TYPE==SIMD_NONE
 // The number of floats per vector
   const int simd_data_size = 1u;
   // What type we use as the vector of floats

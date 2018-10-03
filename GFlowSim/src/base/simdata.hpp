@@ -80,14 +80,32 @@ namespace GFlowSimulation {
 
   public:
 
-    //! Set all positions to zero
+    //! @brief Set all positions to zero.
     void clearX();
 
-    //! Set all velocities to zero
+    //! @brief Set all velocities to zero.
     void clearV();
 
-    //! Set all forces to zero
+    //! @brief Set all forces to zero.
     void clearF();
+
+    //! @brief Set all angles to zero.
+    void clearTh();
+
+    //! @brief Set all angular velocities to zero.
+    void clearOm();
+
+    //! @brief Set all torques to zero.
+    void clearTq();
+
+    //! @brief Set all forces in a direction to zero (complementary projection).
+    void cprojF(RealType*);
+
+    //! @brief Set all data entries of the type specified by the string to a default value.
+    void setAllDataF(string, RealType);
+
+    //! @brief Set all data entries of the type specified by the string to a default value.
+    void setAllDataI(string, int);
 
     // --- Accessors
 
@@ -137,7 +155,7 @@ namespace GFlowSimulation {
     //! These are actually stored in the gflow object, so we pass them on from gflow.
     Bounds getBounds() const;
 
-    //! @brief Get the 
+    bool usingAngularDynamics() const;
 
     //! @brief Add an owned particle to the simdata.
     //!
@@ -146,11 +164,21 @@ namespace GFlowSimulation {
     //! to add the particle.
     void addParticle(const RealType*, const RealType*, const RealType, const RealType, const int);
 
+    //! @brief Add an owned particle to the simdata, with angular dynamics
+    //!
+    //! Add a particle to the simdata. This is the public version of the function, so we can only add owned particles. 
+    //! Depending on how many particles are in the array, and the array capacities, it may be necessary to resize the array 
+    //! to add the particle.
+    void addParticle(const RealType*, const RealType*, const RealType, const RealType, const int, const RealType);
+
     // @brief mark a particle for removal.
     void markForRemoval(const int);
 
     //! @brief Remove all the particles that need to be removed, consolidate data.
     void doParticleRemoval();
+
+    // SimDataHandler is a friend class
+    friend class SimDataHandler;
 
   private:
 
@@ -224,6 +252,8 @@ namespace GFlowSimulation {
     //! @brief Set the needs_remake flag
     void setNeedsRemake(bool r);
 
+    void setAngularDynamics(bool);
+
     void addDataFEntry(const string, RealType=0.);
 
     void addDataIEntry(const string, int=0);
@@ -232,72 +262,102 @@ namespace GFlowSimulation {
 
     int getDataIEntry(const string);
 
-    //! GFlow is a friend class -- this allows it to access protected Base members.
+    // GFlow is a friend class -- this allows it to access protected Base members.
     friend class GFlow;
+
+    //! @brief Delete and set to null all angular dynamics related arrays.
+    void clearAngularDynamics();
+
+    //! @brief Allocate all angular dynamics related arrays.
+    void allocateAngularDynamics(int);
 
     // --- Particle data
 
+    //! @brief Whether we need to use angular data, i.e. th, om, and tq.
+    bool angularDynamics = false;
+
     //! Number of particles that belong to this simdata.
-    int number;
+    int number = 0;
     //! The position after the last valid position in the array of particles that belong to this simdata.
-    int end_owned;
+    int end_owned = 0;
 
     //! The number of "halo" particles.
-    int number_halo;
+    int number_halo = 0;
     //! The position after the last valid position in the halo part of the arrays.
-    int end_halo;
+    int end_halo = 0;
 
     //! Number of "ghost" particles.
-    int number_ghost;
+    int number_ghost = 0;
     //! The position after the last valid position in the ghost part of the arrays.
-    int end_ghost;
+    int end_ghost = 0;
 
     //! @brief The number of types of particles.
     //!
     //! The number of types of particles in the simulation. They will be labeled 0, 1, ... , [ntypes].
-    int ntypes;
+    int ntypes = 0;
  
     // All particles have position, force - this data is used for integration, calculating verlet lists, etc.
 
     //! @brief The global id of the particles.
-    int *global_id;
+    int *global_id = nullptr;
+
     //! @brief Which id will be issued next.
-    int next_global_id;
+    int next_global_id = 0;
 
     //! @brief An array of position vectors.
     //!
     //! Under the hood, there is a single contiguous array at &x[0], and the pointers x[i] point to every
     //! (DIMENSIONS)-th place in the array. That way, we can iterate through the entire array by setting
     //! e.g. RealType *X = x[0]; and then iterating through X.
-    RealType **x;
+    RealType **x = nullptr;
 
     //! @brief An array of velocity vectors
     //!
     //! Under the hood, there is a single contiguous array at &v[0], and the pointers v[i] point to every
     //! (DIMENSIONS)-th place in the array. That way, we can iterate through the entire array by setting
     //! e.g. RealType *V = v[0]; and then iterating through V.
-    RealType **v;
+    RealType **v = nullptr;
 
     //! @brief An array of force vectors
     //!
     //! Under the hood, there is a single contiguous array at &f[0], and the pointers f[i] point to every
     //! (DIMENSIONS)-th place in the array. That way, we can iterate through the entire array by setting
     //! e.g. RealType *F = f[0]; and then iterating through X.
-    RealType **f;
+    RealType **f = nullptr;
 
+    //! @brief An array of angle data.
+    RealType *th = nullptr;
+
+    //! @brief An array of omega data.
+    RealType *om = nullptr;
+
+    //! @brief An array of torque data.
+    RealType *tq = nullptr;
+
+    //! @brief An array of moment of inertia data.
+    RealType *iI = nullptr;
     
     //! @brief The cutoff radius of the particles.
     //!
     //! All particles also have a characteristic length (sg - for sigma), (inverse) mass.
-    RealType *sg;
+    RealType *sg = nullptr;
     //! @brief The inverse mass of the the particles.
-    RealType *im;
+    RealType *im = nullptr;
 
     //! @brief Stores the type of each atom
     //!
     //! The types for valid particles are 0, 1, ... , [ntypes]. The other valid value is -1, which means
     //! "empty,"" or "no particle."
-    int *type;
+    int *type = nullptr;
+
+    //! @brief Which body a particle belongs to.
+    //!
+    //! A particle can only belong to one body (with this setup). If there are no bodies in the simulation,
+    //! then body = nullptr. If there are bodies, then if a particle is not in a body, then body = -1 for it. \n
+    //!
+    //! If we ever have a simulation where we are running in parallel, it could be irritating to have particles
+    //! from the same body on different processors.
+    int *body = nullptr;  
 
     // More data, for more complex objects
     //! @brief Generic floading point data.
@@ -311,15 +371,6 @@ namespace GFlowSimulation {
 
     //! @brief A mapping between the name of the int data and the int data's place.
     std::map<string, int> dataIIndex;
-
-    //! @brief Which body a particle belongs to.
-    //!
-    //! A particle can only belong to one body (with this setup). If there are no bodies in the simulation,
-    //! then body = nullptr. If there are bodies, then if a particle is not in a body, then body = -1 for it. \n
-    //!
-    //! If we ever have a simulation where we are running in parallel, it could be irritating to have particles
-    //! from the same body on different processors.
-    int *body;  
 
     //! @brief A map between global and local ids, <global, local>
     std::map<int, int> id_map;

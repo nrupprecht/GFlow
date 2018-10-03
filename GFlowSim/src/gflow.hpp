@@ -34,6 +34,17 @@ namespace GFlowSimulation {
 
     // --- Accessors
 
+    //! @brief Whether a SimData has been allocated.
+    bool hasSimData()     { return simData!=nullptr; }
+    //! @brief Whether an integrator has been allocated.
+    bool hasIntegrator()  { return integrator!=nullptr; }
+    //! @brief Whether a domain has been allocated.
+    bool hasDomain()      { return domain!=nullptr; }
+    //! @brief Whether a data master has been allocated.
+    bool hasDataMaster()  { return dataMaster!=nullptr; }
+    //! @brief Whether a force master has been allocated.
+    bool hasForceMaster() { return forceMaster!=nullptr; }
+
     //! Get argc
     int getArgC() const { return argc; }
 
@@ -151,6 +162,7 @@ namespace GFlowSimulation {
     friend class DebugCreator;
     friend class FlowCreator;
     friend class FileParseCreator;
+    friend class LineCrystalCreator;
 
     // Force master is a friend class
     friend class ForceMaster;

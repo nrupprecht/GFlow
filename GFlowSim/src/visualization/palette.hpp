@@ -47,10 +47,6 @@ namespace GFlowSimulation {
     return RGBApixel(s, s, s);
   }
 
-  template<typename T> inline T clamp(T x) {
-    return x<T(0) ? T(0) : x;
-  }
-
   // @brief Returns a color based on a two number parameterization.
   using ColorFunction = std::function<RGBApixel(float, float, bool&)> ;
 

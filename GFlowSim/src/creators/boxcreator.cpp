@@ -1,4 +1,5 @@
 #include "boxcreator.hpp"
+// Other files
 #include "../gflow.hpp"
 
 namespace GFlowSimulation {
@@ -82,25 +83,31 @@ namespace GFlowSimulation {
       RealType vol = pow(width, DIMENSIONS);  
       number = phi*vol/sphere_volume(radius);
     }
-    // Add some objects
+
+    // The simdata object
     SimData *simData = gflow->simData;
+
+    /*
+    // Use angular dynamics
+    simData->setAngularDynamics(true);
+    // Add some data entries to dataF
+    simData->addDataFEntry("rp");
+    simData->addDataFEntry("ds");
+    simData->addDataFEntry("cf");
+    */
+
+    // Add some objects
     simData->reserve(number);
-    //-- simData->number = number;
+    
+    // Holders
     RealType X[DIMENSIONS], V[DIMENSIONS]; //-- 
     zeroVec(V); //-- 
+    // Calculate the inverse mass
+    RealType im = 1.0 / (1.0 * PI*sqr(radius));
     for (int n=0; n<number; ++n) {
       // Give some random initial positions - we will allow these to relax
-      
-      for (int d=0; d<DIMENSIONS; ++d) {
-        X[d] = (drand48()-0.5)*width;
-        //-- simData->X(n, d) = (drand48()-0.5)*width;
-      }
-      //-- simData->Sg(n) = radius;
-      //-- simData->Im(n) = 1.0 / (1.0 * PI*sqr(radius)); // Density of 1
-      //-- simData->Type(n) = 0;
-
-      RealType im = 1.0 / (1.0 * PI*sqr(radius));
-      simData->addParticle(X, V, radius, im, 0); //--
+      for (int d=0; d<DIMENSIONS; ++d) X[d] = (drand48()-0.5)*width;
+      simData->addParticle(X, V, radius, im, 0);
     }
     // --- Initialize domain
     gflow->domain->initialize();
@@ -114,6 +121,7 @@ namespace GFlowSimulation {
       force = LJ;
     }
     else {
+      //auto *HS = new GeneralHardSphere(gflow);
       auto *HS = new HardSphere(gflow);
       HS->setRepulsion(repulsion*DEFAULT_HARD_SPHERE_REPULSION);
       force = HS;

@@ -68,7 +68,6 @@ namespace GFlowSimulation {
     }
     #endif
 
-    
     // Update positions -- It seems to be marginally faster to have this in a separate loop.
     #if SIMD_TYPE==SIMD_NONE
     for (int i=0; i<number*DIMENSIONS; ++i) {
@@ -102,6 +101,30 @@ namespace GFlowSimulation {
       #endif 
     }
     #endif
+
+    // --- Update angular variables if they exist
+    if (simData->usingAngularDynamics() && DIMENSIONS>1) {
+      // Get arrays
+      RealType *th = simData->th, *om = simData->om, *tq = simData->tq, *iI = simData->iI;
+      // --- Angular velocity
+      if (DIMENSIONS==2) {
+        for (int i=0; i<number; ++i) {
+          om[i] += hdt*iI[i]*tq[i];
+        }
+      }
+      else {
+        //! @todo Higher dimensional rotational dynamics.
+      }
+      // --- Angular position (angle)
+      if (DIMENSIONS==2) {
+        for (int i=0; i<number; ++i) {
+          th[i] += dt*om[i];
+        }
+      }
+      else {
+        //! @todo Higher dimensional rotational dynamics.
+      }
+    }
     
   }
 
@@ -147,6 +170,22 @@ namespace GFlowSimulation {
       v[i] += hdt*im[id]*f[i];
     }
     #endif
+
+    // --- Update angular variables if they exist
+    if (simData->usingAngularDynamics()) {
+      // Get arrays
+      RealType *th = simData->th, *om = simData->om, *tq = simData->tq, *iI = simData->iI;
+      // --- Angular velocity
+      if (DIMENSIONS==1);
+      else if (DIMENSIONS==2) {
+        for (int i=0; i<number; ++i) {
+          om[i] += hdt*iI[i]*tq[i];
+        }
+      }
+      else {
+        //! @todo Higher dimensional rotational dynamics.
+      }
+    }
   }
 
 }

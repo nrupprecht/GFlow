@@ -6,9 +6,7 @@
 
 namespace GFlowSimulation {
 
-  SimData::SimData(GFlow *gflow) : Base(gflow), number(0), end_owned(0), number_halo(0), end_halo(0), 
-    number_ghost(0), end_ghost(0), global_id(nullptr), next_global_id(0), x(nullptr), v(nullptr), f(nullptr), sg(nullptr), im(nullptr), type(nullptr), 
-    body(nullptr) {};
+  SimData::SimData(GFlow *gflow) : Base(gflow) {};
 
   SimData::~SimData() {
     clean();
@@ -17,8 +15,6 @@ namespace GFlowSimulation {
   void SimData::initialize() {
     // Call base initialization
     Base::initialize();
-    // Reorder memory
-    // MemoryOptimizer::GridParticles(*this, Base::gflow->getBounds());
   }
 
   void SimData::clean() {
@@ -26,6 +22,7 @@ namespace GFlowSimulation {
     if (x) dealloc_array_2d(x);
     if (v) dealloc_array_2d(v);
     if (f) dealloc_array_2d(f);
+    clearAngularDynamics();
     // These are just arrays
     if (sg) {
       delete [] sg;
@@ -41,11 +38,15 @@ namespace GFlowSimulation {
     }
     // --- Delete additional data - these are vectors of arrays
     for (auto &ar : dataF)
-      if (ar) delete [] ar;
-    dataF.clear();
+      if (ar) {
+        delete [] ar;
+        ar = nullptr;
+      }
     for (auto &ar : dataI)
-      if (ar) delete [] ar;
-    dataI.clear();
+      if (ar) {
+        delete [] ar;
+        ar = nullptr;
+      }
   }
 
   void SimData::reserve(int num) {
@@ -57,8 +58,8 @@ namespace GFlowSimulation {
     if (num<=0) return;
 
     // Set numbers
-    number = 0;
-    number_halo = 0;
+    number       = 0;
+    number_halo  = 0;
     number_ghost = 0;
     // ONLY reserving space for owned particles
     end_owned = num;
@@ -69,12 +70,13 @@ namespace GFlowSimulation {
     x = alloc_array_2d<RealType>(num, DIMENSIONS);
     v = alloc_array_2d<RealType>(num, DIMENSIONS);
     f = alloc_array_2d<RealType>(num, DIMENSIONS);
+    if (angularDynamics) allocateAngularDynamics(num);
 
     // Reserve new arrays
-    global_id = new int[num];
     sg   = new RealType[num];
     im   = new RealType[num];
     type = new int[num];
+    global_id = new int[num];
 
     // Set types to -1
     for (int n=0; n<num; ++n) type[n] = -1;
@@ -86,8 +88,8 @@ namespace GFlowSimulation {
     clean();
 
     // Set numbers
-    number = 0;
-    number_halo = 0;
+    number       = 0;
+    number_halo  = 0;
     number_ghost = 0;
     // ONLY reserving space for owned particles
     end_owned = num;
@@ -99,11 +101,13 @@ namespace GFlowSimulation {
     v = alloc_array_2d<RealType>(num, DIMENSIONS);
     f = alloc_array_2d<RealType>(num, DIMENSIONS);
 
+    if (angularDynamics) allocateAngularDynamics(num);
+
     // Reserve new arrays
-    global_id = new int[num];
     sg   = new RealType[num];
     im   = new RealType[num];
     type = new int[num];
+    global_id = new int[num];
 
     // Set types to -1
     for (int n=0; n<num; ++n) type[n] = -1;
@@ -134,29 +138,48 @@ namespace GFlowSimulation {
     RealType **nx  = alloc_array_2d<RealType>(size, DIMENSIONS);
     RealType **nv  = alloc_array_2d<RealType>(size, DIMENSIONS);
     RealType **nf  = alloc_array_2d<RealType>(size, DIMENSIONS);
-    int *ngid = new int[size];
-    RealType *nsg = new RealType[size];
+    // Angular arrays
+    RealType *nth = nullptr, *nom = nullptr, *ntq = nullptr, *niI = nullptr;
+    if (angularDynamics && DIMENSIONS>1) {
+      nth = new RealType[size];
+      nom = new RealType[size];
+      ntq = new RealType[size];
+      niI = new RealType[size];
+    }    
+    RealType *nsg  = new RealType[size];
     RealType *nim  = new RealType[size];
-    int *ntype = new int[size];
+    int *ntype     = new int[size];
+    int *nbody     = new int[size];
+    int *ngid      = new int[size];
+
     vector<RealType*> ndataF;
     vector<int*> ndataI;
+
     if (!dataF.empty()) {
-      ndataF = vector<RealType*>(dataF.size());
+      ndataF = vector<RealType*>(dataF.size(), nullptr);
       for (auto &ar : ndataF) ar = new RealType[end_ghost];
     }
     if (!dataI.empty()) {
-      ndataI = vector<int*>(dataI.size());
+      ndataI = vector<int*>(dataI.size(), nullptr);
       for (auto &ar : ndataI) ar = new int[end_ghost];
     }
     // --- Copy over data
     if (x) copyHelper<DIMENSIONS>(resize_owned, resize_halo, resize_ghost, x[0], nx[0]);
     if (v) copyHelper<DIMENSIONS>(resize_owned, resize_halo, resize_ghost, v[0], nv[0]);
     if (f) copyHelper<DIMENSIONS>(resize_owned, resize_halo, resize_ghost, f[0], nf[0]);
-    if (global_id) copyHelper<1>(resize_owned, resize_halo, resize_ghost, global_id, ngid);
     if (sg) copyHelper<1>(resize_owned, resize_halo, resize_ghost, sg, nsg);
     if (im) copyHelper<1>(resize_owned, resize_halo, resize_ghost, im, nim);
     if (type) copyHelper<1>(resize_owned, resize_halo, resize_ghost, type, ntype);
-    // Potentially copy auxilary data
+    if (body) copyHelper<1>(resize_owned, resize_halo, resize_ghost, body, nbody);
+    if (global_id) copyHelper<1>(resize_owned, resize_halo, resize_ghost, global_id, ngid);
+    // --- Copy over angular data
+    if (angularDynamics && DIMENSIONS>1) {
+      copyHelper<1>(resize_owned, resize_halo, resize_ghost, th, nth);
+      copyHelper<1>(resize_owned, resize_halo, resize_ghost, om, nom);
+      copyHelper<1>(resize_owned, resize_halo, resize_ghost, tq, ntq);
+      copyHelper<1>(resize_owned, resize_halo, resize_ghost, iI, niI);
+    }
+    // --- Copy auxilary data
     for (int i=0; i<dataF.size(); ++i)
       copyHelper<1>(resize_owned, resize_halo, resize_ghost, dataF[i], ndataF[i]);
     for (int i=0; i<dataI.size(); ++i)
@@ -164,15 +187,20 @@ namespace GFlowSimulation {
     // --- Delete old arrays, set new ones
     clean();
     // Old arrays are cleaned, safe to set the new ones
-    x = nx;
-    v = nv;
-    f = nf;
-    global_id = ngid;
+    x  = nx;
+    v  = nv;
+    f  = nf;
+    th = nth;
+    om = nom;
+    tq = ntq;
     sg = nsg;
     im = nim;
-    type = ntype;
+    iI = niI;
+    type  = ntype;
+    body  = nbody;
     dataF = ndataF;
     dataI = ndataI;
+    global_id = ngid;
     // Update end_XYZ variables
     end_owned += resize_owned;
     end_halo  += (resize_owned + resize_halo);
@@ -184,7 +212,7 @@ namespace GFlowSimulation {
     if (number==0) return;
     // Set all positions to zero
     RealType *_x = x[0];
-    for (int i=0; i<number*DIMENSIONS; ++i) _x[i] = 0;
+    for (int i=0; i<number*DIMENSIONS; ++i) _x[i] = 0.;
   }
 
   void SimData::clearV() {
@@ -192,7 +220,7 @@ namespace GFlowSimulation {
     if (number==0) return;
     // Set all velocities to zero
     RealType *_v = v[0];
-    for (int i=0; i<number*DIMENSIONS; ++i) _v[i] = 0;
+    for (int i=0; i<number*DIMENSIONS; ++i) _v[i] = 0.;
   }
 
   void SimData::clearF() {
@@ -200,7 +228,69 @@ namespace GFlowSimulation {
     if (number==0) return;
     // Set all forces to zero
     RealType *_f = f[0];
-    for (int i=0; i<number*DIMENSIONS; ++i) _f[i] = 0;
+    for (int i=0; i<number*DIMENSIONS; ++i) _f[i] = 0.;
+  }
+
+  void SimData::clearTh() {
+    // Check if there are particles and angular variables are allocated
+    if (number==0 || !angularDynamics || DIMENSIONS==1) return;
+    // Set all forces to zero
+    for (int i=0; i<number; ++i) th[i] = 0.;
+  }
+
+  void SimData::clearOm() {
+    // Check if there are particles and angular variables are allocated
+    if (number==0 || !angularDynamics || DIMENSIONS==1) return;
+    // Set all omegas to zero
+    for (int i=0; i<number; ++i) om[i] = 0.;
+  }
+
+  void SimData::clearTq() {
+    // Check if there are particles and angular variables are allocated
+    if (number==0 || !angularDynamics || DIMENSIONS==1) return;
+    // Set all torques to zero
+    for (int i=0; i<number; ++i) tq[i] = 0.;
+  }
+
+  void SimData::cprojF(RealType* dir) {
+    // Make sure dir is normalized
+    RealType norm[DIMENSIONS];
+    normalVec(dir, norm);
+
+    // Check if the direction is a standard coordinate direction
+    for (int d=0; d<DIMENSIONS; ++d) {
+      if (norm[d]==1.) {
+
+        RealType *_f = f[0];
+        for (int i=d; i<number*DIMENSIONS; i+=DIMENSIONS) _f[i] = 0.;
+        return;
+      }
+    }
+
+    // If the direction is arbitrary
+    RealType mag = 0;
+    RealType fproj[DIMENSIONS];
+    for (int i=0; i<number; ++i) {
+      mag = dotVec(f[i], norm);
+      scalarMultVec(mag, f[i], fproj);
+      minusEqVec(f[i], fproj);
+    }
+  }
+
+  void SimData::setAllDataF(string entry_name, RealType value) {
+    int id = getDataFEntry(entry_name);
+    if (id>-1) {
+      for (int i=0; i<number; ++i)
+        dataF[id][i] = value;
+    }
+  }
+
+  void SimData::setAllDataI(string entry_name, int value) {
+    int id = getDataIEntry(entry_name);
+    if (id>-1) {
+      for (int i=0; i<number; ++i)
+        dataI[id][i] = value;
+    }
   }
 
   const BCFlag* SimData::getBCs() const {
@@ -219,6 +309,10 @@ namespace GFlowSimulation {
 
   Bounds SimData::getBounds() const {
     return Base::gflow->getBounds();
+  }
+
+  bool SimData::usingAngularDynamics() const {
+    return angularDynamics;
   }
 
   //! @param x The position of the particle.
@@ -244,10 +338,40 @@ namespace GFlowSimulation {
     sg[number]   = Sg;
     im[number]   = Im;
     type[number] = Type;
+    // If using angular dynamics, but iI is unspecified, treat as uniform disk.
+    if (angularDynamics)
+      iI[number] = 0.5*(1./Im)*sqr(Sg);
     // There is now one more particle
     ++number;
     // Set flag
     needs_remake = true;
+  }
+
+  void SimData::addParticle(const RealType *X, const RealType *V, const RealType Sg, const RealType Im, const int Type, const RealType II) {
+    if (!angularDynamics) addParticle(X, V, Sg, Im, Type);
+    else {
+      if (end_owned<=number) {
+        // Calculate the new amount of size we want
+        int resize_owned = max(static_cast<int>(ceil(0.25*number)), 32);
+        resize(resize_owned, 0, 0);
+      }
+      // Copy data
+      copyVec(X, x[number]);
+      copyVec(V, v[number]);
+      zeroVec(f[number]);
+      // Insert into the global id map
+      id_map.insert(IPair(next_global_id, number));
+      // Assign a global id - this assumes that this is a *new* particle
+      global_id[number] = ++next_global_id;
+      sg[number]   = Sg;
+      im[number]   = Im;
+      iI[number]   = II;
+      type[number] = Type;
+      // There is now one more particle
+      ++number;
+      // Set flag
+      needs_remake = true;
+    }
   }
 
   //! @param X The position of the particle.
@@ -411,23 +535,35 @@ namespace GFlowSimulation {
   }
 
   void SimData::moveParticle(int id_source, int id_dest) {
+    // Get global ids
+    int gs = global_id[id_source];
+    int gd = global_id[id_dest];
+
+    // --- Copy main data
     copyVec(x[id_source], x[id_dest]);
     copyVec(v[id_source], v[id_dest]);
     copyVec(f[id_source], f[id_dest]);
-    int gs = global_id[id_source];
-    int gd = global_id[id_dest];
     global_id[id_dest] = gs;
     sg[id_dest] = sg[id_source];
     im[id_dest] = im[id_source];
     type[id_dest] = type[id_source];
+    // --- Copy angular data
+    if (angularDynamics) {
+      th[id_dest] = th[id_source];
+      om[id_dest] = om[id_source];
+      tq[id_dest] = tq[id_source];
+      iI[id_dest] = iI[id_source];
+    }
+    // --- Move auxilary data
+    for (int i=0; i<dataF.size(); ++i)
+      dataF[i][id_dest] = dataF[i][id_source];
+    for (int i=0; i<dataI.size(); ++i)
+      dataI[i][id_dest] = dataI[i][id_source];
     
     // Update id map - erases global id of the overwritten particle
     auto it = id_map.find(gs);
     if (id_map.end()!=it) it->second = id_dest;
     id_map.erase(gd);
-
-    // FOR NOW, IT DOES NOT MOVE AUXILARY DATA
-    // @todo Move auxilary data
 
     // Set id of source to -1
     type[id_source] = -1;
@@ -451,6 +587,12 @@ namespace GFlowSimulation {
   //! @brief Set the needs_remake flag
   void SimData::setNeedsRemake(bool r) { 
     needs_remake = r; 
+  }
+
+  void SimData::setAngularDynamics(bool ad) {
+    if (angularDynamics && !ad) clearAngularDynamics();
+    else if (!angularDynamics && ad) allocateAngularDynamics(number);
+    angularDynamics = ad;
   }
   
   void SimData::addDataFEntry(const string entry_name, float default_value) {
@@ -489,6 +631,26 @@ namespace GFlowSimulation {
     auto p = dataIIndex.find(entry_name);
     if (p!=dataIIndex.end()) return p->second;
     return -1;
+  }
+
+  void SimData::clearAngularDynamics() {
+    if (th) delete [] th;
+    th = nullptr;
+    if (om) delete [] om;
+    om = nullptr;
+    if (tq) delete [] tq;
+    tq = nullptr;
+    if (iI) delete [] iI;
+    iI = nullptr;
+  }
+
+  void SimData::allocateAngularDynamics(int num) {
+    if (num<=0) return;
+    // We only need one angle in 2d
+    th = new RealType[num];
+    om = new RealType[num];
+    tq = new RealType[num];
+    iI = new RealType[num];
   }
 
 }

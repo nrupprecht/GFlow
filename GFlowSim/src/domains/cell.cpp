@@ -15,7 +15,7 @@ namespace GFlowSimulation {
     id_list.push_back(id) ;
   }
 
-  int Cell::size() {
+  int Cell::size() const {
     return id_list.size();
   }
 

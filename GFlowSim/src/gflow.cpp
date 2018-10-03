@@ -119,14 +119,6 @@ namespace GFlowSimulation {
       throw UnexpectedNullPointer("Some array in simdata was null that shouldn't be.");
     }
 
-    //******
-    /*
-    vector<RealType> rates(1, 0.01);
-    addModifier(new BirthRate(this, rates));
-    addModifier(new DeathRate(this, rates));
-    */
-    //******
-
     // --> Pre-integrate
     running = true;
     elapsed_time = 0;

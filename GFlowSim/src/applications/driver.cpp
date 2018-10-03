@@ -125,6 +125,7 @@ int main(int argc, char **argv) {
   bool bipartite_flag = false;
   bool debug_flag = false;
   bool flow_flag = false;
+  bool crystal_flag = false;
   string load = "";
 
   // Data to gather
@@ -166,6 +167,7 @@ int main(int argc, char **argv) {
   parser.get("bipartite", bipartite_flag);
   parser.get("debug", debug_flag); 
   parser.get("flow", flow_flag);
+  parser.get("crystal", crystal_flag);
   parser.get("load", load);
   parser.get("animate", animate);
   parser.get("snapshot", snapshot);
@@ -202,11 +204,11 @@ int main(int argc, char **argv) {
   else if (bipartite_flag) creator = new BipartiteBoxCreator(&parser);
   else if (debug_flag)     creator = new DebugCreator(&parser);
   else if (flow_flag)      creator = new FlowCreator(&parser);
+  else if (crystal_flag)   creator = new LineCrystalCreator(&parser);
   else if (load!="") {
     creator = new FileParseCreator(&parser, load);
   }
   else                     creator = new BoxCreator(&parser);
-
 
   // --- Set boundary conditions
   switch (boundary) {
@@ -273,6 +275,10 @@ int main(int argc, char **argv) {
   if (gravity!=0) gflow->addModifier(new ConstantAcceleration(gflow, gravity));
 
   // Set time step and request time
+  if (!gflow->hasIntegrator()) {
+    cout << "GFlow does not have an integrator. Exiting.";
+    return 0;
+  }
   gflow->setDT(dt);
   gflow->requestTime(time);
 
