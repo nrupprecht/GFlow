@@ -26,9 +26,10 @@ namespace GFlowSimulation {
 
   // param_pack Should be of the form { strength, cutoff } (length 2).
   // data_pack Should be of the form  { virial } (length 1). 
-  void LennardJones::force(RealType* normal, const RealType distance, const int id1, const int id2, SimData *simData, 
-    const RealType *param_pack, RealType *data_pack)
+  void LennardJones::force(simd_float *buffer_out, simd_float* normal, const simd_float mask, const simd_float distance, const simd_float *soa_data, 
+    const RealType *param_pack, RealType *data_pack) 
   {
+    /*
     // Calculate the magnitude of the force
     RealType gamma = (simData->sg[id1]+simData->sg[id2]) / (distance*param_pack[1]);
     RealType g3 = gamma*gamma*gamma, g6 = sqr(g3), g12 = sqr(g6);
@@ -40,6 +41,7 @@ namespace GFlowSimulation {
     // Add the force to the buffers
     plusEqVec (simData->f[id1], normal);
     minusEqVec(simData->f[id2], normal);
+    */
   }
   
 }

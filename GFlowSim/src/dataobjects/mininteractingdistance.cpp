@@ -11,6 +11,7 @@ namespace GFlowSimulation {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
     
+    /*
     RealType data_pack[] = { 10. }; // Random "large" number
     // Check each verlet list
     for (const auto it : gflow->getInteractions()) {
@@ -21,6 +22,7 @@ namespace GFlowSimulation {
     // Store data
     RealType time = Base::gflow->getElapsedTime();
     data.push_back(RPair(time, data_pack[0]));
+    */
   }
 
   bool MinInteractingDistance::writeToFile(string fileName, bool useName) {

@@ -20,11 +20,11 @@ namespace GFlowSimulation {
     // Check if there are forces to calculate
     if (handler->size()==0 || kernelPtr==nullptr) return; 
     // Execute the interaction
-    handler->executeKernel(kernelPtr, parameters, &virial);
+    handler->executeKernel(kernelPtr, parameters, &virial, data_needed);
   }
 
-  void Interaction::executeKernel(Kernel kernel, RealType *param_pack, RealType *data_pack) const {
-    if (handler) handler->executeKernel(kernel, param_pack, data_pack);
+  void Interaction::executeKernel(Kernel kernel, const RealType *param_pack, RealType *data_pack, const vector<int>& d_needed) const {
+    if (handler) handler->executeKernel(kernel, param_pack, data_pack, d_needed);
   }
 
   bool Interaction::initCalculation() const {
@@ -57,6 +57,11 @@ namespace GFlowSimulation {
   void Interaction::addPair(int id1, int id2) {
     // Add the head if it is new
     handler->addPair(id1, id2);
+  }
+
+  void Interaction::close() {
+    // Add the head if it is new
+    handler->close();
   }
 
 }

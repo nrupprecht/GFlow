@@ -42,6 +42,9 @@ namespace GFlowSimulation {
     // References to vectors
     std::list<class Modifier*> *modifiersPtr;
     vector<class Interaction*> *interactionsPtr;
+
+    //! @brief The number of dimensions in the simulation.
+    int sim_dimensions;
   };
 
 }

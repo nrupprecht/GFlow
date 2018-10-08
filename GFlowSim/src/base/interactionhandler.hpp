@@ -8,8 +8,7 @@
 namespace GFlowSimulation {
 
   //! @brief This defines what type of force kernel function the interaction handler expects to be passed in to it.
-  //typedef void (*Kernel) (RealType*, const RealType, const int, const int, class SimData*, const RealType*, RealType*);
-  using Kernel = auto (*) (RealType*, const RealType, const int, const int, class SimData*, const RealType*, RealType*) -> void;
+  using Kernel = auto (*) (simd_float*, simd_float*, const simd_float, const simd_float, const simd_float*, const RealType*, RealType*) -> void;
 
   /**
   *  @brief Handles the storage and traversal of interacting particles.
@@ -33,6 +32,9 @@ namespace GFlowSimulation {
     //! @brief Add a pair of interacting particles.
     virtual void addPair(const int, const int) = 0;
 
+    //! @brief Signals that the pair additions are done.
+    virtual void close() = 0;
+
     //! @brief Clear out all the data in the handler, allowing it to get new information.
     virtual void clear() = 0;
 
@@ -54,7 +56,7 @@ namespace GFlowSimulation {
     //! of each other.
     //! @param param_pack Parameters used to evaluate the force.
     //! @param data_pack Data to be updated by the function.
-    virtual void executeKernel(Kernel, const RealType*, RealType*) const = 0;
+    virtual void executeKernel(Kernel, const RealType*, RealType*, const vector<int>&) const = 0;
   };
 
 }

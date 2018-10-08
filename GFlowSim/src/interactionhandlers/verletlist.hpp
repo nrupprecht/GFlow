@@ -13,9 +13,12 @@ namespace GFlowSimulation {
     // --- Inherited members
 
     //! @brief Add a pair of interacting particles.
-    virtual void addPair(const int, const int);
+    virtual void addPair(const int, const int) override;
 
-    //! @brief Set sizes (but not capacities) to zero, effectively "clearing" out the data.
+    //! @brief Add a last entry to the heads list to denote the end of the verlet list (a sentinal value).
+    virtual void close() override;
+
+    //! @brief Clear the vectors of data.
     virtual void clear();
 
     //! @brief Return the total length of the verlet list.
@@ -27,12 +30,14 @@ namespace GFlowSimulation {
     //! of each other.
     //! @param param_pack Parameters used to evaluate the force.
     //! @param data_pack Data to be updated by the function.
-    virtual void executeKernel(Kernel, const RealType*, RealType*) const;
+    virtual void executeKernel(Kernel, const RealType*, RealType*, const vector<int>&) const override;
 
   private:
 
     //! @brief The verlet list
     vector<int> verlet;
+    vector<int> heads;
+    int lastHead;
   };
 
 }

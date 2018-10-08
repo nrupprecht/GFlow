@@ -34,6 +34,9 @@
     return a[i/dimensions];
   }
 
+  // Constants
+  const simd_float minus_one = -1.;
+
 #elif SIMD_TYPE==SIMD_SSE3
   // The number of floats per vector
   const int simd_data_size = 4u;
@@ -46,28 +49,43 @@
   inline simd_int simd_and(const simd_int a, const simd_int b) { return _mm_and_si128(a, b); }
 
   // Casting
-  inline simd_int simd_cast_int(const simd_float a)   { return _mm_castps_si128(a); }
+  inline simd_int   simd_cast_int(const simd_float a) { return _mm_castps_si128(a); }
   inline simd_float simd_cast_float(const simd_int a) { return _mm_castsi128_ps(a); }
 
+  inline void move_to_int(const simd_float source, simd_int& dest) {
+    // This is done serially.
+    for (int i=0; i<simd_data_size; ++i)
+      reinterpret_cast<int32_t*>(&dest)[i] = static_cast<int>(source[i]);
+  }
+
+  // Access
+  inline int simd_get_int(int i, const simd_int a) { return reinterpret_cast<const int32_t*>(&a)[i]; }
+  inline void simd_set(int i, simd_int& a, int b) { reinterpret_cast<int32_t*>(&a)[i] = b; }
+
+  inline float simd_get (int i, const simd_float a) { return reinterpret_cast<const float*>(&a)[i]; }
+  inline float& simd_get(int i, simd_float& a) { return reinterpret_cast<float*>(&a)[i]; }
+  inline void simd_set(int i, simd_float& a, float b) { reinterpret_cast<float*>(&a)[i] = b; }
+
   // Masking 
-  inline simd_float simd_mask(const simd_float a, const simd_int m) { return simd_cast_float(simd_and(simd_cast_int(a), m)); }
+  inline simd_float simd_mask(const simd_float a, const simd_float m) { return simd_cast_float(simd_and(simd_cast_int(a), simd_cast_int(m))); }
 
   // Setting, loading, storing
   inline simd_float simd_load (const float *a)                   { return _mm_load_ps(a); }
   inline simd_float simd_load_u(const float *a)                  { return _mm_loadu_ps(a); }
   inline simd_float simd_set1 (const float a)                          { return _mm_set1_ps(a); }
+  inline simd_int simd_set1_int(const int a)                           { return _mm_set1_epi32(a); }
   inline simd_float simd_set_zero ()                                   { return _mm_setzero_ps(); }
   inline void       simd_store(const simd_float src, float *dest)      { _mm_store_ps(dest, src); }
-//  inline void       simd_store(const simd_int src, int *dest)          { _mm_store_si128(dest, src); }
   inline void       simd_store_u(const simd_float src, float *dest)    { _mm_storeu_ps(dest, src); }
-//  inline void       simd_store_u(const simd_int src, int *dest)        { _mm_storeu_si256(dest, src); }
    // Arithmetic
   inline simd_float simd_add  (const simd_float a, const simd_float b) { return _mm_add_ps(a, b); }
   inline simd_float simd_sub  (const simd_float a, const simd_float b) { return _mm_sub_ps(a, b); }
   inline simd_float simd_mult (const simd_float a, const simd_float b) { return _mm_mul_ps(a, b); }
   inline void    simd_plus_eq (simd_float &a, const simd_float b)      { a = _mm_add_ps(a, b); }
+  inline simd_float simd_sqrt(const simd_float a)     { return _mm_sqrt_ps(a); }
+  inline simd_float simd_inv_sqrt(const simd_float a) { return _mm_rsqrt_ps(a); }
   // Comparisons
-  inline simd_int simd_less_than(const simd_float a, const simd_float b) { return _mm_castps_si128(_mm_cmplt_ps(a, b)); }
+  inline simd_float simd_less_than(const simd_float a, const simd_float b) { return _mm_cmplt_ps(a, b); }
 
   // Special load
   template<int dimensions> inline simd_float simd_load_constant(const float *a, const int i) {
@@ -87,6 +105,10 @@
   template<> inline simd_float simd_load_constant<4>(const float *a, const int i) {
     return simd_set1(a[i/4]);
   }
+
+  // Constants
+  const simd_float minus_one = simd_set1(-1.);
+  const int simd_valid = 0xffffffff;
 
 #elif SIMD_TYPE==SIMD_AVX or SIMD_TYPE==SIMD_AVX2
   // The number of floats per vector
@@ -141,6 +163,9 @@
     return simd_set1(a[i/8]);
   }
 
+  // Constants
+  const simd_float minus_one = simd_set1(-1.);
+
 #elif SIMD_TYPE==SIMD_MIC
   // The number of floats per vector
   const int simd_data_size = 16u;
@@ -177,60 +202,16 @@
     );
   }
 
+  // Constants
+  const simd_float minus_one = simd_set1(-1.);
+
 #endif
 
 #if SIMD_TYPE!=SIMD_NONE
 // Operators go here
 #endif
 
-// --- Functions that only depend on the simd names --- //
 
-#include <string>
-#include <sstream>
-
-inline std::string simd_to_str(const simd_float a) {
-  float b[simd_data_size];
-  simd_store_u(a, b);
-  // Create a string stream
-  std::stringstream stream;
-  std::string str;
-  for (int i=0; i<simd_data_size; ++i) {
-    stream << b[i];
-    if (i!=simd_data_size-1) stream << ",";
-  }
-  stream >> str;
-  // Return the string
-  return str;
-}
-
-//! @brief Store a vector in all simd coordinates
-template<int dimensions> inline void simd_broadcast_vector(float *v, simd_float *sv) {
-  for (int d=0; d<dimensions; ++d) sv[d] = simd_set1(v[d]);
-}
-
-//! @brief Compute dot products
-//!
-//! { a_x1, a_x2, ... }, { a_y1, a_y2, ... }, ... * { a_x1, a_x2, ... }, { a_y1, a_y2, ... }, ... 
-//! --> { a_x1 * b_x1 + a_y1*b_y1 + ... , a_x2 * b_x2 + a_y2 * b_y2 + ... , ... }
-//!
-//! So a[0] is a simd_float of all the x components of the first set of vectors, a[1] is a simd_float of all 
-//! the y components of the first set of vectors, etc.
-template<int dimensions> inline simd_float simd_dot_product(const simd_float *a, const simd_float *b) {
-  // Accumulator
-  simd_float acc = simd_set_zero();
-  // Add components
-  for (int i=0; i<dimensions; ++i) {
-    simd_plus_eq(acc, simd_mult(a[i], b[i]) );
-  }
-  return acc;
-}
-
-template<int dimensions> inline simd_float simd_distance_sqr(const simd_float *a, const simd_float *b) {
-  simd_float diff[dimensions];
-  for (int d=0; d<dimensions; ++d)
-    diff[d] = simd_sub(a[d], b[d]);
-  return simd_dot_product<dimensions>(diff, diff);
-}
 
 
 #endif // __SIMD_TYPES_HPP__GFLOW__
