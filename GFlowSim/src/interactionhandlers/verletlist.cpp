@@ -54,7 +54,6 @@ namespace GFlowSimulation {
     simd_float *norm = new simd_float[sim_dimensions];
     RealType   *temp = new RealType[simd_data_size];
     RealType   *f_temp = new RealType[sim_dimensions];
-    RealType   *f_head = new RealType[sim_dimensions];
     // Radii float vectors
     simd_float Sg_sd1, Sg_sd2;
     // Extra data
@@ -102,8 +101,8 @@ namespace GFlowSimulation {
       // Clear accumulator for head particle's force
       zeroVec(f_temp);
 
+      /*
       if (h1-j>=simd_data_size) {
-
         // Get head particle position data and sigma
         simd_vector_set1(x[id1], Xsd1, sim_dimensions);
         Sg_sd1 = simd_set1(sg[id1]);
@@ -111,10 +110,11 @@ namespace GFlowSimulation {
         for (int ed=0; ed<data_size; ++ed)
           soa_data[ed] = simd_set1(arrays[ed][id1]);
         
-        // --- Interact with neighbors
-        for (; j<h1-simd_data_size; j+=simd_data_size) {
+        // --- Interact with neighbors using simd
+        for (; j<h1; j+=simd_data_size) {
           // Number of valid particles
           int size = min(simd_data_size, h1-j);
+          simd_float valid_mask = simd_mask_length(size);
 
           // Pack positions
           load_vector_data_simd(&verlet[j], x, Xsd2, size, sim_dimensions, Xrt);
@@ -136,7 +136,7 @@ namespace GFlowSimulation {
 
           // Check if distance is less than cutoff distance. If so, 0xFFFFFFFF is returned, if not, 0x0 is returned,
           // so we can do a bitwise and of the mask and the force strength. "And" this with valid_mask.
-          simd_float mask = simd_less_than(dX2, cutoff2);
+          simd_float mask = simd_mask(valid_mask, simd_less_than(dX2, cutoff2));
 
           simd_float distance = simd_sqrt(dX2);
           simd_float invDistance = simd_inv_sqrt(dX2);
@@ -146,40 +146,17 @@ namespace GFlowSimulation {
           //kernel(buffer_out, norm, mask, distance, soa_data, nullptr, nullptr);
           HardSphere::force<simd_float>( buffer_out, norm, mask, distance, soa_data, nullptr, nullptr);
 
-          /*
-          cout << "Simd: Displacement = " << simd_vec_to_vec_string(dX, sim_dimensions) << endl;
-          cout << "Simd: Distance = " << distance << endl;
-          cout << "Simd: F = " << simd_vec_to_vec_string(buffer_out, sim_dimensions) << endl;
-          cout << "**********" << endl;
-          */
-
-          /*
-          getDisplacement(x[id1], x[verlet[j]], normal, bounds, boundaryConditions);
-          // Mast the distance squared with the "particles are real" type mask, c1
-          RealType dsqr = sqr(normal);
-          // Check if the particles should interact
-          RealType dist = sqrt(dsqr);
-          cout << "Single: Displacement: " << toStrVec(normal) << endl;
-          cout << "Single: Distance: " << dist << endl;
-          scalarMultVec(1./dist, normal);
-          // Set data
-          data[0] = sg[id1];
-          data[1] = sg[verlet[j]];
-          HardSphere::force<float>(buffer_out_float, normal, (dist<data[0]+data[1] ? 1. : 0.), dist, data, nullptr, nullptr);
-          cout << "Single: F = " << toStrVec(buffer_out_float) << endl;
-          */
-
           // Update forces for other particles
-          update_vector_data_size(&verlet[j], Base::simData->f, &buffer_out[data_size], size, sim_dimensions);
+          update_vector_data_size(&verlet[j],  Base::simData->f, &buffer_out[buffer_size], size, buffer_size);
 
           // Update head particle force buffer
-          simd_consolidate_update(f_head, &buffer_out[0], data_size);
+          simd_consolidate_update(f_temp, &buffer_out[0], buffer_size);
         }
       }
+      */
       
 
       // Left overs
-
       for (; j<h1; ++j) {
         int id2 = verlet[j];
         getDisplacement(x[id1], x[id2], normal, bounds, boundaryConditions);
@@ -203,7 +180,9 @@ namespace GFlowSimulation {
       }
 
 
-      // Collect forces for head particle and write them to the force buffer      
+      // Done with the head - update the head's force.
+
+
       plusEqVec(Base::simData->f[id1], f_temp);
     }
 
@@ -214,7 +193,6 @@ namespace GFlowSimulation {
     delete [] dX;
     delete [] buffer_out;
     delete [] f_temp;
-    delete [] f_head;
     delete [] buffer_out_float;
     delete [] data;
     if (soa_data) delete [] soa_data;

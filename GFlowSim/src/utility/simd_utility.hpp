@@ -129,16 +129,16 @@ inline void load_vector_data_simd(const int *start_ids, float **vec, simd_float 
     container[d] = simd_load_u(temp[d]);
 }
 
-inline void update_vector_data_size(const int *start_ids, float **vec, simd_float *container, int size, int sim_dimensions) {
+inline void update_vector_data_size(const int *start_ids, float **vec, const simd_float *container, const int size, const int buffer_size) {
   for (int i=0; i<size; ++i) {
     int id = start_ids[i];
-    for (int d=0; d<sim_dimensions; ++d)
-      vec[id][d] += reinterpret_cast<float*>(&container[d])[i];
+    for (int d=0; d<buffer_size; ++d)
+      vec[id][d] += simd_get(i, container[d]);
   }
 }
 
-inline void simd_consolidate_update(float *v, const simd_float *vec, const int size) {
-  for (int i=0; i<size; ++i) {
+inline void simd_consolidate_update(float *v, const simd_float *vec, const int buffer_size) {
+  for (int i=0; i<buffer_size; ++i) {
     for (int sd=0; sd<simd_data_size; ++sd)
       v[i] += simd_get(sd, vec[i]);
   }
@@ -154,12 +154,12 @@ inline void simd_scalar_mult_vec(const simd_float scalar, const simd_float *vec,
     out[d] = simd_mult(scalar, vec[d]);
 }
 
-inline void simd_vector_sub(const simd_float *X1, const simd_float *X2, simd_float *dX, int sim_dimensions) {
+inline void simd_vector_sub(const simd_float *X1, const simd_float *X2, simd_float *dX, const int sim_dimensions) {
   for (int d=0; d<sim_dimensions; ++d)
     dX[d] = simd_sub(X1[d], X2[d]);
 }
 
-inline void simd_vector_sqr(const simd_float *X, simd_float& dX2, int sim_dimensions) {
+inline void simd_vector_sqr(const simd_float *X, simd_float& dX2, const int sim_dimensions) {
   dX2 = simd_set1(0.);
   for (int d=0; d<sim_dimensions; ++d)
     simd_plus_eq(dX2, simd_mult(X[d], X[d]));
