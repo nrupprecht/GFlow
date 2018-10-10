@@ -125,7 +125,6 @@ namespace GFlowSimulation {
           simd_float valid_mask = simd_mask_length(size);
 
           // --- Pack up data
-          
           // Pack positions
           load_vector_data_simd(&verlet[j], x, Xsd2, size, sim_dimensions, Xrt);
           // Pack sigmas
@@ -137,6 +136,7 @@ namespace GFlowSimulation {
           // --- Check distances
           simd_get_displacement(Xsd1, Xsd2, dX, bounds, boundaryConditions, sim_dimensions);
 
+          // ---Get distance squared, calculate cutoff radius
           simd_float dX2;
           simd_vector_sqr(dX, dX2, sim_dimensions);
           simd_float cutoff  = simd_add(Sg_sd1, Sg_sd2);
@@ -146,8 +146,9 @@ namespace GFlowSimulation {
           // so we can do a bitwise and of the mask and the force strength. "And" this with valid_mask.
           simd_float mask = simd_mask(valid_mask, simd_less_than(dX2, cutoff2));
 
+          // --- Calculate distance and inverse distance
           simd_float distance = simd_sqrt(dX2);
-          simd_float invDistance = simd_inv_sqrt(dX2);
+          simd_float invDistance = simd_set1(1.)/dX2;
 
           // Get normal vectors
           simd_scalar_mult_vec(invDistance, dX, norm, sim_dimensions);
@@ -184,7 +185,7 @@ namespace GFlowSimulation {
           plusEqVec(f[id2], &buffer_out_float[buffer_size]); 
         }
       }
-      
+
       // Done with the head - update the head's force.
       plusEqVec(Base::simData->f[id1], f_temp);
     }
