@@ -37,8 +37,9 @@ namespace GFlowSimulation {
     //  soa_data[2] - sigma, 2
     //  soa_data[3] - repulsion, 2
 
-    const simd_float &sg1  = soa_data[0];
-    const simd_float &sg2  = soa_data[1]; // 2
+    const simd_float sg1  = soa_data[0];
+    const simd_float sg2  = soa_data[1]; // 2
+    
     /*
     const simd_float &rep1 = soa_data[2];
     const simd_float &rep2 = soa_data[3];
@@ -70,20 +71,51 @@ namespace GFlowSimulation {
     simd_scalar_mult_vec( masked_magnitude, normal, &buffer_out[0], DIMENSIONS); // F1 += f
     simd_scalar_mult_vec( minus_one, &buffer_out[0], &buffer_out[DIMENSIONS], DIMENSIONS); // F2 -= f
 
-    //cout << "F1 =  " << simd_vec_to_str( &buffer_out[0] , DIMENSIONS) << endl;
-    //cout << "F2 =  " << simd_vec_to_str( &buffer_out[DIMENSIONS] , DIMENSIONS) << endl;
-
     /*
-    // Calculate force strength
-    RealType magnitude = param_pack[0]*(simData->sg[id1] + simData->sg[id2] - distance);
-    // Update the virial
-    data_pack[0] += magnitude;
+    RealType magnitude = DEFAULT_HARD_SPHERE_REPULSION*(sg[id1] + simData->sg[id2] - distance);
     // Force strength x Normal vector -> Sets normal to be the vectorial force between the particles.
     scalarMultVec(magnitude, normal);
-    // Add the force to the buffers
-    plusEqVec (simData->f[id1], normal);
-    minusEqVec(simData->f[id2], normal);
     */
   }
+
+  void HardSphere::force(float *buffer_out, float* normal, const float mask, const float distance, const float *soa_data, 
+    const RealType *param_pack, RealType *data_pack) 
+  {
+    const float sg1  = soa_data[0];
+    const float sg2  = soa_data[1]; // 2
+    
+    /*
+    const float &rep1 = soa_data[2];
+    const float &rep2 = soa_data[3];
+    */
+    const float rep1 = DEFAULT_HARD_SPHERE_REPULSION;
+    const float rep2 = rep1;
+
+    float acc1 = rep1 + rep2;
+    float acc2 = sg1  + sg2;
+    float acc3 = acc2 - distance;
+
+    const float repl = rep1*rep2;
+
+    float magnitude = repl*acc3;
+
+    // Apply force mask
+    float masked_magnitude = magnitude * mask;
+
+    /*
+    cout << "Masked magnitude: " << simd_to_str(masked_magnitude) << endl;
+    cout << "Normal vectors: " << simd_vec_to_str(normal, DIMENSIONS) << endl;
+    */
+
+    // Out:
+    //  buffer_out[0::DIM]       = force, 1
+    //  buffer_out[DIM+1::2*DIM] = force, 2
+    scalarMultVec(masked_magnitude, normal, &buffer_out[0]);
+    scalarMultVec(-1., &buffer_out[0], &buffer_out[DIMENSIONS]);
+    //simd_scalar_mult_vec( masked_magnitude, normal, &buffer_out[0], DIMENSIONS); // F1 += f
+    //simd_scalar_mult_vec( minus_one, &buffer_out[0], &buffer_out[DIMENSIONS], DIMENSIONS); // F2 -= f
+  }
+
+  
 
 }

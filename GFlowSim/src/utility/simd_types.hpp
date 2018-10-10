@@ -45,6 +45,8 @@
   // What type we use as the vector of integers
   typedef __m128i simd_int;
 
+  const __m128 SIGNMASK = _mm_castsi128_ps(_mm_set1_epi32(0x80000000));
+
   // Logic
   inline simd_int simd_and(const simd_int a, const simd_int b) { return _mm_and_si128(a, b); }
 
@@ -70,20 +72,24 @@
   inline simd_float simd_mask(const simd_float a, const simd_float m) { return simd_cast_float(simd_and(simd_cast_int(a), simd_cast_int(m))); }
 
   // Setting, loading, storing
-  inline simd_float simd_load (const float *a)                   { return _mm_load_ps(a); }
-  inline simd_float simd_load_u(const float *a)                  { return _mm_loadu_ps(a); }
+  inline simd_float simd_load (const float *a)                         { return _mm_load_ps(a); }
+  inline simd_float simd_load_u(const float *a)                        { return _mm_loadu_ps(a); }
   inline simd_float simd_set1 (const float a)                          { return _mm_set1_ps(a); }
-  inline simd_int simd_set1_int(const int a)                           { return _mm_set1_epi32(a); }
+  inline simd_int   simd_set1_int(const int a)                         { return _mm_set1_epi32(a); }
   inline simd_float simd_set_zero ()                                   { return _mm_setzero_ps(); }
   inline void       simd_store(const simd_float src, float *dest)      { _mm_store_ps(dest, src); }
   inline void       simd_store_u(const simd_float src, float *dest)    { _mm_storeu_ps(dest, src); }
+
    // Arithmetic
   inline simd_float simd_add  (const simd_float a, const simd_float b) { return _mm_add_ps(a, b); }
   inline simd_float simd_sub  (const simd_float a, const simd_float b) { return _mm_sub_ps(a, b); }
   inline simd_float simd_mult (const simd_float a, const simd_float b) { return _mm_mul_ps(a, b); }
-  inline void    simd_plus_eq (simd_float &a, const simd_float b)      { a = _mm_add_ps(a, b); }
-  inline simd_float simd_sqrt(const simd_float a)     { return _mm_sqrt_ps(a); }
-  inline simd_float simd_inv_sqrt(const simd_float a) { return _mm_rsqrt_ps(a); }
+  inline void       simd_plus_eq (simd_float &a, const simd_float b)   { a = _mm_add_ps(a, b); }
+  inline simd_float simd_sqrt(const simd_float a)                      { return _mm_sqrt_ps(a); }
+  inline simd_float simd_inv_sqrt(const simd_float a)                  { return _mm_rsqrt_ps(a); }
+  inline simd_float simd_abs(const simd_float a)                       { return _mm_andnot_ps(SIGNMASK, a); }
+  inline simd_float simd_negate(const simd_float a)                    { return _mm_xor_ps(a, SIGNMASK); }
+
   // Comparisons
   inline simd_float simd_less_than(const simd_float a, const simd_float b) { return _mm_cmplt_ps(a, b); }
 
@@ -108,6 +114,7 @@
 
   // Constants
   const simd_float minus_one = simd_set1(-1.);
+  const simd_float simd_zero = simd_set1(0.);
   const int simd_valid = 0xffffffff;
 
 #elif SIMD_TYPE==SIMD_AVX or SIMD_TYPE==SIMD_AVX2

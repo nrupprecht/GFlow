@@ -44,6 +44,27 @@ inline std::string simd_vec_to_str(const simd_float *a, const int size) {
   return str;
 }
 
+inline std::string simd_vec_to_vec_string(const simd_float *a, const int size) {
+  stringstream stream;
+  for (int s=0; s<simd_data_size; ++s) {
+    stream << "{";
+    for (int i=0; i<size; ++i) {
+      stream << simd_get(s, a[i]);
+      if (i!=size-1) stream << ",";
+    }
+    stream << "}";
+    if (s!=simd_data_size-1) stream << ",";
+  }
+  std::string str;
+  stream >> str;
+  return str;
+}
+
+inline std::ostream& operator<<(std::ostream& out, simd_float x) {
+  out << simd_to_str(x);
+  return out;
+}
+
 //! @brief Store a vector in all simd coordinates
 template<int dimensions> inline void simd_broadcast_vector(float *v, simd_float *sv) {
   for (int d=0; d<dimensions; ++d) sv[d] = simd_set1(v[d]);
@@ -144,9 +165,31 @@ inline void simd_vector_sqr(const simd_float *X, simd_float& dX2, int sim_dimens
     simd_plus_eq(dX2, simd_mult(X[d], X[d]));
 }
 
-inline std::ostream& operator<<(std::ostream& out, simd_float x) {
-  out << simd_to_str(x);
-  return out;
+#include "bounds.hpp"
+using GFlowSimulation::Bounds;
+using GFlowSimulation::BCFlag;
+
+// Get the correct (minimal) displacement vector pointing from y to x
+inline void simd_get_displacement(const simd_float *x, const simd_float *y, simd_float *dis, const Bounds B, 
+  const BCFlag *boundaryConditions, int sim_dimensions) 
+{
+  for (int d=0; d<sim_dimensions; ++d) {
+    dis[d] = simd_sub(x[d], y[d]);
+    if (boundaryConditions[d]==BCFlag::WRAP) {
+
+      simd_float dx = simd_sub(simd_set1(B.max[d] - B.min[d]), simd_abs(dis[d]));
+      simd_float mask1 = simd_less_than(dx, simd_abs(dis[d]));
+      simd_float inv_mask1 = simd_less_than(simd_abs(dis[d]), dx);
+      simd_float mask2 = simd_less_than(simd_zero, dis[d]);
+
+      // if (dx<fabs(dis[d])) dis[d] = dis[d]>0 ? -dx : dx;
+      dis[d] = simd_mask(dis[d], inv_mask1);
+      dis[d] = simd_add(
+        simd_mask(simd_sub(dx, simd_mask(simd_mult(simd_set1(2.),dx), mask2)), mask1),
+        dis[d]
+      );
+    }      
+  }
 }
 
 #endif // __SIMD_UTILITY_HPP__GFLOW__

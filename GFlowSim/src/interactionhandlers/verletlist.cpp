@@ -3,6 +3,8 @@
 #include "../utility/memory.hpp"
 #include "../utility/simd_utility.hpp"
 
+#include "../interactions/hard_sphere.hpp"
+
 namespace GFlowSimulation {
 
   VerletList::VerletList(GFlow *gflow) : InteractionHandler(gflow), lastHead(-1) {};
@@ -81,77 +83,128 @@ namespace GFlowSimulation {
 
     // Get the positions
     RealType **x = Base::simData->x;
+    RealType **f = Base::simData->f;
     RealType *sg = Base::simData->sg;
 
-    //cout << "Heads: " << heads.size() << endl;
+    float *buffer_out_float = new float[2*buffer_size];
+    RealType normal[DIMENSIONS];
+    Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
+    BCFlag boundaryConditions[DIMENSIONS]; 
+    copyVec(Base::gflow->getBCs(), boundaryConditions); // Keep a local copy of the wrap frags
+    RealType *data = new RealType[2*data_size];
 
     for (int i=0; i<heads.size()-1; ++i) {
       // Get next head
       int h0 = heads[i], h1 = heads[i+1];
-      int id_h = verlet[h0];
+      int id1 = verlet[h0];
       int j = h0+1;
+      
       // Clear accumulator for head particle's force
       zeroVec(f_temp);
-      // Get head particle position data and sigma
-      simd_vector_set1(x[id_h], Xsd1, sim_dimensions);
-      Sg_sd1 = simd_set1(sg[id_h]);
-      // Get other head particle data - pack into first half of soa_data array
-      for (int ed=0; ed<data_size; ++ed)
-        soa_data[ed] = simd_set1(arrays[ed][id_h]);
-      // --- Interact with neighbors
-      for (int j=h0+1; j<h1; j+=simd_data_size) {
-        int size = min(simd_data_size, h1-j);
-        simd_float valid_mask = simd_mask_length( size);
 
-        //cout << "Valid mask: " << valid_mask << endl;
+      if (h1-j>=simd_data_size) {
 
-        // Pack positions
-        load_vector_data_simd(&verlet[j], x, Xsd2, size, sim_dimensions, Xrt);
-        // Pack sigmas
-        load_scalar_data_simd(&verlet[j], sg, Sg_sd2, size, temp);
-        // Pack other data - into second half of soa_data array
+        // Get head particle position data and sigma
+        simd_vector_set1(x[id1], Xsd1, sim_dimensions);
+        Sg_sd1 = simd_set1(sg[id1]);
+        // Get other head particle data - pack into first half of soa_data array
         for (int ed=0; ed<data_size; ++ed)
-          load_scalar_data_simd(&verlet[j], arrays[ed], soa_data[data_size+ed], size, temp);
+          soa_data[ed] = simd_set1(arrays[ed][id1]);
+        
+        // --- Interact with neighbors
+        for (; j<h1-simd_data_size; j+=simd_data_size) {
+          // Number of valid particles
+          int size = min(simd_data_size, h1-j);
 
-        // --- Check distances
-        simd_vector_sub(Xsd1, Xsd2, dX, sim_dimensions);
+          // Pack positions
+          load_vector_data_simd(&verlet[j], x, Xsd2, size, sim_dimensions, Xrt);
 
-        /*
-        cout << "X1: " << simd_vec_to_str( Xsd1, sim_dimensions) << endl;
-        cout << "X2: " << simd_vec_to_str(Xsd2, sim_dimensions) << endl;
-        */
+          // Pack sigmas
+          load_scalar_data_simd(&verlet[j], sg, Sg_sd2, size, temp);
+          // Pack other data - into second half of soa_data array
+          for (int ed=0; ed<data_size; ++ed)
+            load_scalar_data_simd(&verlet[j], arrays[ed], soa_data[data_size+ed], size, temp);
 
-        simd_float dX2;
-        simd_vector_sqr(dX, dX2, sim_dimensions);
-        simd_float cutoff  = simd_add(Sg_sd1, Sg_sd2);
-        simd_float cutoff2 = simd_mult(cutoff, cutoff);
+          // --- Check distances
+          // simd_vector_sub(Xsd1, Xsd2, dX, sim_dimensions);
+          simd_get_displacement(Xsd1, Xsd2, dX, bounds, boundaryConditions, sim_dimensions);
 
-        // Check if distance is less than cutoff distance. If so, 0xFFFFFFFF is returned, if not, 0x0 is returned,
-        // so we can do a bitwise and of the mask and the force strength. "And" this with valid_mask.
-        simd_float mask = simd_mask(valid_mask, simd_less_than(dX2, cutoff2));
+          simd_float dX2;
+          simd_vector_sqr(dX, dX2, sim_dimensions);
+          simd_float cutoff  = simd_add(Sg_sd1, Sg_sd2);
+          simd_float cutoff2 = simd_mult(cutoff, cutoff);
 
-        /*
-        cout << "Mask: " << mask << endl;
-        cout << "Dx: " << simd_vec_to_str(dX, sim_dimensions) << endl;
-        cout << "Dsqr: " << dX2 << endl;
-        */
+          // Check if distance is less than cutoff distance. If so, 0xFFFFFFFF is returned, if not, 0x0 is returned,
+          // so we can do a bitwise and of the mask and the force strength. "And" this with valid_mask.
+          simd_float mask = simd_less_than(dX2, cutoff2);
 
-        simd_float distance = simd_sqrt(dX2);
-        simd_float invDistance = simd_inv_sqrt(dX2);
+          simd_float distance = simd_sqrt(dX2);
+          simd_float invDistance = simd_inv_sqrt(dX2);
 
-        // Get normal vectors
-        simd_scalar_mult_vec(invDistance, dX, norm, sim_dimensions);
-        kernel(buffer_out, norm, mask, distance, soa_data, nullptr, nullptr);
+          // Get normal vectors
+          simd_scalar_mult_vec(invDistance, dX, norm, sim_dimensions);
+          //kernel(buffer_out, norm, mask, distance, soa_data, nullptr, nullptr);
+          HardSphere::force<simd_float>( buffer_out, norm, mask, distance, soa_data, nullptr, nullptr);
 
-        // Update forces for other particles
-        // update_vector_data_size(&verlet[j], Base::simData->f, &buffer_out[data_size], size, sim_dimensions);
+          /*
+          cout << "Simd: Displacement = " << simd_vec_to_vec_string(dX, sim_dimensions) << endl;
+          cout << "Simd: Distance = " << distance << endl;
+          cout << "Simd: F = " << simd_vec_to_vec_string(buffer_out, sim_dimensions) << endl;
+          cout << "**********" << endl;
+          */
 
-        // Update head particle force buffer
-        // simd_consolidate_update(f_head, buffer_out, data_size);
+          /*
+          getDisplacement(x[id1], x[verlet[j]], normal, bounds, boundaryConditions);
+          // Mast the distance squared with the "particles are real" type mask, c1
+          RealType dsqr = sqr(normal);
+          // Check if the particles should interact
+          RealType dist = sqrt(dsqr);
+          cout << "Single: Displacement: " << toStrVec(normal) << endl;
+          cout << "Single: Distance: " << dist << endl;
+          scalarMultVec(1./dist, normal);
+          // Set data
+          data[0] = sg[id1];
+          data[1] = sg[verlet[j]];
+          HardSphere::force<float>(buffer_out_float, normal, (dist<data[0]+data[1] ? 1. : 0.), dist, data, nullptr, nullptr);
+          cout << "Single: F = " << toStrVec(buffer_out_float) << endl;
+          */
 
+          // Update forces for other particles
+          update_vector_data_size(&verlet[j], Base::simData->f, &buffer_out[data_size], size, sim_dimensions);
+
+          // Update head particle force buffer
+          simd_consolidate_update(f_head, &buffer_out[0], data_size);
+        }
       }
+      
+
+      // Left overs
+
+      for (; j<h1; ++j) {
+        int id2 = verlet[j];
+        getDisplacement(x[id1], x[id2], normal, bounds, boundaryConditions);
+        // Mast the distance squared with the "particles are real" type mask, c1
+        RealType dsqr = sqr(normal);
+        // Check if the particles should interact
+        if (dsqr < sqr(sg[id1] + sg[id2])) {
+          RealType distance = sqrt(dsqr);
+          scalarMultVec(1./distance, normal);
+          // Set data
+          data[0] = sg[id1];
+          data[1] = sg[id2];
+
+          // Calculate force.
+          HardSphere::force<float>(buffer_out_float, normal, 1., distance, data, nullptr, nullptr);
+         
+          // Add the force to the buffers
+          plusEqVec(f_temp, &buffer_out_float[0]);
+          plusEqVec(f[id2], &buffer_out_float[buffer_size]); 
+        }
+      }
+
+
       // Collect forces for head particle and write them to the force buffer      
-      plusEqVec(Base::simData->f[id_h], f_temp);
+      plusEqVec(Base::simData->f[id1], f_temp);
     }
 
     // --- Clean up arrays
@@ -162,40 +215,10 @@ namespace GFlowSimulation {
     delete [] buffer_out;
     delete [] f_temp;
     delete [] f_head;
+    delete [] buffer_out_float;
+    delete [] data;
     if (soa_data) delete [] soa_data;
     if (temp) delete [] temp;
-
-    ///*********
-
-
-    /*
-    // Get the data we need
-    int id1(0), id2(0); // List length, id pointers
-    RealType **x = Base::simData->x, **f = Base::simData->f, *sg = Base::simData->sg;
-    RealType displacement[DIMENSIONS]; // To calculate displacement, normal vector
-    Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
-    BCFlag boundaryConditions[DIMENSIONS]; 
-    copyVec(Base::gflow->getBCs(), boundaryConditions); // Keep a local copy of the wrap frags
-
-    // --- Go through all particles
-    for (int i=0; i<verlet.size(); i+=2) {
-      id1 = verlet[i];
-      id2 = verlet[i+1];
-      // Type mask
-      bool mask = (simData->type[id1]>-1 || simData->type[id2]>-1);
-      // Get the displacement between the particles
-      getDisplacement(x[id1], x[id2], displacement, bounds, boundaryConditions);
-      // Mast the distance squared with the "particles are real" type mask, c1
-      RealType dsqr = sqr(displacement);
-      // Check if the particles should interact
-      if (mask && dsqr < sqr(sg[id1] + sg[id2])) {
-        RealType distance = sqrt(dsqr);
-        scalarMultVec(1./distance, displacement);
-        // Calculate force strength. Normal will hold the force strength after the function is called.
-        kernel(displacement, distance, id1, id2, Base::simData, param_pack, data_pack);
-      }
-    }
-    */
   }
 
 }

@@ -10,6 +10,9 @@ namespace GFlowSimulation {
   //! @brief This defines what type of force kernel function the interaction handler expects to be passed in to it.
   using Kernel = auto (*) (simd_float*, simd_float*, const simd_float, const simd_float, const simd_float*, const RealType*, RealType*) -> void;
 
+  template<typename T>
+  using Kernel_2 = auto (*) (T*, T*, const T, const T, const T*, const RealType*, RealType*) -> void;
+
   /**
   *  @brief Handles the storage and traversal of interacting particles.
   *
