@@ -116,6 +116,4 @@ namespace GFlowSimulation {
     //simd_scalar_mult_vec( minus_one, &buffer_out[0], &buffer_out[DIMENSIONS], DIMENSIONS); // F2 -= f
   }
 
-  
-
 }

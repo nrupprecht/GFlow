@@ -57,4 +57,24 @@ inline std::string to_string_vec(const simd_float *a, int sim_dimensions) {
   return simd_vec_to_vec_string(a, sim_dimensions);
 }
 
+//******************************
+// Operators
+//******************************
+
+inline simd_float operator+(const simd_float a, const simd_float b) {
+  return simd_add(a, b);
+}
+
+inline simd_float operator-(const simd_float a, const simd_float b) {
+  return simd_sub(a, b);
+}
+
+inline simd_float operator*(const simd_float a, const simd_float b) {
+  return simd_mult(a, b);
+}
+
+inline simd_float operator/(const simd_float a, const simd_float b) {
+  return simd_div(a, b);
+}
+
 #endif // __SIMD_GENERIC_HPP__GFLOW__

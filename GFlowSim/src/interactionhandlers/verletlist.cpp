@@ -4,10 +4,11 @@
 #include "../utility/simd_utility.hpp"
 
 #include "../interactions/hard_sphere.hpp"
+#include "../interactions/lennard_jones.hpp"
 
 namespace GFlowSimulation {
 
-  VerletList::VerletList(GFlow *gflow) : InteractionHandler(gflow), lastHead(-1) {};
+  VerletList::VerletList(GFlow *gflow) : InteractionHandler(gflow), lastHead(-1), min_simd_size(simd_data_size), use_simd(false) {};
 
   void VerletList::addPair(const int id1, const int id2) {
     if (id1==lastHead) verlet.push_back(id2);
@@ -46,16 +47,23 @@ namespace GFlowSimulation {
     data_size = 1;
 
     // --- Set up some data arrays
-    // Position data
-    RealType  **Xrt  = alloc_array_2d<RealType>(sim_dimensions, simd_data_size); // SOA format "scratch work" array
-    simd_float *Xsd1 = new simd_float[sim_dimensions];
-    simd_float *Xsd2 = new simd_float[sim_dimensions];
-    simd_float *dX   = new simd_float[sim_dimensions];
-    simd_float *norm = new simd_float[sim_dimensions];
-    RealType   *temp = new RealType[simd_data_size];
-    RealType   *f_temp = new RealType[sim_dimensions];
+    RealType  **Xrt  = nullptr; // SOA format "scratch work" array
+    simd_float *Xsd1 = nullptr; // Simd vector for position
+    simd_float *Xsd2 = nullptr; // Simd vector for position
+    simd_float *dX   = nullptr; // Simd vector for displacement
+    simd_float *norm = nullptr; // Simd vector for normal force
+    if (use_simd) { // Only allocate these if neccessary
+      RealType  **Xrt  = alloc_array_2d<RealType>(sim_dimensions, simd_data_size); // SOA format "scratch work" array
+      simd_float *Xsd1 = new simd_float[sim_dimensions]; // Simd vector for position
+      simd_float *Xsd2 = new simd_float[sim_dimensions]; // Simd vector for position
+      simd_float *dX   = new simd_float[sim_dimensions]; // Simd vector for displacement
+      simd_float *norm = new simd_float[sim_dimensions]; // Simd vector for normal force
+    }
+    RealType   *temp   = new RealType[simd_data_size];   // A scratchwork buffer
+    RealType   *f_temp = new RealType[sim_dimensions]; // An accumulator for the head particle's force
     // Radii float vectors
     simd_float Sg_sd1, Sg_sd2;
+
     // Extra data
     simd_float *soa_data = nullptr;
     RealType  **arrays   = nullptr;
@@ -68,13 +76,13 @@ namespace GFlowSimulation {
         arrays[i] = Base::simData->dataF[entry]; // @todo This needs to be able to access sigma
       }
       */
-
       /// **** Doing this by hand right now.
       arrays = new RealType*[1];
       arrays[0] = Base::simData->sg;
+      //********
 
       // Two halves - first half will be for head particle (will be duplicated), second half will be for neighbors
-      soa_data = new simd_float[2*data_size]; 
+      if (use_simd) soa_data = new simd_float[2*data_size]; 
     }
     // Buffer for force output
     int buffer_size = sim_dimensions; // @todo Make this an input parameter.
@@ -101,24 +109,25 @@ namespace GFlowSimulation {
       // Clear accumulator for head particle's force
       zeroVec(f_temp);
 
-      /*
-      if (h1-j>=simd_data_size) {
+      // Potentially use simd functions
+      if (use_simd && h1-j>=min_simd_size) {
         // Get head particle position data and sigma
         simd_vector_set1(x[id1], Xsd1, sim_dimensions);
         Sg_sd1 = simd_set1(sg[id1]);
         // Get other head particle data - pack into first half of soa_data array
         for (int ed=0; ed<data_size; ++ed)
           soa_data[ed] = simd_set1(arrays[ed][id1]);
-        
+
         // --- Interact with neighbors using simd
-        for (; j<h1; j+=simd_data_size) {
+        for (; min_simd_size<h1-j; j+=simd_data_size) {
           // Number of valid particles
           int size = min(simd_data_size, h1-j);
           simd_float valid_mask = simd_mask_length(size);
 
+          // --- Pack up data
+          
           // Pack positions
           load_vector_data_simd(&verlet[j], x, Xsd2, size, sim_dimensions, Xrt);
-
           // Pack sigmas
           load_scalar_data_simd(&verlet[j], sg, Sg_sd2, size, temp);
           // Pack other data - into second half of soa_data array
@@ -126,7 +135,6 @@ namespace GFlowSimulation {
             load_scalar_data_simd(&verlet[j], arrays[ed], soa_data[data_size+ed], size, temp);
 
           // --- Check distances
-          // simd_vector_sub(Xsd1, Xsd2, dX, sim_dimensions);
           simd_get_displacement(Xsd1, Xsd2, dX, bounds, boundaryConditions, sim_dimensions);
 
           simd_float dX2;
@@ -144,7 +152,7 @@ namespace GFlowSimulation {
           // Get normal vectors
           simd_scalar_mult_vec(invDistance, dX, norm, sim_dimensions);
           //kernel(buffer_out, norm, mask, distance, soa_data, nullptr, nullptr);
-          HardSphere::force<simd_float>( buffer_out, norm, mask, distance, soa_data, nullptr, nullptr);
+          LennardJones::force<simd_float>( buffer_out, norm, mask, distance, soa_data, nullptr, nullptr);
 
           // Update forces for other particles
           update_vector_data_size(&verlet[j],  Base::simData->f, &buffer_out[buffer_size], size, buffer_size);
@@ -153,10 +161,8 @@ namespace GFlowSimulation {
           simd_consolidate_update(f_temp, &buffer_out[0], buffer_size);
         }
       }
-      */
-      
 
-      // Left overs
+      // Seriel part - for left overs, or if we aren't using simd
       for (; j<h1; ++j) {
         int id2 = verlet[j];
         getDisplacement(x[id1], x[id2], normal, bounds, boundaryConditions);
@@ -171,32 +177,31 @@ namespace GFlowSimulation {
           data[1] = sg[id2];
 
           // Calculate force.
-          HardSphere::force<float>(buffer_out_float, normal, 1., distance, data, nullptr, nullptr);
+          LennardJones::force<float>(buffer_out_float, normal, 1., distance, data, nullptr, nullptr);
          
           // Add the force to the buffers
           plusEqVec(f_temp, &buffer_out_float[0]);
           plusEqVec(f[id2], &buffer_out_float[buffer_size]); 
         }
       }
-
-
+      
       // Done with the head - update the head's force.
-
-
       plusEqVec(Base::simData->f[id1], f_temp);
     }
 
     // --- Clean up arrays
-    dealloc_array_2d(Xrt);
-    delete [] Xsd1;
-    delete [] Xsd2;
-    delete [] dX;
-    delete [] buffer_out;
+    if (use_simd) {
+      dealloc_array_2d(Xrt);
+      delete [] Xsd1;
+      delete [] Xsd2;
+      delete [] dX;
+      delete [] buffer_out;
+      if (soa_data) delete [] soa_data;
+    }
     delete [] f_temp;
     delete [] buffer_out_float;
     delete [] data;
-    if (soa_data) delete [] soa_data;
-    if (temp) delete [] temp;
+    delete [] temp;
   }
 
 }

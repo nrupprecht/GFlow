@@ -38,6 +38,12 @@ namespace GFlowSimulation {
     vector<int> verlet;
     vector<int> heads;
     int lastHead;
+
+    //! @brief The minimum number of particles in a list for which we will use simd instead of serial
+    int min_simd_size;
+
+    //! @brief If true, we can use simd functions
+    bool use_simd;
   };
 
 }

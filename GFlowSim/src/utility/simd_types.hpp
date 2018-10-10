@@ -84,6 +84,7 @@
   inline simd_float simd_add  (const simd_float a, const simd_float b) { return _mm_add_ps(a, b); }
   inline simd_float simd_sub  (const simd_float a, const simd_float b) { return _mm_sub_ps(a, b); }
   inline simd_float simd_mult (const simd_float a, const simd_float b) { return _mm_mul_ps(a, b); }
+  inline simd_float simd_div  (const simd_float a, const simd_float b) { return _mm_div_ps(a, b); }
   inline void       simd_plus_eq (simd_float &a, const simd_float b)   { a = _mm_add_ps(a, b); }
   inline simd_float simd_sqrt(const simd_float a)                      { return _mm_sqrt_ps(a); }
   inline simd_float simd_inv_sqrt(const simd_float a)                  { return _mm_rsqrt_ps(a); }
