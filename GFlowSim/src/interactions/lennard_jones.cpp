@@ -8,7 +8,7 @@ namespace GFlowSimulation {
     parameters[0] = DEFAULT_LENNARD_JONES_STRENGTH;
     parameters[1] = DEFAULT_LENNARD_JONES_CUTOFF;
     // Set the force function
-    simd_kernelPtr = &force<simd_float>;
+    simd_kernelPtr   = &force<simd_float>;
     serial_kernelPtr = &force<float>;
     // Set data needed - sigmas
     data_needed.push_back(0); // Address of sigma array

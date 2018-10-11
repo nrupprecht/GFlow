@@ -41,19 +41,19 @@ inline void copy_negative(const simd_float *src, simd_float *dest, int sim_dimen
   for (int i=0; i<sim_dimensions; ++i) dest[i] = -src[i];
 }
 
-inline std::string to_string(const float a) {
+inline std::string to_str(const float a) {
   return toStr(a); 
 }
 
-inline std::string to_string(const simd_float a) {
+inline std::string to_str(const simd_float a) {
   return simd_to_str(a);
 }
 
-inline std::string to_string_vec(const float *a, int) {
+inline std::string to_str_vec(const float *a, int) {
   return PrintingUtility::toStrVec(a);
 }
 
-inline std::string to_string_vec(const simd_float *a, int sim_dimensions) {
+inline std::string to_str_vec(const simd_float *a, int sim_dimensions) {
   return simd_vec_to_vec_string(a, sim_dimensions);
 }
 

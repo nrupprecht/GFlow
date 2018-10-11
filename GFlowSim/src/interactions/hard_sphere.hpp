@@ -35,17 +35,17 @@ namespace GFlowSimulation {
   template<typename float_type>
   void HardSphere::force(float_type *buffer_out, const float_type* normal, const float_type mask, const float_type distance, const float_type *soa_data, 
   const RealType *param_pack, RealType *data_pack) {
-    // Expect:
+    // Expect: Soa data:
     //  soa_data[0] - sigma, 1
     //  soa_data[1] - sigma, 2
     const float_type sg1  = soa_data[0];
     const float_type sg2  = soa_data[1];
-
-    const float_type rep1 = set1<float_type>(0.5*DEFAULT_HARD_SPHERE_REPULSION);
-    const float_type rep2 = rep1;
+    // Expect: Param pack:
+    //  param_pack[0] - Repulsion
+    const float_type repulsion = set1<float_type>(param_pack[0]);
 
     // Calculate magnitude
-    float_type magnitude = mult( add(rep1, rep2), sub(add(sg1, sg2), distance) );
+    float_type magnitude = repulsion*(sg1 + sg2 - distance);
     // Apply force mask
     float_type masked_magnitude = mask_value(magnitude, mask);
 

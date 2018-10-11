@@ -6,7 +6,7 @@ namespace GFlowSimulation {
 
   Interaction::Interaction(GFlow *gflow) : Base(gflow) {
     // Set the interaction handler
-    handler = new VerletList(gflow);
+    handler = new VerletListSerial(gflow);
   };
 
   Interaction::~Interaction() {

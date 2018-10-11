@@ -8,7 +8,7 @@ namespace GFlowSimulation {
 
   HardSphere::HardSphere(GFlow *gflow) : Interaction(gflow) {
     parameters = new RealType;
-    *parameters = DEFAULT_HARD_SPHERE_REPULSION;
+    parameters[0] = DEFAULT_HARD_SPHERE_REPULSION;
     // Set the force function
     simd_kernelPtr = &force<simd_float>;
     serial_kernelPtr = &force<float>;
@@ -17,7 +17,7 @@ namespace GFlowSimulation {
   };
 
   void HardSphere::initialize() {
-    *parameters = DEFAULT_HARD_SPHERE_REPULSION;
+    parameters[0] = DEFAULT_HARD_SPHERE_REPULSION;
   }
 
   void HardSphere::setRepulsion(RealType r) { 
