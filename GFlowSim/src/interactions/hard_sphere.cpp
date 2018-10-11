@@ -2,44 +2,26 @@
 // Other files
 #include "../base/simdata.hpp"
 #include "../utility/vectormath.hpp"
+#include "../utility/simd_utility.hpp"
 
 namespace GFlowSimulation {
 
   HardSphere::HardSphere(GFlow *gflow) : Interaction(gflow) {
     parameters = new RealType;
-    *parameters = DEFAULT_HARD_SPHERE_REPULSION;
+    parameters[0] = DEFAULT_HARD_SPHERE_REPULSION;
     // Set the force function
-    kernelPtr = &force;
+    simd_kernelPtr = &force<simd_float>;
+    serial_kernelPtr = &force<float>;
+    // Set data needed - sigmas
+    data_needed.push_back(0); // Address of sigma array
   };
 
   void HardSphere::initialize() {
-    *parameters = DEFAULT_HARD_SPHERE_REPULSION;
+    parameters[0] = DEFAULT_HARD_SPHERE_REPULSION;
   }
 
   void HardSphere::setRepulsion(RealType r) { 
     parameters[0] = r; 
-  }
-
-  //! @param[in] normal
-  //! @param[in] distance
-  //! @param[in] id1
-  //! @param[in] id2
-  //! @param[in] simData
-  //! @param[in] param_pack A parameter pack, passed in from force. Should be of the form { repulsion } (length 1).
-  //! @param[in,out] data_pack Data to update in the function. Should be of the form  { virial } (length 1). 
-  //! Add the f_i \dot r_i to this.
-  void HardSphere::force(RealType* normal, const RealType distance, const int id1, const int id2, SimData *simData, 
-    const RealType *param_pack, RealType *data_pack) 
-  {
-    // Calculate force strength
-    RealType magnitude = param_pack[0]*(simData->sg[id1] + simData->sg[id2] - distance);
-    // Update the virial
-    data_pack[0] += magnitude;
-    // Force strength x Normal vector -> Sets normal to be the vectorial force between the particles.
-    scalarMultVec(magnitude, normal);
-    // Add the force to the buffers
-    plusEqVec (simData->f[id1], normal);
-    minusEqVec(simData->f[id2], normal);
   }
 
 }

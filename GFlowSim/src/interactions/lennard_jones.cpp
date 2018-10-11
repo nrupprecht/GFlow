@@ -8,7 +8,10 @@ namespace GFlowSimulation {
     parameters[0] = DEFAULT_LENNARD_JONES_STRENGTH;
     parameters[1] = DEFAULT_LENNARD_JONES_CUTOFF;
     // Set the force function
-    kernelPtr = force;
+    simd_kernelPtr   = &force<simd_float>;
+    serial_kernelPtr = &force<float>;
+    // Set data needed - sigmas
+    data_needed.push_back(0); // Address of sigma array
   };
 
   void LennardJones::initialize() {
@@ -22,24 +25,6 @@ namespace GFlowSimulation {
 
   void LennardJones::setCutoff(RealType cut) {
     if (cut>1.) parameters[1] = cut;
-  }
-
-  // param_pack Should be of the form { strength, cutoff } (length 2).
-  // data_pack Should be of the form  { virial } (length 1). 
-  void LennardJones::force(RealType* normal, const RealType distance, const int id1, const int id2, SimData *simData, 
-    const RealType *param_pack, RealType *data_pack)
-  {
-    // Calculate the magnitude of the force
-    RealType gamma = (simData->sg[id1]+simData->sg[id2]) / (distance*param_pack[1]);
-    RealType g3 = gamma*gamma*gamma, g6 = sqr(g3), g12 = sqr(g6);
-    RealType magnitude = 24*param_pack[0]*(2.*g12 - g6)*(1./distance); 
-    // Update the virial
-    data_pack[0] += magnitude;
-    // Make vectorial
-    scalarMultVec(magnitude, normal);
-    // Add the force to the buffers
-    plusEqVec (simData->f[id1], normal);
-    minusEqVec(simData->f[id2], normal);
   }
   
 }

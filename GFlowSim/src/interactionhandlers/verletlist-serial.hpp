@@ -1,14 +1,14 @@
-#ifndef __VERLET_LIST_HPP__GFLOW__
-#define __VERLET_LIST_HPP__GFLOW__ 
+#ifndef __VERLET_LIST_SERIAL_HPP__GFLOW__
+#define __VERLET_LIST_SERIAL_HPP__GFLOW__ 
 
 #include "../base/interactionhandler.hpp"
 
 namespace GFlowSimulation {
 
-  class VerletList : public InteractionHandler {
+  class VerletListSerial : public InteractionHandler {
   public:
     //! @brief Constructor.
-    VerletList(GFlow*);
+    VerletListSerial(GFlow*);
 
     // --- Inherited members
 
@@ -16,7 +16,7 @@ namespace GFlowSimulation {
     virtual void addPair(const int, const int) override;
 
     //! @brief Add a last entry to the heads list to denote the end of the verlet list (a sentinal value).
-    virtual void close() override;
+    virtual void close() override {};
 
     //! @brief Clear the vectors of data.
     virtual void clear();
@@ -36,15 +36,7 @@ namespace GFlowSimulation {
 
     //! @brief The verlet list
     vector<int> verlet;
-    vector<int> heads;
-    int lastHead;
-
-    //! @brief The minimum number of particles in a list for which we will use simd instead of serial
-    int min_simd_size;
-
-    //! @brief If true, we can use simd functions
-    bool use_simd;
   };
 
 }
-#endif // __VERLET_LIST_HPP__GFLOW__
+#endif // __VERLET_LIST_SERIAL_HPP__GFLOW__

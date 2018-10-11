@@ -40,6 +40,7 @@ namespace GFlowSimulation {
   }
 
   RealType MemoryDistance::getAverageDistance() {
+    /*
     // We will look at the L1 distance between particles that potentially interact by
     // passing in an interaction kernel that only computes data
     RealType data_pack[] = { 0., 0. };
@@ -48,6 +49,8 @@ namespace GFlowSimulation {
     }
     // Return the average distance
     return (data_pack[0]>0 ? static_cast<RealType>(data_pack[0])/data_pack[1] : 0);
+    */
+    return 0.;
   }
 
   //! @param id1

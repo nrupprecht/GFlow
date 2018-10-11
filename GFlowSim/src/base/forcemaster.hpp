@@ -16,24 +16,27 @@ namespace GFlowSimulation {
   */
   class ForceMaster : public Base {
   public:
-    // Constructor
+    //! @brief Constructor
     ForceMaster(GFlow*);
 
-    // Constructor - also includes number of forces
+    //! @brief Constructor - also includes number of forces
     ForceMaster(GFlow*, int);
 
     //! @brief Overloads the initialize function to set needs_construction
     virtual void initialize();
 
-    // Get a pointer to the force that the particle pair belongs in. Null means no force.
+    //! @brief Get a pointer to the force that the particle pair belongs in. Null means no force.
     Interaction* getInteraction(int, int);
 
-    // Clear all the verlet lists of all the forces
+    //! @brief Clear all the verlet lists of all the forces
     void clear();
+
+    //! @brief Close the interactionhandlers for all the forces.
+    void close();
 
     // --- Accessors
 
-    // Get the number of types of particles in the simulation
+    //! @brief Get the number of types of particles in the simulation
     int getNTypes() const;
 
     //! @brief Returns whether there are interactions whose interactionhandlers need construction
@@ -41,11 +44,11 @@ namespace GFlowSimulation {
 
     // --- Mutators
 
-    // Set the number of particle types
+    //! @brief Set the number of particle types
     void setNTypes(int);
 
-    // Set the force in the force grid - this also adds it to the force vector here and in the GFlow
-    // object if it is not already in those locations
+    //! @brief Set the force in the force grid - this also adds it to the force vector here and in the GFlow
+    //! object if it is not already in those locations
     void setInteraction(int, int, Interaction*);
 
   private:

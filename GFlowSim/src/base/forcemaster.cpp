@@ -28,6 +28,10 @@ namespace GFlowSimulation {
     for (auto it : interactions) it->clear();
   }
 
+  void ForceMaster::close() {
+    for (auto it : interactions) it->close();
+  }
+
   int ForceMaster::getNTypes() const {
     return ntypes;
   }

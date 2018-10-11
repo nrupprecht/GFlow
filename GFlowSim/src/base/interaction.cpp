@@ -4,9 +4,9 @@
 
 namespace GFlowSimulation {
 
-  Interaction::Interaction(GFlow *gflow) : Base(gflow), virial(0), parameters(nullptr), kernelPtr(nullptr) {
+  Interaction::Interaction(GFlow *gflow) : Base(gflow) {
     // Set the interaction handler
-    handler = new VerletList(gflow);
+    handler = new VerletListSerial(gflow);
   };
 
   Interaction::~Interaction() {
@@ -18,13 +18,13 @@ namespace GFlowSimulation {
     // Reset virial
     virial = 0;
     // Check if there are forces to calculate
-    if (handler->size()==0 || kernelPtr==nullptr) return; 
+    if (handler->size()==0) return; 
     // Execute the interaction
-    handler->executeKernel(kernelPtr, parameters, &virial);
+    handler->executeKernel(simd_kernelPtr, serial_kernelPtr, parameters, &virial, data_needed);
   }
 
-  void Interaction::executeKernel(Kernel kernel, RealType *param_pack, RealType *data_pack) const {
-    if (handler) handler->executeKernel(kernel, param_pack, data_pack);
+  void Interaction::executeKernel(Kernel<simd_float> simd_kernel, Kernel<float> serial_kernel, const RealType *param_pack, RealType *data_pack, const vector<int>& d_needed) const {
+    if (handler) handler->executeKernel(simd_kernel, serial_kernel, param_pack, data_pack, d_needed);
   }
 
   bool Interaction::initCalculation() const {
@@ -57,6 +57,11 @@ namespace GFlowSimulation {
   void Interaction::addPair(int id1, int id2) {
     // Add the head if it is new
     handler->addPair(id1, id2);
+  }
+
+  void Interaction::close() {
+    // Add the head if it is new
+    handler->close();
   }
 
 }

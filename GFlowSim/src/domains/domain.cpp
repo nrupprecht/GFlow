@@ -287,6 +287,9 @@ namespace GFlowSimulation {
         }
       }
     }
+
+    // Close all
+    Base::forceMaster->close();
   }
 
   // Turns a linear cell index into a (DIMENSIONS)-dimensional index

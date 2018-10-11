@@ -326,8 +326,10 @@ namespace GFlowSimulation {
     string token = head->params[2]->partA;
     if      (token=="HardSphere")   return new HardSphere(gflow);
     else if (token=="LennardJones") return new LennardJones(gflow);
+    /*
     else if (token=="Coulomb")      return new CoulumbForce(gflow);
     else if (token=="Consumption")  return new Consumption(gflow);
+    */
     else if (token=="None")         return nullptr;
     else throw UnexpectedOption();
   }

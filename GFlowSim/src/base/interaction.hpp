@@ -8,20 +8,8 @@
 
 namespace GFlowSimulation {
 
-  template<typename float_type> struct Particle_Pack {
-    float_type *X1, *X2;
-    float_type *V1, *V2;
-    float_type *F1, *F2;
-    float_type *normals;
-    //! @brief Cutoff mask is 0 or 1 based on whether the particles are within cutoff distance
-    float_type cutoff_mask; 
-
-    //! @brief Extra data
-    float_type *dataF;
-  };
-
   /*
-  *  \brief The base class for all interparticle forces.
+  *  \brief The base class for all interparticle forces and other interactions.
   *
   *  A pair force between particles. This is the base class for forces. Forces keep a 
   *  verlet list of all the particles that might experience it.
@@ -43,7 +31,7 @@ namespace GFlowSimulation {
     virtual void interact() const;
 
     //! @brief Run an externally given kernel through this interaction's interaction handler
-    virtual void executeKernel(Kernel, RealType*, RealType*) const;
+    virtual void executeKernel(Kernel<simd_float>, Kernel<float>, const RealType*, RealType*, const vector<int>&) const;
 
     //! @brief Initialize for force calculation
     //!
@@ -72,7 +60,10 @@ namespace GFlowSimulation {
     void clear();
 
     //! @brief Add a pair pf particles - the first is the head
-    void addPair(int, int);
+    virtual void addPair(int, int);
+
+    //! @brief Signals that the pair additions are done.
+    virtual void close();
 
     // GFlow is a friend class
     friend class GFlow;
@@ -83,16 +74,20 @@ namespace GFlowSimulation {
     InteractionHandler *handler;
 
     //! @brief A pointer to the force function
-    Kernel kernelPtr;
+    Kernel<simd_float> simd_kernelPtr = nullptr;
+    Kernel<float> serial_kernelPtr = nullptr;
 
     //! @brief An array of force parameters. The length of this array will vary by force.
-    RealType *parameters;
+    RealType *parameters = nullptr;
+
+    //! @brief The pointers to the arrays of data in simdata that should be packed for the interaction kernel function.
+    vector<int> data_needed;
 
     //! @brief The virial, for calculating pressure.
     //!
     //! The pressure formula is: P = N k T/V + 1/(DIMENSIONS*V) \sum_i (r_i \dot F_i)
     //! This term should be used like: virial = \sum_i (r_i \dot F_i)
-    mutable RealType virial;
+    mutable RealType virial = 0;
   };
 
 }
