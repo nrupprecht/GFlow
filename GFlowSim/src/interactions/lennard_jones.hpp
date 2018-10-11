@@ -2,6 +2,7 @@
 #define __LENNARD_JONES__GFLOW__
 
 #include "../base/interaction.hpp"
+#include "../utility/simd_generic.hpp"
 
 namespace GFlowSimulation {
 
@@ -54,9 +55,7 @@ namespace GFlowSimulation {
 
     // Expect:
     //  soa_data[0] - sigma, 1
-    //  soa_data[1] - lj strength, 1
-    //  soa_data[2] - sigma, 2
-    //  soa_data[3] - lj strength, 2
+    //  soa_data[1] - sigma, 2
     const float_type sg1  = soa_data[0];
     const float_type sg2  = soa_data[1];
     const float_type lj1  = set1<float_type>(DEFAULT_LENNARD_JONES_STRENGTH);

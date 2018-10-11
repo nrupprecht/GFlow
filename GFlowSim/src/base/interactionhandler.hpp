@@ -8,10 +8,13 @@
 namespace GFlowSimulation {
 
   //! @brief This defines what type of force kernel function the interaction handler expects to be passed in to it.
-  using Kernel = auto (*) (simd_float*, simd_float*, const simd_float, const simd_float, const simd_float*, const RealType*, RealType*) -> void;
+  // using Kernel = auto (*) (simd_float*, simd_float*, const simd_float, const simd_float, const simd_float*, const RealType*, RealType*) -> void;
 
-  template<typename T>
-  using Kernel_2 = auto (*) (T*, T*, const T, const T, const T*, const RealType*, RealType*) -> void;
+  //template<typename T>
+  //using Kernel = auto (*) (T*, T*, const T, const T, const T*, const RealType*, RealType*) -> void;
+
+  template<typename float_type>
+  using Kernel = auto (*) (float_type*, const float_type*, const float_type, const float_type, const float_type*, const RealType*, RealType *) -> void;
 
   /**
   *  @brief Handles the storage and traversal of interacting particles.
@@ -59,7 +62,7 @@ namespace GFlowSimulation {
     //! of each other.
     //! @param param_pack Parameters used to evaluate the force.
     //! @param data_pack Data to be updated by the function.
-    virtual void executeKernel(Kernel, const RealType*, RealType*, const vector<int>&) const = 0;
+    virtual void executeKernel(Kernel<simd_float>, Kernel<float>, const RealType*, RealType*, const vector<int>&) const = 0;
   };
 
 }

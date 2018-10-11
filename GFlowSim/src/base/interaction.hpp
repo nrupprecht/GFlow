@@ -31,7 +31,7 @@ namespace GFlowSimulation {
     virtual void interact() const;
 
     //! @brief Run an externally given kernel through this interaction's interaction handler
-    virtual void executeKernel(Kernel, const RealType*, RealType*, const vector<int>&) const;
+    virtual void executeKernel(Kernel<simd_float>, Kernel<float>, const RealType*, RealType*, const vector<int>&) const;
 
     //! @brief Initialize for force calculation
     //!
@@ -74,10 +74,11 @@ namespace GFlowSimulation {
     InteractionHandler *handler;
 
     //! @brief A pointer to the force function
-    Kernel kernelPtr;
+    Kernel<simd_float> simd_kernelPtr = nullptr;
+    Kernel<float> serial_kernelPtr = nullptr;
 
     //! @brief An array of force parameters. The length of this array will vary by force.
-    RealType *parameters;
+    RealType *parameters = nullptr;
 
     //! @brief The pointers to the arrays of data in simdata that should be packed for the interaction kernel function.
     vector<int> data_needed;
@@ -86,7 +87,7 @@ namespace GFlowSimulation {
     //!
     //! The pressure formula is: P = N k T/V + 1/(DIMENSIONS*V) \sum_i (r_i \dot F_i)
     //! This term should be used like: virial = \sum_i (r_i \dot F_i)
-    mutable RealType virial;
+    mutable RealType virial = 0;
   };
 
 }
