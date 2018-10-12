@@ -94,7 +94,7 @@ namespace GFlowSimulation {
     if (bounds.wd(0) == 0) return;
     
     // Calculate cutoff
-    RealType *sg = simData->sg;
+    RealType *sg = simData->Sg();
     int number = simData->number;
 
     // Largest radius
@@ -145,7 +145,7 @@ namespace GFlowSimulation {
     int sectorAdd[DIMENSIONS], dSectorAdd[DIMENSIONS], otherAdd[DIMENSIONS];
     zeroVec(sectorAdd);
     // Get data from simdata
-    RealType **x = simData->x, *sg = simData->sg;
+    RealType **x = simData->x, *sg = simData->Sg();
     const BCFlag *boundaryConditions = gflow->getBCs();
     // A displacement vector - to be set by the getDisplacement function
     RealType displacement[DIMENSIONS];

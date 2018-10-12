@@ -109,14 +109,18 @@ namespace GFlowSimulation {
 
     // --- Accessors
 
+    RealType *Sg() { return data_array[0]; }
+    RealType *Im() { return data_array[1]; }
+    RealType *Ii() { return data_array[2]; }
+
     RealType& X(int n, int d) { return x[n][d]; }
     RealType* X(int n)        { return x[n]; }
     RealType& V(int n, int d) { return v[n][d]; }
     RealType* V(int n)        { return v[n]; }
     RealType& F(int n, int d) { return f[n][d]; }
     RealType* F(int n)        { return f[n]; }
-    RealType& Sg(int n)       { return sg[n]; }
-    RealType& Im(int n)       { return im[n]; }
+    RealType& Sg(int n)       { return data_array[0][n]; }
+    RealType& Im(int n)       { return data_array[1][n]; }
     int&      Type(int n)     { return type[n]; }
     RealType* DataF(int n)    { return dataF[n]; }
     int*      DataI(int n)    { return dataI[n]; }
@@ -129,8 +133,8 @@ namespace GFlowSimulation {
     const RealType* V(int n)        const { return v[n]; }
     const RealType& F(int n, int d) const { return f[n][d]; }
     const RealType* F(int n)        const { return f[n]; }
-    const RealType& Sg(int n)       const { return sg[n]; }
-    const RealType& Im(int n)       const { return im[n]; }
+    const RealType& Sg(int n)       const { return data_array[0][n]; }
+    const RealType& Im(int n)       const { return data_array[1][n]; }
     const int&      Type(int n)     const { return type[n]; }
     const RealType* DataF(int n)    const { return dataF[n]; }
     const int*      DataI(int n)    const { return dataI[n]; }
@@ -325,6 +329,11 @@ namespace GFlowSimulation {
     //! e.g. RealType *F = f[0]; and then iterating through X.
     RealType **f = nullptr;
 
+    //! @brief All the particle vectorial data that can be stored in arrays.
+    //!
+    //! The first three entries are pointers to the x, v, and f arrays.
+    vector<RealType**> vec_data_array;
+
     //! @brief An array of angle data.
     RealType *th = nullptr;
 
@@ -333,16 +342,24 @@ namespace GFlowSimulation {
 
     //! @brief An array of torque data.
     RealType *tq = nullptr;
-
-    //! @brief An array of moment of inertia data.
-    RealType *iI = nullptr;
     
+    /*
     //! @brief The cutoff radius of the particles.
     //!
     //! All particles also have a characteristic length (sg - for sigma), (inverse) mass.
     RealType *sg = nullptr;
+    
     //! @brief The inverse mass of the the particles.
     RealType *im = nullptr;
+
+    //! @brief An array of moment of inertia data.
+    RealType *iI = nullptr;
+    */
+
+    //! @brief All the particle data that can be stored in an array.
+    //! 
+    //! The first three entries are pointers to the sg, im, and iI arrays.
+    vector<RealType*> data_array; 
 
     //! @brief Stores the type of each atom
     //!

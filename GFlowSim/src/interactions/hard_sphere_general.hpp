@@ -1,5 +1,5 @@
-#ifndef __HARD_SPHERE__GFLOW__
-#define __HARD_SPHERE__GFLOW__
+#ifndef __HARD_SPHERE_GENERAL__GFLOW__
+#define __HARD_SPHERE_GENERAL__GFLOW__
 
 #include "../base/interaction.hpp"
 #include "../utility/simd_generic.hpp"
@@ -15,10 +15,10 @@ namespace GFlowSimulation {
   *
   *  The repulsion of the hard spheres is stored as parameters[0]. The repulsion is assumed to be the same for all hard spheres.
   */
-  class HardSphere : public Interaction {
+  class HardSphereGeneral : public Interaction {
   public:
     //! @brief Constructor
-    HardSphere(GFlow *);
+    HardSphereGeneral(GFlow *);
 
     //! @brief Initialize the force, check if all the special data (dataF, dataI) the force needs exists, make
     //! sure parameter packs are up to date.
@@ -35,7 +35,7 @@ namespace GFlowSimulation {
 
   // --- Template force function
   template<typename float_type>
-  void HardSphere::force(float_type *buffer_out, const float_type* normal, const float_type mask, const float_type distance, 
+  void HardSphereGeneral::force(float_type *buffer_out, const float_type* normal, const float_type mask, const float_type distance, 
     const float_type *soa_data, const float_type *vec_data, const RealType *param_pack, RealType *data_pack) {
     // Expect: Soa data:
     //  soa_data[0] - sigma, 1
@@ -59,4 +59,4 @@ namespace GFlowSimulation {
   }
 
 }
-#endif // __HARD_SPHERE__GFLOW__
+#endif // __HARD_SPHERE_GENERAL__GFLOW__

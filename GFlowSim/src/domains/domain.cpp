@@ -57,7 +57,7 @@ namespace GFlowSimulation {
     if (domain_bounds.vol()<=0) return;
 
     // --- Calculate cutoff
-    RealType *sg = simData->sg;
+    RealType *sg = simData->Sg();
     int number = simData->number;
 
     // We may have already set the cutoff, and don't want it to be overwritten
@@ -254,13 +254,15 @@ namespace GFlowSimulation {
     void (*Displacement) (const RealType*, const RealType*, RealType*, const Bounds, const BCFlag*); 
     Displacement = (use_halo_cells || no_wrap) ? Displacement_Halo : getDisplacement;
 
+    RealType *sg = Base::simData->Sg();
+
     // --- Calculate verlet lists
     RealType displacement[DIMENSIONS];
     for (const auto &cell1 : cells) {
       // Loop through every particle in the cell
       for (auto i1 = cell1.id_list.cbegin(); i1!=cell1.id_list.cend(); ++i1) {
         const int id1 = *i1;
-        RealType sigma = Base::simData->sg[id1];
+        RealType sigma = sg[id1];
         // --- Verlet lists for particles in the same cell
         for (auto i2=i1+1; i2!=cell1.id_list.cend(); ++i2) {
           // Get the id of the second particle
@@ -269,7 +271,7 @@ namespace GFlowSimulation {
           // until remake_verlet is called again).
           subtractVec(Base::simData->x[id1], Base::simData->x[id2], displacement);
           // Check the displacement
-          if (sqr(displacement) < sqr(sigma + Base::simData->sg[id2] + skin_depth))
+          if (sqr(displacement) < sqr(sigma + sg[id2] + skin_depth))
             pair_interaction(id1, id2);
         }
 
@@ -281,7 +283,7 @@ namespace GFlowSimulation {
             // Displacement(Base::simData->x[id1], Base::simData->x[id2], displacement, bounds, bcs);
             getDisplacement(Base::simData->x[id1], Base::simData->x[id2], displacement, bounds, bcs); // Faster to just do this
             // Check the displacement
-            if (sqr(displacement) < sqr(sigma + Base::simData->sg[id2] + skin_depth))
+            if (sqr(displacement) < sqr(sigma + sg[id2] + skin_depth))
               pair_interaction(id1, id2);
           }
         }

@@ -45,7 +45,11 @@
   // What type we use as the vector of integers
   typedef __m128i simd_int;
 
+  // Constants
   const __m128 SIGNMASK = _mm_castsi128_ps(_mm_set1_epi32(0x80000000));
+  const simd_float minus_one = _mm_set1_ps(-1.);
+  const simd_float simd_zero = _mm_set1_ps(0.);
+  const int simd_valid = 0xffffffff;
 
   // Logic
   inline simd_int simd_and(const simd_int a, const simd_int b) { return _mm_and_si128(a, b); }
@@ -93,6 +97,7 @@
 
   // Comparisons
   inline simd_float simd_less_than(const simd_float a, const simd_float b) { return _mm_cmplt_ps(a, b); }
+  inline simd_float simd_clamp(const simd_float a) { return simd_mask(a, simd_less_than(simd_zero, a)); }
 
   // Special load
   template<int dimensions> inline simd_float simd_load_constant(const float *a, const int i) {
@@ -113,10 +118,7 @@
     return simd_set1(a[i/4]);
   }
 
-  // Constants
-  const simd_float minus_one = simd_set1(-1.);
-  const simd_float simd_zero = simd_set1(0.);
-  const int simd_valid = 0xffffffff;
+  
 
 #elif SIMD_TYPE==SIMD_AVX or SIMD_TYPE==SIMD_AVX2
   // The number of floats per vector

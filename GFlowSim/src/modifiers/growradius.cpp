@@ -22,7 +22,7 @@ namespace GFlowSimulation {
       remove = true;
     }
     // Set the radius
-    if (id>-1) simData->sg[id] = sigma;
+    if (id>-1) simData->Sg()[id] = sigma;
     else remove = true;
   }
 

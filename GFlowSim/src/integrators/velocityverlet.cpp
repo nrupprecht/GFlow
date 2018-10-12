@@ -17,7 +17,7 @@ namespace GFlowSimulation {
     // Half a timestep
     RealType hdt = 0.5*Integrator::dt;
     // Get arrays
-    RealType *x = simData->x[0], *v = simData->v[0], *f = simData->f[0], *im = simData->im;
+    RealType *x = simData->x[0], *v = simData->v[0], *f = simData->f[0], *im = simData->Im();
     
     #if SIMD_TYPE==SIMD_NONE
     // Update velocities
@@ -105,7 +105,7 @@ namespace GFlowSimulation {
     // --- Update angular variables if they exist
     if (simData->usingAngularDynamics() && DIMENSIONS>1) {
       // Get arrays
-      RealType *th = simData->th, *om = simData->om, *tq = simData->tq, *iI = simData->iI;
+      RealType *th = simData->th, *om = simData->om, *tq = simData->tq, *iI = simData->Ii();
       // --- Angular velocity
       if (DIMENSIONS==2) {
         for (int i=0; i<number; ++i) {
@@ -137,7 +137,7 @@ namespace GFlowSimulation {
     // Half a timestep
     RealType hdt = 0.5*Integrator::dt;
     // Get arrays
-    RealType *x = simData->x[0], *v = simData->v[0], *f = simData->f[0], *im = simData->im;
+    RealType *x = simData->x[0], *v = simData->v[0], *f = simData->f[0], *im = simData->Im();
 
     #if SIMD_TYPE==SIMD_NONE
     for (int i=0; i<number*DIMENSIONS; ++i) {
@@ -174,7 +174,7 @@ namespace GFlowSimulation {
     // --- Update angular variables if they exist
     if (simData->usingAngularDynamics()) {
       // Get arrays
-      RealType *th = simData->th, *om = simData->om, *tq = simData->tq, *iI = simData->iI;
+      RealType *th = simData->th, *om = simData->om, *tq = simData->tq, *iI = simData->Ii();
       // --- Angular velocity
       if (DIMENSIONS==1);
       else if (DIMENSIONS==2) {

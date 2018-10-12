@@ -21,7 +21,7 @@ namespace GFlowSimulation {
     int number = simData->number;
     if (number==0) return;
     // Get arrays
-    RealType *x = simData->x[0], *v = simData->v[0], *f = simData->f[0], *im = simData->im, *sg = simData->sg;
+    RealType *x = simData->x[0], *v = simData->v[0], *f = simData->f[0], *im = simData->Im(), *sg = simData->Sg();
 
     // Add random noise - we don't need to do this every time
     RealType time = Base::gflow->getElapsedTime();

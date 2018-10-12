@@ -20,8 +20,9 @@ namespace GFlowSimulation {
   void ConstantAcceleration::post_forces() {
     int number = Base::simData->number;
     RealType force[DIMENSIONS];
+    RealType *im = Base::simData->Im();
     for (int n=0; n<number; ++n) {
-      RealType mass = Base::simData->im[n]>0 ? 1./Base::simData->im[n] : 0;
+      RealType mass = im[n]>0 ? 1./im[n] : 0;
       scalarMultVec(mass, acceleration, force);
       plusEqVec(Base::simData->F(n), force);
     }

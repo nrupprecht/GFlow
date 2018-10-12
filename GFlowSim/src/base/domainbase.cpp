@@ -184,6 +184,8 @@ namespace GFlowSimulation {
   bool DomainBase::check_needs_remake() {
     // Set time point
     lastCheck = Base::gflow->getElapsedTime();
+    // Don't go to long without updating
+    if (lastCheck - lastUpdate > max_update_delay) return true;
     // If there are more particles now, we need to resectorize
     if (sizeXVL<Base::simData->number) return true;
     // Find the maximum possible motion

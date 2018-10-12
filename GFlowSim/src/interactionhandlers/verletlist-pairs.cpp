@@ -8,7 +8,7 @@
 
 namespace GFlowSimulation {
 
-  VerletListPairs::VerletListPairs(GFlow *gflow) : InteractionHandler(gflow), min_simd_size(simd_data_size), use_simd(false) {};
+  VerletListPairs::VerletListPairs(GFlow *gflow) : InteractionHandler(gflow), min_simd_size(simd_data_size), use_simd(true) {};
 
   void VerletListPairs::addPair(const int id1, const int id2) {
     verlet_a.push_back(id1);
@@ -25,7 +25,8 @@ namespace GFlowSimulation {
   }
 
   void VerletListPairs::executeKernel(Kernel<simd_float> simd_kernel, Kernel<float> serial_kernel, 
-    const RealType *param_pack, RealType *data_pack, const vector<int>& data_needed) const 
+    const RealType *param_pack, RealType *data_pack, 
+    const vector<int>& data_needed, const vector<int>& vec_data_needed) const 
   {
     // If the kernel is null, then there is no point looping through everything
     if (simd_kernel==nullptr && serial_kernel==nullptr) return;
@@ -57,8 +58,7 @@ namespace GFlowSimulation {
       // Set pointers in "arrays"
       for (int i=0; i<data_size; ++i) {
         int entry = data_needed[i];
-        //arrays[i] = Base::simData->dataF[entry]; // @todo This needs to be able to access sigma
-        if (i==0) arrays[i] = Base::simData->sg;
+        arrays[i] = Base::simData->data_array[i];
       }
       // Two halves - first half will be for head particle (will be duplicated), second half will be for neighbors
       if (use_simd) soa_data = new simd_float[2*data_size]; 
@@ -73,7 +73,7 @@ namespace GFlowSimulation {
     // Get the positions
     RealType **x = Base::simData->x;
     RealType **f = Base::simData->f;
-    RealType *sg = Base::simData->sg;
+    RealType *sg = Base::simData->Sg();
 
     Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
     BCFlag boundaryConditions[DIMENSIONS]; 
@@ -121,7 +121,7 @@ namespace GFlowSimulation {
         simd_scalar_mult_vec(invDistance, dX, norm, sim_dimensions);
 
         // Calculate force
-        simd_kernel( buffer_out, norm, mask, distance, soa_data, param_pack, data_pack);
+        simd_kernel( buffer_out, norm, mask, distance, soa_data, nullptr, param_pack, data_pack);
 
         // Update forces
         update_vector_data_size(&verlet_a[i], Base::simData->f, &buffer_out[0], size, buffer_size);
@@ -150,7 +150,7 @@ namespace GFlowSimulation {
         }
 
         // Calculate force.
-        serial_kernel( buffer_out_float, normal, 1., distance, data, param_pack, data_pack);
+        serial_kernel( buffer_out_float, normal, 1., distance, data, nullptr, param_pack, data_pack);
         
         // Add the force to the buffers
         plusEqVec(f[id1], &buffer_out_float[0]);

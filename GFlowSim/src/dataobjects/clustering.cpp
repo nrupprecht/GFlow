@@ -41,7 +41,7 @@ namespace GFlowSimulation {
         // Particle with id [id] belongs in the same cluster as particle with id [head]
         clusters[id] = n_clusters;
         // Fill the neighbors array with ids. The [getAllWithin] function clears [neighbors] before filling it.
-        Base::domain->getAllWithin(id, 2*Base::simData->sg[id] + skin, neighbors);
+        Base::domain->getAllWithin(id, 2*Base::simData->Sg()[id] + skin, neighbors);
         for (auto n : neighbors) {
           // Only put on the stack if it is not already on the stack, and has not had its
           if (clusters[n]==-1 && (!same_type_clusters || type[n]==head_type) && type[n]!=-1) {

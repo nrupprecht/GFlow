@@ -34,7 +34,7 @@ namespace GFlowSimulation {
       for (int d=0; d<DIMENSIONS; ++d)
         constituents[clus].push_back(Base::simData->X(i,d));
       // Push the radius
-      constituents[clus].push_back(Base::simData->sg[i]);
+      constituents[clus].push_back(Base::simData->Sg()[i]);
     }
 
     // Fill [record] and [elements] vectors

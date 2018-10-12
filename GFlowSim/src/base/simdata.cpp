@@ -2,11 +2,12 @@
 // Other files
 #include "../utility/memory.hpp"
 #include "../utility/vectormath.hpp"
-#include "../utility/memoryoptimizer.hpp"
 
 namespace GFlowSimulation {
 
-  SimData::SimData(GFlow *gflow) : Base(gflow) {};
+  SimData::SimData(GFlow *gflow) : Base(gflow) {
+    data_array = vector<RealType*>(3, nullptr);
+  };
 
   SimData::~SimData() {
     clean();
@@ -23,15 +24,9 @@ namespace GFlowSimulation {
     if (v) dealloc_array_2d(v);
     if (f) dealloc_array_2d(f);
     clearAngularDynamics();
-    // These are just arrays
-    if (sg) {
-      delete [] sg;
-      sg = nullptr;
-    }
-    if (im) {
-      delete [] im;
-      im = nullptr;
-    }
+    // Clear data arrays
+    for (auto &dt : data_array)
+      if (dt) delete [] dt;
     if (type) {
       delete [] type;
       type = nullptr;
@@ -73,8 +68,12 @@ namespace GFlowSimulation {
     if (angularDynamics) allocateAngularDynamics(num);
 
     // Reserve new arrays
+    /*
     sg   = new RealType[num];
     im   = new RealType[num];
+    */
+    data_array[0] = new RealType[num]; // Sigmas
+    data_array[1] = new RealType[num]; // Inverse masses
     type = new int[num];
     global_id = new int[num];
 
@@ -104,8 +103,12 @@ namespace GFlowSimulation {
     if (angularDynamics) allocateAngularDynamics(num);
 
     // Reserve new arrays
+    /*
     sg   = new RealType[num];
     im   = new RealType[num];
+    */
+    data_array[0] = new RealType[num]; // Sigmas
+    data_array[1] = new RealType[num]; // Inverse masses
     type = new int[num];
     global_id = new int[num];
 
@@ -167,8 +170,8 @@ namespace GFlowSimulation {
     if (x) copyHelper<DIMENSIONS>(resize_owned, resize_halo, resize_ghost, x[0], nx[0]);
     if (v) copyHelper<DIMENSIONS>(resize_owned, resize_halo, resize_ghost, v[0], nv[0]);
     if (f) copyHelper<DIMENSIONS>(resize_owned, resize_halo, resize_ghost, f[0], nf[0]);
-    if (sg) copyHelper<1>(resize_owned, resize_halo, resize_ghost, sg, nsg);
-    if (im) copyHelper<1>(resize_owned, resize_halo, resize_ghost, im, nim);
+    if (data_array[0]) copyHelper<1>(resize_owned, resize_halo, resize_ghost, data_array[0], nsg);
+    if (data_array[1]) copyHelper<1>(resize_owned, resize_halo, resize_ghost, data_array[1], nim);
     if (type) copyHelper<1>(resize_owned, resize_halo, resize_ghost, type, ntype);
     if (body) copyHelper<1>(resize_owned, resize_halo, resize_ghost, body, nbody);
     if (global_id) copyHelper<1>(resize_owned, resize_halo, resize_ghost, global_id, ngid);
@@ -177,7 +180,7 @@ namespace GFlowSimulation {
       copyHelper<1>(resize_owned, resize_halo, resize_ghost, th, nth);
       copyHelper<1>(resize_owned, resize_halo, resize_ghost, om, nom);
       copyHelper<1>(resize_owned, resize_halo, resize_ghost, tq, ntq);
-      copyHelper<1>(resize_owned, resize_halo, resize_ghost, iI, niI);
+      copyHelper<1>(resize_owned, resize_halo, resize_ghost, data_array[2], niI);
     }
     // --- Copy auxilary data
     for (int i=0; i<dataF.size(); ++i)
@@ -193,9 +196,9 @@ namespace GFlowSimulation {
     th = nth;
     om = nom;
     tq = ntq;
-    sg = nsg;
-    im = nim;
-    iI = niI;
+    data_array[0] = nsg;
+    data_array[1] = nim;
+    data_array[2] = niI;
     type  = ntype;
     body  = nbody;
     dataF = ndataF;
@@ -335,12 +338,12 @@ namespace GFlowSimulation {
     id_map.insert(IPair(next_global_id, number));
     // Assign a global id - this assumes that this is a *new* particle
     global_id[number] = ++next_global_id;
-    sg[number]   = Sg;
-    im[number]   = Im;
+    data_array[0][number]   = Sg;
+    data_array[1][number]   = Im;
     type[number] = Type;
     // If using angular dynamics, but iI is unspecified, treat as uniform disk.
     if (angularDynamics)
-      iI[number] = 0.5*(1./Im)*sqr(Sg);
+      data_array[2][number] = 0.5*(1./Im)*sqr(Sg);
     // There is now one more particle
     ++number;
     // Set flag
@@ -363,9 +366,9 @@ namespace GFlowSimulation {
       id_map.insert(IPair(next_global_id, number));
       // Assign a global id - this assumes that this is a *new* particle
       global_id[number] = ++next_global_id;
-      sg[number]   = Sg;
-      im[number]   = Im;
-      iI[number]   = II;
+      data_array[0][number]   = Sg;
+      data_array[1][number]   = Im;
+      data_array[2][number]   = II;
       type[number] = Type;
       // There is now one more particle
       ++number;
@@ -399,8 +402,8 @@ namespace GFlowSimulation {
         // Copy data
         copyVec(X, x[number_halo+end_owned]);
         copyVec(V, v[number_halo+end_owned]);
-        sg[number_halo+end_owned]   = Sg;
-        im[number_halo+end_owned]   = Im;
+        data_array[0][number_halo+end_owned]   = Sg;
+        data_array[1][number_halo+end_owned]   = Im;
         type[number_halo+end_owned] = Type;
         // There is now one more halo particle
         ++number_halo;
@@ -415,8 +418,8 @@ namespace GFlowSimulation {
         // Copy data
         copyVec(X, x[number_ghost+end_halo]);
         copyVec(V, v[number_ghost+end_halo]);
-        sg[number_ghost+end_halo]   = Sg;
-        im[number_ghost+end_halo]   = Im;
+        data_array[0][number_ghost+end_halo]   = Sg;
+        data_array[1][number_ghost+end_halo]   = Im;
         type[number_ghost+end_halo] = Type;
         // There is now one more ghost particle
         ++number_ghost;
@@ -494,8 +497,8 @@ namespace GFlowSimulation {
     // Copy data
     copyVec(X, x[number_halo+end_owned]);
     copyVec(V, v[number_halo+end_owned]);
-    sg[number_halo+end_owned]   = Sg;
-    im[number_halo+end_owned]   = Im;
+    data_array[0][number_halo+end_owned]   = Sg;
+    data_array[1][number_halo+end_owned]   = Im;
     type[number_halo+end_owned] = Type;
     // There is now one more halo particle
     ++number_halo;
@@ -513,8 +516,8 @@ namespace GFlowSimulation {
     // Copy data
     copyVec(X, x[number_ghost+end_halo]);
     copyVec(V, v[number_ghost+end_halo]);
-    sg[number_ghost+end_halo]   = Sg;
-    im[number_ghost+end_halo]   = Im;
+    data_array[0][number_ghost+end_halo]   = Sg;
+    data_array[1][number_ghost+end_halo]   = Im;
     type[number_ghost+end_halo] = Type;
     // There is now one more ghost particle
     ++number_ghost;
@@ -544,15 +547,15 @@ namespace GFlowSimulation {
     copyVec(v[id_source], v[id_dest]);
     copyVec(f[id_source], f[id_dest]);
     global_id[id_dest] = gs;
-    sg[id_dest] = sg[id_source];
-    im[id_dest] = im[id_source];
+    data_array[0][id_dest] = data_array[0][id_source];
+    data_array[1][id_dest] = data_array[1][id_source];
     type[id_dest] = type[id_source];
     // --- Copy angular data
     if (angularDynamics) {
       th[id_dest] = th[id_source];
       om[id_dest] = om[id_source];
       tq[id_dest] = tq[id_source];
-      iI[id_dest] = iI[id_source];
+      data_array[2][id_dest] = data_array[2][id_source];
     }
     // --- Move auxilary data
     for (int i=0; i<dataF.size(); ++i)
@@ -640,8 +643,8 @@ namespace GFlowSimulation {
     om = nullptr;
     if (tq) delete [] tq;
     tq = nullptr;
-    if (iI) delete [] iI;
-    iI = nullptr;
+    if (data_array[2]) delete [] data_array[2];
+    data_array[2] = nullptr;
   }
 
   void SimData::allocateAngularDynamics(int num) {
@@ -650,7 +653,7 @@ namespace GFlowSimulation {
     th = new RealType[num];
     om = new RealType[num];
     tq = new RealType[num];
-    iI = new RealType[num];
+    data_array[2] = new RealType[num];
   }
 
 }

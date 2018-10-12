@@ -19,7 +19,7 @@ namespace GFlowSimulation {
     int number = Base::simData->number;
     RealType **v = Base::simData->v;
     RealType **f = Base::simData->f;
-    RealType *sg = Base::simData->sg;
+    RealType *sg = Base::simData->Sg();
     // Precomputed values, assumes Kb = 1
     RealType DT1 = temperature/(6.*viscosity*PI);
     RealType Df1 = sqrt(2.*DT1*(time-lastUpdate));

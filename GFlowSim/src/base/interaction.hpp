@@ -31,7 +31,7 @@ namespace GFlowSimulation {
     virtual void interact() const;
 
     //! @brief Run an externally given kernel through this interaction's interaction handler
-    virtual void executeKernel(Kernel<simd_float>, Kernel<float>, const RealType*, RealType*, const vector<int>&) const;
+    virtual void executeKernel(Kernel<simd_float>, Kernel<float>, const RealType*, RealType*, const vector<int>&, const vector<int>&) const;
 
     //! @brief Initialize for force calculation
     //!
@@ -82,6 +82,7 @@ namespace GFlowSimulation {
 
     //! @brief The pointers to the arrays of data in simdata that should be packed for the interaction kernel function.
     vector<int> data_needed;
+    vector<int> vec_data_needed;
 
     //! @brief The virial, for calculating pressure.
     //!

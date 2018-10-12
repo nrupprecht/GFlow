@@ -15,7 +15,7 @@ namespace GFlowSimulation {
     // Number of (real - non ghost) particles
     int number = simData->number;
     // Get arrays
-    RealType *x = simData->x[0], *v = simData->v[0], *f = simData->f[0], *sg = simData->sg;
+    RealType *x = simData->x[0], *v = simData->v[0], *f = simData->f[0], *sg = simData->Sg();
 
     // Update velocities
     for (int i=0; i<number*DIMENSIONS; ++i) {

@@ -10,9 +10,10 @@ namespace GFlowSimulation {
     // Check
     if (simData==nullptr || simData->number==0) return;
     // Look for minimum sigma
-    minSigma = simData->sg[0];
+    RealType *sg = simData->Sg();
+    minSigma = sg[0];
     for (int n=0; n<simData->number; ++n)
-      if (simData->sg[n]<minSigma) minSigma = simData->sg[n];
+      if (sg[n]<minSigma) minSigma = sg[n];
   }
 
   void TimestepModifier::post_forces() {
@@ -30,8 +31,9 @@ namespace GFlowSimulation {
       if (v>maxV) maxV = v;
     }
     // Find maximum acceleration
+    RealType *im = simData->Im();
     for (int n=0; n<simData->number; ++n) {
-      RealType a = magnitudeVec(simData->f[n])*simData->im[n];
+      RealType a = magnitudeVec(simData->f[n])*im[n];
       if (a>maxA) maxA = a;
     }
 

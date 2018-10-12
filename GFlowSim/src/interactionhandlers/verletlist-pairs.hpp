@@ -30,7 +30,7 @@ namespace GFlowSimulation {
     //! of each other.
     //! @param param_pack Parameters used to evaluate the force.
     //! @param data_pack Data to be updated by the function.
-    virtual void executeKernel(Kernel<simd_float>, Kernel<float>, const RealType*, RealType*, const vector<int>&) const override;
+    virtual void executeKernel(Kernel<simd_float>, Kernel<float>, const RealType*, RealType*, const vector<int>&, const vector<int>&) const override;
 
   private:
 

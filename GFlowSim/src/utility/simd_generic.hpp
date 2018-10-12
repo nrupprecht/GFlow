@@ -25,6 +25,9 @@ inline simd_float mult(simd_float a, simd_float b) { return simd_mult(a, b); }
 inline float mask_value(float a, float m) { return a*m; }
 inline simd_float mask_value(simd_float a, simd_float m) { return simd_mask(a, m); }
 
+inline float clamp(float a) { return a<0 ? 0 : a; }
+inline simd_float clamp(simd_float a) { return simd_clamp(a); }
+
 inline void scalar_mult_vec(float scalar, const float *vec, float *out, int) {
   GFlowSimulation::scalarMultVec(scalar, vec, out);
 }

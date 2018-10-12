@@ -1,8 +1,8 @@
-#include "hard_sphere.hpp"
+#include "hard_sphere_general.hpp"
 
 namespace GFlowSimulation {
 
-  HardSphere::HardSphere(GFlow *gflow) : Interaction(gflow) {
+  HardSphereGeneral::HardSphereGeneral(GFlow *gflow) : Interaction(gflow) {
     parameters = new RealType;
     parameters[0] = DEFAULT_HARD_SPHERE_REPULSION;
     // Set the force function
@@ -12,11 +12,11 @@ namespace GFlowSimulation {
     data_needed.push_back(0); // Address of sigma array
   };
 
-  void HardSphere::initialize() {
+  void HardSphereGeneral::initialize() {
     parameters[0] = DEFAULT_HARD_SPHERE_REPULSION;
   }
 
-  void HardSphere::setRepulsion(RealType r) { 
+  void HardSphereGeneral::setRepulsion(RealType r) { 
     parameters[0] = r; 
   }
 

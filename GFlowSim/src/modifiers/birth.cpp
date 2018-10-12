@@ -19,7 +19,7 @@ namespace GFlowSimulation {
     int births = 0;
     for (int i=0; i<Base::simData->number; ++i) {
 
-      RealType sigma = Base::simData->sg[i];
+      RealType sigma = Base::simData->Sg()[i];
       if (sigma>=0.05) split(i, 5);
 
       /*
@@ -51,8 +51,8 @@ namespace GFlowSimulation {
     copyVec(Base::simData->x[id], X2);
     copyVec(Base::simData->v[id], V);
     // Get the parent particle's radius
-    RealType rf = Base::simData->sg[id];
-    RealType im = Base::simData->im[id];
+    RealType rf = Base::simData->Sg()[id];
+    RealType im = Base::simData->Im()[id];
     int type    = Base::simData->type[id];
     // Particles will be at X +/- dX
     scalarMultVec(0.5*rf, Xhat, dX);
@@ -64,7 +64,7 @@ namespace GFlowSimulation {
     Base::gflow->addModifier(new GrowRadius(Base::gflow, id1, 0.45*rf, rf, growTime));
     // Shrink first particle and put in place, add grow radius modifier
     copyVec(X1, Base::simData->x[id]);
-    Base::simData->sg[id] *= 0.45;
+    Base::simData->Sg()[id] *= 0.45;
     int id2 = Base::simData->global_id[id];
     Base::gflow->addModifier(new GrowRadius(Base::gflow, id2, 0.45*rf, rf, growTime));
   }

@@ -42,13 +42,15 @@ namespace GFlowSimulation {
     static void force(simd_float*, simd_float*, const simd_float, const simd_float, const simd_float*, const RealType*, RealType*);
 
     template<typename float_type>
-    static void force(float_type*, const float_type*, const float_type, const float_type, const float_type*, const RealType*, RealType*);
+    static void force(float_type*, const float_type*, 
+      const float_type, const float_type, const float_type*, 
+      const float_type*, const RealType*, RealType*);
   };
 
   // Template force function
   template<typename float_type>
-  void LennardJones::force(float_type *buffer_out, const float_type* normal, const float_type mask, const float_type distance, const float_type *soa_data, 
-  const RealType *param_pack, RealType *data_pack) {
+  void LennardJones::force(float_type *buffer_out, const float_type* normal, const float_type mask, const float_type distance, 
+    const float_type *soa_data, const float_type *vec_data, const RealType *param_pack, RealType *data_pack) {
     // Param Pack: Expect:
     //  param_pack[0] - cutoff
     const RealType cutoff = 2.5; // param_pack[0];

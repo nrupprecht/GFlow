@@ -2,12 +2,6 @@
 // Other files
 #include "allbaseobjects.hpp"
 #include "dataobjects/memorydistance.hpp"
-#include "utility/memoryoptimizer.hpp"
-
-//****
-#include "modifiers/birth.hpp"
-#include "modifiers/death.hpp"
-//****
 
 namespace GFlowSimulation {
 
@@ -113,8 +107,8 @@ namespace GFlowSimulation {
       throw UnexpectedNullPointer("Error: Some object was null at GFlow initialization.");
     }
     // Check that simdata has good arrays
-    if (simData->x==nullptr || simData->v==nullptr || simData->f==nullptr || simData->sg==nullptr 
-      || simData->im==nullptr || simData->type==nullptr) 
+    if (simData->x==nullptr || simData->v==nullptr || simData->f==nullptr || simData->Sg()==nullptr 
+      || simData->Im()==nullptr || simData->type==nullptr) 
     {
       throw UnexpectedNullPointer("Some array in simdata was null that shouldn't be.");
     }
@@ -136,20 +130,6 @@ namespace GFlowSimulation {
       integrator->pre_step();
       dataMaster->pre_step();
       domain->pre_step();
-
-      // --- Potentially optimize memory. Do this before resectorization happens, so we can resectorize
-      if (do_memory_optimization && elapsed_time-last_memory_optimization>memory_check_delay) {
-        // Set last_memory_optimization
-        last_memory_optimization = elapsed_time;
-        // Look at the average memory distance
-        MemoryDistance md(this);
-        RealType aveDist = md.getAverageDistance();
-        // If the distance is large enough, rearrange memory
-        if (aveDist > 1.5*target_memory_distance)
-          MemoryOptimizer::GridParticles(*simData, bounds);
-        // The verlet lists will have to be remade
-        domain->construct();
-      }
 
       // --> Pre-exchange
       for (auto m : modifiers) m->pre_exchange();

@@ -23,6 +23,7 @@ namespace GFlowSimulation {
 
     // Get the number of particles
     int number = Base::simData->number;
+    RealType *sg = Base::simData->Sg();
     // Fill the array of data
     for (int i=0; i<number; ++i) {
       if (Base::simData->type[i]!=-1) {
@@ -32,7 +33,7 @@ namespace GFlowSimulation {
           data.push_back(Base::simData->x[i][d]);
         for (; d<2*DIMENSIONS; ++d)
           data.push_back(Base::simData->v[i][d-DIMENSIONS]);
-        data.push_back(Base::simData->sg[i]);
+        data.push_back(sg[i]);
         data.push_back(Base::simData->type[i]);
       }
     }

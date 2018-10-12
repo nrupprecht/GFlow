@@ -20,10 +20,11 @@ namespace GFlowSimulation {
     RealType V = Base::gflow->getBounds().vol();
     // Get the total number of particles
     int number = Base::simData->number;
+    RealType *im = Base::simData->Im();
     // Calculate the temperature
     RealType T = 0;
     for (int i=0; i<number; ++i) {
-      T += Base::simData->im[i]>0 ? sqr(Base::simData->v[i])/Base::simData->im[i] : 0;
+      T += im[i]>0 ? sqr(Base::simData->v[i])/im[i] : 0;
     }
     T *= 0.5; // Now we have the KE
     // Use E = DIMENSIONS/2 * N k T (not true if there are additional degrees of freedom...)
