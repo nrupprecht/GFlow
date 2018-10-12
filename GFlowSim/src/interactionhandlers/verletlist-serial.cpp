@@ -97,7 +97,7 @@ namespace GFlowSimulation {
         }
 
         // Calculate force.
-        serial_kernel(buffer_out_float, normal, 1., distance, data, vector_data, param_pack, data_pack);
+        serial_kernel( buffer_out_float, normal, 1., distance, data, vector_data, param_pack, data_pack);
         
         // Add the force to the buffers
         plusEqVec(f[id1], &buffer_out_float[0]);

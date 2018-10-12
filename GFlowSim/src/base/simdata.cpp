@@ -7,6 +7,7 @@ namespace GFlowSimulation {
 
   SimData::SimData(GFlow *gflow) : Base(gflow) {
     data_array = vector<RealType*>(3, nullptr);
+    vec_data_array = vector<RealType**>(3, nullptr);
   };
 
   SimData::~SimData() {
@@ -20,9 +21,14 @@ namespace GFlowSimulation {
 
   void SimData::clean() {
     // Theses are arrays of arrays
+    /*
+    for (auto &dt : vec_data_array)
+      if (dt) dealloc_array_2d(dt);
+    */
     if (x) dealloc_array_2d(x);
     if (v) dealloc_array_2d(v);
     if (f) dealloc_array_2d(f);
+    
     clearAngularDynamics();
     // Clear data arrays
     for (auto &dt : data_array)

@@ -3,17 +3,21 @@
 namespace GFlowSimulation {
 
   HardSphereGeneral::HardSphereGeneral(GFlow *gflow) : Interaction(gflow) {
-    parameters = new RealType;
+    parameters = new RealType[2];
     parameters[0] = DEFAULT_HARD_SPHERE_REPULSION;
+    parameters[1] = 1; // Dissipation
     // Set the force function
     simd_kernelPtr = &force<simd_float>;
     serial_kernelPtr = &force<float>;
     // Set data needed - sigmas
     data_needed.push_back(0); // Address of sigma array
+    // Set vector data needed - velocities
+    data_needed.push_back(1);
   };
 
   void HardSphereGeneral::initialize() {
     parameters[0] = DEFAULT_HARD_SPHERE_REPULSION;
+    parameters[1] = 1; // Dissipation
   }
 
   void HardSphereGeneral::setRepulsion(RealType r) { 

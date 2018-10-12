@@ -18,6 +18,12 @@ inline simd_float add(simd_float a, simd_float b) { return simd_add(a, b); }
 
 inline float      sub(float a, float b) { return a-b; }
 inline simd_float sub(simd_float a, simd_float b) { return simd_sub(a, b); }
+inline void       sub(const float *a, const float *b, float *c, int sim_dimensions) {
+  for (int d=0; d<sim_dimensions; ++d) c[d] = a[d] - b[d];
+}
+inline void       sub(const simd_float *a, const simd_float *b, simd_float *c, int sim_dimensions) {
+  simd_vector_sub(a, b, c, sim_dimensions);
+}
 
 inline float      mult(float a, float b) { return a*b; }
 inline simd_float mult(simd_float a, simd_float b) { return simd_mult(a, b); }

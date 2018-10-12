@@ -12,6 +12,7 @@
 #include "../alldataobjects.hpp"
 #include "../allintegrators.hpp"
 #include "../allmodifiers.hpp"
+#include "../allinteractions.hpp"
 
 namespace GFlowSimulation {
 

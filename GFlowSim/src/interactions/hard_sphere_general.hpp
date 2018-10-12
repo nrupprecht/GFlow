@@ -42,12 +42,22 @@ namespace GFlowSimulation {
     //  soa_data[1] - sigma, 2
     const float_type sg1  = soa_data[0];
     const float_type sg2  = soa_data[1];
+    // Expect: Vector data:
+    //  vec_data[0::D]  - velocity, 1
+    //  vec_data[D::2D] - velocity, 2
+
     // Expect: Param pack:
     //  param_pack[0] - Repulsion
     const float_type repulsion = set1<float_type>(param_pack[0]);
 
     // Calculate magnitude
     float_type magnitude = repulsion*(sg1 + sg2 - distance);
+
+    /*
+    float_type dV[DIMENSIONS];
+    sub(&vec_data[0], &vec_data[DIMENSIONS], dV, DIMENSIONS);
+    */
+
     // Apply force mask
     float_type masked_magnitude = mask_value(magnitude, mask);
 
