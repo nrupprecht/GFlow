@@ -57,15 +57,16 @@ namespace GFlowSimulation {
     }
     // Buffer for force output
     int buffer_size = sim_dimensions; // @todo Make this an input parameter.
-    float *buffer_out_float = new float[2*buffer_size];
-    RealType *data          = new RealType[2*data_size];
-    RealType *vector_data   = new RealType[2*vec_data_size*sim_dimensions];    
-    RealType normal[DIMENSIONS];
+    RealType *buffer_out_float = nullptr, *data = nullptr, *vector_data = nullptr;
+    if (buffer_size) buffer_out_float = new float[2*buffer_size];
+    if (data_size) data = new RealType[2*data_size];
+    if (vec_data_size) vector_data = new RealType[2*vec_data_size*sim_dimensions];    
+    RealType *normal = new RealType[sim_dimensions];
 
     // Get the positions
-    RealType **x = Base::simData->x;
-    RealType **v = Base::simData->v;
-    RealType **f = Base::simData->f;
+    RealType **x = Base::simData->X();
+    RealType **v = Base::simData->V();
+    RealType **f = Base::simData->F();
     RealType *sg = Base::simData->Sg();
 
     Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
@@ -110,6 +111,7 @@ namespace GFlowSimulation {
     if (buffer_out_float) delete [] buffer_out_float;
     if (data) delete [] data;
     if (vector_data) delete [] vector_data;
+    delete [] normal;
   }
 
 }

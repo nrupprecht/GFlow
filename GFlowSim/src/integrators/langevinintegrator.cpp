@@ -27,7 +27,7 @@ namespace GFlowSimulation {
     // Half a timestep
     RealType hdt = 0.5*Integrator::dt;
     // Get arrays
-    RealType *x = simData->x[0], *v = simData->v[0], *f = simData->f[0], *im = simData->Im();
+    RealType *x = simData->X_arr(), *v = simData->V_arr(), *f = simData->F_arr(), *im = simData->Im();
 
     // Update velocities
     for (int i=0; i<number*DIMENSIONS; ++i) {
@@ -55,7 +55,7 @@ namespace GFlowSimulation {
     // Number of (real - non ghost) particles
     int number = simData->number;
     // Get arrays
-    RealType *x = simData->x[0], *v = simData->v[0], *f = simData->f[0], *im = simData->Im(), *sg = simData->Sg();
+    RealType *x = simData->X_arr(), *v = simData->V_arr(), *f = simData->F_arr(), *im = simData->Im(), *sg = simData->Sg();
 
     // Add random noise - we don't need to do this every time
     RealType time = Base::gflow->getElapsedTime();

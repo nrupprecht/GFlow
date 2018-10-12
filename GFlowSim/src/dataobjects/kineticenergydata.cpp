@@ -14,7 +14,7 @@ namespace GFlowSimulation {
 
     // Get and store data
     RealType ke = 0;
-    RealType **v = Base::simData->v;
+    RealType **v = Base::simData->V();
     RealType *im = Base::simData->Im();
     int number = Base::simData->number;
     int count = 0;

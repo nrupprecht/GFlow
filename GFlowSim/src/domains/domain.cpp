@@ -95,7 +95,7 @@ namespace GFlowSimulation {
     neighbors.clear();
 
     // Find where particle [id] is
-    RealType *X = Base::simData->x[id];
+    RealType *X = Base::simData->X(id);
     RealType displacement[DIMENSIONS];
     int linear = getCellIndex(X), lin;
     int index[DIMENSIONS], d_index[DIMENSIONS], other_index[DIMENSIONS];
@@ -119,7 +119,7 @@ namespace GFlowSimulation {
         tuple_to_linear(lin, other_index);
         for (const auto n_id : cells[lin].id_list) {
           if (id==n_id) continue;
-          getDisplacement(Base::simData->x[id], Base::simData->x[n_id], displacement, bounds, bcs);
+          getDisplacement(Base::simData->X(id), Base::simData->X(n_id), displacement, bounds, bcs);
           // Check that the particle is close enough
           if (sqr(displacement)<sqr(radius))
             neighbors.push_back(n_id);
@@ -269,7 +269,7 @@ namespace GFlowSimulation {
           int id2 = *i2;
           // Get the displacement - we never need to wrap, since its the same cell (and particle positions don't wrap 
           // until remake_verlet is called again).
-          subtractVec(Base::simData->x[id1], Base::simData->x[id2], displacement);
+          subtractVec(Base::simData->X(id1), Base::simData->X(id2), displacement);
           // Check the displacement
           if (sqr(displacement) < sqr(sigma + sg[id2] + skin_depth))
             pair_interaction(id1, id2);
@@ -281,7 +281,7 @@ namespace GFlowSimulation {
           for (auto id2 : cell_ptr->id_list) {
             // Get the displacement
             // Displacement(Base::simData->x[id1], Base::simData->x[id2], displacement, bounds, bcs);
-            getDisplacement(Base::simData->x[id1], Base::simData->x[id2], displacement, bounds, bcs); // Faster to just do this
+            getDisplacement(Base::simData->X(id1), Base::simData->X(id2), displacement, bounds, bcs); // Faster to just do this
             // Check the displacement
             if (sqr(displacement) < sqr(sigma + sg[id2] + skin_depth))
               pair_interaction(id1, id2);
@@ -514,7 +514,7 @@ namespace GFlowSimulation {
     int linear;
     for (int n=0; n<Base::simData->number; ++n) {
       // Calculate the (DIMENSION)-tuple cell coordinate
-      int linear = getCellIndex(Base::simData->x[n]);
+      int linear = getCellIndex(Base::simData->X(n));
       cells[linear].add(n);
 
       /*

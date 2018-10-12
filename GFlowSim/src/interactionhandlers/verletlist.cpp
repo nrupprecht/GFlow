@@ -79,8 +79,8 @@ namespace GFlowSimulation {
     simd_float *buffer_out = new simd_float[2*buffer_size];
 
     // Get the positions
-    RealType **x = Base::simData->x;
-    RealType **f = Base::simData->f;
+    RealType **x = Base::simData->X();
+    RealType **f = Base::simData->F();
     RealType *sg = Base::simData->Sg();
 
     float *buffer_out_float = new float[2*buffer_size];
@@ -147,7 +147,7 @@ namespace GFlowSimulation {
           simd_kernel(buffer_out, norm, mask, distance, soa_data, nullptr, param_pack, data_pack);
 
           // Update forces for other particles
-          update_vector_data_size(&verlet[j],  Base::simData->f, &buffer_out[buffer_size], size, buffer_size);
+          update_vector_data_size(&verlet[j],  Base::simData->F(), &buffer_out[buffer_size], size, buffer_size);
 
           // Update head particle force buffer
           simd_consolidate_update(f_temp, &buffer_out[0], buffer_size);
@@ -181,7 +181,7 @@ namespace GFlowSimulation {
       }
 
       // Done with the head - update the head's force.
-      plusEqVec(Base::simData->f[id1], f_temp);
+      plusEqVec(f[id1], f_temp);
     }
 
     // --- Clean up arrays

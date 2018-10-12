@@ -31,7 +31,7 @@ namespace GFlowSimulation {
     DomainBase::construct();
 
     // Get data from simdata and sectors array
-    RealType **x = Base::simData->x;
+    RealType **x = Base::simData->X();
     int number = Base::simData->number, total = sectors.total();
 
     // Clear particles from sectors
@@ -145,7 +145,7 @@ namespace GFlowSimulation {
     int sectorAdd[DIMENSIONS], dSectorAdd[DIMENSIONS], otherAdd[DIMENSIONS];
     zeroVec(sectorAdd);
     // Get data from simdata
-    RealType **x = simData->x, *sg = simData->Sg();
+    RealType **x = simData->X(), *sg = simData->Sg();
     const BCFlag *boundaryConditions = gflow->getBCs();
     // A displacement vector - to be set by the getDisplacement function
     RealType displacement[DIMENSIONS];

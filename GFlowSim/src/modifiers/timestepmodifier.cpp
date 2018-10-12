@@ -27,13 +27,13 @@ namespace GFlowSimulation {
     SimData *simData = Base::simData;
     // Find maximum velocity
     for (int n=0; n<simData->number; ++n) {
-      RealType v = magnitudeVec(simData->v[n]);
+      RealType v = magnitudeVec(simData->V(n));
       if (v>maxV) maxV = v;
     }
     // Find maximum acceleration
     RealType *im = simData->Im();
     for (int n=0; n<simData->number; ++n) {
-      RealType a = magnitudeVec(simData->f[n])*im[n];
+      RealType a = magnitudeVec(simData->F(n))*im[n];
       if (a>maxA) maxA = a;
     }
 

@@ -29,7 +29,7 @@ namespace GFlowSimulation {
     RealType force[DIMENSIONS];
     for (int i=0; i<pairs.size(); i+=2) {
       int id1 = pairs[i], id2 = pairs[i+1];
-      RealType *x1 = Base::simData->x[id1], *x2 = Base::simData->x[id2];
+      RealType *x1 = Base::simData->X(id1), *x2 = Base::simData->X(id2);
       // Displacement
       getDisplacement(x1, x2, force, bounds, bcs); 
       // Distance
@@ -41,8 +41,8 @@ namespace GFlowSimulation {
       // Find force
       scalarMultVec(strength[i/2]*diffX, force); // F = - K \vec{x-x_eq}
       // Add the forces
-      minusEqVec(Base::simData->f[id1], force);
-      plusEqVec (Base::simData->f[id2], force);
+      minusEqVec(Base::simData->F(id1), force);
+      plusEqVec (Base::simData->F(id2), force);
     }
   }
 

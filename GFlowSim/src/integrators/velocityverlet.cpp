@@ -17,7 +17,7 @@ namespace GFlowSimulation {
     // Half a timestep
     RealType hdt = 0.5*Integrator::dt;
     // Get arrays
-    RealType *x = simData->x[0], *v = simData->v[0], *f = simData->f[0], *im = simData->Im();
+    RealType *x = simData->X_arr(), *v = simData->V_arr(), *f = simData->F_arr(), *im = simData->Im();
     
     #if SIMD_TYPE==SIMD_NONE
     // Update velocities
@@ -137,7 +137,7 @@ namespace GFlowSimulation {
     // Half a timestep
     RealType hdt = 0.5*Integrator::dt;
     // Get arrays
-    RealType *x = simData->x[0], *v = simData->v[0], *f = simData->f[0], *im = simData->Im();
+    RealType *x = simData->X_arr(), *v = simData->V_arr(), *f = simData->F_arr(), *im = simData->Im();
 
     #if SIMD_TYPE==SIMD_NONE
     for (int i=0; i<number*DIMENSIONS; ++i) {

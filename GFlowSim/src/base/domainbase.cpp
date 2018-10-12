@@ -4,6 +4,7 @@
 #include "simdata.hpp"
 #include "forcemaster.hpp"
 #include "interaction.hpp"
+#include "../utility/memory.hpp"
 
 namespace GFlowSimulation {
 
@@ -116,19 +117,13 @@ namespace GFlowSimulation {
   }
 
   void DomainBase::nullXVL() {
-    if (xVL) {
-      for (int i=0; i<sizeXVL; ++i)
-        if (xVL[i]) delete [] xVL[i];
-      delete [] xVL;
-    }
+    if (xVL) dealloc_array_2d(xVL);
   }
 
   void DomainBase::setupXVL(int length) {
     if (xVL!=nullptr) nullXVL();
     sizeXVL = length;
-    xVL = new RealType*[sizeXVL];
-    for (int i=0; i<sizeXVL; ++i)
-      xVL[i] = new RealType[DIMENSIONS];
+    xVL = alloc_array_2d<RealType>(length, DIMENSIONS);
 
     // If there are few particles, use a low move ratio tollerance
     if (length<10) mvRatioTolerance = 1.;
@@ -139,13 +134,11 @@ namespace GFlowSimulation {
     // Check if our array is the correct size
     if (Base::simData->number!=sizeXVL) 
       setupXVL(Base::simData->number);
+
+    RealType *xvl = xVL[0], *x = Base::simData->X_arr();
     // Fill array
-    for (int i=0; i<Base::simData->number; ++i)
-      #if _INTEL_ == 1
-      #pragma unroll(DIMENSIONS)
-      #endif 
-      for (int d=0; d<DIMENSIONS; ++d) 
-        xVL[i][d] = Base::simData->x[i][d];
+    for (int i=0; i<Base::simData->number*sim_dimensions; ++i)
+      xvl[i] = x[i];
   }
 
   void DomainBase::pair_interaction(int id1, int id2) {
@@ -175,7 +168,7 @@ namespace GFlowSimulation {
     int samples = sample_size>0 ? sample_size : Base::simData->number;
     #pragma loop count min(64)
     for (int n=0; n<samples; ++n) {
-      dsqr = getDistanceSqrNoWrap<>(xVL[n], Base::simData->x[n]);
+      dsqr = getDistanceSqrNoWrap<>(xVL[n], Base::simData->X(n));
       if (dsqr<max_plausible && dsqr>maxDSqr) maxDSqr = dsqr;
     }
     return 2*sqrt(maxDSqr);

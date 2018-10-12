@@ -107,7 +107,7 @@ namespace GFlowSimulation {
       throw UnexpectedNullPointer("Error: Some object was null at GFlow initialization.");
     }
     // Check that simdata has good arrays
-    if (simData->x==nullptr || simData->v==nullptr || simData->f==nullptr || simData->Sg()==nullptr 
+    if (simData->X()==nullptr || simData->V()==nullptr || simData->F()==nullptr || simData->Sg()==nullptr 
       || simData->Im()==nullptr || simData->type==nullptr) 
     {
       throw UnexpectedNullPointer("Some array in simdata was null that shouldn't be.");
@@ -295,7 +295,7 @@ namespace GFlowSimulation {
 
   void GFlow::wrapPositions() {
     // Get a pointer to position data and the number of particles in simData
-    RealType **x = simData->x;
+    RealType **x = simData->X();
     int number = simData->number;
 
     // Wrap all particles
@@ -318,7 +318,7 @@ namespace GFlowSimulation {
 
   void GFlow::reflectPositions() {
     // Get a pointer to position data and the number of particles in simData
-    RealType **x = simData->x, **v = simData->v;
+    RealType **x = simData->X(), **v = simData->V();
     int number = simData->number;
 
     // Reflect all the particles
@@ -342,7 +342,7 @@ namespace GFlowSimulation {
 
   void GFlow::repulsePositions() {
     // Get a pointer to position data and the number of particles in simData
-    RealType **x = simData->x, **f = simData->v;
+    RealType **x = simData->X(), **f = simData->F();
     int number = simData->number;
     // Reset boundary force
     boundaryForce = 0;

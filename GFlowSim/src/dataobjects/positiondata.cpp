@@ -30,9 +30,9 @@ namespace GFlowSimulation {
         // Add data - [dataWidth]'s worth
         int d=0;
         for (; d<DIMENSIONS; ++d)
-          data.push_back(Base::simData->x[i][d]);
+          data.push_back(Base::simData->X(i,d));
         for (; d<2*DIMENSIONS; ++d)
-          data.push_back(Base::simData->v[i][d-DIMENSIONS]);
+          data.push_back(Base::simData->V(i, d-DIMENSIONS));
         data.push_back(sg[i]);
         data.push_back(Base::simData->type[i]);
       }
@@ -48,17 +48,8 @@ namespace GFlowSimulation {
       dirName += dataName+"/";
     else 
       dirName += ("/"+dataName+"/");
-
-    // if(!PrintingUtility::writeVectorToDirectory(positions, numbers, dataWidth, fileName, dataName)) return false;
-
+    // Make a directory for the data
     mkdir(dirName.c_str(), 0777);
-
-    /*
-    Visualization vis;
-    Bounds bounds = Base::gflow->getBounds();
-    vis.setColorBankSize(simData->ntypes);
-    vis.createVideo2d(dirName, positions, dataWidth, bounds, DIMENSIONS);
-    */
     
     // Print data to csv
     ofstream fout(dirName+"data.csv");

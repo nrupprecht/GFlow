@@ -109,16 +109,22 @@ namespace GFlowSimulation {
 
     // --- Accessors
 
-    RealType *Sg() { return data_array[0]; }
-    RealType *Im() { return data_array[1]; }
-    RealType *Ii() { return data_array[2]; }
+    RealType **X()    { return vec_data_array[0]; }
+    RealType *X_arr() { return vec_data_array[0][0]; }
+    RealType **V()    { return vec_data_array[1]; }
+    RealType *V_arr() { return vec_data_array[1][0]; }
+    RealType **F()    { return vec_data_array[2]; }
+    RealType *F_arr() { return vec_data_array[2][0]; }
+    RealType *Sg()    { return data_array[0]; }
+    RealType *Im()    { return data_array[1]; }
+    RealType *Ii()    { return data_array[2]; }
 
-    RealType& X(int n, int d) { return x[n][d]; }
-    RealType* X(int n)        { return x[n]; }
-    RealType& V(int n, int d) { return v[n][d]; }
-    RealType* V(int n)        { return v[n]; }
-    RealType& F(int n, int d) { return f[n][d]; }
-    RealType* F(int n)        { return f[n]; }
+    RealType& X(int n, int d) { return vec_data_array[0][n][d]; }
+    RealType* X(int n)        { return vec_data_array[0][n]; }
+    RealType& V(int n, int d) { return vec_data_array[1][n][d]; }
+    RealType* V(int n)        { return vec_data_array[1][n]; }
+    RealType& F(int n, int d) { return vec_data_array[2][n][d]; }
+    RealType* F(int n)        { return vec_data_array[2][n]; }
     RealType& Sg(int n)       { return data_array[0][n]; }
     RealType& Im(int n)       { return data_array[1][n]; }
     int&      Type(int n)     { return type[n]; }
@@ -127,12 +133,12 @@ namespace GFlowSimulation {
     int&      Body(int n)     { return body[n]; }
 
     // Const versions
-    const RealType& X(int n, int d) const { return x[n][d]; }
-    const RealType* X(int n)        const { return x[n]; }
-    const RealType& V(int n, int d) const { return v[n][d]; }
-    const RealType* V(int n)        const { return v[n]; }
-    const RealType& F(int n, int d) const { return f[n][d]; }
-    const RealType* F(int n)        const { return f[n]; }
+    const RealType& X(int n, int d) const { return vec_data_array[0][n][d]; }
+    const RealType* X(int n)        const { return vec_data_array[0][n]; }
+    const RealType& V(int n, int d) const { return vec_data_array[1][n][d]; }
+    const RealType* V(int n)        const { return vec_data_array[1][n]; }
+    const RealType& F(int n, int d) const { return vec_data_array[2][n][d]; }
+    const RealType* F(int n)        const { return vec_data_array[2][n]; }
     const RealType& Sg(int n)       const { return data_array[0][n]; }
     const RealType& Im(int n)       const { return data_array[1][n]; }
     const int&      Type(int n)     const { return type[n]; }
@@ -191,13 +197,6 @@ namespace GFlowSimulation {
     //! Mark a particle for removal. The basic thing we need to do is set type[id] = -1. We may do a number of things behind 
     //! the scenes, like store the fact that there is now a hole at id. 
     void removeParticle(const int);
-
-    //! @brief Add a particle to the simulation.
-    //!
-    //! Add a particle to the simdata. This is the private version of the function, so we can specify whether it is an owned, 
-    //! halo, or ghost particle. Depending on how many particles are in the array, and the array capacities, it may be necessary 
-    //! to resize the array to add the particle.
-    void addParticle(const RealType*, const RealType*, const RealType, const RealType, const int, const ParticleOwnership);
 
     //! @brief Add a halo particle to the simulation.
     //!
@@ -308,6 +307,7 @@ namespace GFlowSimulation {
     //! @brief Which id will be issued next.
     int next_global_id = 0;
 
+    /*
     //! @brief An array of position vectors.
     //!
     //! Under the hood, there is a single contiguous array at &x[0], and the pointers x[i] point to every
@@ -328,6 +328,7 @@ namespace GFlowSimulation {
     //! (DIMENSIONS)-th place in the array. That way, we can iterate through the entire array by setting
     //! e.g. RealType *F = f[0]; and then iterating through X.
     RealType **f = nullptr;
+    */
 
     //! @brief All the particle vectorial data that can be stored in arrays.
     //!

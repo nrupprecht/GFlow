@@ -53,7 +53,7 @@ namespace GFlowSimulation {
     SimData *simData, const RealType*, RealType *data_pack) 
   {
     RealType displacement[DIMENSIONS];
-    getDisplacement(simData->x[id1], simData->x[id2], displacement, simData->getBounds(), simData->getBCs());
+    getDisplacement(simData->X(id1), simData->X(id2), displacement, simData->getBounds(), simData->getBCs());
     // Check if distance is smaller
     RealType dist = magnitudeVec(displacement);
     if (dist < data_pack[0]) data_pack[0] = dist;

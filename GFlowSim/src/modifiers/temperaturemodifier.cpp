@@ -17,8 +17,8 @@ namespace GFlowSimulation {
     if (time-lastUpdate>updateDelay || temperature<=0) return;
     // Get data
     int number = Base::simData->number;
-    RealType **v = Base::simData->v;
-    RealType **f = Base::simData->f;
+    RealType **v = Base::simData->V();
+    RealType **f = Base::simData->F();
     RealType *sg = Base::simData->Sg();
     // Precomputed values, assumes Kb = 1
     RealType DT1 = temperature/(6.*viscosity*PI);

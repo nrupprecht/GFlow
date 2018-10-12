@@ -71,8 +71,8 @@ namespace GFlowSimulation {
     RealType *data = new RealType[2*data_size];
 
     // Get the positions
-    RealType **x = Base::simData->x;
-    RealType **f = Base::simData->f;
+    RealType **x = Base::simData->X();
+    RealType **f = Base::simData->F();
     RealType *sg = Base::simData->Sg();
 
     Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
@@ -124,8 +124,8 @@ namespace GFlowSimulation {
         simd_kernel( buffer_out, norm, mask, distance, soa_data, nullptr, param_pack, data_pack);
 
         // Update forces
-        update_vector_data_size(&verlet_a[i], Base::simData->f, &buffer_out[0], size, buffer_size);
-        update_vector_data_size(&verlet_b[i], Base::simData->f, &buffer_out[buffer_size], size, buffer_size);
+        update_vector_data_size(&verlet_a[i], Base::simData->F(), &buffer_out[0], size, buffer_size);
+        update_vector_data_size(&verlet_b[i], Base::simData->F(), &buffer_out[buffer_size], size, buffer_size);
       }
     }
     

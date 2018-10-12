@@ -14,7 +14,7 @@ namespace GFlowSimulation {
     // Time step
     RealType dt = Integrator::dt;
     // Get arrays
-    RealType *x = simData->x[0], *v = simData->v[0], *f = simData->f[0], *im = simData->Im();
+    RealType *x = simData->X_arr(), *v = simData->V_arr(), *f = simData->F_arr(), *im = simData->Im();
 
     // Update positions (there are no velocities)
     #if SIMD_TYPE==SIMD_NONE
