@@ -25,6 +25,7 @@ namespace GFlowSimulation {
 
     // Create a new gflow object
     GFlow *gflow = new GFlow;
+    gflow->setAllBCs(bcFlag);
 
     // Create an integrator
     gflow->integrator = new VelocityVerlet(gflow);

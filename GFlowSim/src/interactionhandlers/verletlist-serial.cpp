@@ -79,6 +79,7 @@ namespace GFlowSimulation {
       int id2 = verlet[i+1];
       // Get the displacement between the particles
       getDisplacement(x[id1], x[id2], normal, bounds, boundaryConditions);
+
       // Mast the distance squared with the "particles are real" type mask, c1
       RealType dsqr = sqr(normal);
       // Check if the particles should interact

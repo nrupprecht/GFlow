@@ -6,8 +6,7 @@
 namespace GFlowSimulation {
 
   GFlow::GFlow() : running(false), useForces(true), requested_time(0), total_requested_time(0), elapsed_time(0), total_time(0), 
-    iter(0), argc(0), argv(nullptr), repulsion(DEFAULT_HARD_SPHERE_REPULSION), last_memory_optimization(0),
-    memory_check_delay(1.), do_memory_optimization(false)
+    iter(0), argc(0), argv(nullptr), repulsion(DEFAULT_HARD_SPHERE_REPULSION), sim_dimensions(DIMENSIONS)
   {
     simData      = new SimData(this);
     bondData     = new BondData(this);
@@ -39,11 +38,6 @@ namespace GFlowSimulation {
     if (simData) simData->initialize();
     else non_null = false;
 
-    if (do_memory_optimization) {
-      MemoryDistance md(this);
-      target_memory_distance = md.getAverageDistance();
-    }
-
     if(integrator) integrator->initialize();
     else non_null = false;
 
@@ -71,6 +65,8 @@ namespace GFlowSimulation {
   void GFlow::initializeBase(Base *base) {
     // Make sure we aren't handed a null pointer
     if (base==nullptr) return;
+    // Set the number of dimensions
+    base->sim_dimensions = sim_dimensions;
     // Give pointer to this GFlow object
     base->gflow = this;
     // Set other objects
@@ -146,12 +142,13 @@ namespace GFlowSimulation {
       dataMaster->pre_forces();
       if (useForces) domain->pre_forces();   // -- This is where resectorization / verlet list creation might happen
       
-      // Reflect or repulse particles. We only need to wrap before sectorizing particles, but we need to apply forces at every timestep.
-      reflectPositions();
-      repulsePositions();
-
       // --- Do interactions
       clearForces(); // Clear force buffers
+
+      // Reflect or repulse particles. We only need to wrap before sectorizing particles, but we need to apply forces at every timestep.
+      reflectPositions(); // This only involves velocities, so it could be done before or after clear forces.
+      repulsePositions(); // But this needs to be done after clear forces.
+
       // Calculate current forces
       if (useForces) {
         for (auto &it : interactions) it->interact();
@@ -241,7 +238,7 @@ namespace GFlowSimulation {
   }
 
   BCFlag GFlow::getBC(int dim) const {
-    if (dim<0 || DIMENSIONS<=dim) 
+    if (dim<0 || sim_dimensions<=dim) 
       throw BadDimension("Bad dim in get BC.");
     return boundaryConditions[dim];
   }
@@ -275,7 +272,7 @@ namespace GFlowSimulation {
   }
 
   void GFlow::setAllBCs(BCFlag type) {
-    for (int d=0; d<DIMENSIONS; ++d) 
+    for (int d=0; d<sim_dimensions; ++d) 
       boundaryConditions[d] = type;
   }
 
@@ -299,7 +296,7 @@ namespace GFlowSimulation {
     int number = simData->number;
 
     // Wrap all particles
-    for (int d=0; d<DIMENSIONS; ++d) {
+    for (int d=0; d<sim_dimensions; ++d) {
       if (boundaryConditions[d]==BCFlag::WRAP) { // Wrap the d-th dimension
         for (int n=0; n<number; ++n) {
           // Create a local copy
@@ -322,7 +319,7 @@ namespace GFlowSimulation {
     int number = simData->number;
 
     // Reflect all the particles
-    for (int d=0; d<DIMENSIONS; ++d)
+    for (int d=0; d<sim_dimensions; ++d)
       if (boundaryConditions[d]==BCFlag::REFL) { 
         for (int n=0; n<number; ++n) {
           // Create a local copy
@@ -347,7 +344,7 @@ namespace GFlowSimulation {
     // Reset boundary force
     boundaryForce = 0;
     // Reflect all the particles
-    for (int d=0; d<DIMENSIONS; ++d)
+    for (int d=0; d<sim_dimensions; ++d)
       if (boundaryConditions[d]==BCFlag::REPL) { 
         for (int n=0; n<number; ++n) {
           // Create a local copy
