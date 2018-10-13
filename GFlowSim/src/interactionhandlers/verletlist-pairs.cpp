@@ -97,8 +97,6 @@ namespace GFlowSimulation {
     BCFlag boundaryConditions[DIMENSIONS]; 
     copyVec(Base::gflow->getBCs(), boundaryConditions); // Keep a local copy of the wrap frags
 
-    RealType TV[8], TV2[8];
-
     int i=0, total = verlet_a.size();
     if (use_simd) {
       for (; i<total-min_simd_size; i+=simd_data_size) {
@@ -185,8 +183,8 @@ namespace GFlowSimulation {
         serial_kernel(serial_buffer_out, normal, 1., distance, serial_scalar_data, serial_vec_data, param_pack, data_pack);
         
         // Add the force to the buffers
-        // plusEqVec(f[id1], &serial_buffer_out[0]);
-        // plusEqVec(f[id2], &serial_buffer_out[buffer_size]); 
+        plusEqVec(f[id1], &serial_buffer_out[0]);
+        plusEqVec(f[id2], &serial_buffer_out[buffer_size]); 
       }
     }
 
