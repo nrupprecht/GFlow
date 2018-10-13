@@ -42,7 +42,7 @@ namespace GFlowSimulation {
       // Set pointers in "arrays"
       for (int i=0; i<data_size; ++i) {
         int entry = data_needed[i];
-        arrays[i] = Base::simData->data_array[i];
+        arrays[i] = Base::simData->data_array[entry];
       }
       // Two halves - first half will be for head particle (will be duplicated), second half will be for neighbors
     }
@@ -52,7 +52,7 @@ namespace GFlowSimulation {
       // Set pointers in "vec_arrays"
       for (int i=0; i<vec_data_size; ++i) {
         int entry = vec_data_needed[i];
-        vec_arrays[i] = Base::simData->vec_data_array[i];
+        vec_arrays[i] = Base::simData->vec_data_array[entry];
       }
     }
     // Buffer for force output
@@ -95,11 +95,11 @@ namespace GFlowSimulation {
         // Set vector data
         for (int dt=0; dt<vec_data_size; ++dt) {
           copyVec(vec_arrays[dt][id1], &vector_data[sim_dimensions*dt]);
-          copyVec(vec_arrays[dt][id1], &vector_data[sim_dimensions*(dt+vec_data_size)]);
+          copyVec(vec_arrays[dt][id2], &vector_data[sim_dimensions*(dt+vec_data_size)]);
         }
 
         // Calculate force.
-        serial_kernel( buffer_out_float, normal, 1., distance, data, vector_data, param_pack, data_pack);
+        serial_kernel(buffer_out_float, normal, 1., distance,  data, vector_data, param_pack, data_pack);
         
         // Add the force to the buffers
         plusEqVec(f[id1], &buffer_out_float[0]);

@@ -69,7 +69,7 @@ namespace GFlowSimulation {
       // Set pointers in "arrays"
       for (int i=0; i<data_size; ++i) {
         int entry = data_needed[i];
-        arrays[i] = Base::simData->data_array[i];
+        arrays[i] = Base::simData->data_array[entry];
       }
       // Two halves - first half will be for head particle (will be duplicated), second half will be for neighbors
       if (use_simd) soa_data = new simd_float[2*data_size]; 

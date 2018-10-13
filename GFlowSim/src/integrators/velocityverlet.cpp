@@ -37,13 +37,19 @@ namespace GFlowSimulation {
     simd_float _hdt = simd_set1(hdt);
     int i;
     for (i=0; i<number*DIMENSIONS-simd_data_size; i+=simd_data_size) {
-      simd_float vec1   = simd_load(&f[i]);
+      simd_float _f   = simd_load(&f[i]);
       simd_float V      = simd_load(&v[i]);
       simd_float _im    = simd_load_constant<DIMENSIONS>(im, i);
+
+      simd_float dV = _hdt*_im*_f;
+      simd_float V_new = V + dV;
+
+      /*
       simd_float im_hdt = simd_mult(_im, _hdt);
       simd_float im_h_f = simd_mult(im_hdt, vec1);
       vec1 = simd_add(im_h_f, V);
-      simd_store(vec1, &v[i]);
+      */
+      simd_store(V_new, &v[i]);
       // Debug mode asserts
       #if DEBUG==1
       for (int j=0; j<simd_data_size; ++j) {

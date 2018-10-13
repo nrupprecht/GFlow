@@ -7,16 +7,16 @@ namespace GFlowSimulation {
 
   FileParseCreator::FileParseCreator(int argc, char **argv) : Creator(argc, argv), configFile(""), gflow(nullptr) {
     seed = std::chrono::system_clock::now().time_since_epoch().count();
-    //seedGenerator(seed);
     // Seed generators here
-    //normal_dist = std::normal_distribution<RealType>(0., 1.);
+    seedGenerator(seed);
+    normal_dist = std::normal_distribution<RealType>(0., 1.);
   }
 
   FileParseCreator::FileParseCreator(ArgParse *p) : Creator(p), configFile(""), gflow(nullptr) {
     seed = std::chrono::system_clock::now().time_since_epoch().count();
-    //seedGenerator(seed);
     // Seed generators here
-    //normal_dist = std::normal_distribution<RealType>(0., 1.);
+    seedGenerator(seed);
+    normal_dist = std::normal_distribution<RealType>(0., 1.);
   }
 
   FileParseCreator::FileParseCreator(ArgParse *p, string f) : Creator(p), configFile(f), gflow(nullptr) {
@@ -123,6 +123,25 @@ namespace GFlowSimulation {
       bounds.max[d] = convert<float>( head->subHeads[d]->params[1]->partA );
     }
     gflow->setBounds(bounds);
+
+    // --- Look for boundary conditions
+    getAllMatches("Boundary", container, options);
+    if (container.size()==0) gflow->setAllBCs(BCFlag::WRAP);
+    if (container.size()>1) build_message +=  "We only need the boundary conditions specified once. Ignoring all but the first.\n";
+    head = container[0];
+    if (head->params.size()==0) {
+      // Look for a body that specifies the boundary conditions in each dimension
+
+    }
+    else if (head->params.size()==1) {
+      // The same boundary condition in all directions
+      if (head->params[0]->partA=="Repulsive") gflow->setAllBCs(BCFlag::REPL);
+    }
+
+    getAllMatches("Gravity", container, options);
+    if (!container.empty()) {
+      gflow->addModifier(new ConstantAcceleration(gflow, -1.));
+    }
 
     // --- Look for integrator
     getAllMatches("Integrator", container, options);
@@ -325,6 +344,7 @@ namespace GFlowSimulation {
   inline Interaction* FileParseCreator::choose_interaction(HeadNode *head) const {
     string token = head->params[2]->partA;
     if      (token=="HardSphere")   return new HardSphere(gflow);
+    if      (token=="HardSphereGeneral") return new HardSphereGeneral(gflow);
     else if (token=="LennardJones") return new LennardJones(gflow);
     /*
     else if (token=="Coulomb")      return new CoulumbForce(gflow);
@@ -504,7 +524,7 @@ namespace GFlowSimulation {
           X[d] = drand48()*bnds.wd(d) + bnds.min[d];
         // Choose a type of particle to create
         int pt = choice(global_generator);
-        ParticleTemplate &particle_creator = template_vector.at(pt);
+        ParticleTemplate &particle_creator = particle_template_numbers.empty() ? particle_templates[0] : template_vector.at(pt);
         // Select other characteristics
         particle_creator.createParticle(X, sigma, im, type, i);
         // Add the particle

@@ -36,9 +36,8 @@ namespace GFlowSimulation {
       simd_float X = simd_load(&x[i]);
       simd_float _im = simd_load_constant<DIMENSIONS>(im, i);
       simd_float F = simd_load(&f[i]);
-      simd_float g_im_dt = simd_mult(g_dt, _im);
-      simd_float dX = simd_mult(g_im_dt, F);
-      simd_float X_new = simd_add(X, dX);
+      simd_float dX = g_dt*_im*F;
+      simd_float X_new  = X + dX; 
       simd_store(X_new, &x[i]);
     }
     // Left overs

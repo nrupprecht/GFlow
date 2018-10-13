@@ -121,8 +121,8 @@ namespace GFlowSimulation {
       force = LJ;
     }
     else {
-      //auto *HS = new GeneralHardSphere(gflow);
       auto *HS = new HardSphere(gflow);
+      //auto *HS = new HardSphere(gflow);
       HS->setRepulsion(repulsion*DEFAULT_HARD_SPHERE_REPULSION);
       force = HS;
     }

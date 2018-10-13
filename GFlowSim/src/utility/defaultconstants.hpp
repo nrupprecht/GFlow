@@ -34,22 +34,24 @@
 
 namespace GFlowSimulation {
 
-  //! The default time step.
+  //! @brief The default time step.
   const RealType DEFAULT_TIME_STEP = 0.001;
-  //! A default value for hard sphere repulsion strengths.
+  //! @brief A default value for hard sphere repulsion strengths.
   const RealType DEFAULT_HARD_SPHERE_REPULSION = 50.;
-  //! A default value for the Lennard Jones interaction strength.
+  //! @brief A default value for the hard sphere dissipation strength.
+  const RealType DEFAULT_HARD_SPHERE_DISSIPATION = 1.;
+  //! @brief A default value for the Lennard Jones interaction strength.
   const RealType DEFAULT_LENNARD_JONES_STRENGTH = 0.01;
-  //! A default value for at what multiple of the zero force point we cut off the LJ force.
+  //! @brief A default value for at what multiple of the zero force point we cut off the LJ force.
   const RealType DEFAULT_LENNARD_JONES_CUTOFF = 2.5;
-  //! A default value for the damping constant of the overdamped integrator.
+  //! @brief A default value for the damping constant of the overdamped integrator.
   const RealType DEFAULT_DAMPING_CONSTANT = 0.01;
-  //! The default amount of time we wait between temperature perturbations
+  //! @brief The default amount of time we wait between temperature perturbations
   const RealType DEFAULT_TEMPERATURE_UPDATE_DELAY = 0.05;
   
-  //! The default maximum update delay.
+  //! @brief The default maximum update delay.
   const RealType DEFAULT_MAX_UPDATE_DELAY = 0.025;
-  //! The default skin depth
+  //! @brief The default skin depth
   const RealType DEFAULT_SKIN_DEPTH = 0.025;
   
   //! @brief The default move ratio for recalculating verlet lists.
@@ -63,19 +65,19 @@ namespace GFlowSimulation {
   //! performance of the program, but can cause energy non-conservation.
   const RealType DEFAULT_MOTION_FACTOR = 1.;
 
-  //! The default spring constant for spring bonds.
+  //! @brief The default spring constant for spring bonds.
   const RealType DEFAULT_SPRING_K = 10.;
-  //! The default viscosity for the overdamped integragor. This is the viscosity of water.
+  //! @brief The default viscosity for the overdamped integragor. This is the viscosity of water.
   const RealType DEFAULT_VISCOSITY = 1.308e-3;
-  //! The default maximum time step the simulation will use.
+  //! @brief The default maximum time step the simulation will use.
   const RealType DEFAULT_MAX_DT = 0.005;
-  //! The default minimum time step the simulaiton will use.
+  //! @brief The default minimum time step the simulaiton will use.
   const RealType DEFAULT_MIN_DT = 1e-6;
 
-  //! The value of Pi.
+  //! @brief The value Pi.
   const RealType PI = 3.14159265;
 
-  //! Constants for debugging
+  //!@brief Constants for debugging
   const RealType MAX_REASONABLE_V = 100;
   const RealType MAX_REASONABLE_F = 100;
 
@@ -103,7 +105,7 @@ namespace GFlowSimulation {
   */
   enum class BCFlag { OPEN=0, WRAP=1, REFL=2, REPL=3 };
 
-  //! The number of dimensions the simulation takes place in.
+  //! @brief The number of dimensions the simulation takes place in.
   const int DIMENSIONS = 2;
   
 }

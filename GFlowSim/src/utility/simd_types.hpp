@@ -48,7 +48,7 @@
   // Constants
   const __m128 SIGNMASK = _mm_castsi128_ps(_mm_set1_epi32(0x80000000));
   const simd_float minus_one = _mm_set1_ps(-1.);
-  const simd_float simd_zero = _mm_set1_ps(0.);
+  const simd_float simd_zero = _mm_set1_ps( 0.);
   const int simd_valid = 0xffffffff;
 
   // Logic
@@ -98,6 +98,7 @@
   // Comparisons
   inline simd_float simd_less_than(const simd_float a, const simd_float b) { return _mm_cmplt_ps(a, b); }
   inline simd_float simd_clamp(const simd_float a) { return simd_mask(a, simd_less_than(simd_zero, a)); }
+  inline simd_float simd_un_clamp(const simd_float a) { return simd_mask(a, simd_less_than(a, simd_zero)); }
 
   // Special load
   template<int dimensions> inline simd_float simd_load_constant(const float *a, const int i) {
@@ -218,7 +219,22 @@
 #endif
 
 #if SIMD_TYPE!=SIMD_NONE
-// Operators go here
+  // --- Operators
+  inline simd_float operator+(const simd_float a, const simd_float b) {
+    return simd_add(a, b);
+  }
+
+  inline simd_float operator-(const simd_float a, const simd_float b) {
+    return simd_sub(a, b);
+  }
+
+  inline simd_float operator*(const simd_float a, const simd_float b) {
+    return simd_mult(a, b);
+  }
+
+  inline simd_float operator/(const simd_float a, const simd_float b) {
+    return simd_div(a, b);
+  }
 #endif
 
 

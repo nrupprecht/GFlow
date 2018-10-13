@@ -47,7 +47,7 @@ namespace GFlowSimulation {
       dX   = new simd_float[sim_dimensions]; // Simd vector for displacement
       norm = new simd_float[sim_dimensions]; // Simd vector for normal force
     }
-    RealType   *temp   = new RealType[simd_data_size];   // A scratchwork buffer
+    RealType *temp   = new RealType[simd_data_size];   // A scratchwork buffer
 
     // Extra data
     simd_float *soa_data = nullptr;
@@ -58,7 +58,7 @@ namespace GFlowSimulation {
       // Set pointers in "arrays"
       for (int i=0; i<data_size; ++i) {
         int entry = data_needed[i];
-        arrays[i] = Base::simData->data_array[i];
+        arrays[i] = Base::simData->data_array[entry];
       }
       // Two halves - first half will be for head particle (will be duplicated), second half will be for neighbors
       if (use_simd) soa_data = new simd_float[2*data_size]; 
@@ -121,7 +121,7 @@ namespace GFlowSimulation {
         simd_scalar_mult_vec(invDistance, dX, norm, sim_dimensions);
 
         // Calculate force
-        simd_kernel( buffer_out, norm, mask, distance, soa_data, nullptr, param_pack, data_pack);
+        simd_kernel(buffer_out, norm, mask, distance, soa_data, nullptr, param_pack, data_pack);
 
         // Update forces
         update_vector_data_size(&verlet_a[i], Base::simData->F(), &buffer_out[0], size, buffer_size);

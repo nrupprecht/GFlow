@@ -66,8 +66,8 @@ inline std::ostream& operator<<(std::ostream& out, simd_float x) {
 }
 
 //! @brief Store a vector in all simd coordinates
-template<int dimensions> inline void simd_broadcast_vector(float *v, simd_float *sv) {
-  for (int d=0; d<dimensions; ++d) sv[d] = simd_set1(v[d]);
+inline void simd_broadcast_vector(float *v, simd_float *sv, const int sim_dimensions) {
+  for (int d=0; d<sim_dimensions; ++d) sv[d] = simd_set1(v[d]);
 }
 
 //! @brief Compute dot products
@@ -77,11 +77,11 @@ template<int dimensions> inline void simd_broadcast_vector(float *v, simd_float 
 //!
 //! So a[0] is a simd_float of all the x components of the first set of vectors, a[1] is a simd_float of all 
 //! the y components of the first set of vectors, etc.
-template<int dimensions> inline simd_float simd_dot_product(const simd_float *a, const simd_float *b) {
+inline simd_float simd_dot_product(const simd_float *a, const simd_float *b, const int sim_dimensions) {
   // Accumulator
-  simd_float acc = simd_set_zero();
+  simd_float acc = simd_zero;
   // Add components
-  for (int i=0; i<dimensions; ++i) {
+  for (int i=0; i<sim_dimensions; ++i) {
     simd_plus_eq(acc, simd_mult(a[i], b[i]) );
   }
   return acc;

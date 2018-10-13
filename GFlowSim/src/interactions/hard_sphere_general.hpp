@@ -27,6 +27,9 @@ namespace GFlowSimulation {
     //! @brief Set the repulsion parameter.
     void setRepulsion(RealType);
 
+    //! @brief Set the dissipation parameter.
+    void setDissipation(RealType);
+
     template<typename float_type>
     static void force(float_type*, const float_type*, 
       const float_type, const float_type, const float_type*, 
@@ -36,35 +39,43 @@ namespace GFlowSimulation {
   // --- Template force function
   template<typename float_type>
   void HardSphereGeneral::force(float_type *buffer_out, const float_type* normal, const float_type mask, const float_type distance, 
-    const float_type *soa_data, const float_type *vec_data, const RealType *param_pack, RealType *data_pack) {
+    const float_type *scalar_data, const float_type *vec_data, const RealType *param_pack, RealType *data_pack) {
     // Expect: Soa data:
-    //  soa_data[0] - sigma, 1
-    //  soa_data[1] - sigma, 2
-    const float_type sg1  = soa_data[0];
-    const float_type sg2  = soa_data[1];
+    //  scalar_data[0] - sigma, 1
+    //  scalar_data[1] - sigma, 2
+    const float_type sg1  = scalar_data[0];
+    const float_type sg2  = scalar_data[1];
     // Expect: Vector data:
     //  vec_data[0::D]  - velocity, 1
     //  vec_data[D::2D] - velocity, 2
-
+    const float_type *V1 = &vec_data[0];
+    const float_type *V2 = &vec_data[DIMENSIONS];
     // Expect: Param pack:
     //  param_pack[0] - Repulsion
+    //  param_pack[1] - Dissipation
     const float_type repulsion = set1<float_type>(param_pack[0]);
+    const float_type dissipation = set1<float_type>(param_pack[1]);
 
-    // Calculate magnitude
+    // Calculate repulsion magnitude
     float_type magnitude = repulsion*(sg1 + sg2 - distance);
 
-    /*
-    float_type dV[DIMENSIONS];
-    sub(&vec_data[0], &vec_data[DIMENSIONS], dV, DIMENSIONS);
-    */
-
-    // Apply force mask
-    float_type masked_magnitude = mask_value(magnitude, mask);
+    // Calculate normal velocity
+    float_type masked_Fn;
+    if (param_pack[1]>0) {
+      // Calculate relative velocity
+      float_type dV[DIMENSIONS]; // V2 - V1
+      sub(V2, V1, dV, DIMENSIONS);
+      // Calculate normal velocity and force
+      float_type Vn = dot(static_cast<float_type*>(dV), normal, DIMENSIONS);
+      float_type Fn = magnitude + dissipation * un_clamp(Vn);
+      masked_Fn = mask_value(Fn, mask);
+    }
+    else masked_Fn = mask_value(magnitude, mask);
 
     // Out:
     //  buffer_out[0::DIM]       = force, 1
     //  buffer_out[DIM+1::2*DIM] = force, 2
-    scalar_mult_vec( masked_magnitude, normal, buffer_out, DIMENSIONS); // F1 += f
+    scalar_mult_vec(masked_Fn, normal, buffer_out, DIMENSIONS); // F1 += f
     copy_negative(buffer_out, &buffer_out[DIMENSIONS], DIMENSIONS);
   }
 
