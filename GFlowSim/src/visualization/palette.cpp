@@ -471,6 +471,7 @@ namespace GFlowSimulation {
         if (p.second>My) My = p.second;
         if (p.second<my) my = p.second;
       }
+      My *= 1.1; // Put the upper bound just a bit above the actual max
 
       // If min/max specified
       if (options.useMinX) mx = options.minX;

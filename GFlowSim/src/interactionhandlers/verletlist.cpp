@@ -43,6 +43,10 @@ namespace GFlowSimulation {
 
     // How much extra data is needed
     int data_size = data_needed.size();
+    int vec_data_size = vec_data_needed.size();
+
+    //! @todo - Make sure verlet list works with vector data.
+    if (vec_data_size>0) throw false;
 
     // --- Set up some data arrays
     RealType  **Xrt  = nullptr; // SOA format "scratch work" array
@@ -140,7 +144,7 @@ namespace GFlowSimulation {
 
           // --- Calculate distance and inverse distance
           simd_float distance = simd_sqrt(dX2);
-          simd_float invDistance = simd_set1(1.)/dX2;
+          simd_float invDistance = simd_set1(1.)/distance;
 
           // Get normal vectors
           simd_scalar_mult_vec(invDistance, dX, norm, sim_dimensions);

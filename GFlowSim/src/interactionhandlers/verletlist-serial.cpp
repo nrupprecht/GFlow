@@ -34,6 +34,13 @@ namespace GFlowSimulation {
     int data_size = data_needed.size();
     int vec_data_size = vec_data_needed.size();
 
+    // Buffer for force output
+    int buffer_size = sim_dimensions; // @todo Make this an input parameter.
+    RealType *buffer_out_float = nullptr, *data = nullptr, *vector_data = nullptr;
+    if (buffer_size) buffer_out_float = new float[2*buffer_size]; 
+    RealType *normal = new RealType[sim_dimensions];
+
+    // Arrays for getting data
     RealType **arrays = nullptr;
     RealType ***vec_arrays = nullptr;
     if (data_size) {
@@ -44,7 +51,8 @@ namespace GFlowSimulation {
         int entry = data_needed[i];
         arrays[i] = Base::simData->data_array[entry];
       }
-      // Two halves - first half will be for head particle (will be duplicated), second half will be for neighbors
+
+      data = new RealType[2*data_size];
     }
     if (vec_data_size) {
       // Create array
@@ -54,15 +62,10 @@ namespace GFlowSimulation {
         int entry = vec_data_needed[i];
         vec_arrays[i] = Base::simData->vec_data_array[entry];
       }
-    }
-    // Buffer for force output
-    int buffer_size = sim_dimensions; // @todo Make this an input parameter.
-    RealType *buffer_out_float = nullptr, *data = nullptr, *vector_data = nullptr;
-    if (buffer_size) buffer_out_float = new float[2*buffer_size];
-    if (data_size) data = new RealType[2*data_size];
-    if (vec_data_size) vector_data = new RealType[2*vec_data_size*sim_dimensions];    
-    RealType *normal = new RealType[sim_dimensions];
 
+      vector_data = new RealType[2*vec_data_size*sim_dimensions];
+    }
+    
     // Get the positions
     RealType **x = Base::simData->X();
     RealType **v = Base::simData->V();

@@ -99,3 +99,13 @@ obj/vistools.o: src/applications/vistools.cpp
 .PHONY : clean
 clean:
 	rm -r -f $(OBJ) $(BIN)/*
+
+.PHONY : forces
+forces:
+	rm obj/src/interactions/*
+	make
+
+.PHONY : creators
+creators:
+	rm obj/src/creators/*
+	make DO_OPTIMIZE=0
