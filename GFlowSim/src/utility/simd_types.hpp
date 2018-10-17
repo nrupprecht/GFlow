@@ -34,9 +34,6 @@
     return a[i/dimensions];
   }
 
-  // Constants
-  const simd_float minus_one = -1.;
-
 #elif SIMD_TYPE==SIMD_SSE3
   // The number of floats per vector
   const int simd_data_size = 4u;
@@ -47,8 +44,6 @@
 
   // Constants
   const __m128 SIGNMASK = _mm_castsi128_ps(_mm_set1_epi32(0x80000000));
-  const simd_float minus_one = _mm_set1_ps(-1.);
-  const simd_float simd_zero = _mm_set1_ps( 0.);
   const int simd_valid = 0xffffffff;
 
   // Logic
@@ -119,6 +114,7 @@
   template<> inline simd_float simd_load_constant<4>(const float *a, const int i) {
     return simd_set1(a[i/4]);
   }
+
 
 #elif SIMD_TYPE==SIMD_AVX or SIMD_TYPE==SIMD_AVX2
   // The number of floats per vector
@@ -211,14 +207,10 @@
       a[(i+3)/dimensions], a[(i+2)/dimensions], a[(i+1)/dimensions], a[i/dimensions]
     );
   }
-
-  // Constants
-  const simd_float minus_one = simd_set1(-1.);
-
 #endif
 
+// --- Operators
 #if SIMD_TYPE!=SIMD_NONE
-  // --- Operators
   inline simd_float operator+(const simd_float a, const simd_float b) {
     return simd_add(a, b);
   }

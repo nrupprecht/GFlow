@@ -7,6 +7,10 @@
 
 using namespace GFlowSimulation;
 
+// Constants
+const simd_float simd_zero = simd_set1(0);
+const simd_float minus_one = simd_set1(-1.);
+
 template<typename T>
 inline T set1(float a);
 // Template specification
