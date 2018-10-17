@@ -165,6 +165,14 @@ inline void simd_vector_sqr(const simd_float *X, simd_float& dX2, const int sim_
     simd_plus_eq(dX2, simd_mult(X[d], X[d]));
 }
 
+inline bool simd_any_true(const simd_float a) {
+  bool any = false;
+  for (int i=0; i<simd_data_size; ++i) {
+    any |= static_cast<bool>(simd_get(i, a));
+  }
+  return any;
+}
+
 #include "bounds.hpp"
 using GFlowSimulation::Bounds;
 using GFlowSimulation::BCFlag;

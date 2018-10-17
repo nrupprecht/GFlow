@@ -8,7 +8,7 @@
 
 namespace GFlowSimulation {
 
-  VerletListPairs::VerletListPairs(GFlow *gflow) : InteractionHandler(gflow), min_simd_size(0), use_simd(true) {};
+  VerletListPairs::VerletListPairs(GFlow *gflow) : InteractionHandler(gflow), min_simd_size(simd_data_size), use_simd(true) {};
 
   void VerletListPairs::addPair(const int id1, const int id2) {
     verlet_a.push_back(id1);
@@ -41,6 +41,7 @@ namespace GFlowSimulation {
     simd_float *Xsd2 = nullptr; // Simd vector for position
     simd_float *dX   = nullptr; // Simd vector for displacement
     simd_float *norm = nullptr; // Simd vector for normal force
+
     if (use_simd) { // Only allocate these if neccessary
       Xrt  = alloc_array_2d<RealType>(sim_dimensions, simd_data_size); // SOA format "scratch work" array
       Xsd1 = new simd_float[sim_dimensions]; // Simd vector for position
@@ -97,17 +98,25 @@ namespace GFlowSimulation {
     BCFlag boundaryConditions[DIMENSIONS]; 
     copyVec(Base::gflow->getBCs(), boundaryConditions); // Keep a local copy of the wrap frags
 
+    RealType normal_array[4][DIMENSIONS];
+    RealType dsqr_array[4];
+    int id_array1[4], id_array2[4];
+
     int i=0, total = verlet_a.size();
     if (use_simd) {
+
+      int size = simd_data_size;
+      // Process particles using simd
       for (; i<total-min_simd_size; i+=simd_data_size) {
+
         // Number of valid particles
-        int size = min(simd_data_size, static_cast<int>(verlet_a.size())-i);
-        simd_float valid_mask = simd_mask_length(size);
+        //int size = min(simd_data_size, static_cast<int>(verlet_a.size())-i);
+        //simd_float valid_mask = simd_mask_length(size);
 
         // --- Pack up data
         // Pack positions
-        load_vector_data_simd(&verlet_a[i], x, Xsd1, size, sim_dimensions, Xrt);
-        load_vector_data_simd(&verlet_b[i], x, Xsd2, size, sim_dimensions, Xrt);
+        load_vector_data_simd(&verlet_a[i], x, Xsd1, 4, sim_dimensions, Xrt);
+        load_vector_data_simd(&verlet_b[i], x, Xsd2, 4, sim_dimensions, Xrt);
         
         // Pack sigmas
         simd_float Sg_sd1, Sg_sd2;
@@ -125,10 +134,9 @@ namespace GFlowSimulation {
         for (int ed=0; ed<vec_data_size; ++ed)
           load_vector_data_simd(&verlet_a[i], vec_arrays[ed], &vec_data[(vec_data_size+ed)*sim_dimensions], size, sim_dimensions, Xrt);
         
-
         // --- Check distances
         simd_get_displacement(Xsd1, Xsd2, dX, bounds, boundaryConditions, sim_dimensions);
-
+        
         // ---Get distance squared, calculate cutoff radius
         simd_float dX2;
         simd_vector_sqr(dX, dX2, sim_dimensions);
@@ -137,7 +145,7 @@ namespace GFlowSimulation {
 
         // Check if distance is less than cutoff distance. If so, 0xFFFFFFFF is returned, if not, 0x0 is returned,
         // so we can do a bitwise and of the mask and the force strength. "And" this with valid_mask.
-        simd_float mask = simd_mask(valid_mask, simd_less_than(dX2, cutoff2));
+        simd_float mask = simd_less_than(dX2, cutoff2);
 
         // --- Calculate distance and inverse distance
         simd_float distance    = simd_sqrt(dX2);
@@ -161,7 +169,8 @@ namespace GFlowSimulation {
       int id2 = verlet_b[i];
       // Get the displacement between the particles (stored in "normal")
       getDisplacement(x[id1], x[id2], normal, bounds, boundaryConditions);
-      // Mast the distance squared with the "particles are real" type mask, c1
+
+      // Mask the distance squared with the "particles are real" type mask, c1
       RealType dsqr = sqr(normal);
       // Check if the particles should interact
       if (dsqr < sqr(sg[id1] + sg[id2])) {
@@ -184,18 +193,18 @@ namespace GFlowSimulation {
         
         // Add the force to the buffers
         plusEqVec(f[id1], &serial_buffer_out[0]);
-        plusEqVec(f[id2], &serial_buffer_out[buffer_size]); 
+        plusEqVec(f[id2], &serial_buffer_out[buffer_size]);    
       }
     }
 
     // --- Clean up arrays
     if (use_simd) {
       dealloc_array_2d(Xrt);
-      delete [] Xsd1;
-      delete [] Xsd2;
-      delete [] dX;
-      delete [] buffer_out;
-      delete [] norm;
+      if (Xsd1) delete [] Xsd1;
+      if (Xsd2) delete [] Xsd2;
+      if (dX)   delete [] dX;
+      if (norm) delete [] norm;
+      if (buffer_out)  delete [] buffer_out;
       if (scalar_data) delete [] scalar_data;
       if (vec_data)    delete [] vec_data;
     }
