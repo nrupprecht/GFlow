@@ -65,12 +65,13 @@
   }
 
   // Access
+  /*
   inline int simd_get_int(int i, const simd_int a) { return reinterpret_cast<const int32_t*>(&a)[i]; }
   inline void simd_set(int i, simd_int& a, int b) { reinterpret_cast<int32_t*>(&a)[i] = b; }
-
   inline float simd_get (int i, const simd_float a) { return reinterpret_cast<const float*>(&a)[i]; }
   inline float& simd_get(int i, simd_float& a) { return reinterpret_cast<float*>(&a)[i]; }
   inline void simd_set(int i, simd_float& a, float b) { reinterpret_cast<float*>(&a)[i] = b; }
+  */
 
   // Masking 
   inline simd_float simd_mask(const simd_float a, const simd_float m) { return simd_cast_float(simd_and(simd_cast_int(a), simd_cast_int(m))); }
@@ -118,8 +119,6 @@
   template<> inline simd_float simd_load_constant<4>(const float *a, const int i) {
     return simd_set1(a[i/4]);
   }
-
-  
 
 #elif SIMD_TYPE==SIMD_AVX or SIMD_TYPE==SIMD_AVX2
   // The number of floats per vector

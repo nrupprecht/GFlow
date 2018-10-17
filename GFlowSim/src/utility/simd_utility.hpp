@@ -8,6 +8,14 @@
 #include <string>
 #include <sstream>
 
+// Access
+inline int simd_get_int(int i, const simd_int a)    { return reinterpret_cast<const int32_t*>(&a)[i]; }
+inline void simd_set(int i, simd_int& a, int b)     { reinterpret_cast<int32_t*>(&a)[i] = b; }
+inline float simd_get (int i, const simd_float a)   { return reinterpret_cast<const float*>(&a)[i]; }
+inline float& simd_get(int i, simd_float& a)        { return reinterpret_cast<float*>(&a)[i]; }
+inline void simd_set(int i, simd_float& a, float b) { reinterpret_cast<float*>(&a)[i] = b; }
+
+
 inline std::string simd_to_str(const simd_float a) {
   float b[simd_data_size];
   simd_store_u(a, b);
