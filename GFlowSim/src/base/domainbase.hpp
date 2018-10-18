@@ -158,7 +158,7 @@ namespace GFlowSimulation {
     //! The extra amount around a particle that we should count as being a particle neighbor. So if
     //! d(x, y) < rx + ry + skin_depth, the particles are neighbors.
     RealType skin_depth;
-
+    
     //! @brief The maximum cutoff radius a particle can have and be guarenteed to only have to look in 
     //! adjacent cells for neighbors.
     //!

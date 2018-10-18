@@ -8,6 +8,10 @@
 #include <string>
 #include <sstream>
 
+// Constants
+const simd_float simd_zero = simd_set1(0.);
+const simd_float minus_one = simd_set1(-1.);
+
 // Access
 inline int simd_get_int(int i, const simd_int a)    { return reinterpret_cast<const int32_t*>(&a)[i]; }
 inline void simd_set(int i, simd_int& a, int b)     { reinterpret_cast<int32_t*>(&a)[i] = b; }

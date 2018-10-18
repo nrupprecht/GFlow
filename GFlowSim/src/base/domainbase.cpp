@@ -101,7 +101,7 @@ namespace GFlowSimulation {
   }
 
   void DomainBase::construct() {
-    // Wrap the particles, so they are in their cannonical positions for 
+    // Wrap the particles, so they are in their cannonical positions
     Base::gflow->wrapPositions();
     // Set timer
     lastUpdate = Base::gflow->getElapsedTime();

@@ -3,6 +3,9 @@
 
 #include "simd.hpp"
 
+//! @brief Bitwise all true.
+const int simd_valid = 0xffffffff;
+
 #if SIMD_TYPE==SIMD_NONE
 // The number of floats per vector
   const int simd_data_size = 1u;
@@ -44,7 +47,6 @@
 
   // Constants
   const __m128 SIGNMASK = _mm_castsi128_ps(_mm_set1_epi32(0x80000000));
-  const int simd_valid = 0xffffffff;
 
   // Logic
   inline simd_int simd_and(const simd_int a, const simd_int b) { return _mm_and_si128(a, b); }
@@ -58,15 +60,6 @@
     for (int i=0; i<simd_data_size; ++i)
       reinterpret_cast<int32_t*>(&dest)[i] = static_cast<int>(source[i]);
   }
-
-  // Access
-  /*
-  inline int simd_get_int(int i, const simd_int a) { return reinterpret_cast<const int32_t*>(&a)[i]; }
-  inline void simd_set(int i, simd_int& a, int b) { reinterpret_cast<int32_t*>(&a)[i] = b; }
-  inline float simd_get (int i, const simd_float a) { return reinterpret_cast<const float*>(&a)[i]; }
-  inline float& simd_get(int i, simd_float& a) { return reinterpret_cast<float*>(&a)[i]; }
-  inline void simd_set(int i, simd_float& a, float b) { reinterpret_cast<float*>(&a)[i] = b; }
-  */
 
   // Masking 
   inline simd_float simd_mask(const simd_float a, const simd_float m) { return simd_cast_float(simd_and(simd_cast_int(a), simd_cast_int(m))); }
@@ -93,8 +86,8 @@
 
   // Comparisons
   inline simd_float simd_less_than(const simd_float a, const simd_float b) { return _mm_cmplt_ps(a, b); }
-  inline simd_float simd_clamp(const simd_float a) { return simd_mask(a, simd_less_than(simd_zero, a)); }
-  inline simd_float simd_un_clamp(const simd_float a) { return simd_mask(a, simd_less_than(a, simd_zero)); }
+  inline simd_float simd_clamp(const simd_float a) { return simd_mask(a, simd_less_than(simd_set1(0), a)); }
+  inline simd_float simd_un_clamp(const simd_float a) { return simd_mask(a, simd_less_than(a, simd_set1(0))); }
 
   // Special load
   template<int dimensions> inline simd_float simd_load_constant(const float *a, const int i) {

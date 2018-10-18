@@ -1,6 +1,7 @@
 #include "gflow.hpp"
 // Other files
 #include "allbaseobjects.hpp"
+#include "alldomains.hpp"
 #include "dataobjects/memorydistance.hpp"
 
 namespace GFlowSimulation {
@@ -13,7 +14,7 @@ namespace GFlowSimulation {
     angleData    = new AngleData(this);
     // Integrator will be created by the creator
     integrator   = nullptr;
-    domain       = new Domain(this); // new Sectorization(this); //
+    domain       = new DomainTest(this); // Domain(this);
     dataMaster   = new DataMaster(this);
     forceMaster  = new ForceMaster(this);
 

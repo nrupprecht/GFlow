@@ -38,7 +38,7 @@ namespace GFlowSimulation {
     return i;
   }
 
-  template<typename T> inline T convert(string s) {
+  template<typename T> inline T convert(const string s) {
     stringstream stream;
     T data;
     stream << s;

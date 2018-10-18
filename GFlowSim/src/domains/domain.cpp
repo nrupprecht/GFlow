@@ -280,7 +280,6 @@ namespace GFlowSimulation {
           // Loop through the particles in the adjacent cells
           for (auto id2 : cell_ptr->id_list) {
             // Get the displacement
-            // Displacement(Base::simData->x[id1], Base::simData->x[id2], displacement, bounds, bcs);
             getDisplacement(Base::simData->X(id1), Base::simData->X(id2), displacement, bounds, bcs); // Faster to just do this
             // Check the displacement
             if (sqr(displacement) < sqr(sigma + sg[id2] + skin_depth))

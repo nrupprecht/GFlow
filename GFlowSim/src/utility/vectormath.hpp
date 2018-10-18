@@ -57,6 +57,10 @@ namespace GFlowSimulation {
     return dotVec(x,x);
   }
 
+  inline int sqr(int *x) {
+    return dotVec(x,x);
+  }
+
   template<typename T> inline void zeroVec(T *x) {
     #if _INTEL_ == 1
     #pragma unroll(DIMENSIONS)
