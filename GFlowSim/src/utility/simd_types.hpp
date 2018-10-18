@@ -18,9 +18,9 @@ const int simd_valid = 0xffffffff;
   inline simd_int simd_and(const simd_int a, const simd_int b) { return a & b; }
 
   // Casting
-  inline simd_int   simd_cast_int(const simd_float a) { return reinterpret_cast<int>(a); }
-  inline simd_float simd_cast_float(const simd_int a) { return reinterpret_cast<float>(a); }
-  inline void move_to_int(const simd_float source, simd_int& dest) { dest = static_cast<int>(source[i]); }
+  inline simd_int   simd_cast_int(const simd_float a) { return *reinterpret_cast<const int*>(&a); }
+  inline simd_float simd_cast_float(const simd_int a) { return *reinterpret_cast<const float*>(&a); }
+  inline void move_to_int(const simd_float source, simd_int& dest) { dest = static_cast<int>(source); }
 
   // Masking 
   inline simd_float simd_mask(const simd_float a, const simd_float m) { return simd_cast_float(simd_and(simd_cast_int(a), simd_cast_int(m))); }
@@ -29,6 +29,7 @@ const int simd_valid = 0xffffffff;
   inline simd_float simd_load (const float *a)                   { return *a; }
   inline simd_float simd_load_u(const float *a)                  { return *a; }
   inline simd_float simd_set1 (const float a)                          { return a; }
+  inline simd_int   simd_set1_int(const int a)                         { return a; }
   inline simd_float simd_set_zero ()                                   { return 0; }
   inline void       simd_store(const simd_float src, float *dest)      { *dest = src; }
   inline void       simd_store(const simd_int src, int *dest)          { *dest = src; }
@@ -38,7 +39,13 @@ const int simd_valid = 0xffffffff;
   inline simd_float simd_add  (const simd_float a, const simd_float b) { return a+b; }
   inline simd_float simd_sub  (const simd_float a, const simd_float b) { return a-b; }
   inline simd_float simd_mult (const simd_float a, const simd_float b) { return a*b; }
+  inline simd_float simd_div(const simd_float a, const simd_float b)   { return a/b; }
   inline void    simd_plus_eq (simd_float &a, const simd_float b)      { a += b; }
+  inline simd_float simd_sqrt(const simd_float a)                      { return sqrt(a); }
+  inline simd_float simd_inv_sqrt(const simd_float a)                  { return 1./sqrt(a); }
+  inline simd_float simd_abs(const simd_float a)                       { return fabs(a); }
+  inline simd_float simd_negate(const simd_float a)                    { return -a; }
+
   // Comparisons
   inline simd_int simd_less_than(const simd_float a, const simd_float b) { return a<b ? 1 : 0; }
 

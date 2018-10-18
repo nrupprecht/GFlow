@@ -72,10 +72,12 @@ inline std::string simd_vec_to_vec_string(const simd_float *a, const int size) {
   return str;
 }
 
-inline std::ostream& operator<<(std::ostream& out, simd_float x) {
+#if SIMD_TYPE!=SIMD_NONE // To prevent the redefinition of the ostream operator
+inline std::ostream& operator<<(std::ostream& out, const simd_float x) {
   out << simd_to_str(x);
   return out;
 }
+#endif
 
 //! @brief Store a vector in all simd coordinates
 inline void simd_broadcast_vector(float *v, simd_float *sv, const int sim_dimensions) {

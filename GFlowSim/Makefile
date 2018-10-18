@@ -108,4 +108,4 @@ forces:
 .PHONY : creators
 creators:
 	rm obj/src/creators/*
-	make DO_OPTIMIZE=0
+	make

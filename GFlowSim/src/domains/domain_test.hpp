@@ -1,7 +1,8 @@
+
 #ifndef __DOMAIN_TEST_HPP__GFLOW__
 #define __DOMAIN_TEST_HPP__GFLOW__
 
-#include "../base/DomainBase.hpp"
+#include "../base/domainbase.hpp"
 
 namespace GFlowSimulation {
 
