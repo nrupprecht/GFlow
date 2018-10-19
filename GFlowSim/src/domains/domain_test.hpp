@@ -61,6 +61,8 @@ namespace GFlowSimulation {
 
     inline bool correct_index(int*);
 
+    inline void get_cell_index_tuple(const RealType*, int*);
+
     inline int get_cell_index(const RealType*);
 
     int *border_type_up = nullptr;

@@ -102,6 +102,8 @@ namespace GFlowSimulation {
 
     inline void fillArea(HeadNode*) const;
 
+    inline void createParticle(HeadNode*) const;
+
     //! @brief Get all the headers with a certain heading, put into the supplied vector.
     inline void getAllMatches(string, vector<HeadNode*>&, std::multimap<string, HeadNode*>&) const;
 

@@ -118,6 +118,9 @@ namespace GFlowSimulation {
     //! Set the repulsion stength for repulsing boundary conditions.
     void setRepulsion(RealType);
 
+    //! Set the dissipation stength for repulsing boundary conditions.
+    void setDissipation(RealType);
+
     //! Set the amount of time we should run for.
     void requestTime(RealType);
 
@@ -188,45 +191,48 @@ namespace GFlowSimulation {
     class BondData  *bondData;
     class AngleData *angleData;
 
-    //! A vector of objects that should modify the simulation at some point(s) during execution.
+    //! @brief A vector of objects that should modify the simulation at some point(s) during execution.
     std::list<class Modifier*> modifiers;
 
-    //! All the forces that can happen - which ones correspond to which pairs of particles is controlled by
+    //! @brief All the forces that can happen - which ones correspond to which pairs of particles is controlled by
     // the ForceMaster object.
     vector<class Interaction*> interactions;
 
-    //! If true, the simulation should continue to run.
+    //! @brief If true, the simulation should continue to run.
     bool running;
 
-    //! If true, do tasks related to force computation.
+    //! @brief If true, do tasks related to force computation.
     bool useForces;
 
-    //! How much time we have been requested to run for.
+    //! @brief How much time we have been requested to run for.
     RealType requested_time;
 
-    //! How much time has ever been requested.
+    //! @brief How much time has ever been requested.
     RealType total_requested_time;
 
-    //! How much of the requested time has been run.
+    //! @brief How much of the requested time has been run.
     RealType elapsed_time; 
 
-    //! How much time has been run over all runs.
+    //! @brief How much time has been run over all runs.
     RealType total_time;
 
-    //! The number of iterations that have passed.
+    //! @brief The number of iterations that have passed.
     int iter;
 
-    //! The simulation bounds.
+    //! @brief The simulation bounds.
     Bounds bounds;
 
-    //! Boundary types.
+    //! @brief Boundary types.
     BCFlag boundaryConditions[DIMENSIONS];
 
     //! @brief The number of dimensions
     int sim_dimensions;
 
-    //! Strength of boundary repulsion forces.
+    //! @brief Strength of boundary repulsion forces.
     RealType repulsion;
+
+    //! @brief Dissipation for the boundary repulsion forces.
+    RealType dissipation;
 
     //! Total boundary force applied this iteration.
     RealType boundaryForce;

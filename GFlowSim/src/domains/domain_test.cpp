@@ -73,6 +73,9 @@ namespace GFlowSimulation {
 
     RealType max_reasonable = sqr(0.9*bounds.wd(0));
 
+    // A tuple
+    int tuple1[DIMENSIONS], tuple2[DIMENSIONS], cell_index[DIMENSIONS], center[DIMENSIONS];
+
     // Find potential neighbors
     RealType *sg = Base::simData->Sg();
     RealType **x = Base::simData->X();
@@ -82,44 +85,72 @@ namespace GFlowSimulation {
     for (const auto &c : cells) {
       for (auto p=c.particle_ids.begin(); p!=c.particle_ids.end(); ++p) {
         int id1 = *p;
-        // All other particles in the same sector
-        auto q = p;
-        ++q;
-        for (; q!=c.particle_ids.end(); ++q) {
-          int id2 = *q;
-          subtractVec(x[id1], x[id2], dX);
-          RealType r2 = sqr(dX);
-          if (r2 < sqr(sg[id1] + sg[id2] + skin_depth))
-            pair_interaction(id1, id2);
-        }
-
+        
         // If sigma is <= than min_small_sigma, only look through cell stencil
         if (sg[id1]<=max_small_sigma) {
+
+          // All other particles in the same sector
+          auto q = p;
+          ++q;
+          for (; q!=c.particle_ids.end(); ++q) {
+            int id2 = *q;
+            subtractVec(x[id1], x[id2], dX);
+            RealType r2 = sqr(dX);
+            if (r2 < sqr(sg[id1] + sg[id2] + skin_depth))
+              pair_interaction(id1, id2);
+          }
+
           // Seach through list of adjacent cells
           for (const auto &d : c.adjacent)
             for (const auto id2 : d->particle_ids) {
               // If the other particle is a large particle, it will take care of this interaction
               if (sg[id2]>max_small_sigma) continue;
-              
               // Look for distance between particles
               subtractVec(x[id1], x[id2], dX);
-
-              //getDisplacement(x[id1], x[id2], dX, bounds, bcs);
               RealType r2 = sqr(dX);
-
               if (r2 < sqr(sg[id1] + sg[id2] + skin_depth) || max_reasonable<r2)
                 pair_interaction(id1, id2);
-
-              /*
-              if (r2 < sqr(sg[id1] + sg[id2] + skin_depth)) {
-                pair_interaction(id1, id2);
-              }
-              */
             }
         }
         // If sigma is > min_small_sigma, we have to look through more cells
         else {
-          throw false; // UNIMPLEMENTED
+          
+          // Calculate sweep "radius"
+          RealType search_width = 2*sg[id1]+skin_depth;
+
+          int search_dims[DIMENSIONS], prod = 1;
+          for (int d=0; d<DIMENSIONS; ++d) {
+            center[d] = static_cast<int>(ceil(search_width/widths[d]));
+            search_dims[d] = 2*center[d]+1;
+            prod *= search_dims[d];
+          }
+
+          // The tuple address of the cell the particle is in
+          get_cell_index_tuple(x[id1], cell_index);
+          
+          // Look in a hypercube.
+          for (int j=0; j<prod; ++j) {
+            // Turn j into a tuple
+            getAddressCM(j, search_dims, tuple1);
+            // Shift so it is a displacement
+            subtractVec(tuple1, center, tuple2);
+            // Get the cell at the displacement from the particle's cell
+            addVec(tuple2, cell_index, tuple1);
+            // If the cell is valid, look for particles
+            if(correct_index(tuple1)) {
+              // Get the linear address of the other cell
+              int linear;
+              tuple_to_linear(linear, tuple1);
+              for (auto &id2 : cells[linear].particle_ids) {
+                // If the other particle is a larger particle, it will take care of this interaction
+                if (id1==id2 || sg[id2]>sg[id1]) continue;
+                subtractVec(x[id1], x[id2], dX);
+                RealType r2 = sqr(dX);
+                if (r2 < sqr(sg[id1] + sg[id2] + skin_depth) || max_reasonable<r2)
+                  pair_interaction(id1, id2);
+              }
+            }
+          }
         }
       }
     }
@@ -238,7 +269,8 @@ namespace GFlowSimulation {
     const BCFlag *bcs = gflow->getBCs();
     for (int d=0; d<sim_dimensions; ++d) {
       if (tuple[d]>=dims[d]) {
-        if (bcs[d]==BCFlag::WRAP) tuple[d] -= dims[d];
+        if (bcs[d]==BCFlag::WRAP)
+          tuple[d] -= dims[d];
         else good_index = false;
       }
       if (tuple[d]<0) {
@@ -249,8 +281,7 @@ namespace GFlowSimulation {
     return good_index;
   }
 
-  int DomainTest::get_cell_index(const RealType *x) {
-    int index[DIMENSIONS], linear;
+  inline void DomainTest::get_cell_index_tuple(const RealType *x, int *index) {
     for (int d=0; d<DIMENSIONS; ++d) {
       index[d] = static_cast<int>((x[d] - domain_bounds.min[d])*inverseW[d]);
 
@@ -264,6 +295,13 @@ namespace GFlowSimulation {
       if (index[d]>=dims[d]) index[d] = dims[d]-1; 
       else if (index[d]<0)   index[d] = 0;
     }
+  }
+
+  int DomainTest::get_cell_index(const RealType *x) {
+    int index[DIMENSIONS], linear;
+
+    // Get the tuple index of the cell
+    get_cell_index_tuple(x, index);
 
     // Get the linear index
     tuple_to_linear(linear, index);

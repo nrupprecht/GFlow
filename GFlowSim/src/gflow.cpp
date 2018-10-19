@@ -7,7 +7,7 @@
 namespace GFlowSimulation {
 
   GFlow::GFlow() : running(false), useForces(true), requested_time(0), total_requested_time(0), elapsed_time(0), total_time(0), 
-    iter(0), argc(0), argv(nullptr), repulsion(DEFAULT_HARD_SPHERE_REPULSION), sim_dimensions(DIMENSIONS)
+    iter(0), argc(0), argv(nullptr), repulsion(DEFAULT_HARD_SPHERE_REPULSION), dissipation(0), sim_dimensions(DIMENSIONS)
   {
     simData      = new SimData(this);
     bondData     = new BondData(this);
@@ -286,6 +286,11 @@ namespace GFlowSimulation {
     repulsion = r;
   }
 
+  void GFlow::setDissipation(RealType d) {
+    if (d<0) return;
+    dissipation = d;
+  }
+
   void GFlow::requestTime(RealType t) {
     if (t<0) t = 0;
     requested_time = t;
@@ -340,7 +345,7 @@ namespace GFlowSimulation {
 
   void GFlow::repulsePositions() {
     // Get a pointer to position data and the number of particles in simData
-    RealType **x = simData->X(), **f = simData->F();
+    RealType **x = simData->X(), **v = simData->V(), **f = simData->F();
     int number = simData->number;
     // Reset boundary force
     boundaryForce = 0;
@@ -350,12 +355,14 @@ namespace GFlowSimulation {
         for (int n=0; n<number; ++n) {
           // Create a local copy
           if (x[n][d]<bounds.min[d]) {
-            f[n][d] += repulsion*(bounds.min[d] - x[n][d]);
-            boundaryForce += repulsion*(bounds.min[d] - x[n][d]);
+            RealType F = (repulsion*(bounds.min[d] - x[n][d]) + dissipation*clamp(-v[n][d]));
+            f[n][d] += F;
+            boundaryForce += F;
           }
           else if (bounds.max[d]<x[n][d]) {
-            f[n][d] -= repulsion*(x[n][d] - bounds.max[d]);
-            boundaryForce += repulsion*(x[n][d] - bounds.max[d]);
+            RealType F = repulsion*(x[n][d] - bounds.max[d]) + dissipation*clamp(v[n][d]);
+            f[n][d] -= F;
+            boundaryForce += F;
           }
         }
       }

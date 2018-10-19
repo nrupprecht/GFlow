@@ -5,6 +5,7 @@
 #include "modifiers/temperaturemodifier.hpp"
 #include "modifiers/timestepmodifier.hpp"
 #include "modifiers/constantacceleration.hpp"
+#include "modifiers/constantvelocity.hpp"
 #include "modifiers/flow.hpp"
 #include "modifiers/birth.hpp"
 #include "modifiers/death.hpp"

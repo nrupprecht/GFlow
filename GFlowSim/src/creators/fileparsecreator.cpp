@@ -140,7 +140,13 @@ namespace GFlowSimulation {
 
     getAllMatches("Gravity", container, options);
     if (!container.empty()) {
-      gflow->addModifier(new ConstantAcceleration(gflow, -1.));
+      RealType g[DIMENSIONS];
+      zeroVec(g);
+      // Get the acceleration vector
+      HeadNode *h = container[0];
+      for (int d=0; d<min(DIMENSIONS, static_cast<int>(h->params.size())); ++d)
+        g[d] = convert<RealType>(h->params[d]->partA);
+      gflow->addModifier(new ConstantAcceleration(gflow, g));
     }
 
     // --- Look for integrator
@@ -230,35 +236,25 @@ namespace GFlowSimulation {
       }
     }
 
-    // --- Look for boundary conditions
-    getAllMatches("Boundary-conditions", container, options);
-    if (container.size()>1) build_message += "We only need the boundary conditions specified once. Ignoring all but the first.\n";
-    if (container.size()>0) {
-      head = container[0];
-      // If a parameter is given, it is the BC for all sides
-      if (head && !head->params.empty()) gflow->setAllBCs(choose_bc(head->params[0]->partA));
-      else {
-        for (auto bc : head->subHeads) {
-          if (!head->heading.empty() || head->params.size()==1) { // A specific dimension must be choosen, the (one) parameter is the flag
-            if (head->params.empty()) throw BadStructure("Expected a parameter, found none.");
-            gflow->setBC(convert<int>(head->heading), choose_bc(head->params[0]->partA));
-          }
-          else throw BadStructure("We need one parameter to be the boundary condition flag, we found "+toStr(head->params.size()));
-        }
-      }
-    }
-
     // --- Global Particle Template. Defines "types" of particles, e.g. radius distribution, density/mass, etc.
     getAllMatches("Template", container, options);
     for (auto h : container) {
       getParticleTemplate(h, global_templates);
     }    
 
+    // --- Fill an area with particles
     getAllMatches("Fill-area", container, options);
     for (auto h : container) {
       fillArea(h);
     }
 
+
+    getAllMatches("Particle", container, options);
+    for (auto h : container) {
+      createParticle(h);
+    }
+
+    // --- Rules for creating particles
     getAllMatches("Creation", container, options);
     if (container.size()>1) build_message += "We only want one specification of particle creation. Ignoring all but the first";
     if (container.size()>0) {
@@ -284,6 +280,7 @@ namespace GFlowSimulation {
       }
     }
 
+    // --- Rules for destroying particles
     getAllMatches("Destruction", container, options);
     if (container.size()>1) build_message += "We only want one specification of particle destruction. Ignoring all but the first";
     if (container.size()>0) {
@@ -490,7 +487,7 @@ namespace GFlowSimulation {
     // --- We have found all the options. Fill the area.
     GFlow filler;
     filler.setBounds(bnds);
-    filler.setAllBCs(BCFlag::WRAP);
+    filler.setAllBCs(BCFlag::REPL);
     filler.forceMaster = gflow->forceMaster; // Make sure the particles treat each other in the same way
     // Get the simdata
     SimData *simData = filler.simData;
@@ -584,6 +581,91 @@ namespace GFlowSimulation {
       
     // So we don't delete the force master when filler cleans up
     filler.forceMaster = nullptr; 
+  }
+
+  inline void FileParseCreator::createParticle(HeadNode *head) const {
+    // Check if head is good
+    if (head==nullptr) return;
+    // Particle Templates
+    std::map<string, ParticleTemplate> particle_templates;
+
+    // --- Sort options
+    std::multimap<string, HeadNode*> options;
+    for (auto h : head->subHeads)
+      options.insert(std::pair<string, HeadNode*>(h->heading, h));
+    // Container to collect options in
+    std::vector<HeadNode*> container;
+
+    // --- Look for options
+    RealType X[DIMENSIONS], V[DIMENSIONS], sigma, im;
+    int type;
+
+    // --- Look for position
+    getAllMatches("Position", container, options);
+    if (container.empty())
+      throw BadStructure("Particle needs a position!");
+    else if (container.size()>1) build_message += "Only need one position for a particle.\n";
+    else {
+      HeadNode *h = container[0];
+      for (int d=0; d<DIMENSIONS; ++d) {
+        X[d] = convert<RealType>(h->params[d]->partA);
+      }
+    }
+
+    // --- Look for velocity
+    getAllMatches("Velocity", container, options);
+    if (container.empty()) // Default velocity is 0
+      zeroVec(V);
+    else if (container.size()>1) build_message += "Only need one position for a particle.\n";
+    else {
+      HeadNode *h = container[0];
+      for (int d=0; d<DIMENSIONS; ++d) {
+        V[d] = convert<RealType>(h->params[d]->partA);
+      }
+    }
+
+    // --- Look for sigma
+    getAllMatches("Sigma", container, options);
+    if (container.empty())
+      throw BadStructure("Particle needs a sigma!");
+    else if (container.size()>1) build_message += "Only need one sigma for a particle.\n";
+    else  {
+      HeadNode *h = container[0];
+      sigma = convert<RealType>(h->params[0]->partA);
+    }
+
+    // --- Look for type
+    getAllMatches("Type", container, options);
+    if (container.empty()) type = 0;
+    else if (container.size()>1) build_message += "Only need one sigma for a particle.\n";
+    else  {
+      HeadNode *h = container[0];
+      type = convert<RealType>(h->params[0]->partA);
+    }
+
+    // --- Look for density
+    getAllMatches("Density", container, options);
+    if (container.empty()) im = 1;
+    else if (container.size()>1) build_message += "Only need one density for a particle.\n";
+    else  {
+      HeadNode *h = container[0];
+      RealType vol = sphere_volume(sigma, DIMENSIONS);
+      im = 1./(convert<RealType>(h->params[0]->partA)*vol);
+    }
+
+    // --- Look for modifiers
+    getAllMatches("Modifier", container, options);
+    int g_id = gflow->simData->getNextGlobalID();
+    // Go through all the modifiers specified
+    for (auto m : container) {
+      if (m->params[0]->partA=="CV")
+        gflow->addModifier(new ConstantVelocity(gflow, g_id, V));
+      else
+        throw BadStructure("Unrecognized modifer option, ["+m->params[0]->partA+"].");
+    }
+
+    // Add the particle to the system
+    gflow->simData->addParticle(X, V, sigma, im, type);
   }
 
   inline void FileParseCreator::getAllMatches(string heading, vector<HeadNode*>& container, std::multimap<string, HeadNode*>& options) const {
