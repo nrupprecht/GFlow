@@ -306,6 +306,8 @@ namespace GFlowSimulation {
       }
     }
 
+    // --- Extra, global, relaxation
+
     // Initialize domain
     gflow->domain->initialize();
   }
@@ -464,6 +466,15 @@ namespace GFlowSimulation {
       }
     }
 
+    // --- Velocity. How to choose particle velocities. We will find a better / more expressive way to do this later.
+    getAllMatches("Velocity", container, options);
+    int velocityOption = 0; // Normal velocities by default.
+    if (container.size()>1) build_message += "We only need one way to initialize velocity to be specified.\n";
+    if (container.size()>0) {
+      hd = container[0];
+      if (hd->params[0]->partA=="Zero") velocityOption = 1;
+    }
+
     // Select a velocity
     auto select_velocity = [&] (RealType *V, RealType *X, RealType sigma, RealType im, int type) -> void {
       RealType vsgma = 0.25;
@@ -480,7 +491,7 @@ namespace GFlowSimulation {
     // --- Check that we have defined a good area
     for (int d=0; d<DIMENSIONS; ++d)
       if (bnds.wd(d)==0) 
-	 throw BadStructure("We need valid bounds. The width of dimension "+toStr(d)+" was 0.");
+        throw BadStructure("We need valid bounds. The width of dimension "+toStr(d)+" was 0.");
     if (!usePhi && number<=0 && singleType)
       throw BadStructure("If using a single type, we need a nonzero number of particles.");
 
@@ -573,8 +584,10 @@ namespace GFlowSimulation {
       RealType im = simData->Im(i);
       if (type!=-1) {
         // Select the velocity for the final particle
-        select_velocity(V, X, sigma, im, type);
-        if (im==0) zeroVec(V); //** FOR NOW
+        if (velocityOption==0) select_velocity(V, X, sigma, im, type);
+        else zeroVec(V);
+        // Infinitely heavy objects do not move.
+        if (im==0) zeroVec(V);
         gflow->simData->addParticle(X, V, sigma, im, type);
       }
     }
