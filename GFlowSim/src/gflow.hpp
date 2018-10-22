@@ -9,27 +9,27 @@ namespace GFlowSimulation {
   /*
   *  @brief GFlow
   *
-  *  The simulation class
+  *  The simulation class.
   *
   */
   class GFlow {
   public:
-    //! Constructor.
+    //! @brief Constructor.
     GFlow();
 
-    //! Destructor.
+    //! @brief Destructor.
     ~GFlow();
 
-    //! Initialize - returns true if all pointers are non-null.
+    //! @brief Initialize - returns true if all pointers are non-null.
     bool initialize();
 
-    //! Initialize a base object to point at GFlow's data.
+    //! @brief Initialize a base object to point at GFlow's data.
     void initializeBase(Base *);
 
-    //! Run the simulation for some amount of time.
+    //! @brief Run the simulation for some amount of time.
     void run(RealType=-1);
 
-    //! Write data from data master to file.
+    //! @brief Write data from data master to file.
     void writeData(string);
 
     // --- Accessors
@@ -45,13 +45,13 @@ namespace GFlowSimulation {
     //! @brief Whether a force master has been allocated.
     bool hasForceMaster() { return forceMaster!=nullptr; }
 
-    //! Get argc
+    //! @brief Get argc
     int getArgC() const { return argc; }
 
     //! @brief Get argv
     char** getArgV() const { return argv; }
 
-    //! Get the requested time.
+    //! @brief Get the requested time.
     RealType getRequestedTime() const;
 
     //! @brief Get the total amount of time ever requested.
@@ -62,37 +62,37 @@ namespace GFlowSimulation {
     //! not necessarily the total amount of time ever requested.
     RealType getTotalRequestedTime() const;
     
-    //! Get fulfilled time.
+    //! @brief Get fulfilled time.
     RealType getElapsedTime() const;
 
-    //! Get all the time the simulation ran for.
+    //! @brief Get all the time the simulation ran for.
     RealType getTotalTime() const;
 
-    //! Get the strength of the boundary force.
+    //! @brief Get the strength of the boundary force.
     RealType getBoundaryForce() const;
 
-    //! Get the current time step.
+    //! @brief Get the current time step.
     RealType getDT() const;
 
-    //! Get the number of iterations the simulation had run for.
+    //! @brief Get the number of iterations the simulation had run for.
     int getIter() const;
 
-    // Get the number of forces
+    //! @brief Get the number of forces
     int getNumInteractions() const;
 
-    // Get the number of particles
+    //! @brief Get the number of particles
     int getNumParticles() const;
 
-    // Get the bounds
+    //! @brief Get the bounds
     Bounds getBounds() const;
 
-    // Get the boundary conditions
+    //! @brief Get the boundary conditions
     const BCFlag* getBCs() const;
 
-    // Get a single boundary condition
+    //! @brief Get a single boundary condition
     BCFlag getBC(int) const;
 
-    // Get the number of types of particles in the simulation
+    //! @brief Get the number of types of particles in the simulation
     int getNTypes() const;
 
     pair<int, char**> getCommand() const;
@@ -101,61 +101,69 @@ namespace GFlowSimulation {
 
     class DataMaster* getDataMaster() const;
 
+    const RealType* getVComCorrection() const;
+
     // --- Mutators
 
-    //! Set the command info
+    //! @brief Set the command info
     void setCommand(int, char**);
 
-    //! Set the bounds
+    //! @brief Set the bounds
     void setBounds(Bounds);
 
-    //! Set all wrap values to the same value.
+    //! @brief Set all wrap values to the same value.
     void setAllBCs(BCFlag);
 
     //! @brief Set a single boundary condition.
     void setBC(const int, const BCFlag);
 
-    //! Set the repulsion stength for repulsing boundary conditions.
+    //! @brief Set the repulsion stength for repulsing boundary conditions.
     void setRepulsion(RealType);
 
-    //! Set the dissipation stength for repulsing boundary conditions.
+    //! @brief Set the dissipation stength for repulsing boundary conditions.
     void setDissipation(RealType);
 
-    //! Set the amount of time we should run for.
+    //! @brief Set the amount of time we should run for.
     void requestTime(RealType);
 
-    //! Keep positions in bounds.
+    //! @brief Keep positions in bounds.
     void wrapPositions();
 
-    //! "Reflect" positions off the bounds.
+    //! @brief "Reflect" positions off the bounds.
     void reflectPositions();
 
-    //! Apply a force to keep particles in bounds.
+    //! @brief Apply a force to keep particles in bounds.
     void repulsePositions();
 
-    //! Add a data object.
+    //! @brief Keep the center of mass stationary in wrapped dimensions
+    void fixCenterOfMass();
+
+    //! @brief Add a data object.
     void addDataObject(class DataObject*);
 
-    //! Add a modifier object.
+    //! @brief Add a modifier object.
     void addModifier(class Modifier*);
 
-    //! Reset all timers (use e.g. after doing relaxation of a random initial state).
+    //! @brief Reset all timers (use e.g. after doing relaxation of a random initial state).
     void resetAllTimes();
 
-    //! Set the start recording time.
+    //! @brief Set the start recording time.
     void setStartRecTime(RealType);
 
-    //! Set the frames per second for all data objects.
+    //! @brief Set the frames per second for all data objects.
     void setFPS(RealType);
 
-    //! Set the fps of particular data objects.
+    //! @brief Set the fps of particular data objects.
     void setFPS(int, RealType);
 
-    //! Set the time step.
+    //! @brief Set the time step.
     void setDT(RealType);
 
-    //! Set data master command line data.
+    //! @brief Set data master command line data.
     void setDMCmd(int, char**);
+
+    //! @brief Set the correct com flag.
+    void setCorrectCom(bool);
 
     // Creators are a friend classes --- all must be since friendship is not inherited
     friend class Creator;
@@ -236,6 +244,16 @@ namespace GFlowSimulation {
 
     //! Total boundary force applied this iteration.
     RealType boundaryForce;
+
+    //! @brief By how much the center of mass velocity has been corrected.
+    //!
+    //! Objects like constant velocity modifers should be able to move their object at 
+    //! the correct constant velocity. They can use this correction to adjust velocity 
+    //! accordingly.
+    RealType v_com_correction[DIMENSIONS];
+
+    //! @brief If true, we keep the com velocity zero in directions with wrap boundary conditions.
+    bool correct_com = false;
 
     // The command info (optional)
     int argc;

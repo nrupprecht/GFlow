@@ -59,6 +59,8 @@ namespace GFlowSimulation {
       if (it) it->initialize();
       else non_null = false;
     }
+    // Clear v_com_correction
+    zeroVec(v_com_correction);
     // Return whether pointers were non-null
     return non_null;
   }
@@ -149,6 +151,7 @@ namespace GFlowSimulation {
       // Reflect or repulse particles. We only need to wrap before sectorizing particles, but we need to apply forces at every timestep.
       reflectPositions(); // This only involves velocities, so it could be done before or after clear forces.
       repulsePositions(); // But this needs to be done after clear forces.
+      if (correct_com) fixCenterOfMass();
 
       // Calculate current forces
       if (useForces) {
@@ -260,6 +263,10 @@ namespace GFlowSimulation {
     return dataMaster;
   }
 
+  const RealType* GFlow::getVComCorrection() const {
+    return v_com_correction;
+  }
+
   void GFlow::setCommand(int argc, char **argv) {
     if (argv) {
       this->argc = argc;
@@ -368,6 +375,33 @@ namespace GFlowSimulation {
       }
   }
 
+  void GFlow::fixCenterOfMass() {
+    RealType *v_ave = new RealType[sim_dimensions];
+    RealType mass = 0;
+    RealType **v = simData->V();
+    RealType *im = simData->Im();
+    int number = simData->number;
+    // Calculate the total velocity
+    for (int n=0; n<number; ++n) {
+      RealType m = 1./im[n];
+      plusEqVecScaled(v_ave, v[n], m);
+      mass += m;
+    }
+    // Divide by mass to get the average velocity
+    scalarMultVec(1./mass, v_ave);
+    // Subtract away com velocity in dimensions with wrapped boundary conditions
+    for (int n=0; n<number; ++n) {
+      for (int d=0; d<sim_dimensions; ++d) {
+        if (boundaryConditions[d]==BCFlag::WRAP) 
+          v[n][d] -= v_ave[d];
+      }
+    }
+    // Increment
+    plusEqVec(v_com_correction, v_ave);
+    // Clean up
+    delete [] v_ave;
+  }
+
   void GFlow::addDataObject(class DataObject* dob) {
     dataMaster->addDataObject(dob);
   }
@@ -402,6 +436,10 @@ namespace GFlowSimulation {
 
   void GFlow::setDMCmd(int argc, char** argv) {
     dataMaster->setCommand(argc, argv);
+  }
+
+  void GFlow::setCorrectCom(bool flag) {
+    correct_com = flag;
   }
 
   inline void GFlow::clearForces() {

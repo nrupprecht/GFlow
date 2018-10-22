@@ -68,6 +68,9 @@ namespace GFlowSimulation {
     owned[1] = bounds[1] = width;
     owned[2] = bounds[2] = 0;
     owned[3] = bounds[3] = height;
+    // Set some space bounds
+    bnd_width = 1.;
+    bnd_height = static_cast<double>(height)/width;
     // Create the image
     image = new BMP;
     image->SetSize(width, height);
@@ -86,6 +89,8 @@ namespace GFlowSimulation {
       owned[i] = p.owned[i];
       bounds[i] = p.bounds[i];
     }
+    bnd_width  = p.bnd_width;
+    bnd_height = p.bnd_height;
     // Image and refs
     image = p.image;
     baseImage = p.baseImage;
@@ -103,6 +108,8 @@ namespace GFlowSimulation {
       owned[i] = p.owned[i];
       bounds[i] = p.bounds[i];
     }
+    bnd_width  = p.bnd_width;
+    bnd_height = p.bnd_height;
     // Image and refs
     image = p.image;
     baseImage = p.baseImage;
@@ -125,6 +132,27 @@ namespace GFlowSimulation {
     else --refs[0];
   }
 
+  Palette& Palette::operator=(const Palette& p) {
+    if (p.getWidth()<=0 || p.getHeight()<=0) throw BadPalette();
+    // Get bounds
+    for (int i=0; i<4; ++i) {
+      owned[i] = p.owned[i];
+      bounds[i] = p.bounds[i];
+    }
+    bnd_width  = p.bnd_width;
+    bnd_height = p.bnd_height;
+    // Image and refs
+    image = p.image;
+    baseImage = p.baseImage;
+    refs = p.refs;
+    ++refs[0];
+    // Aspect ratio
+    aspect_ratio = p.aspect_ratio;
+    combinationRule = p.combinationRule;
+    // Return
+    return *this;
+  }
+
   Palette& Palette::operator=(const Palette&& p) {
     if (p.getWidth()<=0 || p.getHeight()<=0) throw BadPalette();
     // Get bounds
@@ -132,6 +160,8 @@ namespace GFlowSimulation {
       owned[i] = p.owned[i];
       bounds[i] = p.bounds[i];
     }
+    bnd_width  = p.bnd_width;
+    bnd_height = p.bnd_height;
     // Image and refs
     image = p.image;
     combinationRule = p.combinationRule;
@@ -140,6 +170,7 @@ namespace GFlowSimulation {
     ++refs[0];
     // Aspect ratio
     aspect_ratio = p.aspect_ratio;
+    combinationRule = p.combinationRule;
     // Return
     return *this;
   }
@@ -192,6 +223,52 @@ namespace GFlowSimulation {
       int width = requested_ratio*height;
       int gap = (getWidth() - width)/2;
       return getSubPalette(gap, getWidth()-gap, 0, getHeight());
+    }
+  }
+
+  void Palette::drawCircle(float x, float y, float r, ColorFunction colorF, bool wrap, float depth) {
+    // Width of owned region
+    int wx = getWidth(), wy = getHeight();
+    float cx = wx/bnd_width, cy = wy/bnd_height;
+    float icx = 1./cx, icy = 1./cy;
+    // Find the center (in pixel coordinates)
+    int px = x*cx;
+    int py = y*cy;
+    // Find dp's (radius in pixel coordinates)
+    int dpx = ceil(r*cx);
+    int dpy = ceil(r*cy);
+    // Radius factor squared
+    bool doColor = true;
+    float rsqr = sqr(r);
+    // If dpx or dpy<2, don't do a color gradient - its too hard to see
+    bool const_color = min(dpx, dpy)<3;
+    // Go through pixels
+    for (int dy=-dpy; dy<=dpy; ++dy) {
+      for (int dx=-dpx; dx<=dpx; ++dx) {
+        if (sqr(dx*icx) + sqr(dy*icy) <= rsqr) {
+          // The potential pixel
+          int w_px = px + dx, w_py = py + dy;
+          // Get the pixel factor
+          std::pair<float, float> pos = pixelPosition(w_px, w_py);
+          float pfx = (pos.first  - x)/r;
+          float pfy = (pos.second - y)/r;
+          if (0<=w_px && w_px<wx && 0<=w_py && w_py<wy) {
+            // Set pixel
+            RGBApixel color = const_color ? colorF(0, 0, doColor) : colorF(pfx, pfy, doColor);
+            if (doColor) setPixel(w_px, w_py, color, depth);
+          }
+          // Wrap pixel
+          else if (wrap) {
+            w_px = w_px >= wx ? w_px-wx : w_px;
+            w_px = w_px <  0 ? w_px+wx : w_px;
+            w_py = w_py >= wy ? w_py-wy : w_py;
+            w_py = w_py <  0 ? w_py+wy : w_py;
+            // Set pixel
+            RGBApixel color = const_color ? colorF(0, 0, doColor) : colorF(pfx, pfy, doColor);
+            if (doColor) setPixel(w_px, w_py, color);
+          }
+        }
+      }
     }
   }
 
@@ -281,6 +358,11 @@ namespace GFlowSimulation {
     return owned;
   }
 
+  void Palette::setSpaceBounds(double width, double height) {
+    bnd_width  = width;
+    bnd_height = height;
+  }
+
   Palette::Palette(int mx, int Mx, int my, int My, BMP *img, int *rfs, int *bnds, double aratio, Image *baseI) {
     if (Mx<=mx || My<=my) throw BadPalette();
     // Set sub-bounds
@@ -298,6 +380,28 @@ namespace GFlowSimulation {
     ++refs[0];
     // Aspect ratio
     aspect_ratio = aratio;
+  }
+
+  Palette::Palette(int mx, int Mx, int my, int My, Palette *p) {
+    if (Mx<=mx || My<=my) throw BadPalette();
+    // Set sub-bounds
+    owned[0] = mx;
+    owned[1] = Mx;
+    owned[2] = my;
+    owned[3] = My;
+    // Copy full bounds
+    for (int i=0; i<4; ++i) bounds[i] = p->bounds[i];
+    // Inherit appropriately aspect ratio-ed bounds
+    bnd_width = (Mx-mx)/getWidth() * p->bnd_width;
+    bnd_height = (My-my)/getHeight() * p->bnd_height;
+    // Image and refs
+    image = p->image;
+    baseImage = p->baseImage;
+    combinationRule = 0;
+    refs = p->refs;
+    ++refs[0];
+    // Aspect ratio
+    aspect_ratio = p->aspect_ratio;
   }
 
   inline std::pair<float, float> Palette::pixelFactor(int x, int y) const {
@@ -321,6 +425,18 @@ namespace GFlowSimulation {
   inline float Palette::pixelFactorY(int y) const {
     int Y = owned[3]-owned[2]+1;
     return static_cast<float>(y)/Y;
+  }
+
+  inline std::pair<float, float> Palette::pixelPosition(int x, int y) const {
+    return std::pair<float, float>(pixelPositionX(x), pixelPositionY(y));
+  }
+
+  inline float Palette::pixelPositionX(int x) const {
+    return pixelFactorX(x)*bnd_width;
+  }
+
+  inline float Palette::pixelPositionY(int y) const {
+    return pixelFactorY(y)*bnd_height;
   }
 
   //! @brief Set a pixel relative to the owned coordinates (origin is {owned[0], owned[2]})

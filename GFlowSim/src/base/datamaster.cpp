@@ -177,6 +177,7 @@ namespace GFlowSimulation {
     if (run_time>60) fout << " ( h:m:s - "   << printAsTime(run_time) << " )";
     fout << "\n";
     fout << "  - Ratio x Particles:        " << toStrRT(ratio*particles) << "\n";
+    fout << "  - Iter x Particles / s:     " << toStrRT(iterations*particles/run_time) << "\n";
     fout << "  - Ratio:                    " << toStrRT(ratio) << "\n";
     fout << "  - Inverse Ratio:            " << toStrRT(1./ratio) << "\n";
     fout << "\n";
@@ -277,11 +278,13 @@ namespace GFlowSimulation {
     }
     fout << "\n";
     fout << "Interactions:\n";
-    int c=0;
+    int c=0, inters=0;
     for (auto &it : gflow->interactions) {
-      fout << "     Interaction " << c << ":           length " << it->size()/2 << "\n";
+      fout << "     Interaction " << c << ":           length " << it->size() << "\n";
       ++c;
+      inters += it->size();
     }
+    fout << "  - Inter.s per particle:     " << static_cast<double>(inters) / particles << "\n";
     
     // Close the stream
     fout.close();

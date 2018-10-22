@@ -109,6 +109,13 @@ namespace GFlowSimulation {
     for (int d=0; d<DIMENSIONS; ++d) z[d] += x[d];
   }
 
+  template<typename T> inline void plusEqVecScaled(T *z, const T *x, const T s) {
+    #if _INTEL_ == 1
+    #pragma unroll(DIMENSIONS)
+    #endif 
+    for (int d=0; d<DIMENSIONS; ++d) z[d] += s*x[d];
+  }
+
   template<typename T> inline void minusEqVec(T *z, const T *x) {
     #if _INTEL_ == 1
     #pragma unroll(DIMENSIONS)

@@ -135,7 +135,9 @@ namespace GFlowSimulation {
     }
     else if (head->params.size()==1) {
       // The same boundary condition in all directions
-      if (head->params[0]->partA=="Repulsive") gflow->setAllBCs(BCFlag::REPL);
+      if (head->params[0]->partA=="Repulse")   gflow->setAllBCs(BCFlag::REPL);
+      else if (head->params[0]->partA=="Wrap") gflow->setAllBCs(BCFlag::WRAP);
+      else throw BadStructure("Unrecognized boundary condition ["+head->params[0]->partA+"].");
     }
 
     getAllMatches("Gravity", container, options);

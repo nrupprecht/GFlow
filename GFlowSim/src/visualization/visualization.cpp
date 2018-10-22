@@ -121,6 +121,7 @@ namespace GFlowSimulation {
 
     // Get a subpallete on which to write the image
     Palette image = sub1.getMaxCenteredSubPalette(wx, wy);
+    image.setSpaceBounds(wx, wy);
 
     // Set background
     image.coverPalette(background);
@@ -190,7 +191,9 @@ namespace GFlowSimulation {
         };
 
       // Draw the particle
-      image.drawCircleByFactors(xf, yf, rf*radius_multiple, colorF, do_wrap); 
+      //image.drawCircleByFactors(xf, yf, rf*radius_multiple, colorF, do_wrap); 
+
+      image.drawCircle(pos[0] - left, pos[1] - bott, sigma, colorF, do_wrap);
     }
 
     // Clean up pdata

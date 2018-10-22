@@ -157,6 +157,9 @@ namespace GFlowSimulation {
     //! @brief Destructor.
     ~Palette();
 
+    //! @brief Equals operator.
+    Palette& operator=(const Palette&);
+
     //! @brief Move equals operator.
     Palette& operator=(const Palette&&);
 
@@ -176,6 +179,8 @@ namespace GFlowSimulation {
     Palette getMaxCenteredSubPalette(float, float);
 
     // --- Drawing functions
+
+    void drawCircle(float, float, float, ColorFunction, bool=true, float=0.f);
 
     //! @brief Draw a circle by giving scaled coordinates and radius.
     void drawCircleByFactors(float, float, float, ColorFunction, bool=true, float=0.f);
@@ -202,6 +207,10 @@ namespace GFlowSimulation {
 
     const int* getOwned() const;
 
+    // --- Mutators
+
+    void setSpaceBounds(double, double);
+
     // --- Exception class
 
     class PaletteOutOfBounds {};
@@ -211,11 +220,16 @@ namespace GFlowSimulation {
     //! @brief Private constructor for use in making subpalettes
     Palette(int, int, int, int, BMP*, int*, int*, double, Image*);
 
+    Palette(int, int, int, int, Palette*);
+
     //! @brief Gives the factor of a pixel
     inline std::pair<float, float> pixelFactor(int, int) const;
-
     inline float pixelFactorX(int) const;
     inline float pixelFactorY(int) const;
+
+    inline std::pair<float, float> pixelPosition(int, int) const;
+    inline float pixelPositionX(int) const;
+    inline float pixelPositionY(int) const;
 
     //! @brief Set a pixel relative to the owned coordinates (origin is {owned[0], owned[2]})
     inline void setPixel(int, int, RGBApixel, float=0.f);
@@ -239,12 +253,17 @@ namespace GFlowSimulation {
     //! @brief The number of references to the image data.
     int *refs;
 
-    //! @brief Bounds - left, right, bottom, top. 
+    //! @brief Bounds - left, right, bottom, top, in pixel space. 
     //! I guess left and bottom are always 0.
     int bounds[4];
 
     //! @brief Owned bounds - the subset of the pixels this palette owns.
     int owned[4];
+
+    //! @brief "Space" bounds width.
+    double bnd_width;
+    //! @brief "Space" bounds height.
+    double bnd_height;
 
     double aspect_ratio;
 
