@@ -18,8 +18,10 @@ namespace GFlowSimulation {
     dataMaster   = new DataMaster(this);
     forceMaster  = new ForceMaster(this);
 
-    // Set wrapping to true by defaule
+    // Set wrapping to true by default
     setAllBCs(BCFlag::WRAP);
+    // Set v_com_correction to zero
+    zeroVec(v_com_correction);
   }
 
   GFlow::~GFlow() {
@@ -390,14 +392,14 @@ namespace GFlowSimulation {
     // Divide by mass to get the average velocity
     scalarMultVec(1./mass, v_ave);
     // Subtract away com velocity in dimensions with wrapped boundary conditions
-    for (int n=0; n<number; ++n) {
-      for (int d=0; d<sim_dimensions; ++d) {
-        if (boundaryConditions[d]==BCFlag::WRAP) 
-          v[n][d] -= v_ave[d];
-      }
-    }
+    for (int d=0; d<sim_dimensions; ++d)
+      if (boundaryConditions[d]!=BCFlag::WRAP) v_ave[d] = 0;
+    for (int n=0; n<number; ++n)
+      minusEqVec(v[n], v_ave);
+
     // Increment
     plusEqVec(v_com_correction, v_ave);
+
     // Clean up
     delete [] v_ave;
   }
