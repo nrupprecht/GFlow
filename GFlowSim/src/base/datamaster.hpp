@@ -20,6 +20,8 @@ namespace GFlowSimulation {
 
     //! Destructor
     ~DataMaster();
+
+    virtual void initialize() override;
     
     //! Add a data object - we are subsequently in charge of the data object
     void addDataObject(DataObject*);
@@ -35,13 +37,13 @@ namespace GFlowSimulation {
 
     // Call the corresponding routeens of the managed data objects - data
     // objects will collect data during one or more of these routines
-    virtual void pre_integrate();
-    virtual void pre_step();
-    virtual void pre_exchange();
-    virtual void pre_forces();
-    virtual void post_forces();
-    virtual void post_step();
-    virtual void post_integrate();
+    virtual void pre_integrate() override;
+    virtual void pre_step() override;
+    virtual void pre_exchange() override;
+    virtual void pre_forces() override;
+    virtual void post_forces() override;
+    virtual void post_step() override;
+    virtual void post_integrate() override;
 
     //! Do a coordinated write to a directory. Returns true if all writes were successful
     bool writeToDirectory(string);

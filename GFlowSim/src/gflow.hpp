@@ -138,6 +138,9 @@ namespace GFlowSimulation {
     //! @brief Keep the center of mass stationary in wrapped dimensions
     void fixCenterOfMass();
 
+    //! @brief Instructs the domain to remove particles that are overlapping by more than some fraction.
+    void removeOverlapping(RealType);
+
     //! @brief Add a data object.
     void addDataObject(class DataObject*);
 

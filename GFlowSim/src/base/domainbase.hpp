@@ -76,6 +76,9 @@ namespace GFlowSimulation {
     //! This function must be overloaded by all children of DomainBase.
     virtual void getAllWithin(int, RealType, vector<int>&)=0;
 
+    //! @brief Remove particles that are overlapping by more than some fraction.
+    virtual void removeOverlapping(RealType)=0;
+
     // --- Mutators
 
     //! @brief Set the skin depth. This function is virtual, as the inheriting class

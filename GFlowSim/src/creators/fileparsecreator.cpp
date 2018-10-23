@@ -312,6 +312,23 @@ namespace GFlowSimulation {
 
     // Initialize domain
     gflow->domain->initialize();
+
+    // --- Look for particle reconcilliation (should we remove overlapping particles?). Must do this after domain initialization.
+    getAllMatches("Reconcile", container, options);
+    if (container.size()>0) {
+      for (auto m : container) {
+        if (m->params.empty()) throw BadStructure("Need a remove option.");
+        if (m->params[0]->partA=="Remove") {
+          if (m->params[0]->partB.empty())
+            gflow->removeOverlapping(1.); // Remove particles overlapping by more than 10%
+          else gflow->removeOverlapping(convert<RealType>(m->params[0]->partB));
+        }
+        else throw BadStructure("Unrecognized remove option, [" + m->params[0]->partA + "].");
+      }
+    }
+
+    // Reconstruct domain
+    gflow->domain->construct();
   }
 
   inline Integrator* FileParseCreator::choose_integrator(HeadNode *head) const {
@@ -675,6 +692,10 @@ namespace GFlowSimulation {
     for (auto m : container) {
       if (m->params[0]->partA=="CV")
         gflow->addModifier(new ConstantVelocity(gflow, g_id, V));
+      else if (m->params[0]->partA=="CV-D") {
+        RealType D = convert<RealType>(m->params[0]->partB);
+        gflow->addModifier(new ConstantVelocityDistance(gflow, g_id, V, D));
+      }
       else
         throw BadStructure("Unrecognized modifer option, ["+m->params[0]->partA+"].");
     }

@@ -331,7 +331,7 @@ namespace GFlowSimulation {
     // Insert into the global id map
     id_map.insert(IPair(next_global_id, number));
     // Assign a global id - this assumes that this is a *new* particle
-    global_id[number] = ++next_global_id;
+    global_id[number] = next_global_id++;
     data_array[0][number]   = Sg;
     data_array[1][number]   = Im;
     type[number] = Type;
@@ -359,7 +359,7 @@ namespace GFlowSimulation {
       // Insert into the global id map
       id_map.insert(IPair(next_global_id, number));
       // Assign a global id - this assumes that this is a *new* particle
-      global_id[number] = ++next_global_id;
+      global_id[number] = next_global_id++;
       data_array[0][number]   = Sg;
       data_array[1][number]   = Im;
       data_array[2][number]   = II;
@@ -425,6 +425,7 @@ namespace GFlowSimulation {
       type[0] = -1;
       // We don't actually need to remake
     }
+    --number;
   }
 
   void SimData::addHaloParticle(const RealType *X, const RealType *V, const RealType Sg, 
@@ -481,7 +482,6 @@ namespace GFlowSimulation {
     // Get global ids
     int gs = global_id[id_source];
     int gd = global_id[id_dest];
-
     // --- Copy main data
     copyVec(vec_data_array[0][id_source], vec_data_array[0][id_dest]);
     copyVec(vec_data_array[1][id_source], vec_data_array[1][id_dest]);
@@ -503,9 +503,12 @@ namespace GFlowSimulation {
     for (int i=0; i<dataI.size(); ++i)
       dataI[i][id_dest] = dataI[i][id_source];
     
-    // Update id map - erases global id of the overwritten particle
+    // Update id map - erases global id of the overwritten particle, 
+    // update the global id for the moved particle
     auto it = id_map.find(gs);
-    if (id_map.end()!=it) it->second = id_dest;
+    if (id_map.end()!=it)
+      it->second = id_dest;
+    else throw UnrecognizedGlobalID(gs);
     id_map.erase(gd);
 
     // Set id of source to -1

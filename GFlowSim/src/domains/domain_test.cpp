@@ -27,8 +27,24 @@ namespace GFlowSimulation {
     // Get the bounds from the gflow object - for now assumes this is the only domain, so bounds==domain_bounds
     domain_bounds = gflow->getBounds();
 
-    RealType target_width = (2*0.05+skin_depth);
-    max_small_sigma = 0.05;
+    // Find average sigma
+    RealType sigma = 0, max_sigma = 0;
+    for (int n=0; n<Base::simData->number; ++n) {
+      RealType s = Base::simData->Sg(n);
+      sigma += s;
+      if (s>max_sigma) max_sigma = s;
+    }
+    sigma /= Base::simData->number;
+    // Threshhold sigma is between average and maximum sigma
+    RealType threshold = 0.5*(sigma + max_sigma), max_under = sigma;
+    if (threshold!=sigma) {
+      for (int n=0; n<Base::simData->number; ++n) {
+        RealType s = Base::simData->Sg(n);
+        if (s<threshold && max_under<s) max_under = s;
+      }
+    }
+    max_small_sigma = 1.025*max_under;
+    RealType target_width = (2*max_small_sigma+skin_depth);
 
     // Use max_small_sigma
     for (int d=0; d<sim_dimensions; ++d) {
@@ -61,6 +77,106 @@ namespace GFlowSimulation {
 
   void DomainTest::getAllWithin(int, RealType, vector<int>&) {
     //! @todo Implement this.
+  }
+
+  void DomainTest::removeOverlapping(RealType factor) {
+    // Domain base common tasks
+    DomainBase::construct();
+    // Clear out the cells
+    clear_cells();
+    // Fill the cells with particles
+    fill_cells();
+
+    RealType max_reasonable = sqr(0.9*bounds.wd(0));
+
+    // A tuple
+    int tuple1[DIMENSIONS], tuple2[DIMENSIONS], cell_index[DIMENSIONS], center[DIMENSIONS];
+
+    // A list of ids of particles to remove
+    std::set<int> removeList;
+
+    // Find potential neighbors
+    RealType *sg = Base::simData->Sg();
+    RealType **x = Base::simData->X();
+    // Get the boundary conditions
+    const BCFlag *bcs = gflow->getBCs();
+    RealType dX[DIMENSIONS];
+    for (const auto &c : cells) {
+      for (auto p=c.particle_ids.begin(); p!=c.particle_ids.end(); ++p) {
+        int id1 = *p;
+        // If sigma is <= than min_small_sigma, only look through cell stencil
+        if (sg[id1]<=max_small_sigma) {
+          // All other particles in the same sector
+          auto q = p;
+          ++q;
+          for (; q!=c.particle_ids.end(); ++q) {
+            int id2 = *q;
+            subtractVec(x[id1], x[id2], dX);
+            RealType r = magnitudeVec(dX);
+            RealType overlap = sg[id1] + sg[id2] - r;
+            if (overlap/min(sg[id1], sg[id2]) > factor)
+              removeList.insert(sg[id1]>sg[id2] ? id2 : id1);
+          }
+
+          // Seach through list of adjacent cells
+          for (const auto &d : c.adjacent)
+            for (const auto id2 : d->particle_ids) {
+              // If the other particle is a large particle, it will take care of this interaction
+              if (sg[id2]>max_small_sigma) continue;
+              // Look for distance between particles
+              getDisplacement(Base::simData->X(id1), Base::simData->X(id2), dX, bounds, bcs);
+              RealType r = magnitudeVec(dX);
+              RealType overlap = sg[id1] + sg[id2] - r;
+              if (overlap/min(sg[id1], sg[id2]) > factor)
+                removeList.insert(sg[id1]>sg[id2] ? id2 : id1);
+            }
+        }
+        // If sigma is > min_small_sigma, we have to look through more cells
+        else {
+          
+          // Calculate sweep "radius"
+          RealType search_width = 2*sg[id1]+skin_depth;
+
+          int search_dims[DIMENSIONS], prod = 1;
+          for (int d=0; d<DIMENSIONS; ++d) {
+            center[d] = static_cast<int>(ceil(search_width/widths[d]));
+            search_dims[d] = 2*center[d]+1;
+            prod *= search_dims[d];
+          }
+
+          // The tuple address of the cell the particle is in
+          get_cell_index_tuple(x[id1], cell_index);
+          
+          // Look in a hypercube.
+          for (int j=0; j<prod; ++j) {
+            // Turn j into a tuple
+            getAddressCM(j, search_dims, tuple1);
+            // Shift so it is a displacement
+            subtractVec(tuple1, center, tuple2);
+            // Get the cell at the displacement from the particle's cell
+            addVec(tuple2, cell_index, tuple1);
+            // If the cell is valid, look for particles
+            if(correct_index(tuple1)) {
+              // Get the linear address of the other cell
+              int linear;
+              tuple_to_linear(linear, tuple1);
+              for (auto &id2 : cells[linear].particle_ids) {
+                // If the other particle is a larger particle, it will take care of this interaction
+                if (id1==id2 || sg[id2]>sg[id1] || (sg[id1]==sg[id2] && id1<id2)) continue; // IF TWO PARTICLES ARE THE SAME SIZE, ERROR
+                getDisplacement(Base::simData->X(id1), Base::simData->X(id2), dX, bounds, bcs);
+                RealType r = magnitudeVec(dX);
+                RealType overlap = sg[id1] + sg[id2] - r;
+                if (overlap/min(sg[id1], sg[id2]) > factor)
+                  removeList.insert(sg[id1]>sg[id2] ? id2 : id1);
+              }
+            }
+          }
+        }
+      }
+    }
+    // Remove all the particles that we need to 
+    for (auto id : removeList)
+      Base::simData->removeParticle(id);
   }
 
   void DomainTest::construct() {

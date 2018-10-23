@@ -33,6 +33,10 @@ namespace GFlowSimulation {
     //! for the positions of the particles in [DIMENSIONS] dimensions, and any other data we want to store.
     vector<vector<RealType> > positions; 
 
+    //! @brief Initial positions of particle.
+    vector<RealType> initial_positions;
+    bool keepInitial = false;
+
     //! @brief The amount of data we collect per particle.
     int dataWidth;
   };

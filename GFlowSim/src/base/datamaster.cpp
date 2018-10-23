@@ -13,6 +13,12 @@ namespace GFlowSimulation {
       if (dob) delete dob;
   }
 
+  void DataMaster::initialize() {
+    Base::initialize();
+    for (auto& dob : dataObjects)
+      if (dob) dob->initialize();
+  }
+
   void DataMaster::addDataObject(DataObject *dob) {
     dataObjects.push_back(dob);
   }
@@ -177,7 +183,7 @@ namespace GFlowSimulation {
     if (run_time>60) fout << " ( h:m:s - "   << printAsTime(run_time) << " )";
     fout << "\n";
     fout << "  - Ratio x Particles:        " << toStrRT(ratio*particles) << "\n";
-    fout << "  - Iter x Particles / s:     " << toStrRT(iterations*particles/run_time) << "\n";
+    fout << "  - Iter x Particles / s:     " << toStrRT(iterations*(particles/run_time)) << "\n";
     fout << "  - Ratio:                    " << toStrRT(ratio) << "\n";
     fout << "  - Inverse Ratio:            " << toStrRT(1./ratio) << "\n";
     fout << "\n";

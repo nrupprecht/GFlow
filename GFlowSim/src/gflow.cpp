@@ -402,6 +402,10 @@ namespace GFlowSimulation {
     delete [] v_ave;
   }
 
+  void GFlow::removeOverlapping(RealType fraction) {
+    domain->removeOverlapping(fraction);
+  }
+
   void GFlow::addDataObject(class DataObject* dob) {
     dataMaster->addDataObject(dob);
   }

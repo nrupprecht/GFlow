@@ -17,7 +17,7 @@ namespace GFlowSimulation {
     RealType time = Base::gflow->getElapsedTime();
     timeStamps.push_back(time);
 
-    // --- Record all data: { x[0], x[1], ... , sg}
+    // --- Record all data
 
     vector<RealType> data;
 

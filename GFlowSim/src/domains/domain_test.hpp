@@ -41,6 +41,8 @@ namespace GFlowSimulation {
     //! This function must be overloaded by all children of DomainBase.
     virtual void getAllWithin(int, RealType, vector<int>&) override;
 
+    virtual void removeOverlapping(RealType) override;
+
     virtual void construct() override;
 
     virtual void setCellSize(RealType) override;

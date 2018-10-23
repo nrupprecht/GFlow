@@ -12,14 +12,14 @@ namespace GFlowSimulation {
     Sectorization(GFlow *);
 
     //! @brief Pre-integrate calls sectorize
-    virtual void pre_integrate();
+    virtual void pre_integrate() override;
 
     //! @brief Doesn't do anything, but must be overloaded.
     //!
     //! In theory, this exchanges particles between processors. Sectorization is 
     //! designed for single processor jobs, so this function does not do anything.
     //! Since it is purely virtual for DomainBase, it must be overloaded.
-    virtual void exchange_particles() {};
+    virtual void exchange_particles()  override {};
 
     // --- Accessors
 
@@ -33,21 +33,23 @@ namespace GFlowSimulation {
     //! Fills a passed in vector with the ids of all the particles that lie within
     //! a specified distance of a given particle.\n
     //! This function must be overloaded by all children of DomainBase.
-    virtual void getAllWithin(int, RealType, vector<int>&);
+    virtual void getAllWithin(int, RealType, vector<int>&) override;
+
+    virtual void removeOverlapping(RealType) override {};
 
     // --- Mutators
 
     //! @brief Set the skin depth, and remake the sectors
-    virtual void setSkinDepth(RealType);
+    virtual void setSkinDepth(RealType) override;
 
     //! @brief Set the cell size. 
     //!
     //! Really, this suggests a cell size. It must be larger than the minimum possible cell size, 
     //! and must evenly divide the size of the domain.
-    virtual void setCellSize(RealType);
+    virtual void setCellSize(RealType) override;
 
     //! @brief Set the cutoff factor, and remake the sectors
-    virtual void setCutoffFactor(RealType);
+    virtual void setCutoffFactor(RealType) override;
     
     // GFlow is a friend class
     friend class GFlow;

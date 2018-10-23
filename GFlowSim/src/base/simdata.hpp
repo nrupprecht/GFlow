@@ -190,13 +190,18 @@ namespace GFlowSimulation {
     // SimDataHandler is a friend class
     friend class SimDataHandler;
 
-  private:
-
     //! @brief Remove a particle from the simdata.
     //!
-    //! Mark a particle for removal. The basic thing we need to do is set type[id] = -1. We may do a number of things behind 
-    //! the scenes, like store the fact that there is now a hole at id. 
+    //! Removes the particle right away, filling in the hole with the last particle in the array.
     void removeParticle(const int);
+
+    //! @brief An exception class that is thrown when we look for a global id that does not exist.
+    struct UnrecognizedGlobalID {
+      UnrecognizedGlobalID(int i) : id(i) {};
+      int id;
+    };
+
+  private:
 
     //! @brief Add a halo particle to the simulation.
     //!

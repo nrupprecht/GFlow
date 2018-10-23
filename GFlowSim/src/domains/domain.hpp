@@ -19,13 +19,13 @@ namespace GFlowSimulation {
     Domain(GFlow *);
 
     //! Create cells, assign their neighbors, etc.
-    virtual void initialize();
+    virtual void initialize() override;
 
     // Pre-integrate calls sectorize
-    virtual void pre_integrate();
+    virtual void pre_integrate() override;
 
     //! Exchange particles between processors
-    virtual void exchange_particles();
+    virtual void exchange_particles() override;
 
     // --- Locator functions
 
@@ -33,17 +33,19 @@ namespace GFlowSimulation {
     //! Fills a passed in vector with the ids of all the particles that lie within
     //! a specified distance of a given particle.\n
     //! This function must be overloaded by all children of DomainBase.
-    virtual void getAllWithin(int, RealType, vector<int>&);
+    virtual void getAllWithin(int, RealType, vector<int>&) override;
+
+    virtual void removeOverlapping(RealType) override { throw false; }
 
     // --- Mutators
 
-    virtual void setSkinDepth(RealType);
+    virtual void setSkinDepth(RealType) override;
 
     //! @brief Set the cell size. 
     //!
     //! Really, this suggests a cell size. It must be larger than the minimum possible cell size, 
     //! and must evenly divide the size of the domain. Inherited from DomainBase.
-    virtual void setCellSize(RealType);
+    virtual void setCellSize(RealType) override;
 
   private:
     // --- Helper functions
