@@ -15,10 +15,7 @@ namespace GFlowSimulation {
     vec_data_needed.push_back(1);
   };
 
-  void HardSphereGeneral::initialize() {
-    parameters[0] = DEFAULT_HARD_SPHERE_REPULSION;
-    parameters[1] = DEFAULT_HARD_SPHERE_DISSIPATION; // Dissipation
-  }
+  void HardSphereGeneral::initialize() {}
 
   void HardSphereGeneral::setRepulsion(RealType r) { 
     parameters[0] = r; 

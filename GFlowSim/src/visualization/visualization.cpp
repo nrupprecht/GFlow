@@ -5,7 +5,7 @@
 namespace GFlowSimulation {
 
   Visualization::Visualization() : pos_place(0), vel_place(DIMENSIONS), sg_place(2*DIMENSIONS), type_place(2*DIMENSIONS+1), 
-    resolution(1.5*1024), do_wrap(true), background(RGB_Black), maxVsqr(0), color_option(0)
+    distance_place(2*DIMENSIONS+2), resolution(1.5*1024), do_wrap(true), background(RGB_Black), maxVsqr(0), maxDistance(0), color_option(0)
   {
     // Default size - 10
     createColorBank(10);
@@ -85,6 +85,8 @@ namespace GFlowSimulation {
     // Find the maximum velocity (if needed)
     if (color_option==2)
       findMaxVSqr(data, dataWidth);
+    else if (color_option==4)
+      findMaxDistance(data, dataWidth);
     // Create frames
     for (int i=0; i<data.size(); ++i) {
       string fileName = dirName + "/frame" + toStr(i) + ".bmp";
@@ -105,6 +107,8 @@ namespace GFlowSimulation {
     float wy = bounds.wd(1);
     float left = bounds.min[0];
     float bott = bounds.min[1];
+
+    // maxDistance = min(0.5f*sqrt(sqr(wx) + sqr(wy)), maxDistance);
 
     // Figure out the needed resolution
     int res_x = resolution, res_y = resolution;
@@ -138,13 +142,13 @@ namespace GFlowSimulation {
       RealType *vel  = vel_place>-1    ? &pdata[vel_place] : nullptr; // Point to start of velocity data
       RealType sigma = sg_place>-1     ?  pdata[sg_place]  : 0; // Get sigma
       int type       = type_place > -1 ? static_cast<int>(pdata[type_place]) : 0; // Get type
+      RealType distance = distance_place > -1 ? pdata[distance_place] : 0; // Get distance traveled
       // If type<0, continue
       if (type<0) continue;
       // Find the center of the particle
       float xf = (pos[0] - left)/wx;
       float yf = (pos[1] - bott)/wy;
       float rf = sigma/wx;
-
       // --- Determine the color
       RGBApixel color = RGB_Green;
       if (!colorBank.empty()) {
@@ -170,6 +174,11 @@ namespace GFlowSimulation {
               float theta = atan2(vel[1], vel[0]);
               color = colorAngle(theta);
             }
+            break;
+          }
+          case 4: { // Color by distance
+            float D = log(1.f + distance)/log(1.f + maxDistance);
+            color = RGBApixel(floor(255*D), floor(255*(1-D)), 0);
             break;
           }
         }
@@ -222,6 +231,21 @@ namespace GFlowSimulation {
     }
     // Take the sqrt
     maxVsqr = sqrt(maxVsqr);
+  }
+
+  inline void Visualization::findMaxDistance(const vector<vector<RealType> >& dataVector, int dataWidth) const {
+    // Reset
+    maxDistance = 0;
+    // Look for max distance - start after first iteration.
+    for (int iter=1; iter<dataVector.size(); ++iter) {
+      if (dataVector[iter].empty()) continue;
+      const RealType *data = &dataVector[iter][0];
+      int number = dataVector[iter].size()/dataWidth;
+      for (int i=0; i<number; ++i) {
+        float D = data[i*dataWidth + distance_place];
+        if (D>maxDistance) maxDistance = D;
+      }
+    }
   }
 
   inline void Visualization::createColorBank(int size) {

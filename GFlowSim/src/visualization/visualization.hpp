@@ -64,6 +64,8 @@ namespace GFlowSimulation {
 
     inline void findMaxVSqr(const vector<vector<RealType> >&, int) const;
 
+    inline void findMaxDistance(const vector<vector<RealType> >&, int) const;
+
     inline void createColorBank(int);
 
     inline RGBApixel getColor(int) const;
@@ -96,13 +98,17 @@ namespace GFlowSimulation {
     //! @brief Where in the data for a particle is its type.
     int type_place;
 
+    int distance_place;
+
     //! @brief The dimensions of the image (it will be the same in x and y)
     int resolution;
 
     //! @brief Whether to wrap at the boundaries or not
     bool do_wrap;
 
-    mutable RealType maxVsqr;
+    mutable float maxVsqr;
+
+    mutable float maxDistance;
 
     RGBApixel background;
 

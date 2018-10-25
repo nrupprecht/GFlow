@@ -146,6 +146,8 @@ namespace GFlowSimulation {
     const int*      DataI(int n)    const { return dataI[n]; }
     const int&      Body(int n)     const { return body[n]; }
 
+    int Number() const { return number; }
+
     //! @brief Get the local id of a particle given the global id.
     //!
     //! The local id is where in the array is the particle stored. The global id is a unique identifier for

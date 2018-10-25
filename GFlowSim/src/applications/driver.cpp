@@ -21,26 +21,6 @@
 using namespace GFlowSimulation;
 
 int main(int argc, char **argv) {
-  #if DEBUG==1
-  cout << "Running in Debug mode.\n";
-  #endif
-  
-  #if SIMD_TYPE==SIMD_NONE
-  cout << "Not using SIMD.\n";
-  #elif SIMD_TYPE==SIMD_SSE
-  cout << "Using SSE.\n";
-  #elif SIMD_TYPE==SIMD_AVX
-  cout << "Using AVX.\n";
-  #elif SIMD_TYPE==SIMD_AVX2
-  cout << "Using AVX2.\n";
-  #elif SIMD_TYPE==SIMD_MIC
-  cout << "Using MIC.\n";
-  #endif
-  
-  // Record the time at which the program started.
-  auto start_time = current_time();
-  cout << "Starting up simulation...\n";
-
   // --- MPI
   int rank(0), numProc(1);
   
@@ -87,6 +67,7 @@ int main(int argc, char **argv) {
   RealType skin = 0.;
 
   // Other options
+  bool quiet = false;
   RealType gravity = 0.;
   bool adjustDT = false;
   RealType startRecTime = 0;
@@ -125,6 +106,7 @@ int main(int argc, char **argv) {
   parser.get("pressure", pressure);
   parser.get("numberdata", numberdata);
   parser.get("skin", skin);
+  parser.get("quiet", quiet);
   parser.get("gravity", gravity);
   parser.get("adjustDT", adjustDT);
   // parser.get("lj", adjustDT); // Adjust DT if lj is true
@@ -135,6 +117,28 @@ int main(int argc, char **argv) {
   parser.get("writeDirectory", writeDirectory);
   parser.get("temperature", temperature);
   parser.get("boundary", boundary);
+
+  if (!quiet) {
+    #if DEBUG==1
+    cout << "Running in Debug mode.\n";
+    #endif
+    // Print SIMD type
+    #if SIMD_TYPE==SIMD_NONE
+    cout << "Not using SIMD.\n";
+    #elif SIMD_TYPE==SIMD_SSE
+    cout << "Using SSE.\n";
+    #elif SIMD_TYPE==SIMD_AVX
+    cout << "Using AVX.\n";
+    #elif SIMD_TYPE==SIMD_AVX2
+    cout << "Using AVX2.\n";
+    #elif SIMD_TYPE==SIMD_MIC
+    cout << "Using MIC.\n";
+    #endif
+  }
+  
+  // Record the time at which the program started.
+  auto start_time = current_time();
+  if (!quiet) cout << "Starting up simulation...\n";
 
   // --- This creator creates gflow simulations
   Creator *creator = nullptr;
@@ -147,7 +151,7 @@ int main(int argc, char **argv) {
   else if (load!="") {
     creator = new FileParseCreator(&parser, load);
   }
-  else                     creator = new BoxCreator(&parser);
+  else creator = new BoxCreator(&parser);
 
   // --- Set boundary conditions
   switch (boundary) {
@@ -173,7 +177,7 @@ int main(int argc, char **argv) {
   // --- Create a gflow simulation
   GFlow *gflow = creator->createSimulation();
   if (gflow==nullptr) {
-    cout << "GFlow was null. Exiting.\n";
+    if (!quiet) cout << "GFlow was null. Exiting.\n";
     return 1;
   }
 
@@ -182,7 +186,7 @@ int main(int argc, char **argv) {
     parser.check();
   }
   catch (ArgParse::UncheckedToken illegal) {
-    cout << "Illegal option: [" << illegal.token << "]. Exiting.\n";
+    if (!quiet) cout << "Illegal option: [" << illegal.token << "]. Exiting.\n";
     exit(1);
   }
 
@@ -215,25 +219,25 @@ int main(int argc, char **argv) {
 
   // Set time step and request time
   if (!gflow->hasIntegrator()) {
-    cout << "GFlow does not have an integrator. Exiting.";
+    if (!quiet) cout << "GFlow does not have an integrator. Exiting.";
     return 0;
   }
   gflow->setDT(dt);
   gflow->requestTime(time);
 
   // Run the simulation
-  cout << "Initialized, ready to run:\t" << time_span(current_time(), start_time) << "\n";
+  if (!quiet) cout << "Initialized, ready to run:\t" << time_span(current_time(), start_time) << "\n";
   if (gflow) gflow->run();
   else {
-    cout << "GFlow pointer was null. Exiting.\n";
+    if (!quiet) cout << "GFlow pointer was null. Exiting.\n";
     return 0;
   }
-  cout << "Run is over:\t\t\t" << time_span(current_time(), start_time) << "\n";
-  cout << "Ratio was:  \t\t\t" << gflow->getDataMaster()->getRatio() << "\n";
+  if (!quiet) cout << "Run is over:\t\t\t" << time_span(current_time(), start_time) << "\n";
+  if (!quiet) cout << "Ratio was:  \t\t\t" << gflow->getDataMaster()->getRatio() << "\n";
 
   // Write accumulated data to files
   gflow->writeData(writeDirectory);
-  cout << "Data write is over:\t\t" << time_span(current_time(), start_time) << "\n";
+  if (!quiet) cout << "Data write is over:\t\t" << time_span(current_time(), start_time) << "\n";
 
   // Delete creator, gflow
   if (creator) delete creator;
@@ -246,7 +250,7 @@ int main(int argc, char **argv) {
   #else
   MPI::Finalize();
   #endif
-  cout << "Finalized MPI.\n";
+  if (!quiet) cout << "Finalized MPI.\n";
   #endif
 
   return 0;

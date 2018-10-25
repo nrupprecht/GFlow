@@ -319,8 +319,7 @@ namespace GFlowSimulation {
       for (auto m : container) {
         if (m->params.empty()) throw BadStructure("Need a remove option.");
         if (m->params[0]->partA=="Remove") {
-          if (m->params[0]->partB.empty())
-            gflow->removeOverlapping(1.); // Remove particles overlapping by more than 10%
+          if (m->params[0]->partB.empty()) gflow->removeOverlapping(2.); // Remove particles overlapping by a large amount
           else gflow->removeOverlapping(convert<RealType>(m->params[0]->partB));
         }
         else throw BadStructure("Unrecognized remove option, [" + m->params[0]->partA + "].");

@@ -8,9 +8,6 @@ namespace GFlowSimulation {
 
   // Get the correct (minimal) displacement vector pointing from y to x
   inline void getDisplacement(const RealType *x, const RealType *y, RealType *dis, const Bounds B, const BCFlag *boundaryConditions) {
-    #if _INTEL_ == 1
-    #pragma unroll(DIMENSIONS)
-    #endif 
     for (int d=0; d<DIMENSIONS; ++d) {
       dis[d] = x[d] - y[d];
       if (boundaryConditions[d]==BCFlag::WRAP) {
@@ -40,9 +37,6 @@ namespace GFlowSimulation {
 
   template<typename T> T inline dotVec(const T *x, const T *y) {
     T dt(0);
-    #if _INTEL_ == 1
-    #pragma unroll(DIMENSIONS)
-    #endif 
     for (int d=0; d<DIMENSIONS; ++d) dt += x[d]*y[d];
     return dt;
   }
@@ -62,9 +56,6 @@ namespace GFlowSimulation {
   }
 
   template<typename T> inline void zeroVec(T *x) {
-    #if _INTEL_ == 1
-    #pragma unroll(DIMENSIONS)
-    #endif 
     for (int d=0; d<DIMENSIONS; ++d) x[d] = T(0);
   }
 
@@ -73,63 +64,36 @@ namespace GFlowSimulation {
   }
 
   template<typename T> inline void addVec(const T *x, const T *y, T *z) {
-    #if _INTEL_ == 1
-    #pragma unroll(DIMENSIONS)
-    #endif 
     for (int d=0; d<DIMENSIONS; ++d) z[d] = x[d]+y[d];
   }
 
   template<typename T> inline void subtractVec(const T *x, const T *y, T *z) {
-    #if _INTEL_ == 1
-    #pragma unroll(DIMENSIONS)
-    #endif 
     for (int d=0; d<DIMENSIONS; ++d) z[d] = x[d]-y[d];
   }
 
   // Times
   template<typename T> inline void scalarMultVec(const RealType scalar, const T *x, T *z) {
-    #if _INTEL_ == 1
-    #pragma unroll(DIMENSIONS)
-    #endif 
     for (int d=0; d<DIMENSIONS; ++d) z[d] = scalar*x[d];
   }
 
   // Times equals
   template<typename T> inline void scalarMultVec(const RealType scalar, T *z) {
-    #if _INTEL_ == 1
-    #pragma unroll(DIMENSIONS)
-    #endif 
     for (int d=0; d<DIMENSIONS; ++d) z[d] *= scalar;
   }
 
   template<typename T> inline void plusEqVec(T *z, const T *x) {
-    #if _INTEL_ == 1
-    #pragma unroll(DIMENSIONS)
-    #endif 
     for (int d=0; d<DIMENSIONS; ++d) z[d] += x[d];
   }
 
   template<typename T> inline void plusEqVecScaled(T *z, const T *x, const T s) {
-    #if _INTEL_ == 1
-    #pragma unroll(DIMENSIONS)
-    #endif 
     for (int d=0; d<DIMENSIONS; ++d) z[d] += s*x[d];
   }
 
   template<typename T> inline void minusEqVec(T *z, const T *x) {
-    #if _INTEL_ == 1
-    #pragma unroll(DIMENSIONS)
-    #endif 
     for (int d=0; d<DIMENSIONS; ++d) z[d] -= x[d];
   }
 
   template<typename T> inline void copyVec(const T *x, T *target) {
-    /*
-    #if _INTEL_ == 1
-    #pragma unroll(DIMENSIONS)
-    #endif 
-    for (int d=0; d<DIMENSIONS; ++d) target[d] = x[d];
-    */
     std::copy(x, x+DIMENSIONS, target);
   }
 
@@ -143,9 +107,6 @@ namespace GFlowSimulation {
 
   template<typename T> inline void normalVec(const T *x, T *norm) {
     T mag = 0;
-    #if _INTEL_ == 1
-    #pragma unroll(DIMENSIONS)
-    #endif 
     for (int d=0; d<DIMENSIONS; ++d) mag += sqr(x[d]);
     T invMag = mag>0 ? 1./sqrt(mag) : 0;
     scalarMultVec(invMag, x, norm);
@@ -153,9 +114,6 @@ namespace GFlowSimulation {
 
   template<typename T> inline void normalizeVec(T *norm) {
     T mag = 0;
-    #if _INTEL_ == 1
-    #pragma unroll(DIMENSIONS)
-    #endif 
     for (int d=0; d<DIMENSIONS; ++d) mag += sqr(norm[d]);
     T invMag = mag>0 ? 1./sqrt(mag) : 0;
     scalarMultVec(invMag, norm);

@@ -124,7 +124,7 @@ namespace GFlowSimulation {
               // If the other particle is a large particle, it will take care of this interaction
               if (sg[id2]>max_small_sigma) continue;
               // Look for distance between particles
-              getDisplacement(Base::simData->X(id1), Base::simData->X(id2), dX, bounds, bcs);
+              Base::gflow->getDisplacement(Base::simData->X(id1), Base::simData->X(id2), dX);
               RealType r = magnitudeVec(dX);
               RealType overlap = sg[id1] + sg[id2] - r;
               if (overlap/min(sg[id1], sg[id2]) > factor)
@@ -163,7 +163,7 @@ namespace GFlowSimulation {
               for (auto &id2 : cells[linear].particle_ids) {
                 // If the other particle is a larger particle, it will take care of this interaction
                 if (id1==id2 || sg[id2]>sg[id1] || (sg[id1]==sg[id2] && id1<id2)) continue; // IF TWO PARTICLES ARE THE SAME SIZE, ERROR
-                getDisplacement(Base::simData->X(id1), Base::simData->X(id2), dX, bounds, bcs);
+                Base::gflow->getDisplacement(Base::simData->X(id1), Base::simData->X(id2), dX);
                 RealType r = magnitudeVec(dX);
                 RealType overlap = sg[id1] + sg[id2] - r;
                 if (overlap/min(sg[id1], sg[id2]) > factor)
@@ -230,7 +230,6 @@ namespace GFlowSimulation {
         }
         // If sigma is > min_small_sigma, we have to look through more cells
         else {
-          
           // Calculate sweep "radius"
           RealType search_width = 2*sg[id1]+skin_depth;
 

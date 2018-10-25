@@ -103,6 +103,8 @@ namespace GFlowSimulation {
 
     const RealType* getVComCorrection() const;
 
+    void getDisplacement(const RealType*, const RealType*, RealType*);
+
     // --- Mutators
 
     //! @brief Set the command info

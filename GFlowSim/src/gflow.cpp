@@ -269,6 +269,16 @@ namespace GFlowSimulation {
     return v_com_correction;
   }
 
+  void GFlow::getDisplacement(const RealType *x, const RealType *y, RealType *dis) {
+    for (int d=0; d<sim_dimensions; ++d) {
+      dis[d] = x[d] - y[d];
+      if (boundaryConditions[d]==BCFlag::WRAP) {
+        RealType dx = bounds.max[d] - bounds.min[d] - fabs(dis[d]);
+        if (dx<fabs(dis[d])) dis[d] = dis[d]>0 ? -dx : dx;
+      }      
+    }
+  }
+
   void GFlow::setCommand(int argc, char **argv) {
     if (argv) {
       this->argc = argc;
