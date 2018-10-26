@@ -75,7 +75,7 @@ namespace GFlowSimulation {
       fin.get(c);
       stringstream stream;
       while (!fin.eof() && c!=',' && c!='\n') {
-        if (isdigit(c) || c=='.' || c=='-') stream << c;
+        if (isdigit(c) || c=='.' || c=='-' || c=='e' || c=='E') stream << c;
         else;
         // Get the next character
         fin.get(c);

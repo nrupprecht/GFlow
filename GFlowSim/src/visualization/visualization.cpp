@@ -36,7 +36,7 @@ namespace GFlowSimulation {
     // The first number in each line is the number of particles to expect
     for (int iter=0; iter<samples; ++iter) {
       // Get the length of data to expect
-      int data_length = getNextNumber<int>( fin);
+      int data_length = getNextNumber<int>(fin);
       // Get this iter's data
       vector<RealType> pdata;
       for (int i=0; i<data_length; ++i) {

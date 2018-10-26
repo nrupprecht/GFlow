@@ -6,8 +6,9 @@ namespace GFlowSimulation {
 
   ConstantVelocityDistance::ConstantVelocityDistance(GFlow *gflow, int g_id, RealType *v, RealType d) : Modifier(gflow), global_id(g_id), distance(d) {
     copyVec(v, velocity);
+    zeroVec(displacement);
   }
-
+  
   void ConstantVelocityDistance::post_forces() {
     RealType time = gflow->getElapsedTime();
     // Find the index of the particle
