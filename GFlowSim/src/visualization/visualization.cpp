@@ -15,7 +15,6 @@ namespace GFlowSimulation {
     // Open file
     std::ifstream fin(loadName);
     if (fin.fail()) return false;
-
     // Get the data width, dimensions, number of times sampled, and the number of types
     int dataWidth, dimensions, samples, ntypes;
     dataWidth = getNextNumber<int>(fin);
@@ -101,14 +100,12 @@ namespace GFlowSimulation {
     }
   }
 
-  inline void Visualization::createImage(string fileName, const vector<RealType>& data, int dataWidth, BoundsPack& bounds, int dimensions) const {
+  void Visualization::createImage(string fileName, const vector<RealType>& data, int dataWidth, BoundsPack& bounds, int dimensions) const {
     // Get some data from the bounds
     float wx = bounds.wd(0);
     float wy = bounds.wd(1);
     float left = bounds.min[0];
     float bott = bounds.min[1];
-
-    // maxDistance = min(0.5f*sqrt(sqr(wx) + sqr(wy)), maxDistance);
 
     // Figure out the needed resolution
     int res_x = resolution, res_y = resolution;
@@ -177,7 +174,7 @@ namespace GFlowSimulation {
             break;
           }
           case 4: { // Color by distance
-            float D = log(1.f + distance)/log(1.f + maxDistance);
+            float D = maxDistance==0 ? 1. : log(1.f + distance)/log(1.f + maxDistance);
             color = RGBApixel(floor(255*D), floor(255*(1-D)), 0);
             break;
           }
@@ -212,7 +209,7 @@ namespace GFlowSimulation {
     palette.writeToFile(fileName);
   }
 
-  inline void Visualization::createImage3d(string fileName, const vector<RealType>& data, int dataWidth, BoundsPack& bounds, int dimensions) const {
+  void Visualization::createImage3d(string fileName, const vector<RealType>& data, int dataWidth, BoundsPack& bounds, int dimensions) const {
     
   }
 
@@ -237,7 +234,7 @@ namespace GFlowSimulation {
     // Reset
     maxDistance = 0;
     // Look for max distance - start after first iteration.
-    for (int iter=1; iter<dataVector.size(); ++iter) {
+    for (int iter=0; iter<dataVector.size(); ++iter) {
       if (dataVector[iter].empty()) continue;
       const RealType *data = &dataVector[iter][0];
       int number = dataVector[iter].size()/dataWidth;

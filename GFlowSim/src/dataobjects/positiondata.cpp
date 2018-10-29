@@ -17,6 +17,7 @@ namespace GFlowSimulation {
   };
 
   void PositionData::pre_integrate() {
+    // Store initial positions
     vector<DataType> pos_data(1, DataType::POSITION);
     store_data(initial_data, pos_data);
 

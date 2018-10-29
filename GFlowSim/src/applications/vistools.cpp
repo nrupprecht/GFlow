@@ -15,6 +15,8 @@ int main(int argc, char** argv) {
   double radius_multiple = 1.;
   int colorOption = 0;
   int resolution = 1.5*1024;
+  // Modes of operation
+  bool snapshot = false;
 
   // --- Argument parsing
   ArgParse parser(argc, argv);
@@ -25,6 +27,7 @@ int main(int argc, char** argv) {
   parser.get("radius_multiple", radius_multiple);
   parser.get("colorOption", colorOption);
   parser.get("resolution", resolution);
+  parser.get("snapshot", snapshot);
   // Done finding arguments
   try {
     parser.check();
@@ -41,7 +44,11 @@ int main(int argc, char** argv) {
   visualization.setResolution(resolution);
 
   // --- Load the data and create an image
-  visualization.load_and_create(directory+"/"+subdirectory+"/data.csv", saveDirectory+"/"+subdirectory);
+  
+  if (snapshot) 
+    visualization.load_and_create(directory+"/Snapshot/data.csv", saveDirectory+"/Snapshot");
+  else
+    visualization.load_and_create(directory+"/"+subdirectory+"/data.csv", saveDirectory+"/"+subdirectory);
 
   // --- End
   return 0;

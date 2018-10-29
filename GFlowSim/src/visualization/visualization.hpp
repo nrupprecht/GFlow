@@ -56,11 +56,12 @@ namespace GFlowSimulation {
 
     void createVideo3d(string, const vector<vector<RealType> >&, int, BoundsPack&, int) const;
 
-  private:
     //! @brief Creates a single frame.
-    inline void createImage(string, const vector<RealType>&, int, BoundsPack&, int) const;
+    void createImage(string, const vector<RealType>&, int, BoundsPack&, int) const;
 
-    inline void createImage3d(string, const vector<RealType>&, int, BoundsPack&, int) const;
+    void createImage3d(string, const vector<RealType>&, int, BoundsPack&, int) const;
+
+  private:
 
     inline void findMaxVSqr(const vector<vector<RealType> >&, int) const;
 

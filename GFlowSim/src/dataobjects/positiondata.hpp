@@ -5,9 +5,6 @@
 
 namespace GFlowSimulation {
 
-  //! @brief What types of data can be stored.
-  enum class DataType { POSITION, VELOCITY, SIGMA, TYPE, DISTANCE };
-
   /*
   *  @class PositionData
   *  Records the position data of all the objects in the system.

@@ -8,6 +8,9 @@
 
 namespace GFlowSimulation {
 
+  //! @brief What types of data can be stored. Used by position data object, ending snapshot object.
+  enum class DataType { POSITION, VELOCITY, SIGMA, TYPE, DISTANCE };
+
   class DataObject : public Base {
   public:
     // Constructor
