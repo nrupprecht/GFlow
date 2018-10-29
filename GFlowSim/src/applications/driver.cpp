@@ -69,6 +69,7 @@ int main(int argc, char **argv) {
   // Other options
   bool quiet = false;
   RealType gravity = 0.;
+  bool damping = false;
   bool adjustDT = false;
   RealType startRecTime = 0;
   RealType fps = -1.;
@@ -109,6 +110,7 @@ int main(int argc, char **argv) {
   parser.get("skin", skin);
   parser.get("quiet", quiet);
   parser.get("gravity", gravity);
+  parser.get("damping", damping);
   parser.get("adjustDT", adjustDT);
   // parser.get("lj", adjustDT); // Adjust DT if lj is true
   parser.get("startRec", startRecTime);
@@ -212,7 +214,7 @@ int main(int argc, char **argv) {
   if (animate) {
     auto pd = new PositionData(gflow);
     gflow->addDataObject(pd);
-    if (videoLength>0) pd->setFPS(time/(20.*videoLength));
+    if (videoLength>0) pd->setFPS((20.*videoLength)/time);
   }
   if (fps>0)    gflow->setFPS(fps); // Do after data objects are loaded
   gflow->setDMCmd(argc, argv);
@@ -222,6 +224,7 @@ int main(int argc, char **argv) {
   // Timestep adjustment
   if (adjustDT) gflow->addModifier(new TimestepModifier(gflow));
   if (gravity!=0) gflow->addModifier(new ConstantAcceleration(gflow, gravity));
+  if (damping) gflow->addModifier(new LinearVelocityDamping(gflow));
 
   // Set time step and request time
   if (!gflow->hasIntegrator()) {
