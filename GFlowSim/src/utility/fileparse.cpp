@@ -18,6 +18,9 @@ namespace GFlowSimulation {
     message = "Starting parse...\n";
     level = 0;
     getBody(fin);
+
+    cout << "Done." << endl;
+
     // Set current head back to null
     currentHead = nullptr;
     // Return the head
@@ -84,6 +87,8 @@ namespace GFlowSimulation {
   }
 
   inline void FileParse::passWhiteSpaces(std::ifstream& fin) {
+    // Check for eof
+    if (fin.eof()) return;
     char c;
     // Get first character
     fin.get(c);
@@ -104,6 +109,9 @@ namespace GFlowSimulation {
     char c;
     bool end = false;
     while (!fin.eof() && !end) {
+
+      cout << fin.eof() << " " << fin.fail() << " " << end << endl;
+
       passWhiteSpaces(fin);
 
       if (!fin.eof()) fin.get(c);
@@ -190,6 +198,12 @@ namespace GFlowSimulation {
   }
 
   inline void FileParse::getParam(std::ifstream& fin, bool& more, bool& body) {
+    // If this is here, we can get stuck forever!!
+    if (fin.eof()) {
+      more = false;
+      return;
+    }
+    // Get parameters
     char c;
     bool end = false, a_part = true;
     fin.get(c);
