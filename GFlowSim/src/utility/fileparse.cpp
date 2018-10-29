@@ -18,9 +18,6 @@ namespace GFlowSimulation {
     message = "Starting parse...\n";
     level = 0;
     getBody(fin);
-
-    cout << "Done." << endl;
-
     // Set current head back to null
     currentHead = nullptr;
     // Return the head
@@ -109,14 +106,9 @@ namespace GFlowSimulation {
     char c;
     bool end = false;
     while (!fin.eof() && !end) {
-
-      cout << fin.eof() << " " << fin.fail() << " " << end << endl;
-
       passWhiteSpaces(fin);
-
       if (!fin.eof()) fin.get(c);
       else return;
-
       if (c=='}') // End of a body
         return;
       else if (c=='/') { // Could be the start of a comment
