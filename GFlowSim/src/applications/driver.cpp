@@ -72,6 +72,7 @@ int main(int argc, char **argv) {
   bool adjustDT = false;
   RealType startRecTime = 0;
   RealType fps = -1.;
+  RealType videoLength = -1.;
   RealType dt = 0.001;
   RealType time = 10.;
   string writeDirectory = "RunData";
@@ -112,6 +113,7 @@ int main(int argc, char **argv) {
   // parser.get("lj", adjustDT); // Adjust DT if lj is true
   parser.get("startRec", startRecTime);
   parser.get("fps", fps);
+  parser.get("videoLength", videoLength);
   parser.get("dt", dt);
   parser.get("time", time);
   parser.get("writeDirectory", writeDirectory);
@@ -207,7 +209,11 @@ int main(int argc, char **argv) {
   if (pressure) gflow->addDataObject(new PressureData(gflow));
   if (numberdata) gflow->addDataObject(new NumberData(gflow));
   // Add this last, as it takes the most time.
-  if (animate)  gflow->addDataObject(new PositionData(gflow));
+  if (animate) {
+    auto pd = new PositionData(gflow);
+    gflow->addDataObject(pd);
+    if (videoLength>0) pd->setFPS(time/(20.*videoLength));
+  }
   if (fps>0)    gflow->setFPS(fps); // Do after data objects are loaded
   gflow->setDMCmd(argc, argv);
 
@@ -226,7 +232,10 @@ int main(int argc, char **argv) {
   gflow->requestTime(time);
 
   // Run the simulation
-  if (!quiet) cout << "Initialized, ready to run:\t" << time_span(current_time(), start_time) << "\n";
+  if (!quiet) {
+    cout << "Initialized, ready to run:\t" << time_span(current_time(), start_time) << "\n";
+    cout << "Running with " << gflow->getNumParticles() << " particles.\n";
+  }
   if (gflow) gflow->run();
   else {
     if (!quiet) cout << "GFlow pointer was null. Exiting.\n";
@@ -252,6 +261,6 @@ int main(int argc, char **argv) {
   #endif
   if (!quiet) cout << "Finalized MPI.\n";
   #endif
-
+  
   return 0;
 }
