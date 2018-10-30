@@ -104,5 +104,15 @@ namespace GFlowSimulation {
     DataEntryNotFound(const string& m) : Exception(m) {};
   };  
 
+  /**
+  *  @brief Exception for when a value is a Nan.
+  */
+  struct NanValue : public Exception {
+    //! Default constructor.
+    NanValue() {};
+    //! Message constructor.
+    NanValue(const string& m) : Exception(m) {};
+  };  
+
 }
 #endif // __EXCEPTIONS_HPP__GFLOW__

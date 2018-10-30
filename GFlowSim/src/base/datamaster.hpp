@@ -60,6 +60,8 @@ namespace GFlowSimulation {
     //! Set the fps of particular data objects
     void setFPS(int, RealType);
 
+    void giveFile(string, string);
+
     RealType getRatio() const;
 
     // GFlow is a friend class
@@ -95,6 +97,9 @@ namespace GFlowSimulation {
 
     //! The data objects we are responsible for
     vector<DataObject*> dataObjects;
+
+    //! @brief Files that should be written to the summary directory: {name, contents}
+    vector<pair<string, string> > files;
   };
 
 }

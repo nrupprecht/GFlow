@@ -118,6 +118,17 @@ namespace GFlowSimulation {
     for (auto& dob : dataObjects)
       if (dob) success &= dob->writeToFile(writeDirectory, true);
 
+    // --- Write all files 
+
+    cout << files.size() << endl;
+
+    for (auto& f : files) {
+      ofstream fout(writeDirectory+"/"+f.first);
+      if (fout.fail()) success = false;
+      else fout << f.second;
+      fout.close();
+    }
+
     // Return true if all writes were successful
     return success;
   }
@@ -134,6 +145,10 @@ namespace GFlowSimulation {
   void DataMaster::setFPS(RealType fps) {
     for (auto &dob : dataObjects) 
       if (dob) dob->setFPS(fps);
+  }
+
+  void DataMaster::giveFile(string filename, string file_contents) {
+    files.push_back(pair<string, string>(filename, file_contents));
   }
 
   // Set the fps of particular data objects

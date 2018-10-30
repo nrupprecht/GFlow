@@ -111,6 +111,8 @@ namespace GFlowSimulation {
 
     inline RandomEngine* getRandomEngine(HeadNode*, string&) const;
 
+    inline string copyFile() const;
+
     //! @brief The name of the file to load from
     string configFile;
 

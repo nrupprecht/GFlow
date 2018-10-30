@@ -11,5 +11,6 @@
 #include "modifiers/birth.hpp"
 #include "modifiers/death.hpp"
 #include "modifiers/linearvelocitydamping.hpp"
+#include "modifiers/quadraticvelocitydamping.hpp"
 
 #endif // __ALL_MODIFIERS_HPP__GFLOW__

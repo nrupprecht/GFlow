@@ -29,6 +29,8 @@ namespace GFlowSimulation {
     // Store data
     RealType time = Base::gflow->getElapsedTime();
     keData.push_back(RPair(time, ke));
+    // A useful check
+    if(isnan(ke)) throw NanValue("KE");
   }
 
   bool KineticEnergyData::writeToFile(string fileName, bool useName) {

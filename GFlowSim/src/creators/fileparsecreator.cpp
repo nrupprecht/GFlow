@@ -73,6 +73,9 @@ namespace GFlowSimulation {
     }
     build_message += "Done.\n";
 
+    // Tell gflow's data master about the file it was created from
+    gflow->giveFileToDataMaster("setup.config", copyFile());
+
     // Clean up and return
     //delete [] root;
     return gflow;
@@ -857,6 +860,19 @@ namespace GFlowSimulation {
     throw BadStructure("An unreachable part of code was reached!");
     // Token return
     return nullptr;
+  }
+
+  inline string FileParseCreator::copyFile() const {
+    string s;
+    char c;
+    ifstream fin(configFile);
+    if (fin.fail()) return "";
+    fin.get(c);
+    while (!fin.eof()) {
+      s.push_back(c);
+      fin.get(c);
+    }
+    return s;
   }
 
 }

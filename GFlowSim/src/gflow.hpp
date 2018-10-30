@@ -170,6 +170,8 @@ namespace GFlowSimulation {
     //! @brief Set the correct com flag.
     void setCorrectCom(bool);
 
+    void giveFileToDataMaster(string, string);
+
     // Creators are a friend classes --- all must be since friendship is not inherited
     friend class Creator;
     friend class BoxCreator;

@@ -7,7 +7,7 @@ namespace GFlowSimulation {
   QuadraticVelocityDamping::QuadraticVelocityDamping(GFlow *gflow) : Modifier(gflow), damping(DEFAULT_DAMPING_CONSTANT), inv_v_char(1.) {};
 
   QuadraticVelocityDamping::QuadraticVelocityDamping(GFlow *gflow, RealType d) : Modifier(gflow), damping(d), inv_v_char(1.) {};
-
+  
   void QuadraticVelocityDamping::pre_forces() {
     // Note - does not work if we are correcting for COM velocity
     // Get the number of particles

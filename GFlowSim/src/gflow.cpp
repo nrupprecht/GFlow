@@ -458,6 +458,10 @@ namespace GFlowSimulation {
     correct_com = flag;
   }
 
+  void GFlow::giveFileToDataMaster(string filename, string file_contents) {
+    dataMaster->giveFile(filename, file_contents);
+  }
+
   inline void GFlow::clearForces() {
     simData->clearF();
   }
