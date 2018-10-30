@@ -48,25 +48,25 @@ class ArgParse {
   void parse() {
     for (int i=1; i<argc; i++) {
       if (argv[i][0]=='-') { // Our cue that this is a token
-	string tok, val;
-	int j=1;
-	char c = argv[i][j];
-	while(c!='\0' && c!='=') {
-	  tok.push_back(c); // Record the token
-	  j++;
-	  c = argv[i][j];
-	}
-	if (c!='\0') {
-	  j++;
-	  c = argv[i][j];
-	}
-	while(c!='\0') { // Get the value
-	  val.push_back(c);
-	  j++;
-	  c = argv[i][j];
-	}
-	tlist.push_back(pair<string,string>(tok,val));
-	checked.push_back(false);
+      	string tok, val;
+      	int j=1;
+      	char c = argv[i][j];
+      	while(c!='\0' && c!='=') {
+      	  tok.push_back(c); // Record the token
+      	  j++;
+      	  c = argv[i][j];
+      	}
+      	if (c!='\0') {
+      	  j++;
+      	  c = argv[i][j];
+      	}
+      	while(c!='\0') { // Get the value
+      	  val.push_back(c);
+      	  j++;
+      	  c = argv[i][j];
+      	}
+      	tlist.push_back(pair<string,string>(tok,val));
+      	checked.push_back(false);
       }
       else throw IllegalToken(argv[i][0]);
     }
@@ -78,9 +78,9 @@ class ArgParse {
     int i=0;
     for (auto tpair : tlist) {
       if (tpair.first==token) {
-	opt = tpair;
-	// We have looked for this token
-	checked.at(i) = true;
+      	opt = tpair;
+      	// We have looked for this token
+      	checked.at(i) = true;
       }
       ++i;
     }

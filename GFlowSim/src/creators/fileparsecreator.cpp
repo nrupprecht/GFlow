@@ -74,7 +74,7 @@ namespace GFlowSimulation {
     build_message += "Done.\n";
 
     // Tell gflow's data master about the file it was created from
-    gflow->giveFileToDataMaster("setup.config", copyFile());
+    gflow->giveFileToDataMaster("setup.txt", copyFile());
 
     // Clean up and return
     //delete [] root;
