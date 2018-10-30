@@ -119,9 +119,6 @@ namespace GFlowSimulation {
       if (dob) success &= dob->writeToFile(writeDirectory, true);
 
     // --- Write all files 
-
-    cout << files.size() << endl;
-
     for (auto& f : files) {
       ofstream fout(writeDirectory+"/"+f.first);
       if (fout.fail()) success = false;
