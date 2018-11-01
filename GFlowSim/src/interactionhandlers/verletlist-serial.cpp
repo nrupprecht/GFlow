@@ -23,9 +23,13 @@ namespace GFlowSimulation {
     return verlet.size();
   }
 
-  void VerletListSerial::executeKernel(Kernel<simd_float> simd_kernel, Kernel<float> serial_kernel, 
-    const RealType *param_pack, RealType *data_pack, 
-    const vector<int>& data_needed, const vector<int>& vec_data_needed) const 
+  void VerletListSerial::executeKernel(
+    Kernel<simd_float>  simd_kernel, 
+    Kernel<float>       serial_kernel, 
+    const RealType      *param_pack, 
+    RealType            *data_pack, 
+    const vector<int>&  data_needed, 
+    const vector<int>&  vec_data_needed) const 
   {
     // If the kernel is null, then there is no point looping through everything
     if (serial_kernel==nullptr) return;

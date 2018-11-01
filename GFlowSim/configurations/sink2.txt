@@ -3,15 +3,13 @@ Dimensions: 2
 
 // Set the simulation bounds
 Bounds: {
-  : -4, 4 // X
-  : -16, 16 // Y
+  : -12, 12 // X
+  : -64, 64 // Y
 }
 
 Integrator: VelocityVerlet
 
-Boundary: Wrap
-
-// Gravity: 0, -1
+Boundary: Repulse
 
 // Set the number of particle types
 NTypes: 1
@@ -35,7 +33,7 @@ Fill-area {
     Type: 0
   }
 
-  Number: Phi=0.95 {
+  Number: Phi=1.2 {
     TypeA : 1
   }
 
@@ -44,11 +42,10 @@ Fill-area {
 
 // The large, dropping particle
 Particle {
-  Position: 0, 0
-  Sigma: 1
-  Velocity: 0, -1
-  Modifier: CV-D=16
+  Position: 0, 48
+  Sigma: 2
+  Velocity: 0, -2
+  Modifier: CV-D=96
 }
 
-Reconcile: Remove
-
+Reconcile: Remove=2

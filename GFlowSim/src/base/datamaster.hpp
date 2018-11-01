@@ -29,6 +29,8 @@ namespace GFlowSimulation {
     //! Set the command data
     void setCommand(int, char**);
 
+    void setInitializationTime(RealType);
+
     //! Start a timer
     void startTimer();
 
@@ -66,6 +68,7 @@ namespace GFlowSimulation {
 
     // GFlow is a friend class
     friend class GFlow;
+    friend class FileParserCreator;
 
   protected:
     // --- Helper functions
@@ -86,14 +89,16 @@ namespace GFlowSimulation {
     int argc;
     char **argv;
 
+    //! @brief How long it took to initialize the simulation
+    RealType initialization_time = -1;
     //! Run time (real time)
-    RealType run_time;
+    RealType run_time = 0;
     //! When the timer started
     high_resolution_clock::time_point start_time;
     //! Whether the timer is running
-    bool timing; 
+    bool timing = false; 
     //! Time to start taking data
-    RealType startRecTime;
+    RealType startRecTime = 0;
 
     //! The data objects we are responsible for
     vector<DataObject*> dataObjects;

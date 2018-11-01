@@ -1,0 +1,41 @@
+// This is a 2d simulation
+Dimensions: 2
+
+// Set the simulation bounds
+Bounds: {
+  : 0, 4 // X
+  : 0, 4 // Y
+}
+
+Integrator: VelocityVerlet
+
+// Boundary: Repulse
+
+Gravity: 0, 0
+
+// Set the number of particle types
+NTypes: 1
+
+// Creates a random force network of HardSphere and Lennard-Jones forces
+Force-grid: {
+  : 0, 0, HardSphereGeneral
+}
+
+// Fill an area with particles
+Fill-area {
+  // Fill all the simulation with particles
+  Bounds: Full
+
+  Template: TypeA {
+    Radius: 0.05
+    Mass: Density=1
+    Type: 0
+  }
+
+  Number: Phi=0.92 {
+    TypeA : 1
+  }
+
+  Velocity: Zero
+
+}

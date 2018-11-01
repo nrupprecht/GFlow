@@ -35,7 +35,6 @@ namespace GFlowSimulation {
     RealType skinDepth = -1.;
     RealType cell_size = -1;
     RealType repulsion = 1.;
-    bool animate = false;
     bool over_damped_flag = false;
     RealType langevin_temp = -1.;
     bool lj_flag = false;
@@ -53,7 +52,6 @@ namespace GFlowSimulation {
       parserPtr->get("skinDepth", skinDepth);
       parserPtr->get("cell_size", cell_size);
       parserPtr->get("repulsion", repulsion);
-      parserPtr->get("animate", animate);
       parserPtr->get("overdamped", over_damped_flag);
       parserPtr->get("langevin", langevin_temp);
       parserPtr->get("lj", lj_flag);

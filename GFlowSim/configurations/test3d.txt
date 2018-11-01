@@ -1,0 +1,52 @@
+// This is a 2d simulation
+Dimensions: 3
+
+// Set the simulation bounds
+Bounds: {
+  : -2, 2 // X
+  : -2, 2 // Y
+  : -2, 2 // Z
+}
+
+Integrator: VelocityVerlet
+
+Boundary: Repulse
+
+// Set the number of particle types
+NTypes: 1
+
+// Creates a random force network of HardSphere and Lennard-Jones forces
+Force-grid: {
+  : 0, 0, HardSphereGeneral
+}
+
+// Fill an area with particles
+Fill-area {
+  // Fill all the simulation with particles
+  Bounds: Full
+
+  Template: TypeA {
+    Radius: Uniform {
+      Min: 0.04
+      Max: 0.06
+    }
+    Mass: Density=1
+    Type: 0
+  }
+
+  Number: Phi=1.3 {
+    TypeA : 1
+  }
+
+  Velocity: Zero
+}
+
+// The large, dropping particle
+Particle {
+  Position: 0, 0, 0
+  Sigma: 0.25
+  Velocity: 0, -1, 0
+  Modifier: CV-D=2
+}
+
+Reconcile: Remove=2

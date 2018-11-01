@@ -16,8 +16,36 @@ namespace GFlowSimulation {
 
 
   struct CellTest {
+    //! @brief Dimension setting constructor
+    CellTest(int d);
+
+    //! @brief Copy constructor
+    CellTest(const CellTest& cell);
+
+    //! @brief Destructor
+    ~CellTest();
+
+    //! @brief Operator equals.
+    CellTest operator=(const CellTest& cell);
+
+    int size() const;
+
+    //! @brief Whether a cell contains a particular particle.
+    bool contains(int id) const;
+
+    //! @brief Whether a position falls within a cell.
+    bool contains(RealType *r) const;
+
+    //! @brief The ids of the particles contained in the cell.
     vector<int> particle_ids;
+
+    //! @brief Pointers to cells adjacent to the cell.
     vector<CellTest*> adjacent;
+
+    //! @brief The cell bounds.
+    RealType *min, *max;
+    //! @brief The number of dimensions of the simulation.
+    int sim_dimensions;
   };
 
 
@@ -51,6 +79,8 @@ namespace GFlowSimulation {
 
     inline void create_cells();
 
+    inline void update_cells();
+
     inline void clear_cells();
 
     inline void fill_cells();
@@ -72,6 +102,9 @@ namespace GFlowSimulation {
 
     //! @brief Whether the domain has been initialized or not.
     bool initialized = false;
+
+    //! @brief The number of particles last time we built the cells.
+    int number = 0;
 
     //! @brief A vector holding all the cells in the domain.
     vector<CellTest> cells;

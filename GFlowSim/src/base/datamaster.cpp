@@ -6,7 +6,7 @@
 
 namespace GFlowSimulation {
 
-  DataMaster::DataMaster(GFlow *gflow) : Base(gflow), run_time(0), timing(false), startRecTime(0) {};
+  DataMaster::DataMaster(GFlow *gflow) : Base(gflow) {};
 
   DataMaster::~DataMaster() {
     for (auto& dob : dataObjects)
@@ -25,6 +25,10 @@ namespace GFlowSimulation {
 
   void DataMaster::setCommand(int ac, char **av) {
     argc = ac; argv = av;
+  }
+
+  void DataMaster::setInitializationTime(RealType t) {
+    initialization_time = t;
   }
 
   void DataMaster::startTimer() {
@@ -189,6 +193,7 @@ namespace GFlowSimulation {
     };
     // Print data
     fout << "Timing and performance:\n";
+    if (initialization_time>0) fout << "  - Initialization time:      " << initialization_time << "\n"; 
     fout << "  - Time simulated:           " << Base::gflow->getTotalTime() << "\n";
     fout << "  - Requested Time:           " << requestedTime << "\n";
     fout << "  - Run Time:                 " << run_time;
@@ -283,7 +288,7 @@ namespace GFlowSimulation {
     if (Base::domain) {
       fout << "  - Cutoff:                   " << Base::domain->getCutoff() << "\n";
       fout << "  - Skin depth:               " << Base::domain->getSkinDepth() << "\n";
-      fout << "  - Move ratio tollerance:    " << Base::domain->getMvRatioTolerance() << "\n";
+      fout << "  - Move ratio tolerance:     " << Base::domain->getMvRatioTolerance() << "\n";
       fout << "  - Delay missed target:      " << Base::domain->getMissedTarget() << "\n";
       fout << "  - Average miss:             " << Base::domain->getAverageMiss() << "\n";
       if (run_time>0) {

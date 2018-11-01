@@ -27,6 +27,18 @@ namespace GFlowSimulation {
   }
 
   GFlow* FileParseCreator::createSimulation() {
+    // Timing 
+    auto start_time = current_time();
+
+    // Command line arguments
+    RealType skinDepth = -1.;
+    RealType cell_size = -1;
+
+    if (parserPtr) {
+      parserPtr->get("skinDepth", skinDepth);
+      parserPtr->get("cell_size", cell_size);
+    }
+
     // We treat the file as one giant body. Get that body.
     build_message = "Starting file parse... ";
     FileParse parser;
@@ -44,6 +56,9 @@ namespace GFlowSimulation {
     // Get the message from the parser.
     parse_message = parser.getMessage();
 
+    // Save the file we just loaded
+    string file = copyFile();
+
     // Sort and collect options
     build_message += "Collecting options... ";
     std::multimap<string, HeadNode*> options;
@@ -55,6 +70,10 @@ namespace GFlowSimulation {
     // Create the scenario from the options
     if (gflow) delete gflow;
     gflow = new GFlow;
+    // Set skin depth
+    if (skinDepth>0) gflow->domain->setSkinDepth(skinDepth);
+    if (cell_size>0) gflow->domain->setCellSize(cell_size);
+    // Create from the options
     build_message += "Starting simulation setup... ";
     try {
       createFromOptions(gflow, options);
@@ -73,11 +92,13 @@ namespace GFlowSimulation {
     }
     build_message += "Done.\n";
 
-    // Tell gflow's data master about the file it was created from
-    gflow->giveFileToDataMaster("setup.txt", copyFile());
+    // Timing
+    auto end_time = current_time();
+    gflow->dataMaster->setInitializationTime(time_span(end_time, start_time));
+
+    gflow->dataMaster->giveFile("setup.txt", file);
 
     // Clean up and return
-    //delete [] root;
     return gflow;
   }
 
