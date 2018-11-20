@@ -26,7 +26,7 @@ namespace GFlowSimulation {
     // If there are no particles there is no need to continue
     if (simData->number<1) 
       return;
-
+    
     // Get the current simulation time
     RealType current_time = Base::gflow->getElapsedTime();
     // Check whether we should check sectors
@@ -171,7 +171,7 @@ namespace GFlowSimulation {
       dsqr = getDistanceSqrNoWrap<>(xVL[n], Base::simData->X(n));
       if (dsqr<max_plausible && dsqr>maxDSqr) maxDSqr = dsqr;
     }
-    return 2*sqrt(maxDSqr);
+    return 2.*sqrt(maxDSqr);
   }
 
   bool DomainBase::check_needs_remake() {

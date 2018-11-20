@@ -145,7 +145,10 @@ namespace GFlowSimulation {
     RealType *nsg  = new RealType[size];
     RealType *nim  = new RealType[size];
     int *ntype     = new int[size];
-    int *nbody     = new int[size];
+    // There may not need to be a body array
+    int *nbody = nullptr;
+    if (body)
+      nbody = new int[size];
     int *ngid      = new int[size];
 
     vector<RealType*> ndataF;

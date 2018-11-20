@@ -37,10 +37,9 @@ namespace GFlowSimulation {
     simd_float _hdt = simd_set1(hdt);
     int i;
     for (i=0; i<number*DIMENSIONS-simd_data_size; i+=simd_data_size) {
-      simd_float _f   = simd_load(&f[i]);
-      simd_float V      = simd_load(&v[i]);
-      simd_float _im    = simd_load_constant<DIMENSIONS>(im, i);
-
+      simd_float _f = simd_load(&f[i]);
+      simd_float V = simd_load(&v[i]);
+      simd_float _im = simd_load_constant<DIMENSIONS>(im, i);
       simd_float dV = _hdt*_im*_f;
       simd_float V_new = V + dV;
 
@@ -135,6 +134,9 @@ namespace GFlowSimulation {
   }
 
   void VelocityVerlet::post_forces() {
+    // Call to parent class
+    Integrator::post_forces();
+    
     // --- Second half kick
 
     // Number of (real - non ghost) particles

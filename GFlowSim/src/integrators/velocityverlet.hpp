@@ -9,9 +9,8 @@ namespace GFlowSimulation {
   public:
     // Constructor
     VelocityVerlet(GFlow *);
-
-    virtual void pre_forces();
-    virtual void post_forces();
+    virtual void pre_forces() override;
+    virtual void post_forces() override;
   };
 
 }

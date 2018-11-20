@@ -137,6 +137,9 @@ namespace GFlowSimulation {
     //! @brief Apply a force to keep particles in bounds.
     void repulsePositions();
 
+    //! @brief Apply a harmonic force to keep particles attracted to the center of the simulation
+    void attractPositions();
+
     //! @brief Keep the center of mass stationary in wrapped dimensions
     void fixCenterOfMass();
 
@@ -248,6 +251,9 @@ namespace GFlowSimulation {
 
     //! @brief Dissipation for the boundary repulsion forces.
     RealType dissipation;
+
+    //! @brief The attraction towards the center of the simulation
+    RealType center_attraction;
 
     //! Total boundary force applied this iteration.
     RealType boundaryForce;

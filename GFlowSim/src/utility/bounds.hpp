@@ -12,7 +12,7 @@ namespace GFlowSimulation {
   *  require constant values).
   *
   */
-   struct BoundsPack {
+  struct BoundsPack {
     BoundsPack() {};
 
     BoundsPack(int dim) {
@@ -31,9 +31,18 @@ namespace GFlowSimulation {
 
     //! @brief Get the widths in various dimensions of the bounds.
     double wd(int d) { return max[d] - min[d]; }
+
     //! @brief Get the dimensionality of the BoundsPack.
     int dims() { return min.size(); }
 
+    //! @brief Set the input vector to be the center of the bounds.
+    void center(RealType *v) {
+      for (int i=0; i<min.size(); ++i) {
+        v[i] = 0.5*(min[i] - max[i]);
+      }
+    }
+
+    //! @brief The min and max.
     vector<double> min, max;
   };
 
@@ -63,6 +72,12 @@ namespace GFlowSimulation {
       RealType V = 1.;
       for (int d=0; d<D; ++d) V *= (max[d] - min[d]);
       return V;
+    }
+
+    void center(RealType *v) {
+      for (int i=0; i<D; ++i) {
+        v[i] = 0.5*(min[i] - max[i]);
+      }
     }
 
     BoundsPack pack_up() {
@@ -96,6 +111,10 @@ namespace GFlowSimulation {
       return (max[0] - min[0]);
     }
 
+    void center(RealType *v) {
+      v[0] = 0.5*(max[0] + min[0]);
+    }
+
     BoundsPack pack_up() {
       return BoundsPack(min, max, 1);
     }
@@ -125,6 +144,11 @@ namespace GFlowSimulation {
 
     RealType vol() {
       return (max[0] - min[0])*(max[1] - min[1]);
+    }
+
+    void center(RealType *v) {
+      v[0] = 0.5*(max[0] + min[0]);
+      v[1] = 0.5*(max[1] + min[1]);
     }
 
     BoundsPack pack_up() {
@@ -157,6 +181,12 @@ namespace GFlowSimulation {
 
     RealType vol() {
       return (max[0] - min[0])*(max[1] - min[1])*(max[2] - min[2]);
+    }
+
+    void center(RealType *v) {
+      v[0] = 0.5*(max[0] + min[0]);
+      v[1] = 0.5*(max[1] + min[1]);
+      v[2] = 0.5*(max[2] + min[2]);
     }
 
     BoundsPack pack_up() {

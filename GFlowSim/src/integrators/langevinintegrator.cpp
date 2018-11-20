@@ -48,6 +48,9 @@ namespace GFlowSimulation {
   }
 
   void LangevinIntegrator::post_forces() {
+    // Call to parent class
+    Integrator::post_forces();
+    
     // --- Second half kick
 
     // Half a timestep

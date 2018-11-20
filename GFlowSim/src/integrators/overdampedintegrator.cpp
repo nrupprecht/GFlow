@@ -4,9 +4,12 @@
 
 namespace GFlowSimulation {
 
-  OverdampedIntegrator::OverdampedIntegrator(GFlow *gflow) : Integrator(gflow), dampingConstant(DEFAULT_DAMPING_CONSTANT) {};
+  OverdampedIntegrator::OverdampedIntegrator(GFlow *gflow) : Integrator(gflow), dampingConstant(10*DEFAULT_DAMPING_CONSTANT) {};
 
   void OverdampedIntegrator::post_forces() {
+    // Call to parent class
+    Integrator::post_forces();
+    
     // Number of (real - non ghost) particles
     int number = simData->number;
     if (number==0) return;

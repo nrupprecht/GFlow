@@ -7,7 +7,7 @@
 namespace GFlowSimulation {
 
   GFlow::GFlow() : running(false), useForces(true), requested_time(0), total_requested_time(0), elapsed_time(0), total_time(0), 
-    iter(0), argc(0), argv(nullptr), repulsion(DEFAULT_HARD_SPHERE_REPULSION), dissipation(0), sim_dimensions(DIMENSIONS)
+    iter(0), argc(0), argv(nullptr), repulsion(DEFAULT_HARD_SPHERE_REPULSION), dissipation(0), center_attraction(0), sim_dimensions(DIMENSIONS)
   {
     simData      = new SimData(this);
     bondData     = new BondData(this);
@@ -153,6 +153,7 @@ namespace GFlowSimulation {
       // Reflect or repulse particles. We only need to wrap before sectorizing particles, but we need to apply forces at every timestep.
       reflectPositions(); // This only involves velocities, so it could be done before or after clear forces.
       repulsePositions(); // But this needs to be done after clear forces.
+      attractPositions(); // This does too.
       if (correct_com) fixCenterOfMass();
 
       // Calculate current forces
@@ -385,6 +386,31 @@ namespace GFlowSimulation {
           }
         }
       }
+  }
+
+  void GFlow::attractPositions() {
+    // Only do this if center_attraction is nonzero
+    if (center_attraction==0) return;
+    // Get a pointer to position data and the number of particles in simData
+    RealType **x = simData->X(), **f = simData->F();
+    RealType *im = simData->Im();
+    int number = simData->number;
+    // Find the center of the simulation
+    RealType *center = new RealType[sim_dimensions];
+    RealType *X = new RealType[sim_dimensions], *dX = new RealType[sim_dimensions];
+    bounds.center(center);
+
+    // Attract particles towards center with constant acceleration
+    for (int n=0; n<simData->number; ++n) {
+      copyVec(x[n], X);
+      subtractVec(center, X, dX);
+      normalizeVec(dX);
+      scalarMultVec(center_attraction/im[n], dX);
+      plusEqVec(f[n], dX);
+    }
+    // Clean up
+    delete [] center;
+    delete [] X;
   }
 
   void GFlow::fixCenterOfMass() {

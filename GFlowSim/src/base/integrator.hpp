@@ -9,6 +9,14 @@ namespace GFlowSimulation {
   public:
     // Constructor
     Integrator(GFlow *);
+
+    //! @brief Set up before the simulation starts running.
+    virtual void pre_integrate() override;
+
+    //! @brief Calculate dt.
+    virtual void pre_step() override;
+
+    virtual void post_forces() override;
     
     // --- Accessors
     RealType getTimeStep();
@@ -20,8 +28,23 @@ namespace GFlowSimulation {
     friend class GFlow;
 
   protected:
-    // Time step
+    //! @brief The current time step.
     RealType dt;
+    //! @brief Minimum acceptable timestep.
+    RealType min_dt;
+    //! @brief Maximum acceptable timestep.
+    RealType max_dt;
+
+    //! @brief Target motion factor.
+    //!
+    //! How many timesteps we want it to take for a particle to traverse its own radius.
+    int target_steps;
+
+    //! @brief How many steps between checking velocities.
+    int step_delay;
+
+    //! @brief Count steps between checking velocities.
+    int step_count;
 
   };
 

@@ -6,6 +6,9 @@
 #include "../interactionhandlers/verletlist.hpp"
 #include "../base/forcemaster.hpp"
 
+#include "../base/interaction.hpp"
+#include "../base/interactionhandler.hpp"
+
 namespace GFlowSimulation {
 
   // Dimension setting constructor
@@ -252,6 +255,7 @@ namespace GFlowSimulation {
   }
 
   void DomainTest::construct() {
+
     // Domain base common tasks
     DomainBase::construct();
 

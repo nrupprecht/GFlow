@@ -126,6 +126,12 @@ const int simd_valid = 0xffffffff;
     return simd_set1(a[i/4]);
   }
 
+  inline void simd_update_masked(simd_float& a, const simd_float b, const simd_float mask) {
+    simd_float a2 = _mm_andnot_ps(mask, a);
+    simd_float updates = _mm_and_ps(b, mask);
+    a = a2 + updates;
+  }
+
 
 #elif SIMD_TYPE==SIMD_AVX or SIMD_TYPE==SIMD_AVX2
   // The number of floats per vector

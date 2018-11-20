@@ -420,7 +420,7 @@ namespace GFlowSimulation {
     // --- Look for bounds
     getAllMatches("Bounds", container, options);
     // We must have bounds
-    Bounds bnds; 
+    FillBounds *bnds; 
     // We only care about the first bounds. We can only define the bounds once.
     if (container.empty())
       throw BadStructure("We need bounds!");
@@ -429,22 +429,7 @@ namespace GFlowSimulation {
       if (container.size()>1) build_message += "Multiple bounds found! Ignoring all but the first instance.\n";
       // Get the bounds from the first instance
       HeadNode *h = container[0];
-      // Check if we should use the full simulation bounds
-      if (h->subHeads.empty() && h->params.size()>0 && h->params[0]->partA=="Full")
-        bnds = bounds;
-      else {
-        if (h->subHeads.size()!=DIMENSIONS) 
-          throw BadStructure("Expected "+toStr(DIMENSIONS)+" arguments, found "+toStr(h->subHeads.size()));
-        // Set bounds
-        for (int d=0; d<h->subHeads.size(); ++d) {
-          // Check for well formed options.
-          if (h->subHeads[d]->params.size()!=2 || !h->subHeads[d]->subHeads.empty()) 
-            throw BadStructure("Bounds need a min and a max, we found "+toStr(h->subHeads[d]->params.size())+" parameters.");
-          // Extract the bounds.
-          bnds.min[d] = convert<float>( h->subHeads[d]->params[0]->partA );
-          bnds.max[d] = convert<float>( h->subHeads[d]->params[1]->partA );
-        }
-      }
+      bnds = getFillBounds(h);
     }
 
     // --- Local Particle Template. Defines "types" of particles, e.g. radius distribution, density/mass, etc.
@@ -530,25 +515,36 @@ namespace GFlowSimulation {
       scalarMultVec(velocity, normal, V);
     };
 
+    // --- Relaxation. How long to relax the particles
+    getAllMatches("Relax", container, options);
+    RealType relax_length = -1;
+    if (container.size()>1) build_message += "We only need one relaxation length.\n";
+    if (container.size()>0) {
+      hd = container[0];
+      relax_length = convert<RealType>(hd->params[0]->partA);
+    }
+
     // --- Check that we have defined a good area
+    /*
     for (int d=0; d<DIMENSIONS; ++d)
       if (bnds.wd(d)==0) 
         throw BadStructure("We need valid bounds. The width of dimension "+toStr(d)+" was 0.");
+    */
     if (!usePhi && number<=0 && singleType)
       throw BadStructure("If using a single type, we need a nonzero number of particles.");
 
     // --- We have found all the options. Fill the area.
     GFlow filler;
-    filler.setBounds(bnds);
+    filler.setBounds(bnds->getBounds());
     filler.setAllBCs(BCFlag::REPL);
     filler.forceMaster = gflow->forceMaster; // Make sure the particles treat each other in the same way
     // Get the simdata
     SimData *simData = filler.simData;
+    
     // --- Fill with particles
     RealType X[DIMENSIONS], V[DIMENSIONS], sigma(0.), im(0.);
     int type(0);
     zeroVec(V);
-
     // If we are filling to a specified packing fraction
     if (usePhi) {
       // Create discrete distribution
@@ -567,11 +563,10 @@ namespace GFlowSimulation {
       // A discrete distribution we use to choose which particle template to use next
       std::discrete_distribution<int> choice(probabilities.begin(), probabilities.end());
       int i(0);
-      RealType vol = 0, Vol = bnds.vol();
+      RealType vol = 0, Vol = bnds->vol();
       while (vol/Vol < phi) {
         // Select a position for the particle (random uniform)
-        for (int d=0; d<DIMENSIONS; ++d)
-          X[d] = drand48()*bnds.wd(d) + bnds.min[d];
+        bnds->pick_position(X);
         // Choose a type of particle to create
         int pt = choice(global_generator);
         ParticleTemplate &particle_creator = particle_template_numbers.empty() ? particle_templates[0] : template_vector.at(pt);
@@ -596,8 +591,7 @@ namespace GFlowSimulation {
         ParticleTemplate &particle_creator = it->second;
         for (int i=0; i<num; ++i) {
           // Select a position for the particle (random uniform)
-          for (int d=0; d<DIMENSIONS; ++d)
-            X[d] = drand48()*bnds.wd(d) + bnds.min[d];
+          bnds->pick_position(X);
           // Select other characteristics
           particle_creator.createParticle(X, sigma, im, type, i);
           // Add the particle
@@ -614,8 +608,10 @@ namespace GFlowSimulation {
     filler.integrator = new VelocityVerlet(&filler);
 
     // --- Relax the simulation
-    hs_relax(&filler, 0.1); // 1) To make sure particles don't stop on top of one another
-    relax(&filler, 0.15);
+    if (relax_length<0) relax_length = 0.1; // Default relax length is 0.1
+    if (relax_length>0) build_message += "From Fill Area: Relaxing for " + toStr(relax_length) + ".\n";
+    hs_relax(&filler, relax_length); // To make sure particles don't stop on top of one another
+    // relax(&filler, 0.15);
 
     // --- Fill gflow with the particles
     for (int i=0; i<simData->number; ++i) {
@@ -636,6 +632,49 @@ namespace GFlowSimulation {
       
     // So we don't delete the force master when filler cleans up
     filler.forceMaster = nullptr; 
+  }
+
+  inline FillBounds* FileParseCreator::getFillBounds(HeadNode *h) const {
+    FillBounds *fbnds = nullptr;
+
+    // --- Identify the type of bounds, and their parameters
+
+    // Check if we should use the full simulation bounds - the bounds are then rectangular
+    if (h->subHeads.empty() && h->params.size()>0 && h->params[0]->partA=="Full")
+      fbnds = new RectangularBounds(bounds, DIMENSIONS);
+
+    // Spherical bounds
+    else if (h->params.size()>0 && h->params[0]->partA=="Sphere") {
+      if (h->subHeads.size()!=2)
+        throw BadStructure("Expected position and radius for spherical bounds.");
+      if (h->subHeads[0]->params.size()!=DIMENSIONS)
+        throw BadStructure("Vector needs the correct number of dimensions.");
+      SphericalBounds *sbnds = new SphericalBounds(DIMENSIONS);
+      // Get the center
+      for (int d=0; d<DIMENSIONS; ++d)
+        sbnds->center[d] = convert<float>(h->subHeads[0]->params[d]->partA);
+      // Get the radius
+      sbnds->radius = convert<float>(h->subHeads[1]->params[0]->partA);
+      fbnds = sbnds;
+    }
+    // Otherwise, rectangular bounds
+    else {
+      if (h->subHeads.size()!=DIMENSIONS) 
+        throw BadStructure("Expected "+toStr(DIMENSIONS)+" arguments, found "+toStr(h->subHeads.size()));
+      // Set bounds
+      RectangularBounds *rbnds = new RectangularBounds(DIMENSIONS);
+      for (int d=0; d<h->subHeads.size(); ++d) {
+        // Check for well formed options.
+        if (h->subHeads[d]->params.size()!=2 || !h->subHeads[d]->subHeads.empty()) 
+          throw BadStructure("Bounds need a min and a max, we found "+toStr(h->subHeads[d]->params.size())+" parameters.");
+        // Extract the bounds.
+        rbnds->min[d] = convert<float>( h->subHeads[d]->params[0]->partA );
+        rbnds->max[d] = convert<float>( h->subHeads[d]->params[1]->partA );
+      }
+      fbnds = rbnds;
+    }
+
+    return fbnds;
   }
 
   inline void FileParseCreator::createParticle(HeadNode *head) const {

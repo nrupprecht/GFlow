@@ -118,6 +118,7 @@ namespace GFlowSimulation {
     RealType *Sg()    { return data_array[0]; }
     RealType *Im()    { return data_array[1]; }
     RealType *Ii()    { return data_array[2]; }
+    int *Type()       { return type; }
 
     RealType& X(int n, int d) { return vec_data_array[0][n][d]; }
     RealType* X(int n)        { return vec_data_array[0][n]; }
@@ -382,7 +383,7 @@ namespace GFlowSimulation {
     //!
     //! If we ever have a simulation where we are running in parallel, it could be irritating to have particles
     //! from the same body on different processors.
-    int *body = nullptr;  
+    int *body = nullptr;
 
     // More data, for more complex objects
     //! @brief Generic floading point data.

@@ -3,28 +3,29 @@ Dimensions: 2
 
 // Set the simulation bounds
 Bounds: {
-  : 0, 4 // X
-  : 0, 4 // Y
+  : -6, 6 // X
+  : -6, 6 // Y
 }
 
-Integrator: VelocityVerlet
+Integrator: OverdampedIntegrator
 
-// Boundary: Repulse
-
-Gravity: 0, 0
+Boundary: Wrap
 
 // Set the number of particle types
 NTypes: 1
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
 Force-grid: {
-  : 0, 0, HardSphereGeneral
+  : 0, 0, HardSphere
 }
 
 // Fill an area with particles
 Fill-area {
   // Fill all the simulation with particles
-  Bounds: Full
+  Bounds: Sphere {
+    : 0, 0 // Center
+    : 4
+  }
 
   Template: TypeA {
     Radius: 0.05
@@ -32,10 +33,11 @@ Fill-area {
     Type: 0
   }
 
-  Number: Phi=0.5 {
+  Number: Phi=1.5 {
     TypeA : 1
   }
 
   Velocity: Zero
 
+  Relax: 0.1
 }

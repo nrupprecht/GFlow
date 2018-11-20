@@ -17,6 +17,9 @@ namespace GFlowSimulation {
   }
 
   void OverdampedLangevinIntegrator::post_forces() {
+    // Call to parent class
+    Integrator::post_forces();
+    
     // Number of (real - non ghost) particles
     int number = simData->number;
     if (number==0) return;

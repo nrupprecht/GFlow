@@ -89,6 +89,7 @@ namespace GFlowSimulation {
 
       // Mast the distance squared with the "particles are real" type mask, c1
       RealType dsqr = sqr(normal);
+
       // Check if the particles should interact
       if (dsqr < sqr(sg[id1] + sg[id2])) {
         RealType distance = sqrt(dsqr);
