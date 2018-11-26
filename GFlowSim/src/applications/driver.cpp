@@ -64,13 +64,15 @@ int main(int argc, char **argv) {
   bool memdist = false;
   bool pressure = false;
   bool numberdata = false;
-  RealType skin = 0.;
-
+  
   // Other options
+  RealType skin = 0.;
   bool quiet = false;
   RealType gravity = 0.;
   bool damping = false;
   bool adjustDT = false;
+  int target_steps = -1;
+  int step_delay = -1;
   RealType startRecTime = 0;
   RealType fps = -1.;
   RealType videoLength = -1.;
@@ -112,7 +114,8 @@ int main(int argc, char **argv) {
   parser.get("gravity", gravity);
   parser.get("damping", damping);
   parser.get("adjustDT", adjustDT);
-  // parser.get("lj", adjustDT); // Adjust DT if lj is true
+  parser.get("target_steps", target_steps);
+  parser.get("step_delay", step_delay);
   parser.get("startRec", startRecTime);
   parser.get("fps", fps);
   parser.get("videoLength", videoLength);
@@ -222,6 +225,8 @@ int main(int argc, char **argv) {
   // --- Add modifiers
   if (temperature>0) gflow->addModifier(new TemperatureModifier(gflow, temperature));
   // Timestep adjustment
+  if (target_steps>0) gflow->getIntegrator()->setTargetSteps(target_steps);
+  if (step_delay>0) gflow->getIntegrator()->setStepDelay(step_delay);
   if (adjustDT) gflow->addModifier(new TimestepModifier(gflow));
   if (gravity!=0) gflow->addModifier(new ConstantAcceleration(gflow, gravity));
   if (damping) gflow->addModifier(new LinearVelocityDamping(gflow));

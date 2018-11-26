@@ -42,12 +42,7 @@ namespace GFlowSimulation {
       simd_float _im = simd_load_constant<DIMENSIONS>(im, i);
       simd_float dV = _hdt*_im*_f;
       simd_float V_new = V + dV;
-
-      /*
-      simd_float im_hdt = simd_mult(_im, _hdt);
-      simd_float im_h_f = simd_mult(im_hdt, vec1);
-      vec1 = simd_add(im_h_f, V);
-      */
+      // Store the updated velocity
       simd_store(V_new, &v[i]);
       // Debug mode asserts
       #if DEBUG==1
@@ -73,7 +68,8 @@ namespace GFlowSimulation {
     }
     #endif
 
-    // Update positions -- It seems to be marginally faster to have this in a separate loop.
+    // --- Update positions -- It seems to be marginally faster to have this in a separate loop.
+    // Do serially
     #if SIMD_TYPE==SIMD_NONE
     for (int i=0; i<number*DIMENSIONS; ++i) {
       x[i] += dt*v[i];
@@ -82,6 +78,7 @@ namespace GFlowSimulation {
       assert(!isnan(x[i]));
       #endif 
     }
+    // Do with SIMD
     #else
     // Set dt
     simd_float dt_vec = simd_set1(dt);

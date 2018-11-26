@@ -24,6 +24,10 @@ namespace GFlowSimulation {
     // --- Mutators
     void setDT(RealType);
 
+    void setTargetSteps(int);
+
+    void setStepDelay(int);
+
     // GFlow is a friend class
     friend class GFlow;
 

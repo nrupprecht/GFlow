@@ -175,6 +175,16 @@ namespace GFlowSimulation {
       gflow->addModifier(new ConstantAcceleration(gflow, g));
     }
 
+    // Attraction towards the center of the domain
+    getAllMatches("Attraction", container, options);
+    if (!container.empty()) {
+      HeadNode *h = container[0];
+      if (!h->params.empty()) {
+        RealType g = convert<RealType>(h->params[0]->partA);
+        gflow->setAttraction(g);
+      }
+    }
+
     // --- Look for integrator
     getAllMatches("Integrator", container, options);
     if (container.size()>1) build_message +=  "We only need the integrator type specified once. Ignoring all but the first.\n";
@@ -273,7 +283,6 @@ namespace GFlowSimulation {
     for (auto h : container) {
       fillArea(h);
     }
-
 
     getAllMatches("Particle", container, options);
     for (auto h : container) {
@@ -533,13 +542,23 @@ namespace GFlowSimulation {
     if (!usePhi && number<=0 && singleType)
       throw BadStructure("If using a single type, we need a nonzero number of particles.");
 
-    // --- We have found all the options. Fill the area.
+    // --- We have found all the options we need so far. Fill the area.
     GFlow filler;
     filler.setBounds(bnds->getBounds());
     filler.setAllBCs(BCFlag::REPL);
     filler.forceMaster = gflow->forceMaster; // Make sure the particles treat each other in the same way
     // Get the simdata
     SimData *simData = filler.simData;
+
+    // Attraction towards the center of the domain
+    getAllMatches("Attraction", container, options);
+    if (!container.empty()) {
+      HeadNode *h = container[0];
+      if (!h->params.empty()) {
+        RealType g = convert<RealType>(h->params[0]->partA);
+        filler.setAttraction(g);
+      }
+    }
     
     // --- Fill with particles
     RealType X[DIMENSIONS], V[DIMENSIONS], sigma(0.), im(0.);

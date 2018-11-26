@@ -266,6 +266,10 @@ namespace GFlowSimulation {
     return dataMaster;
   }
 
+  Integrator* GFlow::getIntegrator() const {
+    return integrator;
+  }
+
   const RealType* GFlow::getVComCorrection() const {
     return v_com_correction;
   }
@@ -309,6 +313,10 @@ namespace GFlowSimulation {
   void GFlow::setDissipation(RealType d) {
     if (d<0) return;
     dissipation = d;
+  }
+
+  void GFlow::setAttraction(RealType g) {
+    center_attraction = g;
   }
 
   void GFlow::requestTime(RealType t) {

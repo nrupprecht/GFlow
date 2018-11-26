@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
 
-  Integrator::Integrator(GFlow *gflow) : Base(gflow), dt(0.0001), min_dt(1e-5), max_dt(0.001), target_steps(18), step_delay(0), step_count(step_delay) {};
+  Integrator::Integrator(GFlow *gflow) : Base(gflow), dt(0.0001), min_dt(1e-5), max_dt(0.0025), target_steps(18), step_delay(10), step_count(step_delay+1) {};
 
   void Integrator::pre_integrate() {
     // Set step count so a check is triggered on the first step
@@ -13,16 +13,21 @@ namespace GFlowSimulation {
   }
 
   void Integrator::pre_step() {
+    // Call Base's pre_step (I don't think it does anything right now, but best to be safe)
+    Base::pre_step();
+
+    // Check if enough time has gone by
     if (step_count < step_delay) {
       ++step_count;
       return;
     }
-    // Call Base's pre_step (I don't think it does anything right now, but best to be safe)
-    Base::pre_step();
     // Check the velocity components of all the particles
     RealType *v = simData->V_arr(), *sg = simData->Sg();
     // The minimum time a particle would take to traverse its own radius
-    RealType minT = 1;
+    //!  @todo A more nuanced thing to check would be how long it takes the fastest
+    //!  particle to traverse the smallest radius, or the smallest radius "near" it.
+    //!  The smallest radius in each subdivision could be found by binning.
+    RealType minT = 1.; // Starting value
 
     // Find minT
     #if SIMD_TYPE==SIMD_NONE
@@ -96,6 +101,14 @@ namespace GFlowSimulation {
 
   void Integrator::setDT(RealType t) {
     dt = t;
+  }
+
+  void Integrator::setTargetSteps(int s) {
+    target_steps = max(1, s);
+  }
+
+  void Integrator::setStepDelay(int s) {
+    step_delay = max(0, s);
   }
 
 }

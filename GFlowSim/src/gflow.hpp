@@ -101,6 +101,8 @@ namespace GFlowSimulation {
 
     class DataMaster* getDataMaster() const;
 
+    class Integrator* getIntegrator() const;
+
     const RealType* getVComCorrection() const;
 
     void getDisplacement(const RealType*, const RealType*, RealType*);
@@ -124,6 +126,9 @@ namespace GFlowSimulation {
 
     //! @brief Set the dissipation stength for repulsing boundary conditions.
     void setDissipation(RealType);
+
+    //! @brief Set the attraction acceleration.
+    void setAttraction(RealType);
 
     //! @brief Set the amount of time we should run for.
     void requestTime(RealType);
