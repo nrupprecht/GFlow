@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
 
-  Integrator::Integrator(GFlow *gflow) : Base(gflow), dt(0.0001), min_dt(1e-5), max_dt(0.0025), target_steps(18), step_delay(10), step_count(step_delay+1) {};
+  Integrator::Integrator(GFlow *gflow) : Base(gflow), dt(0.0001), adjust_dt(true), min_dt(1e-6), max_dt(0.002), target_steps(18), step_delay(10), step_count(step_delay+1) {};
 
   void Integrator::pre_integrate() {
     // Set step count so a check is triggered on the first step
@@ -16,6 +16,7 @@ namespace GFlowSimulation {
     // Call Base's pre_step (I don't think it does anything right now, but best to be safe)
     Base::pre_step();
 
+    if (!adjust_dt) return;
     // Check if enough time has gone by
     if (step_count < step_delay) {
       ++step_count;
@@ -101,6 +102,10 @@ namespace GFlowSimulation {
 
   void Integrator::setDT(RealType t) {
     dt = t;
+  }
+
+  void Integrator::setAdjustDT(bool d) {
+    adjust_dt = d;
   }
 
   void Integrator::setTargetSteps(int s) {

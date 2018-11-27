@@ -24,6 +24,8 @@ namespace GFlowSimulation {
     // --- Mutators
     void setDT(RealType);
 
+    void setAdjustDT(bool);
+
     void setTargetSteps(int);
 
     void setStepDelay(int);
@@ -34,6 +36,8 @@ namespace GFlowSimulation {
   protected:
     //! @brief The current time step.
     RealType dt;
+    //! @brief Whether we should adjust dt or not.
+    bool adjust_dt;
     //! @brief Minimum acceptable timestep.
     RealType min_dt;
     //! @brief Maximum acceptable timestep.

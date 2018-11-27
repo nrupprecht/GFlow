@@ -25,7 +25,7 @@ Force-grid: {
 Fill-area {
   // Fill all the simulation with particles
   Bounds: Sphere {
-    : 0, 0 // Center
+    : 0, 0 // Centered
     : 15
   }
 
@@ -40,21 +40,24 @@ Fill-area {
     Type: 0
   }
 
-  Number: Phi=0.93 {
+  Number: Phi=0.95 {
     TypeA : 1
   }
 
   Velocity: Zero
 
-  Relax: 0.5
+  Relax: 0.25
+
+  Attraction: 1
 }
 
+/*
 // The large, dropping particle
 Particle {
-  Position: 0, 24
-  Sigma: 0.75
+  Position: 0, 25
+  Sigma: 5
   Velocity: 0, -10
-  Mass: Density=200
-  Modifier: CV-D=24
+  Mass: Density=1
 }
+*/
 

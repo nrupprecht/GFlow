@@ -286,11 +286,9 @@ namespace GFlowSimulation {
           for (; q!=c.particle_ids.end(); ++q) {
             int id2 = *q;
             subtractVec(x[id1], x[id2], dX);
-            RealType r2 = sqr(dX);
-            if (r2 < sqr(sg[id1] + sg[id2] + skin_depth))
+            if (sqr(dX) < sqr(sg[id1] + sg[id2] + skin_depth))
               pair_interaction(id1, id2);
           }
-
           // Seach through list of adjacent cells
           for (const auto &d : c.adjacent)
             for (const auto id2 : d->particle_ids) {
@@ -335,7 +333,7 @@ namespace GFlowSimulation {
                 if (id1==id2 || sg[id2]>sg[id1]) continue;
                 subtractVec(x[id1], x[id2], dX);
                 RealType r2 = sqr(dX);
-                if (r2 < sqr(sg[id1] + sg[id2] + skin_depth) || max_reasonable<r2)
+                if (sqr(dX) < sqr(sg[id1] + sg[id2] + skin_depth) || max_reasonable<r2)
                   pair_interaction(id1, id2);
               }
             }

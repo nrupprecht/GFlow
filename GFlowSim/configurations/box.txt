@@ -11,14 +11,12 @@ Integrator: VelocityVerlet
 
 // Boundary: Repulse
 
-Gravity: 0, 0
-
 // Set the number of particle types
 NTypes: 1
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
 Force-grid: {
-  : 0, 0, HardSphereGeneral
+  : 0, 0, HardSphere
 }
 
 // Fill an area with particles
@@ -36,6 +34,5 @@ Fill-area {
     TypeA : 1
   }
 
-  Velocity: Zero
-
+  Relax: 0.25
 }

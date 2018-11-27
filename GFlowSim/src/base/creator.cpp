@@ -60,12 +60,12 @@ namespace GFlowSimulation {
     gflow->dataMaster->resetTimer(); // So the setup does not count towards the run time
     gflow->resetAllTimes();
 
-    // Reset overdamped integrator
+    // Delete overdamped integrator
     delete gflow->integrator;
 
     // Reset GFlow
-    gflow->integrator = integrator;
-    gflow->forceMaster = master;
+    gflow->integrator   = integrator;
+    gflow->forceMaster  = master;
     gflow->interactions = interactions;
 
     // Clear forces

@@ -23,17 +23,20 @@ namespace GFlowSimulation {
   */
   class OverdampedIntegrator : public Integrator {
   public:
-    //! Constructor.
+    //! @brief Constructor.
     OverdampedIntegrator(GFlow*);
 
-    //! The post forces routine. The integrator only needs to act here.
-    virtual void post_forces();
+    //! @brief Override the integrator's pre-step, since there are no velocities when using the overdamped integrator.
+    virtual void pre_step() override;
 
-    //! Set damping constant.
+    //! @brief The post forces routine. The integrator only needs to act here.
+    virtual void post_forces() override;
+
+    //! @brief Set damping constant.
     void setDamping(RealType);
 
   private:
-    //! Damping constant.
+    //! @brief Damping constant.
     RealType dampingConstant;
   };
 

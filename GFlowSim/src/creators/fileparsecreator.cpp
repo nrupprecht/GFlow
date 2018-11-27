@@ -79,8 +79,8 @@ namespace GFlowSimulation {
       createFromOptions(gflow, options);
     }
     catch (BadStructure bs) {
-      cout << build_message << endl;
       cout << "Caught Bad Structure error: " << bs.message << endl;
+      cout << "Build Message:\n" << build_message << endl;
       // Print the parse tree to a file so we can debug
       ofstream fout("ParseTrace.txt");
       if (fout.fail());
@@ -103,6 +103,28 @@ namespace GFlowSimulation {
   }
 
   inline void FileParseCreator::createFromOptions(GFlow *gflow, std::multimap<string, HeadNode*>& options) {
+    /*
+    // Create a parse helper
+    ParseHelper parser(head);
+    // Declare valid options
+    parser.addValidSubheading("Bounds");
+    parser.addValidSubheading("Template");
+    parser.addValidSubheading("Number");
+    parser.addValidSubheading("Velocity");
+    parser.addValidSubheading("Relax");
+    parser.addValidSubheading("Attraction");
+    // Make sure only valid options were used
+    if (!parser.checkValidSubHeads()) {
+      cout << "Warning: Invalid Headings:\n";
+      for (auto ih : parser.getInvalidSubHeads())
+        cout << " -- Heading: " << ih << endl;
+    }
+    // Sort options
+    parser.sortOptions();
+    // Pointer for head nodes
+    HeadNode *hd = nullptr;
+    */
+
     // Container to collect options in
     std::vector<HeadNode*> container;
     // A head node we can use
@@ -417,147 +439,122 @@ namespace GFlowSimulation {
     // Particle Templates
     std::map<string, ParticleTemplate> particle_templates;
 
-    // --- Sort options
-    std::multimap<string, HeadNode*> options;
-    for (auto h : head->subHeads)
-      options.insert(std::pair<string, HeadNode*>(h->heading, h));
-    // Container to collect options in
-    std::vector<HeadNode*> container;
-
+    // Create a parse helper
+    ParseHelper parser(head);
+    // Declare valid options
+    parser.addValidSubheading("Bounds");
+    parser.addValidSubheading("Template");
+    parser.addValidSubheading("Number");
+    parser.addValidSubheading("Velocity");
+    parser.addValidSubheading("Relax");
+    parser.addValidSubheading("Attraction");
+    // Make sure only valid options were used
+    if (!parser.checkValidSubHeads()) {
+      cout << "Warning: Invalid Headings:\n";
+      for (auto ih : parser.getInvalidSubHeads())
+        cout << " -- Heading: " << ih << endl;
+    }
+    // Sort options
+    parser.sortOptions();
+    // Pointer for head nodes
+    HeadNode *hd = nullptr;
+    
     // --- Look for options
 
     // --- Look for bounds
-    getAllMatches("Bounds", container, options);
-    // We must have bounds
-    FillBounds *bnds; 
-    // We only care about the first bounds. We can only define the bounds once.
-    if (container.empty())
-      throw BadStructure("We need bounds!");
-    else {
-      // We want there to only be one set of bounds
-      if (container.size()>1) build_message += "Multiple bounds found! Ignoring all but the first instance.\n";
-      // Get the bounds from the first instance
-      HeadNode *h = container[0];
-      bnds = getFillBounds(h);
-    }
+    parser.getHeading_Necessary("Bounds", "We need bounds!");
+    FillBounds *bnds;
+    bnds = getFillBounds(parser.first());
 
     // --- Local Particle Template. Defines "types" of particles, e.g. radius distribution, density/mass, etc.
-    getAllMatches("Template", container, options);
-    for (auto h : container) {
-      getParticleTemplate(h, particle_templates);
-    }
+    parser.getHeading_Optional("Template");
+    for (auto h : parser) getParticleTemplate(h, particle_templates);
 
     // --- Number. How to choose which particles to fill the space with.
-    getAllMatches("Number", container, options);
-    if (container.empty()) 
-      throw BadStructure("We need number information!");
+    parser.getHeading_Necessary("Number", "We need number information!");
     // Create a structure for recording probabilities or numbers
     std::map<string, double> particle_template_numbers;
     bool useNumber = false, usePhi = false, singleType = false;
     int number(0); 
     double phi(0);
-    // Find options
-    if (container.size()>1) build_message += "Multiple number directives found. Ignoring all but the first instance.\n";
-    HeadNode *hd = container[0];
+    // Get the first head with the correct heading
+    hd = parser.first();
+    // Check if this is using phi or number 
+    if (parser.extract_parameter(hd, "Phi", phi)) usePhi = true;
+    else {
+      useNumber = true;
+      parser.extract_first_parameter(hd, number);
+    }
     // No body - we must have something in one of two forms:
     // Number: #
     // Number: Phi=#
-    if (hd->subHeads.size()==0) { 
-      if (particle_templates.size()>1) 
-        throw BadStructure("More than one type of particle has been defined, but how probable they are is ill defined.");
-      if (hd->params.empty())
-        throw BadStructure("Expected parameters in number directive, since there is no body.");
-      // Single type scenario
-      singleType = true;
-      // Phi or number?
-      if (hd->params[0]->partB.empty()) {
-        useNumber = true;
-        number = convert<int>(hd->params[0]->partA);
-      }
-      else if (hd->params[0]->partA=="Phi") {
-        usePhi = true;
-        phi = convert<double>(hd->params[0]->partB);
-      }
-      else throw BadStructure("Expect either a number or 'Phi=#'");
-    }
-    // Mutiple particle templates are defined. There must be a body
+    if (hd->subHeads.empty()) singleType = true;
+    // Yes body - either the total number, or total phi is given, and particles are generated
+    // randomly with certain probabilities. Subheads must be in one of the two forms:
+    //
+    // Number: Phi=# {
+    //   Template: #[prob]
+    //   ...
+    // }
+    // <or>
+    // Number: {
+    //   Template: #
+    //   ...
+    // }
     else {
-      // Either phi or number
-      if (!hd->params.empty() && hd->params[0]->partA=="Phi") {
-        usePhi = true;
-        // Get phi - Expects "Phi=#"
-        phi = convert<double>(hd->params[0]->partB);
-
-      }
-      else useNumber = true;
-
-      // Look in the body for the probabilities or numbers
-      for (auto sh : hd->subHeads) {
-        if (sh->params.size()!=1)
-          throw BadStructure("Expect two options in template - number definition. Found "+toStr(sh->params.size())+".");
-        // Insert numbers
-        particle_template_numbers.insert(
-          std::pair<string, double>(sh->heading, convert<double>(sh->params[0]->partA))
-        );
+      // Loop through subheads of hd - these are the templates
+      ParseHelper subParser(hd);
+      subParser.sortOptions();
+      // Record template name, number
+      for (auto m=subParser.begin(); m!=subParser.end(); ++m) {
+        particle_template_numbers.insert(pair<string, double>(m.heading(), m.convert_param<double>()));
       }
     }
 
     // --- Velocity. How to choose particle velocities. We will find a better / more expressive way to do this later.
-    getAllMatches("Velocity", container, options);
+    parser.getHeading_Optional("Velocity");
     int velocityOption = 0; // Normal velocities by default.
-    if (container.size()>1) build_message += "We only need one way to initialize velocity to be specified.\n";
-    if (container.size()>0) {
-      hd = container[0];
-      if (hd->params[0]->partA=="Zero") velocityOption = 1;
+    hd = parser.first();
+    if (hd) {
+      string opt;
+      parser.extract_first_parameter(hd, opt);
+      if (opt=="Zero") velocityOption = 1; // Zero velocity
+      // --- Other options go here
     }
-
-    // Select a velocity
-    auto select_velocity = [&] (RealType *V, RealType *X, RealType sigma, RealType im, int type) -> void {
-      RealType vsgma = 0.25;
-      // Velocity based on KE
-      double ke = fabs(vsgma*normal_dist(generator));
-      double velocity = sqrt(2*im*ke/127.324);
-      // Random normal vector
-      RealType normal[DIMENSIONS];
-      randomNormalVec(normal);
-      // Set the velocity
-      scalarMultVec(velocity, normal, V);
-    };
 
     // --- Relaxation. How long to relax the particles
-    getAllMatches("Relax", container, options);
+    parser.getHeading_Optional("Relax");
     RealType relax_length = -1;
-    if (container.size()>1) build_message += "We only need one relaxation length.\n";
-    if (container.size()>0) {
-      hd = container[0];
-      relax_length = convert<RealType>(hd->params[0]->partA);
-    }
+    hd = parser.first();
+    if (hd) parser.set_scalar_argument(relax_length, hd);
 
     // --- Check that we have defined a good area
-    /*
-    for (int d=0; d<DIMENSIONS; ++d)
-      if (bnds.wd(d)==0) 
-        throw BadStructure("We need valid bounds. The width of dimension "+toStr(d)+" was 0.");
-    */
     if (!usePhi && number<=0 && singleType)
       throw BadStructure("If using a single type, we need a nonzero number of particles.");
 
     // --- We have found all the options we need so far. Fill the area.
     GFlow filler;
     filler.setBounds(bnds->getBounds());
+    // Default bounds are repulsive
     filler.setAllBCs(BCFlag::REPL);
+    // If fill area has full bounds in any dimension, use the natural bounds
+    for (int d=0; d<DIMENSIONS; ++d) 
+      if (
+        filler.getBounds().min[d]==gflow->getBounds().min[d] 
+        && filler.getBounds().max[d]==gflow->getBounds().max[d]
+      ) filler.setBC(d, gflow->getBCs()[d]);
+
     filler.forceMaster = gflow->forceMaster; // Make sure the particles treat each other in the same way
     // Get the simdata
     SimData *simData = filler.simData;
 
-    // Attraction towards the center of the domain
-    getAllMatches("Attraction", container, options);
-    if (!container.empty()) {
-      HeadNode *h = container[0];
-      if (!h->params.empty()) {
-        RealType g = convert<RealType>(h->params[0]->partA);
-        filler.setAttraction(g);
-      }
+    // --- Attraction towards the center of the domain
+    parser.getHeading_Optional("Attraction");
+    hd = parser.first();
+    if (hd) {
+      RealType g;
+      parser.set_scalar_argument(g, hd);
+      filler.setAttraction(g);
     }
     
     // --- Fill with particles
@@ -623,14 +620,26 @@ namespace GFlowSimulation {
     build_message += "From Fill Area: Done with initial particle assigmnemt.\n"; 
 
     // Initialize domain
-    filler.domain->initialize();
-    filler.integrator = new VelocityVerlet(&filler);
+    // filler.domain->initialize();
 
     // --- Relax the simulation
     if (relax_length<0) relax_length = 0.1; // Default relax length is 0.1
     if (relax_length>0) build_message += "From Fill Area: Relaxing for " + toStr(relax_length) + ".\n";
     hs_relax(&filler, relax_length); // To make sure particles don't stop on top of one another
     // relax(&filler, 0.15);
+
+    // Select a velocity
+    auto select_velocity = [&] (RealType *V, RealType *X, RealType sigma, RealType im, int type) -> void {
+      RealType vsgma = 0.25;
+      // Velocity based on KE
+      double ke = fabs(vsgma*normal_dist(generator));
+      double velocity = sqrt(2*im*ke/127.324);
+      // Random normal vector
+      RealType normal[DIMENSIONS];
+      randomNormalVec(normal);
+      // Set the velocity
+      scalarMultVec(velocity, normal, V);
+    };
 
     // --- Fill gflow with the particles
     for (int i=0; i<simData->number; ++i) {
@@ -699,8 +708,26 @@ namespace GFlowSimulation {
   inline void FileParseCreator::createParticle(HeadNode *head) const {
     // Check if head is good
     if (head==nullptr) return;
-    // Particle Templates
-    std::map<string, ParticleTemplate> particle_templates;
+
+    // Create a parse helper
+    ParseHelper parser(head);
+    // Declare valid options
+    parser.addValidSubheading("Position");
+    parser.addValidSubheading("Velocity");
+    parser.addValidSubheading("Sigma");
+    parser.addValidSubheading("Type");
+    parser.addValidSubheading("Mass");
+    parser.addValidSubheading("Modifier");
+    // Make sure only valid options were used
+    if (!parser.checkValidSubHeads()) {
+      cout << "Warning: Invalid Headings:\n";
+      for (auto ih : parser.getInvalidSubHeads())
+        cout << " -- Heading: " << ih << endl;
+    }
+    // Sort options
+    parser.sortOptions();
+    // Pointer for head nodes
+    HeadNode *hd = nullptr;
 
     // --- Sort options
     std::multimap<string, HeadNode*> options;
@@ -714,29 +741,22 @@ namespace GFlowSimulation {
     int type;
 
     // --- Look for position
-    getAllMatches("Position", container, options);
-    if (container.empty())
-      throw BadStructure("Particle needs a position!");
-    else if (container.size()>1) build_message += "Only need one position for a particle.\n";
-    else {
-      HeadNode *h = container[0];
-      for (int d=0; d<DIMENSIONS; ++d) {
-        X[d] = convert<RealType>(h->params[d]->partA);
-      }
-    }
+    parser.getHeading_Necessary("Position", "Particle needs a position!");
+    hd = parser.first();
+    parser.set_vector_argument(X, hd, DIMENSIONS);
 
     // --- Look for velocity
-    getAllMatches("Velocity", container, options);
-    if (container.empty()) // Default velocity is 0
-      zeroVec(V);
-    else if (container.size()>1) build_message += "Only need one position for a particle.\n";
-    else {
-      HeadNode *h = container[0];
-      for (int d=0; d<DIMENSIONS; ++d) {
-        V[d] = convert<RealType>(h->params[d]->partA);
-      }
-    }
+    parser.getHeading_Optional("Velocity");
+    hd = parser.first();
+    if (hd) parser.set_vector_argument(V, hd, DIMENSIONS);
+    else zeroVec(V);
 
+    // --- Look for sigma
+    parser.getHeading_Necessary("Sigma", "Particle needs a sigma!");
+    hd = parser.first();
+    parser.set_scalar_argument(sigma, hd);
+
+    /*
     // --- Look for sigma
     getAllMatches("Sigma", container, options);
     if (container.empty())
@@ -746,7 +766,15 @@ namespace GFlowSimulation {
       HeadNode *h = container[0];
       sigma = convert<RealType>(h->params[0]->partA);
     }
+    */
 
+    // --- Look for type
+    parser.getHeading_Optional("Type");
+    hd = parser.first();
+    if (hd) parser.set_scalar_argument(type, hd);
+    else type = 0;
+
+    /*
     // --- Look for type
     getAllMatches("Type", container, options);
     if (container.empty()) type = 0;
@@ -755,18 +783,50 @@ namespace GFlowSimulation {
       HeadNode *h = container[0];
       type = convert<RealType>(h->params[0]->partA);
     }
+    */
 
+    // --- Look for mass
+    parser.getHeading_Optional("Mass");
+    hd = parser.first();
+    if (hd) {
+      RealType d = 1;
+      if (parser.extract_parameter(hd, "Density", d))   im = 1./(d*sphere_volume(sigma, DIMENSIONS));
+      else if (parser.extract_parameter(hd, "Mass", d)) im = 1./d;
+      else throw BadStructure("Unrecognized option for mass in particle creation.");
+    }
+    else im = 1./sphere_volume(sigma, DIMENSIONS); // Default density is 1
+
+    /*
     // --- Look for density
-    getAllMatches("Density", container, options);
+    getAllMatches("Mass", container, options);
     if (container.empty()) im = 1;
-    else if (container.size()>1) build_message += "Only need one density for a particle.\n";
+    else if (container.size()>1) build_message += "Only need one mass information for a particle.\n";
     else  {
       HeadNode *h = container[0];
-      RealType vol = sphere_volume(sigma, DIMENSIONS);
-      im = 1./(convert<RealType>(h->params[0]->partA)*vol);
+      if (h->params[0]->partA=="Density") {
+        RealType d = convert<RealType>(h->params[0]->partB);
+        RealType vol = sphere_volume(sigma, DIMENSIONS);
+        im = 1./(d*vol);
+      }
+      else { // Expect the mass
+        im = 1./convert<RealType>(h->params[0]->partA);
+      }
     }
+    */
 
     // --- Look for modifiers
+    parser.getHeading_Optional("Modifier");
+    int g_id = gflow->simData->getNextGlobalID();
+    for (auto m=parser.begin(); m!=parser.end(); ++m) {
+      if (m.first_param()=="CV") gflow->addModifier(new ConstantVelocity(gflow, g_id, V));
+      else if (m.first_param()=="CV-D") {
+        RealType D = m.first_arg<RealType>();
+        gflow->addModifier(new ConstantVelocityDistance(gflow, g_id, V, D));
+      }
+      else BadStructure("Unrecognized modifer option, ["+m.first_param()+"].");
+    }
+
+    /*
     getAllMatches("Modifier", container, options);
     int g_id = gflow->simData->getNextGlobalID();
     // Go through all the modifiers specified
@@ -780,6 +840,7 @@ namespace GFlowSimulation {
       else
         throw BadStructure("Unrecognized modifer option, ["+m->params[0]->partA+"].");
     }
+    */
 
     // Add the particle to the system
     gflow->simData->addParticle(X, V, sigma, im, type);
@@ -789,8 +850,7 @@ namespace GFlowSimulation {
     // Clear container in case there is stuff left over in it.
     container.clear();
     // Look for options
-    bool good = true;
-    for (auto it=options.find(heading); it!=options.end() && good; ++it) {
+    for (auto it=options.find(heading); it!=options.end(); ++it) {
       // If the head has the propper heading, store it.
       if (it->first==heading) container.push_back(it->second);
     }
@@ -830,8 +890,18 @@ namespace GFlowSimulation {
       throw BadStructure("We need some mass information!");
     if (container.size()>1)
       build_message += "We only need one mass information block. Ignoring all but the first instance.\n";
-    p_template.mass_engine = getRandomEngine(container[0], type);
-    p_template.mass_string = type;
+    // Get Density
+    if (container[0]->params[0]->partA=="Density") {
+      p_template.mass_engine = new DeterministicEngine(convert<RealType>(container[0]->params[0]->partB));
+      p_template.mass_string = "Density";
+    }
+    // Otherwise, get a number
+    else {
+      p_template.mass_engine = new DeterministicEngine(convert<RealType>(container[0]->params[0]->partB));
+      p_template.mass_string = "Mass";
+    }
+    //p_template.mass_engine = getRandomEngine(container[0], type);
+    //p_template.mass_string = type;
 
     // --- Look for Type option
     getAllMatches("Type", container, options);

@@ -2,7 +2,7 @@
 #define __FILE_PARSE_CREATOR_HPP__GFLOW__
 
 #include "../base/creator.hpp"
-#include "../utility/fileparse.hpp"
+#include "../utility/parsehelper.hpp"
 #include "particletemplate.hpp"
 
 #include <map>
@@ -16,7 +16,6 @@ namespace GFlowSimulation {
   const string Interactions_Token = "Force-grid";
   const string Boundary_Token = "Boundary-conditions";
   const string Fill_Token = "Fill-area";
-
 
   struct Molecule {
     ~Molecule() {
@@ -147,8 +146,8 @@ namespace GFlowSimulation {
     Bounds getBounds() override {
       Bounds bnds;
       for (int d=0; d<bnd_dimensions; ++d) {
-        bnds.min[d] = center[d] - 2*radius;
-        bnds.max[d] = center[d] + 2*radius;
+        bnds.min[d] = center[d] - radius;
+        bnds.max[d] = center[d] + radius;
       }
       return bnds;
     }
@@ -178,14 +177,6 @@ namespace GFlowSimulation {
 
     //! Create a simulation.
     virtual GFlow* createSimulation();
-
-    //! @brief Exception class.
-    struct UnexpectedOption {};
-    struct BadStructure {
-      BadStructure() : message("") {};
-      BadStructure(string mess) : message(mess) {};
-      string message;
-    };
 
   private:
 
