@@ -7,7 +7,9 @@ Bounds: {
   : -25, 25 // Y
 }
 
-Integrator: VelocityVerlet
+Integrator: LangevinIntegrator {
+  Temperature: 0
+}
 
 Boundary: Wrap
 
