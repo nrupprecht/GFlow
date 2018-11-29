@@ -36,7 +36,7 @@ namespace GFlowSimulation {
     #if SIMD_TYPE==SIMD_NONE
     // Do serially
     for (int i=0; i<sim_dimensions*simData->number; ++i) {
-      RealType mint = sg[i/sim_dimensions]/fabs(v[i]);
+      RealType mint = sg[i/sim_dimensions] / fabs(f[i]*im[i]);
       if (mint<minT) minT = mint;
     }
     #else 
