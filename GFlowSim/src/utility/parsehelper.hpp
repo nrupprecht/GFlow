@@ -44,9 +44,36 @@ namespace GFlowSimulation {
       else return false;
     }
 
-    template<typename T> bool extract_first_parameter(HeadNode *h, T &variable) {
+    //! @brief Extract the j-th parameter (including casting) from the i-th head node in container, if one exists.
+    //!
+    //! Returns true if at least one head node exists, and node has parameters.
+    template<typename T> bool extract_parameter(T &variable, int i, int j) {
+      if (container.size()<=i || container[i]->params.size()<=j) return false;
+      variable = convert<T>(container[i]->params[j]->partA);
+      return true;
+    }
+
+    template<typename T> bool extract_first_parameter(T &variable, HeadNode *h) {
       if (h->params.empty()) return false;
       variable = convert<T>(h->params[0]->partA);
+      return true;
+    }
+
+    //! @brief Extract the first parameter (including casting) from the first head node in container, if one exists.
+    //!
+    //! Returns true if at least one head node exists, and node has parameters.
+    template<typename T> bool extract_first_parameter(T &variable) {
+      if (container.empty() || container[0]->params.empty()) return false;
+      variable = convert<T>(container[0]->params[0]->partA);
+      return true;
+    }
+
+    //! @brief Extract the first parameter (including casting) from the i-th head node in container, if one exists.
+    //!
+    //! Returns true if at least one head node exists, and node has parameters.
+    template<typename T> bool extract_first_parameter(T &variable, int i) {
+      if (container.size()<=i || container[i]->params.empty()) return false;
+      variable = convert<T>(container[i]->params[0]->partA);
       return true;
     }
 
@@ -73,6 +100,8 @@ namespace GFlowSimulation {
     vector<HeadNode*>& getHeading_Necessary(string, string="");
 
     HeadNode* first();
+
+    HeadNode* at(int);
 
     struct iterator {
       //! @brief Copy constructor.
@@ -133,6 +162,7 @@ namespace GFlowSimulation {
     //! @brief End function. For iteration.
     iterator end();
 
+    //! @brief Return the size of container.
     int size();
 
   private:

@@ -123,6 +123,7 @@ namespace GFlowSimulation {
     // Use max_small_sigma
     for (int d=0; d<sim_dimensions; ++d) {
       dims[d] = static_cast<int>(domain_bounds.wd(d)/target_width);
+      if (dims[d]<=0) throw BadBounds(); // Make sure bin numbers are positive
       widths[d] = domain_bounds.wd(d)/dims[d];
       inverseW[d] = 1./widths[d];
     }
@@ -407,7 +408,7 @@ namespace GFlowSimulation {
     // --- Create the cells
     // Get the total number of cells - The dims MUST be set first.
     const int size = getNumCells();
-    cells = vector<CellTest>(size, CellTest( sim_dimensions));
+    cells = vector<CellTest>(size, CellTest(sim_dimensions));
 
     // Holder for tuple index
     int *tuple1 = new int[sim_dimensions], *tuple2 = new int[sim_dimensions];

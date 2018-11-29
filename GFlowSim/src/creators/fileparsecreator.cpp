@@ -76,7 +76,7 @@ namespace GFlowSimulation {
     // Create from the options
     build_message += "Starting simulation setup... ";
     try {
-      createFromOptions(gflow, options);
+      createFromOptions(gflow, root);
     }
     catch (BadStructure bs) {
       cout << "Caught Bad Structure error: " << bs.message << endl;
@@ -102,17 +102,25 @@ namespace GFlowSimulation {
     return gflow;
   }
 
-  inline void FileParseCreator::createFromOptions(GFlow *gflow, std::multimap<string, HeadNode*>& options) {
-    /*
+  inline void FileParseCreator::createFromOptions(GFlow *gflow, HeadNode *head) {
     // Create a parse helper
     ParseHelper parser(head);
     // Declare valid options
+    parser.addValidSubheading("Dimensions");
+    parser.addValidSubheading("Seed");
     parser.addValidSubheading("Bounds");
-    parser.addValidSubheading("Template");
-    parser.addValidSubheading("Number");
-    parser.addValidSubheading("Velocity");
-    parser.addValidSubheading("Relax");
+    parser.addValidSubheading("Boundary");
+    parser.addValidSubheading("Gravity");
     parser.addValidSubheading("Attraction");
+    parser.addValidSubheading("Integrator");
+    parser.addValidSubheading(Types_Token);
+    parser.addValidSubheading(Interactions_Token);
+    parser.addValidSubheading("Tempate");
+    parser.addValidSubheading("Fill-area");
+    parser.addValidSubheading("Particle");
+    parser.addValidSubheading("Creation");
+    parser.addValidSubheading("Destruction");
+    parser.addValidSubheading("Reconcile");
     // Make sure only valid options were used
     if (!parser.checkValidSubHeads()) {
       cout << "Warning: Invalid Headings:\n";
@@ -123,147 +131,92 @@ namespace GFlowSimulation {
     parser.sortOptions();
     // Pointer for head nodes
     HeadNode *hd = nullptr;
-    */
-
-    // Container to collect options in
-    std::vector<HeadNode*> container;
-    // A head node we can use
-    HeadNode *head;
 
     // --- Look for dimensions
-    getAllMatches("Dimensions", container, options);
-    if (container.size()>1) build_message +=  "We only need the number of dimensions specified once. Ignoring all but the first.\n";
-    head = container[0];
-    if (head->params.size()!=1) 
-      throw BadStructure("Dimensions should be a single argument, we found "+toStr(head->params.size()));
-    if (convert<int>(head->params[0]->partA)!=DIMENSIONS) throw BadDimension();
+    parser.getHeading_Optional("Dimensions");
+    hd = parser.first();
+    if (hd) {
+      int dims = -1;
+      parser.extract_first_parameter<int>(dims);
+      if (dims!=DIMENSIONS) throw BadDimension();
+    }
 
     // --- Look for seed information for random generators
-    getAllMatches("Seed", container, options);
-    if (container.size()==0) {
-      // Default seeding
-      seed = std::chrono::system_clock::now().time_since_epoch().count();
-      seedGenerator(seed);
-      srand48(seed);
-      normal_dist = std::normal_distribution<RealType>(0., 1.);
-    }
-    if (container.size()>1) build_message +=  "We only need one random seed information block. Ignoring all but the first.\n";
-    if (container.size()==1) {
-      head = container[0];
-      if (head->params.size()!=1) 
-        throw BadStructure("Dimensions should be a single argument, we found "+toStr(head->params.size()));
-      if (convert<int>(head->params[0]->partA)!=DIMENSIONS) throw BadDimension();
-    }
-    
+    parser.getHeading_Optional("Seed");
+    hd = parser.first();
+    // Read in a random seed
+    if (parser.extract_first_parameter(seed));
+    // Generate a random seed
+    else seed = std::chrono::system_clock::now().time_since_epoch().count();
+    seedGenerator(seed);
+    srand48(seed);
+    normal_dist = std::normal_distribution<RealType>(0., 1.);
+
     // --- Look for bounds
-    getAllMatches("Bounds", container, options);
-    if (container.size()==0) throw BadStructure("We need bounds information.");
-    if (container.size()>1) build_message +=  "We only need the number of dimensions specified once. Ignoring all but the first.\n";
-    head = container[0];
-    if (head->subHeads.size()!=DIMENSIONS) 
-      throw BadStructure("For bounds, we need "+toStr(DIMENSIONS)+" conditions, we found "+toStr(head->subHeads.size()));
-    for (int d=0; d<head->subHeads.size(); ++d) {
-      if (head->subHeads[d]->params.size()!=2) 
-        throw BadStructure("Bounds need a min and a max, we found "+toStr(head->subHeads[d]->params.size()+" parameters."));
-      bounds.min[d] = convert<float>( head->subHeads[d]->params[0]->partA );
-      bounds.max[d] = convert<float>( head->subHeads[d]->params[1]->partA );
+    parser.getHeading_Necessary("Bounds");
+    hd = parser.first();
+    ParseHelper subParser(hd);
+    int d=0;
+    for (int d=0; d<DIMENSIONS; ++d) {
+      subParser.extract_parameter(bounds.min[d], d, 0);
+      subParser.extract_parameter(bounds.max[d], d, 1);
     }
     gflow->setBounds(bounds);
 
     // --- Look for boundary conditions
-    getAllMatches("Boundary", container, options);
-    if (container.size()==0) gflow->setAllBCs(BCFlag::WRAP);
-    if (container.size()>1) build_message +=  "We only need the boundary conditions specified once. Ignoring all but the first.\n";
-    head = container[0];
-    if (head->params.size()==0) {
-      // Look for a body that specifies the boundary conditions in each dimension
-
+    parser.getHeading_Optional("Boundary");
+    hd = parser.first();
+    if (hd) {
+      string opt;
+      if (hd->params.size()==0) {
+        // @todo Fill in other options - Look for a body specifying options
+      }
+      else if (parser.extract_first_parameter(opt)) {
+        if (opt=="Repulse") gflow->setAllBCs(BCFlag::REPL);
+        else if (opt=="Wrap") gflow->setAllBCs(BCFlag::WRAP);
+        else if (opt=="Reflect") gflow->setAllBCs(BCFlag::REFL);
+        else throw BadStructure("Unrecognized boundary condition ["+opt+"].");
+      }
     }
-    else if (head->params.size()==1) {
-      // The same boundary condition in all directions
-      if (head->params[0]->partA=="Repulse")   gflow->setAllBCs(BCFlag::REPL);
-      else if (head->params[0]->partA=="Wrap") gflow->setAllBCs(BCFlag::WRAP);
-      else throw BadStructure("Unrecognized boundary condition ["+head->params[0]->partA+"].");
-    }
+    else gflow->setAllBCs(BCFlag::WRAP);
 
-    getAllMatches("Gravity", container, options);
-    if (!container.empty()) {
+    parser.getHeading_Optional("Gravity");
+    hd = parser.first();
+    if (hd) {
       RealType g[DIMENSIONS];
-      zeroVec(g);
-      // Get the acceleration vector
-      HeadNode *h = container[0];
-      for (int d=0; d<min(DIMENSIONS, static_cast<int>(h->params.size())); ++d)
-        g[d] = convert<RealType>(h->params[d]->partA);
+      parser.set_vector_argument(g, hd, DIMENSIONS);
       gflow->addModifier(new ConstantAcceleration(gflow, g));
     }
 
-    // Attraction towards the center of the domain
-    getAllMatches("Attraction", container, options);
-    if (!container.empty()) {
-      HeadNode *h = container[0];
-      if (!h->params.empty()) {
-        RealType g = convert<RealType>(h->params[0]->partA);
-        gflow->setAttraction(g);
-      }
-    }
+    // --- Attraction towards the center of the domain
+    parser.getHeading_Optional("Attraction");
+    RealType g;
+    if (parser.extract_first_parameter(g)) gflow->setAttraction(g);
 
     // --- Look for integrator
-    getAllMatches("Integrator", container, options);
-    if (container.size()>1) build_message +=  "We only need the integrator type specified once. Ignoring all but the first.\n";
-    // Default integrator is velocity verlet
-    if (container.empty()) gflow->integrator = new VelocityVerlet(gflow);
-    else {
-      head = container[0];
-      // We expect a single option: the name of the type of integrator to use
-      if (head->params.size()!=1) throw BadStructure("In Integrator we found more than one word.");
-      // Set new integrator
-      gflow->integrator = choose_integrator(head);
-    }
-    
+    parser.getHeading_Optional("Integrator");
+    hd = parser.first();
+    if (hd) gflow->integrator = choose_integrator(hd);
+    else gflow->integrator = new VelocityVerlet(gflow);
+
     // --- Look for number of particle types
-    getAllMatches(Types_Token, container, options);
-    if (container.size()>1) build_message += "We only need the number of types specified once. Ignoring all but the first.\n";
-    // Default is 1 type
-    if (container.empty()) NTypes = 1;
-    else {
-      head = container[0];
-      if (head->params.size()!=1) 
-        throw BadStructure("In NTypes we found more than one number.");
-      // Set particle types
-      NTypes = convert<int>(head->params[0]->partA);
-      gflow->forceMaster->setNTypes(NTypes);
-    }
+    parser.getHeading_Optional(Types_Token);
+    int n;
+    if(parser.extract_first_parameter(NTypes));
+    else NTypes = 1;
+    gflow->forceMaster->setNTypes(NTypes);
 
     // --- Look for interactions
-    getAllMatches(Interactions_Token, container, options);
-    if (container.size()>1) build_message += "We only need the interactions specified once. Ignoring all but the first.\n";
-    head = container[0];
+    parser.getHeading_Necessary(Interactions_Token); 
+    hd = parser.first();   
     // If we expect something like ": Random" instead of a force grid
-    if (head->subHeads.empty()) {
-      if (head->params.size()!=1) 
+    if (hd->subHeads.empty()) {
+      if (hd->params.size()!=1) 
         throw BadStructure("Expect one parameter for force grid, since the body is empty.");
       // Read the parameter and do what it says
-      if (head->params[0]->partA=="Random") {
+      if (hd->params[0]->partA=="Random") {
         // Assign random interactions, either LennardJones or HardSphere (for now), and with equal probability (for now)
-        Interaction *hardSphere = new HardSphere(gflow);
-        Interaction *lennardJones = new LennardJones(gflow);
-        // Assign random (but symmetric) interactions
-        for (int i=0; i<NTypes; ++i) {
-          // Self interaction
-          if (drand48()>0.5) gflow->forceMaster->setInteraction(i, i, hardSphere);
-          else gflow->forceMaster->setInteraction(i, i, lennardJones);
-
-          for (int j=i+1; j<NTypes; ++j) {
-            if (drand48()>0.5) {
-              gflow->forceMaster->setInteraction(i, j, hardSphere);
-              gflow->forceMaster->setInteraction(j, i, hardSphere);
-            }
-            else {
-              gflow->forceMaster->setInteraction(i, j, lennardJones);
-              gflow->forceMaster->setInteraction(j, i, lennardJones);
-            }
-          }
-        }
+        makeRandomForces();
       }
       else throw BadStructure("Unrecognized force grid parameter.");
     }
@@ -272,7 +225,7 @@ namespace GFlowSimulation {
       // Collect all the interactions we need
       std::map<string, Interaction*> interactions;
       // The body specifies the force grid
-      for (auto fg : head->subHeads) {
+      for (auto fg : hd->subHeads) {
         // Look for type1, type2, interaction-type [, possibly "R"]
         if (fg->params.size()!=3 && fg->params.size()!=4) 
           throw BadStructure("Force grid needs three or four parameters per line to specify interaction, found "+toStr(fg->params.size())+".");
@@ -295,31 +248,25 @@ namespace GFlowSimulation {
     }
 
     // --- Global Particle Template. Defines "types" of particles, e.g. radius distribution, density/mass, etc.
-    getAllMatches("Template", container, options);
-    for (auto h : container) {
-      getParticleTemplate(h, global_templates);
-    }    
+    parser.getHeading_Optional("Template");
+    for (auto h : parser) getParticleTemplate(h, global_templates);
 
     // --- Fill an area with particles
-    getAllMatches("Fill-area", container, options);
-    for (auto h : container) {
-      fillArea(h);
-    }
+    parser.getHeading_Optional("Fill-area");
+    for (auto h : parser) fillArea(h); 
 
-    getAllMatches("Particle", container, options);
-    for (auto h : container) {
-      createParticle(h);
-    }
+    // --- Create a single particle
+    parser.getHeading_Optional("Particle");
+    for (auto h : parser) createParticle(h);
 
     // --- Rules for creating particles
-    getAllMatches("Creation", container, options);
-    if (container.size()>1) build_message += "We only want one specification of particle creation. Ignoring all but the first";
-    if (container.size()>0) {
-      head = container[0];
+    parser.getHeading_Optional("Creation");
+    hd = parser.first();
+    if (hd) {
       // The subheads have no bodies, and are of the form: [type i] : [type j], [rate].
       // For now, we only allow reproduction to create the same type.
       std::map<int, RealType> birth;
-      for (auto s : head->subHeads) {
+      for (auto s : hd->subHeads) {
         if (s->params.size()!=2) 
           throw BadStructure("Expected a type and a rate (2 options). Found "+toStr(s->params.size())+".");
         birth.insert(std::pair<int, RealType>(
@@ -338,14 +285,13 @@ namespace GFlowSimulation {
     }
 
     // --- Rules for destroying particles
-    getAllMatches("Destruction", container, options);
-    if (container.size()>1) build_message += "We only want one specification of particle destruction. Ignoring all but the first";
-    if (container.size()>0) {
-      head = container[0];
+    parser.getHeading_Optional("Destruction");
+    hd = parser.first();
+    if (hd) {
       // The subheads have no bodies, and are of the form: [type i] : [rate].
       // For now, we only allow reproduction to create the same type.
       std::map<int, RealType> death;
-      for (auto s : head->subHeads) {
+      for (auto s : hd->subHeads) {
         if (s->params.size()!=1) 
           throw BadStructure("Expected a rate (1 option). Found "+toStr(s->params.size())+".");
         death.insert(std::pair<int, RealType>(
@@ -363,22 +309,18 @@ namespace GFlowSimulation {
       }
     }
 
-    // --- Extra, global, relaxation
-
     // Initialize domain
     gflow->domain->initialize();
 
     // --- Look for particle reconcilliation (should we remove overlapping particles?). Must do this after domain initialization.
-    getAllMatches("Reconcile", container, options);
-    if (container.size()>0) {
-      for (auto m : container) {
-        if (m->params.empty()) throw BadStructure("Need a remove option.");
+    parser.getHeading_Optional("Reconcile");
+    for (auto m : parser) {
+      if (m->params.empty()) throw BadStructure("Need a remove option.");
         if (m->params[0]->partA=="Remove") {
           if (m->params[0]->partB.empty()) gflow->removeOverlapping(2.); // Remove particles overlapping by a large amount
           else gflow->removeOverlapping(convert<RealType>(m->params[0]->partB));
         }
         else throw BadStructure("Unrecognized remove option, [" + m->params[0]->partA + "].");
-      }
     }
 
     // Reconstruct domain
@@ -436,7 +378,7 @@ namespace GFlowSimulation {
   inline void FileParseCreator::fillArea(HeadNode *head) const {
     // Check if head is good
     if (head==nullptr) return;
-    // Particle Templates
+    // For local particle templates
     std::map<string, ParticleTemplate> particle_templates;
 
     // Create a parse helper
@@ -458,8 +400,6 @@ namespace GFlowSimulation {
     parser.sortOptions();
     // Pointer for head nodes
     HeadNode *hd = nullptr;
-    
-    // --- Look for options
 
     // --- Look for bounds
     parser.getHeading_Necessary("Bounds", "We need bounds!");
@@ -483,7 +423,7 @@ namespace GFlowSimulation {
     if (parser.extract_parameter(hd, "Phi", phi)) usePhi = true;
     else {
       useNumber = true;
-      parser.extract_first_parameter(hd, number);
+      parser.extract_first_parameter(number, hd);
     }
     // No body - we must have something in one of two forms:
     // Number: #
@@ -517,7 +457,7 @@ namespace GFlowSimulation {
     hd = parser.first();
     if (hd) {
       string opt;
-      parser.extract_first_parameter(hd, opt);
+      parser.extract_first_parameter(opt, hd);
       if (opt=="Zero") velocityOption = 1; // Zero velocity
       // --- Other options go here
     }
@@ -618,9 +558,6 @@ namespace GFlowSimulation {
 
     // Print status
     build_message += "From Fill Area: Done with initial particle assigmnemt.\n"; 
-
-    // Initialize domain
-    // filler.domain->initialize();
 
     // --- Relax the simulation
     if (relax_length<0) relax_length = 0.1; // Default relax length is 0.1
@@ -756,34 +693,11 @@ namespace GFlowSimulation {
     hd = parser.first();
     parser.set_scalar_argument(sigma, hd);
 
-    /*
-    // --- Look for sigma
-    getAllMatches("Sigma", container, options);
-    if (container.empty())
-      throw BadStructure("Particle needs a sigma!");
-    else if (container.size()>1) build_message += "Only need one sigma for a particle.\n";
-    else  {
-      HeadNode *h = container[0];
-      sigma = convert<RealType>(h->params[0]->partA);
-    }
-    */
-
     // --- Look for type
     parser.getHeading_Optional("Type");
     hd = parser.first();
     if (hd) parser.set_scalar_argument(type, hd);
     else type = 0;
-
-    /*
-    // --- Look for type
-    getAllMatches("Type", container, options);
-    if (container.empty()) type = 0;
-    else if (container.size()>1) build_message += "Only need one sigma for a particle.\n";
-    else  {
-      HeadNode *h = container[0];
-      type = convert<RealType>(h->params[0]->partA);
-    }
-    */
 
     // --- Look for mass
     parser.getHeading_Optional("Mass");
@@ -796,24 +710,6 @@ namespace GFlowSimulation {
     }
     else im = 1./sphere_volume(sigma, DIMENSIONS); // Default density is 1
 
-    /*
-    // --- Look for density
-    getAllMatches("Mass", container, options);
-    if (container.empty()) im = 1;
-    else if (container.size()>1) build_message += "Only need one mass information for a particle.\n";
-    else  {
-      HeadNode *h = container[0];
-      if (h->params[0]->partA=="Density") {
-        RealType d = convert<RealType>(h->params[0]->partB);
-        RealType vol = sphere_volume(sigma, DIMENSIONS);
-        im = 1./(d*vol);
-      }
-      else { // Expect the mass
-        im = 1./convert<RealType>(h->params[0]->partA);
-      }
-    }
-    */
-
     // --- Look for modifiers
     parser.getHeading_Optional("Modifier");
     int g_id = gflow->simData->getNextGlobalID();
@@ -825,22 +721,6 @@ namespace GFlowSimulation {
       }
       else BadStructure("Unrecognized modifer option, ["+m.first_param()+"].");
     }
-
-    /*
-    getAllMatches("Modifier", container, options);
-    int g_id = gflow->simData->getNextGlobalID();
-    // Go through all the modifiers specified
-    for (auto m : container) {
-      if (m->params[0]->partA=="CV")
-        gflow->addModifier(new ConstantVelocity(gflow, g_id, V));
-      else if (m->params[0]->partA=="CV-D") {
-        RealType D = convert<RealType>(m->params[0]->partB);
-        gflow->addModifier(new ConstantVelocityDistance(gflow, g_id, V, D));
-      }
-      else
-        throw BadStructure("Unrecognized modifer option, ["+m->params[0]->partA+"].");
-    }
-    */
 
     // Add the particle to the system
     gflow->simData->addParticle(X, V, sigma, im, type);
@@ -914,6 +794,29 @@ namespace GFlowSimulation {
 
     // Add to particle templates
     particle_templates.insert(std::pair<string, ParticleTemplate>(head->params[0]->partA, p_template));
+  }
+
+  inline void FileParseCreator::makeRandomForces() {
+    // Assign random interactions, either LennardJones or HardSphere (for now), and with equal probability (for now)
+    Interaction *hardSphere   = new HardSphere(gflow);
+    Interaction *lennardJones = new LennardJones(gflow);
+    // Assign random (but symmetric) interactions
+    for (int i=0; i<NTypes; ++i) {
+      // Self interaction
+      if (drand48()>0.5) gflow->forceMaster->setInteraction(i, i, hardSphere);
+      else gflow->forceMaster->setInteraction(i, i, lennardJones);
+
+      for (int j=i+1; j<NTypes; ++j) {
+        if (drand48()>0.5) {
+          gflow->forceMaster->setInteraction(i, j, hardSphere);
+          gflow->forceMaster->setInteraction(j, i, hardSphere);
+        }
+        else {
+          gflow->forceMaster->setInteraction(i, j, lennardJones);
+          gflow->forceMaster->setInteraction(j, i, lennardJones);
+        }
+      }
+    }
   }
 
   inline RandomEngine* FileParseCreator::getRandomEngine(HeadNode *h, string &type) const {

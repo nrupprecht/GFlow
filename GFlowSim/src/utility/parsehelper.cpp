@@ -2,7 +2,9 @@
 
 namespace GFlowSimulation {
 
-  ParseHelper::ParseHelper(HeadNode *h) : head(h) {};
+  ParseHelper::ParseHelper(HeadNode *h) : head(h) {
+    sortOptions();
+  };
 
   void ParseHelper::addValidSubheading(string sh) {
     validSubHeads.insert(sh);
@@ -64,6 +66,11 @@ namespace GFlowSimulation {
     return container.empty() ? nullptr : container[0];
   }
 
+  HeadNode* ParseHelper::at(int id) {
+    if (id>=container.size()) throw BadStructure("Parser does not have the requested head.");
+    return container[id];
+  }
+
   ParseHelper::iterator ParseHelper::begin() {
     return iterator(container, true);
   }
@@ -73,7 +80,7 @@ namespace GFlowSimulation {
   }
 
   int ParseHelper::size() {
-    return options.size();
+    return container.size();
   }
 
 }

@@ -114,5 +114,17 @@ namespace GFlowSimulation {
     NanValue(const string& m) : Exception(m) {};
   };  
 
+  /**
+  *  @brief Exception for when bounds are bad.
+  */
+  struct BadBounds : public Exception {
+    //! Default constructor.
+    BadBounds() {};
+    //! Message constructor.
+    BadBounds(const string& m) : Exception(m) {};
+  };  
+
+  
+
 }
 #endif // __EXCEPTIONS_HPP__GFLOW__

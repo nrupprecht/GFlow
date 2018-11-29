@@ -180,7 +180,7 @@ namespace GFlowSimulation {
 
   private:
 
-    inline void createFromOptions(GFlow*, std::multimap<string, HeadNode*>&);
+    inline void createFromOptions(GFlow*, HeadNode*);
 
     // --- Object selection
 
@@ -202,6 +202,8 @@ namespace GFlowSimulation {
     inline void getAllMatches(string, vector<HeadNode*>&, std::multimap<string, HeadNode*>&) const;
 
     inline void getParticleTemplate(HeadNode*, std::map<string, ParticleTemplate>&) const;
+
+    inline void makeRandomForces();
 
     inline RandomEngine* getRandomEngine(HeadNode*, string&) const;
 
