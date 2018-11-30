@@ -8,10 +8,11 @@
 
 namespace GFlowSimulation {
 
-  Domain::Domain(GFlow *gflow) : DomainBase(gflow), use_halo_cells(false) {
+  Domain::Domain(GFlow *gflow) : DomainBase(gflow), use_halo_cells(false), extended_domain_bounds(Bounds(2)) {
     // --- Find what the domain bounds are
     // For now, we are only running on one core, this is the only domain
     domain_bounds = gflow->getBounds();
+    extended_domain_bounds = Bounds(sim_dimensions);
 
     // Set some default values
     setVec(domains_up, -1);
@@ -240,7 +241,7 @@ namespace GFlowSimulation {
 
     // A simple displacement function that we might get to use
     auto Displacement_Halo = [] (const RealType x1[DIMENSIONS], const RealType x2[DIMENSIONS], 
-      RealType d[DIMENSIONS], const Bounds bounds, const BCFlag *bcs) 
+      RealType d[DIMENSIONS], const Bounds &bounds, const BCFlag *bcs) 
     {
       for (int i=0; i<DIMENSIONS; ++i)
         d[i] = x1[i] - x2[i];
@@ -251,7 +252,7 @@ namespace GFlowSimulation {
     for (int d=0; d<DIMENSIONS; ++d) 
       if (bcs[d]==BCFlag::WRAP) no_wrap = false;
     // Choose displacement function
-    void (*Displacement) (const RealType*, const RealType*, RealType*, const Bounds, const BCFlag*); 
+    void (*Displacement) (const RealType*, const RealType*, RealType*, const Bounds&, const BCFlag*); 
     Displacement = (use_halo_cells || no_wrap) ? Displacement_Halo : getDisplacement;
 
     RealType *sg = Base::simData->Sg();

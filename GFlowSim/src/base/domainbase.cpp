@@ -11,11 +11,14 @@ namespace GFlowSimulation {
   DomainBase::DomainBase(GFlow *gflow) : Base(gflow), skin_depth(DEFAULT_SKIN_DEPTH), max_small_sigma(0.), cutoff(0.), minCutoff(0.), cutoffFactor(1.), 
     number_of_remakes(0), lastCheck(-1.), lastUpdate(-1.), updateDelay(1.0e-4), max_update_delay(DEFAULT_MAX_UPDATE_DELAY), 
     mvRatioTolerance(DEFAULT_MV_RATIO_TOLERANCE), motionFactor(DEFAULT_MOTION_FACTOR), missed_target(0), xVL(nullptr), sizeXVL(0),
-    sample_size(1000)
+    sample_size(1000), domain_bounds(2), bounds(2)
   {
     zeroVec(dims);
     zeroVec(widths);
     zeroVec(inverseW);
+    // Set bounds to have the propper dimensionality
+    domain_bounds = Bounds(sim_dimensions);
+    bounds = Bounds(sim_dimensions);
   }; 
 
   DomainBase::~DomainBase() {

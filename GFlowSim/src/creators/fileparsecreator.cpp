@@ -156,12 +156,13 @@ namespace GFlowSimulation {
     parser.getHeading_Necessary("Bounds");
     hd = parser.first();
     ParseHelper subParser(hd);
+    simBounds = Bounds(subParser.size());
     int d=0;
     for (int d=0; d<DIMENSIONS; ++d) {
-      subParser.extract_parameter(bounds.min[d], d, 0);
-      subParser.extract_parameter(bounds.max[d], d, 1);
+      subParser.extract_parameter(simBounds.min[d], d, 0);
+      subParser.extract_parameter(simBounds.max[d], d, 1);
     }
-    gflow->setBounds(bounds);
+    gflow->setBounds(simBounds);
 
     // --- Look for boundary conditions
     parser.getHeading_Optional("Boundary");
@@ -606,7 +607,7 @@ namespace GFlowSimulation {
 
     // Check if we should use the full simulation bounds - the bounds are then rectangular
     if (h->subHeads.empty() && h->params.size()>0 && h->params[0]->partA=="Full")
-      fbnds = new RectangularBounds(bounds, DIMENSIONS);
+      fbnds = new RectangularBounds(simBounds, DIMENSIONS);
 
     // Spherical bounds
     else if (h->params.size()>0 && h->params[0]->partA=="Sphere") {

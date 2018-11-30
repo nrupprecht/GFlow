@@ -2,11 +2,11 @@
 
 namespace GFlowSimulation {
 
-  Creator::Creator(int ac, char **av) : argc(ac), argv(av), ourParser(true) {
+  Creator::Creator(int ac, char **av) : argc(ac), argv(av), ourParser(true), simBounds(Bounds(2)) {
     parserPtr = new ArgParse(ac, av);
   };
 
-  Creator::Creator(ArgParse *p) : argc(p->getArgc()), argv(p->getArgv()), parserPtr(p), ourParser(false) {};
+  Creator::Creator(ArgParse *p) : argc(p->getArgc()), argv(p->getArgv()), parserPtr(p), ourParser(false), simBounds(Bounds(2)) {};
 
   Creator::~Creator() {
     if (ourParser && parserPtr) 

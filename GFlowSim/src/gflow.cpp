@@ -7,7 +7,8 @@
 namespace GFlowSimulation {
 
   GFlow::GFlow() : running(false), useForces(true), requested_time(0), total_requested_time(0), elapsed_time(0), total_time(0), 
-    iter(0), argc(0), argv(nullptr), repulsion(DEFAULT_HARD_SPHERE_REPULSION), dissipation(0), center_attraction(0), sim_dimensions(DIMENSIONS)
+    iter(0), argc(0), argv(nullptr), repulsion(DEFAULT_HARD_SPHERE_REPULSION), dissipation(0), center_attraction(0), sim_dimensions(DIMENSIONS),
+    bounds(Bounds(2))
   {
     simData      = new SimData(this);
     bondData     = new BondData(this);
@@ -17,6 +18,8 @@ namespace GFlowSimulation {
     domain       = new DomainTest(this); // Domain(this);
     dataMaster   = new DataMaster(this);
     forceMaster  = new ForceMaster(this);
+    // Set up bounds to have the propper dimensions
+    bounds = Bounds(sim_dimensions);
 
     // Set wrapping to true by default
     setAllBCs(BCFlag::WRAP);

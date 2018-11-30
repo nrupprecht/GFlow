@@ -7,7 +7,7 @@
 namespace GFlowSimulation {
 
   // Get the correct (minimal) displacement vector pointing from y to x
-  inline void getDisplacement(const RealType *x, const RealType *y, RealType *dis, const Bounds B, const BCFlag *boundaryConditions) {
+  inline void getDisplacement(const RealType *x, const RealType *y, RealType *dis, const Bounds &B, const BCFlag *boundaryConditions) {
     for (int d=0; d<DIMENSIONS; ++d) {
       dis[d] = x[d] - y[d];
       if (boundaryConditions[d]==BCFlag::WRAP) {
