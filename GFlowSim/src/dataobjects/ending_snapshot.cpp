@@ -50,7 +50,12 @@ namespace GFlowSimulation {
 
     // Make an image
     Visualization vis;
-    vis.createImage(dirName+"/snap.bmp", final_data, dataWidth, boundspack, sim_dimensions);
+    vis.setColorOption(2);
+    vis.createImage(dirName+"/kinetic.bmp", final_data, dataWidth, boundspack, sim_dimensions);
+    vis.setColorOption(3);
+    vis.createImage(dirName+"/direction.bmp", final_data, dataWidth, boundspack, sim_dimensions);
+    vis.setColorOption(4);
+    vis.createImage(dirName+"/displacement.bmp", final_data, dataWidth, boundspack, sim_dimensions);
     
     // Print data to csv
     ofstream fout(dirName+"data.csv");

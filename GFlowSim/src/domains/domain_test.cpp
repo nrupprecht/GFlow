@@ -352,6 +352,7 @@ namespace GFlowSimulation {
   }
 
   inline void DomainTest::update_cells() {
+    
     if (number!=simData->number) {
       // Clear out the cells
       clear_cells();
@@ -385,6 +386,9 @@ namespace GFlowSimulation {
       }
     }
     number = simData->number;
+    
+    //clear_cells();
+    //fill_cells();
   }
 
   inline void DomainTest::create_cells() {

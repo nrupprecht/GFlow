@@ -5,7 +5,7 @@
 namespace GFlowSimulation {
 
   Visualization::Visualization() : pos_place(0), vel_place(DIMENSIONS), sg_place(2*DIMENSIONS), type_place(2*DIMENSIONS+1), 
-    distance_place(2*DIMENSIONS+2), resolution(1.5*1024), do_wrap(true), background(RGB_Black), maxVsqr(0), maxDistance(0), color_option(0)
+    distance_place(2*DIMENSIONS+2), resolution(1.5*1024), do_wrap(true), background(RGB_Black), maxVsqr(-1), maxDistance(-1), color_option(0)
   {
     // Default size - 10
     createColorBank(10);
@@ -126,6 +126,17 @@ namespace GFlowSimulation {
 
     // Set background
     image.coverPalette(background);
+
+    // Make sure we have the appropriate normalization factors.
+    // This will generally only happen when we are making a single image.
+    if (color_option==2 && maxVsqr<0) {
+      auto pack_data = vector<vector<RealType> >(1, data);
+      findMaxVSqr(pack_data, dataWidth);
+    }
+    else if (color_option==4 && maxDistance<0) {
+      auto pack_data = vector<vector<RealType> >(1, data);
+      findMaxDistance(pack_data, dataWidth);
+    }
     
     // A vector for holding data
     RealType *pdata = new RealType[dataWidth];
@@ -197,13 +208,15 @@ namespace GFlowSimulation {
         };
 
       // Draw the particle
-      //image.drawCircleByFactors(xf, yf, rf*radius_multiple, colorF, do_wrap); 
-
       image.drawCircle(pos[0] - left, pos[1] - bott, sigma, colorF, do_wrap);
     }
 
     // Clean up pdata
     delete [] pdata;
+
+    // Reset
+    maxVsqr = -1;
+    maxDistance = -1;
 
     // Save image
     palette.writeToFile(fileName);

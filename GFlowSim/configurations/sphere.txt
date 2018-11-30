@@ -53,13 +53,11 @@ Fill-area {
   Attraction: 1
 }
 
-/*
 // The large, dropping particle
 Particle {
   Position: 0, 25
-  Sigma: 5
+  Sigma: 2
   Velocity: 0, -10
   Mass: Density=1
 }
-*/
 

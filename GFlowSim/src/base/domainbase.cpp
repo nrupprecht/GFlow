@@ -11,7 +11,7 @@ namespace GFlowSimulation {
   DomainBase::DomainBase(GFlow *gflow) : Base(gflow), skin_depth(DEFAULT_SKIN_DEPTH), max_small_sigma(0.), cutoff(0.), minCutoff(0.), cutoffFactor(1.), 
     number_of_remakes(0), lastCheck(-1.), lastUpdate(-1.), updateDelay(1.0e-4), max_update_delay(DEFAULT_MAX_UPDATE_DELAY), 
     mvRatioTolerance(DEFAULT_MV_RATIO_TOLERANCE), motionFactor(DEFAULT_MOTION_FACTOR), missed_target(0), xVL(nullptr), sizeXVL(0),
-    sample_size(0)
+    sample_size(1000)
   {
     zeroVec(dims);
     zeroVec(widths);
@@ -130,15 +130,18 @@ namespace GFlowSimulation {
   }
 
   void DomainBase::fillXVL() {
+    // How many samples to keep
+    int number = Base::simData->number;
+    int samples = sample_size>0 ? sample_size : number;
+
     // --- Record where the particles were
     // Check if our array is the correct size
     if (Base::simData->number!=sizeXVL) 
-      setupXVL(Base::simData->number);
+      setupXVL(samples);
 
-    RealType *xvl = xVL[0], *x = Base::simData->X_arr();
-    // Fill array
-    for (int i=0; i<Base::simData->number*sim_dimensions; ++i)
-      xvl[i] = x[i];
+    // Fill array from the end
+    for (int i=0; i<samples; ++i)
+      copyVec(Base::simData->X(number-1-i), xVL[i]);
   }
 
   void DomainBase::pair_interaction(int id1, int id2) {
@@ -160,17 +163,20 @@ namespace GFlowSimulation {
     RealType max_plausible = sqr(10.*skin_depth);
 
     // Check if re-sectorization is required --- see how far particles have traveled
-    RealType dsqr(0), maxDSqr(0), displacement[DIMENSIONS];
+    RealType dsqr(0), maxDSqr(0);
 
     // We can try sampling the motion of a subset of particles, but this would only work in a
     // homogenous simulation. If there is a localized area of fast moving particles, this would not
-    // pick this up.
-    int samples = sample_size>0 ? sample_size : Base::simData->number;
-    #pragma loop count min(64)
-    for (int n=0; n<samples; ++n) {
-      dsqr = getDistanceSqrNoWrap<>(xVL[n], Base::simData->X(n));
+    // be guarenteed to pick this up.
+    int number = Base::simData->number;
+    int samples = sample_size>0 ? sample_size : number;
+    // Start at the end, since separate special particles are often added at the end of a setup
+    for (int i=0; i<samples; ++i) {
+      dsqr = getDistanceSqrNoWrap<>(xVL[i], Base::simData->X(number-1-i));
       if (dsqr<max_plausible && dsqr>maxDSqr) maxDSqr = dsqr;
     }
+    // The factor of 2 comes from the fact that, at worst, two maximally moving particles can move directly
+    // towards each other.
     return 2.*sqrt(maxDSqr);
   }
 
@@ -179,8 +185,6 @@ namespace GFlowSimulation {
     lastCheck = Base::gflow->getElapsedTime();
     // Don't go to long without updating
     if (lastCheck - lastUpdate > max_update_delay) return true;
-    // If there are more particles now, we need to resectorize
-    if (sizeXVL<Base::simData->number) return true;
     // Find the maximum possible motion
     RealType max_motion = maxMotion();
     RealType motion_ratio = skin_depth/max_motion;

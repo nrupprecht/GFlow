@@ -7,6 +7,5 @@
 #include "creators/debugcreator.hpp"
 #include "creators/flowcreator.hpp"
 #include "creators/fileparsecreator.hpp"
-#include "creators/linecrystalcreator.hpp"
 
 #endif // __ALL_CREATORS_HPP__GFLOW__
