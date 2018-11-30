@@ -52,14 +52,14 @@ namespace GFlowSimulation {
     //! @brief Create a directory filled with BMP renderings of the system.
     //!
     //! This can be used to create a movie.
-    void createVideo2d(string, const vector<vector<RealType> >&, int, BoundsPack&, int) const;
+    void createVideo2d(string, const vector<vector<RealType> >&, int, Bounds&, int) const;
 
-    void createVideo3d(string, const vector<vector<RealType> >&, int, BoundsPack&, int) const;
+    void createVideo3d(string, const vector<vector<RealType> >&, int, Bounds&, int) const;
 
     //! @brief Creates a single frame.
-    void createImage(string, const vector<RealType>&, int, BoundsPack&, int) const;
+    void createImage(string, const vector<RealType>&, int, Bounds&, int) const;
 
-    void createImage3d(string, const vector<RealType>&, int, BoundsPack&, int) const;
+    void createImage3d(string, const vector<RealType>&, int, Bounds&, int) const;
 
   private:
 

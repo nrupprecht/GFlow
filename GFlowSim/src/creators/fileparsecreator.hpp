@@ -104,7 +104,7 @@ namespace GFlowSimulation {
     }
 
     Bounds getBounds() override {
-      Bounds bnds;
+      Bounds bnds(bnd_dimensions);
       for (int d=0; d<bnd_dimensions; ++d) {
         bnds.min[d] = min[d];
         bnds.max[d] = max[d];
@@ -144,7 +144,7 @@ namespace GFlowSimulation {
     }
 
     Bounds getBounds() override {
-      Bounds bnds;
+      Bounds bnds(bnd_dimensions);
       for (int d=0; d<bnd_dimensions; ++d) {
         bnds.min[d] = center[d] - radius;
         bnds.max[d] = center[d] + radius;
@@ -214,9 +214,6 @@ namespace GFlowSimulation {
 
     //! @brief The GFlow object the creator is creating.
     GFlow *gflow;
-
-    //! @brief The bounds of the simulation we are creating
-    Bounds bounds;
 
     //! @brief The number of particle types in the simulation
     int NTypes;

@@ -46,16 +46,15 @@ namespace GFlowSimulation {
 
     // Get bounds
     Bounds bounds = Base::gflow->getBounds();
-    BoundsPack boundspack = bounds.pack_up();
 
     // Make an image
     Visualization vis;
     vis.setColorOption(2);
-    vis.createImage(dirName+"/kinetic.bmp", final_data, dataWidth, boundspack, sim_dimensions);
+    vis.createImage(dirName+"/kinetic.bmp", final_data, dataWidth, bounds, sim_dimensions);
     vis.setColorOption(3);
-    vis.createImage(dirName+"/direction.bmp", final_data, dataWidth, boundspack, sim_dimensions);
+    vis.createImage(dirName+"/direction.bmp", final_data, dataWidth, bounds, sim_dimensions);
     vis.setColorOption(4);
-    vis.createImage(dirName+"/displacement.bmp", final_data, dataWidth, boundspack, sim_dimensions);
+    vis.createImage(dirName+"/displacement.bmp", final_data, dataWidth, bounds, sim_dimensions);
     
     // Print data to csv
     ofstream fout(dirName+"data.csv");

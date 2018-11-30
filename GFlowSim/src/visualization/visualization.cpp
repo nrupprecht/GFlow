@@ -23,7 +23,7 @@ namespace GFlowSimulation {
     ntypes = getNextNumber<int>(fin);
 
     // Get the dimensions - mins first, then maxes
-    BoundsPack bounds(dimensions);
+    Bounds bounds(dimensions);
     for (int i=0; i<dimensions; ++i) 
       bounds.min[i] = getNextNumber<RealType>(fin);
     for (int i=0; i<dimensions; ++i)
@@ -79,7 +79,7 @@ namespace GFlowSimulation {
     resolution = r;
   }
 
-  void Visualization::createVideo2d(string dirName, const vector<vector<RealType> >& data, int dataWidth, BoundsPack& bounds, int dimensions) const 
+  void Visualization::createVideo2d(string dirName, const vector<vector<RealType> >& data, int dataWidth, Bounds& bounds, int dimensions) const 
   {
     // Find the maximum velocity (if needed)
     if (color_option==2)
@@ -93,14 +93,14 @@ namespace GFlowSimulation {
     }
   }
 
-  void Visualization::createVideo3d(string dirName, const vector<vector<RealType> >& data, int dataWidth, BoundsPack& bounds, int dimensions) const {
+  void Visualization::createVideo3d(string dirName, const vector<vector<RealType> >& data, int dataWidth, Bounds& bounds, int dimensions) const {
     for (int i=0; i<data.size(); ++i) {
       string fileName = dirName + "/frame" + toStr(i) + ".bmp";
       createImage3d(fileName, data[i], dataWidth, bounds, dimensions);
     }
   }
 
-  void Visualization::createImage(string fileName, const vector<RealType>& data, int dataWidth, BoundsPack& bounds, int dimensions) const {
+  void Visualization::createImage(string fileName, const vector<RealType>& data, int dataWidth, Bounds& bounds, int dimensions) const {
     // Get some data from the bounds
     float wx = bounds.wd(0);
     float wy = bounds.wd(1);
@@ -222,8 +222,9 @@ namespace GFlowSimulation {
     palette.writeToFile(fileName);
   }
 
-  void Visualization::createImage3d(string fileName, const vector<RealType>& data, int dataWidth, BoundsPack& bounds, int dimensions) const {
-    
+  void Visualization::createImage3d(string fileName, const vector<RealType>& data, int dataWidth, Bounds& bounds, int dimensions) const {
+    // @todo Implement this.
+    throw false; 
   }
 
   inline void Visualization::findMaxVSqr(const vector<vector<RealType> >& dataVector, int dataWidth) const {

@@ -8,10 +8,11 @@
 
 namespace GFlowSimulation {
 
-  Domain::Domain(GFlow *gflow) : DomainBase(gflow), use_halo_cells(false) {
+  Domain::Domain(GFlow *gflow) : DomainBase(gflow), use_halo_cells(false), extended_domain_bounds(Bounds(2)) {
     // --- Find what the domain bounds are
     // For now, we are only running on one core, this is the only domain
     domain_bounds = gflow->getBounds();
+    extended_domain_bounds = Bounds(sim_dimensions);
 
     // Set some default values
     setVec(domains_up, -1);
