@@ -12,72 +12,22 @@
 namespace GFlowSimulation {
 
   // Dimension setting constructor
-  CellTest::CellTest(int d) : sim_dimensions(d) {
-    min = new RealType[d];
-    max = new RealType[d];
-  }
+  CellTest::CellTest(int d) : sim_dimensions(d) {}
 
   // Copy constructor
-  CellTest::CellTest(const CellTest& cell) {
-    sim_dimensions = cell.sim_dimensions;
-    min = new RealType[sim_dimensions];
-    max = new RealType[sim_dimensions];
-    // Set new bounds
-    for (int d=0; d<sim_dimensions; ++d) {
-      min[d] = cell.min[d];
-      max[d] = cell.max[d];
-    }
-  }
-
-  // Destructor
-  CellTest::~CellTest() {
-    if (min) delete [] min;
-    if (max) delete [] max;
-  }
+  CellTest::CellTest(const CellTest& cell) : sim_dimensions(cell.sim_dimensions) {};
 
   CellTest CellTest::operator=(const CellTest& cell) {
-    // If the dimensions are different, we have to reallocate
-    if (sim_dimensions!=cell.sim_dimensions) {
-      sim_dimensions = cell.sim_dimensions;
-      delete [] min;
-      delete [] max;
-      min = new RealType[sim_dimensions];
-      max = new RealType[sim_dimensions];
-    }
-    // Set new bounds
-    for (int d=0; d<sim_dimensions; ++d) {
-      min[d] = cell.min[d];
-      max[d] = cell.max[d];
-    }
+    // Set data
+    particle_ids = cell.particle_ids;
+    adjacent = cell.adjacent;
+    sim_dimensions = cell.sim_dimensions;
     // Return
     return *this;
   }
 
   int CellTest::size() const {
     return particle_ids.size();
-  }
-
-  // Whether a cell contains a particular particle
-  bool CellTest::contains(int id) const {
-    for (auto p : particle_ids) 
-      if (p==id) return true;
-    return false;
-  }
-
-  bool CellTest::contains(RealType *r) const {
-    switch (sim_dimensions) {
-      case 1:
-        return !(r[0]<min[0] || max[0]<r[0]);
-      case 2:
-        return !(r[0]<min[0] || max[0]<r[0] || r[1]<min[1] || max[1]<r[1]);
-      case 3:
-        return !(r[0]<min[0] || max[0]<r[0] || r[1]<min[1] || max[1]<r[1] || r[2]<min[2] || max[2]<r[2]);
-      default: {
-        for (int d=0; d<sim_dimensions; ++d)
-          if (r[d]<min[d] || max[d]<r[d]) return false;
-        return true;
-      }
-    }
   }
 
   // --------------
@@ -352,43 +302,9 @@ namespace GFlowSimulation {
   }
 
   inline void DomainTest::update_cells() {
-    
-    if (number!=simData->number) {
-      // Clear out the cells
-      clear_cells();
-      // Fill the cells with particles
-      fill_cells();
-    }
-    else {
-      RealType **x = Base::simData->X();
-      // Clear cells whose particles have left, record the particles that need to be moved
-      vector<int> updates;
-      for (auto &c : cells) {
-        bool good = true;
-        for (const auto id : c.particle_ids) {
-          if (!c.contains(x[id])) {
-            good = false;
-            break;
-          }
-        }
-        if (!good) {
-          // Put all particles in the updates vector, clear the cell. This may clear out some particles that don't need to be cleared, 
-          // but when I checked, it was not many more, percentage-wise.
-          for (const auto id : c.particle_ids) updates.push_back(id);
-          c.particle_ids.clear();
-        }
-      }
-      // Add particles to appropriate sectors
-      for (const auto id : updates) {
-        int linear = get_cell_index(x[id]);
-        // Stores the *local* id of the particle
-        cells[linear].particle_ids.push_back(id);
-      }
-    }
+    clear_cells();
+    fill_cells();
     number = simData->number;
-    
-    //clear_cells();
-    //fill_cells();
   }
 
   inline void DomainTest::create_cells() {
@@ -438,11 +354,6 @@ namespace GFlowSimulation {
     // --- Assign cell types, adjacent cells, set cell bounds
     for (int c=0; c<size; ++c) {
       linear_to_tuple(c, tuple1);
-      // Set cell bounds
-      for (int d=0; d<sim_dimensions; ++d) {
-        cells[c].min[d] = domain_bounds.min[d] + widths[d]* tuple1[d];
-        cells[c].max[d] = domain_bounds.min[d] + widths[d]*(tuple1[d]+1);
-      }
       // Set cell neighbors
       for (auto n : neighbor_indices) {
         addVec(tuple1, n, tuple2);

@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
 
-  Integrator::Integrator(GFlow *gflow) : Base(gflow), dt(0.0001), adjust_dt(true), min_dt(1e-6), max_dt(0.002), target_steps(18), step_delay(10), step_count(step_delay+1) {};
+  Integrator::Integrator(GFlow *gflow) : Base(gflow), dt(0.0001), adjust_dt(false), min_dt(1e-6), max_dt(0.002), target_steps(18), step_delay(10), step_count(step_delay+1) {};
 
   void Integrator::pre_integrate() {
     // Set step count so a check is triggered on the first step
