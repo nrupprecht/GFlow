@@ -13,37 +13,37 @@ namespace GFlowSimulation {
   *
   */
   struct BoundsPack {
-    BoundsPack() {};
+    //! @brief Default constructor.
+    BoundsPack();
 
-    BoundsPack(int dim) {
-      min = vector<double>(dim, 0);
-      max = vector<double>(dim, 0);
-    }
+    //! @brief Dimension setting constructor.
+    BoundsPack(const int dim);
 
-    BoundsPack(RealType *m, RealType *M, int d) {
-      min = vector<double>(d, 0);
-      max = vector<double>(d, 0);
-      for (int i=0; i<d; ++i) {
-        min[i] = m[i];
-        max[i] = M[i];
-      }
-    }
+    //! @brief Full setting constructor.
+    //!
+    //! @param m Bounds minima.
+    //! @param M Bounds maxima.
+    BoundsPack(const RealType*, const RealType*, const int);
+
+    //! @brief Destructor.
+    ~BoundsPack();
 
     //! @brief Get the widths in various dimensions of the bounds.
-    double wd(int d) { return max[d] - min[d]; }
+    RealType wd(int d);
 
     //! @brief Get the dimensionality of the BoundsPack.
-    int dims() { return min.size(); }
+    int dims();
 
     //! @brief Set the input vector to be the center of the bounds.
-    void center(RealType *v) {
-      for (int i=0; i<min.size(); ++i) {
-        v[i] = 0.5*(min[i] - max[i]);
-      }
-    }
+    void center(RealType *v);
+
+    // --- Data
 
     //! @brief The min and max.
-    vector<double> min, max;
+    RealType *min, *max;
+
+    //! @brief The dimensionality of this bounds object
+    int dimensions;
   };
 
   /*
