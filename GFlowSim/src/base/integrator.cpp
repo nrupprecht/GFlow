@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
 
-  Integrator::Integrator(GFlow *gflow) : Base(gflow), dt(0.0001), adjust_dt(true), min_dt(1e-6), max_dt(0.002), target_steps(18), step_delay(10), step_count(step_delay+1) {};
+  Integrator::Integrator(GFlow *gflow) : Base(gflow), dt(0.0001), adjust_dt(false), min_dt(1e-6), max_dt(0.002), target_steps(18), step_delay(10), step_count(step_delay+1) {};
 
   void Integrator::pre_integrate() {
     // Set step count so a check is triggered on the first step
@@ -43,7 +43,7 @@ namespace GFlowSimulation {
     int i=0;
     for (; i<sim_dimensions*simData->number-simd_data_size; i += simd_data_size) {
       simd_float V = simd_abs(simd_load(&v[i]));
-      simd_float Sg = simd_load_constant<DIMENSIONS>(sg, i);
+      simd_float Sg = simd_load_constant(sg, i, sim_dimensions);
       simd_float Mint = Sg / V;
       simd_float mask = simd_less_than(Mint, MinT);
       simd_update_masked(MinT, Mint, mask);
@@ -74,26 +74,6 @@ namespace GFlowSimulation {
 
   void Integrator::post_forces() {
     Base::post_forces();
-
-    /*
-    // Check the velocity components of all the particles
-    RealType *f = simData->F_arr(), *im = simData->Im();
-
-    RealType maxA = 0., aveA = 0;
-    for (int i=0; i<sim_dimensions*simData->number; ++i) {
-      RealType acc = im[i/sim_dimensions]*fabs(f[i]);
-      if (acc>maxA) maxA = acc;
-
-      aveA += acc;
-    }
-
-    RealType t = 1./maxA;
-    if (t<dt) dt = t;
-    if (dt<min_dt) dt = min_dt;
-
-    cout << maxA << " " << aveA/(sim_dimensions*simData->number) << ", Suggest: " << t << endl;
-    cout << dt << endl << endl;
-    */
   }
 
   RealType Integrator::getTimeStep() {

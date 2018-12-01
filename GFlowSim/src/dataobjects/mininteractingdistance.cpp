@@ -50,12 +50,14 @@ namespace GFlowSimulation {
   //! @param id2
   //! @param data_pack A data pack of the form { minDistance }, to be updated with fabs(id1 - id2), ++count
   void MinInteractingDistance::minimumDistanceKernel(RealType*, const RealType, const int id1, const int id2, 
-    SimData *simData, const RealType*, RealType *data_pack) 
+    SimData *simData, const RealType*, RealType *data_pack, int sim_dimensions) 
   {
-    RealType displacement[DIMENSIONS];
-    getDisplacement(simData->X(id1), simData->X(id2), displacement, simData->getBounds(), simData->getBCs());
     // Check if distance is smaller
-    RealType dist = magnitudeVec(displacement);
+    RealType dist = 0;
+    for (int d=0; d<sim_dimensions; ++d) 
+      dist += sqr(simData->X(id1, d) - simData->X(id2, d));
+    dist = sqrt(dist);
+    
     if (dist < data_pack[0]) data_pack[0] = dist;
   }
 

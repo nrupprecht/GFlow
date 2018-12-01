@@ -19,7 +19,7 @@ namespace GFlowSimulation {
     ParticleTemplate& operator=(const ParticleTemplate& p);
 
     //! @brief Create particle data.
-    void createParticle(RealType *X, RealType& radius, RealType &im, int& type, int n);
+    void createParticle(RealType*, RealType&, RealType&, int&, int, int);
 
     struct NullEngine {};
   

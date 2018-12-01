@@ -24,28 +24,28 @@ namespace GFlowSimulation {
   */
   class Creator {
   public:
-    //! Constructor -- pass in command line arguments.
+    //! @brief Constructor -- pass in command line arguments.
     Creator(int, char**);
 
-    //! Constructor -- pass in a pointer to an ArgParse object.
+    //! @brief Constructor -- pass in a pointer to an ArgParse object.
     Creator(ArgParse*);
 
-    //! Destructor.
+    //! @brief Destructor.
     virtual ~Creator();
 
-    //! Set the random seed.
+    //! @brief Set the random seed.
     void setSeed(uint);
 
-    //! Get the random seed.
+    //! @brief Get the random seed.
     unsigned getSeed();
 
-    //! Seed whatever random generators there are.
+    //! @brief Seed whatever random generators there are.
     virtual void seedGenerator(uint);
 
-    //! Create a GFlow Object
+    //! @brief Create a GFlow Object
     virtual class GFlow* createSimulation() = 0;
 
-    //! Set the boundary condition flags.
+    //! @brief Set the boundary condition flags.
     void setBCFlag(BCFlag b) { bcFlag = b; }
 
   protected:
@@ -64,9 +64,9 @@ namespace GFlowSimulation {
     void relax(class GFlow*, RealType=0.25) const;
 
     // Command line arguments
-    //! The number of command line arguments. Has to be set from the outside.
+    //! @brief The number of command line arguments. Has to be set from the outside.
     int argc;
-    //! The command line arguments. Has to be set from the outside.
+    //! @brief The command line arguments. Has to be set from the outside.
     char **argv;
 
     // --- Data that all creators will (likely) use
@@ -76,10 +76,10 @@ namespace GFlowSimulation {
     //! Use for when we want all the boundary conditions to be the same.
     BCFlag bcFlag;
 
-    //! Bounds of the simulation we are creating.
+    //! @brief Bounds of the simulation we are creating.
     Bounds simBounds;
 
-    //! Argument parser.
+    //! @brief Argument parser.
     ArgParse *parserPtr;
 
     //! @brief Parser flag.
@@ -87,8 +87,11 @@ namespace GFlowSimulation {
     //! True if we allocated the parser ourselves. False if a parser was passed in to us.
     bool ourParser; 
 
-    //! The random seed.
+    //! @brief The random seed.
     unsigned seed;
+
+    //! @brief The dimensionality of the simulation.
+    int sim_dimensions;
   };
 
 }

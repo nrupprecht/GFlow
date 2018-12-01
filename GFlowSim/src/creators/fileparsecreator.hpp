@@ -17,44 +17,6 @@ namespace GFlowSimulation {
   const string Boundary_Token = "Boundary-conditions";
   const string Fill_Token = "Fill-area";
 
-  struct Molecule {
-    ~Molecule() {
-      for (auto &p : position) if (p) delete [] p;
-    }
-    //! @brief The position of the particles.
-    vector<RealType*> position;
-    //! @brief The mass of the particles.
-    vector<RealType> mass;
-    //! @brief The sigma of the particles.
-    vector<RealType> sigma;
-    //! @brief The type of the particle.
-    vector<int> type;
-    //! @brief Bond information. Comes in pairs.
-    vector<int> bond;
-    vector<RealType> relaxedLength;
-    vector<RealType> bondStrength;
-    //! @brief Angle information. Comes in triples.
-    vector<int> angle;
-    vector<RealType> relaxedAngle;
-    vector<RealType> angleStrength;
-
-    void set_com_coordinates() {
-      RealType displacement[DIMENSIONS], weighted[DIMENSIONS];
-      RealType totalMass(0);
-      for (int i=0; i<position.size(); ++i) {
-        copyVec(position[i], weighted);
-        scalarMultVec(mass[i], weighted);
-        plusEqVec(displacement, weighted);
-        totalMass += mass[i];
-      }
-      scalarMultVec(1./totalMass, displacement);
-      // Shift by center of mass
-      for (int i=0; i<position.size(); ++i) {
-        minusEqVec(position[i], displacement);
-      }
-    }
-  };
-
   struct FillBounds {
     FillBounds(int dim) : bnd_dimensions(dim) {};
 
@@ -130,7 +92,7 @@ namespace GFlowSimulation {
 
     virtual void pick_position(RealType *x) override {
       if (radius==0) {
-        zeroVec(x);
+        zeroVec(x, bnd_dimensions);
         return;
       }
       // Do this the dumb way for now, so it works in arbitrary # of dimensions
@@ -139,7 +101,7 @@ namespace GFlowSimulation {
         for (int d=0; d<bnd_dimensions; ++d)
           x[d] = 2*(drand48() - 0.5)*radius + center[d];
         // Check whether the point is good
-        good = sqr(x)<=sqr(radius);
+        good = sqr(x, bnd_dimensions)<=sqr(radius);
       }
     }
 

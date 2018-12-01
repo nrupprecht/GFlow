@@ -42,31 +42,33 @@ namespace GFlowSimulation {
 
   inline void BirthRate::split(const int id, const RealType growTime) const {
     // Data structures
-    RealType X1[DIMENSIONS], X2[DIMENSIONS], Xhat[DIMENSIONS], dX[DIMENSIONS], V[DIMENSIONS];
+    RealType *Xhat = new RealType[sim_dimensions];
+    RealType *dX = new RealType[sim_dimensions];
     // Set x unit vector
-    zeroVec(Xhat); Xhat[0] = 1.;
+    zeroVec(Xhat, sim_dimensions); 
+    Xhat[0] = 1.;
 
-    // Copy X to X1, X2
-    copyVec(Base::simData->X(id), X1);
-    copyVec(Base::simData->X(id), X2);
-    copyVec(Base::simData->X(id), V);
     // Get the parent particle's radius
     RealType rf = Base::simData->Sg()[id];
     RealType im = Base::simData->Im()[id];
     int type    = Base::simData->type[id];
-    // Particles will be at X +/- dX
-    scalarMultVec(0.5*rf, Xhat, dX);
-    plusEqVec (X1, dX);
-    minusEqVec(X2, dX);
     // Add a particle and a modifer for it
+    int place = Base::simData->number;
     int id1 = Base::simData->getNextGlobalID();
-    Base::simData->addParticle(X2, V, 0.45*rf, im, type);
+    Base::simData->addParticle(Base::simData->X(id), Base::simData->V(id), 0.45*rf, im, type);
     Base::gflow->addModifier(new GrowRadius(Base::gflow, id1, 0.45*rf, rf, growTime));
+    // Particles will be at X +/- dX
+    scalarMultVec(0.5*rf, Xhat, dX, sim_dimensions);
+    plusEqVec (Base::simData->X(id), dX, sim_dimensions);
+    minusEqVec(Base::simData->X(place), dX, sim_dimensions);
     // Shrink first particle and put in place, add grow radius modifier
-    copyVec(X1, Base::simData->X(id));
     Base::simData->Sg()[id] *= 0.45;
     int id2 = Base::simData->global_id[id];
     Base::gflow->addModifier(new GrowRadius(Base::gflow, id2, 0.45*rf, rf, growTime));
+
+    // Clean up
+    delete [] Xhat;
+    delete [] dX;
   }
 
 }

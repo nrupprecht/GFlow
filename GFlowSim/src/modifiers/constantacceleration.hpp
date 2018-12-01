@@ -14,17 +14,19 @@ namespace GFlowSimulation {
   */
   class ConstantAcceleration : public Modifier {
   public:
-    //! Default constructor
+    //! Default constructor.
     ConstantAcceleration(GFlow*);
-    //! Acceleration setting constructor
-    ConstantAcceleration(GFlow*, RealType[DIMENSIONS]);
-    //! Single component setting constructor
+    //! Acceleration setting constructor.
+    ConstantAcceleration(GFlow*, RealType*);
+    //! Single component setting constructor/
     ConstantAcceleration(GFlow*, RealType, int=1);
+    //! @brief Destructor.
+    ~ConstantAcceleration();
 
     virtual void post_forces();
 
   private:
-    RealType acceleration[DIMENSIONS];
+    RealType *acceleration;
   };
 }
 #endif // __CONSTANT_ACCELERATOIN_HPP__GFLOW__

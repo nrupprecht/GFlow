@@ -146,13 +146,13 @@ namespace GFlowSimulation {
     int number_of_remakes;
 
     //! @brief Number of cells in each dimension
-    int dims[DIMENSIONS];
+    int *dims;
 
     //! @brief The widths of a cell in each dimension
-    RealType widths[DIMENSIONS];
+    RealType *widths;
 
     //! @brief The inverse widths of a cell in each dimension
-    RealType inverseW[DIMENSIONS];
+    RealType *inverseW;
 
     // --- Sectorization constants
 

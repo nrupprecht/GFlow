@@ -24,14 +24,14 @@ namespace GFlowSimulation {
     parserPtr->get("skinDepth", skinDepth);
 
     // Create a new gflow object
-    GFlow *gflow = new GFlow;
+    GFlow *gflow = new GFlow(sim_dimensions);
     gflow->setAllBCs(bcFlag);
 
     // Create an integrator
     gflow->integrator = new VelocityVerlet(gflow);
 
     // Set the bounds of the gflow object --- for now, just make it [0,1] in each dimension
-    for (int d=0; d<DIMENSIONS; ++d) {
+    for (int d=0; d<sim_dimensions; ++d) {
       gflow->bounds.min[d] = 0.;
       gflow->bounds.max[d] = 1.;
     }
@@ -49,7 +49,7 @@ namespace GFlowSimulation {
     simData->X(0, 0) = 0.3; simData->X(1, 0) = 0.7;
     simData->V(0, 0) = velocity;  simData->V(1, 0) = -velocity;
     simData->X(0, 1) = 0.5*(1.-radius); simData->X(1,1) = 0.5*(1.+radius);
-    for (int d=2; d<DIMENSIONS; ++d) {
+    for (int d=2; d<sim_dimensions; ++d) {
       simData->X(0, d) = simData->X(1, 1) = 0.5;
       simData->V(0, d) = simData->V(1, d) = 0;
     }

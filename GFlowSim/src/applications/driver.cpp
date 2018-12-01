@@ -40,10 +40,8 @@ int main(int argc, char **argv) {
   // --- Options
 
   // Type of simulation
-  bool bond_flag = false;
   bool bipartite_flag = false;
   bool debug_flag = false;
-  bool flow_flag = false;
   string load = "";
 
   // Data to gather
@@ -86,10 +84,8 @@ int main(int argc, char **argv) {
 
   // --- For getting command line arguments
   ArgParse parser(argc, argv);
-  parser.get("bondbox", bond_flag);
   parser.get("bipartite", bipartite_flag);
   parser.get("debug", debug_flag); 
-  parser.get("flow", flow_flag);
   parser.get("load", load);
   parser.get("animate", animate);
   parser.get("snapshot", snapshot);
@@ -148,10 +144,8 @@ int main(int argc, char **argv) {
   // --- This creator creates gflow simulations
   Creator *creator = nullptr;
   // Assign a specific type of creator
-  if      (bond_flag)      creator = new BondBoxCreator(&parser);
-  else if (bipartite_flag) creator = new BipartiteBoxCreator(&parser);
-  else if (debug_flag)     creator = new DebugCreator(&parser);
-  else if (flow_flag)      creator = new FlowCreator(&parser);
+  if (bipartite_flag) creator = new BipartiteBoxCreator(&parser);
+  else if (debug_flag) creator = new DebugCreator(&parser);
   else if (load!="") {
     creator = new FileParseCreator(&parser, load);
   }
@@ -197,10 +191,8 @@ int main(int argc, char **argv) {
   // --- Add data objects
   gflow->setStartRecTime(startRecTime);
   if (snapshot) gflow->addDataObject(new EndingSnapshot(gflow));
-  if (sectorData)  gflow->addDataObject(new SectorizationData(gflow));
   if (totalKE || ke) gflow->addDataObject(new KineticEnergyData(gflow, ke));
   if (keTypes)     gflow->addDataObject(new KineticEnergyTypesData(gflow, true));
-  if (secRemake)   gflow->addDataObject(new SectorizationRemakeData(gflow));
   if (bdForces)    gflow->addDataObject(new BoundaryForceData(gflow));
   if (timestep)    gflow->addDataObject(new TimeStepData(gflow));
   if (averages)    gflow->addDataObject(new AverageData(gflow));
@@ -224,7 +216,6 @@ int main(int argc, char **argv) {
   // Timestep adjustment
   if (target_steps>0) gflow->getIntegrator()->setTargetSteps(target_steps);
   if (step_delay>0) gflow->getIntegrator()->setStepDelay(step_delay);
-  if (adjustDT) gflow->addModifier(new TimestepModifier(gflow));
   if (gravity!=0) gflow->addModifier(new ConstantAcceleration(gflow, gravity));
   if (damping) gflow->addModifier(new LinearVelocityDamping(gflow));
 

@@ -4,8 +4,8 @@
 
 namespace GFlowSimulation {
 
-  Visualization::Visualization() : pos_place(0), vel_place(DIMENSIONS), sg_place(2*DIMENSIONS), type_place(2*DIMENSIONS+1), 
-    distance_place(2*DIMENSIONS+2), resolution(1.5*1024), do_wrap(true), background(RGB_Black), maxVsqr(-1), maxDistance(-1), color_option(0)
+  Visualization::Visualization() : pos_place(0), vel_place(-1), sg_place(-1), type_place(-1), 
+    distance_place(-1), resolution(1.5*1024), do_wrap(true), background(RGB_Black), maxVsqr(-1), maxDistance(-1), color_option(0)
   {
     // Default size - 10
     createColorBank(10);
@@ -56,6 +56,9 @@ namespace GFlowSimulation {
     if (dimensions==2) createVideo2d(saveName, data, dataWidth, bounds, dimensions);
     if (dimensions>2)  createVideo3d(saveName, data, dataWidth, bounds, dimensions);
 
+    // Reset places so they will be gathered again next time
+    resetPlaces();
+
     return true;
   }
 
@@ -81,6 +84,8 @@ namespace GFlowSimulation {
 
   void Visualization::createVideo2d(string dirName, const vector<vector<RealType> >& data, int dataWidth, Bounds& bounds, int dimensions) const 
   {
+    // Set the correct data places based on the number of dimensions
+    setPlaces(dimensions);
     // Find the maximum velocity (if needed)
     if (color_option==2)
       findMaxVSqr(data, dataWidth);
@@ -94,6 +99,9 @@ namespace GFlowSimulation {
   }
 
   void Visualization::createVideo3d(string dirName, const vector<vector<RealType> >& data, int dataWidth, Bounds& bounds, int dimensions) const {
+    // Set the correct data places based on the number of dimensions
+    setPlaces(dimensions);
+
     for (int i=0; i<data.size(); ++i) {
       string fileName = dirName + "/frame" + toStr(i) + ".bmp";
       createImage3d(fileName, data[i], dataWidth, bounds, dimensions);
@@ -101,6 +109,9 @@ namespace GFlowSimulation {
   }
 
   void Visualization::createImage(string fileName, const vector<RealType>& data, int dataWidth, Bounds& bounds, int dimensions) const {
+    // Set the correct data places based on the number of dimensions
+    setPlaces(dimensions);
+
     // Get some data from the bounds
     float wx = bounds.wd(0);
     float wy = bounds.wd(1);
@@ -172,7 +183,7 @@ namespace GFlowSimulation {
           }
           case 2: { // Color by velocity
             if (vel) {
-              float V = magnitudeVec(vel)/maxVsqr;
+              float V = magnitudeVec(vel, dimensions)/maxVsqr;
               color = RGBApixel(floor(255*V), 0, 200*(1-V));
             }
             break;
@@ -225,6 +236,9 @@ namespace GFlowSimulation {
   void Visualization::createImage3d(string fileName, const vector<RealType>& data, int dataWidth, Bounds& bounds, int dimensions) const {
     // @todo Implement this.
     throw false; 
+
+    // Set the correct data places based on the number of dimensions
+    setPlaces(dimensions);
   }
 
   inline void Visualization::findMaxVSqr(const vector<vector<RealType> >& dataVector, int dataWidth) const {
@@ -269,6 +283,22 @@ namespace GFlowSimulation {
 
   inline RGBApixel Visualization::getColor(int c) const {
     return colorBank[ c%colorBank.size() ];
+  }
+
+  inline void Visualization::setPlaces(const int d) const {
+    pos_place = 0;
+    vel_place = d;
+    sg_place = 2*d;
+    type_place = 2*d+1; 
+    distance_place = 2*d+2;
+  }
+
+  inline void Visualization::resetPlaces() {
+    pos_place = -1;
+    vel_place = -1;
+    sg_place = -1;
+    type_place = -1;
+    distance_place = -1;
   }
 
 }

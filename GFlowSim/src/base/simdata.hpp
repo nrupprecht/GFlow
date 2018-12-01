@@ -221,7 +221,7 @@ namespace GFlowSimulation {
     //! @brief Helps copy data when we resize arrays.
     //!
     //! Each array needs to be copied in this way, so we have this private helper function to help us
-    template<int width, typename T> inline void copyHelper(int, int, int, T*, T*);
+    template<typename T> inline void copyHelper(int, int, int, T*, T*, int);
 
     //! @brief Move a particle from one address to another.
     void moveParticle(int, int);
@@ -405,10 +405,12 @@ namespace GFlowSimulation {
   // --- Defined after simdata
 
   //! @brief A helper function for copying a particles data
-  inline void copyParticle(const SimData& simData, int id, RealType *x, RealType *v, RealType *f, RealType &sg, RealType &im, int &type) {
-    copyVec(simData.X(id), x);
-    copyVec(simData.V(id), v);
-    copyVec(simData.F(id), f);
+  inline void copyParticle(const SimData& simData, int id, RealType *x, RealType *v, RealType *f, 
+    RealType &sg, RealType &im, int &type, int sim_dimensions) 
+  {
+    copyVec(simData.X(id), x, sim_dimensions);
+    copyVec(simData.V(id), v, sim_dimensions);
+    copyVec(simData.F(id), f, sim_dimensions);
     sg = simData.Sg(id);
     im = simData.Im(id);
     type = simData.Type(id);

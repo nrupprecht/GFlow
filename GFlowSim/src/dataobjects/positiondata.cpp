@@ -14,7 +14,13 @@ namespace GFlowSimulation {
     data_types.push_back(DataType::SIGMA);
     data_types.push_back(DataType::TYPE);
     data_types.push_back(DataType::DISTANCE);
+    // Allocate
+    vdata = new RealType[sim_dimensions];
   };
+
+  PositionData::~PositionData() {
+    if (vdata) delete [] vdata;
+  }
 
   void PositionData::pre_integrate() {
     // Store initial positions
@@ -61,15 +67,15 @@ namespace GFlowSimulation {
     if (fout.fail()) return false;
 
     // Print data width, dimensions
-    fout << dataWidth << "," << DIMENSIONS << "," << positions.size() << "," << Base::simData->ntypes << "\n";
+    fout << dataWidth << "," << sim_dimensions << "," << positions.size() << "," << Base::simData->ntypes << "\n";
 
     // Print bounds - mins, then maxes
     Bounds bounds = Base::gflow->getBounds();
-    for (int i=0; i<DIMENSIONS; ++i) 
+    for (int i=0; i<sim_dimensions; ++i) 
       fout << bounds.min[i] << ",";
-    for (int i=0; i<DIMENSIONS; ++i) {
+    for (int i=0; i<sim_dimensions; ++i) {
       fout << bounds.max[i];
-      if (i!=DIMENSIONS-1) fout << ",";
+      if (i!=sim_dimensions-1) fout << ",";
     }
     fout << "\n";
 
@@ -108,9 +114,8 @@ namespace GFlowSimulation {
         break;
       }
       case DataType::DISTANCE: {
-        RealType displacement[DIMENSIONS];
-        gflow->getDisplacement(Base::simData->X(id), &initial_data.at(id*sim_dimensions), displacement);
-        data.push_back( magnitudeVec(displacement) );
+        gflow->getDisplacement(Base::simData->X(id), &initial_data.at(id*sim_dimensions), vdata);
+        data.push_back( magnitudeVec(vdata, sim_dimensions) );
         break;
       }
     }

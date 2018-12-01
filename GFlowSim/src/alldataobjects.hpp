@@ -5,10 +5,8 @@
 
 #include "dataobjects/positiondata.hpp"
 #include "dataobjects/ending_snapshot.hpp"
-#include "dataobjects/sectorizationdata.hpp"
 #include "dataobjects/kineticenergydata.hpp"
 #include "dataobjects/kineticenergytypesdata.hpp"
-#include "dataobjects/sectorizationremakedata.hpp"
 #include "dataobjects/boundaryforcedata.hpp"
 #include "dataobjects/timestepdata.hpp"
 #include "dataobjects/averagedata.hpp"

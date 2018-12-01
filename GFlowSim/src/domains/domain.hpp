@@ -15,16 +15,19 @@ namespace GFlowSimulation {
   */
   class Domain : public DomainBase {
   public:
-    //! Default constructor - pass in the Gflow object
+    //! @brief Default constructor - pass in the Gflow object
     Domain(GFlow *);
 
-    //! Create cells, assign their neighbors, etc.
+    //! @brief Destuctor.
+    ~Domain();
+
+    //! @brief Create cells, assign their neighbors, etc.
     virtual void initialize() override;
 
-    // Pre-integrate calls sectorize
+    //! @brief Pre-integrate calls sectorize
     virtual void pre_integrate() override;
 
-    //! Exchange particles between processors
+    //! @brief Exchange particles between processors
     virtual void exchange_particles() override;
 
     // --- Locator functions
@@ -75,7 +78,7 @@ namespace GFlowSimulation {
     inline void tuple_to_linear(int&, const int*);
 
     //! @brief Find the linear indices of the cells adjacent to a given cell.
-    inline void find_adjacent_cells(int[DIMENSIONS], bool, vector<Cell*>&);
+    inline void find_adjacent_cells(int*, bool, vector<Cell*>&);
 
     //! @brief Based on the cutoff distance, reate new cells, assign them their types, etc.
     inline void create_cells();
@@ -83,7 +86,7 @@ namespace GFlowSimulation {
     //! @brief Fill the cells with particle ids.
     inline void fill_cells();
 
-    inline bool correct_index(int[DIMENSIONS], bool);
+    inline bool correct_index(int*, bool);
 
     // --- Data
 
@@ -92,29 +95,29 @@ namespace GFlowSimulation {
 
     // --- Parallel decomposition data
 
-    //! The adjacent domains in the positive dimension. For none, we have -1. Otherwise, we have the processor id.
-    int domains_up[DIMENSIONS];
-    //! The adjacent domains in the negative dimension. For none, we have -1. Otherwise, we have the processor id.
-    int domains_down[DIMENSIONS];
+    //! @brief The adjacent domains in the positive dimension. For none, we have -1. Otherwise, we have the processor id.
+    int *domains_up;
+    //! @brief The adjacent domains in the negative dimension. For none, we have -1. Otherwise, we have the processor id.
+    int *domains_down;
 
-    //! How many domains exist along each dimension (the decomposition into domains is rectangular).
-    int domain_dims[DIMENSIONS];
-    //! The (DIMENSION)-tuple domain index of this domain
-    int domain_index[DIMENSIONS];
+    //! @brief How many domains exist along each dimension (the decomposition into domains is rectangular).
+    int *domain_dims;
+    //! @brief The (DIMENSION)-tuple domain index of this domain
+    int *domain_index;
 
-    //! The bounds of the domain, including ghost and harmonic cells
+    //! @brief The bounds of the domain, including ghost and harmonic cells
     Bounds extended_domain_bounds;
 
-    //! If we have harmonic cells on the positive boundary.
-    bool halo_up[DIMENSIONS];
-    //! If we have harmonic cells on the negative boundary.
-    bool halo_down[DIMENSIONS];
-    //! If we have ghost cells on the positive boundary
-    bool ghost_up[DIMENSIONS];
-    //! If we have ghost cells on the negative boundary
-    bool ghost_down[DIMENSIONS];
+    //! @brief If we have harmonic cells on the positive boundary.
+    bool *halo_up;
+    //! @brief If we have harmonic cells on the negative boundary.
+    bool *halo_down;
+    //! @brief If we have ghost cells on the positive boundary
+    bool *ghost_up;
+    //! @brief If we have ghost cells on the negative boundary
+    bool *ghost_down;
 
-    //! Whether to use halo cells to reflect the periodic boundary conditions
+    //! @brief Whether to use halo cells to reflect the periodic boundary conditions
     bool use_halo_cells;
 
     // --- MPI related varibles

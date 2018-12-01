@@ -22,7 +22,7 @@ namespace GFlowSimulation {
     #else 
     int i=0;
     simd_float _d_inv_v_char = simd_set1(damping*sqr(inv_v_char));
-    for (; i<number*DIMENSIONS-simd_data_size; i+=simd_data_size) {
+    for (; i<number*sim_dimensions-simd_data_size; i+=simd_data_size) {
       simd_float _f = simd_load(&f[i]);
       simd_float _v = simd_load(&v[i]);
       _f -= _d_inv_v_char * _v * _v;

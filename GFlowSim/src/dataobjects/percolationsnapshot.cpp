@@ -31,7 +31,7 @@ namespace GFlowSimulation {
     for (int i=0; i<clusters.size(); ++i) {
       int clus = clusters[i];
       // Push the position
-      for (int d=0; d<DIMENSIONS; ++d)
+      for (int d=0; d<sim_dimensions; ++d)
         constituents[clus].push_back(Base::simData->X(i,d));
       // Push the radius
       constituents[clus].push_back(Base::simData->Sg()[i]);
@@ -44,17 +44,15 @@ namespace GFlowSimulation {
     for (int i=0; i<n_clusters; ++i) {
       record[i] = new RealType[ constituents[i].size() ];
       copyVec(&constituents[i][0], record.at(i), constituents[i].size());
-      elements.push_back(constituents[i].size()/(DIMENSIONS+1));
+      elements.push_back(constituents[i].size()/(sim_dimensions+1));
     }
 
     // Clean up
     delete [] constituents;
   }
-  
-
 
   bool PercolationSnapshot::writeToFile(string fileName, bool useName) {
-    if (!PrintingUtility::writeVectorToDirectory(record, elements, DIMENSIONS + 1, fileName, dataName)) return false;
+    if (!writeVectorToDirectory(record, elements, sim_dimensions+1, fileName, dataName)) return false;
     return true;
   }
 

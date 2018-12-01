@@ -6,9 +6,8 @@
 
 namespace GFlowSimulation {
 
-  // Get the correct (minimal) displacement vector pointing from y to x
-  inline void getDisplacement(const RealType *x, const RealType *y, RealType *dis, const Bounds &B, const BCFlag *boundaryConditions) {
-    for (int d=0; d<DIMENSIONS; ++d) {
+  inline void getDisplacement(const RealType *x, const RealType *y, RealType *dis, const Bounds &B, const BCFlag *boundaryConditions, int dimensions) {
+    for (int d=0; d<dimensions; ++d) {
       dis[d] = x[d] - y[d];
       if (boundaryConditions[d]==BCFlag::WRAP) {
         RealType dx = B.max[d] - B.min[d] - fabs(dis[d]);
@@ -17,27 +16,9 @@ namespace GFlowSimulation {
     }
   }
 
-  template<int D=DIMENSIONS> inline RealType getDistanceSqrNoWrap(const RealType *x, const RealType *y) {
-    RealType distance = 0;
-    for (int d=0; d<D; ++d) distance += (x[d] - y[d]);
-    return distance;
-  }
-
-  template<> inline RealType getDistanceSqrNoWrap<1>(const RealType *x, const RealType *y) {
-    return x[0]-y[0];
-  }
-
-  template<> inline RealType getDistanceSqrNoWrap<2>(const RealType *x, const RealType *y) {
-    return (x[0]-y[0])*(x[0]-y[0]) + (x[1]-y[1])*(x[1]-y[1]);
-  }
-
-  template<> inline RealType getDistanceSqrNoWrap<3>(const RealType *x, const RealType *y) {
-    return (x[0]-y[0])*(x[0]-y[0]) + (x[1]-y[1])*(x[1]-y[1]) + (x[2]-y[2])*(x[2]-y[2]);
-  }
-
-  template<typename T> T inline dotVec(const T *x, const T *y) {
+  template<typename T> T inline dotVec(const T *x, const T *y, int dimensions) {
     T dt(0);
-    for (int d=0; d<DIMENSIONS; ++d) dt += x[d]*y[d];
+    for (int d=0; d<dimensions; ++d) dt += x[d]*y[d];
     return dt;
   }
 
@@ -46,95 +27,98 @@ namespace GFlowSimulation {
     return x*x;
   }
 
-  // Vector squaring function
-  inline RealType sqr(RealType *x) {
-    return dotVec(x,x);
+  inline RealType sqr(RealType *x, int dimensions) {
+    return dotVec(x, x, dimensions);
   }
 
-  inline int sqr(int *x) {
-    return dotVec(x,x);
+  inline int sqr(int *x, int dimensions) {
+    return dotVec(x, x, dimensions);
   }
 
-  template<typename T> inline void zeroVec(T *x) {
-    for (int d=0; d<DIMENSIONS; ++d) x[d] = T(0);
+  inline RealType getDistanceSqrNoWrap(const RealType *x, const RealType *y, int dimensions) {
+    RealType distance = 0;
+    for (int d=0; d<dimensions; ++d) distance += sqr(x[d] - y[d]);
+    return distance;
   }
 
-  template<typename T> inline void setVec(T *x, const T val) {
-    std::fill(x, x+DIMENSIONS, val);
+  template<typename T> inline void zeroVec(T *x, int dimensions) {
+    for (int d=0; d<dimensions; ++d) x[d] = T(0);
   }
 
-  template<typename T> inline void addVec(const T *x, const T *y, T *z) {
-    for (int d=0; d<DIMENSIONS; ++d) z[d] = x[d]+y[d];
+  template<typename T> inline void setVec(T *x, const T val, int dimensions) {
+    std::fill(x, x+dimensions, val);
   }
 
-  template<typename T> inline void subtractVec(const T *x, const T *y, T *z) {
-    for (int d=0; d<DIMENSIONS; ++d) z[d] = x[d]-y[d];
+  template<typename T> inline void addVec(const T *x, const T *y, T *z, int dimensions) {
+    for (int d=0; d<dimensions; ++d) z[d] = x[d]+y[d];
+  }
+
+  template<typename T> inline void subtractVec(const T *x, const T *y, T *z, int dimensions) {
+    for (int d=0; d<dimensions; ++d) z[d] = x[d]-y[d];
   }
 
   // Times
-  template<typename T> inline void scalarMultVec(const RealType scalar, const T *x, T *z) {
-    for (int d=0; d<DIMENSIONS; ++d) z[d] = scalar*x[d];
+  template<typename T> inline void scalarMultVec(const RealType scalar, const T *x, T *z, int dimensions) {
+    for (int d=0; d<dimensions; ++d) z[d] = scalar*x[d];
   }
 
   // Times equals
-  template<typename T> inline void scalarMultVec(const RealType scalar, T *z) {
-    for (int d=0; d<DIMENSIONS; ++d) z[d] *= scalar;
+  template<typename T> inline void scalarMultVec(const RealType scalar, T *z, int dimensions) {
+    for (int d=0; d<dimensions; ++d) z[d] *= scalar;
   }
 
-  template<typename T> inline void plusEqVec(T *z, const T *x) {
-    for (int d=0; d<DIMENSIONS; ++d) z[d] += x[d];
+  template<typename T> inline void plusEqVec(T *z, const T *x, int dimensions) {
+    for (int d=0; d<dimensions; ++d) z[d] += x[d];
   }
 
-  template<typename T> inline void plusEqVecScaled(T *z, const T *x, const T s) {
-    for (int d=0; d<DIMENSIONS; ++d) z[d] += s*x[d];
+  template<typename T> inline void plusEqVecScaled(T *z, const T *x, const T s, int dimensions) {
+    for (int d=0; d<dimensions; ++d) z[d] += s*x[d];
   }
 
-  template<typename T> inline void minusEqVec(T *z, const T *x) {
-    for (int d=0; d<DIMENSIONS; ++d) z[d] -= x[d];
+  template<typename T> inline void minusEqVec(T *z, const T *x, int dimensions) {
+    for (int d=0; d<dimensions; ++d) z[d] -= x[d];
   }
 
-  template<typename T> inline void copyVec(const T *x, T *target) {
-    std::copy(x, x+DIMENSIONS, target);
+  template<typename T> inline void copyVec(const T *x, T *target, int dimensions) {
+    std::copy(x, x+dimensions, target);
   }
 
-  template<typename T> inline void copyVec(const T *x, T *target, const unsigned int size) {
-    for (int d=0; d<size; ++d) target[d] = x[d];
+  template<typename T> inline T magnitudeVec(T *vec, int dimensions) {
+    return sqrt(sqr(vec, dimensions));
   }
 
-  template<typename T> inline T magnitudeVec(T *vec) {
-    return sqrt(sqr(vec));
-  }
-
-  template<typename T> inline void normalVec(const T *x, T *norm) {
+  template<typename T> inline void normalVec(const T *x, T *norm, int dimensions) {
     T mag = 0;
-    for (int d=0; d<DIMENSIONS; ++d) mag += sqr(x[d]);
+    for (int d=0; d<dimensions; ++d) mag += sqr(x[d]);
     T invMag = mag>0 ? 1./sqrt(mag) : 0;
     scalarMultVec(invMag, x, norm);
   }
 
-  template<typename T> inline void normalizeVec(T *norm) {
+  template<typename T> inline void normalizeVec(T *norm, int dimensions) {
     T mag = 0;
-    for (int d=0; d<DIMENSIONS; ++d) mag += sqr(norm[d]);
+    for (int d=0; d<dimensions; ++d) mag += sqr(norm[d]);
     T invMag = mag>0 ? 1./sqrt(mag) : 0;
-    scalarMultVec(invMag, norm);
+    scalarMultVec(invMag, norm, dimensions);
   }
 
-  inline void randomNormalVec(RealType *x) {
+  inline void randomNormalVec(RealType *x, int dimensions) {
     // Random normal components
     // Note: Loop cannot be unrolled
-    for (int d=0; d<DIMENSIONS; ++d)
+    for (int d=0; d<dimensions; ++d)
       x[d] = randNormal();
     // Normalize
-    normalizeVec(x);
+    normalizeVec(x, dimensions);
   }
 
-  inline string toStrVec(RealType *vec) {
-    return ("{"+PrintingUtility::toStrVec(vec)+"}");
+  /*
+  inline string toStrVec(RealType *vec, int length) {
+    return ("{"+toStrVec(vec, length)+"}");
   }
 
-  inline string toStrVec(int *vec) {
-    return ("{"+PrintingUtility::toStrVec(vec)+"}");
+  inline string toStrVec(int *vec, int length) {
+    return ("{"+toStrVec(vec, length)+"}");
   }
+  */
 
 }
 #endif // __VECTOR_MATH_HPP__GFLOW__

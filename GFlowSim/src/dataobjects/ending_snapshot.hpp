@@ -10,6 +10,9 @@ namespace GFlowSimulation {
     //! @brief Constructor
     EndingSnapshot(GFlow*);
 
+    //! @brief Destructor.
+    ~EndingSnapshot();
+
     //! @brief Store the initial positions of the particles.
     virtual void pre_integrate() override;
 
@@ -37,6 +40,9 @@ namespace GFlowSimulation {
 
     //! @brief The amount of data we collect per particle.
     int dataWidth;
+
+    //! @brief A holder for vector data
+    RealType *vdata;
 
     vector<DataType> data_types;
   };

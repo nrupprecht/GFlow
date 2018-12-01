@@ -14,15 +14,25 @@ namespace GFlowSimulation {
     domain_bounds = gflow->getBounds();
     extended_domain_bounds = Bounds(sim_dimensions);
 
+    domains_up = new int[sim_dimensions];
+    domains_down = new int[sim_dimensions];
+    domain_dims = new int[sim_dimensions];
+    domain_index = new int[sim_dimensions];
+
+    halo_up = new bool[sim_dimensions];
+    halo_down = new bool[sim_dimensions];
+    ghost_up = new bool[sim_dimensions];
+    ghost_down = new bool[sim_dimensions];
+
     // Set some default values
-    setVec(domains_up, -1);
-    setVec(domains_down, -1);
-    setVec(domain_dims, 0);
-    setVec(domain_index, 0);
-    setVec(halo_up, false);
-    setVec(halo_down, false);
-    setVec(ghost_up, false);
-    setVec(ghost_down, false);
+    setVec(domains_up, -1, sim_dimensions);
+    setVec(domains_down, -1, sim_dimensions);
+    setVec(domain_dims, 0, sim_dimensions);
+    setVec(domain_index, 0, sim_dimensions);
+    setVec(halo_up, false, sim_dimensions);
+    setVec(halo_down, false, sim_dimensions);
+    setVec(ghost_up, false, sim_dimensions);
+    setVec(ghost_down, false, sim_dimensions);
 
     #if USE_MPI==1
     #if _CLANG_ == 1
@@ -38,6 +48,17 @@ namespace GFlowSimulation {
     parallel_init = false;
     #endif
   };
+
+  Domain::~Domain() {
+    delete [] domains_up;
+    delete [] domains_down;
+    delete [] domain_dims;
+    delete [] domain_index;
+    delete [] halo_up;
+    delete [] halo_down;
+    delete [] ghost_up;
+    delete [] ghost_down;
+  }
 
   void Domain::initialize() {
     // First call Base's initialize function
@@ -97,36 +118,41 @@ namespace GFlowSimulation {
 
     // Find where particle [id] is
     RealType *X = Base::simData->X(id);
-    RealType displacement[DIMENSIONS];
+    RealType *displacement = new RealType[sim_dimensions];
     int linear = getCellIndex(X), lin;
-    int index[DIMENSIONS], d_index[DIMENSIONS], other_index[DIMENSIONS];
+    int *index = new int[sim_dimensions], *d_index = new int[sim_dimensions], *other_index = new int[sim_dimensions];
     linear_to_tuple(linear, index);
     const BCFlag *bcs = Base::gflow->getBCs();
 
     bool is_special = ( cells[linear].cellType==CellType::Halo || cells[linear].cellType==CellType::Ghost );
     // --- DO THIS FOR NOW
     // Go through all adjacent cells
-    for (int c=0; c<pow(3, DIMENSIONS); ++c) {
+    for (int c=0; c<pow(3, sim_dimensions); ++c) {
       // Convert to a base 3 number (-1, 0, 1)
       int c0=c;
-      for (uint d=0; d<DIMENSIONS; ++d) {
+      for (uint d=0; d<sim_dimensions; ++d) {
         d_index[d] = (c0%3) - 1;
         c0 /= 3;
       }
       // Add the index displacement to the index to get a (potentially) adjacent index
-      addVec(index, d_index, other_index);
+      addVec(index, d_index, other_index, sim_dimensions);
       // Check if this cell really should be adjacent and if its a real cell
       if (correct_index(other_index, is_special)) {
         tuple_to_linear(lin, other_index);
         for (const auto n_id : cells[lin].id_list) {
           if (id==n_id) continue;
-          getDisplacement(Base::simData->X(id), Base::simData->X(n_id), displacement, bounds, bcs);
+          getDisplacement(Base::simData->X(id), Base::simData->X(n_id), displacement, bounds, bcs, sim_dimensions);
           // Check that the particle is close enough
-          if (sqr(displacement)<sqr(radius))
+          if (sqr(displacement, sim_dimensions)<sqr(radius))
             neighbors.push_back(n_id);
         }
       }
     }
+    // Clean up
+    delete [] displacement;
+    delete [] index;
+    delete [] d_index;
+    delete [] other_index;
   }
 
   void Domain::setSkinDepth(RealType s) {
@@ -151,11 +177,26 @@ namespace GFlowSimulation {
   }
 
   int Domain::getCellIndex(RealType *x) {
+
+    int linear = 0;
+    // Product lambda
+    auto product = [&] (int n) -> int {
+      int total = 1;
+      for (int i=n; i<sim_dimensions; ++i) total *= dims[i];
+      return total;
+    };
+    // Calculate
+    for (int d=0; d<sim_dimensions; ++d) {
+      RealType dth = static_cast<int>((x[d] - domain_bounds.min[d])*inverseW[d]);
+      if (dth>=dims[d]) dth = dims[d]-1; 
+      else if (dth<0)   dth = 0;
+      linear += dth*product(d+1);
+    }
+    return linear;
+
+    /*
     int index[DIMENSIONS], linear;
-    #if _INTEL_ == 1
-    #pragma unroll(DIMENSIONS)
-    #endif 
-    for (int d=0; d<DIMENSIONS; ++d) {
+    for (int d=0; d<sim_dimensions; ++d) {
       index[d] = static_cast<int>((x[d] - extended_domain_bounds.min[d])*inverseW[d]);
       // Even when wrapping, rounding errors (I assume) can cause index to be too large.
       // When not wrapping, particles could be outside the sectorization grid
@@ -167,6 +208,7 @@ namespace GFlowSimulation {
     // Add particle to the appropriate sector
     tuple_to_linear(linear, index);
     return linear;
+    */
   }
 
   #if USE_MPI==1
@@ -194,7 +236,7 @@ namespace GFlowSimulation {
 
     // --- Calculate which domain we are
     int linear = rank;
-    for (int d=0; d<DIMENSIONS; ++d) {
+    for (int d=0; d<sim_dimensions; ++d) {
       domain_index[d] = linear % domain_dims[d];
       linear /= domain_dims[d];
     }
@@ -204,7 +246,7 @@ namespace GFlowSimulation {
     setVec(domains_down, -1); // By default
     // How far (in linear index) an adjacent sector is
     int ds = 1;
-    for (int d=0; d<DIMENSIONS; ++d) {
+    for (int d=0; d<sim_dimensions; ++d) {
       if (domain_index[d]+1<domain_dims[d])
         domains_up[d] = rank + ds;
       if (-1<domain_index[d]-1)
@@ -215,7 +257,7 @@ namespace GFlowSimulation {
 
     //**** DEBUGGING MESSAGES
     cout << "Proc " << rank << ", index: " << toStrVec(domain_index) << endl;
-    for (int d=0; d<DIMENSIONS; ++d) {
+    for (int d=0; d<sim_dimensions; ++d) {
       cout << "Proc " << rank << " reporting: d=" << d << ", neighbor: " << domains_up[d] << ", " << domains_down[d] << endl;
     }
     //****
@@ -240,25 +282,25 @@ namespace GFlowSimulation {
     const BCFlag *bcs = gflow->getBCs();
 
     // A simple displacement function that we might get to use
-    auto Displacement_Halo = [] (const RealType x1[DIMENSIONS], const RealType x2[DIMENSIONS], 
-      RealType d[DIMENSIONS], const Bounds &bounds, const BCFlag *bcs) 
+    auto Displacement_Halo = [&] (const RealType *x1, const RealType *x2, 
+      RealType *d, const Bounds &bounds, const BCFlag *bcs) 
     {
-      for (int i=0; i<DIMENSIONS; ++i)
+      for (int i=0; i<sim_dimensions; ++i)
         d[i] = x1[i] - x2[i];
     };
 
     // Decide which if we can use a simple displacement function
     bool no_wrap = true;
-    for (int d=0; d<DIMENSIONS; ++d) 
+    for (int d=0; d<sim_dimensions; ++d) 
       if (bcs[d]==BCFlag::WRAP) no_wrap = false;
     // Choose displacement function
-    void (*Displacement) (const RealType*, const RealType*, RealType*, const Bounds&, const BCFlag*); 
-    Displacement = (use_halo_cells || no_wrap) ? Displacement_Halo : getDisplacement;
+    //void (*Displacement) (const RealType*, const RealType*, RealType*, const Bounds&, const BCFlag*); 
+    //Displacement = (use_halo_cells || no_wrap) ? Displacement_Halo : getDisplacement;
 
     RealType *sg = Base::simData->Sg();
 
     // --- Calculate verlet lists
-    RealType displacement[DIMENSIONS];
+    RealType *displacement = new RealType[sim_dimensions];
     for (const auto &cell1 : cells) {
       // Loop through every particle in the cell
       for (auto i1 = cell1.id_list.cbegin(); i1!=cell1.id_list.cend(); ++i1) {
@@ -270,9 +312,9 @@ namespace GFlowSimulation {
           int id2 = *i2;
           // Get the displacement - we never need to wrap, since its the same cell (and particle positions don't wrap 
           // until remake_verlet is called again).
-          subtractVec(Base::simData->X(id1), Base::simData->X(id2), displacement);
+          subtractVec(Base::simData->X(id1), Base::simData->X(id2), displacement, sim_dimensions);
           // Check the displacement
-          if (sqr(displacement) < sqr(sigma + sg[id2] + skin_depth))
+          if (sqr(displacement, sim_dimensions) < sqr(sigma + sg[id2] + skin_depth))
             pair_interaction(id1, id2);
         }
 
@@ -281,23 +323,24 @@ namespace GFlowSimulation {
           // Loop through the particles in the adjacent cells
           for (auto id2 : cell_ptr->id_list) {
             // Get the displacement
-            getDisplacement(Base::simData->X(id1), Base::simData->X(id2), displacement, bounds, bcs); // Faster to just do this
+            getDisplacement(Base::simData->X(id1), Base::simData->X(id2), displacement, bounds, bcs, sim_dimensions); // Faster to just do this
             // Check the displacement
-            if (sqr(displacement) < sqr(sigma + sg[id2] + skin_depth))
+            if (sqr(displacement, sim_dimensions) < sqr(sigma + sg[id2] + skin_depth))
               pair_interaction(id1, id2);
           }
         }
       }
     }
-
     // Close all
     Base::forceMaster->close();
+    // Clean up 
+    delete [] displacement;
   }
 
   // Turns a linear cell index into a (DIMENSIONS)-dimensional index
   inline void Domain::linear_to_tuple(int linear, int *tuple) {
     // Same as the get address function in
-    getAddressCM(linear, dims, tuple); // We need to use the column major form
+    getAddressCM(linear, dims, tuple, sim_dimensions); // We need to use the column major form
   }
 
   // Turns a (DIMENSIONS)-dimensional index into a linear cell index
@@ -306,36 +349,36 @@ namespace GFlowSimulation {
     // Product lambda
     auto product = [&] (int n) -> int {
       int total = 1;
-      for (int i=n; i<DIMENSIONS; ++i) total *= dims[i];
+      for (int i=n; i<sim_dimensions; ++i) total *= dims[i];
       return total;
     };
 
     linear = 0;
-    for (int d=0; d<DIMENSIONS; ++d)
+    for (int d=0; d<sim_dimensions; ++d)
       linear += tuple[d]*product(d+1);
   }
 
-  inline void Domain::find_adjacent_cells(int index[DIMENSIONS], bool is_special, vector<Cell*>& neighbors) {
+  inline void Domain::find_adjacent_cells(int *index, bool is_special, vector<Cell*>& neighbors) {
     // Helper arrays
-    int d_index[DIMENSIONS], other_index[DIMENSIONS], linear;
+    int *d_index = new int[sim_dimensions], *other_index = new int[sim_dimensions], linear;
 
     // --- Look in the first half (rounded down) sectors only
-    for (uint c=0; c<floor(pow(3,DIMENSIONS)/2); ++c) {
+    for (uint c=0; c<floor(pow(3,sim_dimensions)/2); ++c) {
       // Convert to a base 3 number (-1, 0, 1)
       int c0=c;
-      for (uint d=0; d<DIMENSIONS; ++d) {
+      for (uint d=0; d<sim_dimensions; ++d) {
         d_index[d] = (c0%3) - 1;
         c0 /= 3;
       }
       // Look at that neighboring sector
-      addVec(index, d_index, other_index);
+      addVec(index, d_index, other_index, sim_dimensions);
 
       // --- Check that the other cell actually exists
 
       bool good = true;
       if (use_halo_cells) {
         // We are using harmonic cells for wrapping, so if an index is negative or to large, we are done
-        for (int d=0; d<DIMENSIONS && good; ++d) {
+        for (int d=0; d<sim_dimensions && good; ++d) {
           if (other_index[d]<0) {
             good = false;
             break;
@@ -348,7 +391,7 @@ namespace GFlowSimulation {
       }
       else { // There are no halo cells, and neighbors could be cells that we have to wrap to get to 
         const BCFlag *bcs = gflow->getBCs();
-        for (int d=0; d<DIMENSIONS && good; ++d) {
+        for (int d=0; d<sim_dimensions && good; ++d) {
           // Ghost cells will not have wrapping neighbors, hence the check for is_special
           if (other_index[d]<0 && !is_special) {
             if (bcs[d]==BCFlag::WRAP && dims[d]>1) other_index[d] += dims[d];
@@ -377,14 +420,14 @@ namespace GFlowSimulation {
       // Include the cell
       neighbors.push_back(&cells[linear]);
     }
+    // Clean up
+    delete [] d_index;
+    delete [] other_index;
   }
 
   inline void Domain::create_cells() {
     // Correct estimate so sectors are no smaller than our estimation
-    #if _INTEL_ == 1
-    #pragma unroll(DIMENSIONS)
-    #endif 
-    for (int d=0; d<DIMENSIONS; ++d) {
+    for (int d=0; d<sim_dimensions; ++d) {
       widths[d] = cutoff;
       dims[d] = static_cast<int>(max(RealType(1.), bounds.wd(d)/widths[d]));
       // To solve (temporarily?) the "two sector" problem - see comments in "makeVerletLists"
@@ -400,7 +443,7 @@ namespace GFlowSimulation {
     // --- Assign neighbor cells to every cell    
     const BCFlag *bcs = Base::gflow->getBCs(); // Get the boundary condition flags
     // Figure out what types of "extra" cells we'll need (other than normal central cells)
-    for (int d=0; d<DIMENSIONS; ++d) {
+    for (int d=0; d<sim_dimensions; ++d) {
       // Upper cells
       if (domains_up[d]==-1) {
         if (bcs[d]==BCFlag::WRAP) {
@@ -448,7 +491,7 @@ namespace GFlowSimulation {
 
     // Correct dims to reflect the new sectors, adjust extended_bounds
     extended_domain_bounds = domain_bounds;
-    for (int d=0; d<DIMENSIONS; ++d) {
+    for (int d=0; d<sim_dimensions; ++d) {
       if (halo_down[d] || ghost_down[d]) {
         ++dims[d];
         extended_domain_bounds.min[d] -= widths[d];
@@ -464,12 +507,12 @@ namespace GFlowSimulation {
     cells = vector<Cell>(size, Cell());
 
     // Assign cell types
-    int index[DIMENSIONS];
+    int *index = new int[sim_dimensions];
     for (int ind=0; ind<size; ++ind) {
       linear_to_tuple(ind, index);
       // Default is that this is a central cell
       cells[ind].cellType = CellType::Central;
-      for (int d=0; d<DIMENSIONS; ++d) {
+      for (int d=0; d<sim_dimensions; ++d) {
         // Check if this cell is harmonic or a ghost
         if (index[d]==0) {
           if (!ghost_down[d] && halo_down[d])
@@ -486,7 +529,7 @@ namespace GFlowSimulation {
       }
       // Do this after this cell's type has been assigned
       if (cells[ind].cellType==CellType::Central) 
-        for (int d=0; d<DIMENSIONS; ++d) {
+        for (int d=0; d<sim_dimensions; ++d) {
           // Check if this cell is at the edge of the regular domain and has harmonic image cells
           if ((index[d]==1 && halo_down[d]) || (index[d]==dims[d]-2 && halo_up[d])) 
             cells[ind].is_boundary_cell = true;
@@ -501,6 +544,8 @@ namespace GFlowSimulation {
       // Find cell's neighbors
       find_adjacent_cells(index, is_special, cells[ind].adjacent_cells);
     }
+    // Clean up 
+    delete [] index;
   }
 
   inline void Domain::fill_cells() {
@@ -516,44 +561,14 @@ namespace GFlowSimulation {
       // Calculate the (DIMENSION)-tuple cell coordinate
       int linear = getCellIndex(Base::simData->X(n));
       cells[linear].add(n);
-
-      /*
-      // Add cell to halo cells if neccessary
-      if (cells[linear].is_boundary_cell) {
-        // In what dimensions do we need to make halo particles
-        vector<int> changes;
-        vector<RealType> displacement;
-        for (int d=0; d<DIMENSIONS; ++d) {
-          if (halo_down[d]) { // If halo_down[d], then halo_up[d]
-            // Upwards displacent
-            if (index[d]==1) {
-              displacement.push_back(domain_bounds.wd(d));
-              changes.push_back(d);
-            }
-            else if (index[d]==dims[d]-2) {
-              displacement.push_back(-domain_bounds.wd(d));
-              changes.push_back(d);
-            }
-          }
-        }
-        // Create halo particles
-        for (int i=0; i<pow(2, changes.size())-1; ++i) {
-          RealType Xd[DIMENSIONS];
-          copyVec(Base::simData->x[n], Xd);
-
-        }
-        
-        // Done making halo particles
-      }
-      */
     }
   }
 
-  inline bool Domain::correct_index(int index[DIMENSIONS], bool is_special) {
+  inline bool Domain::correct_index(int *index, bool is_special) {
     bool good = true;
     if (use_halo_cells) {
       // We are using harmonic cells for wrapping, so if an index is negative or to large, we are done
-      for (int d=0; d<DIMENSIONS && good; ++d) {
+      for (int d=0; d<sim_dimensions && good; ++d) {
         if (index[d]<0) {
           good = false;
           break;
@@ -566,7 +581,7 @@ namespace GFlowSimulation {
     }
     else { // There are no halo cells, and neighbors could be cells that we have to wrap to get to 
       const BCFlag *bcs = gflow->getBCs();
-      for (int d=0; d<DIMENSIONS && good; ++d) {
+      for (int d=0; d<sim_dimensions && good; ++d) {
         // Ghost cells will not have wrapping neighbors, hence the check for is_special
         if (index[d]<0 && !is_special) {
           if (bcs[d]==BCFlag::WRAP && dims[d]>1) index[d] += dims[d];

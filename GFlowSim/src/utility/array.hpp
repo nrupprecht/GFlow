@@ -35,71 +35,92 @@ namespace GFlowSimulation {
   *
   *  Store data in a row major form.
   */
-  template<class T, int D=DIMENSIONS> class Array {
+  template<typename T> class Array {
   public:
-    //! Default constructor
-    Array() : data(nullptr) {
-      dims = new int[D];
-      for (int d=0; d<D; ++d) dims[d] = 0;
+    //! Dimension setting constructor.
+    Array(int d) : data(nullptr), dimensions(d) {
+      if (d<=0) throw BadDimension();
+      dims = new int[dimensions];
+      offset = new int[dimensions];
+      for (int d=0; d<dimensions; ++d) {
+        dims[d]   = 0;
+        offset[d] = 0;
+      }
     }
 
-    //! Constructor
-    Array(int *sizes) {
-      dims = new int[D]; 
-      for (int i=0; i<D; ++i) dims[i] = sizes[i];
+    //! Size and dimension setting constructor.
+    Array(int *sizes, int d) : dimensions(d) {
+      if (d<=0) throw BadDimension();
+      dims = new int[dimensions];
+      offset = new int[dimensions]; 
+      for (int i=0; i<dimensions; ++i) dims[i] = sizes[i];
       int sz = _product(0);
       data = new T[sz];
-      for (int i=0; i<sz; ++i) data[i] = T();
+      for (int i=0; i<sz; ++i) {
+        data[i]   = T();
+        offset[i] = _product(i);
+      }
     }
-
-    //! Destructor
+  
+    //! Destructor.
     ~Array() {
       if (dims) delete [] dims;
       if (data) delete [] data;
     }
 
-    //! @brief Resize the array
-    //! Resize the array to have the shape specified by the parameter sizes
-    void resize(int sizes[D]) {
+    //! @brief Resize the array.
+    //!
+    //! Resize the array to have the shape specified by the parameter sizes.
+    void resize(int *sizes) {
       uint total = _product(0);
-      for (int i=0; i<D; ++i) dims[i] = sizes[i];
+      for (int i=0; i<dimensions; ++i) dims[i] = sizes[i];
       uint newTotal = _product(0);
       // Reallocate if we don't have the correct amount of space
       if (total!=newTotal) {
         if (data) delete [] data;
       	data = new T[newTotal];
-      	for (int i=0; i<newTotal; ++i) data[i] = T();
+      	for (int i=0; i<newTotal; ++i) {
+          data[i] = T();
+          offset[i] = _product(i);
+        }
       }
     }
 
-    //! Get an element by reference given a D-tuple index
+    //! @brief Get an element by reference given a D-tuple index.
     T& at(int *index) {
       int II = _get_index(index);
       return data[II];
     }
 
-    //! Get an element by const reference given a D-tuple index
+    //! @brief Get an element by const reference given a D-tuple index.
     const T& at(int *index) const {
       int II = _get_index(index);
       return data[II];
     }
 
+    //! @brief Get an element assuming that this is a 2D array.
+    T& at2(int i, int j) {
+      i*offset[0] + j*offset[1];
+    }
+
     //! @brief Get an element by direct access.
-    //! Get an element by reference given a linear index (direct access)
+    //!
+    //! Get an element by reference given a linear index (direct access).
     T& operator[] (int II) {
       return data[II];
     }
 
-    //! Return the total number of elements in the array
+    //! @brief Return the total number of elements in the array.
     int total() {
       return _product(0);
     }
 
-    // Check wheter data is non-null
+    //! @brief Check wheter data is non-null.
     bool check() {
       return data!=nullptr;
     }
 
+    //! @brief Set all entries to a specified value.
     void setAll(T value) {
       for (int i=0; i<_product(0); ++i) data[i] = value;
     }
@@ -111,323 +132,35 @@ namespace GFlowSimulation {
     //! The data itself
     T *data;
 
+    //! @brief Store offsets
+    int *offset;
+
+    //! The dimensionality of the array
+    int dimensions;
+
     // --- Helper functions
 
-    //! Mutiply dims[0] * dims[1] * ... * dims[n-1]
-    //! If n==0, returns 1
     inline int _product(const int n) const {
       int total = 1;
-      for (int i=n; i<D; ++i) total *= dims[i];
+      for (int i=n; i<dimensions; ++i) total *= dims[i];
       return total;
     }
 
-    //! Find the linear index for an index set
+    //! @brief Find the linear index for an index set.
     inline int _get_index(const int *index) const {
-
       int II = 0;
-      for (int i=0; i<D; ++i)
-        II += _product(i)*index[i];
+      for (int i=0; i<dimensions; ++i)
+        II += offset[i]*index[i]; // _product(i)*index[i];
       return II;
     }
   };
 
-  /**
-  *  @brief Zero dimensional array.
-  *
-  *  Empty class for D=0, throws the ZeroDimension exception
-  */
-  template<class T> class Array<T,0> {
-    //! Constructor. Throws the ZeroDimensional exception when called.
-    Array() {
-      throw ZeroDimension("Zero dimensional array created.");
-    }
-  };
-
-  //! @brief One dimensional array.
-  //! The template class Array specialized to 1-dimensional arrays.
-  template<class T> class Array<T,1> {
-  public:
-    //! Default constructor
-    Array() : data(nullptr), alignment(64), dims(0) {};
-
-    //! Size setting constructor
-    Array(int s0) : dims(s0) {
-      data = new T[dims];
-      for (int i=0; i<s0; ++i) data[i] = T();
-    }
-
-    Array(const int *sizes) : dims(sizes[0]) {
-      data = new T[dims];
-      for (int i=0; i<dims; ++i) data[i] = T();
-    }
-
-    //! Destructor
-    ~Array() {
-      if (data) delete [] data;
-    }
-
-    //! @brief Resize the array.
-    //! Resize the array to have the shape specified by the parameter sizes.
-    void resize(int *sizes) {
-      uint oldDims = dims;
-      dims = sizes[0];
-      // Reallocate if we don't have the correct amount of space
-      if (oldDims!=dims) {
-        //if (data) delete data;
-        if (data) delete [] data;
-      	data = new T[dims];
-      	for (int i=0; i<dims; ++i) data[i] = T();
-      }
-    }
-
-    T& at(int i0) {
-      return data[i0];
-    }
-
-    const T& at(int i0) const {
-      return data[i0];
-    }
-
-    T& at(int *index) {
-      // Index should just be a number (a 1-tuple)
-      return data[*index];
-    }
-
-    const T& at(int *index) const {
-      // Index should just be a number (a 1-tuple)
-      return data[*index];
-    }
-
-    //! @brief Get an element by direct access.
-    //! Get an element by reference given a linear index (direct access).
-    T& operator[] (int II) {
-      return data[II];
-    }
-
-    //! The total number of elements in the array.
-    int total() {
-      return dims;
-    }
-
-    // Check wheter data is non-null
-    bool check() {
-      return data!=nullptr;
-    }
-
-    void setAll(T value) {
-      for (int i=0; i<dims; ++i) data[i] = value;
-    }
-
-  private:
-    // The length of the data
-    int dims;
-
-    // Alignment
-    uint alignment;
-
-    // The data itself
-    T *data;
-  };
-
-  // Two dimensional array
-  template<class T> class Array<T,2> {
-  public:
-    // Default constructor
-    Array() : data(nullptr), alignment(64) {
-      dims[0] = dims[1] = 0;
-    };
-
-    // Constructor
-    Array(int s0, int s1) {
-      if (s0<0 || s1<0) throw false;
-      dims[0] = s0; dims[1] = s1;
-      data = new T[s0*s1];
-      for (int i=0; i<s0*s1; ++i) data[i] = T();
-    }
-
-    Array(const int *sizes) {
-      dims[0] = sizes[0]; dims[1] = sizes[1];
-      data = new T[dims[0]*dims[1]];
-      for (int i=0; i<dims[0]*dims[1]; ++i) data[i] = T();
-    }
-
-    // Destructor
-    ~Array() {
-      if (data) delete [] data;
-    }
-
-    // Resize 
-    void resize(int *sizes) {
-      if (sizes[0]<0 || sizes[1]<0) throw false;
-      int total = dims[0]*dims[1];
-      dims[0] = sizes[0]; dims[1] = sizes[1];
-      uint newTotal = dims[0]*dims[1];
-      // Reallocate if we don't have the correct amount of space
-      if (total!=newTotal) {
-      	if (data) delete [] data;
-      	data = new T[newTotal];
-      	for (int i=0; i<newTotal; ++i) data[i] = T();
-      }
-    }
-
-    // Resize
-    void resize(int d1, int d2) {
-      if (d1<0 || d2<0) throw false;
-      int total = dims[0]*dims[1];
-      dims[0] = d1; dims[1] = d2;
-      uint newTotal = dims[0]*dims[1];
-      // Reallocate if we don't have the correct amount of space
-      if (total!=newTotal) {
-      	if (data) delete [] data;
-      	data = new T[newTotal];
-	      for (int i=0; i<newTotal; ++i) data[i] = T();
-      }
-    }
-
-    T& at(int i0, int i1) {
-      int II = i0 + dims[0]*i1;
-      return data[II];
-    }
-
-    const T& at(int i0, int i1) const {
-      int II = i0 + dims[0]*i1;
-      return data[II];
-    }
-
-    T& at(int *index) {
-      int II = index[0] + dims[0]*index[1];
-      return data[II];
-    }
-
-    const T& at(int *index) const {
-      int II = index[0] + dims[0]*index[1];
-      return data[II];
-    }
-
-    T& operator[] (int II) {
-      return data[II];
-    }
-
-    int total() {
-      return dims[0]*dims[1];
-    }
-
-    // Check wheter data is non-null
-    bool check() {
-      return data!=nullptr;
-    }
-
-    void setAll(T value) {
-      for (int i=0; i<dims[0]*dims[1]; ++i) data[i] = value;
-    }
-
-  private:
-    //! The lengths of the data
-    int dims[2];
-
-    //! Alignment
-    uint alignment;
-
-    //! The data itself
-    T *data;
-  };
-
-  // Three dimensional array
-  template<class T> class Array<T,3> {
-  public:
-    // Default constructor
-    Array() : data(nullptr), alignment(64) {
-      dims[0] = dims[1] = dims[2] = 0;
-    };
-
-    // Constructor
-    Array(int s0, int s1, int s2) {
-      dims[0] = s0; dims[1] = s1; dims[2] = s2;
-      data = new T[s0*s1*s2];
-      for (int i=0; i<s0*s1*s2; ++i) data[i] = T();
-    }
-
-    Array(const int *sizes) {
-      dims[0] = sizes[0]; dims[1] = sizes[1]; dims[2] = sizes[2];
-      int total = dims[0]*dims[1]*dims[2];
-      data = new T[total];
-      for (int i=0; i<total; ++i) data[i] = T();
-    }
-
-    // Destructor
-    ~Array() {
-      if (data) delete [] data;
-    }
-
-    // Resize 
-    void resize(int *sizes) {
-      uint total = dims[0]*dims[1]*dims[2];
-      dims[0] = sizes[0]; 
-      dims[1] = sizes[1]; 
-      dims[2] = sizes[2];
-      uint newTotal = dims[0]*dims[1]*dims[2];
-      // Reallocate if we don't have the correct amount of space
-      if (total!=newTotal) {
-        if (data) delete [] data;
-      	data = new T[newTotal];
-      	for (int i=0; i<newTotal; ++i) data[i] = T();
-      }
-    }
-
-    T& at(int i0, int i1, int i2) {
-      int II = i0 + dims[0]*i1 + dims[0]*dims[1]*i2;
-      return data[II];
-    }
-
-    const T& at(int i0, int i1, int i2) const {
-      int II = i0 + dims[0]*i1 + dims[0]*dims[1]*i2;
-      return data[II];
-    }
-
-    T& at(int *index) {
-      int II = index[0] + dims[0]*index[1] + dims[0]*dims[1]*index[2];
-      return data[II];
-    }
-
-    const T& at(int *index) const {
-      int II = index[0] + dims[0]*index[1] + dims[0]*dims[1]*index[2];
-      return data[II];
-    }
-
-    T& operator[] (int II) {
-      return data[II];
-    }
-
-    int total() {
-      return dims[0]*dims[1]*dims[2];
-    }
-
-    // Check wheter data is non-null
-    bool check() {
-      return data!=nullptr;
-    }
-
-    void setAll(T value) {
-      for (int i=0; i<dims[0]*dims[1]*dims[2]; ++i) data[i] = value;
-    }
-
-  private:
-    // The lengths of the data
-    int dims[3];
-
-    // Alignment
-    uint alignment;
-
-    // The data itself
-    T *data;
-  };
-
   //! @brief A helper function that turns a linear address into a tuple address.
   //!
-  //! Store in [ [ x00 x01 ... ], [ x10, x11, ...] ... ] -> row major form
+  //! Store in [ [ x00, x01 ... ], [ x10, x11, ...] ... ] -> row major form
   //! This is the template dimension version of the function. It is overloaded for
   //! the zero through three dimensional cases (at the time of this writing).
-  template<int D=DIMENSIONS> inline void getAddress(int linear, int *dims, int *address) {
+  inline void getAddress(int linear, int *dims, int *address, int dimensions) {
     // Multiply dims[0] * dims[1] * ... * dims[c-1]
     // If c==0, returns 1
     auto product = [&] (int c) -> int {
@@ -436,60 +169,25 @@ namespace GFlowSimulation {
       return p;
     };
 
-    for (int d=D-1; d>=0; --d) {
+    for (int d=dimensions-1; d>=0; --d) {
       int prod = product(d);
       address[d] = linear / prod;
       linear %= prod;
     }
   }
 
-  template<int D=DIMENSIONS> inline void getAddressCM(int linear, int *dims, int *address) {
+  inline void getAddressCM(int linear, int *dims, int *address, int dimensions) {
     auto product = [&] (int c) -> int {
       int p = 1;
-      for (int i=c; i<D; ++i) p*=dims[i];
+      for (int i=c; i<dimensions; ++i) p*=dims[i];
       return p;
     };
 
-    for (int d=0; d<D; ++d) {
+    for (int d=0; d<dimensions; ++d) {
       int prod = product(d+1);
       address[d] = linear / prod;
       linear %= prod;
     }
-  }
-
-  //! @brief A helper function that turns a linear address into a tuple address.
-  //!
-  //! The zero dimensional version of this function - it doesn't do anything
-  //! except throw an exception, since we should never have a zero dimensional
-  //! anything.
-  template<> inline void getAddress<0>(int linear, int *dims, int *address) {
-    throw ZeroDimension("Get address is zero dimensional");
-  };
-
-  //! @brief A helper function that turns a linear address into a tuple address.
-  //!
-  //! The one dimensional template specialization.
-  template<> inline void getAddress<1>(int linear, int *dims, int *address) {
-    address[0] = linear;
-  }
-
-  //! @brief A helper function that turns a linear address into a tuple address.
-  //!
-  //! The two dimensional template specialization.
-  template<> inline void getAddress<2>(int linear, int *dims, int *address) {
-    address[1] = linear / dims[0];
-    address[0] = linear % dims[0];
-  }
-
-  //! @brief A helper function that turns a linear address into a tuple address.
-  //!
-  //! The three dimensional template specialization.
-  template<> inline void getAddress<3>(int linear, int *dims, int *address) {
-    int s1 = dims[0]*dims[1];
-    address[2] = linear/s1;
-    linear %= s1;
-    address[1] = linear / dims[0];
-    address[0] = linear % dims[0];
   }
 
 }

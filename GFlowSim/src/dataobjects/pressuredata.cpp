@@ -23,21 +23,20 @@ namespace GFlowSimulation {
     RealType *im = Base::simData->Im();
     // Calculate the temperature
     RealType T = 0;
-    for (int i=0; i<number; ++i) {
-      T += im[i]>0 ? sqr(Base::simData->V(i))/im[i] : 0;
-    }
+    for (int i=0; i<number; ++i)
+      T += im[i]>0 ? sqr(Base::simData->V(i), sim_dimensions)/im[i] : 0;
     T *= 0.5; // Now we have the KE
     // Use E = DIMENSIONS/2 * N k T (not true if there are additional degrees of freedom...)
-    T *= (2./(DIMENSIONS*number));
+    T *= (2./(sim_dimensions*number));
     // Second entry is the temperature
     pressures.push_back(T); 
     // Compute pressures for each force.
     RealType Ptot = 0;
     for (auto it : *Base::interactionsPtr) {
-      //! P = N k T/V + 1/(DIMENSIONS*V) \sum_i (r_i \dot F_i)
+      //! P = N k T/V + 1/(sim_dimensions*V) \sum_i (r_i \dot F_i)
       // virial = \sum_i (r_i \dot F_i)
       RealType virial = it->getVirial();
-      RealType P = number*T/V + virial/(DIMENSIONS*V);
+      RealType P = number*T/V + virial/(sim_dimensions*V);
       // Subsequent entries are pressures
       pressures.push_back(P);
       // Total pressure

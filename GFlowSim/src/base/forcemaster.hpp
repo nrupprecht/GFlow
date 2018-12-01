@@ -54,7 +54,9 @@ namespace GFlowSimulation {
   private:
 
     // Particles of type t1, t2, should be governed by force forceGrid.at(t1,t2)
-    Array<Interaction*, 2> grid;
+    //Array<Interaction*> grid = Array<Interaction*>(2);
+
+    vector<vector<Interaction*> > grid;
 
     // Pointers to all the forces that exist in the simulation
     vector<Interaction*> interactions;

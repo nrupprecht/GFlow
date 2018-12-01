@@ -59,7 +59,7 @@ namespace GFlowSimulation {
     RealType   *serial_scalar_data = nullptr;
     simd_float *vec_data = nullptr;
     RealType   *serial_vec_data = nullptr;
-    RealType   *normal = new RealType[DIMENSIONS];
+    RealType   *normal = new RealType[sim_dimensions];
 
     // Arrays for getting data
     RealType  **arrays   = nullptr;
@@ -95,10 +95,11 @@ namespace GFlowSimulation {
     RealType *sg = Base::simData->Sg();
 
     Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
-    BCFlag boundaryConditions[DIMENSIONS]; 
-    copyVec(Base::gflow->getBCs(), boundaryConditions); // Keep a local copy of the wrap frags
+    BCFlag *boundaryConditions = new BCFlag[sim_dimensions]; 
+    copyVec(Base::gflow->getBCs(), boundaryConditions, sim_dimensions); // Keep a local copy of the wrap frags
 
-    RealType normal_array[4][DIMENSIONS];
+    RealType *normal_array[4];
+    for (int i=0; i<4; ++i) normal_array[i] = new RealType[sim_dimensions];
     RealType dsqr_array[4];
     int id_array1[4], id_array2[4];
 
@@ -155,7 +156,7 @@ namespace GFlowSimulation {
         simd_scalar_mult_vec(invDistance, dX, norm, sim_dimensions);
 
         // Calculate force
-        simd_kernel(buffer_out, norm, mask, distance, scalar_data, vec_data, param_pack, data_pack);
+        simd_kernel(buffer_out, norm, mask, distance, scalar_data, vec_data, param_pack, data_pack, sim_dimensions);
 
         // Update forces
         update_vector_data_size(&verlet_a[i], Base::simData->F(), &buffer_out[0], size, buffer_size);
@@ -168,14 +169,14 @@ namespace GFlowSimulation {
       int id1 = verlet_a[i];
       int id2 = verlet_b[i];
       // Get the displacement between the particles (stored in "normal")
-      getDisplacement(x[id1], x[id2], normal, bounds, boundaryConditions);
+      getDisplacement(x[id1], x[id2], normal, bounds, boundaryConditions, sim_dimensions);
 
       // Mask the distance squared with the "particles are real" type mask, c1
-      RealType dsqr = sqr(normal);
+      RealType dsqr = sqr(normal, sim_dimensions);
       // Check if the particles should interact
       if (dsqr < sqr(sg[id1] + sg[id2])) {
         RealType distance = sqrt(dsqr);
-        scalarMultVec(1./distance, normal);
+        scalarMultVec(1./distance, normal, sim_dimensions);
         
         // Set scalar data
         for (int dt=0; dt<data_size; ++dt)
@@ -184,16 +185,16 @@ namespace GFlowSimulation {
           serial_scalar_data[dt+data_size] = arrays[dt][id2];
         // Set vector data
         for (int dt=0; dt<vec_data_size; ++dt) {
-          copyVec(vec_arrays[dt][id1], &serial_vec_data[sim_dimensions*dt]);
-          copyVec(vec_arrays[dt][id2], &serial_vec_data[sim_dimensions*(dt+vec_data_size)]);
+          copyVec(vec_arrays[dt][id1], &serial_vec_data[sim_dimensions*dt], sim_dimensions);
+          copyVec(vec_arrays[dt][id2], &serial_vec_data[sim_dimensions*(dt+vec_data_size)], sim_dimensions);
         }
 
         // Calculate force.
-        serial_kernel(serial_buffer_out, normal, 1., distance, serial_scalar_data, serial_vec_data, param_pack, data_pack);
+        serial_kernel(serial_buffer_out, normal, 1., distance, serial_scalar_data, serial_vec_data, param_pack, data_pack, sim_dimensions);
         
         // Add the force to the buffers
-        plusEqVec(f[id1], &serial_buffer_out[0]);
-        plusEqVec(f[id2], &serial_buffer_out[buffer_size]);    
+        plusEqVec(f[id1], &serial_buffer_out[0], sim_dimensions);
+        plusEqVec(f[id2], &serial_buffer_out[buffer_size], sim_dimensions);    
       }
     }
 
@@ -208,10 +209,12 @@ namespace GFlowSimulation {
       if (scalar_data) delete [] scalar_data;
       if (vec_data)    delete [] vec_data;
     }
+    for (int i=0; i<4; ++i) delete [] normal_array[i];
     delete [] serial_buffer_out;
     delete [] serial_scalar_data;
     delete [] temp;
     delete [] normal;
+    delete [] boundaryConditions;
   }
 
 }

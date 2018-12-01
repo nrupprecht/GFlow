@@ -32,8 +32,8 @@ namespace GFlowSimulation {
       // Precomputed values, assumes Kb = 1
       RealType Df1 = sqrt(2.*drift1*(time-lastUpdate));
       // Add a random force to all spatial degrees of freedom
-      for (int i=0; i<number*DIMENSIONS; ++i) {
-        int id = i/DIMENSIONS;
+      for (int i=0; i<number*sim_dimensions; ++i) {
+        int id = i/sim_dimensions;
         RealType Df2 = sqrt(1./sg[id]);
         // Random strength - 'temperature' is from the viscous medium
         RealType strength = drand48()-0.5; // randNormal();
@@ -43,8 +43,8 @@ namespace GFlowSimulation {
     }
 
     // Update positions (there are no velocities)
-    for (int i=0; i<number*DIMENSIONS; ++i) {
-      int id = i/DIMENSIONS;
+    for (int i=0; i<number*sim_dimensions; ++i) {
+      int id = i/sim_dimensions;
       v[i] = viscosity*f[i]*im[id];
       x[i] += v[i]*Integrator::dt;
       // Debug mode asserts

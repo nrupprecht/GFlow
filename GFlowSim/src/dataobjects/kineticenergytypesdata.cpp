@@ -33,7 +33,7 @@ namespace GFlowSimulation {
     for (int n=0; n<number; ++n) {
       int type = Base::simData->type[n];
       if (type<ntypes && im[n]>0)
-        keData[type].rbegin()->second += sqr(v[n])/im[n];
+        keData[type].rbegin()->second += sqr(v[n], sim_dimensions)/im[n];
     }
     // Multiply by 1/2
     for (int ty=0; ty<ntypes; ++ty) {

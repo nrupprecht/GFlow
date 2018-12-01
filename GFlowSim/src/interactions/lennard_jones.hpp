@@ -44,13 +44,13 @@ namespace GFlowSimulation {
     template<typename float_type>
     static void force(float_type*, const float_type*, 
       const float_type, const float_type, const float_type*, 
-      const float_type*, const RealType*, RealType*);
+      const float_type*, const RealType*, RealType*, int);
   };
 
   // Template force function
   template<typename float_type>
   void LennardJones::force(float_type *buffer_out, const float_type* normal, const float_type mask, const float_type distance, 
-    const float_type *soa_data, const float_type *vec_data, const RealType *param_pack, RealType *data_pack) {
+    const float_type *soa_data, const float_type *vec_data, const RealType *param_pack, RealType *data_pack, int dimensions) {
     // Param Pack: Expect:
     //  param_pack[0] - cutoff
     const RealType cutoff = 2.5; // param_pack[0];
@@ -80,8 +80,8 @@ namespace GFlowSimulation {
     // Out:
     //  buffer_out[0::DIM]       = force, 1
     //  buffer_out[DIM+1::2*DIM] = force, 2
-    scalar_mult_vec( masked_magnitude, normal, buffer_out, DIMENSIONS); // F1 += f
-    copy_negative(buffer_out, &buffer_out[DIMENSIONS], DIMENSIONS);
+    scalar_mult_vec( masked_magnitude, normal, buffer_out, dimensions); // F1 += f
+    copy_negative(buffer_out, &buffer_out[dimensions], dimensions);
   }
 
 }

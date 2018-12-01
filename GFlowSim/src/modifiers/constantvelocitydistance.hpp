@@ -12,8 +12,11 @@ namespace GFlowSimulation {
   */
   class ConstantVelocityDistance : public Modifier {
   public:
-    //! @brief Constructor
+    //! @brief Constructor.
     ConstantVelocityDistance(GFlow*, int, RealType*, RealType);
+
+    //! @brief Destructor.
+    ~ConstantVelocityDistance();
 
     //! @brief Set force to zero and velocity to the specified velocity.
     virtual void post_forces() override;
@@ -23,10 +26,10 @@ namespace GFlowSimulation {
     int global_id;
 
     //! @brief The constant velocity.
-    RealType velocity[DIMENSIONS];
+    RealType *velocity;
 
     //! @brief The displacement covered so far.
-    RealType displacement[DIMENSIONS];
+    RealType *displacement;
 
     //! @brief The distance to cover before stopping.
     RealType distance;
