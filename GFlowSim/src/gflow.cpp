@@ -105,6 +105,12 @@ namespace GFlowSimulation {
       return;
     }
 
+    // Clear timers
+    fhs_timer.clear();
+    shs_timer.clear();
+    domain_timer.clear();
+    forces_timer.clear();
+
     // Make sure we have initialized everything
     if (!initialize()) {
       // Some object was null
@@ -146,9 +152,16 @@ namespace GFlowSimulation {
 
       // --> Pre-force
       for (auto m : modifiers) m->pre_forces();
+
+      fhs_timer.start();
       integrator->pre_forces(); // -- This is where VV first half kick happens (if applicable)
+      fhs_timer.stop();
+
       dataMaster->pre_forces();
+
+      domain_timer.start();
       if (useForces) domain->pre_forces();   // -- This is where resectorization / verlet list creation might happen
+      domain_timer.stop();
       
       // --- Do interactions
       clearForces(); // Clear force buffers
@@ -161,7 +174,9 @@ namespace GFlowSimulation {
 
       // Calculate current forces
       if (useForces) {
+        forces_timer.start();
         for (auto &it : interactions) it->interact();
+        forces_timer.stop();
       }
 
       // Do particle removal
@@ -172,7 +187,11 @@ namespace GFlowSimulation {
 
       // --> Post-forces
       for (auto m : modifiers) m->post_forces(); // -- This is where modifiers should do forces (if they need to)
+
+      shs_timer.start();
       integrator->post_forces();                 // -- This is where VV second half kick happens (if applicable)
+      shs_timer.stop();
+      
       dataMaster->post_forces();
       domain->post_forces();
 

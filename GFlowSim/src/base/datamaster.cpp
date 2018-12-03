@@ -205,6 +205,17 @@ namespace GFlowSimulation {
     fout << "  - Inverse Ratio:            " << toStrRT(1./ratio) << "\n";
     fout << "\n";
 
+    fout << "Timing breakdown:\n";
+    const int entries = 4;
+    double timing[entries], total = 0;
+    fout << "  -- Pre-forces, integrator:  " << toStrRT(timing[0] = gflow->fhs_timer.time()/run_time*100) << "%,\t" << gflow->fhs_timer.time() << "\n";
+    fout << "  -- Post-forces, integrator: " << toStrRT(timing[1] = gflow->shs_timer.time()/run_time*100) << "%,\t" << gflow->shs_timer.time() << "\n";
+    fout << "  -- Pre-forces, domain:      " << toStrRT(timing[2] = gflow->domain_timer.time()/run_time*100) << "%,\t" << gflow->domain_timer.time() << "\n";
+    fout << "  -- Interactions:            " << toStrRT(timing[3] = gflow->forces_timer.time()/run_time*100) << "%,\t" << gflow->forces_timer.time() << "\n";
+    for (int i=0; i<entries; ++i) total += timing[i];
+    fout << "  - Uncounted:                " << toStrRT((100. - total)) << "%\n";
+    fout << "\n";
+
     // --- Print simulation summary
     fout << "Simulation and space:\n";
     fout << "  - Dimensions:               " << DIMENSIONS << "\n";

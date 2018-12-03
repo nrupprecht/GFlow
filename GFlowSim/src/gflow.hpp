@@ -4,6 +4,8 @@
 #include "base/base.hpp"
 #include "utility/utility.hpp"
 
+#include "utility/timer.hpp"
+
 namespace GFlowSimulation {
 
   /*
@@ -276,6 +278,12 @@ namespace GFlowSimulation {
     // The command info (optional)
     int argc;
     char **argv;
+
+    // Timing
+    Timer fhs_timer;
+    Timer shs_timer;
+    Timer domain_timer;
+    Timer forces_timer;
   };
 
 }
