@@ -31,6 +31,11 @@ namespace GFlowSimulation {
     static void force(float_type*, const float_type*, 
       const float_type, const float_type, const float_type*, 
       const float_type*, const RealType*, RealType*, int);
+
+    
+    static void force2d(RealType*, const RealType*, 
+      const RealType, const RealType, const RealType*, 
+      const RealType*, const RealType*, RealType*, int);
   };
 
   // --- Template force function

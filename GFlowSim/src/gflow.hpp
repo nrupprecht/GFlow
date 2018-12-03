@@ -200,6 +200,8 @@ namespace GFlowSimulation {
     // Data master is a friend class
     friend class DataMaster;
 
+    friend class Base;
+
   protected:
     // --- Private helper functions
     //! Clear all the force arrays.
@@ -252,7 +254,7 @@ namespace GFlowSimulation {
     BCFlag *boundaryConditions;
 
     //! @brief The number of dimensions
-    int sim_dimensions;
+    const int sim_dimensions;
 
     //! @brief Strength of boundary repulsion forces.
     RealType repulsion;

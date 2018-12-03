@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
 
-  Integrator::Integrator(GFlow *gflow) : Base(gflow), dt(0.0001), adjust_dt(false), min_dt(1e-6), max_dt(0.002), target_steps(18), step_delay(10), step_count(step_delay+1) {};
+  Integrator::Integrator(GFlow *gflow) : Base(gflow), dt(0.0001), adjust_dt(true), min_dt(1e-6), max_dt(0.002), target_steps(18), step_delay(10), step_count(step_delay+1) {};
 
   void Integrator::pre_integrate() {
     // Set step count so a check is triggered on the first step
@@ -30,10 +30,12 @@ namespace GFlowSimulation {
     //!  The smallest radius in each subdivision could be found by binning.
     RealType minT = 1.; // Starting value
 
+    const int total = sim_dimensions*simData->number;
+
     // Find minT
     #if SIMD_TYPE==SIMD_NONE
     // Do serially
-    for (int i=0; i<sim_dimensions*simData->number; ++i) {
+    for (int i=0; i<total; ++i) {
       RealType mint = sg[i/sim_dimensions]/fabs(v[i]);
       if (mint<minT) minT = mint;
     }
@@ -41,7 +43,7 @@ namespace GFlowSimulation {
     // Do as much as we can in parallel
     simd_float MinT = simd_set1(1.);
     int i=0;
-    for (; i<sim_dimensions*simData->number-simd_data_size; i += simd_data_size) {
+    for (; i<total-simd_data_size; i += simd_data_size) {
       simd_float V = simd_abs(simd_load(&v[i]));
       simd_float Sg = simd_load_constant(sg, i, sim_dimensions);
       simd_float Mint = Sg / V;
@@ -54,7 +56,7 @@ namespace GFlowSimulation {
       if (mint<minT) minT = mint;
     }
     // Do the last part serially
-    for (; i<sim_dimensions*simData->number; ++i) {
+    for (; i<total; ++i) {
       RealType mint = sg[i/sim_dimensions]/fabs(v[i]);
       if (mint<minT) minT = mint;
     }
