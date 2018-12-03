@@ -40,7 +40,7 @@ namespace GFlowSimulation {
 
     // --- Accessors
 
-    //! @brief Return the total length of the verlet list 
+    //! @brief Return the total length of the verlet list.
     int size() const;
 
     //! @brief Get the verlet list (get it as a const reference)

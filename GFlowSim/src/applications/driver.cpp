@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
   RealType fps = -1.;
   RealType videoLength = -1.;
   RealType dt = 0.001;
-  RealType time = 10.;
+  RealType time = 1200.;
   string writeDirectory = "RunData";
   int boundary = 1;
   string monitor = ""; // Monitor file

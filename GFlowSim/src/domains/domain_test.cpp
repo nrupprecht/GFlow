@@ -230,12 +230,15 @@ namespace GFlowSimulation {
     int *tuple1 = new int[sim_dimensions], *tuple2 = new int[sim_dimensions];
     int *cell_index = new int[sim_dimensions], *center = new int[sim_dimensions];
 
+    Interaction *hs = nullptr;
+    if (gflow->getInteractions().empty()) return;
+    else hs = gflow->getInteractions()[0];
+
     // Find potential neighbors
     RealType *sg = Base::simData->Sg();
     RealType **x = Base::simData->X();
     // Get the boundary conditions
     const BCFlag *bcs = gflow->getBCs();
-    RealType *dX = new RealType[sim_dimensions];
     int *search_dims = new int[sim_dimensions];
     for (const auto &c : cells) {
       for (auto p=c.particle_ids.begin(); p!=c.particle_ids.end(); ++p) {
@@ -248,8 +251,7 @@ namespace GFlowSimulation {
           ++q;
           for (; q!=c.particle_ids.end(); ++q) {
             int id2 = *q;
-            subtractVec(x[id1], x[id2], dX, sim_dimensions);
-            RealType r2 = sqr(dX, sim_dimensions);
+            RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
             if (r2 < sqr(sg[id1] + sg[id2] + skin_depth))
               pair_interaction(id1, id2);
           }
@@ -259,12 +261,12 @@ namespace GFlowSimulation {
               // If the other particle is a large particle, it will take care of this interaction
               if (sg[id2]>max_small_sigma) continue;
               // Look for distance between particles
-              subtractVec(x[id1], x[id2], dX, sim_dimensions);
-              RealType r2 = sqr(dX, sim_dimensions);
+              RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
               if (r2 < sqr(sg[id1] + sg[id2] + skin_depth) || max_reasonable<r2)
                 pair_interaction(id1, id2);
             }
         }
+        
         // If sigma is > min_small_sigma, we have to look through more cells
         else {
           // Calculate sweep "radius"
@@ -295,8 +297,7 @@ namespace GFlowSimulation {
               for (auto &id2 : cells[linear].particle_ids) {
                 // If the other particle is a larger particle, it will take care of this interaction
                 if (id1==id2 || sg[id2]>sg[id1]) continue;
-                subtractVec(x[id1], x[id2], dX, sim_dimensions);
-                RealType r2 = sqr(dX, sim_dimensions);
+                RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
                 if (r2 < sqr(sg[id1] + sg[id2] + skin_depth) || max_reasonable<r2)
                   pair_interaction(id1, id2);
               }
@@ -312,7 +313,6 @@ namespace GFlowSimulation {
     delete [] tuple2;
     delete [] cell_index;
     delete [] center;
-    delete [] dX;
     delete [] search_dims;
   }
 
