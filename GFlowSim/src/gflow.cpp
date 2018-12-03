@@ -154,7 +154,7 @@ namespace GFlowSimulation {
 
       // --> Pre-force
       for (auto m : modifiers) m->pre_forces();
-      
+
       fhs_timer.start();
       integrator->pre_forces(); // -- This is where VV first half kick happens (if applicable)
       fhs_timer.stop();
@@ -192,8 +192,8 @@ namespace GFlowSimulation {
 
       shs_timer.start();
       integrator->post_forces();                 // -- This is where VV second half kick happens (if applicable)
-      shs_timer.stop(); 
-
+      shs_timer.stop();
+      
       dataMaster->post_forces();
       domain->post_forces();
 
