@@ -9,6 +9,9 @@ namespace GFlowSimulation {
   VelocityVerlet::VelocityVerlet(GFlow *gflow) : Integrator(gflow) {};
 
   void VelocityVerlet::pre_forces() {
+
+    if (sim_dimensions!=2) throw false; // WE NEED TO MANUALLY CHANGE simd_load_constant FOR NOW.
+    
     // --- First half kick
 
     // Number of (real - non ghost) particles
@@ -110,6 +113,8 @@ namespace GFlowSimulation {
   }
 
   void VelocityVerlet::post_forces() {
+
+    if (sim_dimensions!=2) throw false; // WE NEED TO MANUALLY CHANGE simd_load_constant FOR NOW.
 
     // Call to parent class
     Integrator::post_forces();

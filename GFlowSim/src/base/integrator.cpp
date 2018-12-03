@@ -45,7 +45,10 @@ namespace GFlowSimulation {
     int i=0;
     for (; i<total-simd_data_size; i += simd_data_size) {
       simd_float V = simd_abs(simd_load(&v[i]));
-      simd_float Sg = simd_load_constant(sg, i, sim_dimensions);
+
+      //simd_float Sg = simd_load_constant(sg, i, sim_dimensions);
+      simd_float Sg = simd_load_constant<2>(sg, i);
+      
       simd_float Mint = Sg / V;
       simd_float mask = simd_less_than(Mint, MinT);
       simd_update_masked(MinT, Mint, mask);
