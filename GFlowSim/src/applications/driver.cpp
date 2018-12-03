@@ -63,6 +63,7 @@ int main(int argc, char **argv) {
   bool numberdata = false;
   
   // Other options
+  int dimensions = 2;
   RealType skin = 0.;
   bool quiet = false;
   RealType gravity = 0.;
@@ -74,7 +75,7 @@ int main(int argc, char **argv) {
   RealType fps = -1.;
   RealType videoLength = -1.;
   RealType dt = 0.001;
-  RealType time = 1200.;
+  RealType time = 10.;
   string writeDirectory = "RunData";
   int boundary = 1;
   string monitor = ""; // Monitor file
@@ -103,6 +104,7 @@ int main(int argc, char **argv) {
   parser.get("memdist", memdist);
   parser.get("pressure", pressure);
   parser.get("numberdata", numberdata);
+  parser.get("dimensions", dimensions);
   parser.get("skin", skin);
   parser.get("quiet", quiet);
   parser.get("gravity", gravity);
@@ -150,6 +152,9 @@ int main(int argc, char **argv) {
     creator = new FileParseCreator(&parser, load);
   }
   else creator = new BoxCreator(&parser);
+
+  // Set dimensions
+  creator->setDimensions(dimensions);
 
   // --- Set boundary conditions
   switch (boundary) {

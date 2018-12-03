@@ -25,6 +25,14 @@ namespace GFlowSimulation {
     seed = s;
   };
 
+  void Creator::setBCFlag(BCFlag b) { 
+    bcFlag = b; 
+  }
+
+  void Creator::setDimensions(int d) {
+    sim_dimensions = d;
+  }
+
   void Creator::hs_relax(GFlow* gflow, RealType time) const {
     // Check for valid object
     if (gflow==nullptr) return;

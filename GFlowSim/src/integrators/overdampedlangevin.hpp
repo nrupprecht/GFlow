@@ -25,7 +25,7 @@ namespace GFlowSimulation {
     OverdampedLangevinIntegrator(GFlow*, RealType);
 
     //! The post forces routine. The integrator only needs to act here.
-    virtual void post_forces();
+    virtual void post_forces() override;
 
     //! Set damping constant.
     void setViscosity(RealType);

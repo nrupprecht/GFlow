@@ -44,7 +44,7 @@ namespace GFlowSimulation {
     int size() const;
 
     //! @brief Get the verlet list (get it as a const reference)
-    const InteractionHandler* getInteractionHandler() const;
+    InteractionHandler* getInteractionHandler() const;
 
     //! @brief Get the virial, used for calculating pressure
     int getVirial() const;

@@ -23,10 +23,10 @@ namespace GFlowSimulation {
     LangevinIntegrator(GFlow*, RealType);
 
     //! The pre forces routine
-    virtual void pre_forces();
+    virtual void pre_forces() override;
 
     //! The post forces routine.
-    virtual void post_forces();
+    virtual void post_forces() override;
 
     //! Set damping constant.
     void setViscosity(RealType);

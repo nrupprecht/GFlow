@@ -46,7 +46,9 @@ namespace GFlowSimulation {
     virtual class GFlow* createSimulation() = 0;
 
     //! @brief Set the boundary condition flags.
-    void setBCFlag(BCFlag b) { bcFlag = b; }
+    void setBCFlag(BCFlag b);
+
+    void setDimensions(int);
 
   protected:
     // --- Helper functions

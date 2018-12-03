@@ -131,6 +131,7 @@ namespace GFlowSimulation {
   }
 
   void VelocityVerlet::post_forces() {
+
     // Call to parent class
     Integrator::post_forces();
     
@@ -176,6 +177,7 @@ namespace GFlowSimulation {
     }
     #endif
 
+    /*
     // --- Update angular variables if they exist
     if (simData->usingAngularDynamics()) {
       // Get arrays
@@ -191,6 +193,7 @@ namespace GFlowSimulation {
         //! @todo Higher dimensional rotational dynamics.
       }
     }
+    */
   }
 
 }

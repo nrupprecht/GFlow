@@ -31,6 +31,7 @@ namespace GFlowSimulation {
     const vector<int>&  data_needed, 
     const vector<int>&  vec_data_needed) const 
   {
+
     // If the kernel is null, then there is no point looping through everything
     if (serial_kernel==nullptr) return;
 

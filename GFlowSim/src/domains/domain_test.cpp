@@ -230,9 +230,9 @@ namespace GFlowSimulation {
     int *tuple1 = new int[sim_dimensions], *tuple2 = new int[sim_dimensions];
     int *cell_index = new int[sim_dimensions], *center = new int[sim_dimensions];
 
-    Interaction *hs = nullptr;
+    InteractionHandler *hs = nullptr;
     if (gflow->getInteractions().empty()) return;
-    else hs = gflow->getInteractions()[0];
+    else hs = gflow->getInteractions()[0]->getInteractionHandler();
 
     // Find potential neighbors
     RealType *sg = Base::simData->Sg();
@@ -252,8 +252,10 @@ namespace GFlowSimulation {
           for (; q!=c.particle_ids.end(); ++q) {
             int id2 = *q;
             RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
-            if (r2 < sqr(sg[id1] + sg[id2] + skin_depth))
+            if (r2 < sqr(sg[id1] + sg[id2] + skin_depth)) {
+              //hs->addPair(id1, id2);
               pair_interaction(id1, id2);
+            }
           }
           // Seach through list of adjacent cells
           for (const auto &d : c.adjacent)
@@ -262,8 +264,10 @@ namespace GFlowSimulation {
               if (sg[id2]>max_small_sigma) continue;
               // Look for distance between particles
               RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
-              if (r2 < sqr(sg[id1] + sg[id2] + skin_depth) || max_reasonable<r2)
+              if (r2 < sqr(sg[id1] + sg[id2] + skin_depth) || max_reasonable<r2) {
+                //hs->addPair(id1, id2);
                 pair_interaction(id1, id2);
+              }
             }
         }
         

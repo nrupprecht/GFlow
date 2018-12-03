@@ -72,10 +72,6 @@ namespace GFlowSimulation {
     step_count = 0;
   }
 
-  void Integrator::post_forces() {
-    Base::post_forces();
-  }
-
   RealType Integrator::getTimeStep() {
     return dt;
   }
