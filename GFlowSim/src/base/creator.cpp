@@ -2,11 +2,11 @@
 
 namespace GFlowSimulation {
 
-  Creator::Creator(int ac, char **av) : argc(ac), argv(av), ourParser(true), simBounds(Bounds(2)) {
+  Creator::Creator(int ac, char **av) : argc(ac), argv(av), ourParser(true), simBounds(Bounds(2)), sim_dimensions(2) {
     parserPtr = new ArgParse(ac, av);
   };
 
-  Creator::Creator(ArgParse *p) : argc(p->getArgc()), argv(p->getArgv()), parserPtr(p), ourParser(false), simBounds(Bounds(2)) {};
+  Creator::Creator(ArgParse *p) : argc(p->getArgc()), argv(p->getArgv()), parserPtr(p), ourParser(false), simBounds(Bounds(2)), sim_dimensions(2) {};
 
   Creator::~Creator() {
     if (ourParser && parserPtr) 
@@ -24,6 +24,14 @@ namespace GFlowSimulation {
   void Creator::seedGenerator(uint s) {
     seed = s;
   };
+
+  void Creator::setBCFlag(BCFlag b) { 
+    bcFlag = b; 
+  }
+
+  void Creator::setDimensions(int d) {
+    sim_dimensions = d;
+  }
 
   void Creator::hs_relax(GFlow* gflow, RealType time) const {
     // Check for valid object

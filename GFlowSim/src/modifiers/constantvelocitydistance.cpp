@@ -5,8 +5,15 @@
 namespace GFlowSimulation {
 
   ConstantVelocityDistance::ConstantVelocityDistance(GFlow *gflow, int g_id, RealType *v, RealType d) : Modifier(gflow), global_id(g_id), distance(d) {
-    copyVec(v, velocity);
-    zeroVec(displacement);
+    velocity = new RealType[sim_dimensions];
+    displacement = new RealType[sim_dimensions];
+    copyVec(v, velocity, sim_dimensions);
+    zeroVec(displacement, sim_dimensions);
+  }
+
+  ConstantVelocityDistance::~ConstantVelocityDistance() {
+    if (velocity) delete [] velocity;
+    if (displacement) delete [] displacement;
   }
   
   void ConstantVelocityDistance::post_forces() {
@@ -15,23 +22,20 @@ namespace GFlowSimulation {
     int id = simData->getLocalID(global_id);
     if (!moving)  {
       // Keep object still
-      zeroVec(Base::simData->F(id));
-      zeroVec(Base::simData->V(id));
-      minusEqVec(Base::simData->V(id), Base::gflow->getVComCorrection());
+      zeroVec(Base::simData->F(id), sim_dimensions);
+      zeroVec(Base::simData->V(id), sim_dimensions);
+      minusEqVec(Base::simData->V(id), Base::gflow->getVComCorrection(), sim_dimensions);
     }
     else {
       // Acquire time step
       RealType dt = Base::gflow->getDT();
-      // Compute velocity - do this in case we are correcting for center of mass velocity
-      RealType V[DIMENSIONS];
-      subtractVec(velocity, Base::gflow->getVComCorrection(), V);
       // Set velocity, clear force
-      copyVec(V, Base::simData->V(id));
-      zeroVec(Base::simData->F(id));
-      // Update displacement. Use "actual" velocity.
-      plusEqVecScaled(displacement, velocity, dt);
+      copyVec(velocity, Base::simData->V(id), sim_dimensions);
+      zeroVec(Base::simData->F(id), sim_dimensions);
+      // Update displacement.
+      plusEqVecScaled(displacement, velocity, dt, sim_dimensions);
       // Check if the object should stop
-      if (sqr(displacement)>sqr(distance)) moving = false;
+      if (sqr(displacement, sim_dimensions)>sqr(distance)) moving = false;
     }
   }
 

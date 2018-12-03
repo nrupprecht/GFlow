@@ -3,7 +3,7 @@
 
 namespace GFlowSimulation {
 
-  Base::Base(GFlow *gf) {
+  Base::Base(GFlow *gf) : sim_dimensions(gf->sim_dimensions) {
     if (gf) gf->initializeBase(this);
   }
 

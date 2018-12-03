@@ -104,10 +104,6 @@ namespace GFlowSimulation {
   *  conditions.
   */
   enum class BCFlag { OPEN=0, WRAP=1, REFL=2, REPL=3 };
-
-  //! @brief The number of dimensions the simulation takes place in.
-  const int DIMENSIONS = 2;
-  
 }
 
 #endif // __DEFAULT_CONSTANTS_HPP__GFLOW__

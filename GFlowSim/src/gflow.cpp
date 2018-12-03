@@ -6,25 +6,25 @@
 
 namespace GFlowSimulation {
 
-  GFlow::GFlow() : running(false), useForces(true), requested_time(0), total_requested_time(0), elapsed_time(0), total_time(0), 
-    iter(0), argc(0), argv(nullptr), repulsion(DEFAULT_HARD_SPHERE_REPULSION), dissipation(0), center_attraction(0), sim_dimensions(DIMENSIONS),
+  GFlow::GFlow(int dims) : running(false), useForces(true), requested_time(0), total_requested_time(0), elapsed_time(0), total_time(0), 
+    iter(0), argc(0), argv(nullptr), repulsion(DEFAULT_HARD_SPHERE_REPULSION), dissipation(0), center_attraction(0), sim_dimensions(dims),
     bounds(Bounds(2))
   {
+    // Set up arrays
+    boundaryConditions = new BCFlag[sim_dimensions];
+    v_com_correction = new RealType[sim_dimensions];
+    // Set up basic objects. The integrator will be created by the creator
     simData      = new SimData(this);
-    bondData     = new BondData(this);
-    angleData    = new AngleData(this);
-    // Integrator will be created by the creator
     integrator   = nullptr;
     domain       = new DomainTest(this); // Domain(this);
     dataMaster   = new DataMaster(this);
     forceMaster  = new ForceMaster(this);
     // Set up bounds to have the propper dimensions
     bounds = Bounds(sim_dimensions);
-
     // Set wrapping to true by default
     setAllBCs(BCFlag::WRAP);
     // Set v_com_correction to zero
-    zeroVec(v_com_correction);
+    zeroVec(v_com_correction, sim_dimensions);
   }
 
   GFlow::~GFlow() {
@@ -36,6 +36,8 @@ namespace GFlowSimulation {
       if (md) delete md;
     for (auto &it : interactions)
       if (it) delete it;
+    if (boundaryConditions) delete [] boundaryConditions;
+    if (v_com_correction) delete [] v_com_correction;
   }
 
   bool GFlow::initialize() {
@@ -65,7 +67,7 @@ namespace GFlowSimulation {
       else non_null = false;
     }
     // Clear v_com_correction
-    zeroVec(v_com_correction);
+    zeroVec(v_com_correction, sim_dimensions);
     // Return whether pointers were non-null
     return non_null;
   }
@@ -74,7 +76,7 @@ namespace GFlowSimulation {
     // Make sure we aren't handed a null pointer
     if (base==nullptr) return;
     // Set the number of dimensions
-    base->sim_dimensions = sim_dimensions;
+    // base->sim_dimensions = sim_dimensions;
     // Give pointer to this GFlow object
     base->gflow = this;
     // Set other objects
@@ -306,6 +308,19 @@ namespace GFlowSimulation {
     }
   }
 
+  RealType GFlow::getDistance(const RealType *x, const RealType *y) {
+    RealType dist = 0;
+    for (int d=0; d<sim_dimensions; ++d) {
+      RealType ds = x[d] - y[d];
+      if (boundaryConditions[d]==BCFlag::WRAP) {
+        RealType dx = bounds.max[d] - bounds.min[d] - fabs(ds);
+        if (dx<fabs(ds)) ds = ds>0 ? -dx : dx;
+      }
+      dist += sqr(ds);
+    }
+    return sqrt(dist);
+  }
+
   void GFlow::setCommand(int argc, char **argv) {
     if (argv) {
       this->argc = argc;
@@ -432,11 +447,11 @@ namespace GFlowSimulation {
 
     // Attract particles towards center with constant acceleration
     for (int n=0; n<simData->number; ++n) {
-      copyVec(x[n], X);
-      subtractVec(center, X, dX);
-      normalizeVec(dX);
-      scalarMultVec(center_attraction/im[n], dX);
-      plusEqVec(f[n], dX);
+      copyVec(x[n], X, sim_dimensions);
+      subtractVec(center, X, dX, sim_dimensions);
+      normalizeVec(dX, sim_dimensions);
+      scalarMultVec(center_attraction/im[n], dX, sim_dimensions);
+      plusEqVec(f[n], dX, sim_dimensions);
     }
     // Clean up
     delete [] center;
@@ -452,19 +467,19 @@ namespace GFlowSimulation {
     // Calculate the total velocity
     for (int n=0; n<number; ++n) {
       RealType m = 1./im[n];
-      plusEqVecScaled(v_ave, v[n], m);
+      plusEqVecScaled(v_ave, v[n], m, sim_dimensions);
       mass += m;
     }
     // Divide by mass to get the average velocity
-    scalarMultVec(1./mass, v_ave);
+    scalarMultVec(1./mass, v_ave, sim_dimensions);
     // Subtract away com velocity in dimensions with wrapped boundary conditions
     for (int d=0; d<sim_dimensions; ++d)
       if (boundaryConditions[d]!=BCFlag::WRAP) v_ave[d] = 0;
     for (int n=0; n<number; ++n)
-      minusEqVec(v[n], v_ave);
+      minusEqVec(v[n], v_ave, sim_dimensions);
 
     // Increment
-    plusEqVec(v_com_correction, v_ave);
+    plusEqVec(v_com_correction, v_ave, sim_dimensions);
 
     // Clean up
     delete [] v_ave;

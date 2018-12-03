@@ -6,32 +6,8 @@
 
 namespace GFlowSimulation {
 
-  class DataLayout {
-  public:
-    //! @brief Constructor. Pass in data sizes and data names.
-    DataLayout(vector<int>& ds, vector<string>& dn) { 
-      if (ds.size()!=dn.size()) throw false;
-      data_width = 0;
-      for (int i=0; i<ds.size(); ++i) {
-        name_place_mapping.insert(std::pair<string, int>(dn.at(i), ds.at(i)));
-        data_width += ds[i];
-      }
-    }
-
-    RealType *access(RealType *data, string &name) {
-      auto f = name_place_mapping.find(name);
-      if (f==name_place_mapping.end()) return nullptr;
-      else return &data[f->second];
-    } 
-  private:
-    //! @brief The total length of a data entry.
-    int data_width;
-    //! @brief A mapping between data names, and the place where that data entry starts.
-    std::map<string, int> name_place_mapping;
-  };
-
   /**
-  *  @brief Creates visualization from
+  *  @brief Creates visualizations from data.
   *
   */
   class Visualization {
@@ -71,6 +47,10 @@ namespace GFlowSimulation {
 
     inline RGBApixel getColor(int) const;
 
+    inline void setPlaces(const int) const;
+
+    inline void resetPlaces();
+
     template<typename T> inline T getNextNumber(std::ifstream& fin) const {
       char c;
       fin.get(c);
@@ -88,18 +68,19 @@ namespace GFlowSimulation {
     }
 
     //! @brief Where the position data starts.
-    int pos_place;
+    mutable int pos_place;
 
     //! @brief Where the velocity data starts.
-    int vel_place;
+    mutable int vel_place;
 
     //! @brief Where in the data for a particle is the radius.
-    int sg_place;
+    mutable int sg_place;
 
     //! @brief Where in the data for a particle is its type.
-    int type_place;
+    mutable int type_place;
 
-    int distance_place;
+    //! @brief Where in the data for a particle is the distance traveled.
+    mutable int distance_place;
 
     //! @brief The dimensions of the image (it will be the same in x and y)
     int resolution;

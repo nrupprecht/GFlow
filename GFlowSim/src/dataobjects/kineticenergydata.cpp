@@ -20,7 +20,7 @@ namespace GFlowSimulation {
     int count = 0;
     for (int n=0; n<number; ++n)
       if (im[n]>0) {
-        ke += sqr(v[n])/im[n];
+        ke += sqr(v[n], sim_dimensions)/im[n];
         ++count;
       }
     ke *= 0.5;

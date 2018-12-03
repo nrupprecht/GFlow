@@ -58,13 +58,13 @@ namespace GFlowSimulation {
     }
 
     // Create a new gflow object
-    GFlow *gflow = new GFlow;
+    GFlow *gflow = new GFlow(sim_dimensions);
     gflow->setAllBCs(bcFlag);
 
     // Set the bounds of the gflow object
     if (width<=0) width = 1.; // In case of bad argument
     if (height<=0) height = width;
-    for (int d=0; d<DIMENSIONS; ++d) {
+    for (int d=0; d<sim_dimensions; ++d) {
       if (d!=1) {
         gflow->bounds.min[d] = -0.5*width;
         gflow->bounds.max[d] =  0.5*width;
@@ -78,8 +78,8 @@ namespace GFlowSimulation {
     // --- Set initial particle data
     // Find how many objects to use
     if (number<0) {
-      RealType vol = pow(width, DIMENSIONS);  
-      number = phi*vol/sphere_volume(radius);
+      RealType vol = pow(width, sim_dimensions);  
+      number = phi*vol/sphere_volume(radius, sim_dimensions);
     }
 
     // The simdata object
@@ -98,13 +98,13 @@ namespace GFlowSimulation {
     simData->reserve(number);
     
     // Holders
-    RealType X[DIMENSIONS], V[DIMENSIONS]; //-- 
-    zeroVec(V); //-- 
+    RealType *X = new RealType[sim_dimensions], *V = new RealType[sim_dimensions];
+    zeroVec(V, sim_dimensions);
     // Calculate the inverse mass
     RealType im = 1.0 / (1.0 * PI*sqr(radius));
     for (int n=0; n<number; ++n) {
       // Give some random initial positions - we will allow these to relax
-      for (int d=0; d<DIMENSIONS; ++d) X[d] = (drand48()-0.5)*width;
+      for (int d=0; d<sim_dimensions; ++d) X[d] = (drand48()-0.5)*width;
       simData->addParticle(X, V, radius, im, 0);
     }
     // --- Initialize domain
@@ -142,20 +142,22 @@ namespace GFlowSimulation {
     gflow->integrator->setDT(dt);
 
     // --- Set velocities
-    RealType normal[DIMENSIONS];
     // In case the number of particles has changed
     number = gflow->simData->number;
-
     for (int n=0; n<number; ++n) {
       // Give some random velocities
       double ke = fabs(vsgma*normal_dist(generator));
       double velocity = sqrt(2*simData->Im(n)*ke/127.324);
       // Random normal vector
-      randomNormalVec(normal);
+      randomNormalVec(simData->V(n), sim_dimensions);
       // Set the velocity
-      scalarMultVec(velocity, normal, simData->V(n));
+      scalarMultVec(velocity, simData->V(n), sim_dimensions);
       simData->Sg(n) = radius;
     }
+    // Clean up
+    delete [] X;
+    delete [] V;
+    // Return
     return gflow;
   }
 

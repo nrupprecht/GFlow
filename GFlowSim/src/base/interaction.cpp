@@ -40,7 +40,7 @@ namespace GFlowSimulation {
     return handler->size();
   }
 
-  const InteractionHandler* Interaction::getInteractionHandler() const {
+  InteractionHandler* Interaction::getInteractionHandler() const {
     return handler;
   }
 

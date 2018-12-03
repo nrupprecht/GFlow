@@ -15,8 +15,6 @@ namespace GFlowSimulation {
 
     //! @brief Calculate dt.
     virtual void pre_step() override;
-
-    virtual void post_forces() override;
     
     // --- Accessors
     RealType getTimeStep();

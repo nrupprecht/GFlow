@@ -69,10 +69,9 @@ namespace GFlowSimulation {
 
     // Create the scenario from the options
     if (gflow) delete gflow;
-    gflow = new GFlow;
     // Set skin depth
-    if (skinDepth>0) gflow->domain->setSkinDepth(skinDepth);
-    if (cell_size>0) gflow->domain->setCellSize(cell_size);
+    //if (skinDepth>0) gflow->domain->setSkinDepth(skinDepth);
+    //if (cell_size>0) gflow->domain->setCellSize(cell_size);
     // Create from the options
     build_message += "Starting simulation setup... ";
     try {
@@ -135,11 +134,12 @@ namespace GFlowSimulation {
     // --- Look for dimensions
     parser.getHeading_Optional("Dimensions");
     hd = parser.first();
+    int sim_dimensions = 2;
     if (hd) {
-      int dims = -1;
-      parser.extract_first_parameter<int>(dims);
-      if (dims!=DIMENSIONS) throw BadDimension();
+      parser.extract_first_parameter<int>(sim_dimensions);
+      if (sim_dimensions<=0) throw BadDimension();
     }
+    gflow = new GFlow(sim_dimensions);
 
     // --- Look for seed information for random generators
     parser.getHeading_Optional("Seed");
@@ -158,7 +158,7 @@ namespace GFlowSimulation {
     ParseHelper subParser(hd);
     simBounds = Bounds(subParser.size());
     int d=0;
-    for (int d=0; d<DIMENSIONS; ++d) {
+    for (int d=0; d<sim_dimensions; ++d) {
       subParser.extract_parameter(simBounds.min[d], d, 0);
       subParser.extract_parameter(simBounds.max[d], d, 1);
     }
@@ -184,9 +184,10 @@ namespace GFlowSimulation {
     parser.getHeading_Optional("Gravity");
     hd = parser.first();
     if (hd) {
-      RealType g[DIMENSIONS];
-      parser.set_vector_argument(g, hd, DIMENSIONS);
+      RealType *g = new RealType[sim_dimensions];
+      parser.set_vector_argument(g, hd, sim_dimensions);
       gflow->addModifier(new ConstantAcceleration(gflow, g));
+      delete [] g;
     }
 
     // --- Attraction towards the center of the domain
@@ -474,12 +475,12 @@ namespace GFlowSimulation {
       throw BadStructure("If using a single type, we need a nonzero number of particles.");
 
     // --- We have found all the options we need so far. Fill the area.
-    GFlow filler;
+    GFlow filler(sim_dimensions);
     filler.setBounds(bnds->getBounds());
     // Default bounds are repulsive
     filler.setAllBCs(BCFlag::REPL);
     // If fill area has full bounds in any dimension, use the natural bounds
-    for (int d=0; d<DIMENSIONS; ++d) 
+    for (int d=0; d<sim_dimensions; ++d) 
       if (
         filler.getBounds().min[d]==gflow->getBounds().min[d] 
         && filler.getBounds().max[d]==gflow->getBounds().max[d]
@@ -499,9 +500,9 @@ namespace GFlowSimulation {
     }
     
     // --- Fill with particles
-    RealType X[DIMENSIONS], V[DIMENSIONS], sigma(0.), im(0.);
+    RealType *X = new RealType[sim_dimensions], *V = new RealType[sim_dimensions], sigma(0.), im(0.);
     int type(0);
-    zeroVec(V);
+    zeroVec(V, sim_dimensions);
     // If we are filling to a specified packing fraction
     if (usePhi) {
       // Create discrete distribution
@@ -528,11 +529,11 @@ namespace GFlowSimulation {
         int pt = choice(global_generator);
         ParticleTemplate &particle_creator = particle_template_numbers.empty() ? particle_templates[0] : template_vector.at(pt);
         // Select other characteristics
-        particle_creator.createParticle(X, sigma, im, type, i);
+        particle_creator.createParticle(X, sigma, im, type, i, sim_dimensions);
         // Add the particle
         simData->addParticle(X, V, sigma, im, type);
         // Increment volume and counter
-        vol += sphere_volume(sigma);
+        vol += sphere_volume(sigma, sim_dimensions);
         ++i;
       }
     }
@@ -550,7 +551,7 @@ namespace GFlowSimulation {
           // Select a position for the particle (random uniform)
           bnds->pick_position(X);
           // Select other characteristics
-          particle_creator.createParticle(X, sigma, im, type, i);
+          particle_creator.createParticle(X, sigma, im, type, i, sim_dimensions);
           // Add the particle
           simData->addParticle(X, V, sigma, im, type);
         }
@@ -573,31 +574,34 @@ namespace GFlowSimulation {
       double ke = fabs(vsgma*normal_dist(generator));
       double velocity = sqrt(2*im*ke/127.324);
       // Random normal vector
-      RealType normal[DIMENSIONS];
-      randomNormalVec(normal);
+      randomNormalVec(V, sim_dimensions);
       // Set the velocity
-      scalarMultVec(velocity, normal, V);
+      scalarMultVec(velocity, V, sim_dimensions);
     };
 
     // --- Fill gflow with the particles
     for (int i=0; i<simData->number; ++i) {
       // Extract the particle properties
-      copyVec(simData->X(i), X);
+      copyVec(simData->X(i), X, sim_dimensions);
       int type = simData->Type(i);
       RealType sigma = simData->Sg(i);
       RealType im = simData->Im(i);
       if (type!=-1) {
         // Select the velocity for the final particle
         if (velocityOption==0) select_velocity(V, X, sigma, im, type);
-        else zeroVec(V);
+        else zeroVec(V, sim_dimensions);
         // Infinitely heavy objects do not move.
-        if (im==0) zeroVec(V);
+        if (im==0) zeroVec(V, sim_dimensions);
         gflow->simData->addParticle(X, V, sigma, im, type);
       }
     }
       
     // So we don't delete the force master when filler cleans up
     filler.forceMaster = nullptr; 
+
+    // Clean up
+    delete [] X;
+    delete [] V;
   }
 
   inline FillBounds* FileParseCreator::getFillBounds(HeadNode *h) const {
@@ -607,17 +611,17 @@ namespace GFlowSimulation {
 
     // Check if we should use the full simulation bounds - the bounds are then rectangular
     if (h->subHeads.empty() && h->params.size()>0 && h->params[0]->partA=="Full")
-      fbnds = new RectangularBounds(simBounds, DIMENSIONS);
+      fbnds = new RectangularBounds(simBounds, sim_dimensions);
 
     // Spherical bounds
     else if (h->params.size()>0 && h->params[0]->partA=="Sphere") {
       if (h->subHeads.size()!=2)
         throw BadStructure("Expected position and radius for spherical bounds.");
-      if (h->subHeads[0]->params.size()!=DIMENSIONS)
+      if (h->subHeads[0]->params.size()!=sim_dimensions)
         throw BadStructure("Vector needs the correct number of dimensions.");
-      SphericalBounds *sbnds = new SphericalBounds(DIMENSIONS);
+      SphericalBounds *sbnds = new SphericalBounds(sim_dimensions);
       // Get the center
-      for (int d=0; d<DIMENSIONS; ++d)
+      for (int d=0; d<sim_dimensions; ++d)
         sbnds->center[d] = convert<float>(h->subHeads[0]->params[d]->partA);
       // Get the radius
       sbnds->radius = convert<float>(h->subHeads[1]->params[0]->partA);
@@ -625,10 +629,10 @@ namespace GFlowSimulation {
     }
     // Otherwise, rectangular bounds
     else {
-      if (h->subHeads.size()!=DIMENSIONS) 
-        throw BadStructure("Expected "+toStr(DIMENSIONS)+" arguments, found "+toStr(h->subHeads.size()));
+      if (h->subHeads.size()!=sim_dimensions) 
+        throw BadStructure("Expected "+toStr(sim_dimensions)+" arguments, found "+toStr(h->subHeads.size()));
       // Set bounds
-      RectangularBounds *rbnds = new RectangularBounds(DIMENSIONS);
+      RectangularBounds *rbnds = new RectangularBounds(sim_dimensions);
       for (int d=0; d<h->subHeads.size(); ++d) {
         // Check for well formed options.
         if (h->subHeads[d]->params.size()!=2 || !h->subHeads[d]->subHeads.empty()) 
@@ -675,19 +679,19 @@ namespace GFlowSimulation {
     std::vector<HeadNode*> container;
 
     // --- Look for options
-    RealType X[DIMENSIONS], V[DIMENSIONS], sigma, im;
+    RealType *X = new RealType[sim_dimensions], *V = new RealType[sim_dimensions], sigma, im;
     int type;
 
     // --- Look for position
     parser.getHeading_Necessary("Position", "Particle needs a position!");
     hd = parser.first();
-    parser.set_vector_argument(X, hd, DIMENSIONS);
+    parser.set_vector_argument(X, hd, sim_dimensions);
 
     // --- Look for velocity
     parser.getHeading_Optional("Velocity");
     hd = parser.first();
-    if (hd) parser.set_vector_argument(V, hd, DIMENSIONS);
-    else zeroVec(V);
+    if (hd) parser.set_vector_argument(V, hd, sim_dimensions);
+    else zeroVec(V, sim_dimensions);
 
     // --- Look for sigma
     parser.getHeading_Necessary("Sigma", "Particle needs a sigma!");
@@ -705,11 +709,11 @@ namespace GFlowSimulation {
     hd = parser.first();
     if (hd) {
       RealType d = 1;
-      if (parser.extract_parameter(hd, "Density", d))   im = 1./(d*sphere_volume(sigma, DIMENSIONS));
+      if (parser.extract_parameter(hd, "Density", d))   im = 1./(d*sphere_volume(sigma, sim_dimensions));
       else if (parser.extract_parameter(hd, "Mass", d)) im = 1./d;
       else throw BadStructure("Unrecognized option for mass in particle creation.");
     }
-    else im = 1./sphere_volume(sigma, DIMENSIONS); // Default density is 1
+    else im = 1./sphere_volume(sigma, sim_dimensions); // Default density is 1
 
     // --- Look for modifiers
     parser.getHeading_Optional("Modifier");
@@ -725,6 +729,10 @@ namespace GFlowSimulation {
 
     // Add the particle to the system
     gflow->simData->addParticle(X, V, sigma, im, type);
+
+    // Clean up
+    delete [] X;
+    delete [] V;
   }
 
   inline void FileParseCreator::getAllMatches(string heading, vector<HeadNode*>& container, std::multimap<string, HeadNode*>& options) const {

@@ -17,7 +17,7 @@ namespace GFlowSimulation {
   class GFlow {
   public:
     //! @brief Constructor.
-    GFlow();
+    GFlow(int);
 
     //! @brief Destructor.
     ~GFlow();
@@ -109,6 +109,8 @@ namespace GFlowSimulation {
 
     void getDisplacement(const RealType*, const RealType*, RealType*);
 
+    RealType getDistance(const RealType*, const RealType*);
+
     // --- Mutators
 
     //! @brief Set the command info
@@ -198,6 +200,8 @@ namespace GFlowSimulation {
     // Data master is a friend class
     friend class DataMaster;
 
+    friend class Base;
+
   protected:
     // --- Private helper functions
     //! Clear all the force arrays.
@@ -214,7 +218,6 @@ namespace GFlowSimulation {
     class ForceMaster *forceMaster;     // ForceMaster object for defining and storing interparticle forces  
 
     class BondData  *bondData;
-    class AngleData *angleData;
 
     //! @brief A vector of objects that should modify the simulation at some point(s) during execution.
     std::list<class Modifier*> modifiers;
@@ -248,10 +251,10 @@ namespace GFlowSimulation {
     Bounds bounds;
 
     //! @brief Boundary types.
-    BCFlag boundaryConditions[DIMENSIONS];
+    BCFlag *boundaryConditions;
 
     //! @brief The number of dimensions
-    int sim_dimensions;
+    const int sim_dimensions;
 
     //! @brief Strength of boundary repulsion forces.
     RealType repulsion;
@@ -270,7 +273,7 @@ namespace GFlowSimulation {
     //! Objects like constant velocity modifers should be able to move their object at 
     //! the correct constant velocity. They can use this correction to adjust velocity 
     //! accordingly.
-    RealType v_com_correction[DIMENSIONS];
+    RealType *v_com_correction;
 
     //! @brief If true, we keep the com velocity zero in directions with wrap boundary conditions.
     bool correct_com = false;

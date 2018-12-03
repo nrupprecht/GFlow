@@ -13,8 +13,11 @@ namespace GFlowSimulation {
   */
   class PositionData : public DataObject {
   public:
-    //! @brief Constructor
+    //! @brief Constructor.
     PositionData(GFlow*);
+
+    //! @brief Destructor.
+    ~PositionData();
 
     //! @brief Store the initial positions of the particles.
     virtual void pre_integrate() override;
@@ -44,6 +47,9 @@ namespace GFlowSimulation {
 
     //! @brief Initial positions of particle.
     vector<RealType> initial_data;
+
+    //! @brief For holding vector data
+    RealType *vdata;
 
     //! @brief The amount of data we collect per particle.
     int dataWidth;

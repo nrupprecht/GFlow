@@ -195,7 +195,7 @@ namespace GFlowSimulation {
 namespace GFlowSimulation {
 
   //! Computes the volume of a [D]-dimensional sphere - need PI
-  inline RealType sphere_volume(const RealType radius, const int D=DIMENSIONS) {
+  inline RealType sphere_volume(const RealType radius, const int D) {
     return pow(PI, D/2.) * pow(radius, D) / tgamma(D/2. + 1.);
   }
 

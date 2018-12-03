@@ -45,8 +45,8 @@ namespace GFlowSimulation {
     int i=0;
     for (; i<sim_dimensions*simData->number-simd_data_size; i += simd_data_size) {
       simd_float F = simd_abs(simd_load(&f[i]));
-      simd_float Im = simd_load_constant<DIMENSIONS>(im, i);
-      simd_float Sg = simd_load_constant<DIMENSIONS>(sg, i);
+      simd_float Im = simd_load_constant(im, i, sim_dimensions);
+      simd_float Sg = simd_load_constant(sg, i, sim_dimensions);
       simd_float Mint = Sg / (F * Im);
       simd_float mask = simd_less_than(Mint, MinT);
       simd_update_masked(MinT, Mint, mask);
@@ -90,8 +90,8 @@ namespace GFlowSimulation {
 
     // Update positions (there are no velocities)
     #if SIMD_TYPE==SIMD_NONE
-    for (int i=0; i<number*DIMENSIONS; ++i) {
-      int id = i/DIMENSIONS;
+    for (int i=0; i<number*sim_dimensions; ++i) {
+      int id = i/sim_dimensions;
       x[i] += dampingConstant*im[id]*f[i]*dt;
       // Debug mode asserts
       #if DEBUG==1
@@ -104,17 +104,17 @@ namespace GFlowSimulation {
     // Get dampingConstant * dt
     simd_float g_dt = simd_set1(dampingConstant*dt);
     int i=0;
-    for (; i<number*DIMENSIONS-simd_data_size; i+=simd_data_size) {
+    for (; i<number*sim_dimensions-simd_data_size; i+=simd_data_size) {
       simd_float X = simd_load(&x[i]);
-      simd_float _im = simd_load_constant<DIMENSIONS>(im, i);
+      simd_float _im = simd_load_constant(im, i, sim_dimensions);
       simd_float F = simd_load(&f[i]);
       simd_float dX = g_dt*_im*F;
       simd_float X_new  = X + dX; 
       simd_store(X_new, &x[i]);
     }
     // Left overs
-    for (; i<number*DIMENSIONS; ++i) {
-      int id = i/DIMENSIONS;
+    for (; i<number*sim_dimensions; ++i) {
+      int id = i/sim_dimensions;
       x[i] += dampingConstant*im[id]*f[i]*dt;
     }
     #endif

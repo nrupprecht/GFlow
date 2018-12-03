@@ -12,8 +12,11 @@ namespace GFlowSimulation {
   */
   class ConstantVelocity : public Modifier {
   public:
-    //! @brief Constructor
+    //! @brief Constructor.
     ConstantVelocity(GFlow*, int, RealType*);
+
+    //! @brief Destructor.
+    ~ConstantVelocity();
 
     //! @brief Set force to zero and velocity to the specified velocity.
     virtual void post_forces() override;
@@ -23,7 +26,7 @@ namespace GFlowSimulation {
     int global_id;
 
     //! @brief The constant velocity.
-    RealType velocity[DIMENSIONS];
+    RealType *velocity;
   };
 
 }

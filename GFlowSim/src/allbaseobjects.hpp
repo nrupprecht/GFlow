@@ -2,8 +2,6 @@
 #define __ALL_BASE_OBJECTS_HPP__GFLOW__
 
 #include "base/simdata.hpp"
-#include "base/bonddata.hpp"
-#include "base/angledata.hpp"
 #include "base/integrator.hpp"
 #include "base/interaction.hpp"
 #include "base/interactionhandler.hpp"

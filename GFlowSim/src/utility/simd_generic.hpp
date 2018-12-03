@@ -22,7 +22,7 @@ inline void sub(const float *a, const float *b, float *c, int sim_dimensions) {
 inline float mult(const float a, const float b) { return a*b; }
 
 inline float dot(const float *a, const float *b, const int sim_dimensions) {
-  return dotVec(a, b);
+  return dotVec(a, b, sim_dimensions);
 }
 
 inline float mask_value(float a, float m) { return a*m; }
@@ -31,8 +31,8 @@ inline float clamp(float a) { return a<0 ? 0 : a; }
 
 inline float un_clamp(float a) { return a<0 ? a : 0; }
 
-inline void scalar_mult_vec(float scalar, const float *vec, float *out, int) {
-  GFlowSimulation::scalarMultVec(scalar, vec, out);
+inline void scalar_mult_vec(float scalar, const float *vec, float *out, int sim_dimensions) {
+  GFlowSimulation::scalarMultVec(scalar, vec, out, sim_dimensions);
 }
 
 inline void copy_negative(const float *src, float *dest, int sim_dimensions) {
@@ -43,8 +43,8 @@ inline std::string to_str(const float a) {
   return toStr(a); 
 }
 
-inline std::string to_str_vec(const float *a, int) {
-  return PrintingUtility::toStrVec(a);
+inline std::string to_str_vec(const float *a, int sim_dimensions) {
+  return toStrVec(a, sim_dimensions);
 }
 
 #if SIMD_TYPE!=SIMD_NONE

@@ -23,9 +23,9 @@ namespace GFlowSimulation {
     // Get and store data
     int number = Base::simData->number;
     for (int n=0; n<number; ++n) {
-      dat[1] += magnitudeVec(Base::simData->X(n));
-      dat[2] += magnitudeVec(Base::simData->V(n));
-      dat[3] += magnitudeVec(Base::simData->F(n));
+      dat[1] += magnitudeVec(Base::simData->X(n), sim_dimensions);
+      dat[2] += magnitudeVec(Base::simData->V(n), sim_dimensions);
+      dat[3] += magnitudeVec(Base::simData->F(n), sim_dimensions);
     }
     // Put in values
     dat[1] /= number;

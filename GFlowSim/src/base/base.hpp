@@ -44,7 +44,7 @@ namespace GFlowSimulation {
     vector<class Interaction*> *interactionsPtr;
 
     //! @brief The number of dimensions in the simulation. We get this from GFlow.
-    int sim_dimensions;
+    const int sim_dimensions;
   };
 
 }

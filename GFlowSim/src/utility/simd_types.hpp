@@ -55,6 +55,11 @@ const int simd_valid = 0xffffffff;
     return a[i/dimensions];
   }
 
+  inline simd_float simd_load_constant(const float *a, const int i, int dimensions) {
+    // Need to set in "reverse" order
+    return a[i/dimensions];
+  }
+
 #elif SIMD_TYPE==SIMD_SSE3
   // The number of floats per vector
   const int simd_data_size = 4u;
@@ -108,6 +113,11 @@ const int simd_valid = 0xffffffff;
   inline simd_float simd_un_clamp(const simd_float a) { return simd_mask(a, simd_less_than(a, simd_set1(0))); }
 
   // Special load
+  inline simd_float simd_load_constant(const float *a, const int i, int dimensions) {
+    // Need to set in "reverse" order
+    return _mm_set_ps(a[(i+3)/dimensions], a[(i+2)/dimensions], a[(i+1)/dimensions], a[i/dimensions]);
+  }
+
   template<int dimensions> inline simd_float simd_load_constant(const float *a, const int i) {
     // Need to set in "reverse" order
     return _mm_set_ps(a[(i+3)/dimensions], a[(i+2)/dimensions], a[(i+1)/dimensions], a[i/dimensions]);
@@ -185,6 +195,12 @@ const int simd_valid = 0xffffffff;
   inline simd_float simd_un_clamp(const simd_float a) { return simd_mask(a, simd_less_than(a, simd_set1(0.))); }
 
   // Special load
+  inline simd_float simd_load_constant(const float *a, const int i, int dimensions) {
+    // Need to set in "reverse" order
+    return _mm256_set_ps(a[(i+7)/dimensions], a[(i+6)/dimensions], a[(i+5)/dimensions], a[(i+4)/dimensions], 
+      a[(i+3)/dimensions], a[(i+2)/dimensions], a[(i+1)/dimensions], a[i/dimensions]);
+  }
+
   template<int dimensions> inline simd_float simd_load_constant(const float *a, const int i) {
     // Need to set in "reverse" order
     return _mm256_set_ps(a[(i+7)/dimensions], a[(i+6)/dimensions], a[(i+5)/dimensions], a[(i+4)/dimensions], 
@@ -254,6 +270,16 @@ const int simd_valid = 0xffffffff;
   // inline simd_int simd_less_than(const simd_float a, const simd_float b) { return _mm512_castpd_si512(_mm512_cmp_pd(a, b, _CMP_LT_OS)); }
 
   // Special load
+  inline simd_float simd_load_constant(const float *a, const int i, int dimensions) {
+    // Need to set in "reverse" order
+    return _mm512_set_ps(
+      a[(i+15)/dimensions], a[(i+14)/dimensions], a[(i+13)/dimensions], a[(i+12)/dimensions], 
+      a[(i+11)/dimensions], a[(i+10)/dimensions], a[(i+9)/dimensions], a[(i+8)/dimensions],
+      a[(i+7)/dimensions], a[(i+6)/dimensions], a[(i+5)/dimensions], a[(i+4)/dimensions], 
+      a[(i+3)/dimensions], a[(i+2)/dimensions], a[(i+1)/dimensions], a[i/dimensions]
+    );
+  }
+
   template<int dimensions> inline simd_float simd_load_constant(const float *a, const int i) {
     // Need to set in "reverse" order
     return _mm512_set_ps(

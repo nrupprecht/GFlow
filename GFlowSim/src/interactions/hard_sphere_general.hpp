@@ -33,13 +33,13 @@ namespace GFlowSimulation {
     template<typename float_type>
     static void force(float_type*, const float_type*, 
       const float_type, const float_type, const float_type*, 
-      const float_type*, const RealType*, RealType*);
+      const float_type*, const RealType*, RealType*, int);
   };
 
   // --- Template force function
   template<typename float_type>
   void HardSphereGeneral::force(float_type *buffer_out, const float_type* normal, const float_type mask, const float_type distance, 
-    const float_type *scalar_data, const float_type *vec_data, const RealType *param_pack, RealType *data_pack) {
+    const float_type *scalar_data, const float_type *vec_data, const RealType *param_pack, RealType *data_pack, int dimensions) {
     // Expect: Soa data:
     //  scalar_data[0] - sigma, 1
     //  scalar_data[1] - sigma, 2
@@ -49,7 +49,7 @@ namespace GFlowSimulation {
     //  vec_data[0::D]  - velocity, 1
     //  vec_data[D::2D] - velocity, 2
     const float_type *V1 = &vec_data[0];
-    const float_type *V2 = &vec_data[DIMENSIONS];
+    const float_type *V2 = &vec_data[dimensions];
     // Expect: Param pack:
     //  param_pack[0] - Repulsion
     //  param_pack[1] - Dissipation
@@ -63,10 +63,10 @@ namespace GFlowSimulation {
     float_type masked_Fn;
     if (param_pack[1]>0) {
       // Calculate relative velocity
-      float_type dV[DIMENSIONS]; // V2 - V1
-      sub(V2, V1, dV, DIMENSIONS);
+      float_type dV[dimensions]; // V2 - V1
+      sub(V2, V1, dV, dimensions);
       // Calculate normal velocity and force
-      float_type Vn = dot(static_cast<float_type*>(dV), normal, DIMENSIONS);
+      float_type Vn = dot(static_cast<float_type*>(dV), normal, dimensions);
       float_type Fn = magnitude + dissipation * un_clamp(Vn);
       masked_Fn = mask_value(Fn, mask);
     }
@@ -75,8 +75,8 @@ namespace GFlowSimulation {
     // Out:
     //  buffer_out[0::DIM]       = force, 1
     //  buffer_out[DIM+1::2*DIM] = force, 2
-    scalar_mult_vec(masked_Fn, normal, buffer_out, DIMENSIONS); // F1 += f
-    copy_negative(buffer_out, &buffer_out[DIMENSIONS], DIMENSIONS);
+    scalar_mult_vec(masked_Fn, normal, buffer_out, dimensions); // F1 += f
+    copy_negative(buffer_out, &buffer_out[dimensions], dimensions);
   }
 
 }

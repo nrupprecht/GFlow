@@ -30,13 +30,27 @@ namespace GFlowSimulation {
     template<typename float_type>
     static void force(float_type*, const float_type*, 
       const float_type, const float_type, const float_type*, 
-      const float_type*, const RealType*, RealType*);
+      const float_type*, const RealType*, RealType*, int);
+
+    
+    static void force2d(RealType*, const RealType*, 
+      const RealType, const RealType, const RealType*, 
+      const RealType*, const RealType*, RealType*, int);
   };
 
   // --- Template force function
   template<typename float_type>
-  void HardSphere::force(float_type *buffer_out, const float_type* normal, const float_type mask, const float_type distance, 
-    const float_type *soa_data, const float_type *vec_data, const RealType *param_pack, RealType *data_pack) {
+  void HardSphere::force(
+    float_type*       buffer_out, 
+    const float_type* normal, 
+    const float_type  mask, 
+    const float_type  distance, 
+    const float_type* soa_data, 
+    const float_type* vec_data, 
+    const RealType*   param_pack, 
+    RealType*         data_pack, 
+    int               dimensions) 
+  {
     // Expect: Soa data:
     //  soa_data[0] - sigma, 1
     //  soa_data[1] - sigma, 2
@@ -54,8 +68,8 @@ namespace GFlowSimulation {
     // Out:
     //  buffer_out[0::DIM]       = force, 1
     //  buffer_out[DIM+1::2*DIM] = force, 2
-    scalar_mult_vec( masked_magnitude, normal, buffer_out, DIMENSIONS); // F1 += f
-    copy_negative(buffer_out, &buffer_out[DIMENSIONS], DIMENSIONS);
+    scalar_mult_vec( masked_magnitude, normal, buffer_out, dimensions); // F1 += f
+    copy_negative(buffer_out, &buffer_out[dimensions], dimensions);
   }
 
 }

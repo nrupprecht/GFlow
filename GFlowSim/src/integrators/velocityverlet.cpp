@@ -9,10 +9,14 @@ namespace GFlowSimulation {
   VelocityVerlet::VelocityVerlet(GFlow *gflow) : Integrator(gflow) {};
 
   void VelocityVerlet::pre_forces() {
+
+    if (sim_dimensions!=2) throw false; // WE NEED TO MANUALLY CHANGE simd_load_constant FOR NOW.
+    
     // --- First half kick
 
     // Number of (real - non ghost) particles
-    int number = simData->number;
+    const int number = simData->number;
+    const int total = number*sim_dimensions;
     if (number==0) return;
     // Half a timestep
     RealType hdt = 0.5*Integrator::dt;
@@ -21,8 +25,8 @@ namespace GFlowSimulation {
     
     #if SIMD_TYPE==SIMD_NONE
     // Update velocities
-    for (int i=0; i<number*DIMENSIONS; ++i) {
-      int id = i/DIMENSIONS;
+    for (int i=0; i<total; ++i) {
+      int id = i/sim_dimensions;
       v[i] += hdt*im[id]*f[i];
       // Debug mode asserts
       #if DEBUG==1
@@ -36,10 +40,13 @@ namespace GFlowSimulation {
     // Put hdt into a simd vector
     simd_float _hdt = simd_set1(hdt);
     int i;
-    for (i=0; i<number*DIMENSIONS-simd_data_size; i+=simd_data_size) {
+    for (i=0; i<total-simd_data_size; i+=simd_data_size) {
       simd_float _f = simd_load(&f[i]);
       simd_float V = simd_load(&v[i]);
-      simd_float _im = simd_load_constant<DIMENSIONS>(im, i);
+
+      //simd_float _im = simd_load_constant(im, i, sim_dimensions);
+      simd_float _im = simd_load_constant<2>(im, i);
+
       simd_float dV = _hdt*_im*_f;
       simd_float V_new = V + dV;
       // Store the updated velocity
@@ -55,8 +62,8 @@ namespace GFlowSimulation {
       #endif
     }
     // Left overs
-    for (; i<number*DIMENSIONS; ++i) {
-      int id = i/DIMENSIONS;
+    for (; i<total; ++i) {
+      int id = i/sim_dimensions;
       v[i] += hdt*im[id]*f[i];
       // Debug mode asserts
       #if DEBUG==1
@@ -71,7 +78,7 @@ namespace GFlowSimulation {
     // --- Update positions -- It seems to be marginally faster to have this in a separate loop.
     // Do serially
     #if SIMD_TYPE==SIMD_NONE
-    for (int i=0; i<number*DIMENSIONS; ++i) {
+    for (int i=0; i<total; ++i) {
       x[i] += dt*v[i];
       // Debug mode asserts
       #if DEBUG==1
@@ -82,7 +89,7 @@ namespace GFlowSimulation {
     #else
     // Set dt
     simd_float dt_vec = simd_set1(dt);
-    for (i=0; i<=number*DIMENSIONS-simd_data_size; i+=simd_data_size) {
+    for (i=0; i<=total-simd_data_size; i+=simd_data_size) {
       simd_float X = simd_load(&x[i]);
       simd_float V = simd_load(&v[i]);
       simd_float dX = simd_mult(V, dt_vec);
@@ -95,7 +102,7 @@ namespace GFlowSimulation {
       #endif
     }
     // Left overs
-    for (; i<number*DIMENSIONS; ++i) {
+    for (; i<total; ++i) {
       x[i] += dt*v[i];
       // Debug mode asserts
       #if DEBUG==1
@@ -103,41 +110,20 @@ namespace GFlowSimulation {
       #endif 
     }
     #endif
-
-    // --- Update angular variables if they exist
-    if (simData->usingAngularDynamics() && DIMENSIONS>1) {
-      // Get arrays
-      RealType *th = simData->th, *om = simData->om, *tq = simData->tq, *iI = simData->Ii();
-      // --- Angular velocity
-      if (DIMENSIONS==2) {
-        for (int i=0; i<number; ++i) {
-          om[i] += hdt*iI[i]*tq[i];
-        }
-      }
-      else {
-        //! @todo Higher dimensional rotational dynamics.
-      }
-      // --- Angular position (angle)
-      if (DIMENSIONS==2) {
-        for (int i=0; i<number; ++i) {
-          th[i] += dt*om[i];
-        }
-      }
-      else {
-        //! @todo Higher dimensional rotational dynamics.
-      }
-    }
-    
   }
 
   void VelocityVerlet::post_forces() {
+
+    if (sim_dimensions!=2) throw false; // WE NEED TO MANUALLY CHANGE simd_load_constant FOR NOW.
+
     // Call to parent class
     Integrator::post_forces();
     
     // --- Second half kick
 
     // Number of (real - non ghost) particles
-    int number = simData->number;
+    const int number = simData->number;
+    const int total = sim_dimensions*number;
     if (number==0) return;
     // Half a timestep
     RealType hdt = 0.5*Integrator::dt;
@@ -145,8 +131,8 @@ namespace GFlowSimulation {
     RealType *x = simData->X_arr(), *v = simData->V_arr(), *f = simData->F_arr(), *im = simData->Im();
 
     #if SIMD_TYPE==SIMD_NONE
-    for (int i=0; i<number*DIMENSIONS; ++i) {
-      int id = i/DIMENSIONS;
+    for (int i=0; i<total; ++i) {
+      int id = i/sim_dimensions;
       v[i] += hdt*im[id]*f[i];
       // Debug mode asserts
       #if DEBUG==1
@@ -160,37 +146,24 @@ namespace GFlowSimulation {
     // Put hdt into a simd vector
     simd_float _hdt = simd_set1(hdt);
     int i;
-    for (i=0; i<number*DIMENSIONS-simd_data_size; i+=simd_data_size) {
+    for (i=0; i<total-simd_data_size; i+=simd_data_size) {
       simd_float vec1   = simd_load(&f[i]);
       simd_float V      = simd_load(&v[i]);
-      simd_float _im    = simd_load_constant<DIMENSIONS>(im, i);
+
+      //simd_float _im    = simd_load_constant(im, i, sim_dimensions);
+      simd_float _im = simd_load_constant<2>(im, i);
+
       simd_float im_hdt = simd_mult(_im, _hdt);
       simd_float im_h_f = simd_mult(im_hdt, vec1);
       vec1 = simd_add(im_h_f, V);
       simd_store(vec1, &v[i]);
     }
     // Left overs
-    for (; i<number*DIMENSIONS; ++i) {
-      int id = i/DIMENSIONS;
+    for (; i<total; ++i) {
+      int id = i/sim_dimensions;
       v[i] += hdt*im[id]*f[i];
     }
     #endif
-
-    // --- Update angular variables if they exist
-    if (simData->usingAngularDynamics()) {
-      // Get arrays
-      RealType *th = simData->th, *om = simData->om, *tq = simData->tq, *iI = simData->Ii();
-      // --- Angular velocity
-      if (DIMENSIONS==1);
-      else if (DIMENSIONS==2) {
-        for (int i=0; i<number; ++i) {
-          om[i] += hdt*iI[i]*tq[i];
-        }
-      }
-      else {
-        //! @todo Higher dimensional rotational dynamics.
-      }
-    }
   }
 
 }

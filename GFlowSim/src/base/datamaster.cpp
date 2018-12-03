@@ -108,9 +108,9 @@ namespace GFlowSimulation {
       if (fout.fail()) success = false;
       else {
         // Write the number of dimensions
-        fout << DIMENSIONS << endl;
+        fout << sim_dimensions << endl;
         // Write the bounds
-        for (int d=0; d<DIMENSIONS; ++d) {
+        for (int d=0; d<sim_dimensions; ++d) {
           fout << Base::gflow->getBounds().min[d] << "," << Base::gflow->getBounds().max[d];
           fout << endl;
         }
@@ -218,15 +218,15 @@ namespace GFlowSimulation {
 
     // --- Print simulation summary
     fout << "Simulation and space:\n";
-    fout << "  - Dimensions:               " << DIMENSIONS << "\n";
+    fout << "  - Dimensions:               " << sim_dimensions << "\n";
     fout << "  - Boundaries:               ";
-    for (int d=0; d<DIMENSIONS; ++d) {
+    for (int d=0; d<sim_dimensions; ++d) {
       fout << "{" << Base::gflow->bounds.min[d] << "," << Base::gflow->bounds.max[d] << "}";
-      if (d!=DIMENSIONS-1) fout << ", ";
+      if (d!=sim_dimensions-1) fout << ", ";
     }
     fout << "\n";
     fout << "  - Boundaries:               ";
-    for (int d=0; d<DIMENSIONS; ++d) {
+    for (int d=0; d<sim_dimensions; ++d) {
       switch (Base::gflow->getBC(d)) {
         case BCFlag::OPEN: {
           fout << "Open";
@@ -249,7 +249,7 @@ namespace GFlowSimulation {
           break;
         }
       }
-      if (d!=DIMENSIONS-1) fout << ", ";
+      if (d!=sim_dimensions-1) fout << ", ";
     }
     fout << "\n";
     fout << "  - Number of particles:      " << Base::simData->number << "\n";
@@ -264,8 +264,8 @@ namespace GFlowSimulation {
       delete [] count;
     }
     RealType vol = 0;
-    for (int n=0; n<Base::simData->number; ++n) vol += pow(simData->Sg(n), DIMENSIONS);
-    vol *= pow(PI, DIMENSIONS/2.) / tgamma(DIMENSIONS/2. + 1.);
+    for (int n=0; n<Base::simData->number; ++n) vol += pow(simData->Sg(n), sim_dimensions);
+    vol *= pow(PI, sim_dimensions/2.) / tgamma(sim_dimensions/2. + 1.);
     RealType phi = vol/Base::gflow->getBounds().vol();
     fout << "  - Packing fraction:         " << phi << "\n";
     fout << "\n";
@@ -284,16 +284,16 @@ namespace GFlowSimulation {
     // --- Print the domain summary
     fout << "Domain summary (as of end of simulation):\n";
     fout << "  - Grid dimensions:          ";
-    for (int d=0; d<DIMENSIONS; ++d) {
+    for (int d=0; d<sim_dimensions; ++d) {
       fout << Base::domain->getDims()[d];
-      if (d!=DIMENSIONS-1) fout << ", ";
+      if (d!=sim_dimensions-1) fout << ", ";
     }
     fout << "\n";
     fout << "  - Total sectors:            " << Base::domain->getNumCells() << "\n";
     fout << "  - Grid lengths:             ";
-    for (int d=0; d<DIMENSIONS; ++d) {
+    for (int d=0; d<sim_dimensions; ++d) {
       fout << Base::domain->getWidths()[d];
-      if (d!=DIMENSIONS-1) fout << ", ";
+      if (d!=sim_dimensions-1) fout << ", ";
     }
     fout << "\n";
     if (Base::domain) {
@@ -336,9 +336,9 @@ namespace GFlowSimulation {
       RealType sig = Base::simData->Sg(n);
       asigma += sig; 
       amass  += 1./Base::simData->Im(n);
-      aden   += 1./(Base::simData->Im(n)*sphere_volume(sig));
-      aspeed += magnitudeVec(Base::simData->V(n));
-      ake    += sqr(magnitudeVec(Base::simData->V(n)))*(1./Base::simData->Im(n));
+      aden   += 1./(Base::simData->Im(n)*sphere_volume(sig, sim_dimensions));
+      aspeed += magnitudeVec(Base::simData->V(n), sim_dimensions);
+      ake    += sqr(magnitudeVec(Base::simData->V(n), sim_dimensions))*(1./Base::simData->Im(n));
     }
     // Normalize
     RealType invN = 1./static_cast<RealType>(Base::simData->number);

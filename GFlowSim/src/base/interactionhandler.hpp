@@ -14,9 +14,17 @@ namespace GFlowSimulation {
   //using Kernel = auto (*) (T*, T*, const T, const T, const T*, const RealType*, RealType*) -> void;
 
   template<typename float_type>
-  using Kernel = auto (*) (float_type*, const float_type*, 
-    const float_type, const float_type, const float_type*, 
-    const float_type*, const RealType*, RealType*) -> void;
+  using Kernel = auto (*) (
+    float_type*, 
+    const float_type*, 
+    const float_type, 
+    const float_type, 
+    const float_type*, 
+    const float_type*, 
+    const RealType*, 
+    RealType*, 
+    int
+  ) -> void;
 
   /**
   *  @brief Handles the storage and traversal of interacting particles.

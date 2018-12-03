@@ -2,7 +2,7 @@
 
 namespace GFlowSimulation {
 
-  bool PrintingUtility::writeArrayDataToFile(RealType *array, int elements, int width, string fileName) {
+  bool writeArrayDataToFile(RealType *array, int elements, int width, string fileName) {
     // Open a file stream
     ofstream fout(fileName);
     if (fout.fail()) return false;
@@ -23,7 +23,7 @@ namespace GFlowSimulation {
 
   // [dirName] is the name of the directory that we should create our new directory of data in
   // [fileName] is the name of the new directory, and the files in that directory are called [fileName][#].csv
-  bool PrintingUtility::writeVectorToDirectory(vector<RealType*>& record, const vector<int>& elements, 
+  bool writeVectorToDirectory(vector<RealType*>& record, const vector<int>& elements, 
     int width, string dirName, const string fileName) 
   {
     // Create the directory
@@ -47,20 +47,20 @@ namespace GFlowSimulation {
     return true;
   }
 
-  string PrintingUtility::toStrVec(const RealType *x) {
+  string toStrVec(const RealType *x, int length) {
     string str;
-    for (int d=0; d<DIMENSIONS; ++d) {
+    for (int d=0; d<length; ++d) {
       str += toStr(x[d]);
-      if (d!=DIMENSIONS-1) str += ',';
+      if (d!=length-1) str += ',';
     }
     return str;
   }
 
-  string PrintingUtility::toStrVec(const int *x) {
+  string toStrVec(const int *x, int length) {
     string str;
-    for (int d=0; d<DIMENSIONS; ++d) {
+    for (int d=0; d<length; ++d) {
       str += toStr(x[d]);
-      if (d!=DIMENSIONS-1) str += ',';
+      if (d!=length-1) str += ',';
     }
     return str;
   }

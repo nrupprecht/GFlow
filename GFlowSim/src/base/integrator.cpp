@@ -30,10 +30,12 @@ namespace GFlowSimulation {
     //!  The smallest radius in each subdivision could be found by binning.
     RealType minT = 1.; // Starting value
 
+    const int total = sim_dimensions*simData->number;
+
     // Find minT
     #if SIMD_TYPE==SIMD_NONE
     // Do serially
-    for (int i=0; i<sim_dimensions*simData->number; ++i) {
+    for (int i=0; i<total; ++i) {
       RealType mint = sg[i/sim_dimensions]/fabs(v[i]);
       if (mint<minT) minT = mint;
     }
@@ -41,9 +43,12 @@ namespace GFlowSimulation {
     // Do as much as we can in parallel
     simd_float MinT = simd_set1(1.);
     int i=0;
-    for (; i<sim_dimensions*simData->number-simd_data_size; i += simd_data_size) {
+    for (; i<total-simd_data_size; i += simd_data_size) {
       simd_float V = simd_abs(simd_load(&v[i]));
-      simd_float Sg = simd_load_constant<DIMENSIONS>(sg, i);
+
+      //simd_float Sg = simd_load_constant(sg, i, sim_dimensions);
+      simd_float Sg = simd_load_constant<2>(sg, i);
+      
       simd_float Mint = Sg / V;
       simd_float mask = simd_less_than(Mint, MinT);
       simd_update_masked(MinT, Mint, mask);
@@ -54,7 +59,7 @@ namespace GFlowSimulation {
       if (mint<minT) minT = mint;
     }
     // Do the last part serially
-    for (; i<sim_dimensions*simData->number; ++i) {
+    for (; i<total; ++i) {
       RealType mint = sg[i/sim_dimensions]/fabs(v[i]);
       if (mint<minT) minT = mint;
     }
@@ -70,30 +75,6 @@ namespace GFlowSimulation {
 
     // Reset step count
     step_count = 0;
-  }
-
-  void Integrator::post_forces() {
-    Base::post_forces();
-
-    /*
-    // Check the velocity components of all the particles
-    RealType *f = simData->F_arr(), *im = simData->Im();
-
-    RealType maxA = 0., aveA = 0;
-    for (int i=0; i<sim_dimensions*simData->number; ++i) {
-      RealType acc = im[i/sim_dimensions]*fabs(f[i]);
-      if (acc>maxA) maxA = acc;
-
-      aveA += acc;
-    }
-
-    RealType t = 1./maxA;
-    if (t<dt) dt = t;
-    if (dt<min_dt) dt = min_dt;
-
-    cout << maxA << " " << aveA/(sim_dimensions*simData->number) << ", Suggest: " << t << endl;
-    cout << dt << endl << endl;
-    */
   }
 
   RealType Integrator::getTimeStep() {

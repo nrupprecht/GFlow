@@ -24,25 +24,28 @@ namespace GFlowSimulation {
     RealType DT1 = temperature/(6.*viscosity*PI);
     RealType Df1 = sqrt(2.*DT1*(time-lastUpdate));
     // Add a random force
-    RealType force[DIMENSIONS], drag[DIMENSIONS], strength;
+    RealType *force = new RealType[sim_dimensions], *drag = new RealType[sim_dimensions], strength;
     for (int n=0; n<number; ++n) {
       RealType Df2 = sqrt(1./sg[n]);
       // Random normal direction
-      randomNormalVec(force);
+      randomNormalVec(force, sim_dimensions);
       // Random strength - 'temperature' is from the viscous medium
       strength = randNormal();
-      scalarMultVec(Df1*Df2*strength, force);
+      scalarMultVec(Df1*Df2*strength, force, sim_dimensions);
       // Drag force - also from the viscous medium
-      copyVec(v[n], drag);
-      scalarMultVec(6.*PI*viscosity*sg[n], drag);
+      copyVec(v[n], drag, sim_dimensions);
+      scalarMultVec(6.*PI*viscosity*sg[n], drag, sim_dimensions);
       // Add total force
-      plusEqVec (f[n], force);
-      minusEqVec(f[n],  drag);
+      plusEqVec (f[n], force, sim_dimensions);
+      minusEqVec(f[n],  drag, sim_dimensions);
     }
 
     // Update time point - we shouldn't update this before now, so 
     // that (time-lastUpdate) will be correct (instead of 0)
     lastUpdate = time;
+    // Clean up
+    delete [] force;
+    delete [] drag;
   }
 
 }
