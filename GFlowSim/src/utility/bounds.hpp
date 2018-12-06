@@ -32,16 +32,16 @@ namespace GFlowSimulation {
     Bounds& operator=(const Bounds&);
 
     //! @brief Get the widths in various dimensions of the bounds.
-    RealType wd(int);
+    RealType wd(int) const;
 
     //! @brief Get the volume of the bounds.
-    RealType vol();
+    RealType vol() const;
 
     //! @brief Get the dimensionality of the bounds.
-    int dims();
+    int dims() const;
 
     //! @brief Set the input vector to be the center of the bounds.
-    void center(RealType*);
+    void center(RealType*) const;
 
     // --- Data
 

@@ -254,7 +254,7 @@ namespace GFlowSimulation {
     BCFlag *boundaryConditions;
 
     //! @brief The number of dimensions
-    const int sim_dimensions;
+    int sim_dimensions;
 
     //! @brief Strength of boundary repulsion forces.
     RealType repulsion;

@@ -142,7 +142,7 @@ namespace GFlowSimulation {
 
   private:
 
-    inline void createFromOptions(GFlow*, HeadNode*);
+    inline void createFromOptions(HeadNode*);
 
     // --- Object selection
 

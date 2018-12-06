@@ -55,20 +55,22 @@ namespace GFlowSimulation {
     return *this;
   }
 
-  RealType Bounds::wd(int d) { 
+  RealType Bounds::wd(int d) const { 
     return max[d] - min[d]; 
   }
 
-  RealType Bounds::vol() {
+  RealType Bounds::vol() const {
     RealType v = 1.0;
     for (int d=0; d<dimensions; ++d)
       v *= (max[d] - min[d]);
     return v;
   }
 
-  int Bounds::dims() { return dimensions; }
+  int Bounds::dims() const { 
+    return dimensions; 
+  }
 
-  void Bounds::center(RealType *v) {
+  void Bounds::center(RealType *v) const {
     for (int d=0; d<dimensions; ++d) {
       v[d] = 0.5*(max[d] + min[d]);
     }

@@ -75,7 +75,7 @@ namespace GFlowSimulation {
     // Create from the options
     build_message += "Starting simulation setup... ";
     try {
-      createFromOptions(gflow, root);
+      createFromOptions(root);
     }
     catch (BadStructure bs) {
       cout << "Caught Bad Structure error: " << bs.message << endl;
@@ -101,7 +101,7 @@ namespace GFlowSimulation {
     return gflow;
   }
 
-  inline void FileParseCreator::createFromOptions(GFlow *gflow, HeadNode *head) {
+  inline void FileParseCreator::createFromOptions(HeadNode *head) {
     // Create a parse helper
     ParseHelper parser(head);
     // Declare valid options

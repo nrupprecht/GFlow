@@ -76,7 +76,7 @@ namespace GFlowSimulation {
     // Make sure we aren't handed a null pointer
     if (base==nullptr) return;
     // Set the number of dimensions
-    // base->sim_dimensions = sim_dimensions;
+    base->sim_dimensions = sim_dimensions;
     // Give pointer to this GFlow object
     base->gflow = this;
     // Set other objects

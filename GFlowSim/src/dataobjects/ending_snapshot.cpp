@@ -23,7 +23,7 @@ namespace GFlowSimulation {
   void EndingSnapshot::pre_integrate() {
     // Store initial positions
     vector<DataType> pos_data(1, DataType::POSITION);
-    store_data(initial_data, pos_data);
+    store_data<RealType>(initial_data, pos_data);
 
     // Calculate data width
     dataWidth = 0;
@@ -37,7 +37,7 @@ namespace GFlowSimulation {
   void EndingSnapshot::post_integrate() {
     // Record all the data
     final_data.reserve(data_types.size()*simData->Number());
-    store_data(final_data, data_types);
+    store_data<double>(final_data, data_types);
   }
 
   bool EndingSnapshot::writeToFile(string fileName, bool useName) {
@@ -84,40 +84,6 @@ namespace GFlowSimulation {
 
     // Return success
     return true;
-  }
-
-  inline void EndingSnapshot::store_data(vector<RealType>& data, vector<DataType>& d_types) {
-    // Fill the array of data
-    for (int i=0; i<Base::simData->Number(); ++i) {
-      if (Base::simData->Type(i)!=-1)
-        for (const auto type : d_types) get_data(data, type, i);
-    }
-  }
-
-  inline void EndingSnapshot::get_data(vector<RealType>& data, DataType type, int id) {
-    switch(type) {
-      case DataType::POSITION: {
-        for (int d=0; d<sim_dimensions; ++d) data.push_back(Base::simData->X(id, d));
-        break;
-      }
-      case DataType::VELOCITY: {
-        for (int d=0; d<sim_dimensions; ++d) data.push_back(Base::simData->V(id, d));
-        break;
-      }
-      case DataType::SIGMA: {
-        data.push_back(Base::simData->Sg(id));
-        break;
-      }
-      case DataType::TYPE: {
-        data.push_back(Base::simData->Type(id));
-        break;
-      }
-      case DataType::DISTANCE: {
-        gflow->getDisplacement(Base::simData->X(id), &initial_data.at(id*sim_dimensions), vdata);
-        data.push_back( magnitudeVec(vdata, sim_dimensions) );
-        break;
-      }
-    }
   }
 
 }

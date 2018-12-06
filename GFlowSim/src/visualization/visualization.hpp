@@ -19,7 +19,7 @@ namespace GFlowSimulation {
 
     void setColorBankSize(int);
 
-    void setRadiusMultiple(RealType);
+    void setRadiusMultiple(double);
 
     void setColorOption(int);
 
@@ -28,20 +28,20 @@ namespace GFlowSimulation {
     //! @brief Create a directory filled with BMP renderings of the system.
     //!
     //! This can be used to create a movie.
-    void createVideo2d(string, const vector<vector<RealType> >&, int, Bounds&, int) const;
+    void createVideo2d(string, const vector<vector<double> >&, int, Bounds&, int) const;
 
-    void createVideo3d(string, const vector<vector<RealType> >&, int, Bounds&, int) const;
+    void createVideo3d(string, const vector<vector<double> >&, int, Bounds&, int) const;
 
     //! @brief Creates a single frame.
-    void createImage(string, const vector<RealType>&, int, Bounds&, int) const;
+    void createImage(string, const vector<double>&, int, Bounds&, int) const;
 
-    void createImage3d(string, const vector<RealType>&, int, Bounds&, int) const;
+    void createImage3d(string, const vector<double>&, int, Bounds&, int) const;
 
   private:
 
-    inline void findMaxVSqr(const vector<vector<RealType> >&, int) const;
+    inline void findMaxVSqr(const vector<vector<double> >&, int) const;
 
-    inline void findMaxDistance(const vector<vector<RealType> >&, int) const;
+    inline void findMaxDistance(const vector<vector<double> >&, int) const;
 
     inline void createColorBank(int);
 

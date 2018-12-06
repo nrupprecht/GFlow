@@ -1,6 +1,7 @@
 #include "visualization.hpp"
 // Other files
 #include "../utility/vectormath.hpp"
+#include "../compute/load_data.hpp"
 
 namespace GFlowSimulation {
 
@@ -12,42 +13,13 @@ namespace GFlowSimulation {
   };
 
   bool Visualization::load_and_create(string loadName, string saveName) {
-    // Open file
-    std::ifstream fin(loadName);
-    if (fin.fail()) return false;
-    // Get the data width, dimensions, number of times sampled, and the number of types
-    int dataWidth, dimensions, samples, ntypes;
-    dataWidth = getNextNumber<int>(fin);
-    dimensions = getNextNumber<int>(fin);
-    samples = getNextNumber<int>(fin);
-    ntypes = getNextNumber<int>(fin);
-
-    // Get the dimensions - mins first, then maxes
-    Bounds bounds(dimensions);
-    for (int i=0; i<dimensions; ++i) 
-      bounds.min[i] = getNextNumber<RealType>(fin);
-    for (int i=0; i<dimensions; ++i)
-      bounds.max[i] = getNextNumber<RealType>(fin);
-
-    // Vector to hold data
-    vector<vector<RealType> > data;
-
-    // The first number in each line is the number of particles to expect
-    for (int iter=0; iter<samples; ++iter) {
-      // Get the length of data to expect
-      int data_length = getNextNumber<int>(fin);
-      // Get this iter's data
-      vector<RealType> pdata;
-      for (int i=0; i<data_length; ++i) {
-        RealType datum = getNextNumber<RealType>(fin);
-        pdata.push_back(datum);
-      }
-      // Store this iter's data vector
-      data.push_back(pdata);
-    }
-
-    // Close the file stream
-    fin.close();
+    // Create a loader to load the data
+    LoadData loader;
+    if (!loader.load(loadName)) return false;
+    // Extract data from the loader
+    int dataWidth = loader.getDataWidth(), dimensions = loader.getDimensions(), ntypes = loader.getNTypes();
+    Bounds bounds = loader.getBounds();
+    const vector<vector<double> > &data = loader.getData();
 
     // If we are coloring by type, we need a large enough color bank
     if (color_option==0 && colorBank.size()<ntypes) setColorBankSize(ntypes);
@@ -70,7 +42,7 @@ namespace GFlowSimulation {
     }
   }
 
-  void Visualization::setRadiusMultiple(RealType r) {
+  void Visualization::setRadiusMultiple(double r) {
     radius_multiple = r;
   }
 
@@ -82,7 +54,7 @@ namespace GFlowSimulation {
     resolution = r;
   }
 
-  void Visualization::createVideo2d(string dirName, const vector<vector<RealType> >& data, int dataWidth, Bounds& bounds, int dimensions) const 
+  void Visualization::createVideo2d(string dirName, const vector<vector<double> >& data, int dataWidth, Bounds& bounds, int dimensions) const 
   {
     // Set the correct data places based on the number of dimensions
     setPlaces(dimensions);
@@ -98,7 +70,7 @@ namespace GFlowSimulation {
     }
   }
 
-  void Visualization::createVideo3d(string dirName, const vector<vector<RealType> >& data, int dataWidth, Bounds& bounds, int dimensions) const {
+  void Visualization::createVideo3d(string dirName, const vector<vector<double> >& data, int dataWidth, Bounds& bounds, int dimensions) const {
     // Set the correct data places based on the number of dimensions
     setPlaces(dimensions);
 
@@ -108,7 +80,7 @@ namespace GFlowSimulation {
     }
   }
 
-  void Visualization::createImage(string fileName, const vector<RealType>& data, int dataWidth, Bounds& bounds, int dimensions) const {
+  void Visualization::createImage(string fileName, const vector<double>& data, int dataWidth, Bounds& bounds, int dimensions) const {
     // Set the correct data places based on the number of dimensions
     setPlaces(dimensions);
 
@@ -141,27 +113,27 @@ namespace GFlowSimulation {
     // Make sure we have the appropriate normalization factors.
     // This will generally only happen when we are making a single image.
     if (color_option==2 && maxVsqr<0) {
-      auto pack_data = vector<vector<RealType> >(1, data);
+      auto pack_data = vector<vector<double> >(1, data);
       findMaxVSqr(pack_data, dataWidth);
     }
     else if (color_option==4 && maxDistance<0) {
-      auto pack_data = vector<vector<RealType> >(1, data);
+      auto pack_data = vector<vector<double> >(1, data);
       findMaxDistance(pack_data, dataWidth);
     }
     
     // A vector for holding data
-    RealType *pdata = new RealType[dataWidth];
+    double *pdata = new double[dataWidth];
     // Print all particles
     for (int i=0; i<data.size(); i+=dataWidth) {
       // Extract data for the i-th particle
       for (int j=0; j<dataWidth; ++j)
         pdata[j] = data[i+j];
       // Get individual entries
-      RealType *pos  = pdata;
-      RealType *vel  = vel_place>-1    ? &pdata[vel_place] : nullptr; // Point to start of velocity data
-      RealType sigma = sg_place>-1     ?  pdata[sg_place]  : 0; // Get sigma
+      double *pos  = pdata;
+      double *vel  = vel_place>-1    ? &pdata[vel_place] : nullptr; // Point to start of velocity data
+      double sigma = sg_place>-1     ?  pdata[sg_place]  : 0; // Get sigma
       int type       = type_place > -1 ? static_cast<int>(pdata[type_place]) : 0; // Get type
-      RealType distance = distance_place > -1 ? pdata[distance_place] : 0; // Get distance traveled
+      double distance = distance_place > -1 ? pdata[distance_place] : 0; // Get distance traveled
       // If type<0, continue
       if (type<0) continue;
       // Find the center of the particle
@@ -233,7 +205,7 @@ namespace GFlowSimulation {
     palette.writeToFile(fileName);
   }
 
-  void Visualization::createImage3d(string fileName, const vector<RealType>& data, int dataWidth, Bounds& bounds, int dimensions) const {
+  void Visualization::createImage3d(string fileName, const vector<double>& data, int dataWidth, Bounds& bounds, int dimensions) const {
     // @todo Implement this.
     throw false; 
 
@@ -241,13 +213,13 @@ namespace GFlowSimulation {
     setPlaces(dimensions);
   }
 
-  inline void Visualization::findMaxVSqr(const vector<vector<RealType> >& dataVector, int dataWidth) const {
+  inline void Visualization::findMaxVSqr(const vector<vector<double> >& dataVector, int dataWidth) const {
     // Reset
     maxVsqr = 0;
     // Look for max vsqr
     for (int iter=0; iter<dataVector.size(); ++iter) {
       if (dataVector[iter].empty()) continue;
-      const RealType *data = &dataVector[iter][0];
+      const double *data = &dataVector[iter][0];
       int number = dataVector[iter].size()/dataWidth;
       for (int i=0; i<number; ++i) {
         float V = sqr(data[i*dataWidth + vel_place]);
@@ -258,13 +230,13 @@ namespace GFlowSimulation {
     maxVsqr = sqrt(maxVsqr);
   }
 
-  inline void Visualization::findMaxDistance(const vector<vector<RealType> >& dataVector, int dataWidth) const {
+  inline void Visualization::findMaxDistance(const vector<vector<double> >& dataVector, int dataWidth) const {
     // Reset
     maxDistance = 0;
     // Look for max distance - start after first iteration.
     for (int iter=0; iter<dataVector.size(); ++iter) {
       if (dataVector[iter].empty()) continue;
-      const RealType *data = &dataVector[iter][0];
+      const double *data = &dataVector[iter][0];
       int number = dataVector[iter].size()/dataWidth;
       for (int i=0; i<number; ++i) {
         float D = data[i*dataWidth + distance_place];

@@ -1,4 +1,5 @@
 #include "../visualization/visualization.hpp"
+#include "../compute/field_properties.hpp"
 
 #include "../utility/ArgParse.hpp"
 
@@ -17,6 +18,7 @@ int main(int argc, char** argv) {
   int resolution = 1.5*1024;
   // Modes of operation
   bool snapshot = false;
+  bool field = false;
 
   // --- Argument parsing
   ArgParse parser(argc, argv);
@@ -28,6 +30,7 @@ int main(int argc, char** argv) {
   parser.get("colorOption", colorOption);
   parser.get("resolution", resolution);
   parser.get("snapshot", snapshot);
+  parser.get("field", field);
   // Done finding arguments
   try {
     parser.check();
@@ -45,10 +48,22 @@ int main(int argc, char** argv) {
 
   // --- Load the data and create an image
   
-  if (snapshot) 
+  if (snapshot) {
     visualization.load_and_create(directory+"/Snapshot/data.csv", saveDirectory+"/Snapshot");
-  else
+    // Compute field properties
+    if (field) {
+      FieldProperties field_properties;
+      field_properties.load_and_create(directory+"/Snapshot/");
+    }
+  }
+  else {
     visualization.load_and_create(directory+"/"+subdirectory+"/data.csv", saveDirectory+"/"+subdirectory);
+    // Compute field properties
+    if (field) {
+      FieldProperties field_properties;
+      field_properties.load_and_create(directory+"/"+subdirectory);
+    }
+  }
 
   // --- End
   return 0;
