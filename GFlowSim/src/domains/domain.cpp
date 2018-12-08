@@ -58,6 +58,8 @@ namespace GFlowSimulation {
     delete [] halo_down;
     delete [] ghost_up;
     delete [] ghost_down;
+    // Base class destructor
+    DomainBase::~DomainBase();
   }
 
   void Domain::initialize() {
@@ -66,14 +68,7 @@ namespace GFlowSimulation {
 
     // Get the simulation bounds from gflow
     bounds = Base::gflow->getBounds();
-
-    // Calculate data about the domain decomposition, and this domain's place in it
-    #if USE_MPI==1
-    if (!parallel_init) parallel_assignments();
-    #else
-    // This is the only domain
     domain_bounds = bounds;
-    #endif
 
     // If bounds are unset, then don't make sectors
     if (domain_bounds.vol()<=0) return;
@@ -193,89 +188,14 @@ namespace GFlowSimulation {
       linear += dth*product(d+1);
     }
     return linear;
-
-    /*
-    int index[DIMENSIONS], linear;
-    for (int d=0; d<sim_dimensions; ++d) {
-      index[d] = static_cast<int>((x[d] - extended_domain_bounds.min[d])*inverseW[d]);
-      // Even when wrapping, rounding errors (I assume) can cause index to be too large.
-      // When not wrapping, particles could be outside the sectorization grid
-      // This also may be useful later for parallel things, if a particle should interact with
-      // particles in this domain, but is so big that it is outside of the ghost cells.
-      if (index[d]>=dims[d]) index[d] = dims[d]-1; 
-      else if (index[d]<0)   index[d] = 0;
-    }
-    // Add particle to the appropriate sector
-    tuple_to_linear(linear, index);
-    return linear;
-    */
   }
-
-  #if USE_MPI==1
-  void Domain::parallel_assignments() {
-    // Right now, this function doesn't actually work with MPI or calculate anything about
-    // parallel decomposition. It only works with single processor simulations.
-
-    // --- Calculate how the divison of the simulation into domains
-    // @todo Actually calculate this in a smart way.
-    setVec(domain_dims, 1);
-    switch (numProc) {
-    default:
-      case 1: 
-      case 2: 
-      case 3: {
-        domain_dims[0] = numProc;
-        break;
-      }
-      case 4: {
-        domain_dims[0] = 2;
-        domain_dims[1] = 2;
-        break;
-      }
-    }
-
-    // --- Calculate which domain we are
-    int linear = rank;
-    for (int d=0; d<sim_dimensions; ++d) {
-      domain_index[d] = linear % domain_dims[d];
-      linear /= domain_dims[d];
-    }
-
-    // --- Calculate which domains are adjacent to us
-    setVec(domains_up, -1);   // By default
-    setVec(domains_down, -1); // By default
-    // How far (in linear index) an adjacent sector is
-    int ds = 1;
-    for (int d=0; d<sim_dimensions; ++d) {
-      if (domain_index[d]+1<domain_dims[d])
-        domains_up[d] = rank + ds;
-      if (-1<domain_index[d]-1)
-        domains_down[d] = rank - ds;
-      // Change ds
-      ds *= domain_dims[d];
-    }
-
-    //**** DEBUGGING MESSAGES
-    cout << "Proc " << rank << ", index: " << toStrVec(domain_index) << endl;
-    for (int d=0; d<sim_dimensions; ++d) {
-      cout << "Proc " << rank << " reporting: d=" << d << ", neighbor: " << domains_up[d] << ", " << domains_down[d] << endl;
-    }
-    //****
-
-    // Calculate the bounds of this domain
-    domain_bounds = bounds; // For now ...
-
-    // Notify that we have initialized the parallel data
-    parallel_init = true;
-
-  }
-  #endif
 
   void Domain::construct() {
     // Setup and common tasks
     DomainBase::construct();
 
-    // Fill the linked cells
+    // Fill the linked cells - this is where particles outside the domain, or in the 
+    // halo region are detected.
     fill_cells();
 
     // Get the boundary conditions

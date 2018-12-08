@@ -19,7 +19,7 @@ namespace GFlowSimulation {
     Domain(GFlow *);
 
     //! @brief Destuctor.
-    ~Domain();
+    virtual ~Domain() override;
 
     //! @brief Create cells, assign their neighbors, etc.
     virtual void initialize() override;
@@ -61,15 +61,10 @@ namespace GFlowSimulation {
     //! @brief Get the (linear) index of the cell the position falls in
     int getCellIndex(RealType *);
 
-    #if USE_MPI==1
-    //! @brief Calculate the data neccessary to run domains in parallel e.g. domain index, which domain this is, etc.
-    void parallel_assignments();
-    #endif
-
     //! @brief Remake the verlet lists for all the forces.
     //!
     //! Resectorizes the particles into cells and calculates verlet lists from the cell decomposition.
-    virtual void construct();
+    virtual void construct() override;
 
     //! @brief Turns a linear cell index into a (DIMENSIONS)-dimensional index
     inline void linear_to_tuple(const int, int*);
@@ -129,10 +124,6 @@ namespace GFlowSimulation {
     //! @brief This is true when we have done the parallel initialization.
     bool parallel_init;
     #endif 
-
-    // --- Linked cell force related
-    inline void load_cell(Cell&);
-    inline void release_cell(Cell&);
   };
 
 }

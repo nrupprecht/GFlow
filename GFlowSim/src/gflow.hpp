@@ -216,8 +216,7 @@ namespace GFlowSimulation {
     class DomainBase *domain;           // Domain
     class DataMaster *dataMaster;       // DataMaster object for unified data collection  
     class ForceMaster *forceMaster;     // ForceMaster object for defining and storing interparticle forces  
-
-    class BondData  *bondData;
+    class Topology *topology;           // Processor topology
 
     //! @brief A vector of objects that should modify the simulation at some point(s) during execution.
     std::list<class Modifier*> modifiers;
@@ -287,6 +286,10 @@ namespace GFlowSimulation {
     Timer shs_timer;
     Timer domain_timer;
     Timer forces_timer;
+
+    // MPI
+    int rank = 0;
+    int numProc = 1;
   };
 
 }

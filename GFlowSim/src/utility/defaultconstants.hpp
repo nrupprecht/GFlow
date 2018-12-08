@@ -24,13 +24,15 @@
 
 // Compiler type
 //! Set to 1 if the intel compiler being used.
-#ifndef _INTEL
+/*
+#ifndef _INTEL_
 #define _INTEL_ 1
-#endif
 //! Set to 1 if the gnu compiler being used.
-#if !defined(_INTEL_) && !defined(_CLANG_)
+#elif !defined(_INTEL_) && !defined(_CLANG_)
 #define _CLANG_ 1
 #endif 
+*/
+#define _CLANG_ 1
 
 namespace GFlowSimulation {
 

@@ -40,7 +40,7 @@ namespace GFlowSimulation {
     return invalidSubHeads;
   }
 
-  vector<HeadNode*>& ParseHelper::getHeading_Optional(string heading) {
+  void ParseHelper::getHeading_Optional(string heading) {
     // Clear the container
     container.clear();
     // Look for options
@@ -50,7 +50,7 @@ namespace GFlowSimulation {
     }
   }
 
-  vector<HeadNode*>& ParseHelper::getHeading_Necessary(string heading, string error_str) {
+  void ParseHelper::getHeading_Necessary(string heading, string error_str) {
     // Clear the container
     container.clear();
     // Look for options

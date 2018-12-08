@@ -2,6 +2,7 @@
 #define __PARSE_HELPER_HPP__GFLOW__
 
 #include "fileparse.hpp"
+#include "printingutility.hpp"
 
 namespace GFlowSimulation {
 
@@ -95,9 +96,9 @@ namespace GFlowSimulation {
 
     std::set<string>& getInvalidSubHeads();
 
-    vector<HeadNode*>& getHeading_Optional(string);
+    void getHeading_Optional(string);
 
-    vector<HeadNode*>& getHeading_Necessary(string, string="");
+    void getHeading_Necessary(string, string="");
 
     HeadNode* first();
 

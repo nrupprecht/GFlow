@@ -2,7 +2,7 @@
 // Other files
 #include "allbaseobjects.hpp"
 #include "alldomains.hpp"
-#include "dataobjects/memorydistance.hpp"
+#include "allparallelobjects.hpp"
 
 namespace GFlowSimulation {
 
@@ -10,6 +10,15 @@ namespace GFlowSimulation {
     iter(0), argc(0), argv(nullptr), repulsion(DEFAULT_HARD_SPHERE_REPULSION), dissipation(0), center_attraction(0), sim_dimensions(dims),
     bounds(Bounds(2))
   {
+    #if USE_MPI == 1
+    #if _CLANG_ == 1
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &numProc);
+    #else
+    rank    = MPI::COMM_WORLD.Get_rank();
+    numProc = MPI::COMM_WORLD.Get_size();
+    #endif
+    #endif
     // Set up arrays
     boundaryConditions = new BCFlag[sim_dimensions];
     v_com_correction = new RealType[sim_dimensions];
@@ -19,6 +28,7 @@ namespace GFlowSimulation {
     domain       = new DomainTest(this); // Domain(this);
     dataMaster   = new DataMaster(this);
     forceMaster  = new ForceMaster(this);
+    topology     = nullptr;
     // Set up bounds to have the propper dimensions
     bounds = Bounds(sim_dimensions);
     // Set wrapping to true by default
@@ -32,6 +42,7 @@ namespace GFlowSimulation {
     if (domain)       delete domain;
     if (integrator)   delete integrator;
     if (dataMaster)   delete dataMaster;
+    if (topology)     delete topology;
     for (auto &md : modifiers) 
       if (md) delete md;
     for (auto &it : interactions)
@@ -85,9 +96,13 @@ namespace GFlowSimulation {
     base->domain       = domain;
     base->dataMaster   = dataMaster;
     base->forceMaster  = forceMaster;
+    base->topology     = topology;
     // Set vectors
     base->modifiersPtr = &modifiers;
     base->interactionsPtr = &interactions;
+    // Set MPI
+    base->rank = rank;
+    base->numProc = numProc;
   }
 
   void GFlow::run(RealType rt) {

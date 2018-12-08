@@ -35,6 +35,9 @@ namespace GFlowSimulation {
 
     //! @brief The number of dimensions of the simulation.
     int sim_dimensions;
+
+    //! @brief True if particles in this cell should be create ghost cells.
+    bool halo_adjacent;
   };
 
 
@@ -43,7 +46,7 @@ namespace GFlowSimulation {
   public:
     DomainTest(GFlow*);
 
-    ~DomainTest();
+    virtual ~DomainTest() override;
 
     virtual void initialize() override;
 
@@ -53,6 +56,7 @@ namespace GFlowSimulation {
     virtual void exchange_particles() override;
 
     //! @brief Get all the particles within a radius of another particle
+    //!
     //! Fills a passed in vector with the ids of all the particles that lie within
     //! a specified distance of a given particle.\n
     //! This function must be overloaded by all children of DomainBase.
@@ -86,7 +90,13 @@ namespace GFlowSimulation {
 
     inline int get_cell_index(const RealType*);
 
-    int *border_type_up = nullptr;
+    //! @brief Array of products, used to compute linear indices from vectors or tuple indices.
+    int *products = nullptr;
+
+    //! @brief What type of borders there are in the "up" directions.
+    //!
+    //! 0 - None, 1 - Halo, 2 - Wrap.
+    int *border_type_up   = nullptr;
     int *border_type_down = nullptr;
 
     //! @brief Whether the domain has been initialized or not.

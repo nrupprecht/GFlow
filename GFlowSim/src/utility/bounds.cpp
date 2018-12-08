@@ -36,6 +36,8 @@ namespace GFlowSimulation {
   Bounds::~Bounds() {
     if (min) delete [] min;
     if (max) delete [] max;
+    min = nullptr;
+    max = nullptr;
   }
 
   Bounds& Bounds::operator=(const Bounds& b) {

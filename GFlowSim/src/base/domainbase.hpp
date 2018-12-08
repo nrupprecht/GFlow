@@ -28,7 +28,7 @@ namespace GFlowSimulation {
     DomainBase(GFlow*);
 
     //! Destructor
-    ~DomainBase();
+    virtual ~DomainBase();
 
     virtual void pre_forces();
 

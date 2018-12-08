@@ -45,6 +45,13 @@ namespace GFlowSimulation {
 
     //! @brief The number of dimensions in the simulation. We get this from GFlow.
     int sim_dimensions;
+
+    //! @brief Pointer to the topology of the simulation
+    class Topology *topology;
+    //! @brief Rank of this processor.
+    int rank = 0;
+    //! @brief Total number of processes being used
+    int numProc = 1;
   };
 
 }

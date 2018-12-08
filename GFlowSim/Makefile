@@ -9,15 +9,20 @@ DO_OPTIMIZE ?= 1
 # Add flags to this variable as neccessary
 FLAGS = 
 
+MPICC = mpic++
+
 # Compiler options
-ifeq ($(COMPILER), 0)
+ifeq ($(USE_MPI), 1)
+CC = $(MPICC)
+FLAGS += -D USE_MPI=1
+COMPILER = 2
+else ifeq ($(COMPILER), 0)
 CC = icpc
 FLAGS += -D _INTEL_=1
 else
 CC = g++
 FLAGS += -D _CLANG_=1
 endif 
-MPICC = mpic++
 
 ifeq ($(DEBUG), 1)
 FLAGS += -D DEBUG=1
@@ -25,14 +30,6 @@ endif
 
 ifeq ($(NO_SIMD), 1)
 FLAGS += -D SIMD_TYPE=0
-endif
-
-# Whether to use MPI or not
-ifeq (USE_MPI, 0)
-COMP = $(CC)
-FLAGS += -D USE_MPI=1
-else
-COMP = $(MPICC)
 endif
 
 # Name of the application to compile
@@ -43,6 +40,7 @@ OBJ   = obj
 BIN   = bin
 
 EXCLUDE = src/applications/percolationanalysis.cpp src/applications/pressureanalysis.cpp src/applications/driver.cpp src/applications/vistools.cpp
+EXCLUDE += src/utility/argparse2.cpp
 
 SRCS1   := $(shell find $(SRC) -name '*.cpp')
 SRCS    := $(filter-out $(EXCLUDE), $(SRCS1))
@@ -51,7 +49,7 @@ OBJS    := $(patsubst %.cpp,$(OBJ)/%.o,$(SRCS))
 
 CSTD     = -std=c++11
 DEBUG    = -g
-ifeq ($(COMPILER), 0)
+ifeq ($(COMPILER), 0) 
 ifeq ($(DO_OPTIMIZE), 1)
 OPTIMIZE := -O3 -funroll-loops -no-prec-div -restrict -no-inline-max-size -ffast-math
 endif

@@ -19,10 +19,10 @@ namespace GFlowSimulation {
     virtual void close() override;
 
     //! @brief Clear the vectors of data.
-    virtual void clear();
+    virtual void clear() override;
 
     //! @brief Return the total length of the verlet list.
-    virtual int size() const;
+    virtual int size() const override;
 
     //! @brief Iterate through interacting particles, executing the given kernel between them.
     //!

@@ -23,7 +23,7 @@ using namespace GFlowSimulation;
 int main(int argc, char **argv) {
   // --- MPI
   int rank(0), numProc(1);
-  
+
   #if USE_MPI == 1
   #if _CLANG_ == 1
   MPI_Init(&argc, &argv);
@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
   rank = MPI::COMM_WORLD.Get_rank();
   numProc = MPI::COMM_WORLD.Get_size();
   #endif
-  cout << "Initialized MPI.\n";
+  cout << "Initialized MPI. Rank " << rank << "\n";
   #endif
 
   // --- Options
@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
   parser.get("temperature", temperature);
   parser.get("boundary", boundary);
 
-  if (!quiet) {
+  if (!quiet && rank==0) {
     #if DEBUG==1
     cout << "Running in Debug mode.\n";
     #endif
@@ -141,12 +141,12 @@ int main(int argc, char **argv) {
   
   // Record the time at which the program started.
   auto start_time = current_time();
-  if (!quiet) cout << "Starting up simulation...\n";
+  if (!quiet && rank==0) cout << "Starting up simulation...\n";
 
   // --- This creator creates gflow simulations
   Creator *creator = nullptr;
   // Assign a specific type of creator
-  if (bipartite_flag) creator = new BipartiteBoxCreator(&parser);
+  if (bipartite_flag)  creator = new BipartiteBoxCreator(&parser);
   else if (debug_flag) creator = new DebugCreator(&parser);
   else if (load!="") {
     creator = new FileParseCreator(&parser, load);
@@ -233,21 +233,35 @@ int main(int argc, char **argv) {
   gflow->requestTime(time);
 
   // Run the simulation
-  if (!quiet) {
+  if (!quiet && rank==0) {
     cout << "Initialized, ready to run:\t" << time_span(current_time(), start_time) << "\n";
     cout << "Running with " << gflow->getNumParticles() << " particles.\n";
   }
-  if (gflow) gflow->run();
+  if (gflow) {
+    try {
+      gflow->run();
+    }
+    catch (...) {
+      if (!quiet && rank==0) cout << "Exited with exception.\n";
+      // Write accumulated data to files
+      if (rank==0) gflow->writeData(writeDirectory);
+      // Rethrow the exception
+      throw;
+    }
+    // More detailed exception handling
+    // @todo Exception handling.
+
+  }
   else {
-    if (!quiet) cout << "GFlow pointer was null. Exiting.\n";
+    if (!quiet && rank==0) cout << "GFlow pointer was null. Exiting.\n";
     return 0;
   }
-  if (!quiet) cout << "Run is over:\t\t\t" << time_span(current_time(), start_time) << "\n";
-  if (!quiet) cout << "Ratio was:  \t\t\t" << gflow->getDataMaster()->getRatio() << "\n";
+  if (!quiet && rank==0) cout << "Run is over:\t\t\t" << time_span(current_time(), start_time) << "\n";
+  if (!quiet && rank==0) cout << "Ratio was:  \t\t\t" << gflow->getDataMaster()->getRatio() << "\n";
 
   // Write accumulated data to files
-  gflow->writeData(writeDirectory);
-  if (!quiet) cout << "Data write is over:\t\t" << time_span(current_time(), start_time) << "\n";
+  if (rank==0) gflow->writeData(writeDirectory);
+  if (!quiet && rank==0) cout << "Data write is over:\t\t" << time_span(current_time(), start_time) << "\n";
 
   // Delete creator, gflow
   if (creator) delete creator;
@@ -260,7 +274,7 @@ int main(int argc, char **argv) {
   #else
   MPI::Finalize();
   #endif
-  if (!quiet) cout << "Finalized MPI.\n";
+  if (!quiet && rank==0) cout << "Finalized MPI.\n";
   #endif
   
   return 0;

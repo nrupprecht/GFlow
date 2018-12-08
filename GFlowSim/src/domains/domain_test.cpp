@@ -32,11 +32,27 @@ namespace GFlowSimulation {
 
   // --------------
 
-  DomainTest::DomainTest(GFlow *gflow) : DomainBase(gflow) {};
+  DomainTest::DomainTest(GFlow *gflow) : DomainBase(gflow) {
+    border_type_up = new int[sim_dimensions];
+    border_type_down = new int[sim_dimensions];
+    products = new int[sim_dimensions+1];
+    // Initialize values
+    for (int d=0; d<sim_dimensions; ++d) {
+      border_type_up[d]   = 0;
+      border_type_down[d] = 0;
+    }
+  };
 
   DomainTest::~DomainTest() {
+    // Base class destructor
+    DomainBase::~DomainBase();
+    // Delete this object's data
     if (border_type_up)   delete [] border_type_up;
     if (border_type_down) delete [] border_type_down;
+    if (products)         delete [] products;
+    border_type_up = nullptr;
+    border_type_down = nullptr;
+    products = nullptr;
   }
 
   void DomainTest::initialize() {
@@ -79,6 +95,13 @@ namespace GFlowSimulation {
     }
     minCutoff = 2*max_small_sigma + skin_depth;
 
+    // Initialize products array
+    products[sim_dimensions] = 1;
+    for (int d=sim_dimensions-1; d>=0; --d)
+      products[d] = dims[d]*products[d+1];
+
+    //! @todo Processors might need to communicate with one another about what they chose at this point
+
     // Create the cells
     create_cells();
 
@@ -108,10 +131,7 @@ namespace GFlowSimulation {
   void DomainTest::removeOverlapping(RealType factor) {
     // Domain base common tasks
     DomainBase::construct();
-    // Clear out the cells
-    clear_cells();
-    // Fill the cells with particles
-    fill_cells();
+    update_cells();
 
     RealType max_reasonable = sqr(0.9*bounds.wd(0));
 
@@ -162,11 +182,9 @@ namespace GFlowSimulation {
             }
         }
         // If sigma is > min_small_sigma, we have to look through more cells
-        else {
-          
+        else {          
           // Calculate sweep "radius"
           RealType search_width = 2*sg[id1]+skin_depth;
-
           int prod = 1;
           for (int d=0; d<sim_dimensions; ++d) {
             center[d] = static_cast<int>(ceil(search_width/widths[d]));
@@ -252,10 +270,8 @@ namespace GFlowSimulation {
           for (; q!=c.particle_ids.end(); ++q) {
             int id2 = *q;
             RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
-            if (r2 < sqr(sg[id1] + sg[id2] + skin_depth)) {
-              //hs->addPair(id1, id2);
+            if (r2 < sqr(sg[id1] + sg[id2] + skin_depth))
               pair_interaction(id1, id2);
-            }
           }
           // Seach through list of adjacent cells
           for (const auto &d : c.adjacent)
@@ -264,10 +280,8 @@ namespace GFlowSimulation {
               if (sg[id2]>max_small_sigma) continue;
               // Look for distance between particles
               RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
-              if (r2 < sqr(sg[id1] + sg[id2] + skin_depth) || max_reasonable<r2) {
-                //hs->addPair(id1, id2);
+              if (r2 < sqr(sg[id1] + sg[id2] + skin_depth) || max_reasonable<r2)
                 pair_interaction(id1, id2);
-              }
             }
         }
         
@@ -391,9 +405,9 @@ namespace GFlowSimulation {
     // Clean up 
     delete [] tuple1;
     delete [] tuple2;
-    for (auto &n : neighbor_indices) delete [] n;
     delete [] little_dims;
     delete [] center;
+    for (auto &n : neighbor_indices) delete [] n;
   }
 
   inline void DomainTest::clear_cells() {
@@ -406,6 +420,12 @@ namespace GFlowSimulation {
     // Bin all the particles
     for (int i=0; i<number; ++i) {
       int linear = get_cell_index(x[i]);
+
+      #if USE_MPI==1
+      // Check if particle belongs on another processor
+
+      #endif
+
       // Stores the *local* id of the particle
       cells[linear].particle_ids.push_back(i);
     }
@@ -421,15 +441,17 @@ namespace GFlowSimulation {
   // This is column major form.
   inline void DomainTest::tuple_to_linear(int &linear, const int *tuple) {
     // Product lambda
+    /*
     auto product = [&] (int n) -> int {
       int total = 1;
       for (int i=n; i<sim_dimensions; ++i) total *= dims[i];
       return total;
     };
+    */
 
     linear = 0;
     for (int d=0; d<sim_dimensions; ++d)
-      linear += tuple[d]*product(d+1);
+      linear += tuple[d]*products[d+1]; //product(d+1);
   }
 
   inline bool DomainTest::correct_index(int *tuple) {
@@ -470,29 +492,20 @@ namespace GFlowSimulation {
     int linear = 0;
 
     // Product lambda
+    /*
     auto product = [&] (int n) -> int {
       int total = 1;
       for (int i=n; i<sim_dimensions; ++i) total *= dims[i];
       return total;
     };
+    */
 
     for (int d=0; d<sim_dimensions; ++d) {
       RealType dth = static_cast<int>((x[d] - domain_bounds.min[d])*inverseW[d]);
       if (dth>=dims[d]) dth = dims[d]-1; 
       else if (dth<0)   dth = 0;
-      linear += dth*product(d+1);
+      linear += dth*products[d+1]; // product(d+1);
     }
-
-
-    /*
-    int index[DIMENSIONS], linear;
-
-    // Get the tuple index of the cell
-    get_cell_index_tuple(x, index);
-
-    // Get the linear index
-    tuple_to_linear(linear, index);
-  */
 
     // Return the index
     return linear;

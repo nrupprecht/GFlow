@@ -48,7 +48,7 @@ namespace GFlowSimulation {
     // Arrays for getting data
     RealType **arrays = nullptr;
     RealType ***vec_arrays = nullptr;
-    if (data_size) {
+    if (0<data_size) {
       // Create array
       arrays = new RealType*[data_size];
       // Set pointers in "arrays"
@@ -59,7 +59,7 @@ namespace GFlowSimulation {
 
       data = new RealType[2*data_size];
     }
-    if (vec_data_size) {
+    if (0<vec_data_size) {
       // Create array
       vec_arrays = new RealType**[vec_data_size];
       // Set pointers in "vec_arrays"
@@ -85,6 +85,7 @@ namespace GFlowSimulation {
     for (int i=0; i<verlet.size(); i+=2) {
       int id1 = verlet[i];
       int id2 = verlet[i+1];
+      
       // Get the displacement between the particles
       getDisplacement(x[id1], x[id2], normal, bounds, boundaryConditions, sim_dimensions);
 
