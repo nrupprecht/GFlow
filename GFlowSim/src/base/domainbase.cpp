@@ -8,10 +8,7 @@
 
 namespace GFlowSimulation {
 
-  DomainBase::DomainBase(GFlow *gflow) : Base(gflow), skin_depth(DEFAULT_SKIN_DEPTH), max_small_sigma(0.), cutoff(0.), minCutoff(0.), cutoffFactor(1.), 
-    number_of_remakes(0), lastCheck(-1.), lastUpdate(-1.), updateDelay(1.0e-4), max_update_delay(DEFAULT_MAX_UPDATE_DELAY), 
-    mvRatioTolerance(DEFAULT_MV_RATIO_TOLERANCE), motionFactor(DEFAULT_MOTION_FACTOR), missed_target(0), xVL(nullptr), sizeXVL(0),
-    sample_size(-1), domain_bounds(2), bounds(2)
+  DomainBase::DomainBase(GFlow *gflow) : Base(gflow), domain_bounds(2), bounds(2)
   {
     // Allocate arrays
     dims = new int[sim_dimensions];
@@ -26,7 +23,7 @@ namespace GFlowSimulation {
     bounds = Bounds(sim_dimensions);
     // Set up arrays
     dims = new int[sim_dimensions];
-    widths = new RealType[sim_dimensions];
+    widths = new RealType[sim_dimensions] ;
     inverseW = new RealType[sim_dimensions];
   }; 
 
@@ -35,31 +32,19 @@ namespace GFlowSimulation {
   }
 
   void DomainBase::pre_forces() {
+    // Increment timer
+    ++steps_since_last_remake;
     // If there are no particles there is no need to continue
     if (simData->number<1) return;
     // Get the current simulation time
     RealType current_time = Base::gflow->getElapsedTime();
-
+    // If simdata needs a remake, we give it a remake
     if (Base::simData->getNeedsRemake()) construct();
-    else if (current_time-lastUpdate>updateDelay) {
+    else if (update_decision_type==0 && current_time-lastUpdate>updateDelay) {
       if (Base::gflow->getNumInteractions()>0 && check_needs_remake()) construct();
       else Base::gflow->wrapPositions();
     }
-
-    /*
-    // Check whether we should check sectors 
-    if (Base::simData->getNeedsRemake() || (current_time-lastUpdate>updateDelay)) {
-      // If there are no interactions, or particles haven't moved that far, there is no need to reconstruct
-      // the interaction handlers
-      if (Base::gflow->getNumInteractions()>0 && check_needs_remake()) {
-        construct();
-        // SimData does not need to be remade anymore
-        Base::simData->setNeedsRemake(false);
-      }
-      // Make sure positions are wrapped every so often, even if we don't need remake
-      else Base::gflow->wrapPositions();
-    }
-    */
+    else if (update_decision_type==1 && update_delay_steps<=steps_since_last_remake) construct();
   }
 
   const int* DomainBase::getDims() const {
@@ -127,6 +112,8 @@ namespace GFlowSimulation {
     lastUpdate = Base::gflow->getElapsedTime();
     // SimData does not need to be remade anymore
     Base::simData->setNeedsRemake(false);
+    // Reset
+    steps_since_last_remake = 0;
     // We have to check this, since construct can be called from the outside
     if (Base::forceMaster->needsConstruction()) {
       // Increment counter
@@ -134,7 +121,7 @@ namespace GFlowSimulation {
       // Reset the verlet lists of all the forces
       Base::forceMaster->clear();
       // Record where the particles were
-      fillXVL();
+      if (update_decision_type==0) fillXVL();
     }
   }
 
@@ -169,7 +156,7 @@ namespace GFlowSimulation {
     // Check with force master
     Interaction *it = Base::forceMaster->getInteraction(Base::simData->type[id1], Base::simData->type[id2]);
     // A null force means no interaction
-    if (it && it->needsConstruction()) it->addPair(id1, id2);
+    if (it /*&& it->needsConstruction()*/) it->addPair(id1, id2);
   }
 
   RealType DomainBase::maxMotion() {

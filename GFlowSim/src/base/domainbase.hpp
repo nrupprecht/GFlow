@@ -193,14 +193,16 @@ namespace GFlowSimulation {
     RealType updateDelay = 1.0e-4;
     RealType max_update_delay = DEFAULT_MAX_UPDATE_DELAY;
 
-    //! @brief What criteria the domain should 
-    int update_decision_type = 0;
+    //! @brief What criteria the domain should.
+    //!
+    //! 0 - Use an update delay, 1 - update every fixed number of steps.
+    int update_decision_type = 1;
 
     //! @brief How many steps the domain should wait between domain redos.
-    int update_delay_steps = 10;
+    int update_delay_steps = 7;
 
     //! @brief How many steps since the last time the domain was remade.
-    int steps_since_last_remake = 10;
+    int steps_since_last_remake = 0;
 
     //! @brief What fraction of the skin depth should particles move before the domain remake
     RealType motionFactor = DEFAULT_MOTION_FACTOR;

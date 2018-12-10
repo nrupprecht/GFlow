@@ -3,8 +3,8 @@ Dimensions: 2
 
 // Set the simulation bounds
 Bounds: {
-  : -5, 10 // X
-  : -5, 5 // Y
+  : -15, 25 // X
+  : -12, 12 // Y
 }
 
 Integrator: VelocityVerlet
@@ -47,9 +47,10 @@ Fill-area {
 
 Particle {
   Position: 0, 0
-  Sigma: 1
+  Sigma: 2
   Velocity: 0, 0
   Mass: inf
+  Modifier: CV
 }
 
 Reconcile: Remove=2
