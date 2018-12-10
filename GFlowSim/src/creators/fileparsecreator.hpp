@@ -152,6 +152,8 @@ namespace GFlowSimulation {
 
     inline BCFlag choose_bc(string&) const;
 
+    inline void add_modifier(HeadNode*) const;
+
     // --- Creation helpers
 
     inline void fillArea(HeadNode*) const;

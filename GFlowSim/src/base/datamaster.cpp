@@ -47,7 +47,7 @@ namespace GFlowSimulation {
 
   void DataMaster::pre_integrate() {
     startTimer();
-    if (Base::gflow->getElapsedTime()<startRecTime) return;
+    // Always allow preintegrate step to happen.
     for (auto& dob : dataObjects)
       if (dob) dob->pre_integrate();
   }
@@ -331,14 +331,47 @@ namespace GFlowSimulation {
   }
 
   inline void DataMaster::writeParticleData(std::ostream& out) {
+    // If there are no particles
+    if (Base::simData->number==0) {
+      cout << "No particles.\n";
+    }
+    // If there are particles, record data about them.
     RealType asigma(0), amass(0), aden(0), aspeed(0), ake(0);
+    RealType maxsigma = Base::simData->Sg(0), maxmass = 1./Base::simData->Im(0), 
+      maxden = 1./(Base::simData->Im(0)*sphere_volume(maxsigma, sim_dimensions)),
+      maxspeed = magnitudeVec(Base::simData->V(0), sim_dimensions), 
+      maxke = sqr(magnitudeVec(Base::simData->V(0), sim_dimensions))*(1./Base::simData->Im(0));
+    RealType minsigma = maxsigma, minmass = maxmass, minden = maxden, minspeed = maxspeed, minke = maxke;
     for (int n=0; n<Base::simData->number; ++n) {
+      if (Base::simData->Type(n)<0) continue;
+      // Cutoff
       RealType sig = Base::simData->Sg(n);
       asigma += sig; 
-      amass  += 1./Base::simData->Im(n);
-      aden   += 1./(Base::simData->Im(n)*sphere_volume(sig, sim_dimensions));
-      aspeed += magnitudeVec(Base::simData->V(n), sim_dimensions);
-      ake    += sqr(magnitudeVec(Base::simData->V(n), sim_dimensions))*(1./Base::simData->Im(n));
+      if (sig<minsigma) minsigma = sig;
+      if (sig>maxsigma) maxsigma = sig;
+      // Speed
+      RealType speed = magnitudeVec(Base::simData->V(n), sim_dimensions);
+      aspeed += speed;
+      if (speed<minspeed) minspeed = speed;
+      if (speed>maxspeed) maxspeed = speed;
+      // Only evaluate the following if the mass is not infinite
+      if (Base::simData->Im(n)>0) {
+        // Mass
+        RealType mass = 1./Base::simData->Im(n);
+        amass += mass;
+        if (mass<minmass) minmass = mass;
+        if (mass>maxmass) maxmass = mass;
+        // Density
+        RealType den = 1./(Base::simData->Im(n)*sphere_volume(sig, sim_dimensions));
+        aden += den;
+        if (den<minden) minden = den;
+        if (den>maxden) maxden = den;
+        // Kinetic energy
+        RealType ke = sqr(magnitudeVec(Base::simData->V(n), sim_dimensions))*(1./Base::simData->Im(n));
+        ake += ke;
+        if (ke<minke) minke = ke;
+        if (ke>maxke) maxke = ke;
+      }
     }
     // Normalize
     RealType invN = 1./static_cast<RealType>(Base::simData->number);
@@ -349,10 +382,17 @@ namespace GFlowSimulation {
     ake    *= (0.5*invN);
     // Print data
     out << "Particle Average Data (at finish):\n";
-    out << "  - Average sigma:            " << asigma << "\n";
-    out << "  - Average mass:             " << amass << "\n";
-    out << "  - Average density:          " << aden << "\n";
-    out << "  - Average speed:            " << aspeed << "\n";
+    out << "                              Ave, [Min, Max]\n";
+    out << "  - Sigma:                    " << asigma << "\n";
+    out << "                              [ " << minsigma << ", " << maxsigma << " ]\n";
+    out << "  - Mass:                     " << amass << "\n";
+    out << "                              [ " << minmass << ", " << maxmass << " ]\n";
+    out << "  - Density:                  " << aden << "\n";
+    out << "                              [ " << minden << ", " << maxden << " ]\n";
+    out << "  - Speed:                    " << aspeed << "\n";
+    out << "                              [ " << minspeed << ", " << maxspeed << " ]\n";
+    out << "  - Kinetic energy:           " << ake << "\n";
+    out << "                              [ " << minke << ", " << maxke << " ]\n";
   }
 
   inline void DataMaster::writeDomainData(std::ostream&) {

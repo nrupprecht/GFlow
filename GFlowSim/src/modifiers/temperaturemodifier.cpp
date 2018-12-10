@@ -14,7 +14,7 @@ namespace GFlowSimulation {
   void TemperatureModifier::post_forces() {
     // Get the time
     RealType time = Base::gflow->getElapsedTime();
-    if (time-lastUpdate>updateDelay || temperature<=0) return;
+    if (time-lastUpdate<updateDelay || temperature<=0) return;
     // Get data
     int number = Base::simData->number;
     RealType **v = Base::simData->V();

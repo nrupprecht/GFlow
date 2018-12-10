@@ -10,5 +10,7 @@
 #include "modifiers/death.hpp"
 #include "modifiers/linearvelocitydamping.hpp"
 #include "modifiers/quadraticvelocitydamping.hpp"
+#include "modifiers/velocitylimiter.hpp"
+#include "modifiers/windtunnel.hpp"
 
 #endif // __ALL_MODIFIERS_HPP__GFLOW__

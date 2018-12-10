@@ -119,6 +119,10 @@ namespace GFlowSimulation {
     parser.addValidSubheading("Particle");
     parser.addValidSubheading("Creation");
     parser.addValidSubheading("Destruction");
+    parser.addValidSubheading("Modifier");
+    parser.addValidSubheading("MaxDomainUpdateDelay");
+    parser.addValidSubheading("MaxDT");
+    parser.addValidSubheading("MinDT");
     parser.addValidSubheading("Reconcile");
     // Make sure only valid options were used
     if (!parser.checkValidSubHeads()) {
@@ -136,7 +140,7 @@ namespace GFlowSimulation {
     hd = parser.first();
     int sim_dimensions = 2;
     if (hd) {
-      parser.extract_first_parameter<int>(sim_dimensions);
+      parser.extract_first_parameter(sim_dimensions);
       if (sim_dimensions<=0) throw BadDimension();
     }
     gflow = new GFlow(sim_dimensions);
@@ -169,14 +173,24 @@ namespace GFlowSimulation {
     hd = parser.first();
     if (hd) {
       string opt;
-      if (hd->params.size()==0) {
-        // @todo Fill in other options - Look for a body specifying options
-      }
-      else if (parser.extract_first_parameter(opt)) {
+      if (parser.extract_first_parameter(opt)) {
         if (opt=="Repulse") gflow->setAllBCs(BCFlag::REPL);
         else if (opt=="Wrap") gflow->setAllBCs(BCFlag::WRAP);
         else if (opt=="Reflect") gflow->setAllBCs(BCFlag::REFL);
         else throw BadStructure("Unrecognized boundary condition ["+opt+"].");
+      }
+      else {
+        ParseHelper subParser(hd);
+        subParser.sortOptions();
+        // Record template name, number
+        int d=0;
+        for (auto m=subParser.begin() ; m!=subParser.end(); ++m, ++d) {
+          opt = m.convert_param<string>();
+          if (opt=="Repulse") gflow->setBC(d, BCFlag::REPL);
+          else if (opt=="Wrap") gflow->setBC(d, BCFlag::WRAP);
+          else if (opt=="Reflect") gflow->setBC(d, BCFlag::REFL);
+          else throw BadStructure("Unrecognized boundary condition ["+opt+"].");
+        }
       }
     }
     else gflow->setAllBCs(BCFlag::WRAP);
@@ -311,6 +325,36 @@ namespace GFlowSimulation {
       }
     }
 
+    parser.getHeading_Optional("Modifier");
+    for (auto h : parser) add_modifier(h);
+
+    // --- Get a maximum domain update delay time
+    parser.getHeading_Optional("MaxDomainUpdateDelay");
+    hd = parser.first();
+    if (hd) {
+      RealType max = -1;
+      parser.extract_first_parameter(max);
+      if (max>0) gflow->domain->setMaxUpdateDelay(max);
+    }
+
+    // --- Get a maximum allowed timestep
+    parser.getHeading_Optional("MaxDT");
+    hd = parser.first();
+    if (hd) {
+      RealType max = -1;
+      parser.extract_first_parameter(max);
+      if (max>0) gflow->integrator->setMaxDT(max);
+    }
+
+    // --- Get a maximum allowed timestep
+    parser.getHeading_Optional("MinDT");
+    hd = parser.first();
+    if (hd) {
+      RealType min = -1;
+      parser.extract_first_parameter(min);
+      if (min>0) gflow->integrator->setMinDT(min);
+    }
+
     // Initialize domain
     gflow->domain->initialize();
 
@@ -374,6 +418,13 @@ namespace GFlowSimulation {
     if      (token=="Wrap") return BCFlag::WRAP;
     else if (token=="Refl") return BCFlag::REFL;
     else if (token=="Repl") return BCFlag::REPL;
+    else throw UnexpectedOption();
+  }
+
+  inline void FileParseCreator::add_modifier(HeadNode *head) const {
+    string token = head->params[0]->partA;
+    if (token=="WindTunnel")
+      gflow->addModifier(new WindTunnel(gflow, convert<RealType>(head->params[0]->partB)));
     else throw UnexpectedOption();
   }
 
@@ -708,8 +759,9 @@ namespace GFlowSimulation {
     parser.getHeading_Optional("Mass");
     hd = parser.first();
     if (hd) {
-      RealType d = 1;
-      if (parser.extract_parameter(hd, "Density", d))   im = 1./(d*sphere_volume(sigma, sim_dimensions));
+      RealType d = 1.;
+      if (hd->params[0]->partA=="inf") im = 0;
+      else if (parser.extract_parameter(hd, "Density", d)) im = 1./(d*sphere_volume(sigma, sim_dimensions));
       else if (parser.extract_parameter(hd, "Mass", d)) im = 1./d;
       else throw BadStructure("Unrecognized option for mass in particle creation.");
     }

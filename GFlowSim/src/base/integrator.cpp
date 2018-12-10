@@ -29,7 +29,6 @@ namespace GFlowSimulation {
     //!  particle to traverse the smallest radius, or the smallest radius "near" it.
     //!  The smallest radius in each subdivision could be found by binning.
     RealType minT = 1.; // Starting value
-
     const int total = sim_dimensions*simData->number;
 
     // Find minT
@@ -95,6 +94,14 @@ namespace GFlowSimulation {
 
   void Integrator::setStepDelay(int s) {
     step_delay = max(0, s);
+  }
+
+  void Integrator::setMaxDT(RealType t) {
+    if (t>0) max_dt = t;
+  }
+
+  void Integrator::setMinDT(RealType t) {
+    if (t>0) min_dt = t;
   }
 
 }

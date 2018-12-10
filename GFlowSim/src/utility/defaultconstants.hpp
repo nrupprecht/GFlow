@@ -52,7 +52,7 @@ namespace GFlowSimulation {
   const RealType DEFAULT_TEMPERATURE_UPDATE_DELAY = 0.05;
   
   //! @brief The default maximum update delay.
-  const RealType DEFAULT_MAX_UPDATE_DELAY = 0.025;
+  const RealType DEFAULT_MAX_UPDATE_DELAY = 0.05;
   //! @brief The default skin depth
   const RealType DEFAULT_SKIN_DEPTH = 0.025;
   

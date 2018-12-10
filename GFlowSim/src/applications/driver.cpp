@@ -55,6 +55,7 @@ int main(int argc, char **argv) {
   bool bdForces = false;
   bool timestep = false;
   bool averages = false;
+  bool aveV = false;
   bool minDistances = false;
   bool percolation = false;
   bool psnapshot = false;
@@ -98,6 +99,7 @@ int main(int argc, char **argv) {
   parser.get("bdForces", bdForces);
   parser.get("timestep", timestep);
   parser.get("averages", averages);
+  parser.get("aveV", aveV);
   parser.get("minDistances", minDistances);
   parser.get("percolation", percolation);
   parser.get("psnapshot", psnapshot);
@@ -201,6 +203,7 @@ int main(int argc, char **argv) {
   if (bdForces)    gflow->addDataObject(new BoundaryForceData(gflow));
   if (timestep)    gflow->addDataObject(new TimeStepData(gflow));
   if (averages)    gflow->addDataObject(new AverageData(gflow));
+  if (aveV) gflow->addDataObject(new AveVelocityData(gflow));
   if (minDistances) gflow->addDataObject(new MinInteractingDistance(gflow));
   if (percolation) gflow->addDataObject(new PercolationData(gflow, skin));
   if (psnapshot) gflow->addDataObject(new PercolationSnapshot(gflow, skin));
@@ -250,7 +253,6 @@ int main(int argc, char **argv) {
     }
     // More detailed exception handling
     // @todo Exception handling.
-
   }
   else {
     if (!quiet && rank==0) cout << "GFlow pointer was null. Exiting.\n";

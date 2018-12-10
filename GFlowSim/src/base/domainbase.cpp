@@ -39,7 +39,15 @@ namespace GFlowSimulation {
     if (simData->number<1) return;
     // Get the current simulation time
     RealType current_time = Base::gflow->getElapsedTime();
-    // Check whether we should check sectors
+
+    if (Base::simData->getNeedsRemake()) construct();
+    else if (current_time-lastUpdate>updateDelay) {
+      if (Base::gflow->getNumInteractions()>0 && check_needs_remake()) construct();
+      else Base::gflow->wrapPositions();
+    }
+
+    /*
+    // Check whether we should check sectors 
     if (Base::simData->getNeedsRemake() || (current_time-lastUpdate>updateDelay)) {
       // If there are no interactions, or particles haven't moved that far, there is no need to reconstruct
       // the interaction handlers
@@ -51,6 +59,7 @@ namespace GFlowSimulation {
       // Make sure positions are wrapped every so often, even if we don't need remake
       else Base::gflow->wrapPositions();
     }
+    */
   }
 
   const int* DomainBase::getDims() const {
@@ -107,11 +116,17 @@ namespace GFlowSimulation {
     sample_size = s;
   }
 
+  void DomainBase::setMaxUpdateDelay(RealType d) {
+    if (d>0) max_update_delay = d;
+  }
+
   void DomainBase::construct() {
     // Wrap the particles, so they are in their cannonical positions
     Base::gflow->wrapPositions();
     // Set timer
     lastUpdate = Base::gflow->getElapsedTime();
+    // SimData does not need to be remade anymore
+    Base::simData->setNeedsRemake(false);
     // We have to check this, since construct can be called from the outside
     if (Base::forceMaster->needsConstruction()) {
       // Increment counter
@@ -186,7 +201,6 @@ namespace GFlowSimulation {
   bool DomainBase::check_needs_remake() {
     // Set time point
     lastCheck = Base::gflow->getElapsedTime();
-
     // Don't go to long without updating
     if (lastCheck - lastUpdate > max_update_delay)
       return true;

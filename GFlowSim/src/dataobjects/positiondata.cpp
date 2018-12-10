@@ -26,7 +26,6 @@ namespace GFlowSimulation {
     // Store initial positions
     vector<DataType> pos_data(1, DataType::POSITION);
     store_data(initial_data, pos_data);
-
     // Calculate data width
     dataWidth = 0;
     for (const auto type : data_types) {
@@ -114,8 +113,11 @@ namespace GFlowSimulation {
         break;
       }
       case DataType::DISTANCE: {
-        gflow->getDisplacement(Base::simData->X(id), &initial_data.at(id*sim_dimensions), vdata);
-        data.push_back( magnitudeVec(vdata, sim_dimensions) );
+        if (!initial_data.empty()) {
+          gflow->getDisplacement(Base::simData->X(id), &initial_data.at(id*sim_dimensions), vdata);        
+          data.push_back( magnitudeVec(vdata, sim_dimensions) );
+        }
+        else data.push_back(-1.);
         break;
       }
     }

@@ -16,5 +16,6 @@
 #include "dataobjects/memorydistance.hpp"
 #include "dataobjects/pressuredata.hpp"
 #include "dataobjects/numberdata.hpp"
+#include "dataobjects/avevelocitydata.hpp"
 
 #endif // __ALL_DATA_OBJECTS_HPP__GFLOW__

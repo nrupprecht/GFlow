@@ -441,14 +441,6 @@ namespace GFlowSimulation {
   // This is column major form.
   inline void DomainTest::tuple_to_linear(int &linear, const int *tuple) {
     // Product lambda
-    /*
-    auto product = [&] (int n) -> int {
-      int total = 1;
-      for (int i=n; i<sim_dimensions; ++i) total *= dims[i];
-      return total;
-    };
-    */
-
     linear = 0;
     for (int d=0; d<sim_dimensions; ++d)
       linear += tuple[d]*products[d+1]; //product(d+1);
@@ -488,25 +480,13 @@ namespace GFlowSimulation {
   }
 
   int DomainTest::get_cell_index(const RealType *x) {
-
     int linear = 0;
-
-    // Product lambda
-    /*
-    auto product = [&] (int n) -> int {
-      int total = 1;
-      for (int i=n; i<sim_dimensions; ++i) total *= dims[i];
-      return total;
-    };
-    */
-
     for (int d=0; d<sim_dimensions; ++d) {
       RealType dth = static_cast<int>((x[d] - domain_bounds.min[d])*inverseW[d]);
       if (dth>=dims[d]) dth = dims[d]-1; 
       else if (dth<0)   dth = 0;
-      linear += dth*products[d+1]; // product(d+1);
+      linear += dth*products[d+1];
     }
-
     // Return the index
     return linear;
   }

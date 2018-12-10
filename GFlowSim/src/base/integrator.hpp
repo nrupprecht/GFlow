@@ -28,6 +28,10 @@ namespace GFlowSimulation {
 
     void setStepDelay(int);
 
+    void setMaxDT(RealType);
+
+    void setMinDT(RealType);
+
     // GFlow is a friend class
     friend class GFlow;
 

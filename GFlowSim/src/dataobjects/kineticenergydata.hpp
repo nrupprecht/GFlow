@@ -7,20 +7,21 @@ namespace GFlowSimulation {
 
   class KineticEnergyData : public DataObject {
   public:
-    // Constructor
+    //! @brief Constructor
     KineticEnergyData(GFlow*, bool=true);
 
-    // Collect the position data from simdata --- happens during the post-step phase
+    //! @brief Collect the position data from simdata --- happens during the post-step phase
     virtual void post_step();
 
-    // Write data to a file - if true, the string is a path, and you should use your own name as the file name
-    // Returns true for success
+    //! @brief Write data to a file - if true, the string is a path, and you should use your own name as the file name.
+    //!
+    //! Returns true for success
     virtual bool writeToFile(string, bool=true);
 
   private:
-    // The data
+    //! @brief The data
     vector<RPair> keData;
-    // Use ave
+    //! @brief Use ave
     bool useAve;
   };
 

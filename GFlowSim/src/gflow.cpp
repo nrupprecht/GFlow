@@ -3,6 +3,7 @@
 #include "allbaseobjects.hpp"
 #include "alldomains.hpp"
 #include "allparallelobjects.hpp"
+#include "allmodifiers.hpp"
 
 namespace GFlowSimulation {
 

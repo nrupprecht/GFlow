@@ -8,6 +8,8 @@ namespace GFlowSimulation {
   //! @brief Base class for defining processor topologies.
   class Topology {
   public:
+    //! @brief Default constructor. Sets numProc and rank.
+    Topology();
 
     //! @brief Compute how the simulation space should be divided up.
     virtual void computeTopology() = 0;
@@ -21,11 +23,30 @@ namespace GFlowSimulation {
 
     //! @brief Takes in a processor id and dimension, returns whether there is a domain
     //! "above" it in that dimension.
-    bool existsDomainUp(int, int) = 0;
+    virtual bool existsDomainUp(int, int) = 0;
 
     //! @brief Takes in a processor id and dimension, returns whether there is a domain
     //! "below" it in that dimension.
-    bool existsDomainDown(int, int) = 0;
+    virtual bool existsDomainDown(int, int) = 0;
+
+    //! @brief Get the bounds managed by a processor.
+    virtual Bounds getBounds(int) = 0;
+
+    //! @brief Set the simulation bounds.
+    void setSimulationBounds(const Bounds &b) {
+      simulation_bounds = b;
+    }
+
+  private:
+
+    //! @brief The total bounds of the simulation.
+    Bounds simulation_bounds = Bounds(2);
+
+    //! @brief The total number of processors.
+    int numProc = 1;
+
+    //! @brief The rank of this processor.
+    int rank = 0;
 
   };
 

@@ -7,17 +7,17 @@ namespace GFlowSimulation {
 
   class TemperatureModifier : public Modifier {
   public:
-    // Constructor
+    //! @brief Constructor
     TemperatureModifier(GFlow*, RealType);
 
-    // Constructor
+    //! @brief Constructor
     TemperatureModifier(GFlow*, RealType, RealType);
 
-    // Apply forces
-    virtual void post_forces();
+    //! @brief Apply forces
+    virtual void post_forces() override;
 
   private:
-    // Parameters
+    //! @brief Parameters
     RealType temperature, viscosity;
 
     // So we don't apply the force all the time - this is taxing because of all the random numbers
