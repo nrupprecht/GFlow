@@ -56,6 +56,7 @@ int main(int argc, char **argv) {
   bool timestep = false;
   bool averages = false;
   bool aveV = false;
+  bool aveP = false;
   bool minDistances = false;
   bool percolation = false;
   bool psnapshot = false;
@@ -75,7 +76,7 @@ int main(int argc, char **argv) {
   RealType startRecTime = 0;
   RealType fps = -1.;
   RealType videoLength = -1.;
-  RealType dt = 0.001;
+  RealType dt = 0.0001;
   RealType time = 10.;
   string writeDirectory = "RunData";
   int boundary = 1;
@@ -100,6 +101,7 @@ int main(int argc, char **argv) {
   parser.get("timestep", timestep);
   parser.get("averages", averages);
   parser.get("aveV", aveV);
+  parser.get("aveP", aveP);
   parser.get("minDistances", minDistances);
   parser.get("percolation", percolation);
   parser.get("psnapshot", psnapshot);
@@ -204,6 +206,7 @@ int main(int argc, char **argv) {
   if (timestep)    gflow->addDataObject(new TimeStepData(gflow));
   if (averages)    gflow->addDataObject(new AverageData(gflow));
   if (aveV) gflow->addDataObject(new AveVelocityData(gflow));
+  if (aveP) gflow->addDataObject(new AveragePositionData(gflow));
   if (minDistances) gflow->addDataObject(new MinInteractingDistance(gflow));
   if (percolation) gflow->addDataObject(new PercolationData(gflow, skin));
   if (psnapshot) gflow->addDataObject(new PercolationSnapshot(gflow, skin));

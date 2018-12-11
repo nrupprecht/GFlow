@@ -3,8 +3,8 @@ Dimensions: 2
 
 // Set the simulation bounds
 Bounds: {
-  : -15, 25 // X
-  : -12, 12 // Y
+  : -18, 32 // X
+  : -18, 18 // Y
 }
 
 Integrator: VelocityVerlet
@@ -42,12 +42,12 @@ Fill-area {
 
   Relax: 0.25
 
-  Velocity: Zero
+  Velocity: 3,0
 }
 
 Particle {
   Position: 0, 0
-  Sigma: 2
+  Sigma: 3.5
   Velocity: 0, 0
   Mass: inf
   Modifier: CV
@@ -55,4 +55,4 @@ Particle {
 
 Reconcile: Remove=2
 
-Modifier: WindTunnel=4.5
+Modifier: WindTunnel=3

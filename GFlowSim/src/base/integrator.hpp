@@ -56,6 +56,9 @@ namespace GFlowSimulation {
     //! @brief Count steps between checking velocities.
     int step_count;
 
+    //! @brief A characteristic length to use in the calculation of time step size.
+    RealType characteristic_length;
+
   };
 
 }

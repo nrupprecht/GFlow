@@ -16,7 +16,7 @@ namespace GFlowSimulation {
   };
 
   void HardSphereGeneral::initialize() {}
-
+  
   void HardSphereGeneral::setRepulsion(RealType r) { 
     parameters[0] = r; 
   }

@@ -139,9 +139,6 @@ namespace GFlowSimulation {
     int *tuple1 = new int[sim_dimensions], *tuple2 = new int[sim_dimensions];
     int *cell_index = new int[sim_dimensions], *center = new int[sim_dimensions];
 
-    // A list of ids of particles to remove
-    std::set<int> removeList;
-
     // Find potential neighbors
     RealType *sg = Base::simData->Sg();
     RealType **x = Base::simData->X();
@@ -165,7 +162,7 @@ namespace GFlowSimulation {
             RealType r = magnitudeVec(dX, sim_dimensions);
             RealType overlap = sg[id1] + sg[id2] - r;
             if (overlap/min(sg[id1], sg[id2]) > factor)
-              removeList.insert(sg[id1]>sg[id2] ? id2 : id1);
+              Base::simData->markForRemoval(sg[id1]>sg[id2] ? id2 : id1);
           }
 
           // Seach through list of adjacent cells
@@ -178,7 +175,7 @@ namespace GFlowSimulation {
               RealType r = magnitudeVec(dX, sim_dimensions);
               RealType overlap = sg[id1] + sg[id2] - r;
               if (overlap/min(sg[id1], sg[id2]) > factor)
-                removeList.insert(sg[id1]>sg[id2] ? id2 : id1);
+                Base::simData->markForRemoval(sg[id1]>sg[id2] ? id2 : id1);
             }
         }
         // If sigma is > min_small_sigma, we have to look through more cells
@@ -214,17 +211,17 @@ namespace GFlowSimulation {
                 Base::gflow->getDisplacement(Base::simData->X(id1), Base::simData->X(id2), dX);
                 RealType r = magnitudeVec(dX, sim_dimensions);
                 RealType overlap = sg[id1] + sg[id2] - r;
-                if (overlap/min(sg[id1], sg[id2]) > factor)
-                  removeList.insert(sg[id1]>sg[id2] ? id2 : id1);
+                if (overlap/sg[id2] > factor)
+                  simData->markForRemoval(id2);
               }
             }
           }
         }
       }
     }
-    // Remove all the particles that we need to 
-    for (auto id : removeList)
-      Base::simData->removeParticle(id);
+
+    Base::simData->doParticleRemoval();
+
     // Clean up
     delete [] tuple1;
     delete [] tuple2;

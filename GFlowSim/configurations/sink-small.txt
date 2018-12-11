@@ -3,23 +3,19 @@ Dimensions: 2
 
 // Set the simulation bounds
 Bounds: {
-  : -15, 25 // X
-  : -12, 12 // Y
+  : -8, 8
+  : -12, 12
 }
 
 Integrator: VelocityVerlet
 
-Boundary: {
-  : Wrap
-  : Repulse
-}
+Boundary: Repulse
 
 // Set the number of particle types
 NTypes: 1
 
-// Creates a random force network of HardSphere and Lennard-Jones forces
 Force-grid: {
-  : 0, 0, HardSphereGeneral
+  : 0, 0, HardSphere
 }
 
 // Fill an area with particles
@@ -36,23 +32,20 @@ Fill-area {
     Type: 0
   }
 
-  Number: Phi=0.93 {
+  Number: Phi=1.2 {
     TypeA : 1
   }
 
-  Relax: 0.25
-
   Velocity: Zero
+
 }
 
+// The large, dropping particle
 Particle {
-  Position: 0, 0
-  Sigma: 2
-  Velocity: 0, 0
-  Mass: inf
-  Modifier: CV
+  Position: 0, 11
+  Sigma: 1
+  Velocity: 0, -3.5
+  Modifier: CV-D=22
 }
 
-Reconcile: Remove=2
-
-Modifier: WindTunnel=4.5
+Reconcile: Remove=0.5

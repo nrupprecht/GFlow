@@ -5,11 +5,16 @@
 
 namespace GFlowSimulation {
 
-  Integrator::Integrator(GFlow *gflow) : Base(gflow), dt(0.0001), adjust_dt(true), min_dt(1e-6), max_dt(0.002), target_steps(18), step_delay(10), step_count(step_delay+1) {};
+  Integrator::Integrator(GFlow *gflow) : Base(gflow), dt(0.0001), adjust_dt(true), min_dt(1e-6), max_dt(0.002), target_steps(20), step_delay(0), step_count(step_delay+1) {};
 
   void Integrator::pre_integrate() {
     // Set step count so a check is triggered on the first step
     step_count = step_delay;
+
+    // Compute average radius
+    characteristic_length = 0;
+    for (int i=0; i<simData->number; ++i) characteristic_length += simData->Sg(i);
+    characteristic_length /= static_cast<RealType>(simData->number);
   }
 
   void Integrator::pre_step() {
@@ -32,46 +37,39 @@ namespace GFlowSimulation {
     const int total = sim_dimensions*simData->number;
 
     // Find minT
+    RealType maxV = 0;
+
     #if SIMD_TYPE==SIMD_NONE
     // Do serially
-    for (int i=0; i<total; ++i) {
-      RealType mint = sg[i/sim_dimensions]/fabs(v[i]);
-      if (mint<minT) minT = mint;
-    }
+    for (int i=0; i<total; ++i)
+      if (maxV<fabs(v[i])) maxV = fabs(v[i]);
     #else 
     // Do as much as we can in parallel
-    simd_float MinT = simd_set1(1.);
+    simd_float MaxV = simd_set1(0.);
     int i=0;
     for (; i<total-simd_data_size; i += simd_data_size) {
       simd_float V = simd_abs(simd_load(&v[i]));
-
-      //simd_float Sg = simd_load_constant(sg, i, sim_dimensions);
-      simd_float Sg = simd_load_constant<2>(sg, i);
-      
-      simd_float Mint = Sg / V;
-      simd_float mask = simd_less_than(Mint, MinT);
-      simd_update_masked(MinT, Mint, mask);
+      simd_float mask = simd_less_than(MaxV, V);
+      simd_update_masked(MaxV, V, mask);
     }
-    // Consolidate MinT
+    // Consolidate MaxV
     for (int d=0; d<simd_data_size; ++d) {
-      RealType mint = simd_get(d, MinT);
-      if (mint<minT) minT = mint;
+      RealType mv = simd_get(d, MaxV);
+      if (maxV<mv) maxV = mv;
     }
     // Do the last part serially
-    for (; i<total; ++i) {
-      RealType mint = sg[i/sim_dimensions]/fabs(v[i]);
-      if (mint<minT) minT = mint;
-    }
+    for (; i<total; ++i)
+      if (maxV<fabs(v[i])) maxV = fabs(v[i]);
     #endif
 
-    // Scale by a dimensional factor, since we just looked at every component of velocity separately
-    minT /= sqrt(sim_dimensions);
+    // The minimum time any object takes to cover a characteristic length
+    // @todo There should be a systematic finding of the number 0.05.
+    minT = characteristic_length/(maxV*sqrt(sim_dimensions));
 
     // Set the timestep
     dt = minT * 1./static_cast<RealType>(target_steps);
     if (dt>max_dt) dt = max_dt;
     else if (dt<min_dt) dt = min_dt;
-
     // Reset step count
     step_count = 0;
   }

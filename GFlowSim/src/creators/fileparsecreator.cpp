@@ -506,12 +506,20 @@ namespace GFlowSimulation {
 
     // --- Velocity. How to choose particle velocities. We will find a better / more expressive way to do this later.
     parser.getHeading_Optional("Velocity");
+    // Velocity option
+    // 0 - Normal
+    // 1 - Specified vector
+    RealType *Vs = new RealType[sim_dimensions];
     int velocityOption = 0; // Normal velocities by default.
     hd = parser.first();
     if (hd) {
       string opt;
       parser.extract_first_parameter(opt, hd);
       if (opt=="Zero") velocityOption = 1; // Zero velocity
+      else {
+        parser.set_vector_argument(Vs, hd, sim_dimensions);
+        velocityOption = 1;
+      }
       // --- Other options go here
     }
 
@@ -631,6 +639,7 @@ namespace GFlowSimulation {
     };
 
     // --- Fill gflow with the particles
+    copyVec(Vs, V, sim_dimensions);
     for (int i=0; i<simData->number; ++i) {
       // Extract the particle properties
       copyVec(simData->X(i), X, sim_dimensions);
@@ -640,6 +649,7 @@ namespace GFlowSimulation {
       if (type!=-1) {
         // Select the velocity for the final particle
         if (velocityOption==0) select_velocity(V, X, sigma, im, type);
+        else if (velocityOption==1); // We already set V to be Vs
         else zeroVec(V, sim_dimensions);
         // Infinitely heavy objects do not move.
         if (im==0) zeroVec(V, sim_dimensions);
@@ -651,6 +661,7 @@ namespace GFlowSimulation {
     filler.forceMaster = nullptr; 
 
     // Clean up
+    delete [] Vs;
     delete [] X;
     delete [] V;
   }

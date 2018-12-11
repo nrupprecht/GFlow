@@ -14,6 +14,8 @@ namespace GFlowSimulation {
 
   private:
 
+    //! @brief The half-width of the area in which particles are corralled by the velocity field.
+    RealType halfWidth;
     //! @brief The place at which particles should stop being effected by the velocity field.
     RealType leftBound;
     //! @brief The place at which particles should start being effected by the velocity field.
