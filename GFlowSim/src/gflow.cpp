@@ -4,6 +4,7 @@
 #include "alldomains.hpp"
 #include "allparallelobjects.hpp"
 #include "allmodifiers.hpp"
+#include "alltopologies.hpp"
 
 namespace GFlowSimulation {
 
@@ -29,7 +30,7 @@ namespace GFlowSimulation {
     domain       = new DomainTest(this); // Domain(this);
     dataMaster   = new DataMaster(this);
     forceMaster  = new ForceMaster(this);
-    topology     = nullptr;
+    topology     = new GridTopology(sim_dimensions);
     // Set up bounds to have the propper dimensions
     bounds = Bounds(sim_dimensions);
     // Set wrapping to true by default
@@ -346,6 +347,8 @@ namespace GFlowSimulation {
 
   void GFlow::setBounds(Bounds b) {
     bounds = b;
+
+    topology->setSimulationBounds(b);
     // Sectorization updates its bounds in pre_integrate()
   }
 

@@ -31,6 +31,12 @@ namespace GFlowSimulation {
     //! @brief Copy equals.
     Bounds& operator=(const Bounds&);
 
+    //! @brief Boolean equals operator
+    bool operator==(const Bounds&) const;
+
+    //! @brief Boolean not equals operator
+    bool operator!=(const Bounds&) const;
+
     //! @brief Get the widths in various dimensions of the bounds.
     RealType wd(int) const;
 

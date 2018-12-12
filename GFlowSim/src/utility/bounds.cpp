@@ -57,6 +57,17 @@ namespace GFlowSimulation {
     return *this;
   }
 
+  bool Bounds::operator==(const Bounds& b) const {
+    if (dimensions!=b.dimensions) return false;
+    for (int d=0; d<dimensions; ++d)
+      if (min[d]!=b.min[d] || max[d]!=b.max[d]) return false;
+    return true;
+  }
+
+  bool Bounds::operator!=(const Bounds& b) const {
+    return !(*this==b);
+  }
+
   RealType Bounds::wd(int d) const { 
     return max[d] - min[d]; 
   }

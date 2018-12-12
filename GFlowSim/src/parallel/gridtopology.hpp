@@ -1,9 +1,18 @@
 #ifndef __GRID_TOPOLOGY_HPP__GFLOW__
 #define __GRID_TOPOLOGY_HPP__GFLOW__
 
+#include "topology.hpp"
+
 namespace GFlowSimulation {
 
   class GridTopology : public Topology {
+  public:
+    //! @brief Default constructor, takes the number of dimensions.
+    GridTopology(int);
+
+    //! @brief Destructor.
+    ~GridTopology();
+
     //! @brief Compute how the simulation space should be divided up.
     virtual void computeTopology() override;
 
@@ -24,6 +33,10 @@ namespace GFlowSimulation {
 
     //! @brief Get the bounds managed by a processor.
     Bounds getBounds(int) override;
+
+  private:
+    //! @brief The number of processors in the grid in each dimension.
+    int *dims;
   };
 
 }
