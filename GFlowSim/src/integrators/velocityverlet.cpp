@@ -9,8 +9,10 @@ namespace GFlowSimulation {
   VelocityVerlet::VelocityVerlet(GFlow *gflow) : Integrator(gflow) {};
 
   void VelocityVerlet::pre_forces() {
-
+    
+    #if SIMD_TYPE!=SIMD_NONE
     if (sim_dimensions!=2) throw false; // WE NEED TO MANUALLY CHANGE simd_load_constant FOR NOW.
+    #endif
     
     // --- First half kick
 
@@ -45,7 +47,7 @@ namespace GFlowSimulation {
       simd_float V = simd_load(&v[i]);
 
       //simd_float _im = simd_load_constant(im, i, sim_dimensions);
-      simd_float _im = simd_load_constant<2>(im, i);
+      simd_float _im = simd_load_constant<2>(im, i); // THIS IS THE PROBLEM
 
       simd_float dV = _hdt*_im*_f;
       simd_float V_new = V + dV;
@@ -113,9 +115,6 @@ namespace GFlowSimulation {
   }
 
   void VelocityVerlet::post_forces() {
-
-    if (sim_dimensions!=2) throw false; // WE NEED TO MANUALLY CHANGE simd_load_constant FOR NOW.
-
     // Call to parent class
     Integrator::post_forces();
     

@@ -37,6 +37,8 @@ namespace GFlowSimulation {
   private:
     //! @brief The number of processors in the grid in each dimension.
     int *dims;
+    //! @brief Values used to help in the computation of linear indices.
+    int *products;
   };
 
 }
