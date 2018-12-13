@@ -21,22 +21,18 @@ namespace GFlowSimulation {
     Interaction(GFlow *);
 
     //! @brief Destructor
-    ~Interaction();
-
-    //! @brief Initialize the force, check if all the special data (dataF, dataI) the force needs exists, make
-    //! sure parameter packs are up to date.
-    virtual void initialize()=0;
+    virtual ~Interaction();
 
     //! @brief Calculate all the forces between atoms in the verlet lists
     virtual void interact() const;
 
-    //! @brief Run an externally given kernel through this interaction's interaction handler
-    virtual void executeKernel(Kernel<simd_float>, Kernel<float>, const RealType*, RealType*, const vector<int>&, const vector<int>&) const;
-
-    //! @brief Initialize for force calculation
+    //! @brief Compute and update interaction for pairs of particles.
     //!
-    //! Resets the virial and returns whether forces should be calculated.
-    bool initCalculation() const;
+    //! @param id1 Local id of the first particle.
+    //! @param id2 Local id of the second particle.
+    //! @param displacement The displacement from particle 1 to particle 2.
+    //! @param distance The distance between the particles.
+    virtual void compute(const int, const int, RealType*, const RealType) const = 0;
 
     // --- Accessors
 
@@ -48,11 +44,6 @@ namespace GFlowSimulation {
 
     //! @brief Get the virial, used for calculating pressure
     int getVirial() const;
-
-    //! @brief Return whether this interaction needs to be constructed from the outside. 
-    //!
-    //! In other words, does "add pair" do anything. It is actually determined by the interaction handler.
-    virtual bool needsConstruction() const;
 
     // --- Mutators
 
@@ -72,17 +63,6 @@ namespace GFlowSimulation {
 
     //! @brief The neighbor (verlet) lists for all the pairs of atoms between which this force is active
     InteractionHandler *handler;
-
-    //! @brief A pointer to the force function
-    Kernel<simd_float> simd_kernelPtr = nullptr;
-    Kernel<float> serial_kernelPtr = nullptr;
-
-    //! @brief An array of force parameters. The length of this array will vary by force.
-    RealType *parameters = nullptr;
-
-    //! @brief The pointers to the arrays of data in simdata that should be packed for the interaction kernel function.
-    vector<int> data_needed;
-    vector<int> vec_data_needed;
 
     //! @brief The virial, for calculating pressure.
     //!

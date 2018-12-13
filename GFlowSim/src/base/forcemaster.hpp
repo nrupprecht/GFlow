@@ -22,9 +22,6 @@ namespace GFlowSimulation {
     //! @brief Constructor - also includes number of forces
     ForceMaster(GFlow*, int);
 
-    //! @brief Overloads the initialize function to set needs_construction
-    virtual void initialize();
-
     //! @brief Get a pointer to the force that the particle pair belongs in. Null means no force.
     Interaction* getInteraction(int, int);
 
@@ -38,9 +35,6 @@ namespace GFlowSimulation {
 
     //! @brief Get the number of types of particles in the simulation
     int getNTypes() const;
-
-    //! @brief Returns whether there are interactions whose interactionhandlers need construction
-    bool needsConstruction() const;
 
     // --- Mutators
 
@@ -63,9 +57,6 @@ namespace GFlowSimulation {
 
     // Number of particle types
     int ntypes;
-
-    //! @brief Whether any of the interaction handlers for any of the forces need construction
-    bool needs_construction;
   };
 
 }

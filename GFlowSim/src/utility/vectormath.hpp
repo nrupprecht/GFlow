@@ -85,6 +85,10 @@ namespace GFlowSimulation {
     for (int d=0; d<dimensions; ++d) z[d] -= x[d];
   }
 
+  template<typename T> inline void minusEqVecScaled(T *z, const T *x, const T s, int dimensions) {
+    for (int d=0; d<dimensions; ++d) z[d] -= s*x[d];
+  }
+
   template<typename T> inline void copyVec(const T *x, T *target, int dimensions) {
     std::copy(x, x+dimensions, target);
   }

@@ -4,7 +4,7 @@
 
 namespace GFlowSimulation {
 
-  WindTunnel::WindTunnel(GFlow *gflow, RealType v) : Modifier(gflow), velocity(v), halfWidth(1.5), acceleration(3.) {
+  WindTunnel::WindTunnel(GFlow *gflow, RealType v) : Modifier(gflow), velocity(v), halfWidth(1.5), acceleration(1.) {
     leftBound  = gflow->getBounds().min[0] + halfWidth;
     rightBound = gflow->getBounds().max[0] - halfWidth;
   }
