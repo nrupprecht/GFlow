@@ -9,11 +9,9 @@ namespace GFlowSimulation {
   VelocityVerlet::VelocityVerlet(GFlow *gflow) : Integrator(gflow) {};
 
   void VelocityVerlet::pre_forces() {
-    
-    #if SIMD_TYPE!=SIMD_NONE
-    if (sim_dimensions!=2) throw false; // WE NEED TO MANUALLY CHANGE simd_load_constant FOR NOW.
-    #endif
-    
+    // Call base class
+    Integrator::pre_forces();
+
     // --- First half kick
 
     // Number of (real - non ghost) particles
@@ -41,13 +39,27 @@ namespace GFlowSimulation {
     #else
     // Put hdt into a simd vector
     simd_float _hdt = simd_set1(hdt);
+
     int i;
     for (i=0; i<total-simd_data_size; i+=simd_data_size) {
       simd_float _f = simd_load(&f[i]);
       simd_float V = simd_load(&v[i]);
 
-      //simd_float _im = simd_load_constant(im, i, sim_dimensions);
-      simd_float _im = simd_load_constant<2>(im, i); // THIS IS THE PROBLEM
+      simd_float _im;
+      switch (sim_dimensions) {
+        case 1: 
+          _im = simd_load_constant<1>(im, i);
+          break;
+        case 2:
+          _im = simd_load_constant<2>(im, i);
+          break;
+        case 3:
+          _im = simd_load_constant<3>(im, i);
+          break;
+        case 4:
+          _im = simd_load_constant<4>(im, i);
+          break;
+      }
 
       simd_float dV = _hdt*_im*_f;
       simd_float V_new = V + dV;
@@ -149,8 +161,21 @@ namespace GFlowSimulation {
       simd_float vec1   = simd_load(&f[i]);
       simd_float V      = simd_load(&v[i]);
 
-      //simd_float _im    = simd_load_constant(im, i, sim_dimensions);
-      simd_float _im = simd_load_constant<2>(im, i);
+      simd_float _im;
+      switch (sim_dimensions) {
+        case 1: 
+          _im = simd_load(&im[i]);
+          break;
+        case 2:
+          _im = simd_load_constant<2>(im, i);
+          break;
+        case 3:
+          _im = simd_load_constant<3>(im, i);
+          break;
+        case 4:
+          _im = simd_load_constant<4>(im, i);
+          break;
+      }
 
       simd_float im_hdt = simd_mult(_im, _hdt);
       simd_float im_h_f = simd_mult(im_hdt, vec1);

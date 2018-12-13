@@ -17,11 +17,13 @@ namespace GFlowSimulation {
     RealType radius = 0.05;
     RealType velocity = 0.25;
     RealType skinDepth = -1.;
+    bool lj = false;
 
     // Gather command line arguments
     parserPtr->get("time", time);
     parserPtr->get("radius", radius);
     parserPtr->get("skinDepth", skinDepth);
+    parserPtr->get("lj", lj);
 
     // Create a new gflow object
     GFlow *gflow = new GFlow(sim_dimensions);
@@ -64,7 +66,9 @@ namespace GFlowSimulation {
 
     // --- Handle forces
     gflow->forceMaster->setNTypes(1);
-    Interaction *force = new HardSphere(gflow);
+    Interaction *force;
+    if (lj) force = new LennardJones(gflow);
+    else force = new HardSphere(gflow);
     gflow->forceMaster->setInteraction(0, 0, force);
 
     // Set skin depth

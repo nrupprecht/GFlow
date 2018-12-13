@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
 
-  Integrator::Integrator(GFlow *gflow) : Base(gflow), dt(0.0001), adjust_dt(true), min_dt(1e-6), max_dt(0.002), target_steps(20), step_delay(0), step_count(step_delay+1) {};
+  Integrator::Integrator(GFlow *gflow) : Base(gflow), dt(0.0001), adjust_dt(true), min_dt(1e-6), max_dt(0.002), target_steps(20), step_delay(10), step_count(step_delay+1) {};
 
   void Integrator::pre_integrate() {
     // Set step count so a check is triggered on the first step
@@ -20,7 +20,7 @@ namespace GFlowSimulation {
   void Integrator::pre_step() {
     // Call Base's pre_step (I don't think it does anything right now, but best to be safe)
     Base::pre_step();
-
+    // If we are not adjusting dt, we are done.
     if (!adjust_dt) return;
     // Check if enough time has gone by
     if (step_count < step_delay) {
@@ -29,16 +29,10 @@ namespace GFlowSimulation {
     }
     // Check the velocity components of all the particles
     RealType *v = simData->V_arr(), *sg = simData->Sg();
-    // The minimum time a particle would take to traverse its own radius
-    //!  @todo A more nuanced thing to check would be how long it takes the fastest
-    //!  particle to traverse the smallest radius, or the smallest radius "near" it.
-    //!  The smallest radius in each subdivision could be found by binning.
-    RealType minT = 1.; // Starting value
     const int total = sim_dimensions*simData->number;
 
-    // Find minT
+    // Find maxV
     RealType maxV = 0;
-
     #if SIMD_TYPE==SIMD_NONE
     // Do serially
     for (int i=0; i<total; ++i)
@@ -64,7 +58,7 @@ namespace GFlowSimulation {
 
     // The minimum time any object takes to cover a characteristic length
     // @todo There should be a systematic finding of the number 0.05.
-    minT = characteristic_length/(maxV*sqrt(sim_dimensions));
+    RealType minT = characteristic_length/(maxV*sqrt(sim_dimensions));
 
     // Set the timestep
     dt = minT * 1./static_cast<RealType>(target_steps);

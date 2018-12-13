@@ -39,7 +39,9 @@ namespace GFlowSimulation {
     //! @param[in] param_pack A parameter pack, passed in from force. Contains characteristic 
     //! constants of the force, and extra data the force needs. Should be of the form { strength, cutoff } (length 2).
     //! @param[in,out] data_pack Data to be updated by the function. Should be of the form  { virial } (length 1). 
-    static void force(simd_float*, simd_float*, const simd_float, const simd_float, const simd_float*, const RealType*, RealType*);
+    static void force_serial(RealType*, const RealType*, 
+      const RealType, const RealType, const RealType*, 
+      const RealType*, const RealType*, RealType*, int);
 
     template<typename float_type>
     static void force(float_type*, const float_type*, 
@@ -51,6 +53,7 @@ namespace GFlowSimulation {
   template<typename float_type>
   void LennardJones::force(float_type *buffer_out, const float_type* normal, const float_type mask, const float_type distance, 
     const float_type *soa_data, const float_type *vec_data, const RealType *param_pack, RealType *data_pack, int dimensions) {
+
     // Param Pack: Expect:
     //  param_pack[0] - cutoff
     const RealType cutoff = 2.5; // param_pack[0];
