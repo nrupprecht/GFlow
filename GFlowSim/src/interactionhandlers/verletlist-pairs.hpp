@@ -1,5 +1,5 @@
-#ifndef __VERLET_LIST_PAIRS_HPP__GFLOW__
-#define __VERLET_LIST_PAIRS_HPP__GFLOW__ 
+#ifndef __VERLET_LIST_PAIRS__
+#define __VERLET_LIST_PAIRS__
 
 #include "../base/interactionhandler.hpp"
 
@@ -7,7 +7,6 @@ namespace GFlowSimulation {
 
   class VerletListPairs : public InteractionHandler {
   public:
-    //! @brief Constructor.
     VerletListPairs(GFlow*);
 
     // --- Inherited members
@@ -24,26 +23,14 @@ namespace GFlowSimulation {
     //! @brief Return the total length of the verlet list.
     virtual int size() const override;
 
-    //! @brief Iterate through interacting particles, executing the given kernel between them.
-    //!
-    //! @param kernel A function that is executed on all pairs of particles within cutoff distance
-    //! of each other.
-    //! @param param_pack Parameters used to evaluate the force.
-    //! @param data_pack Data to be updated by the function.
-    virtual void executeKernel(Kernel<simd_float>, Kernel<float>, const RealType*, RealType*, const vector<int>&, const vector<int>&) const override;
+    //! @brief Iterate through the pairs of interacting particles, hand them to Interaction's compute function.
+    virtual void execute(const Interaction*) const override;
 
   private:
-
     //! @brief The verlet list
-    vector<int> verlet_a;
-    vector<int> verlet_b;
+    vector<int> verlet;
 
-    //! @brief The minimum number of particles in a list for which we will use simd instead of serial
-    int min_simd_size;
-
-    //! @brief If true, we can use simd functions
-    bool use_simd;
   };
 
 }
-#endif // __VERLET_LIST_PAIRS_HPP__GFLOW__
+#endif // __VERLET_LIST_PAIRS__

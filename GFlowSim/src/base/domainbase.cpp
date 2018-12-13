@@ -114,15 +114,12 @@ namespace GFlowSimulation {
     Base::simData->setNeedsRemake(false);
     // Reset
     steps_since_last_remake = 0;
-    // We have to check this, since construct can be called from the outside
-    if (Base::forceMaster->needsConstruction()) {
-      // Increment counter
-      ++number_of_remakes;
-      // Reset the verlet lists of all the forces
-      Base::forceMaster->clear();
-      // Record where the particles were
-      if (update_decision_type==0) fillXVL();
-    }
+    // Increment counter
+    ++number_of_remakes;
+    // Reset the verlet lists of all the forces
+    Base::forceMaster->clear();
+    // Record where the particles were
+    if (update_decision_type==0) fillXVL();
   }
 
   void DomainBase::nullXVL() {

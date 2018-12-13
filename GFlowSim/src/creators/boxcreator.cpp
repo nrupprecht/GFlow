@@ -85,15 +85,6 @@ namespace GFlowSimulation {
     // The simdata object
     SimData *simData = gflow->simData;
 
-    /*
-    // Use angular dynamics
-    simData->setAngularDynamics(true);
-    // Add some data entries to dataF
-    simData->addDataFEntry("rp");
-    simData->addDataFEntry("ds");
-    simData->addDataFEntry("cf");
-    */
-
     // Add some objects
     simData->reserve(number);
     
@@ -120,7 +111,6 @@ namespace GFlowSimulation {
     }
     else {
       auto *HS = new HardSphere(gflow);
-      //auto *HS = new HardSphere(gflow);
       HS->setRepulsion(repulsion*DEFAULT_HARD_SPHERE_REPULSION);
       force = HS;
     }
@@ -132,8 +122,7 @@ namespace GFlowSimulation {
     if (sample>0) gflow->domain->setSampleSize(sample);
 
     // Relax the setup in two steps
-    hs_relax(gflow, 0.1); // 1) To make sure particles don't stop on top of one another
-    relax(gflow, 0.15);   // 2) To let particles relax naturally
+    hs_relax(gflow, 0.1); // Make sure particles don't stop on top of one another
     // Set the integrator
     if (over_damped_flag) gflow->integrator = new OverdampedIntegrator(gflow);
     else if (langevin_temp>=0) gflow->integrator = new LangevinIntegrator(gflow, langevin_temp);

@@ -8,10 +8,6 @@
 namespace GFlowSimulation {
 
   //! @brief This defines what type of force kernel function the interaction handler expects to be passed in to it.
-  // using Kernel = auto (*) (simd_float*, simd_float*, const simd_float, const simd_float, const simd_float*, const RealType*, RealType*) -> void;
-
-  //template<typename T>
-  //using Kernel = auto (*) (T*, T*, const T, const T, const T*, const RealType*, RealType*) -> void;
 
   template<typename float_type>
   using Kernel = auto (*) (
@@ -25,6 +21,8 @@ namespace GFlowSimulation {
     RealType*, 
     int
   ) -> void;
+
+  // using InteractionFunction = auto (*) (const int, const int, const SimData&, RealType*, const RealType, const RealType*) -> void;
 
   /**
   *  @brief Handles the storage and traversal of interacting particles.
@@ -61,18 +59,8 @@ namespace GFlowSimulation {
     //! through linked cells, and don't have an accurate guess of how many interactions there will be.
     virtual int size() const = 0;
 
-    //! @brief Return whether this handler needs to be constructed from the outside. 
-    //!
-    //! In other words, does "add pair" do anything. This is true by default.
-    virtual bool needsConstruction() { return true; }
-
-    //! @brief Iterate through interacting particles, executing the given kernel between them.
-    //!
-    //! @param kernel A function that is executed on all pairs of particles within cutoff distance
-    //! of each other.
-    //! @param param_pack Parameters used to evaluate the force.
-    //! @param data_pack Data to be updated by the function.
-    virtual void executeKernel(Kernel<simd_float>, Kernel<float>, const RealType*, RealType*, const vector<int>&, const vector<int>&) const = 0;
+    //! @brief Iterate through the pairs of interacting particles, hand them to Interaction's compute function.
+    virtual void execute(const class Interaction*) const = 0;
   };
 
 }

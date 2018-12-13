@@ -45,6 +45,7 @@ namespace GFlowSimulation {
       simd_float _f = simd_load(&f[i]);
       simd_float V = simd_load(&v[i]);
 
+      /*
       simd_float _im;
       switch (sim_dimensions) {
         case 1: 
@@ -60,6 +61,8 @@ namespace GFlowSimulation {
           _im = simd_load_constant<4>(im, i);
           break;
       }
+      */
+      simd_float _im = simd_load_constant<2>(im, i);
 
       simd_float dV = _hdt*_im*_f;
       simd_float V_new = V + dV;
@@ -161,6 +164,7 @@ namespace GFlowSimulation {
       simd_float vec1   = simd_load(&f[i]);
       simd_float V      = simd_load(&v[i]);
 
+      /*
       simd_float _im;
       switch (sim_dimensions) {
         case 1: 
@@ -176,6 +180,8 @@ namespace GFlowSimulation {
           _im = simd_load_constant<4>(im, i);
           break;
       }
+      */
+      simd_float _im = simd_load_constant<2>(im, i);
 
       simd_float im_hdt = simd_mult(_im, _hdt);
       simd_float im_h_f = simd_mult(im_hdt, vec1);
