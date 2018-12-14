@@ -26,6 +26,7 @@ namespace GFlowSimulation {
     // Get the positions
     RealType **x = Base::simData->X();
     RealType *sg = Base::simData->Sg();
+    int *type = Base::simData->Type();
 
     RealType *displacement = new RealType[sim_dimensions];
     Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
@@ -36,6 +37,8 @@ namespace GFlowSimulation {
     for (int i=0; i<verlet.size(); i+=2) {
       int id1 = verlet[i];
       int id2 = verlet[i+1];
+      // Check if the types are good
+      if (type[id1]<0 || type[id2]<0) continue;
       // Get the displacement
       getDisplacement(x[id1], x[id2], displacement, bounds, boundaryConditions, sim_dimensions);
       // Get the distance squared

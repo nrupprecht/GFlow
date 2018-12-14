@@ -198,9 +198,6 @@ namespace GFlowSimulation {
         forces_timer.stop();
       }
 
-      // Do particle removal
-      simData->doParticleRemoval();
-
       // Do modifier removal
       handleModifiers();
 

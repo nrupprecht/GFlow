@@ -106,6 +106,8 @@ namespace GFlowSimulation {
   }
 
   void DomainBase::construct() {
+    // Do necessary removals 
+    Base::simData->doParticleRemoval();
     // Wrap the particles, so they are in their cannonical positions
     Base::gflow->wrapPositions();
     // Set timer
