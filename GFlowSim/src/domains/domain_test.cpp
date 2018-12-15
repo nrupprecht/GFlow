@@ -69,16 +69,18 @@ namespace GFlowSimulation {
 
     // Find average sigma
     RealType sigma = 0, max_sigma = 0;
-    for (int n=0; n<Base::simData->number; ++n) {
+    for (int n=0; n<Base::simData->size(); ++n) {
+      if (Base::simData->Type()<0) continue;
       RealType s = Base::simData->Sg(n);
       sigma += s;
       if (s>max_sigma) max_sigma = s;
     }
-    sigma /= Base::simData->number;
+    sigma /= Base::simData->number();
     // Threshhold sigma is between average and maximum sigma
     RealType threshold = 0.5*(sigma + max_sigma), max_under = sigma;
     if (threshold!=sigma) {
-      for (int n=0; n<Base::simData->number; ++n) {
+      for (int n=0; n<Base::simData->size(); ++n) {
+        if (Base::simData->Type()<0) continue;
         RealType s = Base::simData->Sg(n);
         if (s<threshold && max_under<s) max_under = s;
       }
@@ -338,7 +340,7 @@ namespace GFlowSimulation {
   inline void DomainTest::update_cells() {
     clear_cells();
     fill_cells();
-    number = simData->number;
+    number = simData->number();
   }
 
   inline void DomainTest::create_cells() {
@@ -412,8 +414,9 @@ namespace GFlowSimulation {
   }
 
   inline void DomainTest::fill_cells() {
+    // We should have just done a particle removal, so we can use number, not size (since all arrays are compressed)
     RealType **x = simData->X();
-    int number = Base::simData->number;
+    int number = Base::simData->number();
     // Bin all the particles
     for (int i=0; i<number; ++i) {
       int linear = get_cell_index(x[i]);

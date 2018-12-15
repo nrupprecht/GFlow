@@ -45,7 +45,7 @@ namespace GFlowSimulation {
 
     // Record all the data
     vector<RealType> data;
-    data.reserve(data_types.size()*simData->Number());
+    data.reserve(data_types.size()*simData->number());
     store_data(data, data_types);
     // Store this timestep's data
     positions.push_back(data);
@@ -66,7 +66,7 @@ namespace GFlowSimulation {
     if (fout.fail()) return false;
 
     // Print data width, dimensions
-    fout << dataWidth << "," << sim_dimensions << "," << positions.size() << "," << Base::simData->ntypes << "\n";
+    fout << dataWidth << "," << sim_dimensions << "," << positions.size() << "," << Base::simData->ntypes() << "\n";
 
     // Print bounds - mins, then maxes
     Bounds bounds = Base::gflow->getBounds();
@@ -88,7 +88,7 @@ namespace GFlowSimulation {
 
   inline void PositionData::store_data(vector<RealType>& data, vector<DataType>& d_types) {
     // Fill the array of data
-    for (int i=0; i<Base::simData->Number(); ++i) {
+    for (int i=0; i<Base::simData->size(); ++i) {
       if (Base::simData->Type(i)!=-1)
         for (const auto type : d_types) get_data(data, type, i);
     }

@@ -13,8 +13,11 @@ namespace GFlowSimulation {
 
     // Compute average radius
     characteristic_length = 0;
-    for (int i=0; i<simData->number; ++i) characteristic_length += simData->Sg(i);
-    characteristic_length /= static_cast<RealType>(simData->number);
+    for (int n=0; n<simData->size(); ++n) {
+      if (simData->Type(n)<0) continue;
+      characteristic_length += simData->Sg(n);
+    }
+    characteristic_length /= static_cast<RealType>(simData->number());
   }
 
   void Integrator::pre_step() {
@@ -29,7 +32,7 @@ namespace GFlowSimulation {
     }
     // Check the velocity components of all the particles
     RealType *v = simData->V_arr(), *sg = simData->Sg();
-    const int total = sim_dimensions*simData->number;
+    const int total = sim_dimensions*simData->size();
 
     // Find maxV
     RealType maxV = 0;

@@ -35,7 +35,7 @@ namespace GFlowSimulation {
     // Find minT
     #if SIMD_TYPE==SIMD_NONE
     // Do serially
-    for (int i=0; i<sim_dimensions*simData->number; ++i) {
+    for (int i=0; i<sim_dimensions*simData->size(); ++i) {
       RealType mint = sg[i/sim_dimensions] / fabs(f[i]*im[i]);
       if (mint<minT) minT = mint;
     }
@@ -43,10 +43,14 @@ namespace GFlowSimulation {
     // Do as much as we can in parallel
     simd_float MinT = simd_set1(1.);
     int i=0;
-    for (; i<sim_dimensions*simData->number-simd_data_size; i += simd_data_size) {
+    for (; i<sim_dimensions*simData->size()-simd_data_size; i += simd_data_size) {
       simd_float F = simd_abs(simd_load(&f[i]));
-      simd_float Im = simd_load_constant(im, i, sim_dimensions);
-      simd_float Sg = simd_load_constant(sg, i, sim_dimensions);
+     
+      //simd_float Im = simd_load_constant(im, i, sim_dimensions);
+      //simd_float Sg = simd_load_constant(sg, i, sim_dimensions);
+      simd_float Im = simd_load_constant<2>(im, i);
+      simd_float Sg = simd_load_constant<2>(sg, i);
+
       simd_float Mint = Sg / (F * Im);
       simd_float mask = simd_less_than(Mint, MinT);
       simd_update_masked(MinT, Mint, mask);
@@ -57,7 +61,7 @@ namespace GFlowSimulation {
       if (mint<minT) minT = mint;
     }
     // Do the last part serially
-    for (; i<sim_dimensions*simData->number; ++i) {
+    for (; i<sim_dimensions*simData->size(); ++i) {
       RealType mint = sg[i/sim_dimensions] / fabs(f[i]*im[i]);
       if (mint<minT) minT = mint;
     }
@@ -79,9 +83,14 @@ namespace GFlowSimulation {
     // Call to parent class
     Integrator::post_forces();
     
+    if (sim_dimensions!=2) {
+      cout << "ERROR: Overdamped integrator is hardcoded for 2 dimensions.\n";
+      throw BadDimension();
+    }
+
     // Number of (real - non ghost) particles
-    int number = simData->number;
-    if (number==0) return;
+    int size = simData->size();
+    if (size==0) return;
 
     // Time step
     RealType dt = Integrator::dt;
@@ -90,7 +99,7 @@ namespace GFlowSimulation {
 
     // Update positions (there are no velocities)
     #if SIMD_TYPE==SIMD_NONE
-    for (int i=0; i<number*sim_dimensions; ++i) {
+    for (int i=0; i<size*sim_dimensions; ++i) {
       int id = i/sim_dimensions;
       x[i] += dampingConstant*im[id]*f[i]*dt;
       // Debug mode asserts
@@ -104,16 +113,17 @@ namespace GFlowSimulation {
     // Get dampingConstant * dt
     simd_float g_dt = simd_set1(dampingConstant*dt);
     int i=0;
-    for (; i<number*sim_dimensions-simd_data_size; i+=simd_data_size) {
+    for (; i<size*sim_dimensions-simd_data_size; i+=simd_data_size) {
       simd_float X = simd_load(&x[i]);
-      simd_float _im = simd_load_constant(im, i, sim_dimensions);
+      //simd_float _im = simd_load_constant(im, i, sim_dimensions);
+      simd_float _im = simd_load_constant<2>(im, i);
       simd_float F = simd_load(&f[i]);
       simd_float dX = g_dt*_im*F;
       simd_float X_new  = X + dX; 
       simd_store(X_new, &x[i]);
     }
     // Left overs
-    for (; i<number*sim_dimensions; ++i) {
+    for (; i<size*sim_dimensions; ++i) {
       int id = i/sim_dimensions;
       x[i] += dampingConstant*im[id]*f[i]*dt;
     }

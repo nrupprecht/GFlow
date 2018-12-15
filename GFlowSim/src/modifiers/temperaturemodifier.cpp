@@ -16,7 +16,7 @@ namespace GFlowSimulation {
     RealType time = Base::gflow->getElapsedTime();
     if (time-lastUpdate<updateDelay || temperature<=0) return;
     // Get data
-    int number = Base::simData->number;
+    int size = Base::simData->size();
     RealType **v = Base::simData->V();
     RealType **f = Base::simData->F();
     RealType *sg = Base::simData->Sg();
@@ -25,7 +25,7 @@ namespace GFlowSimulation {
     RealType Df1 = sqrt(2.*DT1*(time-lastUpdate));
     // Add a random force
     RealType *force = new RealType[sim_dimensions], *drag = new RealType[sim_dimensions], strength;
-    for (int n=0; n<number; ++n) {
+    for (int n=0; n<size; ++n) {
       RealType Df2 = sqrt(1./sg[n]);
       // Random normal direction
       randomNormalVec(force, sim_dimensions);

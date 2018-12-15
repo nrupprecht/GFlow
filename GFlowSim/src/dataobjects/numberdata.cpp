@@ -7,14 +7,14 @@ namespace GFlowSimulation {
   NumberData::NumberData(GFlow *gflow) : DataObject(gflow, "NumberData") {};
 
   void NumberData::post_step() {
-    int ntypes = Base::simData->ntypes;
+    int ntypes = Base::simData->ntypes();
 
     if (numberData.empty()) numberData = vector<vector<RPair> >(ntypes);
     vector<int> nums(ntypes, 0);
 
-    int number = Base::simData->number;
-    for (int n=0; n<number; ++n) {
-      int type = Base::simData->type[n];
+    int size = Base::simData->size();
+    for (int n=0; n<size; ++n) {
+      int type = Base::simData->Type(n);
       if (-1<type && type<ntypes)
         ++nums[type];
     }

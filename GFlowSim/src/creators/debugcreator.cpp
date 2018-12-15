@@ -43,6 +43,7 @@ namespace GFlowSimulation {
 
     // Add some objects
     gflow->simData->reserve(2);
+    gflow->simData->addParticle(2);
 
     // Get pointers to particle data
     SimData *simData = gflow->simData;
@@ -62,7 +63,7 @@ namespace GFlowSimulation {
     }
 
     // Set the correct number of particles
-    gflow->simData->number = 2;
+    // gflow->simData->number = 2;
 
     // --- Handle forces
     gflow->forceMaster->setNTypes(1);

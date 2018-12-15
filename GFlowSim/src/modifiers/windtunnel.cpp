@@ -10,14 +10,14 @@ namespace GFlowSimulation {
   }
 
   void WindTunnel::post_forces() {
-    int number = simData->number;
+    int size = simData->size();
 
     RealType *vel = new RealType[sim_dimensions], *dv = new RealType[sim_dimensions];
     zeroVec(vel, sim_dimensions); 
     vel[0] = velocity;
     
     RealType *x = simData->X_arr(), **v = simData->V(), **f = simData->F(), *im = simData->Im();
-    for (int i=0, j=0; i<number*sim_dimensions; i+=sim_dimensions, ++j) {
+    for (int i=0, j=0; i<size*sim_dimensions; i+=sim_dimensions, ++j) {
       if (rightBound<x[i] || x[i]<leftBound) {
         subtractVec(vel, v[j], dv, sim_dimensions);
         scalarMultVec(acceleration*1./im[j], dv, sim_dimensions);

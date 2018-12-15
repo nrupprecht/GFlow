@@ -27,7 +27,7 @@ namespace GFlowSimulation {
     //! @brief Helper function that stores all the neccesary data in a vector.
     template<typename T> void store_data(vector<T>& data, vector<DataType>& d_types) {
       // Fill the array of data
-      for (int i=0; i<Base::simData->Number(); ++i) {
+      for (int i=0; i<Base::simData->size(); ++i) {
         if (Base::simData->Type(i)!=-1)
           for (const auto type : d_types) get_data(data, type, i);
       }

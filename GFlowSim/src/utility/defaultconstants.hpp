@@ -37,7 +37,7 @@
 namespace GFlowSimulation {
 
   //! @brief The default time step.
-  const RealType DEFAULT_TIME_STEP = 0.001;
+  const RealType DEFAULT_TIME_STEP = 0.0001;
   //! @brief A default value for hard sphere repulsion strengths.
   const RealType DEFAULT_HARD_SPHERE_REPULSION = 50.;
   //! @brief A default value for the hard sphere dissipation strength.
