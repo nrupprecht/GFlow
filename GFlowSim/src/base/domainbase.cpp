@@ -127,10 +127,11 @@ namespace GFlowSimulation {
 
   void DomainBase::nullXVL() {
     if (xVL) dealloc_array_2d(xVL);
+    xVL = nullptr;
   }
 
   void DomainBase::setupXVL(int length) {
-    if (xVL!=nullptr) nullXVL();
+    nullXVL();
     sizeXVL = length;
     xVL = alloc_array_2d<RealType>(length, sim_dimensions);
 

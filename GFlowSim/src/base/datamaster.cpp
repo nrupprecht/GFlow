@@ -213,7 +213,7 @@ namespace GFlowSimulation {
     fout << "  -- Pre-forces, domain:      " << toStrRT(timing[2] = gflow->domain_timer.time()/run_time*100) << "%,\t" << gflow->domain_timer.time() << "\n";
     fout << "  -- Interactions:            " << toStrRT(timing[3] = gflow->forces_timer.time()/run_time*100) << "%,\t" << gflow->forces_timer.time() << "\n";
     for (int i=0; i<entries; ++i) total += timing[i];
-    fout << "  - Uncounted:                " << toStrRT((100. - total)) << "%\n";
+    fout << "  - Uncounted:                " << toStrRT((100. - total)) << "%,\t" << run_time*(100. - total)*0.01 << "\n";
     fout << "\n";
 
     // --- Print simulation summary

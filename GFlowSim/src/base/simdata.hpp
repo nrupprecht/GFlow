@@ -83,16 +83,46 @@ namespace GFlowSimulation {
     int* Id();
     int& Id(int);
 
+    // --- Constant accessors
+
+    const RealType** X() const;
+    const RealType*  X_arr() const;
+    const RealType*  X(int) const;
+    const RealType&  X(int, int) const;
+    const RealType** V() const;
+    const RealType*  V_arr() const;
+    const RealType*  V(int) const;
+    const RealType&  V(int, int) const;
+    const RealType** F() const;
+    const RealType*  F_arr() const;
+    const RealType*  F(int) const;
+    const RealType&  F(int, int) const;
+
+    const RealType* Sg() const;
+    const RealType& Sg(int) const;
+    const RealType* Im() const;
+    const RealType& Im(int) const;
+
+    const int* Type() const;
+    const int& Type(int) const;
+    const int* Id() const;
+    const int& Id(int) const;
+
     //! \brief The size of the part of the arrays that contain valid particles.
-    int size();
+    int size() const;
 
     //! \brief Return the number of owned particles.
-    int number();
+    int number() const;
 
     //! \brief Return the number of types of particles.
-    int ntypes();
+    int ntypes() const;
 
     // --- Clear entries
+
+    //! \brief Set all velocities to zero.
+    void clearV();
+
+    //! \brief Set all forces to zero.
     void clearF();
 
     //! \brief Get the local id of a particle given the global id.
@@ -130,6 +160,20 @@ namespace GFlowSimulation {
 
     //! \brief Move a particle's data from one spot to another, overwriting the particle that was there before.
     void move_particle(int, int);
+
+    //! \brief Swap two particle's data.
+    void swap_particle(int, int);
+
+    //! \brief Do a quick sort based on the particle's positions.
+    void quick_sort();
+
+    void quick_sort_help(int, int, int);
+
+    //! \brief The partition step for quicksort
+    int quick_sort_partition(int, int, int);
+
+    //! \brief Recursively sorts by dimension.
+    void recursion_help(int, int, int);
 
     // --- Data
 

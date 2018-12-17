@@ -6,6 +6,7 @@
 
 namespace GFlowSimulation {
 
+  // rx = rx − length*floor(rx/length + 0.5);
   inline void getDisplacement(const RealType *x, const RealType *y, RealType *dis, const Bounds &B, const BCFlag *boundaryConditions, int dimensions) {
     for (int d=0; d<dimensions; ++d) {
       dis[d] = x[d] - y[d];
@@ -53,6 +54,10 @@ namespace GFlowSimulation {
 
   template<typename T> inline void setVec(T *x, const T val, int dimensions) {
     std::fill(x, x+dimensions, val);
+  }
+
+  template<typename T> inline void swapVec(T *x, T *y, int dimensions) {
+    for (int d=0; d<dimensions; ++d) std::swap(x[d], y[d]);
   }
 
   template<typename T> inline void addVec(const T *x, const T *y, T *z, int dimensions) {

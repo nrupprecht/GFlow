@@ -1,6 +1,7 @@
 #include "simdata.hpp"
 // Other files
 #include "../utility/memory.hpp"
+#include <algorithm>
 
 namespace GFlowSimulation {
 
@@ -30,6 +31,9 @@ namespace GFlowSimulation {
 
     // For now
     bounds = gflow->getBounds();
+
+    // Sort the particles by position
+    quick_sort();
   }
 
   //! @brief Reserve space for particles, extending the lengths of all arrays to the requested size.
@@ -239,21 +243,106 @@ namespace GFlowSimulation {
     return idata[1][i];
   }
 
-  int SimData::size() {
+  const RealType** SimData::X() const {
+    return const_cast<const RealType**>(vdata[0]);
+  }
+
+  const RealType* SimData::X_arr() const {
+    return *vdata[0];
+  }
+
+  const RealType* SimData::X(int i) const {
+    return vdata[0][i];
+  }
+
+  const RealType& SimData::X(int i, int d) const {
+    return vdata[0][i][d];
+  }
+
+  const RealType** SimData::V() const {
+    return const_cast<const RealType**>(vdata[1]);
+  }
+
+  const RealType* SimData::V_arr() const {
+    return *vdata[1];
+  }
+
+  const RealType* SimData::V(int i) const {
+    return vdata[1][i];
+  }
+
+  const RealType& SimData::V(int i, int d) const {
+    return vdata[1][i][d];
+  }
+
+  const RealType** SimData::F() const {
+    return const_cast<const RealType**>(vdata[2]);
+  }
+
+  const RealType* SimData::F_arr() const {
+    return *vdata[2];
+  }
+
+  const RealType* SimData::F(int i) const {
+    return vdata[2][i];
+  }
+
+  const RealType& SimData::F(int i, int d) const {
+    return vdata[2][i][d];
+  }
+
+  const RealType* SimData::Sg() const {
+    return sdata[0];
+  }
+
+  const RealType& SimData::Sg(int i) const {
+    return sdata[0][i];
+  }
+
+  const RealType* SimData::Im() const {
+    return sdata[1];
+  }
+
+  const RealType& SimData::Im(int i) const {
+    return sdata[1][i];
+  }
+
+  const int* SimData::Type() const {
+    return idata[0];
+  }
+
+  const int& SimData::Type(int i) const {
+    return idata[0][i];
+  }
+
+  const int* SimData::Id() const {
+    return idata[1];
+  }
+
+  const int& SimData::Id(int i) const {
+    return idata[1][i];
+  }
+
+  int SimData::size() const {
     return _number;
   }
 
-  int SimData::number() {
+  int SimData::number() const {
     return _number;
   }
 
-  int SimData::ntypes() {
+  int SimData::ntypes() const {
     return _ntypes;
   }
 
+  void SimData::clearV() {
+    RealType *v = V_arr();
+    for (int i=0; i<_size*sim_dimensions; ++i) v[i] = 0;
+  }
+
   void SimData::clearF() {
-    for (int i=0; i<_size*sim_dimensions; ++i)
-      vdata[1][0][i] = 0;
+    RealType *f = F_arr();
+    for (int i=0; i<_size*sim_dimensions; ++i) f[i] = 0;
   }
 
   int SimData::getLocalID(int global) const {
@@ -328,12 +417,9 @@ namespace GFlowSimulation {
       id_map.erase(gd);
     }
     // Transfer data
-    for (auto v : vdata)
-      copyVec(v[src], v[dst], sim_dimensions);
-    for (auto s : sdata)
-      s[dst] = s[src];
-    for (auto i : idata)
-      i[dst] = i[src];
+    for (auto v : vdata) copyVec(v[src], v[dst], sim_dimensions);
+    for (auto s : sdata) s[dst] = s[src];
+    for (auto i : idata) i[dst] = i[src];
 
     // Remap global id
     auto it = id_map.find(gs);
@@ -343,6 +429,73 @@ namespace GFlowSimulation {
 
     // We have invalidated the local id
     needs_remake = true;
+  }
+
+  void SimData::swap_particle(int id1, int id2) {
+    // Get global IDs
+    int g1 = Id(id1);
+    int g2 = Id(id2);
+    // Transfer data
+    for (auto v : vdata) swapVec(v[id1], v[id2], sim_dimensions);
+    for (auto s : sdata) std::swap(s[id1], s[id2]);
+    for (auto i : idata) std::swap(i[id1], i[id2]);
+    // Set global ids
+    auto it = id_map.find(g1);
+    if (id_map.end()!=it) it->second = id1;
+    it = id_map.find(g2);
+    if (id_map.end()!=it) it->second = id2;
+    // Set flag
+    needs_remake = true;
+  }
+
+  void SimData::quick_sort() {
+    // Make sure all particles are valid, and compressed
+    doParticleRemoval();
+    // Quick sort
+    quick_sort_help(0, _number-1, 0);
+    recursion_help (0, _number-1, 1);
+  }
+
+  void SimData::quick_sort_help(int start, int end, int dim) {
+    if (start<end && dim<sim_dimensions) {
+      int partition = quick_sort_partition(start, end, dim);
+      quick_sort_help(start, partition, dim);
+      quick_sort_help(partition+1, end, dim);
+    }
+  }
+
+  int SimData::quick_sort_partition(int start, int end, int dim) {
+    RealType pivot = X((start + end)/2, dim);
+    int i = start-1, j = end+1;
+    while (true) {
+      do {
+        ++i;
+      } while (X(i, dim)<pivot);
+      do {
+        --j;
+      } while (X(j, dim)>pivot);      
+      // Termination condition
+      if (j<=i) return j;
+      // If not, swap particles i and j
+      swap_particle(i, j);
+    }
+  }
+
+  void SimData::recursion_help(int start, int end, int dim) {
+    if (dim>=sim_dimensions) return;
+    // Do next level of quicksorts, for the next dimension
+    const int sort_bins = 5, min_particles = 10;
+    const int ds = (end-start)/sort_bins;
+
+    if (ds>min_particles) {
+      for (int i=0; i<sort_bins; ++i) {
+        quick_sort_help(i*ds, (i+1)*ds, dim);
+        recursion_help (i*ds, (i+1)*ds, dim+1);
+      }
+      // Potentially, there is some left over
+      quick_sort_help(sort_bins*ds, _number-1, dim);
+      recursion_help (sort_bins*ds, _number-1, dim+1);
+    }
   }
 
 }
