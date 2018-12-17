@@ -1,7 +1,8 @@
 #include "simdata.hpp"
 // Other files
 #include "../utility/memory.hpp"
-#include <algorithm>
+
+#include "integrator.hpp"
 
 namespace GFlowSimulation {
 
@@ -27,6 +28,7 @@ namespace GFlowSimulation {
 
   //! @brief Initialize the atom container.
   void SimData::initialize() {
+    // Call base's initialize
     Base::initialize();
 
     // For now

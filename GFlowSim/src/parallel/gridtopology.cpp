@@ -52,7 +52,7 @@ namespace GFlowSimulation {
 
   //! @brief Get the bounds managed by a processor.
   Bounds GridTopology::getBounds(int rnk) {
-
+    
   }
 
 }
