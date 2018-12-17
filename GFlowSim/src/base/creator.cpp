@@ -39,7 +39,7 @@ namespace GFlowSimulation {
 
     // Save gflow's data
     Integrator *integrator = gflow->integrator; // Save integrator
-    ForceMaster *master = gflow->forceMaster; // Save old master
+    ForceMaster *master    = gflow->forceMaster; // Save old master
     vector<Interaction*> interactions = gflow->interactions; // Save old forces
 
     // Use hard sphere forces

@@ -67,6 +67,12 @@ namespace GFlowSimulation {
     // Get the bounds from the gflow object - for now assumes this is the only domain, so bounds==domain_bounds
     domain_bounds = gflow->getBounds();
 
+    // If bounds are unset, then don't make sectors
+    if (domain_bounds.vol()<=0) return;
+
+    // We cannot initialize if simdata is null
+    if (simData==nullptr) return;
+
     // Find average sigma
     RealType sigma = 0, max_sigma = 0;
     for (int n=0; n<Base::simData->size(); ++n) {
@@ -360,7 +366,6 @@ namespace GFlowSimulation {
         border_type_down[d] = 0;
       }
     }
-
     // --- Create the cells
     // Get the total number of cells - The dims MUST be set first.
     const int size = getNumCells();
@@ -368,7 +373,6 @@ namespace GFlowSimulation {
 
     // Holder for tuple index
     int *tuple1 = new int[sim_dimensions], *tuple2 = new int[sim_dimensions];
-
     // --- Create a neighborhood stencil to help us find adjacent cells
     int sweep = ceil(minCutoff/min(widths, sim_dimensions));
     vector<int*> neighbor_indices;

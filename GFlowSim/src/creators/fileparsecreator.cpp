@@ -546,6 +546,7 @@ namespace GFlowSimulation {
       ) filler.setBC(d, gflow->getBCs()[d]);
 
     filler.forceMaster = gflow->forceMaster; // Make sure the particles treat each other in the same way
+
     // Get the simdata
     SimData *simData = filler.simData;
 

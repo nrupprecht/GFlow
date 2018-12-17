@@ -10,7 +10,7 @@ namespace GFlowSimulation {
   void Base::initialize() {
     // Reset subpointers
     if (gflow) gflow->initializeBase(this);
-    else throw false;
+    else throw UnexpectedNullPointer("GFlow should not be null.");
   }
 
   class GFlow* Base::getGFlow() {

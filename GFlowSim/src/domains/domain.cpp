@@ -73,6 +73,9 @@ namespace GFlowSimulation {
     // If bounds are unset, then don't make sectors
     if (domain_bounds.vol()<=0) return;
 
+    // We cannot initialize if simdata is null
+    if (simData==nullptr) return;
+
     // --- Calculate cutoff
     RealType *sg = simData->Sg();
     int *type = simData->Type();

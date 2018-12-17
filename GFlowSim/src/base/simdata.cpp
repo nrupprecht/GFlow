@@ -18,12 +18,18 @@ namespace GFlowSimulation {
   }
 
   SimData::~SimData() {
-    for (auto &v : vdata)
-      dealloc_array_2d(v);
-    for (auto &s : sdata)
+    for (auto &v : vdata) {
+      if (v) dealloc_array_2d(v);
+      v = nullptr;
+    }
+    for (auto &s : sdata) {
       if (s) delete [] s;
-    for (auto &i : idata)
+      s = nullptr;
+    }
+    for (auto &i : idata) {
       if (i) delete [] i;
+      i = nullptr;
+    }
   }
 
   //! @brief Initialize the atom container.

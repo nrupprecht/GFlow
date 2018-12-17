@@ -205,12 +205,12 @@ namespace GFlowSimulation {
     inline void handleModifiers();
 
     // --- Data - public so anyone can access it
-    class SimData *simData;             // Particle data
-    class Integrator *integrator;       // Integrator
-    class DomainBase *domain;           // Domain
-    class DataMaster *dataMaster;       // DataMaster object for unified data collection  
-    class ForceMaster *forceMaster;     // ForceMaster object for defining and storing interparticle forces  
-    class Topology *topology;           // Processor topology
+    class SimData *simData = nullptr;             // Particle data
+    class Integrator *integrator = nullptr;       // Integrator
+    class DomainBase *domain = nullptr;           // Domain
+    class DataMaster *dataMaster = nullptr;       // DataMaster object for unified data collection  
+    class ForceMaster *forceMaster = nullptr;     // ForceMaster object for defining and storing interparticle forces  
+    class Topology *topology = nullptr;           // Processor topology
 
     //! \brief A vector of objects that should modify the simulation at some point(s) during execution.
     std::list<class Modifier*> modifiers;

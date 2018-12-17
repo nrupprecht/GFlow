@@ -34,6 +34,8 @@ namespace GFlowSimulation {
     bounds = Bounds(sim_dimensions);
     // Set wrapping to true by default
     setAllBCs(BCFlag::WRAP);
+    // Initialize all base objects, so they have valid pointers to one another
+    initialize();
   }
 
   GFlow::~GFlow() {
@@ -67,10 +69,13 @@ namespace GFlowSimulation {
     if (forceMaster) forceMaster->initialize();
     else non_null = false;
 
+    // Topology does not currently have an initialization function, as it does not inherit from Base
+
     for (auto &md : modifiers) {
       if (md) md->initialize();
       else non_null = false; 
     }
+
     for (auto &it: interactions) {
       if (it) it->initialize();
       else non_null = false;
