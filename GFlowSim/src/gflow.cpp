@@ -40,9 +40,10 @@ namespace GFlowSimulation {
 
   GFlow::~GFlow() {
     if (simData)      delete simData;
-    if (domain)       delete domain;
     if (integrator)   delete integrator;
+    if (domain)       delete domain;
     if (dataMaster)   delete dataMaster;
+    if (forceMaster)  delete forceMaster;
     if (topology)     delete topology;
     for (auto &md : modifiers) 
       if (md) delete md;

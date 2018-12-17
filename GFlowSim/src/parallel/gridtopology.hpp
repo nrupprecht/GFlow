@@ -11,7 +11,7 @@ namespace GFlowSimulation {
     GridTopology(int);
 
     //! @brief Destructor.
-    ~GridTopology();
+    virtual ~GridTopology();
 
     //! @brief Compute how the simulation space should be divided up.
     virtual void computeTopology() override;

@@ -21,14 +21,16 @@ namespace GFlowSimulation {
     // Set bounds to have the propper dimensionality
     domain_bounds = Bounds(sim_dimensions);
     bounds = Bounds(sim_dimensions);
-    // Set up arrays
-    dims = new int[sim_dimensions];
-    widths = new RealType[sim_dimensions] ;
-    inverseW = new RealType[sim_dimensions];
   }; 
 
   DomainBase::~DomainBase() {
     nullXVL();
+    if (dims) delete [] dims;
+    if (widths) delete [] widths;
+    if (inverseW) delete [] inverseW;
+    dims = nullptr;
+    widths = nullptr;
+    inverseW = nullptr;
   }
 
   void DomainBase::pre_forces() {

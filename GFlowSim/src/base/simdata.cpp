@@ -52,7 +52,7 @@ namespace GFlowSimulation {
     }
     for (auto &s : sdata) {
       if (s) delete [] s;
-      s = new RealType[num];
+      s = new RealType[num]; // Valgrind says there is an error here.
     }
     for (auto &i : idata) {
       if (i) delete [] i;
@@ -73,6 +73,7 @@ namespace GFlowSimulation {
       s[_size] = 0;
     // Set type, give a global id
     Type(_size) = 0;
+    id_map.insert(IPair(_size, next_global_id));
     Id(_size) = next_global_id++;
     ++_number;
     ++_size;
@@ -89,6 +90,7 @@ namespace GFlowSimulation {
         s[_size] = 0;
       // Set type, give a global id
       Type(_size) = 0;
+      id_map.insert(IPair(_size, next_global_id));
       Id(_size) = next_global_id++;
       ++_number;
       ++_size;
@@ -104,6 +106,7 @@ namespace GFlowSimulation {
     Sg(_size) = sg;
     Im(_size) = im;
     Type(_size) = type;
+    id_map.insert(IPair(_size, next_global_id));
     Id(_size) = next_global_id++;
     ++_number;
     ++_size;
@@ -385,32 +388,37 @@ namespace GFlowSimulation {
     // Allocate new vector data arrays
     for (auto &v : vdata) {
       RealType **nv = alloc_array_2d<RealType>(new_capacity, sim_dimensions);
-      // Transfer data
-      copyVec(v, nv, _size);
       // Delete old array, set new
-      if(v) delete [] v;
+      if (v) {
+	// Transfer data
+	copyVec(*v, *nv, _size*sim_dimensions);
+	delete [] v;
+      }
       v = nv;
     }
     // Allocate new scalar data arrays
     for (auto &s : sdata) {
       RealType *ns = new RealType[new_capacity];
-      // Transfer data
-      copyVec(s, ns, _size);
       // Delete old array, set new
-      if (s) delete [] s;
+      if (s) {
+	// Transfer data
+	copyVec(s, ns, _size);
+	delete [] s;
+      }
       s = ns;
     }
     // Allodate new integer data
     // Allocate new scalar data arrays
     for (auto &i : idata) {
       int *ni = new int[new_capacity];
-      // Transfer data
-      copyVec(i, ni, _size);
       // Delete old array, set new
-      if (i) delete [] i;
+      if (i) {
+	// Transfer data
+	copyVec(i, ni, _size);
+	delete [] i;
+      }
       i = ni;
     }
-
     // Set new sizes
     _capacity += num;
   }

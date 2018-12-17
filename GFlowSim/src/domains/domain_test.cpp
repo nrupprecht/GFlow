@@ -44,8 +44,6 @@ namespace GFlowSimulation {
   };
 
   DomainTest::~DomainTest() {
-    // Base class destructor
-    DomainBase::~DomainBase();
     // Delete this object's data
     if (border_type_up)   delete [] border_type_up;
     if (border_type_down) delete [] border_type_down;
@@ -53,6 +51,8 @@ namespace GFlowSimulation {
     border_type_up = nullptr;
     border_type_down = nullptr;
     products = nullptr;
+    // Base class destructor
+    DomainBase::~DomainBase();
   }
 
   void DomainTest::initialize() {
@@ -254,7 +254,13 @@ namespace GFlowSimulation {
     int *cell_index = new int[sim_dimensions], *center = new int[sim_dimensions];
 
     InteractionHandler *hs = nullptr;
-    if (gflow->getInteractions().empty()) return;
+    if (gflow->getInteractions().empty()) {
+      delete [] tuple1;
+      delete [] tuple2;
+      delete [] cell_index;
+      delete [] center;
+      return;
+    }
     else hs = gflow->getInteractions()[0]->getInteractionHandler();
 
     // Find potential neighbors
@@ -350,10 +356,6 @@ namespace GFlowSimulation {
   }
 
   inline void DomainTest::create_cells() {
-    // Initialize border record
-    border_type_up = new int[sim_dimensions];
-    border_type_down = new int[sim_dimensions];
-
     // --- Determine border type
     const BCFlag *bcs = Base::gflow->getBCs(); // Get the boundary condition flags
     for (int d=0; d<sim_dimensions; ++d) {
