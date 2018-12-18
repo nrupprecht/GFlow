@@ -52,6 +52,9 @@ namespace GFlowSimulation {
     //! \brief Exchange particles with neighboring domains.
     void exchangeParticles();
 
+    //! \brief Do a quick sort based on the particle's positions.
+    void sortParticles();
+
     //! \brief Update the primary particle that halo particles correspond to.
     void updateHaloParticles();
 
@@ -71,17 +74,23 @@ namespace GFlowSimulation {
     RealType*  F(int);
     RealType&  F(int, int);
 
+    RealType** VectorData(int);
+
     // --- Get scalar data
     RealType* Sg();
     RealType& Sg(int);
     RealType* Im();
     RealType& Im(int);
 
+    RealType* ScalarData(int);
+
     // --- Get integer data
     int* Type();
     int& Type(int);
     int* Id();
     int& Id(int);
+
+    int* IntegerData(int);
 
     // --- Constant accessors
 
@@ -108,6 +117,20 @@ namespace GFlowSimulation {
     const int* Id() const;
     const int& Id(int) const;
 
+    // --- Data creation and request
+
+    // The request versions get the data entry's place if it exists, and creates it if it doesn't.
+    int request_vector_data(string);
+    int request_scalar_data(string);
+    int request_integer_data(string);
+
+    // The get versions do not *create* the data entries, they just look for them.
+    int get_vector_data(string);
+    int get_scalar_data(string);
+    int get_integer_data(string);
+
+    // --- Particle size information
+
     //! \brief The size of the part of the arrays that contain valid particles.
     int size() const;
 
@@ -124,6 +147,8 @@ namespace GFlowSimulation {
 
     //! \brief Set all forces to zero.
     void clearF();
+
+    // --- Other accessors
 
     //! \brief Get the local id of a particle given the global id.
     //!
@@ -164,9 +189,6 @@ namespace GFlowSimulation {
     //! \brief Swap two particle's data.
     void swap_particle(int, int);
 
-    //! \brief Do a quick sort based on the particle's positions.
-    void quick_sort();
-
     void quick_sort_help(int, int, int);
 
     //! \brief The partition step for quicksort
@@ -199,6 +221,15 @@ namespace GFlowSimulation {
     //!
     //! Contains type (0), global id (1). Can also contain body membership information, etc.
     vector<int*> idata;
+
+    // -*-*-*- Data mapping -*-*-*-
+
+    // Map names to entries in the data vectors.
+    std::map<string, int> vector_data_map;
+    std::map<string, int> scalar_data_map;
+    std::map<string, int> integer_data_map;
+
+    typedef pair<string, int> SIPair;
 
     // -*-*-*- Ids -*-*-*-
 

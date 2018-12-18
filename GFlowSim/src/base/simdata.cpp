@@ -9,10 +9,20 @@ namespace GFlowSimulation {
   SimData::SimData(GFlow *gflow) : Base(gflow), bounds(Bounds(2)) {
     // Initialize vdata array
     vdata = vector<RealType**>(3, nullptr);
+    // Put names into map
+    vector_data_map.insert(SIPair("X", 0));
+    vector_data_map.insert(SIPair("V", 1)); 
+    vector_data_map.insert(SIPair("F", 2));
     // Initialize sdata array
     sdata = vector<RealType*>(2, nullptr);
+    // Put names into map
+    scalar_data_map.insert(SIPair("Sg", 0));
+    scalar_data_map.insert(SIPair("Im", 1));
     // Initialize idata array
     idata = vector<int*>(2, nullptr);
+    // Put names into map
+    integer_data_map.insert(SIPair("Type", 0));
+    integer_data_map.insert(SIPair("ID", 1));
     // Set up bounds to have the propper dimensions
     bounds = Bounds(sim_dimensions);
   }
@@ -41,7 +51,7 @@ namespace GFlowSimulation {
     bounds = gflow->getBounds();
 
     // Sort the particles by position
-    quick_sort();
+    sortParticles();
   }
 
   //! @brief Reserve space for particles, extending the lengths of all arrays to the requested size.
@@ -163,6 +173,14 @@ namespace GFlowSimulation {
     // @todo Implement
   }
 
+  void SimData::sortParticles() {
+    // Make sure all particles are valid, and compressed
+    doParticleRemoval();
+    // Quick sort
+    quick_sort_help(0, _number-1, 0);
+    recursion_help (0, _number-1, 1);
+  }
+
   void SimData::updateHaloParticles() {
     for (int i=0; i<halo_map.size(); i+=2) {
       int hid = halo_map[i];
@@ -222,6 +240,11 @@ namespace GFlowSimulation {
     return vdata[2][i][d];
   }
 
+  RealType** SimData::VectorData(int i) {
+    if (i<vdata.size()) return vdata[i];
+    else return nullptr;
+  }
+
   RealType* SimData::Sg() {
     return sdata[0];
   }
@@ -238,6 +261,11 @@ namespace GFlowSimulation {
     return sdata[1][i];
   }
 
+  RealType* SimData::ScalarData(int i) {
+    if (i<sdata.size()) return sdata[i];
+    else return nullptr;
+  }
+
   int* SimData::Type() {
     return idata[0];
   }
@@ -252,6 +280,11 @@ namespace GFlowSimulation {
 
   int& SimData::Id(int i) {
     return idata[1][i];
+  }
+
+  int* SimData::IntegerData(int i) {
+    if (i<idata.size()) return idata[i];
+    else return nullptr;
   }
 
   const RealType** SimData::X() const {
@@ -332,6 +365,63 @@ namespace GFlowSimulation {
 
   const int& SimData::Id(int i) const {
     return idata[1][i];
+  }
+
+  int SimData::request_vector_data(string name) {
+    // Check if the data already exists
+    auto it = vector_data_map.find(name);
+    if (it!=vector_data_map.end()) return it->second;
+    // Otherwise, create a data entry
+    vector_data_map.insert(SIPair(name, vdata.size()));
+    RealType **address = alloc_array_2d<RealType>(_capacity, sim_dimensions);
+    vdata.push_back(address);
+    // Return the entry
+    return vdata.size()-1;
+  }
+
+  int SimData::request_scalar_data(string name) {
+    // Check if the data already exists
+    auto it = scalar_data_map.find(name);
+    if (it!=scalar_data_map.end()) return it->second;
+    // Otherwise, create a data entry
+    scalar_data_map.insert(SIPair(name, sdata.size()));
+    RealType *address = new RealType[_capacity];
+    sdata.push_back(address);
+    // Return the entry
+    return sdata.size()-1;
+  }
+
+  int SimData::request_integer_data(string name) {
+    // Check if the data already exists
+    auto it = integer_data_map.find(name);
+    if (it!=integer_data_map.end()) return it->second;
+    // Otherwise, create a data entry
+    integer_data_map.insert(SIPair(name, idata.size()));
+    int *address = new int[_capacity];
+    idata.push_back(address);
+    // Return the entry
+    return idata.size()-1;
+  }
+
+  int SimData::get_vector_data(string name) {
+    // Check if the data already exists
+    auto it = vector_data_map.find(name);
+    if (it!=vector_data_map.end()) return it->second;
+    else return -1;
+  }
+
+  int SimData::get_scalar_data(string name) {
+    // Check if the data already exists
+    auto it = scalar_data_map.find(name);
+    if (it!=scalar_data_map.end()) return it->second;
+    else return -1;
+  }
+
+  int SimData::get_integer_data(string name) {
+    // Check if the data already exists
+    auto it = integer_data_map.find(name);
+    if (it!=integer_data_map.end()) return it->second;
+    else return -1;
   }
 
   int SimData::size() const {
@@ -462,14 +552,6 @@ namespace GFlowSimulation {
     if (id_map.end()!=it) it->second = id2;
     // Set flag
     needs_remake = true;
-  }
-
-  void SimData::quick_sort() {
-    // Make sure all particles are valid, and compressed
-    doParticleRemoval();
-    // Quick sort
-    quick_sort_help(0, _number-1, 0);
-    recursion_help (0, _number-1, 1);
   }
 
   void SimData::quick_sort_help(int start, int end, int dim) {

@@ -146,10 +146,10 @@ namespace GFlowSimulation {
     running = true;
     elapsed_time = 0;
     iter = 0;
+    for (auto m : modifiers) m->pre_integrate();
     integrator->pre_integrate();
     dataMaster->pre_integrate();
     domain->pre_integrate();
-    for (auto m : modifiers) m->pre_integrate();
 
     // Do integration for the requested amount of time
     while (running) {

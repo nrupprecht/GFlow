@@ -26,6 +26,24 @@ namespace GFlowSimulation {
     for (int i=0; i<dimensions; ++i)
       bounds.max[i] = getNextNumber<RealType>(fin);
 
+    // Get the types of data to expect
+    string str;
+    int nd = getNextNumber<int>(fin);
+    for (int i=0; i<nd; ++i) {
+      str = getNextString(fin);
+      vector_data.push_back(str);
+    }
+    nd = getNextNumber<int>(fin);
+    for (int i=0; i<nd; ++i) {
+      str = getNextString(fin);
+      scalar_data.push_back(str);
+    }
+    nd = getNextNumber<int>(fin);
+    for (int i=0; i<nd; ++i) {
+      str = getNextString(fin);
+      integer_data.push_back(str);
+    }
+
     // The first number in each line is the number of particles to expect
     for (int iter=0; iter<samples; ++iter) {
       // Get the length of data to expect
@@ -72,6 +90,31 @@ namespace GFlowSimulation {
 
   int LoadData::getNTypes() const {
     return nTypes;
+  }
+
+  const vector<string>& LoadData::get_vector_data() {
+    return vector_data;
+  }
+
+  const vector<string>& LoadData::get_scalar_data() {
+    return scalar_data;
+  }
+
+  const vector<string>& LoadData::get_integer_data() {
+    return integer_data;
+  }
+
+  inline string LoadData::getNextString(std::ifstream& fin) const {
+    char c;
+    fin.get(c);
+    string str;
+    while (!fin.eof() && c!=',' && c!='\n' && c!='\r') {
+      str += c;
+      // Get the next character
+      fin.get(c);
+    }
+    // Convert to a type T and return
+    return str;
   }
 
 }

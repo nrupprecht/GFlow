@@ -20,6 +20,10 @@ namespace GFlowSimulation {
     int getDimensions() const;
     int getNTypes() const;
 
+    const vector<string>& get_vector_data();
+    const vector<string>& get_scalar_data();
+    const vector<string>& get_integer_data();
+
   private:
 
     template<typename T> inline T getNextNumber(std::ifstream& fin) const {
@@ -38,6 +42,8 @@ namespace GFlowSimulation {
       return val;
     }
 
+    inline string getNextString(std::ifstream& fin) const;
+
     //! @brief The particle data.
     vector<vector<double> > data;
     //! @brief The bounds data.
@@ -48,6 +54,11 @@ namespace GFlowSimulation {
     int dimensions;
     //! @brief The number of types.
     int nTypes;
+
+    // The names of the data that we are reading in.
+    vector<string> vector_data;
+    vector<string> scalar_data;
+    vector<string> integer_data;
   };
 
 }

@@ -17,8 +17,15 @@ namespace GFlowSimulation {
     LoadData loader;
     if (!loader.load(loadName)) return false;
     // Extract data from the loader
-    int dataWidth = loader.getDataWidth(), dimensions = loader.getDimensions(), ntypes = loader.getNTypes();
+    int dataWidth = loader.getDataWidth(), ntypes = loader.getNTypes();
+    dimensions = loader.getDimensions();
     Bounds bounds = loader.getBounds();
+    vector_data = loader.get_vector_data();
+    scalar_data = loader.get_scalar_data();
+    integer_data = loader.get_integer_data();
+    // Find data positions
+    findPlaces();
+    // Get the bulk of the data
     const vector<vector<double> > &data = loader.getData();
 
     // If we are coloring by type, we need a large enough color bank
@@ -56,8 +63,6 @@ namespace GFlowSimulation {
 
   void Visualization::createVideo2d(string dirName, const vector<vector<double> >& data, int dataWidth, Bounds& bounds, int dimensions) const 
   {
-    // Set the correct data places based on the number of dimensions
-    setPlaces(dimensions);
     // Find the maximum velocity (if needed)
     if (color_option==2)
       findMaxVSqr(data, dataWidth);
@@ -71,9 +76,6 @@ namespace GFlowSimulation {
   }
 
   void Visualization::createVideo3d(string dirName, const vector<vector<double> >& data, int dataWidth, Bounds& bounds, int dimensions) const {
-    // Set the correct data places based on the number of dimensions
-    setPlaces(dimensions);
-
     for (int i=0; i<data.size(); ++i) {
       string fileName = dirName + "/frame" + toStr(i) + ".bmp";
       createImage3d(fileName, data[i], dataWidth, bounds, dimensions);
@@ -81,9 +83,6 @@ namespace GFlowSimulation {
   }
 
   void Visualization::createImage(string fileName, const vector<double>& data, int dataWidth, Bounds& bounds, int dimensions) const {
-    // Set the correct data places based on the number of dimensions
-    setPlaces(dimensions);
-
     // Get some data from the bounds
     float wx = bounds.wd(0);
     float wy = bounds.wd(1);
@@ -120,6 +119,9 @@ namespace GFlowSimulation {
       auto pack_data = vector<vector<double> >(1, data);
       findMaxDistance(pack_data, dataWidth);
     }
+    if (stripex_place<0) {
+      color_option = 0;
+    }
     
     // A vector for holding data
     double *pdata = new double[dataWidth];
@@ -134,6 +136,7 @@ namespace GFlowSimulation {
       double sigma = sg_place>-1     ?  pdata[sg_place]  : 0; // Get sigma
       int type       = type_place > -1 ? static_cast<int>(pdata[type_place]) : 0; // Get type
       double distance = distance_place > -1 ? pdata[distance_place] : 0; // Get distance traveled
+      double stripex = stripex_place<0 ? 0 : pdata[stripex_place];
       // If type<0, continue
       if (type<0) continue;
       // Find the center of the particle
@@ -172,6 +175,13 @@ namespace GFlowSimulation {
             color = RGBApixel(floor(255*D), floor(255*(1-D)), 0);
             break;
           }
+          case 5: { // Color by xstripe
+            RealType width = bounds.wd(1);
+            const int nstripes = 20;
+            int s = (stripex - bott)/wy * nstripes;
+            if (s%2) color = RGB_Green;
+            else color = RGB_White;
+          }
         }
       }
 
@@ -208,9 +218,6 @@ namespace GFlowSimulation {
   void Visualization::createImage3d(string fileName, const vector<double>& data, int dataWidth, Bounds& bounds, int dimensions) const {
     // @todo Implement this.
     throw false; 
-
-    // Set the correct data places based on the number of dimensions
-    setPlaces(dimensions);
   }
 
   inline void Visualization::findMaxVSqr(const vector<vector<double> >& dataVector, int dataWidth) const {
@@ -257,20 +264,34 @@ namespace GFlowSimulation {
     return colorBank[ c%colorBank.size() ];
   }
 
-  inline void Visualization::setPlaces(const int d) const {
-    pos_place = 0;
-    vel_place = d;
-    sg_place = 2*d;
-    type_place = 2*d+1; 
-    distance_place = 2*d+2;
-  }
-
   inline void Visualization::resetPlaces() {
     pos_place = -1;
     vel_place = -1;
     sg_place = -1;
     type_place = -1;
     distance_place = -1;
+    stripex_place = -1;
+  }
+
+  inline void Visualization::findPlaces() {
+    auto find = [] (string key, vector<string>& vec) -> int {
+      for (int i=0; i<vec.size(); ++i)
+        if (key==vec[i]) return i;
+      return -1;
+    };
+
+    // Vector data
+    pos_place = find("X", vector_data)*dimensions;
+    vel_place = find("V", vector_data)*dimensions;
+
+    // Scalar data
+    int shift = vector_data.size()*dimensions;
+    sg_place = find("Sg", scalar_data) + shift;
+    stripex_place = find("StripeX", scalar_data) + shift;    
+
+    // Integer data
+    shift += scalar_data.size();
+    type_place = find("Type", integer_data) + shift;
   }
 
 }

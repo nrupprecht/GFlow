@@ -17,6 +17,8 @@ namespace GFlowSimulation {
     #endif
   }
 
+  Topology::~Topology() {};
+
   void Topology::setSimulationBounds(const Bounds &b) {
     if (b==simulation_bounds);
     else {

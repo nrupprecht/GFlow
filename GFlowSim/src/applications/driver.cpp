@@ -63,6 +63,7 @@ int main(int argc, char **argv) {
   bool memdist = false;
   bool pressure = false;
   bool numberdata = false;
+  bool stripex = false;
   
   // Other options
   int dimensions = 2;
@@ -108,6 +109,7 @@ int main(int argc, char **argv) {
   parser.get("memdist", memdist);
   parser.get("pressure", pressure);
   parser.get("numberdata", numberdata);
+  parser.get("stripex", stripex);
   parser.get("dimensions", dimensions);
   parser.get("skin", skin);
   parser.get("quiet", quiet);
@@ -213,6 +215,7 @@ int main(int argc, char **argv) {
   if (memdist)  gflow->addDataObject(new MemoryDistance(gflow));
   if (pressure) gflow->addDataObject(new PressureData(gflow));
   if (numberdata) gflow->addDataObject(new NumberData(gflow));
+  if (stripex) gflow->addModifier(new StripeX(gflow));
   // Add this last, as it takes the most time.
   if (animate) {
     auto pd = new PositionData(gflow);
