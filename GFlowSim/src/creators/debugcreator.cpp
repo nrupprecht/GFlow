@@ -34,8 +34,8 @@ namespace GFlowSimulation {
 
     // Set the bounds of the gflow object --- for now, just make it [0,1] in each dimension
     for (int d=0; d<sim_dimensions; ++d) {
-      gflow->bounds.min[d] = 0.;
-      gflow->bounds.max[d] = 1.;
+      gflow->bounds.min[d] = -0.5;
+      gflow->bounds.max[d] = 0.5;
     }
 
     // Set wrapping
@@ -43,26 +43,26 @@ namespace GFlowSimulation {
 
     // Add some objects
     gflow->simData->reserve(2);
+    gflow->simData->addParticle(2);
 
     // Get pointers to particle data
     SimData *simData = gflow->simData;
 
     // Rightwards ball
-    simData->X(0, 0) = 0.3; simData->X(1, 0) = 0.7;
+    zeroVec(simData->X(0), sim_dimensions); 
+    zeroVec(simData->X(1), sim_dimensions);
+    simData->X(0, 0) = -0.3; 
+    simData->X(1, 0) =  0.3;
+    simData->X(0, 1) = -0.5*radius;
+    simData->X(1, 1) =  0.5*radius;
+    zeroVec(simData->V(0), sim_dimensions); 
+    zeroVec(simData->V(1), sim_dimensions);
     simData->V(0, 0) = velocity;  simData->V(1, 0) = -velocity;
-    simData->X(0, 1) = 0.5*(1.-radius); simData->X(1,1) = 0.5*(1.+radius);
-    for (int d=2; d<sim_dimensions; ++d) {
-      simData->X(0, d) = simData->X(1, 1) = 0.5;
-      simData->V(0, d) = simData->V(1, d) = 0;
-    }
     for (int n=0; n<2; ++n) {
       simData->Sg(n) = radius;
-      simData->Im(n) = 1.0 / (1.0 * PI*sqr(radius)); // Density of 1
+      simData->Im(n) = 1./sphere_volume(radius, sim_dimensions);
       simData->Type(n) = 0;
     }
-
-    // Set the correct number of particles
-    gflow->simData->number = 2;
 
     // --- Handle forces
     gflow->forceMaster->setNTypes(1);

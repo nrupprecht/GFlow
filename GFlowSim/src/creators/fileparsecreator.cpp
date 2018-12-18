@@ -546,6 +546,7 @@ namespace GFlowSimulation {
       ) filler.setBC(d, gflow->getBCs()[d]);
 
     filler.forceMaster = gflow->forceMaster; // Make sure the particles treat each other in the same way
+
     // Get the simdata
     SimData *simData = filler.simData;
 
@@ -640,7 +641,7 @@ namespace GFlowSimulation {
 
     // --- Fill gflow with the particles
     copyVec(Vs, V, sim_dimensions);
-    for (int i=0; i<simData->number; ++i) {
+    for (int i=0; i<simData->number(); ++i) {
       // Extract the particle properties
       copyVec(simData->X(i), X, sim_dimensions);
       int type = simData->Type(i);

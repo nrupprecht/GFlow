@@ -78,7 +78,7 @@ namespace GFlowSimulation {
     }
     // Add some objects
     gflow->simData->reserve(number);
-    gflow->simData->number = number;
+    gflow->simData->addParticle(number);
     // Get pointers to particle data
     SimData *simData = gflow->simData;
     for (int n=0; n<number; ++n) {
@@ -124,7 +124,7 @@ namespace GFlowSimulation {
     gflow->integrator->setDT(dt);
 
     // --- Set velocities
-    number = simData->number;
+    number = simData->number();
     for (int n=0; n<number; ++n) {
       // Give some random velocities
       double ke = fabs(vsgma*normal_dist(generator));

@@ -23,11 +23,11 @@ namespace GFlowSimulation {
     zeroVec(ave, sim_dimensions);
     RealType **x = Base::simData->X();
     RealType *im = Base::simData->Im();
-    int number = Base::simData->number;
+    int size = Base::simData->size(), *type = Base::simData->Type();
     // Compute totals
     int count = 0;
-    for (int n=0; n<number; ++n)
-      if (im[n]>0) {
+    for (int n=0; n<size; ++n)
+      if (im[n]>0 && type[n]>-1) {
         for (int d=0; d<sim_dimensions; ++d)
           ave[d] += x[n][d];
         ++count;

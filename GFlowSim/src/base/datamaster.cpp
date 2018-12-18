@@ -186,7 +186,7 @@ namespace GFlowSimulation {
     // --- Print timing summary
     RealType requestedTime = Base::gflow ? Base::gflow->getTotalRequestedTime() : 0;
     RealType ratio = requestedTime/run_time;
-    int iterations = Base::gflow->getIter(), particles = Base::simData->number;
+    int iterations = Base::gflow->getIter(), particles = Base::simData->number();
     // Helper lambda - checks whether run_time was non-zero
     auto toStrRT = [&] (RealType x) -> string {
       return (run_time>0 ? toStr(x) : "--");
@@ -213,7 +213,7 @@ namespace GFlowSimulation {
     fout << "  -- Pre-forces, domain:      " << toStrRT(timing[2] = gflow->domain_timer.time()/run_time*100) << "%,\t" << gflow->domain_timer.time() << "\n";
     fout << "  -- Interactions:            " << toStrRT(timing[3] = gflow->forces_timer.time()/run_time*100) << "%,\t" << gflow->forces_timer.time() << "\n";
     for (int i=0; i<entries; ++i) total += timing[i];
-    fout << "  - Uncounted:                " << toStrRT((100. - total)) << "%\n";
+    fout << "  - Uncounted:                " << toStrRT((100. - total)) << "%,\t" << run_time*(100. - total)*0.01 << "\n";
     fout << "\n";
 
     // --- Print simulation summary
@@ -252,26 +252,22 @@ namespace GFlowSimulation {
       if (d!=sim_dimensions-1) fout << ", ";
     }
     fout << "\n";
-    fout << "  - Number of particles:      " << Base::simData->number << "\n";
-    int types = Base::simData->ntypes;
+    fout << "  - Number of particles:      " << Base::simData->number() << "\n";
+    int types = Base::simData->ntypes();
     if (types>1) {
       int *count = new int[types];
       for (int ty=0; ty<types; ++ty) count[ty] = 0;
-      for (int n=0; n<Base::simData->number; ++n) ++count[Base::simData->Type(n)];
+      for (int n=0; n<Base::simData->number(); ++n) ++count[Base::simData->Type(n)];
       for (int ty=0; ty<types; ++ty)
         fout << "     Type " << toStr(ty) << ":                  " << count[ty] << " (" << 
-          count[ty] / static_cast<RealType>(Base::simData->number) << "%)\n";
+          count[ty] / static_cast<RealType>(Base::simData->number()) << "%)\n";
       delete [] count;
     }
     RealType vol = 0;
-    for (int n=0; n<Base::simData->number; ++n) vol += pow(simData->Sg(n), sim_dimensions);
+    for (int n=0; n<Base::simData->number(); ++n) vol += pow(simData->Sg(n), sim_dimensions);
     vol *= pow(PI, sim_dimensions/2.) / tgamma(sim_dimensions/2. + 1.);
     RealType phi = vol/Base::gflow->getBounds().vol();
     fout << "  - Packing fraction:         " << phi << "\n";
-    fout << "\n";
-
-    // --- Print particle summary
-    writeParticleData(fout);
     fout << "\n";
 
     // --- Print integration summary
@@ -279,6 +275,7 @@ namespace GFlowSimulation {
     fout << "  - Iterations:               " << iterations << "\n";
     fout << "  - Time per iteration:       " << toStrRT(run_time / static_cast<RealType>(iterations)) << "\n";
     if (integrator) fout << "  - Time step (at end):       " << integrator->getTimeStep() << "\n";
+    fout << "  - Average dt:               " << Base::gflow->getTotalTime()/iterations << "\n";
     fout << "\n";
     
     // --- Print the domain summary
@@ -311,6 +308,8 @@ namespace GFlowSimulation {
       }
     }
     fout << "\n";
+
+    // --- Interactions
     fout << "Interactions:\n";
     int c=0, inters=0;
     for (auto &it : gflow->interactions) {
@@ -319,6 +318,11 @@ namespace GFlowSimulation {
       inters += it->size();
     }
     fout << "  - Inter.s per particle:     " << static_cast<double>(inters) / particles << "\n";
+    fout << "\n";
+
+    // --- Print particle summary
+    writeParticleData(fout);
+    fout << "\n";
     
     // Close the stream
     fout.close();
@@ -332,7 +336,7 @@ namespace GFlowSimulation {
 
   inline void DataMaster::writeParticleData(std::ostream& out) {
     // If there are no particles
-    if (Base::simData->number==0) {
+    if (Base::simData->number()==0) {
       cout << "No particles.\n";
     }
     // If there are particles, record data about them.
@@ -342,7 +346,7 @@ namespace GFlowSimulation {
       maxspeed = magnitudeVec(Base::simData->V(0), sim_dimensions), 
       maxke = sqr(magnitudeVec(Base::simData->V(0), sim_dimensions))*(1./Base::simData->Im(0));
     RealType minsigma = maxsigma, minmass = maxmass, minden = maxden, minspeed = maxspeed, minke = maxke;
-    for (int n=0; n<Base::simData->number; ++n) {
+    for (int n=0; n<Base::simData->number(); ++n) {
       if (Base::simData->Type(n)<0) continue;
       // Cutoff
       RealType sig = Base::simData->Sg(n);
@@ -374,25 +378,27 @@ namespace GFlowSimulation {
       }
     }
     // Normalize
-    RealType invN = 1./static_cast<RealType>(Base::simData->number);
+    RealType invN = 1./static_cast<RealType>(Base::simData->number());
     asigma *= invN;
     amass  *= invN;
     aden   *= invN;
     aspeed *= invN;
     ake    *= (0.5*invN);
     // Print data
-    out << "Particle Average Data (at finish):\n";
-    out << "                              Ave, [Min, Max]\n";
+    out << "Particle Average Data (at finish): (Ave, [Min, Max])\n";
     out << "  - Sigma:                    " << asigma << "\n";
-    out << "                              [ " << minsigma << ", " << maxsigma << " ]\n";
     out << "  - Mass:                     " << amass << "\n";
-    out << "                              [ " << minmass << ", " << maxmass << " ]\n";
     out << "  - Density:                  " << aden << "\n";
-    out << "                              [ " << minden << ", " << maxden << " ]\n";
     out << "  - Speed:                    " << aspeed << "\n";
-    out << "                              [ " << minspeed << ", " << maxspeed << " ]\n";
     out << "  - Kinetic energy:           " << ake << "\n";
-    out << "                              [ " << minke << ", " << maxke << " ]\n";
+    out << "\n";
+    out << "Particle min/max data (at finish):\n";
+    out << "  - Sigma:                    [ " << minsigma << ", " << maxsigma << " ]\n";
+    out << "  - Mass:                     [ " << minmass << ", " << maxmass << " ]\n";
+    out << "  - Density:                  [ " << minden << ", " << maxden << " ]\n";
+    out << "  - Speed:                    [ " << minspeed << ", " << maxspeed << " ]\n";
+    out << "  - Kinetic energy:           [ " << minke << ", " << maxke << " ]\n";
+    out << "\n";
   }
 
   inline void DataMaster::writeDomainData(std::ostream&) {

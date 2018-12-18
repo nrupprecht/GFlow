@@ -9,13 +9,14 @@ namespace GFlowSimulation {
   // Constructor
   PositionData::PositionData(GFlow *gflow) : DataObject(gflow, "Pos"), dataWidth(0) {
     // The data to gather
-    data_types.push_back(DataType::POSITION);
-    data_types.push_back(DataType::VELOCITY);
-    data_types.push_back(DataType::SIGMA);
-    data_types.push_back(DataType::TYPE);
-    data_types.push_back(DataType::DISTANCE);
+    vector_data_entries.push_back("X");
+    vector_data_entries.push_back("V");
+    scalar_data_entries.push_back("Sg");
+    scalar_data_entries.push_back("StripeX");
+    integer_data_entries.push_back("Type");
+    integer_data_entries.push_back("ID");
     // Allocate
-    vdata = new RealType[sim_dimensions];
+    vdata = new RealType[sim_dimensions];    
   };
 
   PositionData::~PositionData() {
@@ -23,16 +24,42 @@ namespace GFlowSimulation {
   }
 
   void PositionData::pre_integrate() {
-    // Store initial positions
-    vector<DataType> pos_data(1, DataType::POSITION);
-    store_data(initial_data, pos_data);
-    // Calculate data width
+    // Get data positions, calculate data width.
     dataWidth = 0;
-    for (const auto type : data_types) {
-      if (type==DataType::POSITION || type==DataType::VELOCITY)
+    vector<string> temp;
+    for (auto entry : vector_data_entries) {
+      int pos = simData->get_vector_data(entry);
+      if (-1<pos) {
+        temp.push_back(entry);
+        vector_data_positions.push_back(pos);
         dataWidth += sim_dimensions;
-      else ++dataWidth;
+      }
     }
+    vector_data_entries = temp;
+    temp.clear();
+    for (auto entry : scalar_data_entries) {
+      int pos = simData->get_scalar_data(entry);
+      if (-1<pos) {
+        temp.push_back(entry);
+        scalar_data_positions.push_back(pos);
+        ++dataWidth;
+      }
+    }
+    scalar_data_entries = temp;
+    temp.clear();
+    for (auto entry : integer_data_entries) {
+      int pos = simData->get_integer_data(entry);
+      if (-1<pos) {
+        temp.push_back(entry);
+        integer_data_positions.push_back(pos);
+        ++dataWidth;
+      }
+    }
+    integer_data_entries = temp;
+
+    // Store initial data
+    initial_data = vector<RealType>(dataWidth*simData->number(), 0);
+    store_data(initial_data);
   }
 
   void PositionData::post_step() {
@@ -44,9 +71,8 @@ namespace GFlowSimulation {
     timeStamps.push_back(time);
 
     // Record all the data
-    vector<RealType> data;
-    data.reserve(data_types.size()*simData->Number());
-    store_data(data, data_types);
+    vector<RealType> data(dataWidth*simData->number(), 0);
+    store_data(data);
     // Store this timestep's data
     positions.push_back(data);
   }
@@ -66,7 +92,7 @@ namespace GFlowSimulation {
     if (fout.fail()) return false;
 
     // Print data width, dimensions
-    fout << dataWidth << "," << sim_dimensions << "," << positions.size() << "," << Base::simData->ntypes << "\n";
+    fout << dataWidth << "," << sim_dimensions << "," << positions.size() << "," << Base::simData->ntypes() << "\n";
 
     // Print bounds - mins, then maxes
     Bounds bounds = Base::gflow->getBounds();
@@ -78,6 +104,30 @@ namespace GFlowSimulation {
     }
     fout << "\n";
 
+    // Vector data types
+    fout << vector_data_entries.size() << ",";
+    for (int i=0; i<vector_data_entries.size(); ++i) {
+      fout << vector_data_entries[i];
+      if (i!=vector_data_entries.size()-1) fout << ",";
+    }
+    fout << "\n";
+
+    // Scalar data types
+    fout << scalar_data_entries.size() << ",";
+    for (int i=0; i<scalar_data_entries.size(); ++i) {
+      fout << scalar_data_entries[i];
+      if (i!=scalar_data_entries.size()-1) fout << ",";
+    }
+    fout << "\n";
+    
+    // Integer data types
+    fout << integer_data_entries.size() << ",";
+    for (int i=0; i<integer_data_entries.size(); ++i) {
+      fout << integer_data_entries[i];
+      if (i!=integer_data_entries.size()-1) fout << ",";
+    }
+    fout << "\n";
+
     // Print out the actual data - first the number of particles, then the particle data
     for (auto &v : positions) fout << v.size() << "," << toCSV(v) << "\n";
     fout.close();
@@ -86,39 +136,23 @@ namespace GFlowSimulation {
     return true;
   }
 
-  inline void PositionData::store_data(vector<RealType>& data, vector<DataType>& d_types) {
-    // Fill the array of data
-    for (int i=0; i<Base::simData->Number(); ++i) {
-      if (Base::simData->Type(i)!=-1)
-        for (const auto type : d_types) get_data(data, type, i);
-    }
-  }
-
-  inline void PositionData::get_data(vector<RealType>& data, DataType type, int id) {
-    switch(type) {
-      case DataType::POSITION: {
-        for (int d=0; d<sim_dimensions; ++d) data.push_back(Base::simData->X(id, d));
-        break;
+  inline void PositionData::store_data(vector<RealType>& data) {
+    int data_pointer = 0;
+    for (int n=0; n<simData->size(); ++n) {
+      // If not a particle, continue
+      if (simData->Type(n)<0) continue;
+      // Copy data
+      for (auto v : vector_data_positions) {
+        copyVec(simData->VectorData(v)[n], &data[data_pointer], sim_dimensions);
+        data_pointer += sim_dimensions;
       }
-      case DataType::VELOCITY: {
-        for (int d=0; d<sim_dimensions; ++d) data.push_back(Base::simData->V(id, d));
-        break;
+      for (auto s : scalar_data_positions) {
+        data[data_pointer] = simData->ScalarData(s)[n];
+        ++data_pointer;
       }
-      case DataType::SIGMA: {
-        data.push_back(Base::simData->Sg(id));
-        break;
-      }
-      case DataType::TYPE: {
-        data.push_back(Base::simData->Type(id));
-        break;
-      }
-      case DataType::DISTANCE: {
-        if (!initial_data.empty()) {
-          gflow->getDisplacement(Base::simData->X(id), &initial_data.at(id*sim_dimensions), vdata);        
-          data.push_back( magnitudeVec(vdata, sim_dimensions) );
-        }
-        else data.push_back(-1.);
-        break;
+      for (auto i : integer_data_positions) {
+        data[data_pointer] = simData->IntegerData(i)[n];
+        ++data_pointer;
       }
     }
   }

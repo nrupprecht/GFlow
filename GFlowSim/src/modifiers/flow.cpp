@@ -12,12 +12,12 @@ namespace GFlowSimulation {
       width[d] = Base::gflow->getBounds().wd(d);
 
     // Number of (real - non ghost) particles
-    int number = simData->number;
+    int size = simData->size();
     // Get arrays
     RealType *x = simData->X_arr(), *v = simData->V_arr(), *f = simData->F_arr(), *sg = simData->Sg();
 
     // Update velocities
-    for (int i=0; i<number*sim_dimensions; ++i) {
+    for (int i=0; i<size*sim_dimensions; ++i) {
       int d = i % sim_dimensions;
       int id = i/sim_dimensions;
       // Dimension 0 is the flow direction

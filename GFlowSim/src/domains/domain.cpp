@@ -73,17 +73,21 @@ namespace GFlowSimulation {
     // If bounds are unset, then don't make sectors
     if (domain_bounds.vol()<=0) return;
 
+    // We cannot initialize if simdata is null
+    if (simData==nullptr) return;
+
     // --- Calculate cutoff
     RealType *sg = simData->Sg();
-    int number = simData->number;
+    int *type = simData->Type();
+    int size = simData->size();
 
     // We may have already set the cutoff, and don't want it to be overwritten
     if (cutoff <= minCutoff) {
       // Largest radius
       RealType maxSigma(0);
       // Look for largest and second largest radii
-      for (int i=0; i<number; ++i)
-        if (sg[i]>maxSigma) maxSigma = sg[i];
+      for (int i=0; i<size; ++i)
+        if (type[i]>-1 && sg[i]>maxSigma) maxSigma = sg[i];
       max_small_sigma = maxSigma;
       minCutoff = 2*max_small_sigma + skin_depth; // Cutoff radius
 
@@ -473,11 +477,10 @@ namespace GFlowSimulation {
     for (int i=0; i<cells.size(); ++i) 
       cells[i].clear();
 
-    // @todo Clear ghost index mapping in simData
-
-    // --- Place particles in their cells
-    int linear;
-    for (int n=0; n<Base::simData->number; ++n) {
+    // We should have just done a particle removal, so we can use number, not size (since all arrays are compressed
+    int number = Base::simData->number(), linear;
+    // Place particles in their cells
+    for (int n=0; n<number; ++n) {
       // Calculate the (DIMENSION)-tuple cell coordinate
       int linear = getCellIndex(Base::simData->X(n));
       cells[linear].add(n);

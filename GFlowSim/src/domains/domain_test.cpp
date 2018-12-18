@@ -44,8 +44,6 @@ namespace GFlowSimulation {
   };
 
   DomainTest::~DomainTest() {
-    // Base class destructor
-    DomainBase::~DomainBase();
     // Delete this object's data
     if (border_type_up)   delete [] border_type_up;
     if (border_type_down) delete [] border_type_down;
@@ -53,6 +51,8 @@ namespace GFlowSimulation {
     border_type_up = nullptr;
     border_type_down = nullptr;
     products = nullptr;
+    // Base class destructor
+    DomainBase::~DomainBase();
   }
 
   void DomainTest::initialize() {
@@ -67,18 +67,26 @@ namespace GFlowSimulation {
     // Get the bounds from the gflow object - for now assumes this is the only domain, so bounds==domain_bounds
     domain_bounds = gflow->getBounds();
 
+    // If bounds are unset, then don't make sectors
+    if (domain_bounds.vol()<=0) return;
+
+    // We cannot initialize if simdata is null
+    if (simData==nullptr) return;
+
     // Find average sigma
     RealType sigma = 0, max_sigma = 0;
-    for (int n=0; n<Base::simData->number; ++n) {
+    for (int n=0; n<Base::simData->size(); ++n) {
+      if (Base::simData->Type()<0) continue;
       RealType s = Base::simData->Sg(n);
       sigma += s;
       if (s>max_sigma) max_sigma = s;
     }
-    sigma /= Base::simData->number;
+    sigma /= Base::simData->number();
     // Threshhold sigma is between average and maximum sigma
     RealType threshold = 0.5*(sigma + max_sigma), max_under = sigma;
     if (threshold!=sigma) {
-      for (int n=0; n<Base::simData->number; ++n) {
+      for (int n=0; n<Base::simData->size(); ++n) {
+        if (Base::simData->Type()<0) continue;
         RealType s = Base::simData->Sg(n);
         if (s<threshold && max_under<s) max_under = s;
       }
@@ -246,7 +254,13 @@ namespace GFlowSimulation {
     int *cell_index = new int[sim_dimensions], *center = new int[sim_dimensions];
 
     InteractionHandler *hs = nullptr;
-    if (gflow->getInteractions().empty()) return;
+    if (gflow->getInteractions().empty()) {
+      delete [] tuple1;
+      delete [] tuple2;
+      delete [] cell_index;
+      delete [] center;
+      return;
+    }
     else hs = gflow->getInteractions()[0]->getInteractionHandler();
 
     // Find potential neighbors
@@ -338,14 +352,10 @@ namespace GFlowSimulation {
   inline void DomainTest::update_cells() {
     clear_cells();
     fill_cells();
-    number = simData->number;
+    number = simData->number();
   }
 
   inline void DomainTest::create_cells() {
-    // Initialize border record
-    border_type_up = new int[sim_dimensions];
-    border_type_down = new int[sim_dimensions];
-
     // --- Determine border type
     const BCFlag *bcs = Base::gflow->getBCs(); // Get the boundary condition flags
     for (int d=0; d<sim_dimensions; ++d) {
@@ -358,7 +368,6 @@ namespace GFlowSimulation {
         border_type_down[d] = 0;
       }
     }
-
     // --- Create the cells
     // Get the total number of cells - The dims MUST be set first.
     const int size = getNumCells();
@@ -366,7 +375,6 @@ namespace GFlowSimulation {
 
     // Holder for tuple index
     int *tuple1 = new int[sim_dimensions], *tuple2 = new int[sim_dimensions];
-
     // --- Create a neighborhood stencil to help us find adjacent cells
     int sweep = ceil(minCutoff/min(widths, sim_dimensions));
     vector<int*> neighbor_indices;
@@ -412,8 +420,9 @@ namespace GFlowSimulation {
   }
 
   inline void DomainTest::fill_cells() {
+    // We should have just done a particle removal, so we can use number, not size (since all arrays are compressed)
     RealType **x = simData->X();
-    int number = Base::simData->number;
+    int number = Base::simData->number();
     // Bin all the particles
     for (int i=0; i<number; ++i) {
       int linear = get_cell_index(x[i]);

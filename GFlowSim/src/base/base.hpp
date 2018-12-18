@@ -32,6 +32,13 @@ namespace GFlowSimulation {
     // GFlow is a friend class
     friend class GFlow;
 
+    class GFlow* getGFlow();
+    class SimData* getSimData();
+    class Integrator* getIntegrator();
+    class DomainBase* getDomain();
+    class DataMaster* getDataMaster();
+    class ForceMaster* getForceMaster();
+
   protected:
     class GFlow        *gflow;
     class SimData      *simData;

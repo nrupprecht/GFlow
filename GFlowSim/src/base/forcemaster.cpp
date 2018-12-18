@@ -33,7 +33,7 @@ namespace GFlowSimulation {
     // Set ntypes for this object
     ntypes = n;
     // Set ntypes for the simdata
-    Base::simData->ntypes = n;
+    Base::simData->_ntypes = n;
     // Resize and erase array
     grid = vector<vector<Interaction*> >(n, vector<Interaction*>(n, nullptr));
   }

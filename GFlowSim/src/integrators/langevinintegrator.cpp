@@ -22,15 +22,15 @@ namespace GFlowSimulation {
     // --- First half kick
 
     // Number of (real - non ghost) particles
-    int number = simData->number;
-    if (number==0) return;
+    int size = simData->size();
+    if (size==0) return;
     // Half a timestep
     RealType hdt = 0.5*Integrator::dt;
     // Get arrays
     RealType *x = simData->X_arr(), *v = simData->V_arr(), *f = simData->F_arr(), *im = simData->Im();
 
     // Update velocities
-    for (int i=0; i<number*sim_dimensions; ++i) {
+    for (int i=0; i<size*sim_dimensions; ++i) {
       int id = i/sim_dimensions;
       v[i] += hdt*im[id]*f[i];
       // Debug mode asserts
@@ -43,7 +43,7 @@ namespace GFlowSimulation {
     }
 
     // Update positions
-    for (int i=0; i<number*sim_dimensions; ++i)
+    for (int i=0; i<size*sim_dimensions; ++i)
       x[i] += dt*v[i];
   }
 
@@ -56,7 +56,7 @@ namespace GFlowSimulation {
     // Half a timestep
     RealType hdt = 0.5*Integrator::dt;
     // Number of (real - non ghost) particles
-    int number = simData->number;
+    int size = simData->size();
     // Get arrays
     RealType *x = simData->X_arr(), *v = simData->V_arr(), *f = simData->F_arr(), *im = simData->Im(), *sg = simData->Sg();
 
@@ -66,7 +66,7 @@ namespace GFlowSimulation {
       // Precomputed values, assumes Kb = 1
       RealType Df1 = sqrt(2.*drift1*(time-lastUpdate));
       // Add a random force to all spatial degrees of freedom
-      for (int i=0; i<number*sim_dimensions; ++i) {
+      for (int i=0; i<size*sim_dimensions; ++i) {
         int id = i/sim_dimensions;
         RealType Df2 = sqrt(1./sg[id]);
         // Random strength - 'temperature' is from the viscous medium
@@ -76,7 +76,7 @@ namespace GFlowSimulation {
       lastUpdate = time;
     }
 
-    for (int i=0; i<number*sim_dimensions; ++i) {
+    for (int i=0; i<size*sim_dimensions; ++i) {
       int id = i/sim_dimensions;
       // Drag force
       f[i] -= 6.*PI*viscosity*sg[id]*v[i];

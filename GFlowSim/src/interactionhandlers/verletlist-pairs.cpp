@@ -50,7 +50,10 @@ namespace GFlowSimulation {
         interaction->compute(id1, id2, displacement, distance);
       }
     }
-      
+
+    // Clean up
+    delete [] displacement;
+    delete [] boundaryConditions;
   }
 
 }

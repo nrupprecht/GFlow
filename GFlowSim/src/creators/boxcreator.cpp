@@ -132,7 +132,7 @@ namespace GFlowSimulation {
 
     // --- Set velocities
     // In case the number of particles has changed
-    number = gflow->simData->number;
+    number = gflow->simData->number();
     for (int n=0; n<number; ++n) {
       // Give some random velocities
       double ke = fabs(vsgma*normal_dist(generator));

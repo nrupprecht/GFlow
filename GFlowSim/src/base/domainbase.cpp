@@ -21,21 +21,23 @@ namespace GFlowSimulation {
     // Set bounds to have the propper dimensionality
     domain_bounds = Bounds(sim_dimensions);
     bounds = Bounds(sim_dimensions);
-    // Set up arrays
-    dims = new int[sim_dimensions];
-    widths = new RealType[sim_dimensions] ;
-    inverseW = new RealType[sim_dimensions];
   }; 
 
   DomainBase::~DomainBase() {
     nullXVL();
+    if (dims) delete [] dims;
+    if (widths) delete [] widths;
+    if (inverseW) delete [] inverseW;
+    dims = nullptr;
+    widths = nullptr;
+    inverseW = nullptr;
   }
 
   void DomainBase::pre_forces() {
     // Increment timer
     ++steps_since_last_remake;
     // If there are no particles there is no need to continue
-    if (simData->number<1) return;
+    if (simData->number()<1) return;
     // Get the current simulation time
     RealType current_time = Base::gflow->getElapsedTime();
     // If simdata needs a remake, we give it a remake
@@ -106,7 +108,8 @@ namespace GFlowSimulation {
   }
 
   void DomainBase::construct() {
-    // Do necessary removals 
+    // Do necessary removals - this will compress the arrays so that there are no invalid (type -1) particles
+    // and _number == _size
     Base::simData->doParticleRemoval();
     // Wrap the particles, so they are in their cannonical positions
     Base::gflow->wrapPositions();
@@ -126,10 +129,11 @@ namespace GFlowSimulation {
 
   void DomainBase::nullXVL() {
     if (xVL) dealloc_array_2d(xVL);
+    xVL = nullptr;
   }
 
   void DomainBase::setupXVL(int length) {
-    if (xVL!=nullptr) nullXVL();
+    nullXVL();
     sizeXVL = length;
     xVL = alloc_array_2d<RealType>(length, sim_dimensions);
 
@@ -139,9 +143,9 @@ namespace GFlowSimulation {
 
   void DomainBase::fillXVL() {
     // How many samples to keep
-    int number = Base::simData->number, samples = sample_size>0 ? min(sample_size, number) : number;
+    int number = Base::simData->number(), samples = sample_size>0 ? min(sample_size, number) : number;
     // Check if our array is the correct size
-    if (Base::simData->number!=sizeXVL) 
+    if (Base::simData->number()!=sizeXVL) 
       setupXVL(samples);
     // Fill array from the end
     for (int i=0; i<samples; ++i)
@@ -150,12 +154,13 @@ namespace GFlowSimulation {
 
   void DomainBase::pair_interaction(int id1, int id2) {
     // Check to see if they are part of the same body. If so, they cannot exert force on each other
-    if (Base::simData->body && Base::simData->body[id1]>0 && Base::simData->body[id2]==Base::simData->body[id1])
-      return; // The particles are in the same body
+    //if (Base::simData->body && Base::simData->body[id1]>0 && Base::simData->body[id2]==Base::simData->body[id1])
+    //  return; // The particles are in the same body
+
     // Check with force master
-    Interaction *it = Base::forceMaster->getInteraction(Base::simData->type[id1], Base::simData->type[id2]);
+    Interaction *it = Base::forceMaster->getInteraction(Base::simData->Type(id1), Base::simData->Type(id2));
     // A null force means no interaction
-    if (it /*&& it->needsConstruction()*/) it->addPair(id1, id2);
+    if (it) it->addPair(id1, id2);
   }
 
   RealType DomainBase::maxMotion() {
@@ -170,12 +175,12 @@ namespace GFlowSimulation {
     // We can try sampling the motion of a subset of particles, but this would only work in a
     // homogenous simulation. If there is a localized area of fast moving particles, this would not
     // be guarenteed to pick this up.
-    int number = Base::simData->number;
+    int number = Base::simData->number();
     int samples = sample_size>0 ? min(sample_size, number) : number;
 
     // Start at the end, since separate special particles are often added at the end of a setup
     for (int i=0; i<samples; ++i) {
-      dsqr = getDistanceSqrNoWrap(  xVL[i], Base::simData->X(number-1-i), sim_dimensions);
+      dsqr = getDistanceSqrNoWrap(xVL[i], Base::simData->X(number-1-i), sim_dimensions);
       if (dsqr<max_plausible && dsqr>maxDSqr) maxDSqr = dsqr;
     }
 

@@ -31,10 +31,11 @@ namespace GFlowSimulation {
     virtual void compute(const int, const int, RealType*, const RealType) const override;
 
   private:
-
+    //! @brief The repulsion for the spheres. This is the same for all spheres.
     RealType repulsion;
+    //! @brief The dissipation for the spheres. This is the same for all spheres.
     RealType dissipation;
-
+    //! @brief A buffer used for intermediate vector calculations.
     RealType *buffer;
   };
 

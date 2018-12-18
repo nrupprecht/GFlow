@@ -10,7 +10,7 @@ namespace GFlowSimulation {
 
   void Clustering::findClusters() {
     // Look for clusters of particles
-    int number = Base::simData->number;
+    int number = Base::simData->number();
     // If there is nothing to record
     if (number<=0) return;
     // Array used to see which particles are in which cluster - reset it
@@ -18,7 +18,7 @@ namespace GFlowSimulation {
     clusters = vector<int>(number, -1);
     cluster_sizes.clear();
     // Get the types
-    const int *type = Base::simData->type;
+    const int *type = Base::simData->Type();
     // Stack for clustering
     std::stack<int> check_stack;
     // Pass into the domain [getAllWithin] function
@@ -41,7 +41,7 @@ namespace GFlowSimulation {
         // Particle with id [id] belongs in the same cluster as particle with id [head]
         clusters[id] = n_clusters;
         // Fill the neighbors array with ids. The [getAllWithin] function clears [neighbors] before filling it.
-        Base::domain->getAllWithin(id, 2*Base::simData->Sg()[id] + skin, neighbors);
+        Base::domain->getAllWithin(id, 2*Base::simData->Sg(id) + skin, neighbors);
         for (auto n : neighbors) {
           // Only put on the stack if it is not already on the stack, and has not had its
           if (clusters[n]==-1 && (!same_type_clusters || type[n]==head_type) && type[n]!=-1) {
@@ -86,7 +86,7 @@ namespace GFlowSimulation {
 
   void Clustering::get_next(int &head, const vector<int>& cluster) {
     while (head<cluster.size()) {
-      if (cluster[head]==-1 && Base::simData->type[head]!=-1) return;
+      if (cluster[head]==-1 && Base::simData->Type(head)!=-1) return;
       ++head;
     }
   }

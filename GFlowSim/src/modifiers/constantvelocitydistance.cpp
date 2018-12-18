@@ -24,7 +24,6 @@ namespace GFlowSimulation {
       // Keep object still
       zeroVec(Base::simData->F(id), sim_dimensions);
       zeroVec(Base::simData->V(id), sim_dimensions);
-      minusEqVec(Base::simData->V(id), Base::gflow->getVComCorrection(), sim_dimensions);
     }
     else {
       // Acquire time step

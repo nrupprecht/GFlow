@@ -36,7 +36,7 @@ namespace GFlowSimulation {
 
   void EndingSnapshot::post_integrate() {
     // Record all the data
-    final_data.reserve(data_types.size()*simData->Number());
+    final_data.reserve(data_types.size()*simData->number());
     store_data<double>(final_data, data_types);
   }
 
@@ -67,7 +67,7 @@ namespace GFlowSimulation {
     if (fout.fail()) return false;
 
     // Print data width, dimensions
-    fout << dataWidth << "," << sim_dimensions << ",1," << Base::simData->ntypes << "\n";
+    fout << dataWidth << "," << sim_dimensions << ",1," << Base::simData->ntypes() << "\n";
 
     // Print bounds - mins, then maxes
     for (int i=0; i<sim_dimensions; ++i) 

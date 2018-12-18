@@ -12,5 +12,6 @@
 #include "modifiers/quadraticvelocitydamping.hpp"
 #include "modifiers/velocitylimiter.hpp"
 #include "modifiers/windtunnel.hpp"
+#include "modifiers/stripe-x.hpp"
 
 #endif // __ALL_MODIFIERS_HPP__GFLOW__

@@ -11,6 +11,9 @@ namespace GFlowSimulation {
     //! @brief Default constructor, takes the number of dimensions. Sets numProc and rank.
     Topology(int);
 
+    //! \brief Destructor.
+    virtual ~Topology();
+
     //! @brief Compute how the simulation space should be divided up.
     virtual void computeTopology() = 0;
 

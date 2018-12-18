@@ -23,7 +23,6 @@ namespace GFlowSimulation {
     #endif
     // Set up arrays
     boundaryConditions = new BCFlag[sim_dimensions];
-    v_com_correction = new RealType[sim_dimensions];
     // Set up basic objects. The integrator will be created by the creator
     simData      = new SimData(this);
     integrator   = nullptr;
@@ -35,22 +34,22 @@ namespace GFlowSimulation {
     bounds = Bounds(sim_dimensions);
     // Set wrapping to true by default
     setAllBCs(BCFlag::WRAP);
-    // Set v_com_correction to zero
-    zeroVec(v_com_correction, sim_dimensions);
+    // Initialize all base objects, so they have valid pointers to one another
+    initialize();
   }
 
   GFlow::~GFlow() {
     if (simData)      delete simData;
-    if (domain)       delete domain;
     if (integrator)   delete integrator;
+    if (domain)       delete domain;
     if (dataMaster)   delete dataMaster;
+    if (forceMaster)  delete forceMaster;
     if (topology)     delete topology;
     for (auto &md : modifiers) 
       if (md) delete md;
     for (auto &it : interactions)
       if (it) delete it;
     if (boundaryConditions) delete [] boundaryConditions;
-    if (v_com_correction) delete [] v_com_correction;
   }
 
   bool GFlow::initialize() {
@@ -71,16 +70,17 @@ namespace GFlowSimulation {
     if (forceMaster) forceMaster->initialize();
     else non_null = false;
 
+    // Topology does not currently have an initialization function, as it does not inherit from Base
+
     for (auto &md : modifiers) {
       if (md) md->initialize();
       else non_null = false; 
     }
+
     for (auto &it: interactions) {
       if (it) it->initialize();
       else non_null = false;
     }
-    // Clear v_com_correction
-    zeroVec(v_com_correction, sim_dimensions);
     // Return whether pointers were non-null
     return non_null;
   }
@@ -118,7 +118,7 @@ namespace GFlowSimulation {
     total_requested_time += requested_time;
 
     // If there are no particles, we are done
-    if (simData->number==0) {
+    if (simData->number()==0) {
       elapsed_time += requested_time;
       total_time   += requested_time;
       return;
@@ -137,7 +137,7 @@ namespace GFlowSimulation {
     }
     // Check that simdata has good arrays
     if (simData->X()==nullptr || simData->V()==nullptr || simData->F()==nullptr || simData->Sg()==nullptr 
-      || simData->Im()==nullptr || simData->type==nullptr) 
+      || simData->Im()==nullptr || simData->Type()==nullptr) 
     {
       throw UnexpectedNullPointer("Some array in simdata was null that shouldn't be.");
     }
@@ -146,11 +146,10 @@ namespace GFlowSimulation {
     running = true;
     elapsed_time = 0;
     iter = 0;
+    for (auto m : modifiers) m->pre_integrate();
     integrator->pre_integrate();
     dataMaster->pre_integrate();
     domain->pre_integrate();
-
-    for (auto m : modifiers) m->pre_integrate();
 
     // Do integration for the requested amount of time
     while (running) {
@@ -171,13 +170,10 @@ namespace GFlowSimulation {
 
       // --> Pre-force
       for (auto m : modifiers) m->pre_forces();
-
       fhs_timer.start();
       integrator->pre_forces(); // -- This is where VV first half kick happens (if applicable)
       fhs_timer.stop();
-
       dataMaster->pre_forces();
-
       domain_timer.start();
       if (useForces) domain->pre_forces();   // -- This is where resectorization / verlet list creation might happen
       domain_timer.stop();
@@ -189,13 +185,12 @@ namespace GFlowSimulation {
       reflectPositions(); // This only involves velocities, so it could be done before or after clear forces.
       repulsePositions(); // But this needs to be done after clear forces.
       attractPositions(); // This does too.
-      if (correct_com) fixCenterOfMass();
 
       // Calculate current forces
       if (useForces) {
-        forces_timer.start();
+        forces_timer.start(); 
         for (auto &it : interactions) it->interact();
-        forces_timer.stop();
+        forces_timer.stop(); 
       }
 
       // Do modifier removal
@@ -203,11 +198,9 @@ namespace GFlowSimulation {
 
       // --> Post-forces
       for (auto m : modifiers) m->post_forces(); // -- This is where modifiers should do forces (if they need to)
-
       shs_timer.start();
       integrator->post_forces();                 // -- This is where VV second half kick happens (if applicable)
       shs_timer.stop();
-      
       dataMaster->post_forces();
       domain->post_forces();
 
@@ -271,7 +264,7 @@ namespace GFlowSimulation {
   }
 
   int GFlow::getNumParticles() const {
-    return simData->number;
+    return simData->number();
   }
 
   Bounds GFlow::getBounds() const {
@@ -306,10 +299,6 @@ namespace GFlowSimulation {
 
   Integrator* GFlow::getIntegrator() const {
     return integrator;
-  }
-
-  const RealType* GFlow::getVComCorrection() const {
-    return v_com_correction;
   }
 
   void GFlow::getDisplacement(const RealType *x, const RealType *y, RealType *dis) {
@@ -380,12 +369,12 @@ namespace GFlowSimulation {
   void GFlow::wrapPositions() {
     // Get a pointer to position data and the number of particles in simData
     RealType **x = simData->X();
-    int number = simData->number;
+    int size = simData->size();
 
     // Wrap all particles
     for (int d=0; d<sim_dimensions; ++d) {
       if (boundaryConditions[d]==BCFlag::WRAP) { // Wrap the d-th dimension
-        for (int n=0; n<number; ++n) {
+        for (int n=0; n<size; ++n) {
           // Create a local copy
           RealType xlocal = x[n][d];
           // Wrap xlocal
@@ -403,12 +392,12 @@ namespace GFlowSimulation {
   void GFlow::reflectPositions() {
     // Get a pointer to position data and the number of particles in simData
     RealType **x = simData->X(), **v = simData->V();
-    int number = simData->number;
+    int size = simData->size();
 
     // Reflect all the particles
     for (int d=0; d<sim_dimensions; ++d)
       if (boundaryConditions[d]==BCFlag::REFL) { 
-        for (int n=0; n<number; ++n) {
+        for (int n=0; n<size; ++n) {
           // Create a local copy
           RealType xlocal = x[n][d];
           if (xlocal<bounds.min[d]) {
@@ -427,13 +416,13 @@ namespace GFlowSimulation {
   void GFlow::repulsePositions() {
     // Get a pointer to position data and the number of particles in simData
     RealType **x = simData->X(), **v = simData->V(), **f = simData->F();
-    int number = simData->number;
+    int size = simData->size();
     // Reset boundary force
     boundaryForce = 0;
     // Reflect all the particles
     for (int d=0; d<sim_dimensions; ++d)
       if (boundaryConditions[d]==BCFlag::REPL) { 
-        for (int n=0; n<number; ++n) {
+        for (int n=0; n<size; ++n) {
           // Create a local copy
           if (x[n][d]<bounds.min[d]) {
             RealType F = (repulsion*(bounds.min[d] - x[n][d]) + dissipation*clamp(-v[n][d]));
@@ -455,14 +444,15 @@ namespace GFlowSimulation {
     // Get a pointer to position data and the number of particles in simData
     RealType **x = simData->X(), **f = simData->F();
     RealType *im = simData->Im();
-    int number = simData->number;
+    int size = simData->size();
     // Find the center of the simulation
     RealType *center = new RealType[sim_dimensions];
     RealType *X = new RealType[sim_dimensions], *dX = new RealType[sim_dimensions];
     bounds.center(center);
 
     // Attract particles towards center with constant acceleration
-    for (int n=0; n<simData->number; ++n) {
+    for (int n=0; n<size; ++n) {
+      if (simData->Type(n)<0) continue;
       copyVec(x[n], X, sim_dimensions);
       subtractVec(center, X, dX, sim_dimensions);
       normalizeVec(dX, sim_dimensions);
@@ -472,33 +462,6 @@ namespace GFlowSimulation {
     // Clean up
     delete [] center;
     delete [] X;
-  }
-
-  void GFlow::fixCenterOfMass() {
-    RealType *v_ave = new RealType[sim_dimensions];
-    RealType mass = 0;
-    RealType **v = simData->V();
-    RealType *im = simData->Im();
-    int number = simData->number;
-    // Calculate the total velocity
-    for (int n=0; n<number; ++n) {
-      RealType m = 1./im[n];
-      plusEqVecScaled(v_ave, v[n], m, sim_dimensions);
-      mass += m;
-    }
-    // Divide by mass to get the average velocity
-    scalarMultVec(1./mass, v_ave, sim_dimensions);
-    // Subtract away com velocity in dimensions with wrapped boundary conditions
-    for (int d=0; d<sim_dimensions; ++d)
-      if (boundaryConditions[d]!=BCFlag::WRAP) v_ave[d] = 0;
-    for (int n=0; n<number; ++n)
-      minusEqVec(v[n], v_ave, sim_dimensions);
-
-    // Increment
-    plusEqVec(v_com_correction, v_ave, sim_dimensions);
-
-    // Clean up
-    delete [] v_ave;
   }
 
   void GFlow::removeOverlapping(RealType fraction) {
@@ -539,10 +502,6 @@ namespace GFlowSimulation {
 
   void GFlow::setDMCmd(int argc, char** argv) {
     dataMaster->setCommand(argc, argv);
-  }
-
-  void GFlow::setCorrectCom(bool flag) {
-    correct_com = flag;
   }
 
   void GFlow::giveFileToDataMaster(string filename, string file_contents) {

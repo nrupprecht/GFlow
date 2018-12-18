@@ -10,6 +10,8 @@ namespace GFlowSimulation {
   GridTopology::~GridTopology() {
     if (dims) delete [] dims;
     if (products) delete [] products;
+    dims = nullptr;
+    products = nullptr;
   }
 
   //! @brief Compute how the simulation space should be divided up.
@@ -52,7 +54,7 @@ namespace GFlowSimulation {
 
   //! @brief Get the bounds managed by a processor.
   Bounds GridTopology::getBounds(int rnk) {
-
+    
   }
 
 }
