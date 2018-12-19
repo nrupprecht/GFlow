@@ -656,7 +656,7 @@ namespace GFlowSimulation {
       if (type!=-1) {
         // Select the velocity for the final particle
         if (velocityOption==0) select_velocity(V, X, sigma, im, type);
-        else if (velocityOption==1); // We already set V to be Vs
+        else if (velocityOption==1) zeroVec(V, sim_dimensions); // We already set V to be Vs
         else zeroVec(V, sim_dimensions);
         // Infinitely heavy objects do not move.
         if (im==0) zeroVec(V, sim_dimensions);

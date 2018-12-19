@@ -250,6 +250,11 @@ int main(int argc, char **argv) {
     try {
       gflow->run();
     }
+    catch (Exception *exc) {
+      if (!quiet && rank==0)
+        cout << "Message: " << exc->message << endl;
+      throw;
+    }
     catch (...) {
       if (!quiet && rank==0) cout << "Exited with exception.\n";
       // Write accumulated data to files

@@ -51,7 +51,7 @@ namespace GFlowSimulation {
     bounds = gflow->getBounds();
 
     // Sort the particles by position
-    //sortParticles();
+    sortParticles();
   }
 
   //! @brief Reserve space for particles, extending the lengths of all arrays to the requested size.
