@@ -21,8 +21,6 @@ namespace GFlowSimulation {
     numProc = MPI::COMM_WORLD.Get_size();
     #endif
     #endif
-    // Set up arrays
-    boundaryConditions = new BCFlag[sim_dimensions];
     // Set up basic objects. The integrator will be created by the creator
     simData      = new SimData(this);
     integrator   = nullptr;
@@ -30,6 +28,8 @@ namespace GFlowSimulation {
     dataMaster   = new DataMaster(this);
     forceMaster  = new ForceMaster(this);
     topology     = new GridTopology(sim_dimensions);
+    // Set up boundary conditions
+    boundaryConditions = new BCFlag[sim_dimensions];
     // Set up bounds to have the propper dimensions
     bounds = Bounds(sim_dimensions);
     // Set wrapping to true by default
@@ -45,11 +45,22 @@ namespace GFlowSimulation {
     if (dataMaster)   delete dataMaster;
     if (forceMaster)  delete forceMaster;
     if (topology)     delete topology;
-    for (auto &md : modifiers) 
+    simData = nullptr;
+    integrator = nullptr;
+    domain = nullptr;
+    dataMaster = nullptr;
+    forceMaster = nullptr;
+    topology = nullptr;
+    for (auto &md : modifiers) {
       if (md) delete md;
-    for (auto &it : interactions)
+      md = nullptr;
+    }
+    for (auto &it : interactions) {
       if (it) delete it;
+      it = nullptr;
+    }
     if (boundaryConditions) delete [] boundaryConditions;
+    boundaryConditions = nullptr;
   }
 
   bool GFlow::initialize() {

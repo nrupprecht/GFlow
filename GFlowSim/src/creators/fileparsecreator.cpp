@@ -91,6 +91,9 @@ namespace GFlowSimulation {
     }
     build_message += "Done.\n";
 
+    // Clean up
+    delete root;
+    
     // Timing
     auto end_time = current_time();
     gflow->dataMaster->setInitializationTime(time_span(end_time, start_time));
@@ -545,6 +548,9 @@ namespace GFlowSimulation {
         && filler.getBounds().max[d]==gflow->getBounds().max[d]
       ) filler.setBC(d, gflow->getBCs()[d]);
 
+    // Delete filler's force master
+    delete filler.forceMaster;
+    // Set the new force master
     filler.forceMaster = gflow->forceMaster; // Make sure the particles treat each other in the same way
 
     // Get the simdata
@@ -665,13 +671,11 @@ namespace GFlowSimulation {
     delete [] Vs;
     delete [] X;
     delete [] V;
+    delete bnds;
   }
 
   inline FillBounds* FileParseCreator::getFillBounds(HeadNode *h) const {
     FillBounds *fbnds = nullptr;
-
-    // --- Identify the type of bounds, and their parameters
-
     // Check if we should use the full simulation bounds - the bounds are then rectangular
     if (h->subHeads.empty() && h->params.size()>0 && h->params[0]->partA=="Full")
       fbnds = new RectangularBounds(simBounds, sim_dimensions);

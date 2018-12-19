@@ -42,7 +42,7 @@ namespace GFlowSimulation {
   public:
     //! Constructor
     InteractionHandler(GFlow *gflow) : Base(gflow) {};
-
+    
     //! @brief Add a pair of interacting particles.
     virtual void addPair(const int, const int) = 0;
 

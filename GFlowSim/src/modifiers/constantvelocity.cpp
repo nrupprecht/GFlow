@@ -20,8 +20,8 @@ namespace GFlowSimulation {
       return;
     }
     // Keep the particle moving at constant velocity.
-    copyVec(velocity, Base::simData->V()[id], sim_dimensions);
-    zeroVec(Base::simData->F()[id], sim_dimensions);
+    copyVec(velocity, Base::simData->V(id), sim_dimensions);
+    zeroVec(Base::simData->F(id), sim_dimensions);
   }
 
 }

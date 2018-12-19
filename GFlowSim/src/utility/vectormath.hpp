@@ -98,6 +98,10 @@ namespace GFlowSimulation {
     std::copy(x, x+dimensions, target);
   }
 
+  template<typename T> inline void setVec(T *v, const int start, const int end, const T val) {
+    for (int i=start; i<end; ++i) v[i] = val;
+  }
+
   template<typename T> inline T magnitudeVec(T *vec, int dimensions) {
     return sqrt(sqr(vec, dimensions));
   }

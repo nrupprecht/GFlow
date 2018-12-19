@@ -217,7 +217,7 @@ int main(int argc, char **argv) {
   if (numberdata) gflow->addDataObject(new NumberData(gflow));
   if (stripex) gflow->addModifier(new StripeX(gflow));
   // Add this last, as it takes the most time.
-  if (animate || stripex) {
+  if (animate /*|| stripex*/) {
     auto pd = new PositionData(gflow);
     gflow->addDataObject(pd);
     if (videoLength>0) pd->setFPS((20.*videoLength)/time);

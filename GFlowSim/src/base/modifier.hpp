@@ -9,17 +9,19 @@ namespace GFlowSimulation {
 
   class Modifier : public Base {
   public:
-    // Constructor
-    Modifier(GFlow *);
+    //! \brief Default constructor.
+    Modifier(GFlow*);
 
+    //! \brief Get the remove flag.
     bool getRemove();
-
+    //! \brief Set the remove flag.
     void setRemove(bool);
 
     // GFlow is a friend class
     friend class GFlow;
 
   protected:
+    //! \brief A flag that indicates whether this modifier should be removed.
     bool remove;
   };
 

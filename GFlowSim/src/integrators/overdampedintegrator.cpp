@@ -13,7 +13,7 @@ namespace GFlowSimulation {
     // Call Base's pre_step
     Base::pre_step();
 
-    if (!adjust_dt) return;
+    if (!adjust_dt || simData->number()==0) return;
     // Check if enough time has gone by
     if (step_count < step_delay) {
       ++step_count;
@@ -26,6 +26,8 @@ namespace GFlowSimulation {
     
     // Check the acceleration components of all the particles
     RealType *f = simData->F_arr(), *im = simData->Im(), *sg = simData->Sg();
+    // Make sure the pointers are valid
+    if (f==nullptr || im==nullptr || sg==nullptr) return;
     // The minimum time a particle would take to traverse its own radius
     //!  @todo A more nuanced thing to check would be how long it takes the fastest
     //!  particle to traverse the smallest radius, or the smallest radius "near" it.
@@ -36,7 +38,7 @@ namespace GFlowSimulation {
     #if SIMD_TYPE==SIMD_NONE
     // Do serially
     for (int i=0; i<sim_dimensions*simData->size(); ++i) {
-      RealType mint = sg[i/sim_dimensions] / fabs(f[i]*im[i]);
+      RealType mint = sg[i/sim_dimensions] / fabs(f[i]*im[i]); // Valgrind says there is an invalid read here
       if (mint<minT) minT = mint;
     }
     #else 

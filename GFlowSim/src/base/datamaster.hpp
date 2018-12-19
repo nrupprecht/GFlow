@@ -86,8 +86,8 @@ namespace GFlowSimulation {
     inline bool writeLogFile(string);
 
     // Command line arguments
-    int argc;
-    char **argv;
+    int argc = 0;
+    char **argv = nullptr;
 
     //! @brief How long it took to initialize the simulation
     RealType initialization_time = -1;

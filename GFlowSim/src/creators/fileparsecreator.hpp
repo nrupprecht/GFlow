@@ -49,8 +49,8 @@ namespace GFlowSimulation {
     }
 
     ~RectangularBounds() {
-      delete [] min;
-      delete [] max;
+      if (min) delete [] min;
+      if (max) delete [] max;
     }
 
     virtual double vol() override {

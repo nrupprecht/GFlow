@@ -183,6 +183,9 @@ namespace GFlowSimulation {
     //! \brief Allocate more space to hold owned particles.
     void resize_owned(int);
 
+    //! \brief Set all values for a particle to default values
+    void resetParticle(int);
+
     //! \brief Move a particle's data from one spot to another, overwriting the particle that was there before.
     void move_particle(int, int);
 

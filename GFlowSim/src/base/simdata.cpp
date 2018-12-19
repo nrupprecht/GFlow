@@ -51,7 +51,7 @@ namespace GFlowSimulation {
     bounds = gflow->getBounds();
 
     // Sort the particles by position
-    sortParticles();
+    //sortParticles();
   }
 
   //! @brief Reserve space for particles, extending the lengths of all arrays to the requested size.
@@ -76,11 +76,8 @@ namespace GFlowSimulation {
 
   void SimData::addParticle() {
     if (_size+1 > _capacity) resize_owned(32);
-    // Zero all data
-    for (auto v : vdata)
-      zeroVec(v[_size], sim_dimensions);
-    for (auto s : sdata)
-      s[_size] = 0;
+    // Reset all data
+    resetParticle(_size);
     // Set type, give a global id
     Type(_size) = 0;
     id_map.insert(IPair(_size, next_global_id));
@@ -93,11 +90,8 @@ namespace GFlowSimulation {
     if (num<=0) return;
     if (_size+num > _capacity) resize_owned(num+_size-_capacity+32);
     for (int i=0; i<num; ++i) {
-      // Zero all data
-      for (auto v : vdata)
-        zeroVec(v[_size], sim_dimensions);
-      for (auto s : sdata)
-        s[_size] = 0;
+      // Reset all data
+      resetParticle(_size);
       // Set type, give a global id
       Type(_size) = 0;
       id_map.insert(IPair(_size, next_global_id));
@@ -110,9 +104,11 @@ namespace GFlowSimulation {
   void SimData::addParticle(const RealType *x, const RealType *v, const RealType sg, const RealType im, const int type) {
     // If not enough spots to add a new owned particle, create more
     if (_size>=_capacity) resize_owned(32);
+    // Reset all data
+    resetParticle(_size);
+    // Set data
     copyVec(x, X(_size), sim_dimensions);
     copyVec(v, V(_size), sim_dimensions);
-    zeroVec(F(_size), sim_dimensions);
     Sg(_size) = sg;
     Im(_size) = im;
     Type(_size) = type;
@@ -478,8 +474,12 @@ namespace GFlowSimulation {
       if (v) {
 	// Transfer data
 	copyVec(*v, *nv, _size*sim_dimensions);
-	delete [] v;
+	// Delete old
+	dealloc_array_2d(v);
       }
+      // Initialize the reset of the data
+      setVec(*nv, _size*sim_dimensions, new_capacity*sim_dimensions, static_cast<RealType>(0.));
+      // Set pointer
       v = nv;
     }
     // Allocate new scalar data arrays
@@ -489,12 +489,15 @@ namespace GFlowSimulation {
       if (s) {
 	// Transfer data
 	copyVec(s, ns, _size);
+	// Delete old 
 	delete [] s;
       }
+      // Initialize the rest of the data
+      setVec(ns, _size, new_capacity, static_cast<RealType>(0.));
+      // Set pointer
       s = ns;
     }
-    // Allodate new integer data
-    // Allocate new scalar data arrays
+    // Allocate new integer data
     for (auto &i : idata) {
       int *ni = new int[new_capacity];
       // Delete old array, set new
@@ -503,10 +506,19 @@ namespace GFlowSimulation {
 	copyVec(i, ni, _size);
 	delete [] i;
       }
+      // Initialize the rest of the data
+      setVec(ni, _size, new_capacity, -1); // Set to -1 so type will be -1
+      // Set pointer
       i = ni;
     }
     // Set new sizes
     _capacity += num;
+  }
+
+  void SimData::resetParticle(int id) {
+    for (auto v : vdata) zeroVec(v[id], sim_dimensions);
+    for (auto s : sdata) s[id] = 0.;
+    for (auto i : idata) i[id] = 0;
   }
 
   void SimData::move_particle(int src, int dst) {
