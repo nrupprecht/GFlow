@@ -9,6 +9,10 @@ namespace GFlowSimulation {
   /**
   *  \brief Creates visualizations from data.
   *
+  *  This class can create both images and videos. Data is passed in as a vector<float> (for images), or 
+  *  a vector<vector<float>> (for movies). Meta-data such as the physical bounds, data width, number of
+  *  particle types, etc. must be set from the outside if using the createVideo or create image functions,
+  *  but will be taken from the load object if using the load_and_create function.
   */
   class Visualization {
   public:
@@ -19,29 +23,32 @@ namespace GFlowSimulation {
 
     void setColorBankSize(int);
 
-    void setRadiusMultiple(double);
+    void setRadiusMultiple(float);
 
     void setColorOption(int);
 
     void setResolution(int);
 
+    void setMetaParameters(const class StoreData&);
+
     //! \brief Create a directory filled with BMP renderings of the system.
     //!
     //! This can be used to create a movie.
-    void createVideo2d(string, const vector<vector<double> >&, int, Bounds&, int) const;
+    void createVideo2d(string, const vector<vector<float> >&);
 
-    void createVideo3d(string, const vector<vector<double> >&, int, Bounds&, int) const;
+    void createVideo3d(string, const vector<vector<float> >&);
 
-    //! \brief Creates a single frame.
-    void createImage(string, const vector<double>&, int, Bounds&, int) const;
+    //! \brief Creates a single frame of 2D data.
+    void createImage(string, const vector<float>&);
 
-    void createImage3d(string, const vector<double>&, int, Bounds&, int) const;
+    //! \brief Creates a single frame of 3D data.
+    void createImage3d(string, const vector<float>&);
 
   private:
 
-    inline void findMaxVSqr(const vector<vector<double> >&, int) const;
+    inline void findMaxVSqr(const vector<vector<float> >&);
 
-    inline void findMaxDistance(const vector<vector<double> >&, int) const;
+    inline void findMaxDistance(const vector<vector<float> >&);
 
     inline void createColorBank(int);
 
@@ -51,59 +58,54 @@ namespace GFlowSimulation {
 
     inline void findPlaces();
 
-    template<typename T> inline T getNextNumber(std::ifstream& fin) const {
-      char c;
-      fin.get(c);
-      stringstream stream;
-      while (!fin.eof() && c!=',' && c!='\n') {
-        if (isdigit(c) || c=='.' || c=='-' || c=='e' || c=='E') stream << c;
-        else;
-        // Get the next character
-        fin.get(c);
-      }
-      // Convert to a type T and return
-      T val;
-      stream >> val;
-      return val;
-    }
+    //! \brief The dimensions of the image (it will be the same in x and y)
+    int resolution = 1536;
 
     //! \brief Where the position data starts.
-    mutable int pos_place = -1;
+    int pos_place = -1;
 
     //! \brief Where the velocity data starts.
-    mutable int vel_place = -1;
+    int vel_place = -1;
 
     //! \brief Where in the data for a particle is the radius.
-    mutable int sg_place = -1;
+    int sg_place = -1;
 
     //! \brief Where in the data for a particle is its type.
-    mutable int type_place = -1;
+    int type_place = -1;
 
     //! \brief Where in the data for a particle is the distance traveled.
-    mutable int distance_place = -1;
+    int distance_place = -1;
 
-    mutable int stripex_place = -1;
+    //! \brief Where in the data the stripe data is.
+    int stripex_place = -1;
 
-    //! \brief The dimensions of the image (it will be the same in x and y)
-    int resolution;
+    //! \brief The width of the data.
+    int dataWidth = 0;
+
+    //! \brief The number of particle types.
+    int ntypes = 0;
 
     //! \brief The dimensionality of vector data.
-    int dimensions;
+    int dimensions = 0;
+
+    //! \brief The physical bounds of the data.
+    Bounds bounds = Bounds(2);
 
     //! \brief Whether to wrap at the boundaries or not
-    bool do_wrap;
+    bool do_wrap = true;
 
-    mutable float maxVsqr;
+    float maxVsqr = -1.;
+    float maxDistance = -1.;
+    float radius_multiple = 1.;
 
-    mutable float maxDistance;
+    //! \brief How the particles should be colored.
+    unsigned int color_option = 0;
 
-    RGBApixel background;
-
-    mutable unsigned int color_option;
-
+    //! \brief A bank of colors.
     vector<RGBApixel> colorBank;
 
-    double radius_multiple = 1.;
+    //! \brief The background color.
+    RGBApixel background = RGB_Black;
 
     // The names of the data
     vector<string> vector_data;

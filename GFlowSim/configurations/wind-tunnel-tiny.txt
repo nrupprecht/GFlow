@@ -3,19 +3,24 @@ Dimensions: 2
 
 // Set the simulation bounds
 Bounds: {
-  : 0, 4 // X
-  : 0, 4 // Y
+  : -2.5, 5 // X
+  : -2, 2 // Y
 }
 
-Integrator: LangevinIntegrator {
-  Temperature: 50
+Integrator: VelocityVerlet
+
+Boundary: {
+  : Wrap
+  : Repulse
 }
 
 // Set the number of particle types
-NTypes: 2
+NTypes: 1
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
-Force-grid: Random
+Force-grid: {
+  : 0, 0, HardSphereGeneral
+}
 
 // Fill an area with particles
 Fill-area {
@@ -23,24 +28,31 @@ Fill-area {
   Bounds: Full
 
   Template: TypeA {
-    Radius: 0.05
+    Radius: Uniform {
+      Min: 0.04
+      Max: 0.06
+    }
     Mass: Density=1
     Type: 0
   }
 
-  Template: TypeB {
-    Radius: Uniform {
-      Min: 0.02
-      Max: 0.04
-    }
-    Mass: Density=1
-    Type: 1
-  }
-
-  Number: Phi=0.5 {
+  Number: Phi=0.93 {
     TypeA : 1
-    TypeB : 1
   }
 
   Relax: 0.25
+
+  //Velocity: 3, 0
 }
+
+Particle {
+  Position: 0, 0
+  Sigma: 0.5
+  Velocity: 0, 0
+  Mass: inf
+  Modifier: CV
+}
+
+Reconcile: Remove=0.5
+
+Modifier: WindTunnel=2

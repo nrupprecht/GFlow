@@ -7,10 +7,10 @@ namespace GFlowSimulation {
 
   struct vec2d {
     vec2d() : x(0), y(0) {};
-    vec2d(double v) : x(v), y(v) {};
-    vec2d(double a, double b) : x(a), y(b) {};
+    vec2d(float v) : x(v), y(v) {};
+    vec2d(float a, float b) : x(a), y(b) {};
 
-    double x, y;
+    float x, y;
   };
 
   inline string toStr(vec2d v) {
@@ -76,10 +76,10 @@ namespace GFlowSimulation {
     int dimx, dimy;
 
     // @brief Dimensions of a bin.
-    double dx, dy;
+    float dx, dy;
     //! @brief Width of the bounds.
-    double min[2];
-    double max[2];
+    float min[2];
+    float max[2];
 
     //! @brief The data.
     vector<T> data;
@@ -91,7 +91,7 @@ namespace GFlowSimulation {
   class FieldProperties {
   public:
 
-    void create_field(const vector<double>&, const Bounds&, int, int);
+    void create_field(const vector<float>&, const Bounds&, int, int);
 
     void load_and_create(string);
 
@@ -106,7 +106,7 @@ namespace GFlowSimulation {
 
   private:
 
-    inline double vel(int, int, const vector<double>&);
+    inline float vel(int, int, const vector<float>&);
 
     inline void setPlaces(const int);
 
@@ -130,9 +130,9 @@ namespace GFlowSimulation {
 
     // --- Fields
 
-    Field2d<double> phi_field;
-    Field2d<double> ave_v_field;
-    Field2d<double> var_v_field;
+    Field2d<float> phi_field;
+    Field2d<float> ave_v_field;
+    Field2d<float> var_v_field;
 
     Field2d<vec2d> ave_v_vector_field;
   };

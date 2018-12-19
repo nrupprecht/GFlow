@@ -6,22 +6,27 @@ namespace GFlowSimulation {
 
   void StripeX::pre_integrate() {
     entry = simData->request_scalar_data("StripeX");
+    // Entry must be positive. Otherwise, something is wrong.
+    if (entry<0) throw false;
     // Initialize all values
-    RealType *st = simData->ScalarData(entry);
-    for (int n=0; n<simData->size(); ++n)
-      st[n] = simData->X(n, 1);
+    RealType *st = simData->ScalarData(entry), *x = simData->X_arr();
+    // Set initial heights
+    for (int i=0; i<simData->size()*sim_dimensions; i+=sim_dimensions)
+      st[static_cast<int>(i/sim_dimensions)] = x[i+1];
   }
-
+  
   void StripeX::post_forces() {
     // Get the time
     RealType time = Base::gflow->getElapsedTime();
     if (time-lastUpdate<updateDelay || entry<0) return;
+
     // Set particles in the window
     RealType bound = simData->getBounds().min[0] + window;
-    RealType *st = simData->ScalarData(entry);
-    for (int n=0; n<simData->size(); ++n) {
-      if( simData->X(n, 0) < bound) st[n] = simData->X(n, 1);
-    }
+    RealType *st = simData->ScalarData(entry), *x = simData->X_arr();
+
+    // Set heights for particles in the window
+    for (int i=0; i<simData->size()*sim_dimensions; i+=sim_dimensions)
+      if (x[i] < bound) st[static_cast<int>(i/sim_dimensions)] = x[i+1];
 
     // Update time point
     lastUpdate = time;

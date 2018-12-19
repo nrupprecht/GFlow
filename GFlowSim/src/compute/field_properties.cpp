@@ -6,14 +6,14 @@
 
 namespace GFlowSimulation {
 
-  void FieldProperties::create_field(const vector<double>& data, const Bounds& bounds, int entries, int dat_width) {
+  void FieldProperties::create_field(const vector<float>& data, const Bounds& bounds, int entries, int dat_width) {
     // Set data width
     data_width = dat_width;
     // Assume 2 dimensions
     setPlaces(2);
 
     // Resolution
-    double res = 0.15;
+    float res = 0.15;
 
     int bx = static_cast<int>(bounds.wd(0)/res);
     int by = static_cast<int>(bounds.wd(1)/res);
@@ -38,7 +38,7 @@ namespace GFlowSimulation {
 
     // Stencil
     int sx = 1, sy = 1;
-    double ave_vx = 0, ave_vy = 0, vsqr = 0, var = 0;
+    float ave_vx = 0, ave_vy = 0, vsqr = 0, var = 0;
     int num = 0;
     for (int y=0; y<by; ++y) {
       for (int x=0; x<bx; ++x) {
@@ -48,8 +48,8 @@ namespace GFlowSimulation {
         // Calculate average velocity
         num = binning.at(x, y).size();
         for (const auto& id : binning.at(x, y)) {
-          double vx = vel(id, 0, data);
-          double vy = vel(id, 1, data);
+          float vx = vel(id, 0, data);
+          float vy = vel(id, 1, data);
           vsqr += (sqr(vx) + sqr(vy));
           ave_vx += vx; ave_vy += vy;
         }
@@ -114,7 +114,7 @@ namespace GFlowSimulation {
     return ave_v_vector_field.toCSV();
   }
 
-  inline double FieldProperties::vel(int id, int d, const vector<double>& data) {
+  inline float FieldProperties::vel(int id, int d, const vector<float>& data) {
     return data.at(data_width*id + vel_place + d);
   }
 

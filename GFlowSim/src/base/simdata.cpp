@@ -123,12 +123,14 @@ namespace GFlowSimulation {
   }
 
   void SimData::markForRemoval(const int id) {
-    if (Type(id)<0) return;
+    // If the particle has already been marked for removal, or is beyond the end of the array, return.
+    if (Type(id)<0 || id>=_size) return;
     // Mark for removal, clear some data
     remove_list.insert(id);
     Type(id) = -1;
     id_map.erase(Id(id));
     Id(id) = -1;
+    // This is probably unneccesary, but set V, F to zero.
     zeroVec(V(id), sim_dimensions);
     zeroVec(F(id), sim_dimensions);
   }
@@ -136,36 +138,30 @@ namespace GFlowSimulation {
   void SimData::doParticleRemoval() {
     // If there is nothing to remove, we're done
     if (remove_list.empty() || _number==0) return;
-    // Variables
-    int count = 0, count_back = _size, need_removal = 0;
-    // Set all types to -1, remove global ids
-    for (auto id : remove_list) {
-      if (Type(id)!=-1) ++need_removal;
-      Type(id) = -1;
-    }
     // Fill in all holes
-    int removed = 0;
+    int count_back = _size, removed = 0;
     for(auto id : remove_list) {
-      // We either need to start at (_size-1), or moved the particle that was at count_back. Either way, decrement.
-      --count_back;
-      // We have removed a particle
-      ++removed;
+      // The type of a particle that has been marked for removal is -1.
+      do {
+        --count_back;
+      } while (Type(count_back)<0);
 
-      // Find the next valid particle (counting back from the end) to fill for the particle we want to remove
-      // C++ 20 has a std::set contains() function.
-      while ( contains(remove_list, count_back) && count_back>id) --count_back;
-
-      // Move the particle to fill the particle we want to remove - moving the good particle to the hole erases the hole's 
-      // global id.
-      if (count_back>id) move_particle(count_back, id);
+      if (count_back>id) {
+        move_particle(count_back, id);
+        ++removed;
+      }
       else break;
     }
-    // Decrease number
-    _number -= need_removal;
-
-    // Clear list
+    // Decrease number.
+    _number -= remove_list.size();
+    // Array is compressed.
+    _size = _number;
+    // Clear the remove list
     remove_list.clear();
-    // We need to update
+
+    // We need to update. Removed could be zero if, e.g. only and all of the N particles were removed.
+    // Arguably, you still might want to remake. There could be extra entries in the verlet list that 
+    // it would be better to get rid of.
     if (removed>0) needs_remake = true;
   }
 

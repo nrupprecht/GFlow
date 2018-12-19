@@ -55,4 +55,4 @@ Particle {
 
 Reconcile: Remove=0.5
 
-Modifier: WindTunnel=3
+Modifier: WindTunnel=2.75

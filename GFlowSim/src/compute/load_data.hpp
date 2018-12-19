@@ -12,8 +12,8 @@ namespace GFlowSimulation {
 
     bool load(string);
 
-    const vector<vector<double> >& getData() const;
-    const vector<double>& getData(int) const;
+    const vector<vector<float> >& getData() const;
+    const vector<float>& getData(int) const;
     int getEntries(int) const;
     const Bounds& getBounds() const;
     int getDataWidth() const;
@@ -45,7 +45,7 @@ namespace GFlowSimulation {
     inline string getNextString(std::ifstream& fin) const;
 
     //! @brief The particle data.
-    vector<vector<double> > data;
+    vector<vector<float> > data;
     //! @brief The bounds data.
     Bounds bounds;
     //! @brief The data width.

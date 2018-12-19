@@ -2,14 +2,12 @@
 // Other files
 #include "../utility/vectormath.hpp"
 #include "../compute/load_data.hpp"
+#include "../compute/store_data.hpp"
 
 namespace GFlowSimulation {
 
-  Visualization::Visualization() : pos_place(0), vel_place(-1), sg_place(-1), type_place(-1), 
-    distance_place(-1), resolution(1.5*1024), do_wrap(true), background(RGB_Black), maxVsqr(-1), maxDistance(-1), color_option(0)
-  {
-    // Default size - 10
-    createColorBank(10);
+  Visualization::Visualization() {
+    createColorBank(10); // Default size - 10
   };
 
   bool Visualization::load_and_create(string loadName, string saveName) {
@@ -17,23 +15,25 @@ namespace GFlowSimulation {
     LoadData loader;
     if (!loader.load(loadName)) return false;
     // Extract data from the loader
-    int dataWidth = loader.getDataWidth(), ntypes = loader.getNTypes();
+    dataWidth = loader.getDataWidth();
+    ntypes = loader.getNTypes();
     dimensions = loader.getDimensions();
-    Bounds bounds = loader.getBounds();
+    bounds = loader.getBounds();
+    // Get entries
     vector_data = loader.get_vector_data();
     scalar_data = loader.get_scalar_data();
     integer_data = loader.get_integer_data();
     // Find data positions
     findPlaces();
     // Get the bulk of the data
-    const vector<vector<double> > &data = loader.getData();
+    const vector<vector<float> > &data = loader.getData();
 
     // If we are coloring by type, we need a large enough color bank
     if (color_option==0 && colorBank.size()<ntypes) setColorBankSize(ntypes);
 
     // Create a video from the data
-    if (dimensions==2) createVideo2d(saveName, data, dataWidth, bounds, dimensions);
-    if (dimensions>2)  createVideo3d(saveName, data, dataWidth, bounds, dimensions);
+    if (dimensions==2) createVideo2d(saveName, data);
+    if (dimensions>2)  createVideo3d(saveName, data);
 
     // Reset places so they will be gathered again next time
     resetPlaces();
@@ -49,7 +49,7 @@ namespace GFlowSimulation {
     }
   }
 
-  void Visualization::setRadiusMultiple(double r) {
+  void Visualization::setRadiusMultiple(float r) {
     radius_multiple = r;
   }
 
@@ -61,28 +61,40 @@ namespace GFlowSimulation {
     resolution = r;
   }
 
-  void Visualization::createVideo2d(string dirName, const vector<vector<double> >& data, int dataWidth, Bounds& bounds, int dimensions) const 
-  {
+  void Visualization::setMetaParameters(const StoreData& storeData) {
+    dataWidth = storeData.getDataWidth();
+    ntypes = storeData.getNTypes();
+    dimensions = storeData.getDimensions();
+    bounds = storeData.getBounds();
+    // Get entries
+    vector_data = storeData.get_vector_data();
+    scalar_data = storeData.get_scalar_data();
+    integer_data = storeData.get_integer_data();
+    // Find data positoins
+    findPlaces();
+  }
+
+  void Visualization::createVideo2d(string dirName, const vector<vector<float> >& data) {
     // Find the maximum velocity (if needed)
     if (color_option==2)
-      findMaxVSqr(data, dataWidth);
+      findMaxVSqr(data);
     else if (color_option==4)
-      findMaxDistance(data, dataWidth);
+      findMaxDistance(data);
     // Create frames
     for (int i=0; i<data.size(); ++i) {
       string fileName = dirName + "/frame" + toStr(i) + ".bmp";
-      createImage(fileName, data[i], dataWidth, bounds, dimensions);
+      createImage(fileName, data[i]);
     }
   }
 
-  void Visualization::createVideo3d(string dirName, const vector<vector<double> >& data, int dataWidth, Bounds& bounds, int dimensions) const {
+  void Visualization::createVideo3d(string dirName, const vector<vector<float> >& data) {
     for (int i=0; i<data.size(); ++i) {
       string fileName = dirName + "/frame" + toStr(i) + ".bmp";
-      createImage3d(fileName, data[i], dataWidth, bounds, dimensions);
+      createImage3d(fileName, data[i]);
     }
   }
 
-  void Visualization::createImage(string fileName, const vector<double>& data, int dataWidth, Bounds& bounds, int dimensions) const {
+  void Visualization::createImage(string fileName, const vector<float>& data) {
     // Get some data from the bounds
     float wx = bounds.wd(0);
     float wy = bounds.wd(1);
@@ -109,34 +121,52 @@ namespace GFlowSimulation {
     // Set background
     image.coverPalette(background);
 
+    // Check what data we have, make sure we can make the requested image
+    if (dataWidth==0 || pos_place<0) {
+      cout << "No position data detected. This is essential. Exiting.\n";
+      return;
+    }
+    else if ((color_option==2 || color_option==3) && vel_place<0) {
+      cout << "No velocity data detected. Switching to color option 0.\n";
+      color_option = 0;
+    }
+    else if (color_option==4 && distance_place<0) {
+      cout << "No distance data detected. Switching to color option 0.\n";
+      color_option = 0;
+    }
+    else if (color_option==5 && stripex_place<0) {
+      cout << "No stripe-x data detected. Switching to color option 0.\n";
+      color_option = 0;
+    }
+
     // Make sure we have the appropriate normalization factors.
     // This will generally only happen when we are making a single image.
+    if (color_option==0 && ntypes>colorBank.size()) {
+      createColorBank(ntypes);
+    }
     if (color_option==2 && maxVsqr<0) {
-      auto pack_data = vector<vector<double> >(1, data);
-      findMaxVSqr(pack_data, dataWidth);
+      auto pack_data = vector<vector<float> >(1, data);
+      findMaxVSqr(pack_data);
     }
     else if (color_option==4 && maxDistance<0) {
-      auto pack_data = vector<vector<double> >(1, data);
-      findMaxDistance(pack_data, dataWidth);
-    }
-    if (stripex_place<0) {
-      color_option = 0;
+      auto pack_data = vector<vector<float> >(1, data);
+      findMaxDistance(pack_data);
     }
     
     // A vector for holding data
-    double *pdata = new double[dataWidth];
+    float *pdata = new float[dataWidth];
     // Print all particles
     for (int i=0; i<data.size(); i+=dataWidth) {
       // Extract data for the i-th particle
       for (int j=0; j<dataWidth; ++j)
         pdata[j] = data[i+j];
       // Get individual entries
-      double *pos  = pdata;
-      double *vel  = vel_place>-1    ? &pdata[vel_place] : nullptr; // Point to start of velocity data
-      double sigma = sg_place>-1     ?  pdata[sg_place]  : 0; // Get sigma
-      int type       = type_place > -1 ? static_cast<int>(pdata[type_place]) : 0; // Get type
-      double distance = distance_place > -1 ? pdata[distance_place] : 0; // Get distance traveled
-      double stripex = stripex_place<0 ? 0 : pdata[stripex_place];
+      float *pos  = pos_place<0 ? nullptr : &pdata[pos_place];
+      float *vel  = vel_place<0 ? nullptr : &pdata[vel_place]; // Point to start of velocity data
+      float sigma = sg_place<0  ? 0 : pdata[sg_place]; // Get sigma
+      int type    = type_place<0 ? 0 : static_cast<int>(pdata[type_place]); // Get type
+      float distance = distance_place<0 ? 0 : pdata[distance_place]; // Get distance traveled
+      float stripex = stripex_place<0 ? 0 : pdata[stripex_place];
       // If type<0, continue
       if (type<0) continue;
       // Find the center of the particle
@@ -177,10 +207,23 @@ namespace GFlowSimulation {
           }
           case 5: { // Color by xstripe
             RealType width = bounds.wd(1);
-            const int nstripes = 20;
+            const int nstripes = 40;
             int s = (stripex - bott)/wy * nstripes;
-            if (s%2) color = RGB_Green;
-            else color = RGB_White;
+            int c = s%4;
+            switch (c) {
+              case 0:
+                color = RGB_Green;
+                break;
+              case 1:
+                color = RGB_Blue;
+                break;
+              case 2:
+                color = RGB_White;
+                break;
+              case 3:
+                color = RGB_Red;
+                break;
+            }
           }
         }
       }
@@ -215,18 +258,20 @@ namespace GFlowSimulation {
     palette.writeToFile(fileName);
   }
 
-  void Visualization::createImage3d(string fileName, const vector<double>& data, int dataWidth, Bounds& bounds, int dimensions) const {
+  void Visualization::createImage3d(string fileName, const vector<float>& data) {
     // @todo Implement this.
     throw false; 
   }
 
-  inline void Visualization::findMaxVSqr(const vector<vector<double> >& dataVector, int dataWidth) const {
+  inline void Visualization::findMaxVSqr(const vector<vector<float> >& dataVector) {
+    // Check that we have velocity data
+    if (vel_place<0) return;
     // Reset
     maxVsqr = 0;
     // Look for max vsqr
     for (int iter=0; iter<dataVector.size(); ++iter) {
       if (dataVector[iter].empty()) continue;
-      const double *data = &dataVector[iter][0];
+      const float *data = &dataVector[iter][0];
       int number = dataVector[iter].size()/dataWidth;
       for (int i=0; i<number; ++i) {
         float V = sqr(data[i*dataWidth + vel_place]);
@@ -237,13 +282,15 @@ namespace GFlowSimulation {
     maxVsqr = sqrt(maxVsqr);
   }
 
-  inline void Visualization::findMaxDistance(const vector<vector<double> >& dataVector, int dataWidth) const {
+  inline void Visualization::findMaxDistance(const vector<vector<float> >& dataVector) {
+    // Check that we have distance data
+    if (distance_place<0) return;
     // Reset
     maxDistance = 0;
     // Look for max distance - start after first iteration.
     for (int iter=0; iter<dataVector.size(); ++iter) {
       if (dataVector[iter].empty()) continue;
-      const double *data = &dataVector[iter][0];
+      const float *data = &dataVector[iter][0];
       int number = dataVector[iter].size()/dataWidth;
       for (int i=0; i<number; ++i) {
         float D = data[i*dataWidth + distance_place];

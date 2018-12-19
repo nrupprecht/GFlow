@@ -16,7 +16,7 @@ namespace GFlowSimulation {
     setBounds(bounds.min[0], bounds.max[0], bounds.min[1], bounds.max[1]);
   }
 
-  void Binning2d::setBounds(double minx, double maxx, double miny, double maxy) {
+  void Binning2d::setBounds(float minx, float maxx, float miny, float maxy) {
     // Set bounds
     min[0] = minx;
     min[1] = miny;
@@ -27,7 +27,7 @@ namespace GFlowSimulation {
     dy = (maxy-miny)/dimy;
   }
 
-  void Binning2d::bin_data(const vector<double>& data, int entries, int data_width) {
+  void Binning2d::bin_data(const vector<float>& data, int entries, int data_width) {
     // Make sure bounds are good.
     if (min[0]>=max[0] || min[1]>=max[1]) return;
     // Bin data

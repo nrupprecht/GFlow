@@ -37,4 +37,8 @@ namespace GFlowSimulation {
     return forceMaster;
   }
 
+  int Base::getSimDimensions() const {
+    return sim_dimensions;
+  }
+
 }

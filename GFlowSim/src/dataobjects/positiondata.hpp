@@ -2,6 +2,7 @@
 #define __POSITION_DATA_HPP__GFLOW__
 
 #include "../base/dataobject.hpp"
+#include "../compute/store_data.hpp"
 
 namespace GFlowSimulation {
 
@@ -16,9 +17,6 @@ namespace GFlowSimulation {
     //! \brief Constructor.
     PositionData(GFlow*);
 
-    //! \brief Destructor.
-    ~PositionData();
-
     //! \brief Store the initial positions of the particles.
     virtual void pre_integrate() override;
 
@@ -30,36 +28,25 @@ namespace GFlowSimulation {
     virtual bool writeToFile(string, bool=true) override;
 
   private:
-    //! \brief Store the needed data.
-    inline void store_data(vector<RealType>&);
 
     //! \brief  The time steps of when the data was gathered
-    vector<RealType> timeStamps;
+    vector<float> timeStamps;
 
     //! \brief Contains all the relevant data for a time step.
     //!
     //! Each time step contains a length ( [number of particles] * [dataWidth] ) array 
     //! for the positions of the particles in [DIMENSIONS] dimensions, and any other data we want to store.
-    vector<vector<RealType> > positions; 
+    vector<vector<float> > positions; 
 
     //! \brief Initial positions of particle.
-    vector<RealType> initial_data;
+    vector<float> initial_data;
 
-    //! \brief For holding vector data
-    RealType *vdata;
-
-    //! \brief The amount of data we collect per particle.
-    int dataWidth;
-
-    // NEW WAY OF DOING THIS
+    // Data names and places
     vector<string> vector_data_entries;
-    vector<int> vector_data_positions;
-
     vector<string> scalar_data_entries;
-    vector<int> scalar_data_positions;
-
     vector<string> integer_data_entries;
-    vector<int> integer_data_positions;
+
+    StoreData storeData;
   };
 
 }

@@ -39,6 +39,8 @@ namespace GFlowSimulation {
     class DataMaster* getDataMaster();
     class ForceMaster* getForceMaster();
 
+    int getSimDimensions() const;
+
   protected:
     class GFlow        *gflow;
     class SimData      *simData;

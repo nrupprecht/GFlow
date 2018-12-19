@@ -49,9 +49,9 @@ namespace GFlowSimulation {
       // Get the length of data to expect
       int data_length = getNextNumber<int>(fin);
       // Get this iter's data
-      vector<double> pdata;
+      vector<float> pdata;
       for (int i=0; i<data_length; ++i) {
-        RealType datum = getNextNumber<double>(fin);
+        RealType datum = getNextNumber<float>(fin);
         pdata.push_back(datum);
       }
       // Store this iter's data vector
@@ -64,7 +64,7 @@ namespace GFlowSimulation {
     return true;
   }
 
-  const vector<vector<double> >& LoadData::getData() const {
+  const vector<vector<float> >& LoadData::getData() const {
     return data;
   }
 
@@ -72,7 +72,7 @@ namespace GFlowSimulation {
     return data.at(i).size()/dataWidth;
   }
 
-  const vector<double>& LoadData::getData(int i) const {
+  const vector<float>& LoadData::getData(int i) const {
     return data.at(i);
   } 
 

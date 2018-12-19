@@ -12,21 +12,21 @@ namespace GFlowSimulation {
     ~Binning2d();
 
     void setBounds(const Bounds&);
-    void setBounds(double, double, double, double);
+    void setBounds(float, float, float, float);
 
-    void bin_data(const vector<double>&, int, int);
-
+    void bin_data(const vector<float>&, int, int);
+    
     const vector<int>& at(int, int);
 
   private:
     //! @brief Number of bins in each dimension.
     int dimx, dimy;
     // @brief Dimensions of a bin.
-    double dx, dy;
+    float dx, dy;
     
     //! @brief Width of the bounds.
-    double min[2];
-    double max[2];
+    float min[2];
+    float max[2];
 
     //! @brief Bins that hold the ids of data that falls into the bins
     vector<int> *bins;

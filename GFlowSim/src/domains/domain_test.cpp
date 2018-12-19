@@ -166,6 +166,9 @@ namespace GFlowSimulation {
           ++q;
           for (; q!=c.particle_ids.end(); ++q) {
             int id2 = *q;
+            // If the other particle is a large particle, it will take care of this interaction
+            if (sg[id2]>max_small_sigma) continue;
+            // Get distance between particles
             subtractVec(x[id1], x[id2], dX, sim_dimensions);
             RealType r = magnitudeVec(dX, sim_dimensions);
             RealType overlap = sg[id1] + sg[id2] - r;
@@ -187,7 +190,7 @@ namespace GFlowSimulation {
             }
         }
         // If sigma is > min_small_sigma, we have to look through more cells
-        else {          
+        else {
           // Calculate sweep "radius"
           RealType search_width = 2*sg[id1]+skin_depth;
           int prod = 1;
@@ -224,10 +227,12 @@ namespace GFlowSimulation {
               }
             }
           }
+          
         }
       }
     }
 
+    // Remove particles
     Base::simData->doParticleRemoval();
 
     // Clean up
