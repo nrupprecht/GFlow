@@ -51,8 +51,6 @@ namespace GFlowSimulation {
     border_type_up = nullptr;
     border_type_down = nullptr;
     products = nullptr;
-    // Base class destructor
-    DomainBase::~DomainBase();
   }
 
   void DomainTest::initialize() {

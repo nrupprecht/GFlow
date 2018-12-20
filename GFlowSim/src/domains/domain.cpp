@@ -58,8 +58,6 @@ namespace GFlowSimulation {
     delete [] halo_down;
     delete [] ghost_up;
     delete [] ghost_down;
-    // Base class destructor
-    DomainBase::~DomainBase();
   }
 
   void Domain::initialize() {
