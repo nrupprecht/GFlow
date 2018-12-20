@@ -16,15 +16,16 @@
 *  <https://stackoverflow.com/questions/11016078/is-it-possible-to-create-a-function-dynamically-during-runtime-in-c>
 *  <http://burnttoys.blogspot.com/2011/04/how-to-allocate-executable-memory-on.html>
 *
+*  Using XCode: <https://hiltmon.com/blog/2015/08/01/simple-c-plus-plus-from-makefiles-to-xcode-builds/>
+*
 */
 
 using namespace GFlowSimulation;
 
 int main(int argc, char **argv) {
-  // --- MPI
-  int rank(0), numProc(1);
-
+  int rank(0);
   #if USE_MPI == 1
+  int numProc(1);
   #if _CLANG_ == 1
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);

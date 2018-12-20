@@ -293,6 +293,7 @@ const int simd_valid = 0xffffffff;
 
 // --- Operators
 #if SIMD_TYPE!=SIMD_NONE
+
   inline simd_float operator+(const simd_float a, const simd_float b) {
     return simd_add(a, b);
   }
@@ -309,8 +310,6 @@ const int simd_valid = 0xffffffff;
     return simd_div(a, b);
   }
 #endif
-
-
 
 
 #endif // __SIMD_TYPES_HPP__GFLOW__

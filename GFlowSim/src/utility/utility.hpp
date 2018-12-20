@@ -172,7 +172,7 @@ namespace GFlowSimulation {
   static std::normal_distribution<RealType> global_normal_dist(0., 1.);
 
   inline void seedNormalDistribution(unsigned seed=0) {
-    if(seed==0) seed = std::chrono::system_clock::now().time_since_epoch().count();
+    if(seed==0) seed = static_cast<unsigned>(std::chrono::system_clock::now().time_since_epoch().count());
     global_generator = std::mt19937(seed);
   }
 

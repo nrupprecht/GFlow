@@ -19,8 +19,11 @@ COMPILER = 2
 else ifeq ($(COMPILER), 0)
 CC = icpc
 FLAGS += -D _INTEL_=1
-else
+else ifeq ($(COMPILER), 1)
 CC = g++
+FLAGS += -D _CLANG_=1
+else
+CC = clang++
 FLAGS += -D _CLANG_=1
 endif 
 

@@ -12,6 +12,8 @@ namespace GFlowSimulation {
     }
   }
 
+  //! @param m Bounds minima.
+  //! @param M Bounds maxima.
   Bounds::Bounds(const RealType *m, const RealType *M, const int dim) : dimensions(dim) {
     if (dim<=0) throw BadDimension();
     min = new RealType[dim];

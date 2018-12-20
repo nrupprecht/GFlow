@@ -32,7 +32,7 @@ namespace GFlowSimulation {
     //! @param id2 Local id of the second particle.
     //! @param displacement The displacement from particle 1 to particle 2.
     //! @param distance The distance between the particles.
-    virtual void compute(const int, const int, RealType*, const RealType) const = 0;
+    virtual void compute(const int id1, const int id2, RealType *displacement, const RealType distance) const = 0;
 
     // --- Accessors
 

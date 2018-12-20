@@ -17,9 +17,6 @@ namespace GFlowSimulation {
     Bounds(const int);
 
     //! @brief Full setting constructor.
-    //!
-    //! @param m Bounds minima.
-    //! @param M Bounds maxima.
     Bounds(const RealType*, const RealType*, const int);
 
     //! @brief Copy constructor
