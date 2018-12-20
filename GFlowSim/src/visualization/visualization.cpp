@@ -161,12 +161,12 @@ namespace GFlowSimulation {
       for (int j=0; j<dataWidth; ++j)
         pdata[j] = data[i+j];
       // Get individual entries
-      float *pos  = pos_place<0 ? nullptr : &pdata[pos_place];
-      float *vel  = vel_place<0 ? nullptr : &pdata[vel_place]; // Point to start of velocity data
-      float sigma = sg_place<0  ? 0 : pdata[sg_place]; // Get sigma
-      int type    = type_place<0 ? 0 : static_cast<int>(pdata[type_place]); // Get type
-      float distance = distance_place<0 ? 0 : pdata[distance_place]; // Get distance traveled
-      float stripex = stripex_place<0 ? 0 : pdata[stripex_place];
+      float *pos     = pos_place<0      ? nullptr : &pdata[pos_place];
+      float *vel     = vel_place<0      ? nullptr : &pdata[vel_place]; // Point to start of velocity data
+      float sigma    = sg_place<0       ? 0       : pdata[sg_place]; // Get sigma
+      int   type     = type_place<0     ? 0       : static_cast<int>(pdata[type_place]); // Get type
+      float distance = distance_place<0 ? 0       : pdata[distance_place]; // Get distance traveled
+      float stripex  = stripex_place<0  ? 0       : pdata[stripex_place];
       // If type<0, continue
       if (type<0) continue;
       // Find the center of the particle
@@ -207,7 +207,7 @@ namespace GFlowSimulation {
           }
           case 5: { // Color by xstripe
             RealType width = bounds.wd(1);
-            const int nstripes = 40;
+            const int nstripes = 80;
             int s = (stripex - bott)/wy * nstripes;
             int c = s%4;
             switch (c) {

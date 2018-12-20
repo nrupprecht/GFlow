@@ -38,7 +38,8 @@ namespace GFlowSimulation {
     #if SIMD_TYPE==SIMD_NONE
     // Do serially
     for (int i=0; i<sim_dimensions*simData->size(); ++i) {
-      RealType mint = sg[i/sim_dimensions] / fabs(f[i]*im[i]); // Valgrind says there is an invalid read here
+      int id = i/sim_dimensions;
+      RealType mint = sg[id] / fabs(f[i]*im[id]); // Valgrind says there is an invalid read here
       if (mint<minT) minT = mint;
     }
     #else 
@@ -64,7 +65,8 @@ namespace GFlowSimulation {
     }
     // Do the last part serially
     for (; i<sim_dimensions*simData->size(); ++i) {
-      RealType mint = sg[i/sim_dimensions] / fabs(f[i]*im[i]);
+      int id = i/sim_dimensions;
+      RealType mint = sg[id] / fabs(f[i]*im[id]);
       if (mint<minT) minT = mint;
     }
     #endif
