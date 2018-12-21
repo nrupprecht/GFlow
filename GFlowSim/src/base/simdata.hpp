@@ -232,6 +232,7 @@ namespace GFlowSimulation {
     std::map<string, int> scalar_data_map;
     std::map<string, int> integer_data_map;
 
+    //! \brief A pair containing a string and an int.
     typedef pair<string, int> SIPair;
 
     // -*-*-*- Ids -*-*-*-

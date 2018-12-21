@@ -122,9 +122,6 @@ namespace GFlowSimulation {
     // If a parameter was passed in, it is the requested time
     if (rt>0) requested_time = rt;
 
-    // Only run if time has been requested
-    if (requested_time<=0) return;
-
     // Record this request
     total_requested_time += requested_time;
 
@@ -370,6 +367,10 @@ namespace GFlowSimulation {
 
   void GFlow::setAttraction(RealType g) {
     center_attraction = g;
+  }
+
+  void GFlow::setRunning(bool r) {
+    running = r;
   }
 
   void GFlow::requestTime(RealType t) {

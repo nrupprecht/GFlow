@@ -51,7 +51,7 @@ namespace GFlowSimulation {
     bounds = gflow->getBounds();
 
     // Sort the particles by position
-    //sortParticles();
+    sortParticles();
   }
 
   //! @brief Reserve space for particles, extending the lengths of all arrays to the requested size.
@@ -75,7 +75,10 @@ namespace GFlowSimulation {
   }
 
   void SimData::addParticle() {
-    if (_size+1 > _capacity) resize_owned(32);
+    if (_size+1 > _capacity) {
+      int new_capacity = max(32, static_cast<int>(0.25*_capacity));
+      resize_owned(new_capacity);
+    }
     // Reset all data
     resetParticle(_size);
     // Set type, give a global id
@@ -86,9 +89,13 @@ namespace GFlowSimulation {
     ++_size;
   }
 
+  //! \param num The number of particle slots to add.
   void SimData::addParticle(int num) {
     if (num<=0) return;
-    if (_size+num > _capacity) resize_owned(num+_size-_capacity+32);
+    if (_size+num > _capacity) {
+      int new_capacity = max(32, static_cast<int>(0.25*(num+_size-_capacity)));
+      resize_owned(new_capacity);
+    }
     for (int i=0; i<num; ++i) {
       // Reset all data
       resetParticle(_size);
@@ -101,9 +108,17 @@ namespace GFlowSimulation {
     }
   }
 
+  //! \param x The position of the particle.
+  //! \param v The velocity of the particle.
+  //! \param sg The cutoff radius of the particle.
+  //! \param im The inverse mass of the particle.
+  //! \param type The type of the particle.
   void SimData::addParticle(const RealType *x, const RealType *v, const RealType sg, const RealType im, const int type) {
     // If not enough spots to add a new owned particle, create more
-    if (_size>=_capacity) resize_owned(32);
+    if (_size+1 > _capacity) {
+      int new_capacity = max(32, static_cast<int>(0.25*_size));
+      resize_owned(new_capacity);
+    }
     // Reset all data
     resetParticle(_size);
     // Set data
@@ -472,10 +487,10 @@ namespace GFlowSimulation {
       RealType **nv = alloc_array_2d<RealType>(new_capacity, sim_dimensions);
       // Delete old array, set new
       if (v) {
-	// Transfer data
-	copyVec(*v, *nv, _size*sim_dimensions);
-	// Delete old
-	dealloc_array_2d(v);
+  	    // Transfer data
+  	    copyVec(*v, *nv, _size*sim_dimensions);
+        // Delete old
+        dealloc_array_2d(v);
       }
       // Initialize the reset of the data
       setVec(*nv, _size*sim_dimensions, new_capacity*sim_dimensions, static_cast<RealType>(0.));
@@ -487,10 +502,10 @@ namespace GFlowSimulation {
       RealType *ns = new RealType[new_capacity];
       // Delete old array, set new
       if (s) {
-	// Transfer data
-	copyVec(s, ns, _size);
-	// Delete old 
-	delete [] s;
+      	// Transfer data
+      	copyVec(s, ns, _size);
+      	// Delete old 
+      	delete [] s;
       }
       // Initialize the rest of the data
       setVec(ns, _size, new_capacity, static_cast<RealType>(0.));
@@ -502,9 +517,9 @@ namespace GFlowSimulation {
       int *ni = new int[new_capacity];
       // Delete old array, set new
       if (i) {
-	// Transfer data
-	copyVec(i, ni, _size);
-	delete [] i;
+      	// Transfer data
+      	copyVec(i, ni, _size);
+      	delete [] i;
       }
       // Initialize the rest of the data
       setVec(ni, _size, new_capacity, -1); // Set to -1 so type will be -1

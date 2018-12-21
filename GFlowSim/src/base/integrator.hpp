@@ -10,10 +10,10 @@ namespace GFlowSimulation {
     // Constructor
     Integrator(GFlow *);
 
-    //! @brief Set up before the simulation starts running.
+    //! \brief Set up before the simulation starts running.
     virtual void pre_integrate() override;
 
-    //! @brief Calculate dt.
+    //! \brief Calculate dt.
     virtual void pre_step() override;
     
     // --- Accessors
@@ -32,33 +32,38 @@ namespace GFlowSimulation {
 
     void setMinDT(RealType);
 
+    //! \brief Returns the maximum velocity.
+    RealType get_max_velocity();
+
+    //! \brief Returns the maximum acceleration.
+    RealType get_max_acceleration();
+
     // GFlow is a friend class
     friend class GFlow;
 
   protected:
-    //! @brief The current time step.
+    //! \brief The current time step.
     RealType dt;
-    //! @brief Whether we should adjust dt or not.
+    //! \brief Whether we should adjust dt or not.
     bool adjust_dt;
-    //! @brief Minimum acceptable timestep.
+    //! \brief Minimum acceptable timestep.
     RealType min_dt;
-    //! @brief Maximum acceptable timestep.
+    //! \brief Maximum acceptable timestep.
     RealType max_dt;
 
-    //! @brief Target motion factor.
+    //! \brief Target motion factor.
     //!
     //! How many timesteps we want it to take for a particle to traverse its own radius.
     int target_steps;
 
-    //! @brief How many steps between checking velocities.
+    //! \brief How many steps between checking velocities.
     int step_delay;
 
-    //! @brief Count steps between checking velocities.
+    //! \brief Count steps between checking velocities.
     int step_count;
 
-    //! @brief A characteristic length to use in the calculation of time step size.
+    //! \brief A characteristic length to use in the calculation of time step size.
     RealType characteristic_length;
-
   };
 
 }

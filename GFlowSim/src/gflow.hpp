@@ -76,7 +76,7 @@ namespace GFlowSimulation {
     //! \brief Get the current time step.
     RealType getDT() const;
 
-    //! \brief Get the number of iterations the simulation had run for.
+    //! \brief Get the iteration.
     int getIter() const;
 
     //! \brief Get the number of forces
@@ -133,6 +133,9 @@ namespace GFlowSimulation {
 
     //! \brief Set the attraction acceleration.
     void setAttraction(RealType);
+
+    //! \brief Set the running flag.
+    void setRunning(bool);
 
     //! \brief Set the amount of time we should run for.
     void requestTime(RealType);

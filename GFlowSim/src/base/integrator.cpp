@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
 
-  Integrator::Integrator(GFlow *gflow) : Base(gflow), dt(0.0001), adjust_dt(true), min_dt(1e-6), max_dt(0.002), target_steps(20), step_delay(10), step_count(step_delay+1) {};
+  Integrator::Integrator(GFlow *gflow) : Base(gflow), dt(0.0001), adjust_dt(true), min_dt(1e-6), max_dt(0.002), target_steps(20), step_delay(10), step_count(0) {};
 
   void Integrator::pre_integrate() {
     // Set step count so a check is triggered on the first step
@@ -18,11 +18,12 @@ namespace GFlowSimulation {
       characteristic_length += simData->Sg(n);
     }
     characteristic_length /= static_cast<RealType>(simData->number());
+
+    // Set dt to the minimum size
+    if (adjust_dt) dt = min_dt;
   }
 
   void Integrator::pre_step() {
-    // Call Base's pre_step (I don't think it does anything right now, but best to be safe)
-    Base::pre_step();
     // If we are not adjusting dt, we are done.
     if (!adjust_dt) return;
     // Check if enough time has gone by
@@ -30,45 +31,20 @@ namespace GFlowSimulation {
       ++step_count;
       return;
     }
-    // Check the velocity components of all the particles
-    RealType *v = simData->V_arr(), *sg = simData->Sg();
-    const int total = sim_dimensions*simData->size();
 
-    // Find maxV
-    RealType maxV = 0;
-    #if SIMD_TYPE==SIMD_NONE
-    // Do serially
-    for (int i=0; i<total; ++i)
-      if (maxV<fabs(v[i])) maxV = fabs(v[i]);
-    #else 
-    // Do as much as we can in parallel
-    simd_float MaxV = simd_set1(0.);
-    int i=0;
-    for (; i<total-simd_data_size; i += simd_data_size) {
-      simd_float V = simd_abs(simd_load(&v[i]));
-      simd_float mask = simd_less_than(MaxV, V);
-      simd_update_masked(MaxV, V, mask);
-    }
-    // Consolidate MaxV
-    for (int d=0; d<simd_data_size; ++d) {
-      RealType mv = simd_get(d, MaxV);
-      if (maxV<mv) maxV = mv;
-    }
-    // Do the last part serially
-    for (; i<total; ++i)
-      if (maxV<fabs(v[i])) maxV = fabs(v[i]);
-    #endif
-
-    // The minimum time any object takes to cover a characteristic length
-    // @todo There should be a systematic finding of the number 0.05.
-    RealType minT = characteristic_length/(maxV*sqrt(sim_dimensions));
-
-    // Set the timestep
-    dt = minT * 1./static_cast<RealType>(target_steps);
-    if (dt>max_dt) dt = max_dt;
-    else if (dt<min_dt) dt = min_dt;
     // Reset step count
     step_count = 0;
+    // Get the maximum velocity
+    RealType maxV = get_max_velocity();
+    // No information. Maybe this is the start of a run.
+    if (maxV==0) return;
+    // The minimum time any object takes to cover a characteristic length
+    RealType minT = characteristic_length/(maxV*sqrt(sim_dimensions));
+    // Set the timestep
+    dt = minT * 1./static_cast<RealType>(target_steps);
+
+    if (dt>max_dt) dt = max_dt;
+    else if (dt<min_dt) dt = min_dt;
   }
 
   RealType Integrator::getTimeStep() {
@@ -97,6 +73,87 @@ namespace GFlowSimulation {
 
   void Integrator::setMinDT(RealType t) {
     if (t>0) min_dt = t;
+  }
+
+  RealType Integrator::get_max_velocity() {
+    // Check the velocity components of all the particles
+    RealType *v = simData->V_arr();
+    // Make sure the pointers are valid
+    if (v==nullptr) return 0.;
+    // Find maxV
+    RealType maxV = 0;
+    const int total = sim_dimensions*simData->size();
+
+    #if SIMD_TYPE==SIMD_NONE
+    // Do serially
+    for (int i=0; i<total; ++i)
+      if (maxV<fabs(v[i])) maxV = fabs(v[i]);
+    #else 
+    // Do as much as we can in parallel
+    simd_float MaxV = simd_set1(0.);
+    int i=0;
+    for (; i<total-simd_data_size; i += simd_data_size) {
+      simd_float V = simd_abs(simd_load(&v[i]));
+      simd_float mask = simd_less_than(MaxV, V);
+      simd_update_masked(MaxV, V, mask);
+    }
+    // Consolidate MaxV
+    for (int d=0; d<simd_data_size; ++d) {
+      RealType mv = simd_get(d, MaxV);
+      if (maxV<mv) maxV = mv;
+    }
+    // Do the last part serially
+    for (; i<total; ++i)
+      if (maxV<fabs(v[i])) maxV = fabs(v[i]);
+    #endif
+
+    // Return the max velocity
+    return maxV;
+  }
+
+  RealType Integrator::get_max_acceleration() {
+    // Check the acceleration components of all the particles
+    RealType *f = simData->F_arr(), *im = simData->Im();
+    // Make sure the pointers are valid
+    if (f==nullptr || im==nullptr) return 0.;
+    // Reset the maximum acceleration of any particle.
+    RealType maxA = 0.;
+    const int total = sim_dimensions*simData->size();
+
+    // Find minT
+    #if SIMD_TYPE==SIMD_NONE
+    // Do serially
+    for (int i=0; i<total; ++i) {
+      int id = i/sim_dimensions;
+      RealType a = fabs(f[i]*im[id]);
+      if (a>maxA) maxA = a;
+    }
+    #else 
+    // Do as much as we can in parallel
+    simd_float MaxA = simd_set1(0.);
+    int i=0;
+    for (; i<sim_dimensions*simData->size()-simd_data_size; i += simd_data_size) {
+      simd_float F = simd_abs(simd_load(&f[i]));
+      //simd_float Im = simd_load_constant(im, i, sim_dimensions);
+      simd_float Im = simd_load_constant<2>(im, i);
+      simd_float A = F*Im;
+      simd_float mask = simd_less_than(MaxA, MaxA);
+      simd_update_masked(MaxA, A, mask);
+    }
+    // Consolidate MaxA
+    for (int d=0; d<simd_data_size; ++d) {
+      RealType a = simd_get(d, MaxA);
+      if (maxA<a) maxA = a;
+    }
+    // Do the last part serially
+    for (; i<total; ++i) {
+      RealType a = fabs(f[i]*im[i/sim_dimensions]);
+      if (maxA<a) maxA = a;
+    }
+    #endif
+
+    // Return the max acceleration
+    return maxA;
   }
 
 }

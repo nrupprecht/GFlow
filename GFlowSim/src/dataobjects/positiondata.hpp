@@ -27,6 +27,10 @@ namespace GFlowSimulation {
     // Returns true for success.
     virtual bool writeToFile(string, bool=true) override;
 
+    void add_vector_data_entry(string);
+    void add_scalar_data_entry(string);
+    void add_integer_data_entry(string);
+
   private:
 
     //! \brief  The time steps of when the data was gathered

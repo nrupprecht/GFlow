@@ -5,82 +5,38 @@
 
 namespace GFlowSimulation {
 
-  OverdampedIntegrator::OverdampedIntegrator(GFlow *gflow) : Integrator(gflow), dampingConstant(10*DEFAULT_DAMPING_CONSTANT) {
-    max_dt = 0.001;
+  OverdampedIntegrator::OverdampedIntegrator(GFlow *gflow) : Integrator(gflow), dampingConstant(DEFAULT_DAMPING_CONSTANT) {
+    // Set dt
+    dt = min_dt;
   };
 
-  void OverdampedIntegrator::pre_step() {
-    // Call Base's pre_step
-    Base::pre_step();
+  void OverdampedIntegrator::pre_integrate() {
+    // Call this before
+    Integrator::pre_integrate();
+    // Set dt
+    dt = min_dt;
+  }
 
+  void OverdampedIntegrator::pre_step() {
+    // This overrides the default integrator prestep. The default integrator prestep adjusts the timestep so that
+    // the fastest particle can only traverse its own radius in at least a set number of steps.
+    // We need a condition on maximum force (actually acceleration), not maximum velocity, since dx/dt ~ F.
     if (!adjust_dt || simData->number()==0) return;
     // Check if enough time has gone by
     if (step_count < step_delay) {
       ++step_count;
       return;
     }
-
-    // This overrides the default integrator prestep. The default integrator prestep adjusts the timestep so that
-    // the fastest particle can only traverse its own radius in at least a set number of steps.
-    // We need a condition on maximum force (actually acceleration), not maximum velocity, since dx/dt ~ F.
-    
-    // Check the acceleration components of all the particles
-    RealType *f = simData->F_arr(), *im = simData->Im(), *sg = simData->Sg();
-    // Make sure the pointers are valid
-    if (f==nullptr || im==nullptr || sg==nullptr) return;
-    // The minimum time a particle would take to traverse its own radius
-    //!  @todo A more nuanced thing to check would be how long it takes the fastest
-    //!  particle to traverse the smallest radius, or the smallest radius "near" it.
-    //!  The smallest radius in each subdivision could be found by binning.
-    RealType minT = 1.; // Starting value
-
-    // Find minT
-    #if SIMD_TYPE==SIMD_NONE
-    // Do serially
-    for (int i=0; i<sim_dimensions*simData->size(); ++i) {
-      int id = i/sim_dimensions;
-      RealType mint = sg[id] / fabs(f[i]*im[id]); // Valgrind says there is an invalid read here
-      if (mint<minT) minT = mint;
-    }
-    #else 
-    // Do as much as we can in parallel
-    simd_float MinT = simd_set1(1.);
-    int i=0;
-    for (; i<sim_dimensions*simData->size()-simd_data_size; i += simd_data_size) {
-      simd_float F = simd_abs(simd_load(&f[i]));
-     
-      //simd_float Im = simd_load_constant(im, i, sim_dimensions);
-      //simd_float Sg = simd_load_constant(sg, i, sim_dimensions);
-      simd_float Im = simd_load_constant<2>(im, i);
-      simd_float Sg = simd_load_constant<2>(sg, i);
-
-      simd_float Mint = Sg / (F * Im);
-      simd_float mask = simd_less_than(Mint, MinT);
-      simd_update_masked(MinT, Mint, mask);
-    }
-    // Consolidate MinT
-    for (int d=0; d<simd_data_size; ++d) {
-      RealType mint = simd_get(d, MinT);
-      if (mint<minT) minT = mint;
-    }
-    // Do the last part serially
-    for (; i<sim_dimensions*simData->size(); ++i) {
-      int id = i/sim_dimensions;
-      RealType mint = sg[id] / fabs(f[i]*im[id]);
-      if (mint<minT) minT = mint;
-    }
-    #endif
-
-    // Scale by a dimensional factor, since we just looked at every component of velocity separately
-    minT /= sqrt(sim_dimensions);
-
-    // Set the timestep
-    dt = minT * 1./(static_cast<RealType>(target_steps) * dampingConstant);
-    if (dt>max_dt) dt = max_dt;
-    else if (dt<min_dt) dt = min_dt;
-
     // Reset step count
     step_count = 0;
+    // Get the maximum acceleration of any particle
+    maximum_acceleration = get_max_acceleration();
+    // No data
+    if (maximum_acceleration==0) return;
+    // Set the timestep
+    dt = characteristic_length/(dampingConstant*maximum_acceleration*sqrt(sim_dimensions)*static_cast<RealType>(target_steps));
+    if (dt>max_dt) dt = max_dt;
+    else if (dt<min_dt) dt = min_dt;
   }
 
   void OverdampedIntegrator::post_forces() {

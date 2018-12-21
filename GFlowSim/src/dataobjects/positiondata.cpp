@@ -14,7 +14,6 @@ namespace GFlowSimulation {
     scalar_data_entries.push_back("Sg");
     scalar_data_entries.push_back("StripeX");
     integer_data_entries.push_back("Type");
-    integer_data_entries.push_back("ID"); 
   };
 
   void PositionData::pre_integrate() {
@@ -52,6 +51,18 @@ namespace GFlowSimulation {
     mkdir(dirName.c_str(), 0777);
 
     return storeData.write(dirName+"data.csv", positions);
+  }
+
+  void PositionData::add_vector_data_entry(string entry) {
+    vector_data_entries.push_back(entry);
+  }
+
+  void PositionData::add_scalar_data_entry(string entry) {
+    scalar_data_entries.push_back(entry);
+  }
+
+  void PositionData::add_integer_data_entry(string entry) {
+    integer_data_entries.push_back(entry);
   }
 
 }

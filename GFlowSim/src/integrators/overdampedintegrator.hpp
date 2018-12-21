@@ -6,7 +6,7 @@
 namespace GFlowSimulation {
 
   /**
-  *  @brief Overdamped integrator
+  *  \brief Overdamped integrator
   *
   *  An integrator where the change in x (velocity) is proportional to the 
   *  applied force, with a constant of proportionality dampingConstant. This
@@ -23,21 +23,27 @@ namespace GFlowSimulation {
   */
   class OverdampedIntegrator : public Integrator {
   public:
-    //! @brief Constructor.
+    //! \brief Constructor.
     OverdampedIntegrator(GFlow*);
 
-    //! @brief Override the integrator's pre-step, since there are no velocities when using the overdamped integrator.
+    //! \brief Make sure appropriate values are set.
+    virtual void pre_integrate() override;
+
+    //! \brief Override the integrator's pre-step, since there are no velocities when using the overdamped integrator.
     virtual void pre_step() override;
 
-    //! @brief The post forces routine. The integrator only needs to act here.
+    //! \brief The post forces routine. The integrator only needs to act here.
     virtual void post_forces() override;
 
-    //! @brief Set damping constant.
+    //! \brief Set damping constant.
     void setDamping(RealType);
 
-  private:
-    //! @brief Damping constant.
+  protected:
+    //! \brief Damping constant.
     RealType dampingConstant;
+
+    //! \brief The maximum acceleration
+    RealType maximum_acceleration = 0;
   };
 
 }

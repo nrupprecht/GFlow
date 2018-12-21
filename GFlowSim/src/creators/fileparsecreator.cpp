@@ -584,6 +584,8 @@ namespace GFlowSimulation {
         probabilities.push_back(pr.second);
       }
 
+      // @todo Make a guess as to how much space is needed, so simdata doesn't have to keep allocating data.
+
       // A discrete distribution we use to choose which particle template to use next
       std::discrete_distribution<int> choice(probabilities.begin(), probabilities.end());
       int i(0);
@@ -631,7 +633,6 @@ namespace GFlowSimulation {
     if (relax_length<0) relax_length = 0.1; // Default relax length is 0.1
     if (relax_length>0) build_message += "From Fill Area: Relaxing for " + toStr(relax_length) + ".\n";
     hs_relax(&filler, relax_length); // To make sure particles don't stop on top of one another
-    // relax(&filler, 0.15);
 
     // Select a velocity
     auto select_velocity = [&] (RealType *V, RealType *X, RealType sigma, RealType im, int type) -> void {

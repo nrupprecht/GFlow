@@ -3,6 +3,7 @@
 
 #include "integrators/velocityverlet.hpp"
 #include "integrators/overdampedintegrator.hpp"
+#include "integrators/relaxintegrator.hpp"
 #include "integrators/overdampedlangevin.hpp"
 #include "integrators/langevinintegrator.hpp"
 
