@@ -5,16 +5,16 @@
 
 namespace GFlowSimulation {
 
-  RelaxIntegrator::RelaxIntegrator(GFlow *gflow) : OverdampedIntegrator(gflow), allowable_acceleration(1.), min_iterations(100) {
+  RelaxIntegrator::RelaxIntegrator(GFlow *gflow) : OverdampedIntegrator(gflow), allowable_acceleration(0.1), min_iterations(10) {
     // Set the max dt
-    max_dt = 0.0002;
+    max_dt = sqrt(characteristic_length*characteristic_length/DEFAULT_HARD_SPHERE_REPULSION)/target_steps;
     if (adjust_dt) dt = min_dt;
   };
 
   void RelaxIntegrator::pre_integrate() {
     OverdampedIntegrator::pre_integrate();
     // Set the max dt
-    max_dt = 0.0002;
+    max_dt = sqrt(characteristic_length*characteristic_length/DEFAULT_HARD_SPHERE_REPULSION)/target_steps;
     if (adjust_dt) dt = min_dt;
   }
 

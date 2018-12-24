@@ -5,12 +5,12 @@
 
 namespace GFlowSimulation {
 
-  Integrator::Integrator(GFlow *gflow) : Base(gflow), dt(0.0001), adjust_dt(true), min_dt(1e-6), max_dt(0.002), target_steps(20), step_delay(10), step_count(0) {};
+  Integrator::Integrator(GFlow *gflow) : Base(gflow), dt(0.0001), adjust_dt(true), min_dt(1e-6), max_dt(0.002), 
+    target_steps(20), step_delay(2), step_count(0), use_v(true), use_a(false) {};
 
   void Integrator::pre_integrate() {
     // Set step count so a check is triggered on the first step
     step_count = step_delay;
-
     // Compute average radius
     characteristic_length = 0;
     for (int n=0; n<simData->size(); ++n) {
@@ -18,9 +18,10 @@ namespace GFlowSimulation {
       characteristic_length += simData->Sg(n);
     }
     characteristic_length /= static_cast<RealType>(simData->number());
-
     // Set dt to the minimum size
     if (adjust_dt) dt = min_dt;
+
+    // cout << "Proposed max dt: " << sqrt(characteristic_length*characteristic_length/DEFAULT_HARD_SPHERE_REPULSION) << endl;
   }
 
   void Integrator::pre_step() {
@@ -35,16 +36,30 @@ namespace GFlowSimulation {
     // Reset step count
     step_count = 0;
     // Get the maximum velocity
-    RealType maxV = get_max_velocity();
+    RealType maxV = -1., maxA = -1., dt_v = 1., dt_a = 1.;
+    if (use_v) {
+      maxV = get_max_velocity();
+      dt_v = characteristic_length*1./(maxV*static_cast<RealType>(target_steps));
+    }
+    if (use_a) {
+      maxA = get_max_acceleration();
+      dt_a = 10*sqrt(characteristic_length)*1./(maxA*static_cast<RealType>(target_steps));
+    }
     // No information. Maybe this is the start of a run.
-    if (maxV==0) return;
-    // The minimum time any object takes to cover a characteristic length
-    RealType minT = characteristic_length/(maxV*sqrt(sim_dimensions));
+    if (maxV==0 && maxA==0) return;
+    if (isnan(maxV) || isnan(maxA)) throw NanValue("Integrator pre-step detected NAN value.");
     // Set the timestep
-    dt = minT * 1./static_cast<RealType>(target_steps);
+    RealType dt_c = min(dt_v, dt_a); // Candidate dt
+    dt = dt_c<dt ? dt_c : 0.9*dt + 0.1*dt_c;
+
+    //cout << gflow->getElapsedTime() << ", V=" << maxV << ", A=" << maxA << "\t";
 
     if (dt>max_dt) dt = max_dt;
     else if (dt<min_dt) dt = min_dt;
+
+    if (maxV>10) throw false;
+
+    //cout << dt << " :: " << dt_v << ", " << dt_a << endl;
   }
 
   RealType Integrator::getTimeStep() {
@@ -53,6 +68,14 @@ namespace GFlowSimulation {
 
   void Integrator::setDT(RealType t) {
     dt = t;
+  }
+
+  void Integrator::setUseV(bool u) {
+    use_v = u;
+  }
+
+  void Integrator::setUseA(bool u) {
+    use_a = u;
   }
 
   void Integrator::setAdjustDT(bool d) {
@@ -108,7 +131,7 @@ namespace GFlowSimulation {
     #endif
 
     // Return the max velocity
-    return maxV;
+    return maxV*sqrt(sim_dimensions);
   }
 
   RealType Integrator::get_max_acceleration() {
@@ -153,7 +176,7 @@ namespace GFlowSimulation {
     #endif
 
     // Return the max acceleration
-    return maxA;
+    return maxA*sqrt(sim_dimensions);
   }
 
 }

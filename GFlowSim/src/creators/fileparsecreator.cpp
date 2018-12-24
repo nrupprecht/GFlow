@@ -378,11 +378,12 @@ namespace GFlowSimulation {
 
   inline Integrator* FileParseCreator::choose_integrator(HeadNode *head) const {
     string token = head->params[0]->partA;
-    if      (token=="VelocityVerlet")       return new VelocityVerlet(gflow);
-    else if (token=="OverdampedIntegrator") return new OverdampedIntegrator(gflow);
-    else if (token=="OverdampedLangevin")   return new OverdampedLangevinIntegrator(gflow);
+    Integrator *integrator = nullptr;
+    if      (token=="VelocityVerlet")       integrator = new VelocityVerlet(gflow);
+    else if (token=="OverdampedIntegrator") integrator = new OverdampedIntegrator(gflow);
+    else if (token=="OverdampedLangevin")   integrator = new OverdampedLangevinIntegrator(gflow);
     else if (token=="LangevinIntegrator") {
-      LangevinIntegrator *integrator = new LangevinIntegrator(gflow);
+      LangevinIntegrator *langevin = new LangevinIntegrator(gflow);
       if (!head->subHeads.empty()) {
         // Gather options
         std::map<string, HeadNode*> options;
@@ -391,17 +392,78 @@ namespace GFlowSimulation {
         // Check for temperature
         auto it = options.find("Temperature");
         if (it!=options.end()) {
-          integrator->setTemperature(convert<RealType>(it->second->params[0]->partA));
+          langevin->setTemperature(convert<RealType>(it->second->params[0]->partA));
         }
         // Check for viscosity
         it = options.find("Viscosity");
         if (it!=options.end()) {
-          integrator->setViscosity(convert<RealType>(it->second->params[0]->partA));
+          langevin->setViscosity(convert<RealType>(it->second->params[0]->partA));
         }
       }
-      return integrator;
+      integrator = langevin;
     }
     else throw UnexpectedOption();
+    // Look for options
+    ParseHelper parser(head);
+    parser.addValidSubheading("Delay");
+    parser.addValidSubheading("MaxDT");
+    parser.addValidSubheading("MinDT");
+    parser.addValidSubheading("Adjust");
+    parser.addValidSubheading("UseV");
+    parser.addValidSubheading("UseA");
+    parser.sortOptions();
+    HeadNode *hd = nullptr;
+
+    parser.getHeading_Optional("Delay");
+    hd = parser.first();
+    if (hd) {
+      int steps = 0;
+      parser.extract_first_parameter(steps, hd);
+      integrator->setStepDelay(steps);
+    }
+
+    parser.getHeading_Optional("MaxDT");
+    hd = parser.first();
+    if (hd) {
+      RealType max_dt;
+      parser.extract_first_parameter(max_dt, hd);
+      if (max_dt>0) integrator->setMaxDT(max_dt);
+    }
+
+    parser.getHeading_Optional("MinDT");
+    hd = parser.first();
+    if (hd) {
+      RealType min_dt;
+      parser.extract_first_parameter(min_dt, hd); 
+      if (min_dt>0) integrator->setMinDT(min_dt);
+    }
+
+    parser.getHeading_Optional("Adjust");
+    hd = parser.first();
+    if (hd) {
+      int adj;
+      parser.extract_first_parameter(adj, hd); 
+      if (adj>=0) integrator->setAdjustDT(adj);
+    }
+
+    parser.getHeading_Optional("UseV");
+    hd = parser.first();
+    if (hd) {
+      int u;
+      parser.extract_first_parameter(u, hd); 
+      if (u>=0) integrator->setUseV(u);
+    }
+
+    parser.getHeading_Optional("UseA");
+    hd = parser.first();
+    if (hd) {
+      int u;
+      parser.extract_first_parameter(u, hd); 
+      if (u>=0) integrator->setUseA(u);
+    }
+
+    // Return
+    return integrator;
   }
 
   inline Interaction* FileParseCreator::choose_interaction(HeadNode *head) const {
@@ -409,10 +471,6 @@ namespace GFlowSimulation {
     if      (token=="HardSphere")   return new HardSphere(gflow);
     if      (token=="HardSphereGeneral") return new HardSphereGeneral(gflow);
     else if (token=="LennardJones") return new LennardJones(gflow);
-    /*
-    else if (token=="Coulomb")      return new CoulumbForce(gflow);
-    else if (token=="Consumption")  return new Consumption(gflow);
-    */
     else if (token=="None")         return nullptr;
     else throw UnexpectedOption();
   }

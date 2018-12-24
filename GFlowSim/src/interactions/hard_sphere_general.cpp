@@ -3,7 +3,7 @@
 namespace GFlowSimulation {
 
   HardSphereGeneral::HardSphereGeneral(GFlow *gflow) : Interaction(gflow), repulsion(DEFAULT_HARD_SPHERE_REPULSION), 
-    dissipation(DEFAULT_HARD_SPHERE_DISSIPATION) 
+    dissipation(DEFAULT_HARD_SPHERE_DISSIPATION)
   {
     buffer = new RealType[sim_dimensions];
   };

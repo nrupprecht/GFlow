@@ -33,8 +33,8 @@ namespace GFlowSimulation {
     maximum_acceleration = get_max_acceleration();
     // No data
     if (maximum_acceleration==0) return;
-    // Set the timestep
-    dt = characteristic_length/(dampingConstant*maximum_acceleration*sqrt(sim_dimensions)*static_cast<RealType>(target_steps));
+    // Set the timestep - acceleration is proportional to velocity (w/ constant dampingConstant)
+    dt = characteristic_length/(dampingConstant*maximum_acceleration*static_cast<RealType>(target_steps));
     if (dt>max_dt) dt = max_dt;
     else if (dt<min_dt) dt = min_dt;
   }

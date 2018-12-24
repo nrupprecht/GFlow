@@ -185,6 +185,9 @@ namespace GFlowSimulation {
     //! @brief Particle templates usable anywhere in the configuration file.
     std::map<string, ParticleTemplate> global_templates;
 
+    //! @brief Variables.
+    std::map<string, string> variables;
+
     //! @brief The message the parser writes as it parses the configuration file
     mutable string parse_message, build_message;
 
