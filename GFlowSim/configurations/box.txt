@@ -9,9 +9,7 @@ Bounds: {
 
 Integrator: VelocityVerlet
 
-// SetExternal: $phi=0.5
-
-// Boundary: Repulse
+Boundary: Wrap
 
 // Set the number of particle types
 NTypes: 1

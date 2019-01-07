@@ -108,6 +108,7 @@ namespace GFlowSimulation {
     // Create a parse helper
     ParseHelper parser(head);
     // Declare valid options
+    parser.addValidSubheading("Var");
     parser.addValidSubheading("Dimensions");
     parser.addValidSubheading("Seed");
     parser.addValidSubheading("Bounds");
@@ -117,7 +118,7 @@ namespace GFlowSimulation {
     parser.addValidSubheading("Integrator");
     parser.addValidSubheading(Types_Token);
     parser.addValidSubheading(Interactions_Token);
-    parser.addValidSubheading("Tempate");
+    parser.addValidSubheading("Template");
     parser.addValidSubheading("Fill-area");
     parser.addValidSubheading("Particle");
     parser.addValidSubheading("Creation");
@@ -137,6 +138,20 @@ namespace GFlowSimulation {
     parser.sortOptions();
     // Pointer for head nodes
     HeadNode *hd = nullptr;
+
+    // --- Look for variables
+    parser.getHeading_Optional("Var");
+    for (auto v=parser.begin(); v!=parser.end(); ++v) {
+      string name, value;
+      name  = v.first_param();
+      value = v.first_arg<string>();
+      // Check for command line argument
+      parserPtr->get(name, value);
+      // Add to variables
+      variables.insert(pair<string, string>(name, value));
+    }
+    // Set the variables
+    parser.set_variables( variables);
 
     // --- Look for dimensions
     parser.getHeading_Optional("Dimensions");
@@ -163,6 +178,7 @@ namespace GFlowSimulation {
     parser.getHeading_Necessary("Bounds");
     hd = parser.first();
     ParseHelper subParser(hd);
+    subParser.set_variables(variables);
     simBounds = Bounds(subParser.size());
     int d=0;
     for (int d=0; d<sim_dimensions; ++d) {
@@ -184,7 +200,7 @@ namespace GFlowSimulation {
       }
       else {
         ParseHelper subParser(hd);
-        subParser.sortOptions();
+        subParser.set_variables(variables);
         // Record template name, number
         int d=0;
         for (auto m=subParser.begin() ; m!=subParser.end(); ++m, ++d) {
@@ -558,7 +574,7 @@ namespace GFlowSimulation {
     else {
       // Loop through subheads of hd - these are the templates
       ParseHelper subParser(hd);
-      subParser.sortOptions();
+      subParser.set_variables(variables);
       // Record template name, number
       for (auto m=subParser.begin(); m!=subParser.end(); ++m) {
         particle_template_numbers.insert(pair<string, double>(m.heading(), m.convert_param<double>()));

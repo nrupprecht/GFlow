@@ -3,11 +3,16 @@ Dimensions: 2
 
 // Set the simulation bounds
 Bounds: {
-  : -6, 20 // X
-  : -6, 6 // Y
+  : -6, 18 // X
+  : -6, 6  // Y
 }
 
-Integrator: VelocityVerlet
+Integrator: VelocityVerlet {
+  //Delay: 2
+  //UseA: 1
+  UseV: 1
+  // MaxDT: 0.0002
+}
 
 Boundary: {
   : Wrap
@@ -29,14 +34,14 @@ Fill-area {
 
   Template: TypeA {
     Radius: Uniform {
-      Min: 0.01
-      Max: 0.012
+      Min: 0.02 // Min tried: 0.0125
+      Max: 0.03  // Min upper: 0.015
     }
     Mass: Density=1
     Type: 0
   }
 
-  Number: Phi=0.93 {
+  Number: Phi=0.91 {
     TypeA : 1
   }
 
@@ -55,6 +60,4 @@ Particle {
 
 Reconcile: Remove=0.5
 
-MaxDT: 0.0002
-
-Modifier: WindTunnel=0.5
+Modifier: WindTunnel=2

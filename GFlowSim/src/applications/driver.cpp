@@ -248,8 +248,9 @@ int main(int argc, char **argv) {
     cout << "Running with " << gflow->getNumParticles() << " particles.\n";
   }
   if (gflow) {
-    try {
+    //try {
       gflow->run();
+    /*
     }
     catch (Exception *exc) {
       if (!quiet && rank==0)
@@ -265,6 +266,7 @@ int main(int argc, char **argv) {
     }
     // More detailed exception handling
     // @todo Exception handling.
+    */
   }
   else {
     if (!quiet && rank==0) cout << "GFlow pointer was null. Exiting.\n";

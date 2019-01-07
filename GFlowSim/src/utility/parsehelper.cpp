@@ -71,12 +71,22 @@ namespace GFlowSimulation {
     return container[id];
   }
 
+  void ParseHelper::set_variables(const std::map<string, string>& vars) {
+    variables = vars;
+  }
+
+  string ParseHelper::get_variable_value(const string& var) {
+    auto it = variables.find(var);
+    if (it!=variables.end()) return it->second;
+    else return "";
+  }
+
   ParseHelper::iterator ParseHelper::begin() {
-    return iterator(container, true);
+    return iterator(container, true, this);
   }
 
   ParseHelper::iterator ParseHelper::end() {
-    return iterator(container, false);
+    return iterator(container, false, this);
   }
 
   int ParseHelper::size() {

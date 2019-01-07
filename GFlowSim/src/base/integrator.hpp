@@ -22,18 +22,25 @@ namespace GFlowSimulation {
     // --- Mutators
     void setDT(RealType);
 
+    //! \brief Set the use velocity to compute time step flag.
     void setUseV(bool);
 
+    //! \brief Set the use acceleration to compute time step flag.
     void setUseA(bool);
 
+    //! \brief Set the adjust time step flag.
     void setAdjustDT(bool);
 
+    //! \brief Set the target number of steps.
     void setTargetSteps(int);
 
+    //! \brief Set the delay between updating time step.
     void setStepDelay(int);
 
+    //! \brief Set the maxiumum allowed time step.
     void setMaxDT(RealType);
 
+    //! \brief Set the minimum allowed time step.
     void setMinDT(RealType);
 
     //! \brief Returns the maximum velocity.

@@ -20,14 +20,14 @@ namespace GFlowSimulation {
   struct FillBounds {
     FillBounds(int dim) : bnd_dimensions(dim) {};
 
-    //! @brief Returns the volume of the bounds
+    //! \brief Returns the volume of the bounds
     virtual double vol()=0;
-    //! @brief Return a random position within the bounds
+    //! \brief Return a random position within the bounds
     virtual void pick_position(RealType*)=0;
-    //! @brief Get rectangular bounds that enclose the bounds
+    //! \brief Get rectangular bounds that enclose the bounds
     virtual Bounds getBounds()=0;
 
-    //! @brief Number of dimensions the bounds takes up.
+    //! \brief Number of dimensions the bounds takes up.
     //!
     //! We include this so we can make lower dimensional fill areas - walls, lines, etc
     const int bnd_dimensions;
@@ -119,7 +119,7 @@ namespace GFlowSimulation {
   };
 
   /**
-  *  @brief A creator that creates a simulation from a file.
+  *  \brief A creator that creates a simulation from a file.
   *
   *  This creator parses the contents of a file and creates a simulation from the
   *  options specified in that file.
@@ -162,7 +162,7 @@ namespace GFlowSimulation {
 
     inline void createParticle(HeadNode*) const;
 
-    //! @brief Get all the headers with a certain heading, put into the supplied vector.
+    //! \brief Get all the headers with a certain heading, put into the supplied vector.
     inline void getAllMatches(string, vector<HeadNode*>&, std::multimap<string, HeadNode*>&) const;
 
     inline void getParticleTemplate(HeadNode*, std::map<string, ParticleTemplate>&) const;
@@ -173,22 +173,22 @@ namespace GFlowSimulation {
 
     inline string copyFile() const;
 
-    //! @brief The name of the file to load from
+    //! \brief The name of the file to load from
     string configFile;
 
-    //! @brief The GFlow object the creator is creating.
+    //! \brief The GFlow object the creator is creating.
     GFlow *gflow;
 
-    //! @brief The number of particle types in the simulation
+    //! \brief The number of particle types in the simulation
     int NTypes;
 
-    //! @brief Particle templates usable anywhere in the configuration file.
+    //! \brief Particle templates usable anywhere in the configuration file.
     std::map<string, ParticleTemplate> global_templates;
 
-    //! @brief Variables.
+    //! \brief Variables.
     std::map<string, string> variables;
 
-    //! @brief The message the parser writes as it parses the configuration file
+    //! \brief The message the parser writes as it parses the configuration file
     mutable string parse_message, build_message;
 
     // Normal distribution

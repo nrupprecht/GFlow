@@ -57,7 +57,7 @@ namespace GFlowSimulation {
     if (dt>max_dt) dt = max_dt;
     else if (dt<min_dt) dt = min_dt;
 
-    if (maxV>10) throw false;
+    //if (maxV>10) throw false;
 
     //cout << dt << " :: " << dt_v << ", " << dt_a << endl;
   }

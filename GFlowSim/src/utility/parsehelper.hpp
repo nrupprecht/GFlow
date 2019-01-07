@@ -6,7 +6,7 @@
 
 namespace GFlowSimulation {
 
-  //! @brief Exception class.
+  //! \brief Exception class.
   struct UnexpectedOption {};
 
   struct BadStructure {
@@ -19,15 +19,15 @@ namespace GFlowSimulation {
   public:
     ParseHelper(HeadNode*);
 
-    //! @brief Add a valid subheading to the list of valid subheadings.
+    //! \brief Add a valid subheading to the list of valid subheadings.
     void addValidSubheading(string);
 
-    //! @brief Checks to make sure the only subheadings of head are valid subheadings.
+    //! \brief Checks to make sure the only subheadings of head are valid subheadings.
     bool checkValidSubHeads();
 
     vector<string> checkForUncheckedSubHeads();
 
-    //! @brief Sort subheads, set up iterator to iterate through all subheads.
+    //! \brief Sort subheads, set up iterator to iterate through all subheads.
     void sortOptions();
 
     template<typename T> bool extract_parameter(HeadNode *h, const string& name, T &variable) {
@@ -39,57 +39,57 @@ namespace GFlowSimulation {
       auto it = parameters.find(name);
       if (it!=parameters.end()) {
         if (it->second=="") variable = T(0);
-        else variable = convert<T>(it->second);
+        else variable = value<T>(it->second);
         return true;
       }
       else return false;
     }
 
-    //! @brief Extract the j-th parameter (including casting) from the i-th head node in container, if one exists.
+    //! \brief Extract the j-th parameter (including casting) from the i-th head node in container, if one exists.
     //!
     //! Returns true if at least one head node exists, and node has parameters.
     template<typename T> bool extract_parameter(T &variable, int i, int j) {
       if (container.size()<=i || container[i]->params.size()<=j) return false;
-      variable = convert<T>(container[i]->params[j]->partA);
+      variable = value<T>(container[i]->params[j]->partA);
       return true;
     }
 
     template<typename T> bool extract_first_parameter(T &variable, HeadNode *h) {
       if (h->params.empty()) return false;
-      variable = convert<T>(h->params[0]->partA);
+      variable = value<T>(h->params[0]->partA);
       return true;
     }
 
-    //! @brief Extract the first parameter (including casting) from the first head node in container, if one exists.
+    //! \brief Extract the first parameter (including casting) from the first head node in container, if one exists.
     //!
     //! Returns true if at least one head node exists, and node has parameters.
     template<typename T> bool extract_first_parameter(T &variable) {
       if (container.empty() || container[0]->params.empty()) return false;
-      variable = convert<T>(container[0]->params[0]->partA);
+      variable = value<T>(container[0]->params[0]->partA);
       return true;
     }
 
-    //! @brief Extract the first parameter (including casting) from the i-th head node in container, if one exists.
+    //! \brief Extract the first parameter (including casting) from the i-th head node in container, if one exists.
     //!
     //! Returns true if at least one head node exists, and node has parameters.
     template<typename T> bool extract_first_parameter(T &variable, int i) {
       if (container.size()<=i || container[i]->params.empty()) return false;
-      variable = convert<T>(container[i]->params[0]->partA);
+      variable = value<T>(container[i]->params[0]->partA);
       return true;
     }
 
-    //! @brief Fill a vector from the parameters of a HeadNode.
+    //! \brief Fill a vector from the parameters of a HeadNode.
     //!
     //! The bool "exact" should be true when we want an exception to be thrown if the vector size, 
     //! v_size, and the number of parameters do no match.
     template<typename T> void set_vector_argument(T *vec, HeadNode *h, int v_size, bool exact=true) {
       if (exact && h->params.size()!=v_size) throw BadStructure("Number of parameters does not match vector size.");
       for (int d=0; d<min(v_size, static_cast<int>(h->params.size())); ++d)
-        vec[d] = convert<T>(h->params[d]->partA);
+        vec[d] = value<T>(h->params[d]->partA);
     }
 
     template<typename T> void set_scalar_argument(T &scalar, HeadNode *h) {
-      scalar = convert<T>(h->params[0]->partA);
+      scalar = value<T>(h->params[0]->partA);
     }
 
     // --- Accessors
@@ -104,88 +104,104 @@ namespace GFlowSimulation {
 
     HeadNode* at(int);
 
+    void set_variables(const std::map<string, string>&);
+
+    string get_variable_value(const string&);
+
+    template<typename T> T value(string v) {
+      string var = get_variable_value(v);
+      if (var=="") var = v;
+      return convert<T>(var);
+    }
+
     struct iterator {
-      //! @brief Copy constructor.
+      //! \brief Copy constructor.
       iterator(const iterator& iter) : it(iter.it) {};
-      //! @brief Assignment operator.
+      //! \brief Assignment operator.
       iterator& operator=(iterator iter)  {
         it = iter.it;
         return *this;
       }
-      //! @brief Bool equals operator.
+      //! \brief Bool equals operator.
       bool operator==(iterator iter) {
         return (it == iter.it);
       }
-      //! @brief Bool not equals operator.
+      //! \brief Bool not equals operator.
       bool operator!=(iterator iter) {
         return (it != iter.it);
       }
-      //! @brief Pre-incrementation operator.
+      //! \brief Pre-incrementation operator.
       iterator& operator++() {
         ++it;
         return *this;
       }
-      //! @brief Dereference operator.
+      //! \brief Dereference operator.
       HeadNode* operator*() {
         return *it;
       }
-      //! @brief Get the heading
+      //! \brief Get the heading
       string heading() {
         return (*it)->heading;
       }
-      //! @brief Get the first parameter string.
+      //! \brief Get the first parameter string.
       string first_param() {
         return (*it)->params.empty() ? "" : (*it)->params[0]->partA;
       }
-      //! @brief Convert the first part of the first parameter (partA) and return it.
+      //! \brief Convert the first part of the first parameter (partA) and return it.
       template<typename T> T convert_param() {
-        return (*it)->params.empty() ? T(0) : convert<T>((*it)->params[0]->partA);
+        return (*it)->params.empty() ? T(0) : parent->value<T>((*it)->params[0]->partA);
       }
-      //! @brief Get the argument (partB) of the first parameter.
+      //! \brief Get the argument (partB) of the first parameter.
       template<typename T> T first_arg() {
-        return ((*it)->params.empty() || (*it)->params[0]->partB=="") ? T(0) : convert<T>((*it)->params[0]->partB);
+        return ((*it)->params.empty() || (*it)->params[0]->partB=="") ? T(0) : parent->value<T>((*it)->params[0]->partB);
       }
     private:
-      //! @brief Private constructors.
-      iterator(vector<HeadNode*>& container, bool begin) {
+      //! \brief Private constructors.
+      iterator(vector<HeadNode*>& container, bool begin, ParseHelper *par) : parent(par) {
         it = (begin ? container.begin() : container.end());
       }
 
-      //! @brief The iterator class is basically a wrapper for a vector iterator.
+      //! \brief The iterator class is basically a wrapper for a vector iterator.
       vector<HeadNode*>::iterator it;
+
+      //! \brief The parent parse helper of the iterator.
+      ParseHelper *parent;
+
       // ParseHelper is a friend class.
       friend class ParseHelper;
     };
 
-    //! @brief Begin function. For iteration.
+    //! \brief Begin function. For iteration.
     iterator begin();
 
-    //! @brief End function. For iteration.
+    //! \brief End function. For iteration.
     iterator end();
 
-    //! @brief Return the size of container.
+    //! \brief Return the size of container.
     int size();
 
   private:
 
-    //! @brief The head node that this parser helper is focused on.
+    //! \brief The head node that this parser helper is focused on.
     HeadNode *head;
 
-    //! @brief A vector that can be filled with what subheadings we expect.
+    //! \brief A vector that can be filled with what subheadings we expect.
     //!
     //! This can then be compared to what subheadings actually exist to see if there
     //! are any invalid headings.
     std::set<string> validSubHeads;
 
-    //! @brief A list of invalid subheadings that have been found.
+    //! \brief A list of invalid subheadings that have been found.
     std::set<string> invalidSubHeads;
 
-    //! @brief A map of headings to head nodes.
+    //! \brief A map of headings to head nodes.
     std::multimap<string, HeadNode*> options;
 
-    //! @brief An internal container used for searching for options
+    //! \brief An internal container used for searching for options
     vector<HeadNode*> container;
 
+    //! \brief Variables.
+    std::map<string, string> variables;
   };
 
 }
