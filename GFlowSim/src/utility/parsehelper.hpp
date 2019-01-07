@@ -44,7 +44,7 @@ namespace GFlowSimulation {
       }
       else return false;
     }
-
+    
     //! \brief Extract the j-th parameter (including casting) from the i-th head node in container, if one exists.
     //!
     //! Returns true if at least one head node exists, and node has parameters.
@@ -75,6 +75,12 @@ namespace GFlowSimulation {
     template<typename T> bool extract_first_parameter(T &variable, int i) {
       if (container.size()<=i || container[i]->params.empty()) return false;
       variable = value<T>(container[i]->params[0]->partA);
+      return true;
+    }
+
+    template<typename T> bool extract_first_arg(T &arg) {
+      if (container.empty() || container[0]->params.empty() || container[0]->params[0]->partB=="") return false;
+      arg = value<T>(container[0]->params[0]->partB);
       return true;
     }
 

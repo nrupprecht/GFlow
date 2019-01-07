@@ -28,6 +28,8 @@ namespace GFlowSimulation {
     options.clear();
     // Clear container
     container.clear();
+    // Check for null
+    if (head==nullptr) return;
     // Find options
     for (auto h : head->subHeads) {
       options.insert(std::pair<string, HeadNode*>(h->heading, h));

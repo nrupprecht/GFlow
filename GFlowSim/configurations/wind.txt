@@ -1,3 +1,6 @@
+// Granular "wind tunnel" simulation
+// Min radius tries was 0.0125-0.015. Needed a max dt of 0.0002.
+
 // This is a 2d simulation
 Dimensions: 2
 
@@ -7,10 +10,15 @@ Bounds: {
   : -6, 6  // Y
 }
 
+// VARIABLES
+Var: MinR=0.03
+Var: MaxR=0.05
+Var: Velocity=2
+
 Integrator: VelocityVerlet {
-  //Delay: 2
-  //UseA: 1
   UseV: 1
+  // Delay: 2
+  // UseA: 1
   // MaxDT: 0.0002
 }
 
@@ -34,14 +42,14 @@ Fill-area {
 
   Template: TypeA {
     Radius: Uniform {
-      Min: 0.02 // Min tried: 0.0125
-      Max: 0.03  // Min upper: 0.015
+      Min: MinR
+      Max: MaxR
     }
     Mass: Density=1
     Type: 0
   }
 
-  Number: Phi=0.91 {
+  Number: Phi=0.93 {
     TypeA : 1
   }
 
@@ -55,9 +63,8 @@ Particle {
   Sigma: 1
   Velocity: 0, 0
   Mass: inf
-  Modifier: CV
 }
 
 Reconcile: Remove=0.5
 
-Modifier: WindTunnel=2
+Modifier: WindTunnel=Velocity

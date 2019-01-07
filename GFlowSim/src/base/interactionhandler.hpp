@@ -7,25 +7,18 @@
 
 namespace GFlowSimulation {
 
-  //! @brief This defines what type of force kernel function the interaction handler expects to be passed in to it.
-
-  template<typename float_type>
+  // \brief Interaction kernel
   using Kernel = auto (*) (
-    float_type*, 
-    const float_type*, 
-    const float_type, 
-    const float_type, 
-    const float_type*, 
-    const float_type*, 
-    const RealType*, 
-    RealType*, 
-    int
+    SimData *,    // SimData
+    int,          // id1
+    int,          // id2
+    RealType *,   // Displacement
+    RealType,     // Distance
+    RealType*     // Param pack
   ) -> void;
 
-  // using InteractionFunction = auto (*) (const int, const int, const SimData&, RealType*, const RealType, const RealType*) -> void;
-
   /**
-  *  @brief Handles the storage and traversal of interacting particles.
+  *  \brief Handles the storage and traversal of interacting particles.
   *
   *  This is a generalization of what was the original verletlist class. In a more
   *  general setting, we may want a way of handling the particles that is not just
@@ -43,23 +36,23 @@ namespace GFlowSimulation {
     //! Constructor
     InteractionHandler(GFlow *gflow) : Base(gflow) {};
     
-    //! @brief Add a pair of interacting particles.
+    //! \brief Add a pair of interacting particles.
     virtual void addPair(const int, const int) = 0;
 
-    //! @brief Signals that the pair additions are done.
+    //! \brief Signals that the pair additions are done.
     virtual void close() = 0;
 
-    //! @brief Clear out all the data in the handler, allowing it to get new information.
+    //! \brief Clear out all the data in the handler, allowing it to get new information.
     virtual void clear() = 0;
 
-    //! @brief Returns a characteriztic size indicating the number of interactions the handler will test for. 
+    //! \brief Returns a characteriztic size indicating the number of interactions the handler will test for. 
     //! 
     //! This may be the size of the array the particles are stored in, or the number of interactions the
     //! handler will try. If unknown, the function returns -1. This could occur if e.g. we are travering 
     //! through linked cells, and don't have an accurate guess of how many interactions there will be.
     virtual int size() const = 0;
 
-    //! @brief Iterate through the pairs of interacting particles, hand them to Interaction's compute function.
+    //! \brief Iterate through the pairs of interacting particles, hand them to Interaction's compute function.
     virtual void execute(const class Interaction*) const = 0;
   };
 

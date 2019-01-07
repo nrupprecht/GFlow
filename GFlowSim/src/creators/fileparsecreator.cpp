@@ -421,6 +421,7 @@ namespace GFlowSimulation {
     else throw UnexpectedOption();
     // Look for options
     ParseHelper parser(head);
+    parser.set_variables(variables);
     parser.addValidSubheading("Delay");
     parser.addValidSubheading("MaxDT");
     parser.addValidSubheading("MinDT");
@@ -499,9 +500,11 @@ namespace GFlowSimulation {
   }
 
   inline void FileParseCreator::add_modifier(HeadNode *head) const {
+    ParseHelper parser(nullptr);
+    parser.set_variables(variables);
     string token = head->params[0]->partA;
     if (token=="WindTunnel")
-      gflow->addModifier(new WindTunnel(gflow, convert<RealType>(head->params[0]->partB)));
+      gflow->addModifier(new WindTunnel(gflow, parser.value<RealType>(head->params[0]->partB)));
     else throw UnexpectedOption();
   }
 
@@ -513,6 +516,7 @@ namespace GFlowSimulation {
 
     // Create a parse helper
     ParseHelper parser(head);
+    parser.set_variables(variables);
     // Declare valid options
     parser.addValidSubheading("Bounds");
     parser.addValidSubheading("Template");
@@ -795,6 +799,7 @@ namespace GFlowSimulation {
 
     // Create a parse helper
     ParseHelper parser(head);
+    parser.set_variables(variables);
     // Declare valid options
     parser.addValidSubheading("Position");
     parser.addValidSubheading("Velocity");
@@ -896,52 +901,50 @@ namespace GFlowSimulation {
     // Create a particle template to set
     ParticleTemplate p_template;
 
-    // --- Sort options
-    std::multimap<string, HeadNode*> options;
-    for (auto h : head->subHeads)
-      options.insert(std::pair<string, HeadNode*>(h->heading, h));
-    // For collecting options
-    std::vector<HeadNode*> container;
-    string type;
-
+    ParseHelper parser(head);
+    parser.set_variables(variables);
+    // Declare valid options
+    parser.addValidSubheading("Radius");
+    parser.addValidSubheading("Mass");
+    parser.addValidSubheading("Type");
+    // Make sure only valid options were used
+    if (!parser.checkValidSubHeads()) {
+      cout << "Warning: Invalid Headings:\n";
+      for (auto ih : parser.getInvalidSubHeads())
+        cout << " -- Heading: " << ih << endl;
+    }
+    // Sort options
+    parser.sortOptions();
+    // Pointer for head nodes
+    HeadNode *hd = nullptr;
+    
     // --- Look for options
+    string option, type;
     
     // --- Look for Radius option
-    getAllMatches("Radius", container, options);
-    if (container.empty()) 
-      throw BadStructure("We need some radius information!");
-    if (container.size()>1)
-      build_message += "We only need one radius information block. Ignoring all but the first instance.\n";
-    // Get the random engine
-    p_template.radius_engine = getRandomEngine(container[0], type);
+    parser.getHeading_Necessary("Radius");
+    hd = parser.first();
+    p_template.radius_engine = getRandomEngine(hd, type);
     p_template.radius_string = type;
-    
+
     // --- Look for Mass option
-    getAllMatches("Mass", container, options);
-    if (container.empty())
-      throw BadStructure("We need some mass information!");
-    if (container.size()>1)
-      build_message += "We only need one mass information block. Ignoring all but the first instance.\n";
-    // Get Density
-    if (container[0]->params[0]->partA=="Density") {
-      p_template.mass_engine = new DeterministicEngine(convert<RealType>(container[0]->params[0]->partB));
+    parser.getHeading_Necessary("Mass");
+    hd = parser.first();
+    parser.extract_first_parameter(option, hd);
+    RealType m;
+    if (option=="Density" && parser.extract_first_arg(m)) {
+      p_template.mass_engine = new DeterministicEngine(m);
       p_template.mass_string = "Density";
     }
-    // Otherwise, get a number
-    else {
-      p_template.mass_engine = new DeterministicEngine(convert<RealType>(container[0]->params[0]->partB));
+    else if (parser.extract_first_arg(m)) {
+      p_template.mass_engine = new DeterministicEngine(m);
       p_template.mass_string = "Mass";
     }
-    //p_template.mass_engine = getRandomEngine(container[0], type);
-    //p_template.mass_string = type;
 
     // --- Look for Type option
-    getAllMatches("Type", container, options);
-    if (container.empty())
-      throw BadStructure("We need some type information!");
-    if (container.size()>1)
-      build_message += "We only need one type information block. Ignoring all but the first instance.\n";
-    p_template.type_engine = getRandomEngine(container[0], type);
+    parser.getHeading_Necessary("Type");
+    hd = parser.first();
+    p_template.type_engine = getRandomEngine(hd, type);
     p_template.type_string = type;
 
     // Add to particle templates
@@ -974,6 +977,10 @@ namespace GFlowSimulation {
   inline RandomEngine* FileParseCreator::getRandomEngine(HeadNode *h, string &type) const {
     // Clear type string
     type.clear();
+
+    ParseHelper parser(h);
+    parser.set_variables(variables);
+
     // Check structure
     if (h->params.size()!=1)
       throw BadStructure("Random engine needs one parameter, found "+toStr(h->params.size())+".");
@@ -981,14 +988,14 @@ namespace GFlowSimulation {
       // A type is specified
       type = h->params[0]->partA;
       // We expect a number in partB
-      return new DeterministicEngine(convert<double>(h->params[0]->partB));
+      return new DeterministicEngine(parser.value<double>(h->params[0]->partB));
     }
     // If there is no body
     else if (h->subHeads.empty()) {
       string token = h->params[0]->partA;
       // We expect either a number in partA, or a string (e.g. "Inf").
       if (isdigit(token.at(0))) {
-        return new DeterministicEngine(convert<double>(token));
+        return new DeterministicEngine(parser.value<double>(token));
       }
       else if (h->heading=="Type" && token=="Equiprobable") {
         type = token;
@@ -1022,8 +1029,8 @@ namespace GFlowSimulation {
         if (!sh->params[0]->partB.empty() || !sh->params[1]->partB.empty())
           throw BadStructure("Expected one part parameters in discrete probability specification.");
         // Store the value and its probability
-        values.push_back(convert<double>(sh->params[0]->partA)); 
-        probabilities.push_back(convert<double>(sh->params[1]->partA));
+        values.push_back(parser.value<double>(sh->params[0]->partA)); 
+        probabilities.push_back(parser.value<double>(sh->params[1]->partA));
       }
       return new DiscreteRandomEngine(probabilities, values);
     }
@@ -1040,7 +1047,7 @@ namespace GFlowSimulation {
         throw BadStructure("More than one parameter for uniform distribution.");
       // Set the uniform random engine
       return new UniformRandomEngine(
-        convert<double>(lwr->params[0]->partA), convert<double>(upr->params[0]->partA)
+        parser.value<double>(lwr->params[0]->partA), parser.value<double>(upr->params[0]->partA)
       );
     }
     else if (param=="Normal") {
@@ -1056,7 +1063,7 @@ namespace GFlowSimulation {
         throw BadStructure("More than one parameter for normal distribution.");
       // Set the uniform random engine
       return new NormalRandomEngine(
-        convert<double>(ave->params[0]->partA), convert<double>(var->params[0]->partA)
+        parser.value<double>(ave->params[0]->partA), parser.value<double>(var->params[0]->partA)
       );
     }
     else throw BadStructure("Unrecognized choice for a random engine.");
