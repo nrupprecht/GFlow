@@ -14,7 +14,8 @@ namespace GFlowSimulation {
     int,          // id2
     RealType *,   // Displacement
     RealType,     // Distance
-    RealType*     // Param pack
+    RealType*,    // Param pack
+    int           // Simulation dimensions
   ) -> void;
 
   /**
@@ -54,6 +55,11 @@ namespace GFlowSimulation {
 
     //! \brief Iterate through the pairs of interacting particles, hand them to Interaction's compute function.
     virtual void execute(const class Interaction*) const = 0;
+
+    //! \brief Iterate through the pairs of interacting particles, applying a kernel function to all of them.
+    //! 
+    //! The pointer is for a parameter pack that may be used by the kernel function.
+    virtual void execute(const Kernel, RealType*) const = 0;
   };
 
 }

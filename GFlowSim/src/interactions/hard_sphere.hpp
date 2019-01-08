@@ -25,8 +25,13 @@ namespace GFlowSimulation {
 
     virtual void compute(const int, const int, RealType*, const RealType) const override;
 
-  private:
+    //! \brief An interaction kernel.
+    static void kernel(SimData*, int, int, RealType*, RealType, RealType*, int);
 
+    static void kernel2d(SimData*, int, int, RealType*, RealType, RealType*, int);
+
+  private:
+    //! \brief The hard sphere repulsion.
     RealType repulsion;
 
   };

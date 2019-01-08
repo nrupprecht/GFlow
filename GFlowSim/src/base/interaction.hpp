@@ -17,16 +17,16 @@ namespace GFlowSimulation {
   */
   class Interaction : public Base {
   public:
-    //! @brief Constructor
+    //! \brief Constructor
     Interaction(GFlow *);
 
-    //! @brief Destructor
+    //! \brief Destructor
     virtual ~Interaction();
 
-    //! @brief Calculate all the forces between atoms in the verlet lists
+    //! \brief Calculate all the forces between atoms in the verlet lists
     virtual void interact() const;
 
-    //! @brief Compute and update interaction for pairs of particles.
+    //! \brief Compute and update interaction for pairs of particles.
     //!
     //! @param id1 Local id of the first particle.
     //! @param id2 Local id of the second particle.
@@ -36,24 +36,24 @@ namespace GFlowSimulation {
 
     // --- Accessors
 
-    //! @brief Return the total length of the verlet list.
+    //! \brief Return the total length of the verlet list.
     int size() const;
 
-    //! @brief Get the verlet list (get it as a const reference)
+    //! \brief Get the verlet list (get it as a const reference)
     InteractionHandler* getInteractionHandler() const;
 
-    //! @brief Get the virial, used for calculating pressure
+    //! \brief Get the virial, used for calculating pressure
     int getVirial() const;
 
     // --- Mutators
 
-    //! @brief Clear this force's interaction handler
+    //! \brief Clear this force's interaction handler
     void clear();
 
-    //! @brief Add a pair pf particles - the first is the head
+    //! \brief Add a pair pf particles - the first is the head
     virtual void addPair(int, int);
 
-    //! @brief Signals that the pair additions are done.
+    //! \brief Signals that the pair additions are done.
     virtual void close();
 
     // GFlow is a friend class
@@ -61,14 +61,20 @@ namespace GFlowSimulation {
 
   protected:
 
-    //! @brief The neighbor (verlet) lists for all the pairs of atoms between which this force is active
+    //! \brief The neighbor (verlet) lists for all the pairs of atoms between which this force is active
     InteractionHandler *handler;
 
-    //! @brief The virial, for calculating pressure.
+    //! \brief An interaction kernel that can be used for the computation of particle interactions.
+    Kernel kernel;
+
+    //! \brief The virial, for calculating pressure.
     //!
     //! The pressure formula is: P = N k T/V + 1/(DIMENSIONS*V) \sum_i (r_i \dot F_i)
     //! This term should be used like: virial = \sum_i (r_i \dot F_i)
     mutable RealType virial = 0;
+
+    //! \brief A pack of parameters.
+    RealType *param_pack;
   };
 
 }

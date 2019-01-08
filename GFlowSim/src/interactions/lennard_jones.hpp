@@ -29,6 +29,9 @@ namespace GFlowSimulation {
 
     virtual void compute(const int, const int, RealType*, const RealType) const override;
 
+    //! \brief An interaction kernel.
+    static void kernel(SimData*, int, int, RealType*, RealType, RealType*, int);
+
   private:
     //! @brief The LJ force strength.
     RealType strength;

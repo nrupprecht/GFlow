@@ -223,6 +223,8 @@ namespace GFlowSimulation {
       RealType dt = integrator->getTimeStep();
       elapsed_time += dt;
       total_time += dt;
+
+      if (iter%1000==0) simData->sortParticles();
     }
 
     // --> Post-integrate
