@@ -10,7 +10,7 @@ namespace GFlowSimulation {
   };
 
   Interaction::~Interaction() {
-    if (handler)    delete handler;
+    if (handler) delete handler;
   }
 
   void Interaction::interact() const {

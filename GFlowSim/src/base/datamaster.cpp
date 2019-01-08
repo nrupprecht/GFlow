@@ -169,6 +169,8 @@ namespace GFlowSimulation {
       std::cerr << "Failed to open file [" << writeDirectory << "/run_summary.txt]." << endl;
       return false;
     }
+    // End timer - in case the run failed, and therefore didn't end the timer
+    endTimer();
     // Print Header
     fout << "**********          SUMMARY          **********\n";
     fout << "*******  GFlow Granular Simulator v 4.0 *******\n";
