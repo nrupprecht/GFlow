@@ -187,7 +187,7 @@ namespace GFlowSimulation {
     fout << "\n\n";
     // --- Print timing summary
     RealType requestedTime = Base::gflow ? Base::gflow->getTotalRequestedTime() : 0;
-    RealType ratio = requestedTime/run_time;
+    RealType ratio = Base::gflow->getTotalTime()/run_time;
     int iterations = Base::gflow->getIter(), particles = Base::simData->number();
     // Helper lambda - checks whether run_time was non-zero
     auto toStrRT = [&] (RealType x) -> string {

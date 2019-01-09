@@ -200,6 +200,8 @@ namespace GFlowSimulation {
         for (auto &it : interactions) it->interact();
         forces_timer.stop(); 
       }
+      // Update halo particles
+      simData->updateHaloParticles();
 
       // Do modifier removal
       handleModifiers();

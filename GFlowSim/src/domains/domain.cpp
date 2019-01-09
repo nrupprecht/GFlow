@@ -50,30 +50,13 @@ namespace GFlowSimulation {
     // We cannot initialize if simdata is null
     if (simData==nullptr) return;
 
-    // Find average sigma
-    RealType sigma = 0, max_sigma = 0;
-    for (int n=0; n<Base::simData->size(); ++n) {
-      if (Base::simData->Type()<0) continue;
-      RealType s = Base::simData->Sg(n);
-      sigma += s;
-      if (s>max_sigma) max_sigma = s;
-    }
-    sigma /= Base::simData->number();
-    // Threshhold sigma is between average and maximum sigma
-    RealType threshold = 0.5*(sigma + max_sigma), max_under = sigma;
-    if (threshold!=sigma) {
-      for (int n=0; n<Base::simData->size(); ++n) {
-        if (Base::simData->Type()<0) continue;
-        RealType s = Base::simData->Sg(n);
-        if (s<threshold && max_under<s) max_under = s;
-      }
-    }
-    max_small_sigma = 1.025*max_under;
-    RealType target_width = (2*max_small_sigma+skin_depth);
+    // Calculate the maxiumu "small sigma"
+    calculate_max_small_sigma();
 
     // Use max_small_sigma
+    cutoff = (2*max_small_sigma+skin_depth);
     for (int d=0; d<sim_dimensions; ++d) {
-      dims[d] = static_cast<int>(domain_bounds.wd(d)/target_width);
+      dims[d] = static_cast<int>(domain_bounds.wd(d)/cutoff);
       if (dims[d]<=0) throw BadBounds(); // Make sure bin numbers are positive
       widths[d] = domain_bounds.wd(d)/dims[d];
       inverseW[d] = 1./widths[d];
@@ -116,17 +99,20 @@ namespace GFlowSimulation {
   void Domain::removeOverlapping(RealType factor) {
     // Domain base common tasks
     DomainBase::construct();
+    
+    // Update particles in the cells
     update_cells();
 
     RealType max_reasonable = sqr(0.9*bounds.wd(0));
 
-    // A tuple
+    // Tuples
     int *tuple1 = new int[sim_dimensions], *tuple2 = new int[sim_dimensions];
     int *cell_index = new int[sim_dimensions], *center = new int[sim_dimensions];
 
     // Find potential neighbors
     RealType *sg = Base::simData->Sg();
     RealType **x = Base::simData->X();
+
     // Get the boundary conditions
     const BCFlag *bcs = gflow->getBCs();
     RealType *dX = new RealType[sim_dimensions];
@@ -231,19 +217,11 @@ namespace GFlowSimulation {
     // Set a "maximum reasonable distance"
     RealType max_reasonable = sqr(0.9*bounds.wd(0));
 
+    if (gflow->getInteractions().empty()) return;
+
     // A tuple
     int *tuple1 = new int[sim_dimensions], *tuple2 = new int[sim_dimensions];
     int *cell_index = new int[sim_dimensions], *center = new int[sim_dimensions];
-
-    InteractionHandler *hs = nullptr;
-    if (gflow->getInteractions().empty()) {
-      delete [] tuple1;
-      delete [] tuple2;
-      delete [] cell_index;
-      delete [] center;
-      return;
-    }
-    else hs = gflow->getInteractions()[0]->getInteractionHandler();
 
     // Find potential neighbors
     RealType *sg = Base::simData->Sg();
@@ -334,6 +312,7 @@ namespace GFlowSimulation {
   inline void Domain::update_cells() {
     clear_cells();
     fill_cells();
+    // Record how many particles there were
     number = simData->number();
   }
 
@@ -408,12 +387,6 @@ namespace GFlowSimulation {
     // Bin all the particles
     for (int i=0; i<number; ++i) {
       int linear = get_cell_index(x[i]);
-
-      #if USE_MPI==1
-      // Check if particle belongs on another processor
-
-      #endif
-
       // Stores the *local* id of the particle
       cells[linear].particle_ids.push_back(i);
     }
@@ -477,6 +450,28 @@ namespace GFlowSimulation {
     }
     // Return the index
     return linear;
+  }
+
+  void Domain::calculate_max_small_sigma() {
+    // Find average sigma
+    RealType sigma = 0, max_sigma = 0;
+    for (int n=0; n<Base::simData->size(); ++n) {
+      if (Base::simData->Type()<0) continue;
+      RealType s = Base::simData->Sg(n);
+      sigma += s;
+      if (s>max_sigma) max_sigma = s;
+    }
+    sigma /= Base::simData->number();
+    // Threshhold sigma is between average and maximum sigma
+    RealType threshold = 0.5*(sigma + max_sigma), max_under = sigma;
+    if (threshold!=sigma) {
+      for (int n=0; n<Base::simData->size(); ++n) {
+        if (Base::simData->Type()<0) continue;
+        RealType s = Base::simData->Sg(n);
+        if (s<threshold && max_under<s) max_under = s;
+      }
+    }
+    max_small_sigma = 1.025*max_under;
   }
 
 }
