@@ -3,5 +3,6 @@
 
 #include "domains/domain.hpp"
 #include "domains/domain_test.hpp"
+#include "domains/linkedcells.hpp"
 
 #endif // __ALL_DOMAINS_HPP__GFLOW__

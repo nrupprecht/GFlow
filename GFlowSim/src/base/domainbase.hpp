@@ -6,7 +6,7 @@
 namespace GFlowSimulation {
 
   /** 
-  *  @brief The base class for domain decomposition and sectorization classes.
+  *  \brief The base class for domain decomposition and sectorization classes.
   *
   *  DomainBase classes are responsible for a subvolume (possibly the whole volume)
   *  of the simulation, keeping track of where the particles are and where they need 
@@ -70,38 +70,38 @@ namespace GFlowSimulation {
 
     // --- Locator functions
 
-    //! @brief Get all the particles within a radius of another particle
+    //! \brief Get all the particles within a radius of another particle
     //! Fills a passed in vector with the ids of all the particles that lie within
     //! a specified distance of a given particle.\n
     //! This function must be overloaded by all children of DomainBase.
     virtual void getAllWithin(int, RealType, vector<int>&)=0;
 
-    //! @brief Remove particles that are overlapping by more than some fraction.
+    //! \brief Remove particles that are overlapping by more than some fraction.
     virtual void removeOverlapping(RealType)=0;
 
     // --- Mutators
 
-    //! @brief Set the skin depth. This function is virtual, as the inheriting class
+    //! \brief Set the skin depth. This function is virtual, as the inheriting class
     //! may need to remake itself after doing this.
     virtual void setSkinDepth(RealType);
 
-    //! @brief Set the cell size. 
+    //! \brief Set the cell size. 
     //!
     //! Really, this suggests a cell size. It must be larger than the minimum possible cell size, 
     //! and must evenly divide the size of the domain.
     virtual void setCellSize(RealType)=0;
 
-    //! @brief Set the cutoff factor. This function is virtual, as the inheriting class
+    //! \brief Set the cutoff factor. This function is virtual, as the inheriting class
     //! may need to remake itself after doing this.
     virtual void setCutoffFactor(RealType);
 
-    //! @brief Set the sample size variable.
+    //! \brief Set the sample size variable.
     void setSampleSize(int);
 
-    //! @brief Set the maximum update delay.
+    //! \brief Set the maximum update delay.
     void setMaxUpdateDelay(RealType);
 
-    //! @brief Remakes interactionhandlers (if neccessary).
+    //! \brief Remakes interactionhandlers (if neccessary).
     //!
     //! This function should be overridden by each child to remake the interaction handlers of the forces as they
     //! see fit. It should, however, be called first in each child function (DomainBase::construct()). This function
@@ -140,49 +140,49 @@ namespace GFlowSimulation {
 
     // --- Data
 
-    //! @brief The bounds of the domain
+    //! \brief The bounds of the domain
     Bounds domain_bounds;
     
-    //! @brief The bounds of the entire simulation
+    //! \brief The bounds of the entire simulation
     Bounds bounds;
 
-    //! @brief The number of times the domain has remade the sectors
+    //! \brief The number of times the domain has remade the sectors
     int number_of_remakes = 0;
 
-    //! @brief Number of cells in each dimension
+    //! \brief Number of cells in each dimension
     int *dims;
 
-    //! @brief The widths of a cell in each dimension
+    //! \brief The widths of a cell in each dimension
     RealType *widths;
 
-    //! @brief The inverse widths of a cell in each dimension
+    //! \brief The inverse widths of a cell in each dimension
     RealType *inverseW;
 
     // --- Sectorization constants
 
-    //! @brief The skin depth.
+    //! \brief The skin depth.
     //!
     //! The extra amount around a particle that the domain should count as being a particle neighbor. So if
     //! d(x, y) < rx + ry + skin_depth, the particles are neighbors.
     RealType skin_depth = DEFAULT_SKIN_DEPTH;
     
-    //! @brief The maximum cutoff radius a particle can have and be guarenteed to only have to look in 
+    //! \brief The maximum cutoff radius a particle can have and be guarenteed to only have to look in 
     //! adjacent cells for neighbors.
     //!
     //! How domains decide to determine max_small_sigma is up to them.
     RealType max_small_sigma = 0.;
 
-    //! @brief The target cell size. 
+    //! \brief The target cell size. 
     //!
     //! Cells will be at least this wide in each dimension, but since an integral number of them have
     //! to fit in the domain in each dimension, the actual widths will be different. They will be at
     //! least this large though.
     RealType cutoff = 0.;
 
-    //! @brief The minimum allowable cutoff, 2*max_small_sigma + skin_depth
+    //! \brief The minimum allowable cutoff, 2*max_small_sigma + skin_depth
     RealType minCutoff = 0.; 
 
-    //! @brief How much larger than the minimum cutoff should the default cutoff be.
+    //! \brief How much larger than the minimum cutoff should the default cutoff be.
     RealType cutoffFactor = 1.;
 
     // --- Timers
@@ -193,37 +193,37 @@ namespace GFlowSimulation {
     RealType updateDelay = 1.0e-4;
     RealType max_update_delay = DEFAULT_MAX_UPDATE_DELAY;
 
-    //! @brief What criteria the domain should.
+    //! \brief What criteria the domain should.
     //!
     //! 0 - Use an update delay.
     //! 1 - update every fixed number of steps.
     int update_decision_type = 0;
 
-    //! @brief How many steps the domain should wait between domain redos.
+    //! \brief How many steps the domain should wait between domain redos.
     int update_delay_steps = 7;
 
-    //! @brief How many steps since the last time the domain was remade.
+    //! \brief How many steps since the last time the domain was remade.
     int steps_since_last_remake = 0;
 
-    //! @brief What fraction of the skin depth should particles move before the domain remake
+    //! \brief What fraction of the skin depth should particles move before the domain remake
     RealType motionFactor = DEFAULT_MOTION_FACTOR;
 
-    //! @brief The target move ratio for remake
+    //! \brief The target move ratio for remake
     RealType mvRatioTolerance = DEFAULT_MV_RATIO_TOLERANCE;
 
-    //! @brief The number of times max_motion / skinDepth was > 1
+    //! \brief The number of times max_motion / skinDepth was > 1
     int missed_target = 0;
 
-    //! @brief The average (once divided by [missed_target]) amount the delay missed by
+    //! \brief The average (once divided by [missed_target]) amount the delay missed by
     RealType ave_miss = 0.;
 
-    //! @brief An array storing the positions of the particles at the last verlet list creation
+    //! \brief An array storing the positions of the particles at the last verlet list creation
     RealType **xVL = nullptr;
 
-    //! @brief The size of the xVL array
+    //! \brief The size of the xVL array
     int sizeXVL = 0;
     
-    //! @brief How many particles the domain should sample to estimate the maximum displacement of 
+    //! \brief How many particles the domain should sample to estimate the maximum displacement of 
     //! particles. An important parameter when "used for good."
     //!
     //! If [sample_size]>0, the domain should sample a subset of the particles for calculating the 

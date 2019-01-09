@@ -24,7 +24,7 @@ namespace GFlowSimulation {
     // Set up basic objects. The integrator will be created by the creator
     simData      = new SimData(this);
     integrator   = nullptr;
-    domain       = new DomainTest(this); // Domain(this);
+    domain       = new DomainTest(this); // LinkedCells(this); //
     dataMaster   = new DataMaster(this);
     forceMaster  = new ForceMaster(this);
     topology     = new GridTopology(sim_dimensions);
@@ -223,8 +223,6 @@ namespace GFlowSimulation {
       RealType dt = integrator->getTimeStep();
       elapsed_time += dt;
       total_time += dt;
-
-      if (iter%1000==0) simData->sortParticles();
     }
 
     // --> Post-integrate
