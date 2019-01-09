@@ -2,21 +2,25 @@
 
 namespace GFlowSimulation {
 
-  Cell::Cell() : cellType(CellType::Unassigned), is_boundary_cell(false), x(nullptr), f(nullptr), sg(nullptr), 
-    mask(nullptr), capacity(0), loaded(false) {};
+  // Dimension setting constructor
+  Cell::Cell(int d) {}
 
-  Cell::~Cell() {}
+  // Copy constructor
+  Cell::Cell(const Cell& cell) {
+    particle_ids = cell.particle_ids;
+    adjacent = cell.adjacent;
+  };
 
-  void Cell::clear() {
-    id_list.clear() ;
-  }
-
-  void Cell::add(int id) {
-    id_list.push_back(id) ;
+  Cell Cell::operator=(const Cell& cell) {
+    // Set data
+    particle_ids = cell.particle_ids;
+    adjacent = cell.adjacent;
+    // Return
+    return *this;
   }
 
   int Cell::size() const {
-    return id_list.size();
+    return particle_ids.size();
   }
 
 }

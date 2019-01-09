@@ -24,7 +24,7 @@ namespace GFlowSimulation {
     // Set up basic objects. The integrator will be created by the creator
     simData      = new SimData(this);
     integrator   = nullptr;
-    domain       = new DomainTest(this); // LinkedCells(this); //
+    domain       = new Domain(this);
     dataMaster   = new DataMaster(this);
     forceMaster  = new ForceMaster(this);
     topology     = new GridTopology(sim_dimensions);

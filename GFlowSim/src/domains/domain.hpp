@@ -1,130 +1,78 @@
-#ifndef __DOMAIN_HPP__GFLOW__
-#define __DOMAIN_HPP__GFLOW__
+
+#ifndef __DOMAIN_TEST_HPP__GFLOW__
+#define __DOMAIN_TEST_HPP__GFLOW__
 
 #include "../base/domainbase.hpp"
 #include "cell.hpp"
 
 namespace GFlowSimulation {
 
-  /** @brief A (hyper) rectangular patch of space in the simulation.
-  *  
-  *  Creates and maintains a sectorization composed of many cells. Uses this to 
-  *  create verlet lists for the forces. 
-  *
-  *  Responsible for communicating with neighboring domains.
-  */
   class Domain : public DomainBase {
   public:
-    //! @brief Default constructor - pass in the Gflow object
-    Domain(GFlow *);
+    Domain(GFlow*);
 
-    //! @brief Destuctor.
     virtual ~Domain() override;
 
-    //! @brief Create cells, assign their neighbors, etc.
     virtual void initialize() override;
 
-    //! @brief Pre-integrate calls sectorize
     virtual void pre_integrate() override;
 
-    //! @brief Exchange particles between processors
+    //! \brief Exchange particles between processors
     virtual void exchange_particles() override;
 
-    // --- Locator functions
-
-    //! @brief Get all the particles within a radius of another particle
+    //! \brief Get all the particles within a radius of another particle
+    //!
     //! Fills a passed in vector with the ids of all the particles that lie within
     //! a specified distance of a given particle.\n
     //! This function must be overloaded by all children of DomainBase.
     virtual void getAllWithin(int, RealType, vector<int>&) override;
 
-    virtual void removeOverlapping(RealType) override { throw false; }
+    virtual void removeOverlapping(RealType) override;
 
-    // --- Mutators
+    virtual void construct() override;
 
-    virtual void setSkinDepth(RealType) override;
-
-    //! @brief Set the cell size. 
-    //!
-    //! Really, this suggests a cell size. It must be larger than the minimum possible cell size, 
-    //! and must evenly divide the size of the domain. Inherited from DomainBase.
     virtual void setCellSize(RealType) override;
 
   private:
-    // --- Helper functions
 
-    //! @brief Adds particles to the correct position(s) in the sectorization cells.
-    //!
-    //! We do not add halo particles when we inset the particle.
-    void addToCell(int);
-
-    //! @brief Get the (linear) index of the cell the position falls in
-    int getCellIndex(RealType *);
-
-    //! @brief Remake the verlet lists for all the forces.
-    //!
-    //! Resectorizes the particles into cells and calculates verlet lists from the cell decomposition.
-    virtual void construct() override;
-
-    //! @brief Turns a linear cell index into a (DIMENSIONS)-dimensional index
-    inline void linear_to_tuple(const int, int*);
-
-    //! @brief Turns a (DIMENSIONS)-dimensional index into a linear cell index.
-    inline void tuple_to_linear(int&, const int*);
-
-    //! @brief Find the linear indices of the cells adjacent to a given cell.
-    inline void find_adjacent_cells(int*, bool, vector<Cell*>&);
-
-    //! @brief Based on the cutoff distance, reate new cells, assign them their types, etc.
     inline void create_cells();
 
-    //! @brief Fill the cells with particle ids.
+    inline void update_cells();
+
+    inline void clear_cells();
+
     inline void fill_cells();
 
-    inline bool correct_index(int*, bool);
+    //! \brief Turns a linear cell index into a (DIMENSIONS)-dimensional index
+    inline void linear_to_tuple(const int, int*);
 
-    // --- Data
+    //! \brief Turns a (DIMENSIONS)-dimensional index into a linear cell index.
+    inline void tuple_to_linear(int&, const int*);
 
-    //! All the cells in this decomposition
+    inline bool correct_index(int*);
+
+    inline void get_cell_index_tuple(const RealType*, int*);
+
+    inline int get_cell_index(const RealType*);
+
+    //! \brief Array of products, used to compute linear indices from vectors or tuple indices.
+    int *products = nullptr;
+
+    //! \brief What type of borders there are in the "up" directions.
+    //!
+    //! 0 - None, 1 - Halo, 2 - Wrap.
+    int *border_type_up   = nullptr;
+    int *border_type_down = nullptr;
+
+    //! \brief Whether the domain has been initialized or not.
+    bool initialized = false;
+
+    //! \brief The number of particles last time we built the cells.
+    int number = 0;
+
+    //! \brief A vector holding all the cells in the domain.
     vector<Cell> cells;
-
-    // --- Parallel decomposition data
-
-    //! @brief The adjacent domains in the positive dimension. For none, we have -1. Otherwise, we have the processor id.
-    int *domains_up;
-    //! @brief The adjacent domains in the negative dimension. For none, we have -1. Otherwise, we have the processor id.
-    int *domains_down;
-
-    //! @brief How many domains exist along each dimension (the decomposition into domains is rectangular).
-    int *domain_dims;
-    //! @brief The (DIMENSION)-tuple domain index of this domain
-    int *domain_index;
-
-    //! @brief The bounds of the domain, including ghost and harmonic cells
-    Bounds extended_domain_bounds;
-
-    //! @brief If we have harmonic cells on the positive boundary.
-    bool *halo_up;
-    //! @brief If we have harmonic cells on the negative boundary.
-    bool *halo_down;
-    //! @brief If we have ghost cells on the positive boundary
-    bool *ghost_up;
-    //! @brief If we have ghost cells on the negative boundary
-    bool *ghost_down;
-
-    //! @brief Whether to use halo cells to reflect the periodic boundary conditions
-    bool use_halo_cells;
-
-    // --- MPI related varibles
-    #if USE_MPI==1
-    //! @brief The rank of this processor.
-    int rank;
-    //! @brief The total number of MPI processors.
-    int numProc;
-    //! @brief This is true when we have done the parallel initialization.
-    bool parallel_init;
-    #endif 
   };
 
 }
-#endif // __DOMAIN_HPP__GFLOW__
+#endif // __DOMAIN_TEST_HPP__GFLOW__
