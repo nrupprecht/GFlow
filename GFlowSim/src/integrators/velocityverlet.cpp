@@ -25,16 +25,25 @@ namespace GFlowSimulation {
     
     #if SIMD_TYPE==SIMD_NONE
     // Update velocities
-    for (int i=0; i<total; ++i) {
-      int id = i/sim_dimensions;
-      v[i] += hdt*im[id]*f[i];
-      // Debug mode asserts
-      #if DEBUG==1
-      assert(!isnan(f[i]));
-      assert(!isnan(v[i]));
-      assert(fabs(v[i])<MAX_REASONABLE_V);
-      assert(fabs(f[i])<MAX_REASONABLE_F);
-      #endif
+    if (sim_dimensions==2) {
+      for (int i=0; i<total; i+=2) {
+	RealType m = im[i>>1];
+	v[i]   += hdt*m*f[i];
+	v[i+1] += hdt*m*f[i+1];
+      }
+    }
+    else {
+      for (int i=0; i<total; ++i) {
+	int id = i/sim_dimensions;
+	v[i] += hdt*im[id]*f[i];
+	// Debug mode asserts
+        #if DEBUG==1
+	assert(!isnan(f[i]));
+	assert(!isnan(v[i]));
+	assert(fabs(v[i])<MAX_REASONABLE_V);
+	assert(fabs(f[i])<MAX_REASONABLE_F);
+        #endif
+      }
     }
     #else
     // Put hdt into a simd vector
@@ -82,13 +91,6 @@ namespace GFlowSimulation {
     for (; i<total; ++i) {
       int id = i/sim_dimensions;
       v[i] += hdt*im[id]*f[i];
-      // Debug mode asserts
-      #if DEBUG==1
-      assert(!isnan(f[i]));
-      assert(!isnan(v[i]));
-      assert(fabs(v[i])<MAX_REASONABLE_V);
-      assert(fabs(f[i])<MAX_REASONABLE_F);
-      #endif
     }
     #endif
 
@@ -145,17 +147,27 @@ namespace GFlowSimulation {
     RealType *x = simData->X_arr(), *v = simData->V_arr(), *f = simData->F_arr(), *im = simData->Im();
 
     #if SIMD_TYPE==SIMD_NONE
-    for (int i=0; i<total; ++i) {
-      int id = i/sim_dimensions;
-      v[i] += hdt*im[id]*f[i];
-      // Debug mode asserts
-      #if DEBUG==1
-      assert(!isnan(f[i]));
-      assert(!isnan(v[i]));
-      assert(fabs(v[i])<MAX_REASONABLE_V);
-      assert(fabs(f[i])<MAX_REASONABLE_F);
-      #endif 
+    if (sim_dimensions==2) {
+      for (int i=0; i<total; i+=2) {
+	RealType m = im[i>>1];
+	v[i]   += hdt*m*f[i];
+	v[i+1] += hdt*m*f[i+1];
+      }
     }
+    else {
+      for (int i=0; i<total; ++i) {
+	int id = i/sim_dimensions;
+	v[i] += hdt*im[id]*f[i];
+	// Debug mode asserts
+        #if DEBUG==1
+	assert(!isnan(f[i]));
+	assert(!isnan(v[i]));
+	assert(fabs(v[i])<MAX_REASONABLE_V);
+	assert(fabs(f[i])<MAX_REASONABLE_F);
+        #endif
+      }
+    }
+
     #else
     // Put hdt into a simd vector
     simd_float _hdt = simd_set1(hdt);
