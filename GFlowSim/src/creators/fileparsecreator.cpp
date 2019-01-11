@@ -89,6 +89,18 @@ namespace GFlowSimulation {
       }
       throw;
     }
+    catch (UnexpectedOption uo) {
+      cout << "Caught Unexpected Option error: " << uo.message << endl;
+      cout << "Build Message:\n" << build_message << endl;
+      // Print the parse tree to a file so we can debug
+      ofstream fout("ParseTrace.txt");
+      if (fout.fail());
+      else {
+        fout << parse_message;
+        fout.close();
+      }
+      throw;
+    }
     build_message += "Done.\n";
 
     // Clean up
@@ -391,7 +403,7 @@ namespace GFlowSimulation {
     else if (token=="OverdampedIntegrator") integrator = new OverdampedIntegrator(gflow);
     else if (token=="OverdampedLangevin")   integrator = new OverdampedLangevinIntegrator(gflow);
     else if (token=="LangevinIntegrator")    integrator = new LangevinIntegrator(gflow);
-    else throw UnexpectedOption();
+    else throw UnexpectedOption("Integrator choice was ["+token+"].");
     // Temperature and viscosity for LangevinType integrators
     LangevinTypeIntegrator* lti = dynamic_cast<LangevinTypeIntegrator*>(integrator);
     if (lti) {
@@ -482,14 +494,14 @@ namespace GFlowSimulation {
     if      (token=="HardSphereGeneral") return new HardSphereGeneral(gflow);
     else if (token=="LennardJones") return new LennardJones(gflow);
     else if (token=="None")         return nullptr;
-    else throw UnexpectedOption();
+    else throw UnexpectedOption("Interaction choice was ["+token+"].");
   }
 
   inline BCFlag FileParseCreator::choose_bc(string& token) const {
     if      (token=="Wrap")     return BCFlag::WRAP;
     else if (token=="Reflect")  return BCFlag::REFL;
-    else if (token=="Replulse") return BCFlag::REPL;
-    else throw UnexpectedOption();
+    else if (token=="Repulse") return BCFlag::REPL;
+    else throw UnexpectedOption("Boundary condition choice was ["+token+"].");
   }
 
   inline void FileParseCreator::add_modifier(HeadNode *head) const {
@@ -498,7 +510,7 @@ namespace GFlowSimulation {
     string token = head->params[0]->partA;
     if (token=="WindTunnel")
       gflow->addModifier(new WindTunnel(gflow, parser.value<RealType>(head->params[0]->partB)));
-    else throw UnexpectedOption();
+    else throw UnexpectedOption("Modifier choice was ["+token+"].");
   }
 
   inline void FileParseCreator::fillArea(HeadNode *head) const {

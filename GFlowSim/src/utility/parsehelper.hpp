@@ -6,8 +6,11 @@
 
 namespace GFlowSimulation {
 
-  //! \brief Exception class.
-  struct UnexpectedOption {};
+  //! \brief Exception class for unexpected options.
+  struct UnexpectedOption : public Exception{
+    UnexpectedOption() : Exception() {};
+    UnexpectedOption(const string& m) : Exception(m) {};
+  };
 
   struct BadStructure {
     BadStructure() : message("") {};

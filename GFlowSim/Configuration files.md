@@ -187,7 +187,14 @@ This is the most useful, flexible, and complex way to create particles. Basicall
 
     Bounds: Full
 
-which sets the bounds to be the full simulation bounds.
+which sets the bounds to be the full simulation bounds. 
+
+Additionally, Spherical bounds can be set by
+
+    Bounds: Sphere {
+      : [x], [y], ... , [w]
+      : [radius]
+    }
 
 **Template**: The way to define particles is though particle templates, which specify how a particle should be generated. Any number of particle templates may be specified. Particle templates are their own block, and have the template name as their only parameter. The mass, radius, and type for the template must all be specified, either as a deterministic number, or using a random generator. 
 
