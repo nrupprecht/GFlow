@@ -1,0 +1,72 @@
+// Granular "wind tunnel" simulation
+// Min radius tries was 0.0125-0.015. Needed a max dt of 0.0002.
+
+// This is a 3d simulation
+Dimensions: 3
+
+// VARIABLES
+Var: MinR=0.1
+Var: MaxR=0.12
+Var: Velocity=2
+
+// Set the simulation bounds
+Bounds: {
+  : -6, 18
+  : -6, 6
+  : -6, 6
+}
+
+Integrator: VelocityVerlet {
+  UseV: 1
+  // Delay: 2
+  // UseA: 1
+  // MaxDT: 0.0002
+}
+
+Boundary: {
+  : Wrap
+  : Repulse
+  : Repulse
+}
+
+// Set the number of particle types
+NTypes: 1
+
+// Creates a random force network of HardSphere and Lennard-Jones forces
+Force-grid: {
+  : 0, 0, HardSphereGeneral
+}
+
+// Fill an area with particles
+Fill-area {
+  // Fill all the simulation with particles
+  Bounds: Full
+
+  Template: TypeA {
+    Radius: Uniform {
+      Min: MinR
+      Max: MaxR
+    }
+    Mass: Density=1
+    Type: 0
+  }
+
+  Number: Phi=0.93 {
+    TypeA : 1
+  }
+
+  Relax: 1.5
+
+  Velocity: Zero
+}
+
+Particle {
+  Position: 0, 0, 0
+  Sigma: 1
+  Velocity: 0, 0, 0
+  Mass: inf
+}
+
+Reconcile: Remove=0.5
+
+Modifier: WindTunnel=Velocity
