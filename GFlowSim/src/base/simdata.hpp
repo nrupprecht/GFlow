@@ -13,9 +13,9 @@ namespace GFlowSimulation {
   //!
   //! Summary of numbers:
   //!
-  //! The following inequalities hold: [ number <= last_valid <= owned_capacity <= last_extended <= capacity ]. 
-  //! The reason why number <= last_valid is that there may be some invalid (type=-1) particles in the middle of the number array. 
-  //! The reason why last_valid <= owned_capacity is that we may have allocated more space than necessary for owned particles.
+  //! The following inequalities hold:  _number <= _size <= _capacity. 
+  //! The reason why _number <= _size is that there may be some invalid (type=-1) particles in the middle of the number array. 
+  //! The reason why _size <= _capacity is that we may have allocated more space than necessary for particles.
   class SimData : public Base {
   public:
     //! \brief Default constructor.

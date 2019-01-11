@@ -19,6 +19,7 @@ namespace GFlowSimulation {
     return str;
   }
 
+  //! \brief Convert a vector to csv format: x1, x2, x3, ...
   template<typename T> inline string toCSV(const vector<T>& vec) {
     stringstream stream;
     for (int i=0; i<vec.size(); ++i) {
@@ -30,6 +31,7 @@ namespace GFlowSimulation {
     return str;
   }
 
+  //! \brief Convert a string to an int.
   inline int toInt(string s) {
     stringstream stream;
     int i;
@@ -38,6 +40,9 @@ namespace GFlowSimulation {
     return i;
   }
 
+  //! \brief Convert a string to whatever type is specified.
+  //!
+  //! Use like "double x = convert<double>(str);"
   template<typename T> inline T convert(const string s) {
     stringstream stream;
     T data;
@@ -69,17 +74,19 @@ namespace GFlowSimulation {
     return true;
   }
 
-  // Write an array that represents [elements]*[width] data to a .csv file
+  //! \brief Write an array that represents [elements]*[width] data to a .csv file
   bool writeArrayDataToFile(RealType*, int, int, string);
 
-  // [dirName] is the name of the directory that we should create our new directory of data in
-  // [fileName] is the name of the new directory, and the files in that directory are called [fileName][#].csv
+  //! \brief Write a vector to a directory.
   bool writeVectorToDirectory(vector<RealType*>&, const vector<int>&, int, string, const string);
 
-  // Write a vector to a comma separated string
-  string toStrVec(const RealType*, int);
+  //! \brief Write a vector to a comma separated string
+  string toStrVec(const double*, int);
 
-  // Write an integer vector to a comma separated string
+  //! \brief Write a vector to a comma separated string
+  string toStrVec(const float*, int);
+
+  //! \brief Write an integer vector to a comma separated string
   string toStrVec(const int*, int);
 
   template<typename T> string toStrVec(const T* vec, int number) {

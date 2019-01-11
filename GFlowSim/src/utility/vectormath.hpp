@@ -28,17 +28,17 @@ namespace GFlowSimulation {
     return x*x;
   }
 
-  template<typename T> T inline sqr(T *x, int dimensions) {
+  template<typename T> T inline sqr(const T *x, int dimensions) {
     T val(0);
     for (int d=0; d<dimensions; ++d) val += sqr(x[d]);
     return val;
   }
 
-  inline RealType sqr(RealType *x, int dimensions) {
+  inline RealType sqr(const RealType *x, int dimensions) {
     return dotVec(x, x, dimensions);
   }
 
-  inline int sqr(int *x, int dimensions) {
+  inline int sqr(const int *x, int dimensions) {
     return dotVec(x, x, dimensions);
   }
 

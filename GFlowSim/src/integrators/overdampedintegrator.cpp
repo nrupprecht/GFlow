@@ -42,11 +42,6 @@ namespace GFlowSimulation {
   void OverdampedIntegrator::post_forces() {
     // Call to parent class
     Integrator::post_forces();
-    
-    if (sim_dimensions!=2) {
-      cout << "ERROR: Overdamped integrator is hardcoded for 2 dimensions.\n";
-      throw BadDimension();
-    }
 
     // Number of (real - non ghost) particles
     int size = simData->size();
@@ -75,8 +70,24 @@ namespace GFlowSimulation {
     int i=0;
     for (; i<size*sim_dimensions-simd_data_size; i+=simd_data_size) {
       simd_float X = simd_load(&x[i]);
-      //simd_float _im = simd_load_constant(im, i, sim_dimensions);
-      simd_float _im = simd_load_constant<2>(im, i);
+      simd_float _im;
+      switch (sim_dimensions) {
+        case 1: 
+          _im = simd_load(&im[i]);
+          break;
+        case 2:
+          _im = simd_load_constant<2>(im, i);
+          break;
+        case 3:
+          _im = simd_load_constant<3>(im, i);
+          break;
+        case 4:
+          _im = simd_load_constant<4>(im, i);
+          break;
+        default:
+          throw false;
+          break;
+      }
       simd_float F = simd_load(&f[i]);
       simd_float dX = g_dt*_im*F;
       simd_float X_new  = X + dX; 

@@ -91,83 +91,33 @@ namespace GFlowSimulation {
   void Visualization::createVideo3d(string dirName, const vector<vector<float> >& data) {
     for (int i=0; i<data.size(); ++i) {
       string fileName = dirName + "/frame" + toStr(i) + ".bmp";
-      createImage3d(fileName, data[i]);
+      //createImage3d(fileName, data[i]); // <-- This has yet to be implemented
+      projectImage(fileName, data[i]); // For now, we just draw a projected image
     }
   }
 
   void Visualization::createImage(string fileName, const vector<float>& data) {
     // Get some data from the bounds
-    float wx = bounds.wd(0);
-    float wy = bounds.wd(1);
-    float left = bounds.min[0];
-    float bott = bounds.min[1];
-
+    float wx = bounds.wd(0), wy = bounds.wd(1), left = bounds.min[0], bott = bounds.min[1];
     // Figure out the needed resolution
     int res_x = resolution, res_y = resolution;
     if (wx>wy) res_y = wy/wx*resolution;
     else if (wy>wx) res_x = wx/wy*resolution;
-
     // Create the main palette
     Palette palette(resolution, resolution);
     palette.coverPalette(RGB_Black);
-
-    // Get a centered subset
-    Palette sub1 = palette.getSubPaletteCentered(0.01);
+    Palette sub1 = palette.getSubPaletteCentered(0.01); // Get a centered subset
     sub1.coverPalette(RGB_White);
-
-    // Get a subpallete on which to write the image
-    Palette image = sub1.getMaxCenteredSubPalette(wx, wy);
+    Palette image = sub1.getMaxCenteredSubPalette(wx, wy); // Get a subpallete on which to write the image
     image.setSpaceBounds(wx, wy);
-
-    // Set background
     image.coverPalette(background);
-
-    // Check what data we have, make sure we can make the requested image
-    if (dataWidth==0 || pos_place<0) {
-      cout << "No position data detected. This is essential. Exiting.\n";
-      return;
-    }
-    else if ((color_option==2 || color_option==3) && vel_place<0) {
-      cout << "No velocity data detected. Switching to color option 0.\n";
-      color_option = 0;
-    }
-    else if (color_option==4 && distance_place<0) {
-      cout << "No distance data detected. Switching to color option 0.\n";
-      color_option = 0;
-    }
-    else if (color_option==5 && stripex_place<0) {
-      cout << "No stripe-x data detected. Switching to color option 0.\n";
-      color_option = 0;
-    }
-
-    // Make sure we have the appropriate normalization factors.
-    // This will generally only happen when we are making a single image.
-    if (color_option==0 && ntypes>colorBank.size()) {
-      createColorBank(ntypes);
-    }
-    if (color_option==2 && maxVsqr<0) {
-      auto pack_data = vector<vector<float> >(1, data);
-      findMaxVSqr(pack_data);
-    }
-    else if (color_option==4 && maxDistance<0) {
-      auto pack_data = vector<vector<float> >(1, data);
-      findMaxDistance(pack_data);
-    }
-    
-    // A vector for holding data
-    float *pdata = new float[dataWidth];
-    // Print all particles
+    // Do checks of positions
+    if (!do_checks(data)) return;
+    // Draw all particles
     for (int i=0; i<data.size(); i+=dataWidth) {
-      // Extract data for the i-th particle
-      for (int j=0; j<dataWidth; ++j)
-        pdata[j] = data[i+j];
-      // Get individual entries
-      float *pos     = pos_place<0      ? nullptr : &pdata[pos_place];
-      float *vel     = vel_place<0      ? nullptr : &pdata[vel_place]; // Point to start of velocity data
-      float sigma    = sg_place<0       ? 0       : pdata[sg_place]; // Get sigma
-      int   type     = type_place<0     ? 0       : static_cast<int>(pdata[type_place]); // Get type
-      float distance = distance_place<0 ? 0       : pdata[distance_place]; // Get distance traveled
-      float stripex  = stripex_place<0  ? 0       : pdata[stripex_place];
+      // Get valudes
+      const float *pos, *vel; float sigma, distance, stripex; int type;
+      get_values(&data[i], pos, vel, sigma, type, distance, stripex);
       // If type<0, continue
       if (type<0) continue;
       // Find the center of the particle
@@ -176,59 +126,7 @@ namespace GFlowSimulation {
       float rf = sigma/wx;
       // --- Determine the color
       RGBApixel color = RGB_Green;
-      if (!colorBank.empty()) {
-        switch (color_option) {
-          default:
-          case 0: { // Color by type
-            color = getColor(type);
-            break;
-          }
-          case 1: { // Color randomly
-            color = getColor(i);
-            break;
-          }
-          case 2: { // Color by velocity
-            if (vel) {
-              float V = magnitudeVec(vel, dimensions)/maxVsqr;
-              color = RGBApixel(floor(255*V), 0, 200*(1-V));
-            }
-            break;
-          }
-          case 3: { // Color by orientation
-            if (vel) {
-              float theta = atan2(vel[1], vel[0]);
-              color = colorAngle(theta);
-            }
-            break;
-          }
-          case 4: { // Color by distance
-            float D = maxDistance==0 ? 1. : log(1.f + distance)/log(1.f + maxDistance);
-            color = RGBApixel(floor(255*D), floor(255*(1-D)), 0);
-            break;
-          }
-          case 5: { // Color by xstripe
-            RealType width = bounds.wd(1);
-            const int nstripes = 80;
-            int s = (stripex - bott)/wy * nstripes;
-            int c = s%4;
-            switch (c) {
-              case 0:
-                color = RGB_Green;
-                break;
-              case 1:
-                color = RGB_Blue;
-                break;
-              case 2:
-                color = RGB_White;
-                break;
-              case 3:
-                color = RGB_Red;
-                break;
-            }
-          }
-        }
-      }
-
+      determine_color(color, i, pos, vel, type, distance, stripex);
       // --- Create the color function.
       // xf, yf \in [-1, 1] (roughly - could be a bit larger)
       std::function<RGBApixel(float, float, bool&)> colorF = 
@@ -245,16 +143,72 @@ namespace GFlowSimulation {
         };
 
       // Draw the particle
-      image.drawCircle(pos[0] - left, pos[1] - bott, sigma, colorF, do_wrap);
+      image.drawCircle(pos[0] - left, pos[1] - bott, radius_multiple*sigma, colorF, do_wrap);
     }
-
-    // Clean up pdata
-    delete [] pdata;
-
     // Reset
     maxVsqr = -1;
     maxDistance = -1;
+    // Save image
+    palette.writeToFile(fileName);
+  }
 
+  void Visualization::projectImage(string fileName, const vector<float>& data) {
+    // Get some data from the bounds
+    float wx = bounds.wd(0), wy = bounds.wd(1), left = bounds.min[0], bott = bounds.min[1];
+    // Figure out the needed resolution
+    int res_x = resolution, res_y = resolution;
+    if (wx>wy) res_y = wy/wx*resolution;
+    else if (wy>wx) res_x = wx/wy*resolution;
+    // Create the main palette
+    Palette palette(resolution, resolution);
+    palette.coverPalette(RGB_Black);
+    Palette sub1 = palette.getSubPaletteCentered(0.01); // Get a centered subset
+    sub1.coverPalette(RGB_White);
+    Palette image = sub1.getMaxCenteredSubPalette(wx, wy); // Get a subpallete on which to write the image
+    image.setSpaceBounds(wx, wy);
+    image.coverPalette(background);
+    // Do checks of positions
+    if (!do_checks(data)) return;
+    // Draw all particles
+    for (int i=0; i<data.size(); i+=dataWidth) {
+      // Get valudes
+      const float *pos, *vel; float sigma, distance, stripex; int type;
+      get_values(&data[i], pos, vel, sigma, type, distance, stripex);
+      // If type<0, continue
+      if (type<0) continue;
+      // Find the center of the particle
+      float xf = (pos[0] - left)/wx;
+      float yf = (pos[1] - bott)/wy;
+      float d_tangent_sqr = 0;
+      for (int d=2; d<dimensions; ++d) d_tangent_sqr += sqr(pos[d]);
+      // If particle does not intersect with the plane of projection
+      if (d_tangent_sqr>=sqr(sigma)) continue;
+      float rf = sqrt(1. - d_tangent_sqr/sqr(sigma));
+
+      // --- Determine the color
+      RGBApixel color = RGB_Green;
+      determine_color(color, i, pos, vel, type, distance, stripex);
+      // --- Create the color function.
+      // xf, yf \in [-1, 1] (roughly - could be a bit larger)
+      std::function<RGBApixel(float, float, bool&)> colorF = 
+        [&] (float xf, float yf, bool &doColor)  {
+          float s = 255.f*(1.f - 0.5f*(sqr(xf) + sqr(yf)));
+          if (s<0) {
+            doColor = false;
+            return RGB_White;
+          }
+          else {
+            doColor = true;
+            return color*makePixel(floor(s)); 
+          }
+        };
+
+      // Draw the particle
+      image.drawCircle(pos[0] - left, pos[1] - bott, rf*radius_multiple*sigma, colorF, do_wrap);
+    }
+    // Reset
+    maxVsqr = -1;
+    maxDistance = -1;
     // Save image
     palette.writeToFile(fileName);
   }
@@ -340,6 +294,108 @@ namespace GFlowSimulation {
     // Integer data
     shift += scalar_data.size();
     type_place = find("Type", integer_data) + shift;
+  }
+
+  inline bool Visualization::do_checks(const vector<float>& data) {
+    // Check what data we have, make sure we can make the requested image
+    if (dataWidth==0 || pos_place<0) {
+      cout << "No position data detected. This is essential. Exiting.\n";
+      return false;
+    }
+    else if ((color_option==2 || color_option==3) && vel_place<0) {
+      cout << "No velocity data detected. Switching to color option 0.\n";
+      color_option = 0;
+    }
+    else if (color_option==4 && distance_place<0) {
+      cout << "No distance data detected. Switching to color option 0.\n";
+      color_option = 0;
+    }
+    else if (color_option==5 && stripex_place<0) {
+      cout << "No stripe-x data detected. Switching to color option 0.\n";
+      color_option = 0;
+    }
+
+    // Make sure we have the appropriate normalization factors.
+    // This will generally only happen when we are making a single image.
+    if (color_option==0 && ntypes>colorBank.size()) {
+      createColorBank(ntypes);
+    }
+    if (color_option==2 && maxVsqr<0) {
+      auto pack_data = vector<vector<float> >(1, data);
+      findMaxVSqr(pack_data);
+    }
+    else if (color_option==4 && maxDistance<0) {
+      auto pack_data = vector<vector<float> >(1, data);
+      findMaxDistance(pack_data);
+    }
+
+    // Return success
+    return true;
+  }
+
+  inline void Visualization::get_values(const float * pdata, const float * &pos, const float * &vel, float& sigma, int& type, float& distance, float& stripex) {
+    // Get individual entries
+    pos = pos_place<0 ? nullptr : &pdata[pos_place];
+    vel = vel_place<0 ? nullptr : &pdata[vel_place]; // Point to start of velocity data
+    sigma = sg_place<0 ? 0 : pdata[sg_place]; // Get sigma
+    type = type_place<0 ? 0 : static_cast<int>(pdata[type_place]); // Get type
+    distance = distance_place<0 ? 0 : pdata[distance_place]; // Get distance traveled
+    stripex  = stripex_place<0  ? 0 : pdata[stripex_place];
+  }
+
+  inline void Visualization::determine_color(RGBApixel& color, int i, const float *pos, const float *vel, int type, float distance, float stripex) {
+    if (!colorBank.empty()) {
+      switch (color_option) {
+        default:
+        case 0: { // Color by type
+          color = getColor(type);
+          break;
+        }
+        case 1: { // Color randomly
+          color = getColor(i);
+          break;
+        }
+        case 2: { // Color by velocity
+          if (vel) {
+            float V = magnitudeVec(vel, dimensions)/maxVsqr;
+            color = RGBApixel(floor(255*V), 0, 200*(1-V));
+          }
+          break;
+        }
+        case 3: { // Color by orientation
+          if (vel) {
+            float theta = atan2(vel[1], vel[0]);
+            color = colorAngle(theta);
+          }
+          break;
+        }
+        case 4: { // Color by distance
+          float D = maxDistance==0 ? 1. : log(1.f + distance)/log(1.f + maxDistance);
+          color = RGBApixel(floor(255*D), floor(255*(1-D)), 0);
+          break;
+        }
+        case 5: { // Color by xstripe
+          RealType width = bounds.wd(1);
+          const int nstripes = 80;
+          int s = (stripex - bounds.min[1])/bounds.wd(1) * nstripes;
+          int c = s%4;
+          switch (c) {
+            case 0:
+              color = RGB_Green;
+              break;
+            case 1:
+              color = RGB_Blue;
+              break;
+            case 2:
+              color = RGB_White;
+              break;
+            case 3:
+              color = RGB_Red;
+              break;
+          }
+        }
+      }
+    }
   }
 
 }

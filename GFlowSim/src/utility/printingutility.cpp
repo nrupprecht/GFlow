@@ -21,8 +21,8 @@ namespace GFlowSimulation {
     return true;
   }
 
-  // [dirName] is the name of the directory that we should create our new directory of data in
-  // [fileName] is the name of the new directory, and the files in that directory are called [fileName][#].csv
+  //! \param dirName is the name of the directory that we should create our new directory of data in
+  //! \param fileName is the name of the new directory, and the files in that directory are called [fileName][#].csv
   bool writeVectorToDirectory(vector<RealType*>& record, const vector<int>& elements, 
     int width, string dirName, const string fileName) 
   {
@@ -47,7 +47,16 @@ namespace GFlowSimulation {
     return true;
   }
 
-  string toStrVec(const RealType *x, int length) {
+  string toStrVec(const float *x, int length) {
+    string str;
+    for (int d=0; d<length; ++d) {
+      str += toStr(x[d]);
+      if (d!=length-1) str += ',';
+    }
+    return str;
+  }
+
+  string toStrVec(const double *x, int length) {
     string str;
     for (int d=0; d<length; ++d) {
       str += toStr(x[d]);

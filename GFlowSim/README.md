@@ -33,27 +33,27 @@ Run with
 
 ## TODO:
 
-* Bodies, rigid and otherwise.
+- [ ] Bodies, rigid and otherwise.
 
-* Walls
+- [ ] Walls.
 
-* Angles / torque
+- [ ] Angles / torque.
 
-* Sectorization that is optimized for multiple scales of particles
+- [x] Sectorization that is optimized for multiple scales of particles.
 
-* Hard triangles
+- [ ] Hard triangles.
 
-* Bond/angle modifier
+- [ ] Bond/angle modifier.
 
-* Time step monitoring --- Completed.
+- [x] Time step monitoring.
 
-* Vectorize integration step
+- [x] Vectorize integration step.
 
-* Adding/removing particles while the simulation is running
+- [x] Adding/removing particles while the simulation is running.
 
-* More efficient force calculation
+- [ ] More efficient force calculation.
 
-* Parallelization
+- [ ] Parallelization.
 
 ## Authors
 * **Nathaniel Rupprecht** - *Author*

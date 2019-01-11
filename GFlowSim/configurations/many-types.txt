@@ -8,11 +8,11 @@ Bounds: {
 }
 
 Integrator: LangevinIntegrator {
-  Temperature: 50
+  Temperature: 0.25
 }
 
 // Set the number of particle types
-NTypes: 2
+NTypes: 10
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
 Force-grid: Random
@@ -22,25 +22,15 @@ Fill-area {
   // Fill all the simulation with particles
   Bounds: Full
 
-  Template: TypeA {
+  Template: Particle {
     Radius: 0.05
     Mass: Density=1
-    Type: 0
+    Type: Equiprobable
   }
 
-  Template: TypeB {
-    Radius: Uniform {
-      Min: 0.02
-      Max: 0.04
-    }
-    Mass: Density=1
-    Type: 1
+  Number: Phi=0.75 {
+    Particle : 1
   }
 
-  Number: Phi=0.5 {
-    TypeA : 1
-    TypeB : 1
-  }
-
-  Relax: 0.25
+  Relax: 1
 }

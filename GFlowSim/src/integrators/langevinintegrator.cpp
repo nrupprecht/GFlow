@@ -6,17 +6,9 @@
 
 namespace GFlowSimulation {
 
-  LangevinIntegrator::LangevinIntegrator(GFlow *gflow) : Integrator(gflow), viscosity(DEFAULT_VISCOSITY), 
-    temperature(0.025), lastUpdate(0), updateDelay(DEFAULT_TEMPERATURE_UPDATE_DELAY)
-  {
-    drift1 = temperature/(6.*viscosity*PI);
-  }
+  LangevinIntegrator::LangevinIntegrator(GFlow *gflow) : LangevinTypeIntegrator(gflow, 0.025, DEFAULT_VISCOSITY) {};
 
-  LangevinIntegrator::LangevinIntegrator(GFlow *gflow, RealType T) : Integrator(gflow), viscosity(DEFAULT_VISCOSITY), 
-  temperature(T), lastUpdate(0), updateDelay(DEFAULT_TEMPERATURE_UPDATE_DELAY)
-  {
-    drift1 = temperature/(6.*viscosity*PI);
-  }
+  LangevinIntegrator::LangevinIntegrator(GFlow *gflow, RealType temp) : LangevinTypeIntegrator(gflow, temp, DEFAULT_VISCOSITY) {};
 
   void LangevinIntegrator::pre_forces() {
     // --- First half kick
@@ -90,16 +82,6 @@ namespace GFlowSimulation {
       assert(fabs(f[i])<MAX_REASONABLE_F);
       #endif 
     }
-  }
-
-  void LangevinIntegrator::setViscosity(RealType eta) {
-    viscosity = eta;
-    drift1 = temperature/(6.*viscosity*PI);
-  }
-
-  void LangevinIntegrator::setTemperature(RealType T) {
-    temperature = T;
-    drift1 = temperature/(6.*viscosity*PI);
   }
 
 }

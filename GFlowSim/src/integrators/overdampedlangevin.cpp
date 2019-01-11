@@ -4,17 +4,9 @@
 
 namespace GFlowSimulation {
 
-  OverdampedLangevinIntegrator::OverdampedLangevinIntegrator(GFlow *gflow) : Integrator(gflow), viscosity(DEFAULT_VISCOSITY), 
-  temperature(10.), lastUpdate(0), updateDelay(0.01)
-  {
-    drift1 = temperature/(6.*viscosity*PI);
-  }
+  OverdampedLangevinIntegrator::OverdampedLangevinIntegrator(GFlow *gflow) : LangevinTypeIntegrator(gflow, 1., DEFAULT_VISCOSITY) {};
 
-  OverdampedLangevinIntegrator::OverdampedLangevinIntegrator(GFlow *gflow, RealType T) : Integrator(gflow), viscosity(DEFAULT_VISCOSITY), 
-  temperature(T), lastUpdate(0), updateDelay(0.05)
-  {
-    drift1 = temperature/(6.*viscosity*PI);
-  }
+  OverdampedLangevinIntegrator::OverdampedLangevinIntegrator(GFlow *gflow, RealType temp) : LangevinTypeIntegrator(gflow, temp, DEFAULT_VISCOSITY) {};
 
   void OverdampedLangevinIntegrator::post_forces() {
     // Call to parent class
@@ -54,17 +46,6 @@ namespace GFlowSimulation {
       assert(fabs(v[i])<MAX_REASONABLE_V);
       #endif 
     }
-
-  }
-
-  void OverdampedLangevinIntegrator::setViscosity(RealType eta) {
-    viscosity = eta;
-    drift1 = temperature/(6.*viscosity*PI);
-  }
-
-  void OverdampedLangevinIntegrator::setTemperature(RealType T) {
-    temperature = T;
-    drift1 = temperature/(6.*viscosity*PI);
   }
 
 }

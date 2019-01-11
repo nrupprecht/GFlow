@@ -41,6 +41,9 @@ namespace GFlowSimulation {
     //! \brief Creates a single frame of 2D data.
     void createImage(string, const vector<float>&);
 
+    //! \brief Create a single frame from 2+ dimensional data projected into the first two dimensions.
+    void projectImage(string, const vector<float>&);
+
     //! \brief Creates a single frame of 3D data.
     void createImage3d(string, const vector<float>&);
 
@@ -57,6 +60,12 @@ namespace GFlowSimulation {
     inline void resetPlaces();
 
     inline void findPlaces();
+
+    inline bool do_checks(const vector<float>&);
+
+    inline void get_values(const float*, const float* &, const float* &, float&, int&, float&, float&);
+
+    inline void determine_color(RGBApixel&, int, const float*, const float*, int, float, float);
 
     //! \brief The dimensions of the image (it will be the same in x and y)
     int resolution = 1536;

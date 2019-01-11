@@ -27,21 +27,21 @@ namespace GFlowSimulation {
     // Update velocities
     if (sim_dimensions==2) {
       for (int i=0; i<total; i+=2) {
-	RealType m = im[i>>1];
-	v[i]   += hdt*m*f[i];
-	v[i+1] += hdt*m*f[i+1];
+        RealType m = im[i>>1];
+        v[i]   += hdt*m*f[i];
+        v[i+1] += hdt*m*f[i+1];
       }
     }
     else {
       for (int i=0; i<total; ++i) {
-	int id = i/sim_dimensions;
-	v[i] += hdt*im[id]*f[i];
-	// Debug mode asserts
+        int id = i/sim_dimensions;
+        v[i] += hdt*im[id]*f[i];
+        // Debug mode asserts
         #if DEBUG==1
-	assert(!isnan(f[i]));
-	assert(!isnan(v[i]));
-	assert(fabs(v[i])<MAX_REASONABLE_V);
-	assert(fabs(f[i])<MAX_REASONABLE_F);
+      	assert(!isnan(f[i]));
+        assert(!isnan(v[i]));
+        assert(fabs(v[i])<MAX_REASONABLE_V);
+        assert(fabs(f[i])<MAX_REASONABLE_F);
         #endif
       }
     }
@@ -54,7 +54,7 @@ namespace GFlowSimulation {
       simd_float _f = simd_load(&f[i]);
       simd_float V = simd_load(&v[i]);
 
-      /*
+      
       simd_float _im;
       switch (sim_dimensions) {
         case 1: 
@@ -69,9 +69,11 @@ namespace GFlowSimulation {
         case 4:
           _im = simd_load_constant<4>(im, i);
           break;
+        default:
+          throw false;
+          break;
       }
-      */
-      simd_float _im = simd_load_constant<2>(im, i);
+      //simd_float _im = simd_load_constant<2>(im, i);
 
       simd_float dV = _hdt*_im*_f;
       simd_float V_new = V + dV;
@@ -149,21 +151,21 @@ namespace GFlowSimulation {
     #if SIMD_TYPE==SIMD_NONE
     if (sim_dimensions==2) {
       for (int i=0; i<total; i+=2) {
-	RealType m = im[i>>1];
-	v[i]   += hdt*m*f[i];
-	v[i+1] += hdt*m*f[i+1];
+      	RealType m = im[i>>1];
+      	v[i]   += hdt*m*f[i];
+      	v[i+1] += hdt*m*f[i+1];
       }
     }
     else {
       for (int i=0; i<total; ++i) {
-	int id = i/sim_dimensions;
-	v[i] += hdt*im[id]*f[i];
-	// Debug mode asserts
+      	int id = i/sim_dimensions;
+      	v[i] += hdt*im[id]*f[i];
+      	// Debug mode asserts
         #if DEBUG==1
-	assert(!isnan(f[i]));
-	assert(!isnan(v[i]));
-	assert(fabs(v[i])<MAX_REASONABLE_V);
-	assert(fabs(f[i])<MAX_REASONABLE_F);
+      	assert(!isnan(f[i]));
+      	assert(!isnan(v[i]));
+      	assert(fabs(v[i])<MAX_REASONABLE_V);
+      	assert(fabs(f[i])<MAX_REASONABLE_F);
         #endif
       }
     }
@@ -176,7 +178,6 @@ namespace GFlowSimulation {
       simd_float vec1   = simd_load(&f[i]);
       simd_float V      = simd_load(&v[i]);
 
-      /*
       simd_float _im;
       switch (sim_dimensions) {
         case 1: 
@@ -191,9 +192,10 @@ namespace GFlowSimulation {
         case 4:
           _im = simd_load_constant<4>(im, i);
           break;
+        default:
+          throw false;
+          break;
       }
-      */
-      simd_float _im = simd_load_constant<2>(im, i);
 
       simd_float im_hdt = simd_mult(_im, _hdt);
       simd_float im_h_f = simd_mult(im_hdt, vec1);

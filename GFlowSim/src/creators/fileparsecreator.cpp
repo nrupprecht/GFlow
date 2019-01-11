@@ -156,7 +156,7 @@ namespace GFlowSimulation {
     // --- Look for dimensions
     parser.getHeading_Optional("Dimensions");
     hd = parser.first();
-    int sim_dimensions = 2;
+    sim_dimensions = 2; // Default value
     if (hd) {
       parser.extract_first_parameter(sim_dimensions);
       if (sim_dimensions<=0) throw BadDimension();
@@ -192,12 +192,7 @@ namespace GFlowSimulation {
     hd = parser.first();
     if (hd) {
       string opt;
-      if (parser.extract_first_parameter(opt)) {
-        if (opt=="Repulse") gflow->setAllBCs(BCFlag::REPL);
-        else if (opt=="Wrap") gflow->setAllBCs(BCFlag::WRAP);
-        else if (opt=="Reflect") gflow->setAllBCs(BCFlag::REFL);
-        else throw BadStructure("Unrecognized boundary condition ["+opt+"].");
-      }
+      if (parser.extract_first_parameter(opt)) gflow->setBC(d, choose_bc(opt));
       else {
         ParseHelper subParser(hd);
         subParser.set_variables(variables);
@@ -205,10 +200,7 @@ namespace GFlowSimulation {
         int d=0;
         for (auto m=subParser.begin() ; m!=subParser.end(); ++m, ++d) {
           opt = m.convert_param<string>();
-          if (opt=="Repulse") gflow->setBC(d, BCFlag::REPL);
-          else if (opt=="Wrap") gflow->setBC(d, BCFlag::WRAP);
-          else if (opt=="Reflect") gflow->setBC(d, BCFlag::REFL);
-          else throw BadStructure("Unrecognized boundary condition ["+opt+"].");
+          gflow->setBC(d, choose_bc(opt));
         }
       }
     }
@@ -398,8 +390,11 @@ namespace GFlowSimulation {
     if      (token=="VelocityVerlet")       integrator = new VelocityVerlet(gflow);
     else if (token=="OverdampedIntegrator") integrator = new OverdampedIntegrator(gflow);
     else if (token=="OverdampedLangevin")   integrator = new OverdampedLangevinIntegrator(gflow);
-    else if (token=="LangevinIntegrator") {
-      LangevinIntegrator *langevin = new LangevinIntegrator(gflow);
+    else if (token=="LangevinIntegrator")    integrator = new LangevinIntegrator(gflow);
+    else throw UnexpectedOption();
+    // Temperature and viscosity for LangevinType integrators
+    LangevinTypeIntegrator* lti = dynamic_cast<LangevinTypeIntegrator*>(integrator);
+    if (lti) {
       if (!head->subHeads.empty()) {
         // Gather options
         std::map<string, HeadNode*> options;
@@ -408,18 +403,16 @@ namespace GFlowSimulation {
         // Check for temperature
         auto it = options.find("Temperature");
         if (it!=options.end()) {
-          langevin->setTemperature(convert<RealType>(it->second->params[0]->partA));
+          lti->setTemperature(convert<RealType>(it->second->params[0]->partA));
         }
         // Check for viscosity
         it = options.find("Viscosity");
         if (it!=options.end()) {
-          langevin->setViscosity(convert<RealType>(it->second->params[0]->partA));
+          lti->setViscosity(convert<RealType>(it->second->params[0]->partA));
         }
       }
-      integrator = langevin;
     }
-    else throw UnexpectedOption();
-    // Look for options
+    // Look for general options
     ParseHelper parser(head);
     parser.set_variables(variables);
     parser.addValidSubheading("Delay");
@@ -493,9 +486,9 @@ namespace GFlowSimulation {
   }
 
   inline BCFlag FileParseCreator::choose_bc(string& token) const {
-    if      (token=="Wrap") return BCFlag::WRAP;
-    else if (token=="Refl") return BCFlag::REFL;
-    else if (token=="Repl") return BCFlag::REPL;
+    if      (token=="Wrap")     return BCFlag::WRAP;
+    else if (token=="Reflect")  return BCFlag::REFL;
+    else if (token=="Replulse") return BCFlag::REPL;
     else throw UnexpectedOption();
   }
 
@@ -705,7 +698,8 @@ namespace GFlowSimulation {
     }
 
     // Print status
-    build_message += "From Fill Area: Done with initial particle assigmnemt.\n"; 
+    build_message += "From Fill Area: Done with initial particle assigmnemt. There are " + toStr(simData->size()) + " particles.\n"; 
+    cout << "Relaxing " << simData->size() << " particles.\n";
 
     // --- Relax the simulation
     if (relax_length<0) relax_length = 0.1; // Default relax length is 0.1
