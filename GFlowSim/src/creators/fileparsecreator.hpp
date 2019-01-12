@@ -4,6 +4,7 @@
 #include "../base/creator.hpp"
 #include "../utility/parsehelper.hpp"
 #include "particletemplate.hpp"
+#include "fillbounds.hpp"
 
 #include <map>
 
@@ -16,107 +17,6 @@ namespace GFlowSimulation {
   const string Interactions_Token = "Force-grid";
   const string Boundary_Token = "Boundary-conditions";
   const string Fill_Token = "Fill-area";
-
-  struct FillBounds {
-    FillBounds(int dim) : bnd_dimensions(dim) {};
-
-    //! \brief Returns the volume of the bounds
-    virtual double vol()=0;
-    //! \brief Return a random position within the bounds
-    virtual void pick_position(RealType*)=0;
-    //! \brief Get rectangular bounds that enclose the bounds
-    virtual Bounds getBounds()=0;
-
-    //! \brief Number of dimensions the bounds takes up.
-    //!
-    //! We include this so we can make lower dimensional fill areas - walls, lines, etc
-    const int bnd_dimensions;
-  };
-
-  struct RectangularBounds : public FillBounds {
-    RectangularBounds(int dim) : FillBounds(dim) {
-      min = new RealType[dim];
-      max = new RealType[dim];
-    }
-
-    RectangularBounds(Bounds bnds, int dim) : FillBounds(dim) {
-      min = new RealType[dim];
-      max = new RealType[dim];
-      for (int d=0; d<dim; ++d) {
-        min[d] = bnds.min[d];
-        max[d] = bnds.max[d];
-      }
-    }
-
-    ~RectangularBounds() {
-      if (min) delete [] min;
-      if (max) delete [] max;
-    }
-
-    virtual double vol() override {
-      float v = 1;
-      for (int d=0; d<bnd_dimensions; ++d)
-        v *= (max[d] - min[d]);
-      return v;
-    }
-
-    virtual void pick_position(RealType *x) override {
-      for (int d=0; d<bnd_dimensions; ++d) 
-        x[d] = drand48()*(max[d] - min[d]) + min[d];
-    }
-
-    Bounds getBounds() override {
-      Bounds bnds(bnd_dimensions);
-      for (int d=0; d<bnd_dimensions; ++d) {
-        bnds.min[d] = min[d];
-        bnds.max[d] = max[d];
-      }
-      return bnds;
-    }
-
-    float *min, *max;
-  };
-
-  struct SphericalBounds : public FillBounds {
-    SphericalBounds(int dim) : FillBounds(dim), radius(0) {
-      center = new RealType[dim];
-    }
-
-    ~SphericalBounds() {
-      delete [] center;
-    }
-
-    virtual double vol() override {
-      return sphere_volume(radius, bnd_dimensions);
-    }
-
-    virtual void pick_position(RealType *x) override {
-      if (radius==0) {
-        zeroVec(x, bnd_dimensions);
-        return;
-      }
-      // Do this the dumb way for now, so it works in arbitrary # of dimensions
-      bool good = false;
-      while (!good) {
-        for (int d=0; d<bnd_dimensions; ++d)
-          x[d] = 2*(drand48() - 0.5)*radius + center[d];
-        // Check whether the point is good
-        good = sqr(x, bnd_dimensions)<=sqr(radius);
-      }
-    }
-
-    Bounds getBounds() override {
-      Bounds bnds(bnd_dimensions);
-      for (int d=0; d<bnd_dimensions; ++d) {
-        bnds.min[d] = center[d] - radius;
-        bnds.max[d] = center[d] + radius;
-      }
-      return bnds;
-    }
-
-    float *center;
-    float radius;
-  };
 
   /**
   *  \brief A creator that creates a simulation from a file.

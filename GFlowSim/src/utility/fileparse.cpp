@@ -81,6 +81,8 @@ namespace GFlowSimulation {
       // Get next character
       fin.get(c);
     }
+    // Return success
+    return true;
   }
 
   inline void FileParse::passWhiteSpaces(std::ifstream& fin) {
@@ -254,7 +256,7 @@ namespace GFlowSimulation {
     // Check what kind of comment this is
     if (c=='/')      passComment(fin, false);
     else if (c=='*') passComment(fin, true);
-    else             throw UnexpectedToken();
+    else             throw UnexpectedToken("Token: ["+toStr(c)+"].");
   }
 
   inline string FileParse::tabs() {

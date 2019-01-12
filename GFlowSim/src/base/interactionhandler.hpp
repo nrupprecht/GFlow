@@ -36,6 +36,11 @@ namespace GFlowSimulation {
   public:
     //! Constructor
     InteractionHandler(GFlow *gflow) : Base(gflow) {};
+
+    //! \brief Virtual destructor.
+    //!
+    //! Doesn't do anything, but keeps warnings from arising.
+    virtual ~InteractionHandler() {};
     
     //! \brief Add a pair of interacting particles.
     virtual void addPair(const int, const int) = 0;

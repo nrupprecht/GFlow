@@ -29,7 +29,8 @@ namespace GFlowSimulation {
   //! @brief Given a position and cutoff value, this function returns the
   //! ids of the processors which this particle overlaps.
   vector<int> GridTopology::domain_overlaps(const RealType *x, const RealType sg) {
-    
+    // STUB
+    return vector<int>();
   }
 
   //! @brief Determines which processor a position falls into.
@@ -38,23 +39,27 @@ namespace GFlowSimulation {
     for (int d=0; d<sim_dimensions; ++d) {
       index += (x[d] - simulation_bounds.min[d]) / simulation_bounds.wd(d) * products[d];
     }
+    return index;
   }
 
   //! @brief Takes in a processor id and dimension, returns whether there is a domain
   //! "above" it in that dimension.
   bool GridTopology::existsDomainUp(int id, int dim) {
-
+    // STUB
+    return false;
   }
 
   //! @brief Takes in a processor id and dimension, returns whether there is a domain
   //! "below" it in that dimension.
   bool GridTopology::existsDomainDown(int id, int dim) {
-
+    // STUB
+    return false;
   }
 
   //! @brief Get the bounds managed by a processor.
   Bounds GridTopology::getBounds(int rnk) {
-    
+    // STUB
+    return Bounds(2);
   }
 
 }

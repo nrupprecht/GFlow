@@ -15,10 +15,10 @@ namespace GFlowSimulation {
   */
   class DataMaster : public Base {
   public:
-    //! Constructor
+    //! Constructor.
     DataMaster(GFlow *);
 
-    //! Destructor
+    //! Destructor.
     ~DataMaster();
 
     virtual void initialize() override;
@@ -73,23 +73,23 @@ namespace GFlowSimulation {
   protected:
     // --- Helper functions
 
-    //! @brief Write a summary of the run to a text file.
+    //! \brief Write a summary of the run to a text file.
     inline bool writeSummary(string);
 
-    //! @brief Write particle data to a stream.
+    //! \brief Write particle data to a stream.
     inline void writeParticleData(std::ostream&);
 
-    //! @brief Compute and write data concerning the domain to a stream.
+    //! \brief Compute and write data concerning the domain to a stream.
     inline void writeDomainData(std::ostream&);
 
-    //! @brief Write more technical data to a separate file.
+    //! \brief Write more technical data to a separate file.
     inline bool writeLogFile(string);
 
     // Command line arguments
     int argc = 0;
     char **argv = nullptr;
 
-    //! @brief How long it took to initialize the simulation
+    //! \brief How long it took to initialize the simulation
     RealType initialization_time = -1;
     //! Run time (real time)
     RealType run_time = 0;
@@ -103,7 +103,7 @@ namespace GFlowSimulation {
     //! The data objects we are responsible for
     vector<DataObject*> dataObjects;
 
-    //! @brief Files that should be written to the summary directory: {name, contents}
+    //! \brief Files that should be written to the summary directory: {name, contents}
     vector<pair<string, string> > files;
   };
 

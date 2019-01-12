@@ -115,7 +115,7 @@ namespace GFlowSimulation {
 
   template<typename T> inline void normalizeVec(T *norm, int dimensions) {
     T mag = 0;
-    for (int d=0; d<dimensions; ++d) mag += sqr(norm[d]);
+    for (int d=0; d<dimensions; ++d) mag += norm[d]*norm[d];
     T invMag = mag>0 ? 1./sqrt(mag) : 0;
     scalarMultVec(invMag, norm, dimensions);
   }

@@ -88,9 +88,9 @@ namespace GFlowSimulation {
   *  needs to be implemented for proper functionality.
   */
   struct Unimplemented : public Exception {
-    //! Default constructor.
+    //! \brief Default constructor.
     Unimplemented() {};
-    //! Message constructor.
+    //! \brief Message constructor.
     Unimplemented(const string& m) : Exception(m) {};
   };
 

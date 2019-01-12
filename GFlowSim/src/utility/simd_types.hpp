@@ -291,25 +291,4 @@ const int simd_valid = 0xffffffff;
   }
 #endif
 
-// --- Operators
-#if SIMD_TYPE!=SIMD_NONE
-
-  inline simd_float operator+(const simd_float a, const simd_float b) {
-    return simd_add(a, b);
-  }
-
-  inline simd_float operator-(const simd_float a, const simd_float b) {
-    return simd_sub(a, b);
-  }
-
-  inline simd_float operator*(const simd_float a, const simd_float b) {
-    return simd_mult(a, b);
-  }
-
-  inline simd_float operator/(const simd_float a, const simd_float b) {
-    return simd_div(a, b);
-  }
-#endif
-
-
 #endif // __SIMD_TYPES_HPP__GFLOW__

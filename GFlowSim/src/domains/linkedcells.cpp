@@ -30,7 +30,7 @@ namespace GFlowSimulation {
     // Find average sigma
     RealType sigma = 0, max_sigma = 0;
     for (int n=0; n<Base::simData->size(); ++n) {
-      if (Base::simData->Type()<0) continue;
+      if (Base::simData->Type(n)<0) continue;
       RealType s = Base::simData->Sg(n);
       sigma += s;
       if (s>max_sigma) max_sigma = s;
@@ -40,7 +40,7 @@ namespace GFlowSimulation {
     RealType threshold = 0.5*(sigma + max_sigma), max_under = sigma;
     if (threshold!=sigma) {
       for (int n=0; n<Base::simData->size(); ++n) {
-        if (Base::simData->Type()<0) continue;
+        if (Base::simData->Type(n)<0) continue;
         RealType s = Base::simData->Sg(n);
         if (s<threshold && max_under<s) max_under = s;
       }

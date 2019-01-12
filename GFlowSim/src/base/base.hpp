@@ -6,7 +6,7 @@
 namespace GFlowSimulation {
 
   /*
-  *  @brief The base class for simulation object that have to interact with other simulation objects.
+  *  \brief The base class for simulation object that have to interact with other simulation objects.
   * 
   *  Having every class inherit from this gives everyone access to all data.
   *  This idea was inspired by LAMMPS.
@@ -14,10 +14,15 @@ namespace GFlowSimulation {
   */
   class Base {
   public:
-    // Constructor - copies values from the [GFlow] class to the pointers in the [Base] class
+    //! \brief Constructor - copies values from the [GFlow] class to the pointers in the [Base] class
     Base(class GFlow *);
 
-    // Initialize the base object - make sure all the pointers are pointing to up to date objects
+    //! \brief Virtual destructor.
+    //!
+    //! Doesn't do anything, but keeps warnings from arising.
+    ~Base() {};
+
+    //! \brief Initialize the base object - make sure all the pointers are pointing to up to date objects
     virtual void initialize();
 
     // --> All the times when a base object can act during the run cycle
@@ -52,14 +57,14 @@ namespace GFlowSimulation {
     std::list<class Modifier*> *modifiersPtr;
     vector<class Interaction*> *interactionsPtr;
 
-    //! @brief The number of dimensions in the simulation. We get this from GFlow.
+    //! \brief The number of dimensions in the simulation. We get this from GFlow.
     int sim_dimensions;
 
-    //! @brief Pointer to the topology of the simulation
+    //! \brief Pointer to the topology of the simulation
     class Topology *topology;
-    //! @brief Rank of this processor.
+    //! \brief Rank of this processor.
     int rank = 0;
-    //! @brief Total number of processes being used
+    //! \brief Total number of processes being used
     int numProc = 1;
   };
 

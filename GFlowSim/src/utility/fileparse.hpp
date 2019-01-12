@@ -68,6 +68,7 @@ namespace GFlowSimulation {
     // Exceptions
     //! @brief An exception class that is thrown if an unexpected character is encountered.
     class UnexpectedToken : public Exception {
+    public:
       //! \brief Default constructor.
       UnexpectedToken() {};
       //! \brief Message constructor.

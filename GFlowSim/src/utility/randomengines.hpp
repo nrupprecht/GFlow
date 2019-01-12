@@ -7,6 +7,8 @@ namespace GFlowSimulation {
 
   class RandomEngine {
   public:
+    virtual ~RandomEngine() {};
+
     // @brief Generate a random number from the engine.
     virtual double generate() = 0;
 
