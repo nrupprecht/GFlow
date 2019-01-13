@@ -19,7 +19,7 @@ namespace GFlowSimulation {
     //! \brief Virtual destructor.
     //!
     //! Doesn't do anything, but keeps warnings from arising.
-    ~DataObject() {};
+    virtual ~DataObject() {};
 
     //! \brief  Write data to a file - if true, the string is a path, and you should use your own name as the file name
     virtual bool writeToFile(string, bool=true) = 0;

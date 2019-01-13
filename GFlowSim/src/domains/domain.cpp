@@ -404,7 +404,7 @@ namespace GFlowSimulation {
     // Product lambda
     linear = 0;
     for (int d=0; d<sim_dimensions; ++d)
-      linear += tuple[d]*products[d+1]; //product(d+1);
+      linear += tuple[d]*products[d+1];
   }
 
   inline bool Domain::correct_index(int *tuple) {

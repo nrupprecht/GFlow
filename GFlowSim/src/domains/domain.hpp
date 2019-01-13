@@ -36,8 +36,14 @@ namespace GFlowSimulation {
     //! overlap too much with any other particle, even if the other particle will be removed.
     virtual void removeOverlapping(RealType) override;
 
+    //! \brief Construct neighbor lists.
+    //!
+    //! Resets cells, then creates all the neighbor lists from the cells.
     virtual void construct() override;
 
+    //! \brief Set the minimum cell size. 
+    //!
+    //! Causes a rebuild of all the cells.
     virtual void setCellSize(RealType) override;
 
   private:
@@ -85,6 +91,10 @@ namespace GFlowSimulation {
     //!
     //! 0 - None, 1 - Halo, 2 - Wrap.
     int *border_type_up   = nullptr;
+
+    //! \brief What type of borders there are in the "down" directions.
+    //!
+    //! 0 - None, 1 - Halo, 2 - Wrap.
     int *border_type_down = nullptr;
 
     //! \brief Whether the domain has been initialized or not.

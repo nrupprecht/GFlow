@@ -24,7 +24,7 @@ namespace GFlowSimulation {
   *  This creator parses the contents of a file and creates a simulation from the
   *  options specified in that file.
   *
-  *  @see Creator
+  *  \see Creator
   */
   class FileParseCreator : public Creator {
   public:
