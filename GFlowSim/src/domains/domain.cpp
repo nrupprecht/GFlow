@@ -257,14 +257,10 @@ namespace GFlowSimulation {
             for (const auto id2 : d->particle_ids) {
               // If the other particle is a large particle, it will take care of this interaction
               if (sg[id2]>max_small_sigma) continue;
-
-              pair_interaction(id1, id2); //--- //***
-              /*
               // Look for distance between particles
               RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
               if (r2 < sqr(sg[id1] + sg[id2] + skin_depth) || max_reasonable<r2)
                 pair_interaction(id1, id2);
-              */
             }
         }
         
@@ -352,21 +348,19 @@ namespace GFlowSimulation {
       widths[d] = domain_bounds.wd(d)/dims[d];
       inverseW[d] = 1./widths[d];
 
-      //----
+      // Do border related work
       if (border_type_down[d]) {
         extended_bounds.min[d] -= widths[d];
         ++dims[d];
         dim_shift_down[d] = 1;
       }
       else dim_shift_down[d] = 0;
-
       if (border_type_up[d]) {
         extended_bounds.max[d] += widths[d];
         ++dims[d];
         dim_shift_up[d] = 1;
       }
       else dim_shift_up[d] = 0;
-      //----
     }
   }
 
@@ -424,20 +418,6 @@ namespace GFlowSimulation {
       }
     }
 
-    //**
-    cout << "Map: \n";
-    for (int y=dims[1]-1; y>=0; --y) {
-      for (int x=0; x<dims[0]; ++x) {
-        int linear;
-        tuple1[0] = x; tuple1[1] = y;
-        tuple_to_linear(linear, tuple1);
-        cout << cells[linear].adjacent.size() << ", ";
-      }
-      cout << endl;
-    }
-    cout << endl;
-    //**
-
     // Clean up 
     delete [] tuple1;
     delete [] tuple2;
@@ -486,7 +466,7 @@ namespace GFlowSimulation {
     bool good_index = true;
     const BCFlag *bcs = gflow->getBCs();
     for (int d=0; d<sim_dimensions; ++d) {
-      if (index[d]>=dims[d]+dim_shift_down[d]-dim_shift_up[d]) {
+      if (index[d]>=dims[d]-dim_shift_down[d]) {
         if (bcs[d]==BCFlag::WRAP && wrap)
           index[d] -= (dims[d]-dim_shift_down[d]-dim_shift_up[d]);
         else good_index = false;
