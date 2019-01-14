@@ -44,25 +44,20 @@ namespace GFlowSimulation {
     // Get the bounds from the gflow object - for now assumes this is the only domain, so bounds==domain_bounds
     domain_bounds = gflow->getBounds();
 
-    // If bounds are unset, then don't make sectors
-    if (domain_bounds.vol()<=0) return;
+    // If bounds are unset, then don't make sectors. We cannot initialize if simdata is null
+    if (domain_bounds.vol()<=0 || simData==nullptr) return; 
 
-    // We cannot initialize if simdata is null
-    if (simData==nullptr) return;
+    // Assign border types - do this before creating cells.
+    assign_border_types();
 
     // Calculate the maxiumu "small sigma"
     calculate_max_small_sigma();
 
     // Use max_small_sigma
-    cutoff = (2*max_small_sigma+skin_depth);
-    for (int d=0; d<sim_dimensions; ++d) {
-      dims[d] = static_cast<int>(domain_bounds.wd(d)/cutoff);
-      if (dims[d]<=0) throw BadBounds(); // Make sure bin numbers are positive
-      widths[d] = domain_bounds.wd(d)/dims[d];
-      inverseW[d] = 1./widths[d];
-    }
-    minCutoff = 2*max_small_sigma + skin_depth;
+    cutoff = minCutoff = 2*max_small_sigma+skin_depth;
 
+    calculate_domain_cell_dimensions();
+    
     // Initialize products array
     products[sim_dimensions] = 1;
     for (int d=sim_dimensions-1; d>=0; --d)
@@ -316,9 +311,10 @@ namespace GFlowSimulation {
     number = simData->number();
   }
 
-  inline void Domain::create_cells() {
-    // --- Determine border type
+  inline void Domain::assign_border_types() {
     const BCFlag *bcs = Base::gflow->getBCs(); // Get the boundary condition flags
+    //! \todo Use topology object to determine border types.
+    //! For now, just use halo cells whenever possible.
     for (int d=0; d<sim_dimensions; ++d) {
       if (bcs[d]==BCFlag::WRAP) {
         border_type_up[d] = 1;
@@ -329,6 +325,19 @@ namespace GFlowSimulation {
         border_type_down[d] = 0;
       }
     }
+  }
+
+  inline void Domain::calculate_domain_cell_dimensions() {
+    for (int d=0; d<sim_dimensions; ++d) {
+      dims[d] = static_cast<int>(domain_bounds.wd(d)/cutoff);
+      // Check that the bounds are good
+      if (dims[d]<=0) throw BadBounds();
+      widths[d] = domain_bounds.wd(d)/dims[d];
+      inverseW[d] = 1./widths[d];
+    }
+  }
+
+  inline void Domain::create_cells() {
     // --- Create the cells
     // Get the total number of cells - The dims MUST be set first.
     const int size = getNumCells();
@@ -336,7 +345,7 @@ namespace GFlowSimulation {
 
     // Holder for tuple index
     int *tuple1 = new int[sim_dimensions], *tuple2 = new int[sim_dimensions];
-    // --- Create a neighborhood stencil to help us find adjacent cells
+    // --- Create a neighborhood stencil to help us find adjacent cells.
     int sweep = ceil(minCutoff/min(widths, sim_dimensions));
     vector<int*> neighbor_indices;
     int *little_dims = new int[sim_dimensions], *center = new int[sim_dimensions];
@@ -360,7 +369,7 @@ namespace GFlowSimulation {
       // Set cell neighbors
       for (auto n : neighbor_indices) {
         addVec(tuple1, n, tuple2, sim_dimensions);
-        if (correct_index(tuple2)) {
+        if (correct_index(tuple2, true)) {
           int linear;
           tuple_to_linear(linear, tuple2);
           cells[c].adjacent.push_back(&cells[linear]);
@@ -384,12 +393,19 @@ namespace GFlowSimulation {
     // We should have just done a particle removal, so we can use number, not size (since all arrays are compressed)
     RealType **x = simData->X();
     int number = Base::simData->number();
+    int *tuple = new int[sim_dimensions], linear;
+
     // Bin all the particles
     for (int i=0; i<number; ++i) {
-      int linear = get_cell_index(x[i]);
+      linear = get_cell_index(x[i]);
       // Stores the *local* id of the particle
       cells[linear].particle_ids.push_back(i);
     }
+    
+    // do_halo_assignment();
+
+    // Clean up
+    delete [] tuple;
   }
 
   // Turns a linear cell index into a (DIMENSIONS)-dimensional index
@@ -407,17 +423,17 @@ namespace GFlowSimulation {
       linear += tuple[d]*products[d+1];
   }
 
-  inline bool Domain::correct_index(int *tuple) {
+  inline bool Domain::correct_index(int *tuple, bool wrap) {
     bool good_index = true;
     const BCFlag *bcs = gflow->getBCs();
     for (int d=0; d<sim_dimensions; ++d) {
       if (tuple[d]>=dims[d]) {
-        if (bcs[d]==BCFlag::WRAP)
+        if (bcs[d]==BCFlag::WRAP && wrap)
           tuple[d] -= dims[d];
         else good_index = false;
       }
       if (tuple[d]<0) {
-        if (bcs[d]==BCFlag::WRAP) tuple[d] += dims[d];
+        if (bcs[d]==BCFlag::WRAP && wrap) tuple[d] += dims[d];
         else good_index = false;
       }
     }
@@ -428,14 +444,8 @@ namespace GFlowSimulation {
     for (int d=0; d<sim_dimensions; ++d) {
       index[d] = static_cast<int>((x[d] - domain_bounds.min[d])*inverseW[d]);
 
-      // Increment index if there are halo or ghost cells
-      // if (border_type_down[d]) ++index[d];
-
-      // Even when wrapping, rounding errors (I assume) can cause index to be too large.
-      // When not wrapping, particles could be outside the sectorization grid
-      // This also may be useful later for parallel things, if a particle should interact with
-      // particles in this domain, but is so big that it is outside of the ghost cells.
-      if (index[d]>=dims[d]) index[d] = dims[d]-1; 
+      // Even when wrapping, rounding errors or drifting can cause index to be too large or small.
+      if (index[d]>=dims[d]) index[d] = dims[d]-1;
       else if (index[d]<0)   index[d] = 0;
     }
   }
@@ -444,12 +454,97 @@ namespace GFlowSimulation {
     int linear = 0;
     for (int d=0; d<sim_dimensions; ++d) {
       RealType dth = static_cast<int>((x[d] - domain_bounds.min[d])*inverseW[d]);
-      if (dth>=dims[d]) dth = dims[d]-1; 
+      if (dth>=dims[d]) dth = dims[d]-1;
       else if (dth<0)   dth = 0;
       linear += dth*products[d+1];
     }
     // Return the index
     return linear;
+  }
+
+  inline void Domain::add_to_cell(const RealType *x, int id) {
+    int linear = get_cell_index(Base::simData->X(id));
+    // Stores the *local* id of the particle
+    cells[linear].particle_ids.push_back(id);
+  }
+
+  inline void Domain::do_halo_assignment() {
+    // TWO DIMENSIONS
+    int count = 0, linear = 0, *tuple = new int[sim_dimensions];
+
+    vector<int> plus_list, minus_list;
+    RealType *dR = new RealType[sim_dimensions];
+    
+    if (border_type_up[0]) { // Wrap in X direction
+      // Bottom
+      for (int i=0; i<dims[0]; ++i) {
+        tuple[0] = 0; tuple[1] = i;
+        tuple_to_linear(linear, tuple);
+        // Create halo particle
+        for (auto id : cells[linear].particle_ids) {
+          ++count;
+          plus_list.push_back(id);
+        }
+      }
+      // Top
+      for (int i=0; i<dims[0]; ++i) {
+        tuple[0] = dims[1]-1; tuple[1] = i;
+        tuple_to_linear(linear, tuple);
+        for (auto id : cells[linear].particle_ids) {
+          ++count;
+          minus_list.push_back(id);
+        }
+      }
+      // Add particles to simdata and cells
+      dR[0] = domain_bounds.wd(0); dR[1] = 0;
+      halo_list_add(plus_list,  dR);
+      dR[0] = -domain_bounds.wd(0); dR[1] = 0;
+      halo_list_add(minus_list, dR);
+      plus_list.clear(); minus_list.clear();
+    }
+
+    /*
+    if (border_type_up[1]) {
+      // Bottom
+      for (int i=0; i<dims[1]; ++i) {
+        tuple[0] = i; tuple[1] = 0;
+        tuple_to_linear(linear, tuple);
+        for (auto id : cells[linear].particle_ids) {
+          ++count;
+          plus_list.push_back(id);
+        }
+      }
+      // Top
+      for (int i=0; i<dims[1]; ++i) {
+        tuple[0] = i; tuple[1] = dims[0]-1;
+        tuple_to_linear(linear, tuple);
+        for (auto id : cells[linear].particle_ids) {
+          ++count;
+          minus_list.push_back(id);
+        }
+      }
+      // Add particles to simdata and cells
+      dR[0] = 0; dR[1] = domain_bounds.wd(1);
+      halo_list_add(plus_list,  dR);
+      dR[0] = 0; dR[1] = -domain_bounds.wd(1);
+      halo_list_add(minus_list, dR);
+      plus_list.clear(); minus_list.clear();
+    }
+    */
+
+    //! \todo Check edge cells for particles that should produce ghost particles
+    // ---
+
+    // Clean up
+    delete [] tuple;
+  }
+
+  inline void Domain::halo_list_add(const vector<int>& id_list, RealType *displacement) {
+    for (auto id : id_list) {
+      Base::simData->create_halo_of(id, displacement);
+      int id2 = Base::simData->size()-1; // The id of the halo particle
+      add_to_cell(Base::simData->X(id2), id2); // Add the halo particle to the cells
+    }
   }
 
   void Domain::calculate_max_small_sigma() {
