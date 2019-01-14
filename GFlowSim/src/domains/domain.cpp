@@ -11,24 +11,35 @@
 
 namespace GFlowSimulation {
 
-  Domain::Domain(GFlow *gflow) : DomainBase(gflow) {
+  Domain::Domain(GFlow *gflow) : DomainBase(gflow), extended_bounds(2) {
+    // Allocate arrays
     border_type_up = new int[sim_dimensions];
     border_type_down = new int[sim_dimensions];
+    dim_shift_up = new int[sim_dimensions];
+    dim_shift_down = new int[sim_dimensions];
     products = new int[sim_dimensions+1];
-    // Initialize values
-    for (int d=0; d<sim_dimensions; ++d) {
-      border_type_up[d]   = 0;
-      border_type_down[d] = 0;
-    }
+    // Initialize to zero
+    zeroVec(border_type_up, sim_dimensions);
+    zeroVec(border_type_down, sim_dimensions);
+    zeroVec(dim_shift_up, sim_dimensions);
+    zeroVec(dim_shift_down, sim_dimensions);
+    zeroVec(products, sim_dimensions);
+    // Extended values
+    extended_bounds = Bounds(sim_dimensions);
   };
 
   Domain::~Domain() {
-    // Delete this object's data
+    // Delete this object's data.
     if (border_type_up)   delete [] border_type_up;
     if (border_type_down) delete [] border_type_down;
+    if (dim_shift_up)     delete [] dim_shift_up;
+    if (dim_shift_down)   delete [] dim_shift_down;
     if (products)         delete [] products;
+    // Null pointers, just in case.
     border_type_up = nullptr;
     border_type_down = nullptr;
+    dim_shift_up = nullptr;
+    dim_shift_down = nullptr;
     products = nullptr;
   }
 
@@ -43,6 +54,7 @@ namespace GFlowSimulation {
     bounds = Base::gflow->getBounds();
     // Get the bounds from the gflow object - for now assumes this is the only domain, so bounds==domain_bounds
     domain_bounds = gflow->getBounds();
+    extended_bounds = domain_bounds;
 
     // If bounds are unset, then don't make sectors. We cannot initialize if simdata is null
     if (domain_bounds.vol()<=0 || simData==nullptr) return; 
@@ -57,13 +69,11 @@ namespace GFlowSimulation {
     cutoff = minCutoff = 2*max_small_sigma+skin_depth;
 
     calculate_domain_cell_dimensions();
-    
-    // Initialize products array
-    products[sim_dimensions] = 1;
-    for (int d=sim_dimensions-1; d>=0; --d)
-      products[d] = dims[d]*products[d+1];
 
     //! @todo Processors might need to communicate with one another about what they chose at this point
+
+    // Initialize products array
+    calculate_product_array();
 
     // Create the cells
     create_cells();
@@ -235,6 +245,9 @@ namespace GFlowSimulation {
           ++q;
           for (; q!=c.particle_ids.end(); ++q) {
             int id2 = *q;
+            // If the other particle is a large particle, it will take care of this interaction
+            if (sg[id2]>max_small_sigma) continue;
+            // Look for distance between particles
             RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
             if (r2 < sqr(sg[id1] + sg[id2] + skin_depth))
               pair_interaction(id1, id2);
@@ -244,10 +257,14 @@ namespace GFlowSimulation {
             for (const auto id2 : d->particle_ids) {
               // If the other particle is a large particle, it will take care of this interaction
               if (sg[id2]>max_small_sigma) continue;
+
+              pair_interaction(id1, id2); //--- //***
+              /*
               // Look for distance between particles
               RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
               if (r2 < sqr(sg[id1] + sg[id2] + skin_depth) || max_reasonable<r2)
                 pair_interaction(id1, id2);
+              */
             }
         }
         
@@ -334,7 +351,29 @@ namespace GFlowSimulation {
       if (dims[d]<=0) throw BadBounds();
       widths[d] = domain_bounds.wd(d)/dims[d];
       inverseW[d] = 1./widths[d];
+
+      //----
+      if (border_type_down[d]) {
+        extended_bounds.min[d] -= widths[d];
+        ++dims[d];
+        dim_shift_down[d] = 1;
+      }
+      else dim_shift_down[d] = 0;
+
+      if (border_type_up[d]) {
+        extended_bounds.max[d] += widths[d];
+        ++dims[d];
+        dim_shift_up[d] = 1;
+      }
+      else dim_shift_up[d] = 0;
+      //----
     }
+  }
+
+  inline void Domain::calculate_product_array() {
+    products[sim_dimensions] = 1;
+    for (int d=sim_dimensions-1; d>=0; --d)
+      products[d] = dims[d]*products[d+1];
   }
 
   inline void Domain::create_cells() {
@@ -345,6 +384,7 @@ namespace GFlowSimulation {
 
     // Holder for tuple index
     int *tuple1 = new int[sim_dimensions], *tuple2 = new int[sim_dimensions];
+    
     // --- Create a neighborhood stencil to help us find adjacent cells.
     int sweep = ceil(minCutoff/min(widths, sim_dimensions));
     vector<int*> neighbor_indices;
@@ -363,12 +403,19 @@ namespace GFlowSimulation {
       }
     }
 
+    // At this point, the vector neighor_indices now contains all the relative indices of neighbors cells.
+    // Some "neighbors" might be out of bounds, but correct_index will take care of this.
+
     // --- Assign cell types, adjacent cells, set cell bounds
     for (int c=0; c<size; ++c) {
       linear_to_tuple(c, tuple1);
       // Set cell neighbors
       for (auto n : neighbor_indices) {
         addVec(tuple1, n, tuple2, sim_dimensions);
+
+        if ((tuple1[0]==0 || tuple1[0]==dims[0]-1) && dim_shift_down[0]) continue;
+        if ((tuple1[1]==0 || tuple1[1]==dims[1]-1) && dim_shift_down[1]) continue;
+
         if (correct_index(tuple2, true)) {
           int linear;
           tuple_to_linear(linear, tuple2);
@@ -376,6 +423,20 @@ namespace GFlowSimulation {
         }
       }
     }
+
+    //**
+    cout << "Map: \n";
+    for (int y=dims[1]-1; y>=0; --y) {
+      for (int x=0; x<dims[0]; ++x) {
+        int linear;
+        tuple1[0] = x; tuple1[1] = y;
+        tuple_to_linear(linear, tuple1);
+        cout << cells[linear].adjacent.size() << ", ";
+      }
+      cout << endl;
+    }
+    cout << endl;
+    //**
 
     // Clean up 
     delete [] tuple1;
@@ -386,7 +447,8 @@ namespace GFlowSimulation {
   }
 
   inline void Domain::clear_cells() {
-    for (auto &c : cells) c.particle_ids.clear();
+    for (auto &c : cells) 
+      c.particle_ids.clear();
   }
 
   inline void Domain::fill_cells() {
@@ -396,11 +458,8 @@ namespace GFlowSimulation {
     int *tuple = new int[sim_dimensions], linear;
 
     // Bin all the particles
-    for (int i=0; i<number; ++i) {
-      linear = get_cell_index(x[i]);
-      // Stores the *local* id of the particle
-      cells[linear].particle_ids.push_back(i);
-    }
+    for (int i=0; i<number; ++i) 
+      add_to_cell(x[i], i);
     
     // do_halo_assignment();
 
@@ -423,17 +482,18 @@ namespace GFlowSimulation {
       linear += tuple[d]*products[d+1];
   }
 
-  inline bool Domain::correct_index(int *tuple, bool wrap) {
+  inline bool Domain::correct_index(int *index, bool wrap) {
     bool good_index = true;
     const BCFlag *bcs = gflow->getBCs();
     for (int d=0; d<sim_dimensions; ++d) {
-      if (tuple[d]>=dims[d]) {
+      if (index[d]>=dims[d]+dim_shift_down[d]-dim_shift_up[d]) {
         if (bcs[d]==BCFlag::WRAP && wrap)
-          tuple[d] -= dims[d];
+          index[d] -= (dims[d]-dim_shift_down[d]-dim_shift_up[d]);
         else good_index = false;
       }
-      if (tuple[d]<0) {
-        if (bcs[d]==BCFlag::WRAP && wrap) tuple[d] += dims[d];
+      if (index[d]<dim_shift_down[d]) {
+        if (bcs[d]==BCFlag::WRAP && wrap) 
+          index[d] += (dims[d]-dim_shift_down[d]-dim_shift_up[d]);
         else good_index = false;
       }
     }
@@ -441,22 +501,22 @@ namespace GFlowSimulation {
   }
 
   inline void Domain::get_cell_index_tuple(const RealType *x, int *index) {
-    for (int d=0; d<sim_dimensions; ++d) {
-      index[d] = static_cast<int>((x[d] - domain_bounds.min[d])*inverseW[d]);
+    // This function is (currently) only used for finding the linear index of the cell the large object is in.
+    for (int d=0; d<sim_dimensions; ++d)
+      index[d] = static_cast<int>((x[d] - extended_bounds.min[d])*inverseW[d]);
 
-      // Even when wrapping, rounding errors or drifting can cause index to be too large or small.
-      if (index[d]>=dims[d]) index[d] = dims[d]-1;
-      else if (index[d]<0)   index[d] = 0;
-    }
+    // This is probably not neccessary...
+    correct_index(index);
   }
 
   int Domain::get_cell_index(const RealType *x) {
     int linear = 0;
     for (int d=0; d<sim_dimensions; ++d) {
-      RealType dth = static_cast<int>((x[d] - domain_bounds.min[d])*inverseW[d]);
-      if (dth>=dims[d]) dth = dims[d]-1;
-      else if (dth<0)   dth = 0;
-      linear += dth*products[d+1];
+      //-- domain_bounds --> extended_bounds
+      RealType index = static_cast<int>((x[d] - extended_bounds.min[d])*inverseW[d]);
+      if (index>=dims[d]) index = dims[d]-1;
+      else if (index<0)   index = 0;
+      linear += index*products[d+1];
     }
     // Return the index
     return linear;

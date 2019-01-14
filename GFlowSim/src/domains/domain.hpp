@@ -57,6 +57,9 @@ namespace GFlowSimulation {
     //! that the cutoff has been calculated.
     inline void calculate_domain_cell_dimensions();
 
+    //! \brief Calculates the array of products used to convert between linear and tuple indices.
+    inline void calculate_product_array();
+
     //! \brief Create the cells.
     inline void create_cells();
 
@@ -115,6 +118,9 @@ namespace GFlowSimulation {
     //! 0 - None, 1 - Halo, 2 - Wrap.
     int *border_type_down = nullptr;
 
+    int *dim_shift_up;
+    int *dim_shift_down;
+
     //! \brief Whether the domain has been initialized or not.
     bool initialized = false;
 
@@ -123,6 +129,8 @@ namespace GFlowSimulation {
 
     //! \brief A vector holding all the cells in the domain.
     vector<Cell> cells;
+
+    Bounds extended_bounds;
   };
 
 }
