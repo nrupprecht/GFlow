@@ -109,7 +109,7 @@ namespace GFlowSimulation {
 
   void DomainBase::construct() {
     // Remove all halo and ghost particles.
-    Base::simData->remove_halo_and_ghost_particles();
+    Base::simData->removeHaloAndGhostParticles();
     // Do necessary removals - this will compress the arrays so that there are no invalid (type -1) particles
     // and _number == _size
     Base::simData->doParticleRemoval();

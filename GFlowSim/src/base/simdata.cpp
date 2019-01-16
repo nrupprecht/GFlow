@@ -47,10 +47,6 @@ namespace GFlowSimulation {
     // Call base's initialize
     Base::initialize();
 
-    // Remove halo and ghost particles just in case some snuck in there
-    remove_halo_and_ghost_particles();
-    doParticleRemoval();
-
     // For now
     bounds = gflow->getBounds();
 
@@ -60,7 +56,7 @@ namespace GFlowSimulation {
 
   void SimData::post_integrate() {
     // Mark extraneous particles for removal
-    remove_halo_and_ghost_particles();
+    removeHaloAndGhostParticles();
     // Do actual particle removal.
     doParticleRemoval();
   }
@@ -91,7 +87,7 @@ namespace GFlowSimulation {
       resize_owned(new_capacity);
     }
     // Reset all data
-    resetParticle(_size);
+    reset_particle(_size);
     // Set type, give a global id
     Type(_size) = 0;
     id_map.insert(IPair(_size, next_global_id));
@@ -109,7 +105,7 @@ namespace GFlowSimulation {
     }
     for (int i=0; i<num; ++i) {
       // Reset all data
-      resetParticle(_size);
+      reset_particle(_size);
       // Set type, give a global id
       Type(_size) = 0;
       id_map.insert(IPair(_size, next_global_id));
@@ -131,7 +127,7 @@ namespace GFlowSimulation {
       resize_owned(new_capacity);
     }
     // Reset all data
-    resetParticle(_size);
+    reset_particle(_size);
     // Set data
     copyVec(x, X(_size), sim_dimensions);
     copyVec(v, V(_size), sim_dimensions);
@@ -385,7 +381,7 @@ namespace GFlowSimulation {
     return idata[1][i];
   }
 
-  int SimData::request_vector_data(string name) {
+  int SimData::requestVectorData(string name) {
     // Check if the data already exists
     auto it = vector_data_map.find(name);
     if (it!=vector_data_map.end()) return it->second;
@@ -397,7 +393,7 @@ namespace GFlowSimulation {
     return vdata.size()-1;
   }
 
-  int SimData::request_scalar_data(string name) {
+  int SimData::requestScalarData(string name) {
     // Check if the data already exists
     auto it = scalar_data_map.find(name);
     if (it!=scalar_data_map.end()) return it->second;
@@ -409,7 +405,7 @@ namespace GFlowSimulation {
     return sdata.size()-1;
   }
 
-  int SimData::request_integer_data(string name) {
+  int SimData::requestIntegerData(string name) {
     // Check if the data already exists
     auto it = integer_data_map.find(name);
     if (it!=integer_data_map.end()) return it->second;
@@ -421,21 +417,21 @@ namespace GFlowSimulation {
     return idata.size()-1;
   }
 
-  int SimData::get_vector_data(string name) {
+  int SimData::getVectorData(string name) {
     // Check if the data already exists
     auto it = vector_data_map.find(name);
     if (it!=vector_data_map.end()) return it->second;
     else return -1;
   }
 
-  int SimData::get_scalar_data(string name) {
+  int SimData::getScalarData(string name) {
     // Check if the data already exists
     auto it = scalar_data_map.find(name);
     if (it!=scalar_data_map.end()) return it->second;
     else return -1;
   }
 
-  int SimData::get_integer_data(string name) {
+  int SimData::getIntegerData(string name) {
     // Check if the data already exists
     auto it = integer_data_map.find(name);
     if (it!=integer_data_map.end()) return it->second;
@@ -444,7 +440,7 @@ namespace GFlowSimulation {
 
   //! \param id The id of the particle to copy
   //! \param displacement How should the halo particle be displaced relative to the original particle.
-  void SimData::create_halo_of(int id, const RealType *displacement) {
+  void SimData::createHaloOf(int id, const RealType *displacement) {
     // Record local ids
     halo_map.push_back(_size); // Halo local id
     halo_map.push_back(id);    // Original local id
@@ -458,7 +454,7 @@ namespace GFlowSimulation {
     //! \todo There may be other data we should copy
   }
 
-  void SimData::remove_halo_particles() {
+  void SimData::removeHaloParticles() {
     // Mark halo particles for removal
     for (int i=0; i<halo_map.size(); i+=2) 
       markForRemoval(halo_map[i]);
@@ -467,7 +463,7 @@ namespace GFlowSimulation {
     halo_displacement.clear();
   }
 
-  void SimData::remove_ghost_particles() {
+  void SimData::removeGhostParticles() {
     // Mark ghost particles for removal
     for (int i=0; i<ghost_map.size(); i+=2) 
       markForRemoval(ghost_map[i]);
@@ -475,9 +471,9 @@ namespace GFlowSimulation {
     ghost_map.clear();
   }
 
-  void SimData::remove_halo_and_ghost_particles() {
-    remove_halo_particles();
-    remove_ghost_particles();
+  void SimData::removeHaloAndGhostParticles() {
+    removeHaloParticles();
+    removeGhostParticles();
   }
 
   int SimData::size() const {
@@ -579,7 +575,7 @@ namespace GFlowSimulation {
     _capacity += num;
   }
 
-  void SimData::resetParticle(int id) {
+  void SimData::reset_particle(int id) {
     for (auto v : vdata) zeroVec(v[id], sim_dimensions);
     for (auto s : sdata) s[id] = 0.;
     for (auto i : idata) i[id] = 0;
