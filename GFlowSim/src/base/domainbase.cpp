@@ -108,6 +108,8 @@ namespace GFlowSimulation {
   }
 
   void DomainBase::construct() {
+    // Remove all halo and ghost particles.
+    Base::simData->remove_halo_and_ghost_particles();
     // Do necessary removals - this will compress the arrays so that there are no invalid (type -1) particles
     // and _number == _size
     Base::simData->doParticleRemoval();
@@ -133,9 +135,11 @@ namespace GFlowSimulation {
   }
 
   void DomainBase::setupXVL(int length) {
-    nullXVL();
-    sizeXVL = length;
-    xVL = alloc_array_2d<RealType>(length, sim_dimensions);
+    if (sizeXVL!=length) {
+      nullXVL();
+      sizeXVL = length;
+      xVL = alloc_array_2d<RealType>(length, sim_dimensions);
+    }
 
     // If there are few particles, use a low move ratio tollerance
     if (length<10) mvRatioTolerance = 1.;
@@ -176,10 +180,9 @@ namespace GFlowSimulation {
     // homogenous simulation. If there is a localized area of fast moving particles, this would not
     // be guarenteed to pick this up.
     int number = Base::simData->number();
-    int samples = sample_size>0 ? min(sample_size, number) : number;
 
     // Start at the end, since separate special particles are often added at the end of a setup
-    for (int i=0; i<samples; ++i) {
+    for (int i=0; i<sizeXVL; ++i) {
       dsqr = getDistanceSqrNoWrap(xVL[i], Base::simData->X(number-1-i), sim_dimensions);
       if (dsqr<max_plausible && dsqr>maxDSqr) maxDSqr = dsqr;
     }

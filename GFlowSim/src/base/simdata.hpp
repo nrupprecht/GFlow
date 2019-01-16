@@ -27,6 +27,9 @@ namespace GFlowSimulation {
     //! \brief Initialize the atom container.
     virtual void initialize() override;
 
+    //! \brief Remove all halo and ghost particles.
+    virtual void post_integrate() override;
+
     //! \brief Reserve space for particles, extending the lengths of all arrays to the requested size.
     void reserve(int);
 
@@ -128,6 +131,22 @@ namespace GFlowSimulation {
     int get_vector_data(string);
     int get_scalar_data(string);
     int get_integer_data(string);
+
+    // --- Halo and Ghost particles
+
+    //! \brief Create a halo particle of a certain particle, with a certain displacement from the original particle.
+    void create_halo_of(int, const RealType*);
+
+    //! \brief Mark all halo particles for removal and clear halo particle data.
+    void remove_halo_particles();
+
+    //! \brief Mark all ghost particles for removal and clear ghost particle data.
+    void remove_ghost_particles();
+
+    //! \brief Remove both halo and ghost particles.
+    //!
+    //! This simply calls remove_halo_particles and remove_ghost_particles.
+    void remove_halo_and_ghost_particles();
 
     // --- Particle size information
 
@@ -245,6 +264,9 @@ namespace GFlowSimulation {
 
     //! \brief A map between local halo particle ids and primary (local) IDs.
     std::vector<int> halo_map;
+
+    //! \brief A list of displacement vectors for halo particles
+    std::vector<RealType> halo_displacement;
 
     //! \brief A map between global id of ghost particles and local IDs.
     std::vector<int> ghost_map;

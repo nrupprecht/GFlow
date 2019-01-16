@@ -48,6 +48,18 @@ namespace GFlowSimulation {
 
   private:
 
+    //! \brief Determine what type of borders the domain has.
+    //!
+    //! This effects the dimensions of the domain, since there may need to be halo/ghost cells in some dimensions.
+    inline void assign_border_types();
+
+    //! \brief Calculates the domain cell dimensions, widths, and inverse widths given 
+    //! that the cutoff has been calculated.
+    inline void calculate_domain_cell_dimensions();
+
+    //! \brief Calculates the array of products used to convert between linear and tuple indices.
+    inline void calculate_product_array();
+
     //! \brief Create the cells.
     inline void create_cells();
 
@@ -70,13 +82,22 @@ namespace GFlowSimulation {
     inline void tuple_to_linear(int&, const int*);
 
     //! \brief Correct a linear index for wrapping. Returns true if the index is a valid cell.
-    inline bool correct_index(int*);
+    //!
+    //! If the flag is set to false, we do not wrap positions.
+    inline bool correct_index(int*, bool=true);
 
     //! \brief Get the tuple index of a cell that a position lies in.
     inline void get_cell_index_tuple(const RealType*, int*);
 
     //! \brief Get the linear index of the cell that a position lies within.
     inline int get_cell_index(const RealType*);
+
+    //! \brief Add a particle to the cell it belongs in.
+    inline void add_to_cell(const RealType*, int);
+
+    inline void do_halo_assignment();
+
+    inline void halo_list_add(const vector<int>&, RealType*);
 
     //! \brief Calculates the maximum "small sigma."
     //!
@@ -97,6 +118,9 @@ namespace GFlowSimulation {
     //! 0 - None, 1 - Halo, 2 - Wrap.
     int *border_type_down = nullptr;
 
+    int *dim_shift_up;
+    int *dim_shift_down;
+
     //! \brief Whether the domain has been initialized or not.
     bool initialized = false;
 
@@ -105,6 +129,8 @@ namespace GFlowSimulation {
 
     //! \brief A vector holding all the cells in the domain.
     vector<Cell> cells;
+
+    Bounds extended_bounds;
   };
 
 }

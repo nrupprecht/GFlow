@@ -47,11 +47,22 @@ namespace GFlowSimulation {
     // Call base's initialize
     Base::initialize();
 
+    // Remove halo and ghost particles just in case some snuck in there
+    remove_halo_and_ghost_particles();
+    doParticleRemoval();
+
     // For now
     bounds = gflow->getBounds();
 
     // Sort the particles by position
     sortParticles();
+  }
+
+  void SimData::post_integrate() {
+    // Mark extraneous particles for removal
+    remove_halo_and_ghost_particles();
+    // Do actual particle removal.
+    doParticleRemoval();
   }
 
   //! @brief Reserve space for particles, extending the lengths of all arrays to the requested size.
@@ -431,8 +442,46 @@ namespace GFlowSimulation {
     else return -1;
   }
 
+  //! \param id The id of the particle to copy
+  //! \param displacement How should the halo particle be displaced relative to the original particle.
+  void SimData::create_halo_of(int id, const RealType *displacement) {
+    // Record local ids
+    halo_map.push_back(_size); // Halo local id
+    halo_map.push_back(id);    // Original local id
+    // Record displacement vector
+    for (int d=0; d<sim_dimensions; ++d) 
+      halo_displacement.push_back(displacement[d]);
+    // Make a copy of the particle
+    addParticle(X(id), V(id), Sg(id), Im(id), Type(id));
+    int id2 = _size-1;
+    plusEqVec(X(id2), displacement, sim_dimensions); // Displace halo particle
+    //! \todo There may be other data we should copy
+  }
+
+  void SimData::remove_halo_particles() {
+    // Mark halo particles for removal
+    for (int i=0; i<halo_map.size(); i+=2) 
+      markForRemoval(halo_map[i]);
+    // Clear halo data
+    halo_map.clear();
+    halo_displacement.clear();
+  }
+
+  void SimData::remove_ghost_particles() {
+    // Mark ghost particles for removal
+    for (int i=0; i<ghost_map.size(); i+=2) 
+      markForRemoval(ghost_map[i]);
+    // Clear halo data
+    ghost_map.clear();
+  }
+
+  void SimData::remove_halo_and_ghost_particles() {
+    remove_halo_particles();
+    remove_ghost_particles();
+  }
+
   int SimData::size() const {
-    return _number;
+    return _size;
   }
 
   int SimData::number() const {
