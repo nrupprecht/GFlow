@@ -17,7 +17,7 @@ namespace GFlowSimulation {
     dataWidth = 0;
     vector<string> temp;
     for (auto entry : vector_data_entries) {
-      int pos = simData->get_vector_data(entry);
+      int pos = simData->getVectorData(entry);
       if (-1<pos) {
         temp.push_back(entry);
         vector_data_positions.push_back(pos);
@@ -27,7 +27,7 @@ namespace GFlowSimulation {
     vector_data_entries = temp;
     temp.clear();
     for (auto entry : scalar_data_entries) {
-      int pos = simData->get_scalar_data(entry);
+      int pos = simData->getScalarData(entry);
       if (-1<pos) {
         temp.push_back(entry);
         scalar_data_positions.push_back(pos);
@@ -37,7 +37,7 @@ namespace GFlowSimulation {
     scalar_data_entries = temp;
     temp.clear();
     for (auto entry : integer_data_entries) {
-      int pos = simData->get_integer_data(entry);
+      int pos = simData->getIntegerData(entry);
       if (-1<pos) {
         temp.push_back(entry);
         integer_data_positions.push_back(pos);

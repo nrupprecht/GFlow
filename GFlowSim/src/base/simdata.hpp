@@ -123,30 +123,30 @@ namespace GFlowSimulation {
     // --- Data creation and request
 
     // The request versions get the data entry's place if it exists, and creates it if it doesn't.
-    int request_vector_data(string);
-    int request_scalar_data(string);
-    int request_integer_data(string);
+    int requestVectorData(string);
+    int requestScalarData(string);
+    int requestIntegerData(string);
 
     // The get versions do not *create* the data entries, they just look for them.
-    int get_vector_data(string);
-    int get_scalar_data(string);
-    int get_integer_data(string);
+    int getVectorData(string);
+    int getScalarData(string);
+    int getIntegerData(string);
 
     // --- Halo and Ghost particles
 
     //! \brief Create a halo particle of a certain particle, with a certain displacement from the original particle.
-    void create_halo_of(int, const RealType*);
+    void createHaloOf(int, const RealType*);
 
     //! \brief Mark all halo particles for removal and clear halo particle data.
-    void remove_halo_particles();
+    void removeHaloParticles();
 
     //! \brief Mark all ghost particles for removal and clear ghost particle data.
-    void remove_ghost_particles();
+    void removeGhostParticles();
 
     //! \brief Remove both halo and ghost particles.
     //!
     //! This simply calls remove_halo_particles and remove_ghost_particles.
-    void remove_halo_and_ghost_particles();
+    void removeHaloAndGhostParticles();
 
     // --- Particle size information
 
@@ -203,7 +203,7 @@ namespace GFlowSimulation {
     void resize_owned(int);
 
     //! \brief Set all values for a particle to default values
-    void resetParticle(int);
+    void reset_particle(int);
 
     //! \brief Move a particle's data from one spot to another, overwriting the particle that was there before.
     void move_particle(int, int);
