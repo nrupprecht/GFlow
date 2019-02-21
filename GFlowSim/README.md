@@ -26,6 +26,8 @@ This version also includes Doxygen style commenting which can be used to generat
 
 * OpenMD: See e.g. [this](http://openmd.org/wp-content/docs/OpenMD-2.5.pdf)
 
+* Sphere box testing: [paper](https://pdfs.semanticscholar.org/ede0/ef718fc599b9af6ca909db3696c9e87f7192.pdf)
+
 Run with
 ```
 ./bin/driver

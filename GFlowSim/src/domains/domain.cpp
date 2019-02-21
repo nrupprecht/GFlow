@@ -117,6 +117,7 @@ namespace GFlowSimulation {
     // Find potential neighbors
     RealType *sg = Base::simData->Sg();
     RealType **x = Base::simData->X();
+    int *type = Base::simData->Type();
 
     // Get the boundary conditions
     const BCFlag *bcs = gflow->getBCs();
@@ -127,6 +128,7 @@ namespace GFlowSimulation {
     for (const auto &c : cells) {
       for (auto p=c.particle_ids.begin(); p!=c.particle_ids.end(); ++p) {
         int id1 = *p;
+        if (type[id1]<0) continue;
         // If sigma is <= than min_small_sigma, only look through cell stencil
         if (sg[id1]<=max_small_sigma) {
           // All other particles in the same sector
@@ -135,7 +137,7 @@ namespace GFlowSimulation {
           for (; q!=c.particle_ids.end(); ++q) {
             int id2 = *q;
             // If the other particle is a large particle, it will take care of this interaction
-            if (sg[id2]>max_small_sigma) continue;
+            if (sg[id2]>max_small_sigma || type[id2]<0) continue;
             // Get distance between particles
             subtractVec(x[id1], x[id2], dX, sim_dimensions);
             RealType r = magnitudeVec(dX, sim_dimensions);
