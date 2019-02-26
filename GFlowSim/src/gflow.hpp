@@ -97,9 +97,13 @@ namespace GFlowSimulation {
     //! \brief Get the number of types of particles in the simulation
     int getNTypes() const;
 
+    int getSimDimensions() const;
+
     pair<int, char**> getCommand() const;
 
     const vector<class Interaction*>& getInteractions() const;
+
+    class SimData* getSimData() const;
 
     class DataMaster* getDataMaster() const;
 
@@ -199,6 +203,8 @@ namespace GFlowSimulation {
 
     friend class Base;
 
+    friend class PolymerCreator;
+
   protected:
     // --- Private helper functions
     //! Clear all the force arrays.
@@ -208,12 +214,12 @@ namespace GFlowSimulation {
     inline void handleModifiers();
 
     // --- Data - public so anyone can access it
-    class SimData *simData = nullptr;             // Particle data
-    class Integrator *integrator = nullptr;       // Integrator
-    class DomainBase *domain = nullptr;           // Domain
-    class DataMaster *dataMaster = nullptr;       // DataMaster object for unified data collection  
-    class ForceMaster *forceMaster = nullptr;     // ForceMaster object for defining and storing interparticle forces  
-    class Topology *topology = nullptr;           // Processor topology
+    class SimData     *simData = nullptr;      // Particle data
+    class Integrator  *integrator = nullptr;   // Integrator
+    class DomainBase  *domain = nullptr;       // Domain
+    class DataMaster  *dataMaster = nullptr;   // DataMaster object for unified data collection  
+    class ForceMaster *forceMaster = nullptr;  // ForceMaster object for defining and storing interparticle forces  
+    class Topology    *topology = nullptr;     // Processor topology
 
     //! \brief A vector of objects that should modify the simulation at some point(s) during execution.
     std::list<class Modifier*> modifiers;

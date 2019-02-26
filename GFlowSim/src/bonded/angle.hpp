@@ -11,9 +11,12 @@ namespace GFlowSimulation {
     Angle(GFlow*);
 
     //! \brief Add an angle - basic version.
-    virtual void addAngle(int, int, int);
+    virtual void addAngle(int, int, int)=0;
 
-  private:
+    //! brief Where the angles execute forces.
+    virtual void post_forces()=0;
+
+  protected:
     //! \brief The left, center, and right particles in the angle.
     vector<int> left, center, right;
   };

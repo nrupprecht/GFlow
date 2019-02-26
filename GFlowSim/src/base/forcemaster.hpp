@@ -7,7 +7,7 @@
 namespace GFlowSimulation {
 
   /*
-  *  @class ForceMaster
+  *  \class ForceMaster
   *
   *  Force master keeps a record of which interaction happens between pairs of particles.
   *  This allows, for example, interactions 0<-->0 to be hard spheres, 0<-->1 is sphere-triangle, etc...
@@ -16,47 +16,47 @@ namespace GFlowSimulation {
   */
   class ForceMaster : public Base {
   public:
-    //! @brief Constructor
+    //! \brief Default constructor.
     ForceMaster(GFlow*);
 
-    //! @brief Constructor - also includes number of forces
+    //! \brief Constructor - also includes number of forces/
     ForceMaster(GFlow*, int);
 
-    //! @brief Get a pointer to the force that the particle pair belongs in. Null means no force.
+    //! \brief Get a pointer to the force that the particle pair belongs in. Null means no force.
     Interaction* getInteraction(int, int);
 
-    //! @brief Clear all the verlet lists of all the forces
+    //! \brief Clear all the verlet lists of all the forces.
     void clear();
 
-    //! @brief Close the interactionhandlers for all the forces.
+    //! \brief Close the interactionhandlers for all the forces.
     void close();
 
     // --- Accessors
 
-    //! @brief Get the number of types of particles in the simulation
+    //! \brief Get the number of types of particles in the simulation.
     int getNTypes() const;
 
     // --- Mutators
 
-    //! @brief Set the number of particle types
+    //! \brief Set the number of particle types.
     void setNTypes(int);
 
-    //! @brief Set the force in the force grid - this also adds it to the force vector here and in the GFlow
-    //! object if it is not already in those locations
+    //! \brief Set the force in the force grid - this also adds it to the force vector here and in the GFlow
+    //! object if it is not already in those locations.
     void setInteraction(int, int, Interaction*);
 
   private:
-
-    // Particles of type t1, t2, should be governed by force forceGrid.at(t1,t2)
-    //Array<Interaction*> grid = Array<Interaction*>(2);
-
+    //! \brief Interaction grid.
     vector<vector<Interaction*> > grid;
 
-    // Pointers to all the forces that exist in the simulation
+    //! \brief Pointers to all the forces that exist in the simulation.
     vector<Interaction*> interactions;
 
-    // Number of particle types
+    //! \brief Number of particle types.
     int ntypes;
+
+    //! \brief Whether the i-th particle type interacts with any particles.
+    bool *doesInteract;
   };
 
 }

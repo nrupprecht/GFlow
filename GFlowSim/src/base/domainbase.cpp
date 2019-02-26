@@ -118,7 +118,7 @@ namespace GFlowSimulation {
     // Set timer
     lastUpdate = Base::gflow->getElapsedTime();
     // SimData does not need to be remade anymore
-    Base::simData->setNeedsRemake(false);
+    //** Base::simData->setNeedsRemake(false); ---> Remove this - let gflow set this at the end of each timestep
     // Reset
     steps_since_last_remake = 0;
     // Increment counter

@@ -227,6 +227,9 @@ namespace GFlowSimulation {
       RealType dt = integrator->getTimeStep();
       elapsed_time += dt;
       total_time += dt;
+
+      // Reset simdata needs remake flag
+      simData->setNeedsRemake(false);
     }
 
     // --> Post-integrate
@@ -299,12 +302,20 @@ namespace GFlowSimulation {
     return forceMaster->getNTypes();
   }
 
+  int GFlow::getSimDimensions() const {
+    return sim_dimensions;
+  }
+
   pair<int, char**> GFlow::getCommand() const {
     return pair<int, char**>(argc, argv);
   }
 
   const vector<class Interaction*>& GFlow::getInteractions() const {
     return interactions;
+  }
+
+  SimData* GFlow::getSimData() const {
+    return simData;
   }
 
   DataMaster* GFlow::getDataMaster() const {

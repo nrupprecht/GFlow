@@ -2,6 +2,7 @@
 // Other files
 #include "../utility/printingutility.hpp"
 #include "../allmodifiers.hpp"
+#include "polymercreator.hpp"
 
 namespace GFlowSimulation {
 
@@ -140,6 +141,7 @@ namespace GFlowSimulation {
     parser.addValidSubheading("MaxDT");
     parser.addValidSubheading("MinDT");
     parser.addValidSubheading("Reconcile");
+    parser.addValidSubheading("Test");
     // Make sure only valid options were used
     if (!parser.checkValidSubHeads()) {
       cout << "Warning: Invalid Headings:\n";
@@ -163,7 +165,7 @@ namespace GFlowSimulation {
       variables.insert(pair<string, string>(name, value));
     }
     // Set the variables
-    parser.set_variables( variables);
+    parser.set_variables(variables);
 
     // --- Look for dimensions
     parser.getHeading_Optional("Dimensions");
@@ -376,6 +378,14 @@ namespace GFlowSimulation {
       RealType min = -1;
       parser.extract_first_parameter(min);
       if (min>0) gflow->integrator->setMinDT(min);
+    }
+
+    // --- Run some sort of test
+    parser.getHeading_Optional("Test");
+    hd = parser.first();
+    if (hd) {
+      PolymerCreator pc;
+      pc.createArea(hd, gflow, variables);
     }
 
     // Initialize domain

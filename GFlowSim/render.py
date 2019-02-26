@@ -23,8 +23,8 @@ dir_path = args['directory']
 load_path = dir_path + "/Pos"
 save_path = dir_path + "/" + output
 
-print "Looking for images in ", load_path
-print "Will save file in ", save_path
+print ("Looking for images in ", load_path)
+print ("Will save file in ", save_path)
 
 images = []
 for f in os.listdir(load_path):
@@ -32,12 +32,15 @@ for f in os.listdir(load_path):
         images.append(f)
 
 if len(images)==0 : 
-    print "No images.\n"
+    print ("No images.\n")
     exit()
+
 
 # Sorted the list of files
 # Sorting method comes from <https://stackoverflow.com/questions/33159106/sort-filenames-in-directory-in-ascending-order>
-images.sort(key=lambda f: int(filter(str.isdigit, f)))
+#images.sort(key=lambda f: int(filter(str.isdigit, f)))
+# I had to modify the lambda after I changed to python3 via anaconda.
+images.sort(key=lambda f: int(''.join(list(filter(str.isdigit, f)))) )
 
 # Determine the width and height from the first image
 image_path = os.path.join(load_path, images[0])
@@ -74,10 +77,10 @@ for image in images:
     sys.stdout.flush()
     count += 1
 
-print ""
+print ("")
 
 # Release everything if job is finished
 out.release()
 cv2.destroyAllWindows()
 
-print("The output video is {}".format(save_path)) ##
+print ("The output video is {}".format(save_path)) ##

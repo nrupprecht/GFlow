@@ -4,4 +4,6 @@
 #include "bonded/bond.hpp"
 #include "bonded/angle.hpp"
 
+#include "bonded/harmonicbond.hpp"
+
 #endif // __ALL_BONDED_HPP__GFLOW__

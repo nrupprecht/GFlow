@@ -33,7 +33,7 @@ namespace GFlowSimulation {
     sim_dimensions = d;
   }
 
-  void Creator::hs_relax(GFlow* gflow, RealType time) const {
+  void Creator::hs_relax(GFlow* gflow, RealType time) {
     // Check for valid object
     if (gflow==nullptr) return;
 
@@ -78,7 +78,7 @@ namespace GFlowSimulation {
     gflow->simData->clearF();
   }
 
-  void Creator::relax(class GFlow *gflow, RealType time) const {
+  void Creator::relax(class GFlow *gflow, RealType time) {
     // Check for valid object
     if (gflow==nullptr) return;
 

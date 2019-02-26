@@ -189,10 +189,12 @@ namespace GFlowSimulation {
 
   void SimData::sortParticles() {
     // Make sure all particles are valid, and compressed
-    doParticleRemoval();
+    doParticleRemoval(); // This only sets the needs remake flag if it removes particles.
     // Quick sort
     quick_sort_help(0, _number-1, 0);
     recursion_help (0, _number-1, 1);
+    // Set needs remake flag
+    needs_remake = true;
   }
 
   void SimData::updateHaloParticles() {
@@ -613,11 +615,13 @@ namespace GFlowSimulation {
     for (auto v : vdata) swapVec(v[id1], v[id2], sim_dimensions);
     for (auto s : sdata) std::swap(s[id1], s[id2]);
     for (auto i : idata) std::swap(i[id1], i[id2]);
-    // Set global ids
-    auto it = id_map.find(g1);
-    if (id_map.end()!=it) it->second = id1;
-    it = id_map.find(g2);
-    if (id_map.end()!=it) it->second = id2;
+    
+    // Swap global ids
+    auto it1 = id_map.find(g1);
+    auto it2 = id_map.find(g2);
+    if (id_map.end()!=it1 && id_map.end()!=it2) 
+      std::swap(it1->second, it2->second);
+
     // Set flag
     needs_remake = true;
   }

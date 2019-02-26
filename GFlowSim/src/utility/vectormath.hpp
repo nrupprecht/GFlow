@@ -110,7 +110,7 @@ namespace GFlowSimulation {
     T mag = 0;
     for (int d=0; d<dimensions; ++d) mag += sqr(x[d]);
     T invMag = mag>0 ? 1./sqrt(mag) : 0;
-    scalarMultVec(invMag, x, norm);
+    scalarMultVec(invMag, x, norm, dimensions);
   }
 
   template<typename T> inline void normalizeVec(T *norm, int dimensions) {
@@ -128,16 +128,6 @@ namespace GFlowSimulation {
     // Normalize
     normalizeVec(x, dimensions);
   }
-
-  /*
-  inline string toStrVec(RealType *vec, int length) {
-    return ("{"+toStrVec(vec, length)+"}");
-  }
-
-  inline string toStrVec(int *vec, int length) {
-    return ("{"+toStrVec(vec, length)+"}");
-  }
-  */
 
 }
 #endif // __VECTOR_MATH_HPP__GFLOW__
