@@ -22,12 +22,9 @@ namespace GFlowSimulation {
     //! \brief Constructor - also includes number of forces/
     ForceMaster(GFlow*, int);
 
-    //! \brief Destructor.
-    //!
-    //! Since force master handles interactions, it is responsible for cleaning then up.
-    ~ForceMaster();
-
     virtual void initialize();
+
+    virtual void pre_integrate();
 
     //! \brief Get a pointer to the force that the particle pair belongs in. Null means no force.
     Interaction* getInteraction(int, int);
@@ -55,13 +52,10 @@ namespace GFlowSimulation {
     //! \brief Returns whether the particle type interacts with other particles.
     bool typeInteracts(int);
 
-    //! \brief Check if the does interact array has been initialized, if not, initialize it.
-    void checkDoesInteract();
+    //! \brief Initialize the does interact array.
+    void initialize_does_interact();
 
   private:
-
-    inline void initialize_does_interact();
-
     //! \brief Interaction grid.
     vector<vector<Interaction*> > grid;
 

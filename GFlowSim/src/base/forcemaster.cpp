@@ -14,18 +14,14 @@ namespace GFlowSimulation {
     setNTypes(nt);
   };
 
-  ForceMaster::~ForceMaster() {
-    // Delete all interactions
-    for (auto &inter : interactions)
-      delete inter;
-    // Clear vector
-    interactions.clear();
-  }
-
   void ForceMaster::initialize() {
     // Base initialization
     Base::initialize();
     // Initialize
+    initialize_does_interact();
+  }
+
+  void ForceMaster::pre_integrate() {
     initialize_does_interact();
   }
 
@@ -77,15 +73,7 @@ namespace GFlowSimulation {
     return doesInteract[type];
   }
 
-  void ForceMaster::checkDoesInteract() {
-    if (simData!=nullptr && ntypes!=simData->ntypes()) {
-      ntypes = simData->ntypes();
-      initialize_does_interact();
-    }
-    else if (doesInteract==nullptr) initialize_does_interact();
-  }
-
-  inline void ForceMaster::initialize_does_interact() {
+  void ForceMaster::initialize_does_interact() {
     // Set up doesInteract array - default value is false
     for (int i=0; i<ntypes; ++i) 
       doesInteract[i] = false;

@@ -229,7 +229,7 @@ namespace GFlowSimulation {
     // If there is no force master, return
     if (forceMaster==nullptr) return;
     // Make sure force master has interaction array set up
-    forceMaster->checkDoesInteract();
+    forceMaster->initialize_does_interact();
 
     // A tuple
     int *tuple1 = new int[sim_dimensions], *tuple2 = new int[sim_dimensions];
@@ -603,7 +603,7 @@ namespace GFlowSimulation {
 
   void Domain::calculate_max_small_sigma() {
     // Make sure force master has interaction array set up
-    forceMaster->checkDoesInteract(); 
+    forceMaster->initialize_does_interact(); 
 
     // Find average sigma
     RealType sigma = 0, max_sigma = 0;

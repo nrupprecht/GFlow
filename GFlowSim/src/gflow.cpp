@@ -143,9 +143,8 @@ namespace GFlowSimulation {
       // Some object was null
       throw UnexpectedNullPointer("Error: Some object was null at GFlow initialization.");
     }
-    // Check that simdata has good arrays
-    if (simData->X()==nullptr || simData->V()==nullptr || simData->F()==nullptr || simData->Sg()==nullptr 
-      || simData->Im()==nullptr || simData->Type()==nullptr) 
+    // Check that simdata has good arrays. 
+    if (simData->X()==nullptr || simData->V()==nullptr || simData->F()==nullptr) 
     {
       throw UnexpectedNullPointer("Some array in simdata was null that shouldn't be.");
     }
@@ -154,6 +153,7 @@ namespace GFlowSimulation {
     running = true;
     elapsed_time = 0;
     iter = 0;
+    // Set up all objects
     for (auto m : modifiers) m->pre_integrate();
     simData->pre_integrate();
     integrator->pre_integrate();
