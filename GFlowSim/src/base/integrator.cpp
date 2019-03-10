@@ -20,8 +20,6 @@ namespace GFlowSimulation {
     characteristic_length /= static_cast<RealType>(simData->number());
     // Set dt to the minimum size
     if (adjust_dt) dt = min_dt;
-
-    // cout << "Proposed max dt: " << sqrt(characteristic_length*characteristic_length/DEFAULT_HARD_SPHERE_REPULSION) << endl;
   }
 
   void Integrator::pre_step() {
@@ -51,15 +49,9 @@ namespace GFlowSimulation {
     // Set the timestep
     RealType dt_c = min(dt_v, dt_a); // Candidate dt
     dt = dt_c<dt ? dt_c : 0.9*dt + 0.1*dt_c;
-
-    //cout << gflow->getElapsedTime() << ", V=" << maxV << ", A=" << maxA << "\t";
-
+    
     if (dt>max_dt) dt = max_dt;
     else if (dt<min_dt) dt = min_dt;
-
-    //if (maxV>10) throw false;
-
-    //cout << dt << " :: " << dt_v << ", " << dt_a << endl;
   }
 
   RealType Integrator::getTimeStep() {

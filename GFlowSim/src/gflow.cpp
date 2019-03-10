@@ -72,13 +72,13 @@ namespace GFlowSimulation {
     if(integrator) integrator->initialize();
     else non_null = false;
 
+    if (forceMaster) forceMaster->initialize(); // Should go before domain
+    else non_null = false;
+
     if (domain) domain->initialize();
     else non_null = false;
 
     if (dataMaster) dataMaster->initialize();
-    else non_null = false;
-
-    if (forceMaster) forceMaster->initialize();
     else non_null = false;
 
     // Topology does not currently have an initialization function, as it does not inherit from Base
@@ -227,7 +227,7 @@ namespace GFlowSimulation {
       RealType dt = integrator->getTimeStep();
       elapsed_time += dt;
       total_time += dt;
-
+      
       // Reset simdata needs remake flag
       simData->setNeedsRemake(false);
     }
@@ -347,6 +347,11 @@ namespace GFlowSimulation {
       dist += sqr(ds);
     }
     return sqrt(dist);
+  }
+
+  void GFlow::addInteraction(Interaction *inter) {
+    if (inter!=nullptr && !contains(interactions, inter))
+      interactions.push_back(inter);
   }
 
   void GFlow::setCommand(int argc, char **argv) {

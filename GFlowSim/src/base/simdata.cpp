@@ -1,30 +1,23 @@
 #include "simdata.hpp"
 // Other files
 #include "../utility/memory.hpp"
+#include "../base/forcemaster.hpp"
 
 #include "integrator.hpp"
 
 namespace GFlowSimulation {
 
-  SimData::SimData(GFlow *gflow) : Base(gflow), bounds(Bounds(2)) {
-    // Initialize vdata array
-    vdata = vector<RealType**>(3, nullptr);
-    // Put names into map
-    vector_data_map.insert(SIPair("X", 0));
-    vector_data_map.insert(SIPair("V", 1)); 
-    vector_data_map.insert(SIPair("F", 2));
-    // Initialize sdata array
-    sdata = vector<RealType*>(2, nullptr);
-    // Put names into map
-    scalar_data_map.insert(SIPair("Sg", 0));
-    scalar_data_map.insert(SIPair("Im", 1));
-    // Initialize idata array
-    idata = vector<int*>(2, nullptr);
-    // Put names into map
-    integer_data_map.insert(SIPair("Type", 0));
-    integer_data_map.insert(SIPair("ID", 1));
-    // Set up bounds to have the propper dimensions
-    bounds = Bounds(sim_dimensions);
+  SimData::SimData(GFlow *gflow) : Base(gflow), bounds(sim_dimensions) {
+    // Add default vector data entries
+    addVectorData("X");
+    addVectorData("V");
+    addVectorData("F");
+    // Add default scalar data entries
+    addScalarData("Sg");
+    addScalarData("Im");
+    // Add default integer data entries
+    addIntegerData("Type");
+    addIntegerData("ID");
   }
 
   SimData::~SimData() {
@@ -487,7 +480,9 @@ namespace GFlowSimulation {
   }
 
   int SimData::ntypes() const {
-    return _ntypes;
+    if (Base::forceMaster!=nullptr)
+      return Base::forceMaster->getNTypes();
+    else return -1;
   }
 
   void SimData::clearV() {
@@ -524,6 +519,21 @@ namespace GFlowSimulation {
 
   void SimData::setNeedsRemake(bool r) {
     needs_remake = r;
+  }
+
+  void SimData::addVectorData(string name) {
+    vector_data_map.insert(SIPair(name, vector_data_map.size()));
+    vdata.push_back(nullptr);
+  }
+
+  void SimData::addScalarData(string name) {
+    scalar_data_map.insert(SIPair(name, vector_data_map.size()));
+    sdata.push_back(nullptr);
+  }
+
+  void SimData::addIntegerData(string name) {
+    integer_data_map.insert(SIPair(name, vector_data_map.size()));
+    idata.push_back(nullptr);
   }
 
   void SimData::resize_owned(int num) {

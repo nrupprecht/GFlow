@@ -33,7 +33,7 @@ namespace GFlowSimulation {
     sim_dimensions = d;
   }
 
-  void Creator::hs_relax(GFlow* gflow, RealType time) {
+  void Creator::hs_relax(GFlow* gflow, RealType time, bool relax_integrator) {
     // Check for valid object
     if (gflow==nullptr) return;
 
@@ -47,11 +47,13 @@ namespace GFlowSimulation {
     HardSphere hsForce(gflow);
     // New force master - has only hard sphere forces.
     ForceMaster forceMaster(gflow, ntypes);
-    RelaxIntegrator rx_integrator(gflow);
+    Integrator *rx_integrator;
+    if (relax_integrator) rx_integrator = new RelaxIntegrator(gflow);
+    else rx_integrator = new OverdampedIntegrator(gflow);
     
     // Give gflow new data
     gflow->interactions.clear(); // Clear old forces
-    gflow->integrator = &rx_integrator;
+    gflow->integrator = rx_integrator;
     gflow->forceMaster = &forceMaster; // Give it to gflow
 
     // All particles interact as hard spheres
@@ -76,6 +78,9 @@ namespace GFlowSimulation {
 
     // Clear forces
     gflow->simData->clearF();
+
+    // Clean up
+    delete rx_integrator;
   }
 
   void Creator::relax(class GFlow *gflow, RealType time) {

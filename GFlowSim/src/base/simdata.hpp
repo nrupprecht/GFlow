@@ -191,8 +191,19 @@ namespace GFlowSimulation {
     //! \brief Get the needs remake flag.
     bool getNeedsRemake();
 
+    // --- Mutators
+
     //! \brief Set the needs remake flag.
     void setNeedsRemake(bool);
+
+    //! \brief Add a vector data entry.
+    void addVectorData(string);
+
+    //! \brief Add a scalar data entry.
+    void addScalarData(string);
+
+    //! \brief Add an integer data entry.
+    void addIntegerData(string);
 
     friend class ForceMaster;
 
@@ -287,9 +298,6 @@ namespace GFlowSimulation {
 
     //! \brief The total capacity of the particle data arrays.
     int _capacity = 0;
-
-    //! \brief The number of particle types.
-    int _ntypes;
 
     // -*-*-*- MPI related -*-*-*-
 

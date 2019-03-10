@@ -18,8 +18,6 @@ namespace GFlowSimulation {
     virtual void post_forces();
 
   private:
-    // Helper functions
-    
     //! \brief Update the local id list from the global ids.
     void updateLocalIDs();
 

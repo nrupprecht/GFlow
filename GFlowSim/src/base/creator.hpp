@@ -55,7 +55,7 @@ namespace GFlowSimulation {
     //!
     //! This function gives the simdata an overdamped integrator and hard sphere interactions, runs it for some amount
     //! of time, then discards the integrator and resets the timers.
-    static void hs_relax(class GFlow*, RealType=0.25);
+    static void hs_relax(class GFlow*, RealType=0.25, bool=true);
 
     //! \brief Native version of the relaxation function.
     //!

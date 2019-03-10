@@ -224,7 +224,12 @@ namespace GFlowSimulation {
     // Set a "maximum reasonable distance"
     RealType max_reasonable = sqr(0.9*bounds.wd(0));
 
+    // If there are no interaction, we don't need to make any verlet lists
     if (gflow->getInteractions().empty()) return;
+    // If there is no force master, return
+    if (forceMaster==nullptr) return;
+    // Make sure force master has interaction array set up
+    forceMaster->checkDoesInteract();
 
     // A tuple
     int *tuple1 = new int[sim_dimensions], *tuple2 = new int[sim_dimensions];
@@ -437,11 +442,14 @@ namespace GFlowSimulation {
     // We should have just done a particle removal, so we can use number, not size (since all arrays are compressed)
     RealType **x = simData->X();
     int number = Base::simData->number();
+    int *type = Base::simData->Type();
     int *tuple = new int[sim_dimensions], linear;
 
     // Bin all the particles
-    for (int i=0; i<number; ++i) 
-      add_to_cell(x[i], i);
+    for (int i=0; i<number; ++i) {
+      if (forceMaster->typeInteracts(type[i]))
+        add_to_cell(x[i], i);
+    }
     
     do_halo_assignment();
 
@@ -584,7 +592,7 @@ namespace GFlowSimulation {
 
   inline void Domain::halo_list_add(const vector<int>& id_list, RealType *displacement) {
 
-    return;
+    return; //**
 
     for (auto id : id_list) {
       Base::simData->createHaloOf(id, displacement);
@@ -594,20 +602,38 @@ namespace GFlowSimulation {
   }
 
   void Domain::calculate_max_small_sigma() {
+    // Make sure force master has interaction array set up
+    forceMaster->checkDoesInteract(); 
+
     // Find average sigma
     RealType sigma = 0, max_sigma = 0;
+    int count = 0;
     for (int n=0; n<Base::simData->size(); ++n) {
-      if (Base::simData->Type(n)<0) continue;
+      // Check that the type is valid, and is an interacting type
+      int type = Base::simData->Type(n);
+      if (type<0 || !Base::forceMaster->typeInteracts(type)) 
+        continue;
+      // Get the cutoff radius, use in the calculation
       RealType s = Base::simData->Sg(n);
       sigma += s;
       if (s>max_sigma) max_sigma = s;
+      ++count;
     }
-    sigma /= Base::simData->number();
+    if (count>0) sigma /= count;
+    else {
+      sigma = Base::simData->Sg(0);
+      max_sigma = sigma;
+    }
+
     // Threshhold sigma is between average and maximum sigma
     RealType threshold = 0.5*(sigma + max_sigma), max_under = sigma;
     if (threshold!=sigma) {
       for (int n=0; n<Base::simData->size(); ++n) {
-        if (Base::simData->Type(n)<0) continue;
+        // Check that the type is valid, and is an interacting type
+        int type = Base::simData->Type(n);
+        if (type<0 || !Base::forceMaster->typeInteracts(type)) 
+          continue;
+        // Get the cutoff radius, use in the calculation
         RealType s = Base::simData->Sg(n);
         if (s<threshold && max_under<s) max_under = s;
       }

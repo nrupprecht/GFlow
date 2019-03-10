@@ -117,6 +117,11 @@ namespace GFlowSimulation {
 
     // --- Mutators
 
+    //! \brief Add an interaction. 
+    //!
+    //! GFlow only adds the interaction if it is non null.
+    void addInteraction(Interaction*);
+
     //! \brief Set the command info
     void setCommand(int, char**);
 

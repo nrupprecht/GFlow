@@ -10,20 +10,24 @@ namespace GFlowSimulation {
     seed = std::chrono::system_clock::now().time_since_epoch().count();
     // Seed generators here
     seedGenerator(seed);
+    generator = std::mt19937(seed);
     normal_dist = std::normal_distribution<RealType>(0., 1.);
+
   }
 
   FileParseCreator::FileParseCreator(ArgParse *p) : Creator(p), configFile(""), gflow(nullptr) {
     seed = std::chrono::system_clock::now().time_since_epoch().count();
     // Seed generators here
     seedGenerator(seed);
+    generator = std::mt19937(seed);
     normal_dist = std::normal_distribution<RealType>(0., 1.);
   }
 
   FileParseCreator::FileParseCreator(ArgParse *p, string f) : Creator(p), configFile(f), gflow(nullptr) {
     seed = std::chrono::system_clock::now().time_since_epoch().count();
-    seedGenerator(seed);
     // Seed generators here
+    seedGenerator(seed);
+    generator = std::mt19937(seed);
     normal_dist = std::normal_distribution<RealType>(0., 1.);
   }
 
@@ -687,7 +691,7 @@ namespace GFlowSimulation {
         // Select a position for the particle (random uniform)
         bnds->pick_position(X);
         // Choose a type of particle to create
-        int pt = choice(global_generator);
+        int pt = choice(generator);
         ParticleTemplate &particle_creator = particle_template_numbers.empty() ? particle_templates[0] : template_vector.at(pt);
         // Select other characteristics
         particle_creator.createParticle(X, sigma, im, type, i, sim_dimensions);

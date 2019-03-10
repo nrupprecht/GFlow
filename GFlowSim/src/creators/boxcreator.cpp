@@ -38,6 +38,7 @@ namespace GFlowSimulation {
     bool over_damped_flag = false;
     RealType langevin_temp = -1.;
     bool lj_flag = false;
+    bool interact_flag = true;
 
     // Gather command line arguments
     if (parserPtr) {
@@ -55,6 +56,7 @@ namespace GFlowSimulation {
       parserPtr->get("overdamped", over_damped_flag);
       parserPtr->get("langevin", langevin_temp);
       parserPtr->get("lj", lj_flag);
+      parserPtr->get("interact", interact_flag);
     }
 
     // Create a new gflow object
@@ -108,6 +110,9 @@ namespace GFlowSimulation {
       auto *LJ = new LennardJones(gflow);
       LJ->setStrength(repulsion*DEFAULT_LENNARD_JONES_STRENGTH);
       force = LJ;
+    }
+    else if (!interact_flag) {
+      force = nullptr;
     }
     else {
       auto *HS = new HardSphere(gflow);
