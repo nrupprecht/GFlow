@@ -23,6 +23,13 @@ namespace GFlowSimulation {
     return dt;
   }
 
+  //! \brief Cross product - assumes 3 dimensions.
+  template<typename T> inline void crossVec(const T *x, const T *y, T *z) {
+    z[0] = x[1]*y[2];
+    z[1] = -x[0]*y[2];
+    z[2] = x[0]*y[1];
+  }
+
   // Generic squaring function
   template<typename T> T inline sqr(const T x) {
     return x*x;
@@ -69,12 +76,12 @@ namespace GFlowSimulation {
   }
 
   // Times
-  template<typename T> inline void scalarMultVec(const RealType scalar, const T *x, T *z, int dimensions) {
+  template<typename S, typename T> inline void scalarMultVec(const S scalar, const T *x, T *z, int dimensions) {
     for (int d=0; d<dimensions; ++d) z[d] = scalar*x[d];
   }
 
   // Times equals
-  template<typename T> inline void scalarMultVec(const RealType scalar, T *z, int dimensions) {
+  template<typename S, typename T> inline void scalarMultVec(const S scalar, T *z, int dimensions) {
     for (int d=0; d<dimensions; ++d) z[d] *= scalar;
   }
 

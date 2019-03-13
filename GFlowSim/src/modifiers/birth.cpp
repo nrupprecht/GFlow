@@ -41,16 +41,16 @@ namespace GFlowSimulation {
     // Add a particle and a modifer for it
     int place = Base::simData->size();
     int id1 = Base::simData->getNextGlobalID();
-    Base::simData->addParticle(Base::simData->X(id), Base::simData->V(id), 0.45*rf, im, type);
-    Base::gflow->addModifier(new GrowRadius(Base::gflow, id1, 0.45*rf, rf, growTime));
+    Base::simData->addParticle(Base::simData->X(id), Base::simData->V(id), RealType(0.45)*rf, im, type);
+    Base::gflow->addModifier(new GrowRadius(Base::gflow, id1, RealType(0.45)*rf, rf, growTime));
     // Particles will be at X +/- dX
-    scalarMultVec(0.5*rf, Xhat, dX, sim_dimensions);
+    scalarMultVec(RealType(0.5)*rf, Xhat, dX, sim_dimensions);
     plusEqVec (Base::simData->X(id), dX, sim_dimensions);
     minusEqVec(Base::simData->X(place), dX, sim_dimensions);
     // Shrink first particle and put in place, add grow radius modifier
-    Base::simData->Sg()[id] *= 0.45;
+    Base::simData->Sg()[id] *= RealType(0.45);
     int id2 = Base::simData->Id(id);
-    Base::gflow->addModifier(new GrowRadius(Base::gflow, id2, 0.45*rf, rf, growTime));
+    Base::gflow->addModifier(new GrowRadius(Base::gflow, id2, RealType(0.45)*rf, rf, growTime));
 
     // Clean up
     delete [] Xhat;

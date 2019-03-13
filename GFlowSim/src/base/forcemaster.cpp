@@ -45,6 +45,7 @@ namespace GFlowSimulation {
   void ForceMaster::setNTypes(int n) {
     // Set ntypes for this object
     ntypes = n;
+    if (simData) simData->_ntypes = n;
     // Resize and erase array
     grid = vector<vector<Interaction*> >(n, vector<Interaction*>(n, nullptr));
     // Resize and reset doesInteract

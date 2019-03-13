@@ -6,9 +6,6 @@
 #include "../interactionhandlers/verletlist.hpp"
 #include "../base/forcemaster.hpp"
 
-#include "../base/interaction.hpp"
-#include "../base/interactionhandler.hpp"
-
 namespace GFlowSimulation {
 
   Domain::Domain(GFlow *gflow) : DomainBase(gflow), extended_bounds(2) {

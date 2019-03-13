@@ -7,12 +7,16 @@ namespace GFlowSimulation {
   StoreData::StoreData() : simData(nullptr), bounds(2), dataWidth(0), sim_dimensions(0), nTypes(0) {}
 
   void StoreData::initialize(SimData *sd) {
+    // Make sure simData is non-null
+    if (sd==nullptr) return;
     // Set simdata
     simData = sd;
     // Get basic data
     bounds = simData->getBounds();
     sim_dimensions = simData->getSimDimensions();
     nTypes = simData->ntypes();
+    // Make sure there are types.
+    if (nTypes==0) return;
     // Get data positions, calculate data width.
     dataWidth = 0;
     vector<string> temp;
@@ -85,15 +89,18 @@ namespace GFlowSimulation {
       if (simData->Type(n)<0) continue;
       // Copy data
       for (auto v : vector_data_positions) {
-        copyVec(simData->VectorData(v)[n], &data[data_pointer], sim_dimensions);
+        RealType **vd = simData->VectorData(v);
+        if (vd!=nullptr) copyVec(vd[n], &data[data_pointer], sim_dimensions);
         data_pointer += sim_dimensions;
       }
       for (auto s : scalar_data_positions) {
-        data[data_pointer] = simData->ScalarData(s)[n];
+        RealType *sd = simData->ScalarData(s);
+        if (sd!=nullptr) data[data_pointer] = sd[n];
         ++data_pointer;
       }
       for (auto i : integer_data_positions) {
-        data[data_pointer] = simData->IntegerData(i)[n];
+        int *id = simData->IntegerData(i);
+        if (id!=nullptr) data[data_pointer] = id[n];
         ++data_pointer;
       }
     }

@@ -299,6 +299,9 @@ namespace GFlowSimulation {
     //! \brief The total capacity of the particle data arrays.
     int _capacity = 0;
 
+    //! \brief Copy this data from force master.
+    int _ntypes;
+
     // -*-*-*- MPI related -*-*-*-
 
   };

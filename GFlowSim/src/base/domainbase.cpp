@@ -8,28 +8,25 @@
 
 namespace GFlowSimulation {
 
-  DomainBase::DomainBase(GFlow *gflow) : Base(gflow), domain_bounds(2), bounds(2)
+  DomainBase::DomainBase(GFlow *gflow) : Base(gflow), domain_bounds(sim_dimensions), bounds(sim_dimensions)
   {
     // Allocate arrays
-    dims = new int[sim_dimensions];
-    widths = new RealType[sim_dimensions];
+    dims     = new int[sim_dimensions];
+    widths   = new RealType[sim_dimensions];
     inverseW = new RealType[sim_dimensions];
     // Set to zero
     zeroVec(dims, sim_dimensions);
     zeroVec(widths, sim_dimensions);
     zeroVec(inverseW, sim_dimensions);
-    // Set bounds to have the propper dimensionality
-    domain_bounds = Bounds(sim_dimensions);
-    bounds = Bounds(sim_dimensions);
   }; 
 
   DomainBase::~DomainBase() {
     nullXVL();
-    if (dims) delete [] dims;
-    if (widths) delete [] widths;
+    if (dims)     delete [] dims;
+    if (widths)   delete [] widths;
     if (inverseW) delete [] inverseW;
-    dims = nullptr;
-    widths = nullptr;
+    dims     = nullptr;
+    widths   = nullptr;
     inverseW = nullptr;
   }
 
@@ -117,8 +114,6 @@ namespace GFlowSimulation {
     Base::gflow->wrapPositions();
     // Set timer
     lastUpdate = Base::gflow->getElapsedTime();
-    // SimData does not need to be remade anymore
-    //** Base::simData->setNeedsRemake(false); ---> Remove this - let gflow set this at the end of each timestep
     // Reset
     steps_since_last_remake = 0;
     // Increment counter
@@ -196,8 +191,7 @@ namespace GFlowSimulation {
     // Set time point
     lastCheck = Base::gflow->getElapsedTime();
     // Don't go to long without updating
-    if (lastCheck - lastUpdate > max_update_delay)
-      return true;
+    if (lastCheck - lastUpdate > max_update_delay) return true;
     // Find the maximum possible motion
     RealType max_motion = maxMotion();
 

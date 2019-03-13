@@ -20,7 +20,7 @@ namespace GFlowSimulation {
     for (int i=0, j=0; i<size*sim_dimensions; i+=sim_dimensions, ++j) {
       if (rightBound<x[i] || x[i]<leftBound) {
         subtractVec(vel, v[j], dv, sim_dimensions);
-        scalarMultVec(acceleration*1./im[j], dv, sim_dimensions);
+        scalarMultVec(acceleration*1.f/im[j], dv, sim_dimensions);
         plusEqVec(f[j], dv, sim_dimensions);
       }
     }

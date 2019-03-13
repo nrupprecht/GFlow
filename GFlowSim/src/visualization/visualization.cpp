@@ -91,9 +91,11 @@ namespace GFlowSimulation {
   void Visualization::createVideo3d(string dirName, const vector<vector<float> >& data) {
     for (int i=0; i<data.size(); ++i) {
       string fileName = dirName + "/frame" + toStr(i) + ".bmp";
-      //createImage3d(fileName, data[i]); // <-- This has yet to be implemented
-      projectImage(fileName, data[i]); // For now, we just draw a projected image
+      createImage3d(fileName, data[i]);
+      // projectImage(fileName, data[i]); // For now, we just draw a projected image
     }
+    // Clean up the ray tracer's kd tree structure.
+    tracer.empty();
   }
 
   void Visualization::createImage(string fileName, const vector<float>& data) {
@@ -214,8 +216,37 @@ namespace GFlowSimulation {
   }
 
   void Visualization::createImage3d(string fileName, const vector<float>& data) {
-    // @todo Implement this.
-    throw false; 
+    // Create the ray tracer
+    RayTrace tracer;
+    tracer.setBounds(bounds);
+    // Add all objects to the ray tracer.
+    tracer.reserve(data.size()/dataWidth);
+    for (int i=0; i<data.size(); i+=dataWidth) {
+      // Get valudes
+      const float *pos, *vel; float sigma, distance, stripex; int type;
+      get_values(&data[i], pos, vel, sigma, type, distance, stripex);
+
+      // Add the sphere to the ray tracer.
+      tracer.addSphere(pos, sigma);
+    }
+    // Set the tracer's camera
+    float center[3], bounds_center[3];
+    // Put the camera center along a line from the center of the simulation bounds to the minimum corner of the bounds
+    addVec(bounds.min, bounds.max, bounds_center, 3);
+    scalarMultVec(0.5f, bounds_center, 3);
+    subtractVec(bounds.min, bounds_center, center, 3);
+    scalarMultVec(2.f, center, 3);
+    plusEqVec(center, bounds_center, 3);
+
+    float orientation[3] = { 1.f/sqrt(3.f), 1.f/sqrt(3.f), 1.f/sqrt(3.f) };
+    tracer.setCameraPlacement(center);
+    tracer.setCameraOrientation(orientation);
+    // Tells the ray tracer we are done adding objects. The tracer constructs a KD tree, and gets ready to render.
+    tracer.initialize();
+    // Render via ray tracing and produce an image.
+    tracer.render();
+    // Write the image to the file
+    tracer.saveImage(fileName);
   }
 
   inline void Visualization::findMaxVSqr(const vector<vector<float> >& dataVector) {

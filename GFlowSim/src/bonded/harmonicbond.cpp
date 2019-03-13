@@ -48,11 +48,8 @@ namespace GFlowSimulation {
       RealType dr = r - distance[i];
       // Makes nX the unit vector of dX
       normalizeVec(dX, sim_dimensions);
-      // Calculate strength
-      RealType strength = springConstant*dr;
-      
       // nX is now the force vector
-      scalarMultVec(strength, dX, sim_dimensions);
+      scalarMultVec(springConstant*dr, dX, sim_dimensions);
       // Add forces to particles
       minusEqVec(f[id1], dX, sim_dimensions);
       plusEqVec (f[id2], dX, sim_dimensions);

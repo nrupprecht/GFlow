@@ -34,7 +34,7 @@ namespace GFlowSimulation {
       scalarMultVec(Df1*Df2*strength, force, sim_dimensions);
       // Drag force - also from the viscous medium
       copyVec(v[n], drag, sim_dimensions);
-      scalarMultVec(6.*PI*viscosity*sg[n], drag, sim_dimensions);
+      scalarMultVec(RealType(6.*PI*viscosity*sg[n]), drag, sim_dimensions);
       // Add total force
       plusEqVec (f[n], force, sim_dimensions);
       minusEqVec(f[n],  drag, sim_dimensions);

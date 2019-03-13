@@ -125,7 +125,7 @@ namespace GFlowSimulation {
     // Clean up if we are the last palette to reference the object
     if (refs[0]==1) {
       --refs[0];
-      if (image) delete image;
+      if (image)     delete image;
       if (baseImage) delete baseImage;
       delete refs;
     }

@@ -2,6 +2,7 @@
 #define __VISUALIZATION_HPP__GFLOW__
 
 #include "palette.hpp"
+#include "raytrace.hpp"
 #include <map>
 
 namespace GFlowSimulation {
@@ -99,6 +100,9 @@ namespace GFlowSimulation {
 
     //! \brief The physical bounds of the data.
     Bounds bounds = Bounds(2);
+
+    //! \brief A ray tracer, for 3d image creation.
+    RayTrace tracer;
 
     //! \brief Whether to wrap at the boundaries or not
     bool do_wrap = true;

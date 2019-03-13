@@ -40,6 +40,9 @@ namespace GFlowSimulation {
     // For now
     bounds = gflow->getBounds();
 
+    // Get ntypes from force master
+    _ntypes = forceMaster->getNTypes();
+
     // Sort the particles by position
     sortParticles();
   }
@@ -477,9 +480,7 @@ namespace GFlowSimulation {
   }
 
   int SimData::ntypes() const {
-    if (Base::forceMaster!=nullptr)
-      return Base::forceMaster->getNTypes();
-    else return -1;
+    return _ntypes;
   }
 
   void SimData::clearV() {
@@ -524,12 +525,12 @@ namespace GFlowSimulation {
   }
 
   void SimData::addScalarData(string name) {
-    scalar_data_map.insert(SIPair(name, vector_data_map.size()));
+    scalar_data_map.insert(SIPair(name, scalar_data_map.size()));
     sdata.push_back(nullptr);
   }
 
   void SimData::addIntegerData(string name) {
-    integer_data_map.insert(SIPair(name, vector_data_map.size()));
+    integer_data_map.insert(SIPair(name, integer_data_map.size()));
     idata.push_back(nullptr);
   }
 
@@ -587,7 +588,7 @@ namespace GFlowSimulation {
   void SimData::reset_particle(int id) {
     for (auto v : vdata) zeroVec(v[id], sim_dimensions);
     for (auto s : sdata) s[id] = 0.;
-    for (auto i : idata) i[id] = 0;
+    for (auto i : idata) i[id] = -1;
   }
 
   void SimData::move_particle(int src, int dst) {
