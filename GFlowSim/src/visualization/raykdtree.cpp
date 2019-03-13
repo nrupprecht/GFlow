@@ -36,16 +36,10 @@ namespace GFlowSimulation {
       Sphere *min_sphere = nullptr;
       // Go through all spheres in this node.
       for (const auto& sphere : sphere_list) {
-
-        cout << toStrVec(sphere->center, 3) << endl;
-
-
         if (sphere->intersect(ray, test_point, distance) && distance<dmin) {
           min_sphere = sphere;
           dmin = distance;
           copyVec(test_point, min_point, 3);
-
-          cout << "I" << endl;
         }
       }
       // Check if there was an intersection. If so, return.
@@ -128,15 +122,26 @@ namespace GFlowSimulation {
   Sphere* RayKDTree::traverse(const Ray& ray, float *point, float& distance, bool& intersect) const {
     // If the tree is empty, return nullptr.
     if (head==nullptr) return nullptr;
-
     // Find the tmin and tmax of the ray through the system bounding box.
     float tmin = 0, tmax = 0;
+    // If the ray does not intersect with the bounding box, set the flag and return.
+    if (!getRayIntersectionParameters(ray, tmin, tmax)) {
+      intersect = false;
+      return nullptr;
+    }
+    // The ray did intersect with the bounding box.
+    intersect = true;
+    // Traverse the data structure.
+    return head->traverse(ray, point, distance, tmin, tmax);
+  }
+
+  bool RayKDTree::getRayIntersectionParameters(const Ray& ray, float& tmin, float& tmax) const {
     float tmin_d[3], tmax_d[3];
     // Find tmin, tmax for each dimension.
     for (int i=0; i<3; ++i) {
       if (ray.orientation[i]==0) {
         // No intersection.
-        if (ray.origin[i]<=bounds.min[i] || bounds.max[i]<=ray.origin[i]) return nullptr;
+        if (ray.origin[i]<=bounds.min[i] || bounds.max[i]<=ray.origin[i]) return false;
         tmin_d[i] = 0;
         tmax_d[i] = 10000; // Use as "infinity."
       }
@@ -152,21 +157,15 @@ namespace GFlowSimulation {
     // Find actual tmin, tmax
     tmin = max(tmin_d[0], tmin_d[1], tmin_d[2]);
     tmax = min(tmax_d[0], tmax_d[1], tmax_d[2]);
-
     // If the ray does not intersect with the bounding box, set the flag and return.
-    if (tmax<=tmin) {
-      intersect = false;
-      return nullptr;
-    }
+    if (tmax<=tmin) return false;
     // The ray did intersect with the bounding box.
-    intersect = true;
-
-    // Traverse the data structure.
-    return head->traverse(ray, point, distance, tmin, tmax);
+    return true;
   }
 
   void RayKDTree::clear() {
     if (head) delete head;
+    head = nullptr;
   }
 
   void RayKDTree::empty() {

@@ -91,4 +91,14 @@ namespace GFlowSimulation {
     }
   }
 
+  RealType max_width(const Bounds& bnds) {
+    RealType a = bnds.wd(0), b = bnds.wd(1), c = bnds.wd(2);
+    return max(a, b, c);
+  }
+
+  RealType min_width(const Bounds& bnds) {
+    RealType a = bnds.wd(0), b = bnds.wd(1), c = bnds.wd(2);
+    return min(a, b, c);
+  }
+
 }

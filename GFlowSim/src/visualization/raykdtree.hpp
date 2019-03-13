@@ -59,6 +59,9 @@ namespace GFlowSimulation {
     //! The boolean is set to whether the ray intersected with the scene bounding box.
     Sphere* traverse(const Ray&, float*, float&, bool&) const;
 
+    //! \brief Get the part of the ray that intersects with the scene bounding box.
+    bool getRayIntersectionParameters(const Ray&, float&, float&) const;
+
     //! \brief Clean up the tree.
     void clear();
 

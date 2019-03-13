@@ -89,6 +89,32 @@ namespace GFlowSimulation {
   }
 
   void Visualization::createVideo3d(string dirName, const vector<vector<float> >& data) {
+    // Set up the ray tracer - it should be empty
+    tracer.setBounds(bounds);
+    // Set the tracer's camera
+    float bounds_center[3];
+
+    float scale = 0.5*max_width(bounds);
+    float camera[3] = {1.3f, 2.4f, 2.f};
+
+    // Scale the camera placement vector
+    scalarMultVec(scale, camera, 3);
+    // Find the center of the bounds
+    addVec(bounds.min, bounds.max, bounds_center, 3); 
+    scalarMultVec(0.5f, bounds_center, 3); 
+    // Shift the camera placement vector
+    plusEqVec(camera, bounds_center, 3);
+
+    // Have the orientation point towards the center of the bounds
+    float orientation[3];
+    subtractVec(bounds_center, camera, orientation, 3);
+    normalizeVec(orientation, 3);
+
+    // Set camera and orientation vectors
+    tracer.setCameraPlacement(camera);
+    tracer.setCameraOrientation(orientation);
+
+    // Create all the images
     for (int i=0; i<data.size(); ++i) {
       string fileName = dirName + "/frame" + toStr(i) + ".bmp";
       createImage3d(fileName, data[i]);
@@ -96,6 +122,8 @@ namespace GFlowSimulation {
     }
     // Clean up the ray tracer's kd tree structure.
     tracer.empty();
+
+    cout << "Image creation time: " << tracer.getRenderTime() << endl;
   }
 
   void Visualization::createImage(string fileName, const vector<float>& data) {
@@ -216,35 +244,21 @@ namespace GFlowSimulation {
   }
 
   void Visualization::createImage3d(string fileName, const vector<float>& data) {
-    // Create the ray tracer
-    RayTrace tracer;
-    tracer.setBounds(bounds);
     // Add all objects to the ray tracer.
     tracer.reserve(data.size()/dataWidth);
     for (int i=0; i<data.size(); i+=dataWidth) {
-      // Get valudes
+      // Get values
       const float *pos, *vel; float sigma, distance, stripex; int type;
       get_values(&data[i], pos, vel, sigma, type, distance, stripex);
 
       // Add the sphere to the ray tracer.
       tracer.addSphere(pos, sigma);
     }
-    // Set the tracer's camera
-    float center[3], bounds_center[3];
-    // Put the camera center along a line from the center of the simulation bounds to the minimum corner of the bounds
-    addVec(bounds.min, bounds.max, bounds_center, 3);
-    scalarMultVec(0.5f, bounds_center, 3);
-    subtractVec(bounds.min, bounds_center, center, 3);
-    scalarMultVec(2.f, center, 3);
-    plusEqVec(center, bounds_center, 3);
-
-    float orientation[3] = { 1.f/sqrt(3.f), 1.f/sqrt(3.f), 1.f/sqrt(3.f) };
-    tracer.setCameraPlacement(center);
-    tracer.setCameraOrientation(orientation);
     // Tells the ray tracer we are done adding objects. The tracer constructs a KD tree, and gets ready to render.
     tracer.initialize();
     // Render via ray tracing and produce an image.
     tracer.render();
+    tracer.empty();
     // Write the image to the file
     tracer.saveImage(fileName);
   }

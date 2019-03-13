@@ -25,9 +25,9 @@ namespace GFlowSimulation {
 
   //! \brief Cross product - assumes 3 dimensions.
   template<typename T> inline void crossVec(const T *x, const T *y, T *z) {
-    z[0] = x[1]*y[2];
-    z[1] = -x[0]*y[2];
-    z[2] = x[0]*y[1];
+    z[0] = x[1]*y[2] - y[1]*x[2];
+    z[1] = -x[0]*y[2] + y[0]*x[2];
+    z[2] = x[0]*y[1] - y[0]*x[1];
   }
 
   // Generic squaring function

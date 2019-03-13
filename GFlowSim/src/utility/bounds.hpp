@@ -13,45 +13,51 @@ namespace GFlowSimulation {
   *
   */
   struct Bounds {
-    //! @brief Dimension setting constructor.
+    //! \brief Dimension setting constructor.
     Bounds(const int);
 
-    //! @brief Full setting constructor.
+    //! \brief Full setting constructor.
     Bounds(const RealType*, const RealType*, const int);
 
-    //! @brief Copy constructor
+    //! \brief Copy constructor
     Bounds(const Bounds&);
 
-    //! @brief Destructor.
+    //! \brief Destructor.
     ~Bounds();
 
-    //! @brief Copy equals.
+    //! \brief Copy equals.
     Bounds& operator=(const Bounds&);
 
-    //! @brief Boolean equals operator
+    //! \brief Boolean equals operator
     bool operator==(const Bounds&) const;
 
-    //! @brief Boolean not equals operator
+    //! \brief Boolean not equals operator
     bool operator!=(const Bounds&) const;
 
-    //! @brief Get the widths in various dimensions of the bounds.
+    //! \brief Get the widths in various dimensions of the bounds.
     RealType wd(int) const;
 
-    //! @brief Get the volume of the bounds.
+    //! \brief Get the volume of the bounds.
     RealType vol() const;
 
-    //! @brief Get the dimensionality of the bounds.
+    //! \brief Get the dimensionality of the bounds.
     int dims() const;
 
-    //! @brief Set the input vector to be the center of the bounds.
+    //! \brief Set the input vector to be the center of the bounds.
     void center(RealType*) const;
+
+    //! \brief Find the maximum bounds width.
+    friend RealType max_width(const Bounds&);
+
+    //! \brief Find the minimum bounds width.
+    friend RealType min_width(const Bounds&);
 
     // --- Data
 
-    //! @brief The min and max.
+    //! \brief The min and max.
     RealType *min, *max;
 
-    //! @brief The dimensionality of this bounds object
+    //! \brief The dimensionality of this bounds object
     int dimensions;
   };
 
