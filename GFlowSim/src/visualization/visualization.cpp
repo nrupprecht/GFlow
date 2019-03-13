@@ -89,6 +89,8 @@ namespace GFlowSimulation {
   }
 
   void Visualization::createVideo3d(string dirName, const vector<vector<float> >& data) {
+    // Timing
+    auto start_time = current_time();
     // Set up the ray tracer - it should be empty
     tracer.setBounds(bounds);
     // Set the tracer's camera
@@ -122,8 +124,10 @@ namespace GFlowSimulation {
     }
     // Clean up the ray tracer's kd tree structure.
     tracer.empty();
+    // Timing
+    auto end_time = current_time();
 
-    cout << "Image creation time: " << tracer.getRenderTime() << endl;
+    cout << "Image creation time: " << time_span(end_time, start_time) << endl;
   }
 
   void Visualization::createImage(string fileName, const vector<float>& data) {
