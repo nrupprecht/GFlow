@@ -28,24 +28,21 @@ namespace GFlowSimulation {
     if (higher) higher->empty();
   }
 
-  Sphere* RayKDTreeNode::traverse(const Ray& ray, float *point, float& distance, float tmin, float tmax) const {
+  Sphere* RayKDTreeNode::traverse(const Ray& ray, float *point, float& distance_near, float& distance_far, float tmin, float tmax) const {
     // If this is a terminal node, search through all spheres for an intersection.
     if (lower==nullptr) {
-      float distance = 10000, dmin = 10000;
-      float min_point[3], test_point[3];
+      float distance = 10000, d_far = 10000;
+      distance_near = distance_far = 10000;
+      float test_point[3];
       Sphere *min_sphere = nullptr;
       // Go through all spheres in this node.
       for (const auto& sphere : sphere_list) {
-        if (sphere->intersect(ray, test_point, distance) && distance<dmin) {
+        if (sphere->intersect(ray, test_point, distance, d_far) && distance<distance_near) {
           min_sphere = sphere;
-          dmin = distance;
-          copyVec(test_point, min_point, 3);
+          distance_near = distance;
+          distance_far  = d_far;
+          copyVec(test_point, point, 3);
         }
-      }
-      // Check if there was an intersection. If so, return.
-      if (min_sphere!=nullptr) {
-        distance = dmin;
-        copyVec(min_point, point, 3);
       }
       // If we found nothing, this just returns nullptr.
       return min_sphere;
@@ -68,26 +65,25 @@ namespace GFlowSimulation {
       // In either case, we only need to check with one child domain. We can test which one is relevant by seeing which child 
       // domain the entrance point is in.
       if (t_split>tmax || t_split<tmin) {
-        
         // Check which side of the splitting coordinate X is on
-        if (lower_first) return lower->traverse(ray, point, distance, tmin, tmax);
-        else return higher->traverse(ray, point, distance, tmin, tmax);
+        if (lower_first) return lower->traverse(ray, point, distance_near, distance_far, tmin, tmax);
+        else return higher->traverse(ray, point, distance_near, distance_far, tmin, tmax);
       }
       
       // Otherwise, the ray intersects with both child domains. The only thing left to do is to figure out which domain comes first.
       // We can do this by seeing which child domain the entrance point is in
       Sphere *sphere = nullptr;
       if (lower_first) {
-        sphere = lower->traverse(ray, point, distance, tmin, tmax);
+        sphere = lower->traverse(ray, point, distance_near, distance_far, tmin, tmax);
         // If nothing was found in the first child, search the second child.
-        if (sphere==nullptr) return higher->traverse(ray, point, distance, tmin, tmax);
+        if (sphere==nullptr) return higher->traverse(ray, point, distance_near, distance_far, tmin, tmax);
         // If something was found return it.
         else return sphere;
       }
       else {
-        sphere = higher->traverse(ray, point, distance, tmin, tmax);
+        sphere = higher->traverse(ray, point, distance_near, distance_far, tmin, tmax);
         // If nothing was found in the first child, search the second child.
-        if (sphere==nullptr) return lower->traverse(ray, point, distance, tmin, tmax);
+        if (sphere==nullptr) return lower->traverse(ray, point, distance_near, distance_far, tmin, tmax);
         // If something was found return it.
         else return sphere;
       }
@@ -95,9 +91,9 @@ namespace GFlowSimulation {
     }
     else {
       // Only intersects the lower node
-      if (ray.origin[split_dim] < split_value) return lower->traverse(ray, point, distance, tmin, tmax);
+      if (ray.origin[split_dim] < split_value) return lower->traverse(ray, point, distance_near, distance_far, tmin, tmax);
       // Only intersects the higher node
-      else return higher->traverse(ray, point, distance, tmin, tmax);
+      else return higher->traverse(ray, point, distance_near, distance_far, tmin, tmax);
     }
   }
 
@@ -119,7 +115,7 @@ namespace GFlowSimulation {
     if (head) head->insert(sphere);
   }
 
-  Sphere* RayKDTree::traverse(const Ray& ray, float *point, float& distance, bool& intersect) const {
+  Sphere* RayKDTree::traverse(const Ray& ray, float *point, float& distance_near, float& distance_far, bool& intersect) const {
     // If the tree is empty, return nullptr.
     if (head==nullptr) return nullptr;
     // Find the tmin and tmax of the ray through the system bounding box.
@@ -132,7 +128,7 @@ namespace GFlowSimulation {
     // The ray did intersect with the bounding box.
     intersect = true;
     // Traverse the data structure.
-    return head->traverse(ray, point, distance, tmin, tmax);
+    return head->traverse(ray, point, distance_near, distance_far, tmin, tmax);
   }
 
   bool RayKDTree::getRayIntersectionParameters(const Ray& ray, float& tmin, float& tmax) const {

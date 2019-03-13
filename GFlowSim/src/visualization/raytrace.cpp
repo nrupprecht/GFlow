@@ -116,7 +116,7 @@ namespace GFlowSimulation {
 
   RGBApixel RayTrace::trace(const Ray& ray) const {
     // Distance to intersection point
-    float distance = 0;
+    float distance_near = 0, distance_far = 0;
     // Intersection point
     float point[3];
     // Did the ray intersect with the scene bounding box?
@@ -124,8 +124,8 @@ namespace GFlowSimulation {
 
     // Use kd tree to find intersection.
     Sphere const* sphere = nullptr;
-    if (use_tree) sphere = kdTree.traverse(ray, point, distance, intersect);
-    else sphere = brute_force_traverse(ray, point, distance, intersect);
+    if (use_tree) sphere = kdTree.traverse      (ray, point, distance_near, distance_far, intersect);
+    else          sphere = brute_force_traverse (ray, point, distance_near, distance_far, intersect);
 
     // If the ray intersected with a sphere, figure out what kind of shading it should have.
     if (sphere) {
@@ -140,18 +140,18 @@ namespace GFlowSimulation {
     else return intersect ? RGB_Dark_Gray : RGB_Black;
   }
 
-  inline Sphere const * RayTrace::brute_force_traverse(const Ray& ray, float *point, float& distance, bool& intersect) const {
+  inline Sphere const * RayTrace::brute_force_traverse(const Ray& ray, float *point, float& distance_near, float& distance_far, bool& intersect) const {
     Sphere const * min_sphere = nullptr;
     float min = 10000, test_point[3], sphere_center[3];
     bool did_intersect = false;
     for (auto &sphere : sphere_list) {
-      if (sphere.intersect(ray, test_point, distance) && distance<min) {
-        min = distance;
+      if (sphere.intersect(ray, test_point, distance_near, distance_far) && distance_near<min) {
+        min = distance_near;
         min_sphere = &sphere;
         copyVec(test_point, point, 3);
       }
     }
-    distance = min;
+    distance_near = min;
     // Check if the ray intersected with the scene bounding box
     if (min_sphere) intersect = true;
     else {
@@ -219,14 +219,10 @@ namespace GFlowSimulation {
   }
 
   inline void RayTrace::quick_sort(int start, int end, int dim) {
-    quick_sort_help(start, end, dim);
-  }
-
-  inline void RayTrace::quick_sort_help(int start, int end, int dim) {
     if (start<end && dim<3) {
       int partition = quick_sort_partition(start, end, dim);
-      quick_sort_help(start, partition, dim);
-      quick_sort_help(partition+1, end, dim);
+      quick_sort(start, partition, dim);
+      quick_sort(partition+1, end, dim);
     }
   }
 
@@ -241,26 +237,9 @@ namespace GFlowSimulation {
         --j;
       } while (sphere_list[j].center[dim]>pivot);      
       // Termination condition
-      if (j<=i) return j;
+      if (j<=i) return j; // Return the id of the new dividing point.
       // If not, swap particles i and j
       swap(sphere_list[i], sphere_list[j]);
-    }
-  }
-
-  inline void RayTrace::recursion_help(int start, int end, int dim) {
-    if (dim>=3) return;
-    // Do next level of quicksorts, for the next dimension
-    const int sort_bins = 5, min_particles = 10;
-    const int ds = (end-start)/sort_bins;
-
-    if (ds>min_particles) {
-      for (int i=0; i<sort_bins; ++i) {
-        quick_sort_help(i*ds, (i+1)*ds, dim);
-        recursion_help (i*ds, (i+1)*ds, dim+1);
-      }
-      // Potentially, there is some left over
-      quick_sort_help(sort_bins*ds, sphere_list.size()-1, dim);
-      recursion_help (sort_bins*ds, sphere_list.size()-1, dim+1);
     }
   }
 

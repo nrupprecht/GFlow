@@ -81,20 +81,19 @@ namespace GFlowSimulation {
     //! \brief Find the sphere that the ray intersects with by brute force.
     //!
     //! Trys intersecting the ray with every sphere in the environment.
-    inline Sphere const* brute_force_traverse(const Ray&, float*, float&, bool&) const;
+    inline Sphere const* brute_force_traverse(const Ray&, float*, float&, float&, bool&) const;
 
     //! \brief Create the KD tree by sorting the spheres.
     inline void createKDTree();
 
+    //! \brief A helper function for creating the KD tree.
     inline void createKDTree_help(int, int, int, RayKDTreeNode*, Bounds&);
 
+    //! \brief Sort the spheres by the dim-th coordinate using quicksort.
     inline void quick_sort(int, int, int);
 
-    inline void quick_sort_help(int, int, int);
-
+    //! \brief Partition into two sections. Return the id of the new dividing point.
     inline int quick_sort_partition(int, int, int);
-
-    inline void recursion_help(int, int, int);
 
     //! \brief The target number of spheres to have per leaf node.
     int target_leaf_size;

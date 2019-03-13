@@ -13,8 +13,13 @@ namespace GFlowSimulation {
 
   bool Visualization::load_and_create(string loadName, string saveName) {
     // Create a loader to load the data
+    auto start_load = current_time();
+    cout << "Starting load...\n";
     LoadData loader;
     if (!loader.load(loadName)) return false;
+    auto  end_load = current_time();
+    // Print load time
+    cout << "Load time: " << time_span(end_load, start_load) << endl;
     // Extract data from the loader
     dataWidth = loader.getDataWidth();
     ntypes = loader.getNTypes();
@@ -76,6 +81,9 @@ namespace GFlowSimulation {
   }
 
   void Visualization::createVideo2d(string dirName, const vector<vector<float> >& data) {
+    cout << "Starting image write.\n";
+    // Timing
+    auto start_time = current_time();
     // Find the maximum velocity (if needed)
     if (color_option==2)
       findMaxVSqr(data);
@@ -86,9 +94,14 @@ namespace GFlowSimulation {
       string fileName = dirName + "/frame" + toStr(i) + ".bmp";
       createImage(fileName, data[i]);
     }
+    // Timing
+    auto end_time = current_time();
+    // Print timing.
+    cout << "Image creation time: " << time_span(end_time, start_time) << endl;
   }
 
   void Visualization::createVideo3d(string dirName, const vector<vector<float> >& data) {
+    cout << "Starting image write.\n";
     // Timing
     auto start_time = current_time();
     // Set up the ray tracer - it should be empty
@@ -126,7 +139,7 @@ namespace GFlowSimulation {
     tracer.empty();
     // Timing
     auto end_time = current_time();
-
+    // Print timing.
     cout << "Image creation time: " << time_span(end_time, start_time) << endl;
   }
 

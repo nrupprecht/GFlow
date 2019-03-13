@@ -38,7 +38,7 @@ namespace GFlowSimulation {
     Sphere& operator=(const Sphere&);
 
     //! \brief Test whether a ray intersects a sphere. If so, return the intersection point.
-    bool intersect(const Ray&, float*, float&) const;
+    bool intersect(const Ray&, float*, float&, float&) const;
 
     //! \brief A function that swaps two spheres.
     friend void swap(Sphere&, Sphere&);

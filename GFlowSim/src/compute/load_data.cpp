@@ -18,7 +18,7 @@ namespace GFlowSimulation {
     dimensions = getNextNumber<int>(fin);
     samples    = getNextNumber<int>(fin);
     nTypes     = getNextNumber<int>(fin);
-
+    
     // Get the dimensions - mins first, then maxes
     bounds = Bounds(dimensions);
     for (int i=0; i<dimensions; ++i) 

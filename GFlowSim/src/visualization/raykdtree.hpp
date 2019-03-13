@@ -16,7 +16,7 @@ namespace GFlowSimulation {
     void empty();
 
     //! \brief Traverse the tree, searching for the first sphere the ray intersects with
-    Sphere* traverse(const Ray&, float*, float&, float, float) const;
+    Sphere* traverse(const Ray&, float*, float&, float&, float, float) const;
 
     // --- Accessor helpers 
 
@@ -57,7 +57,7 @@ namespace GFlowSimulation {
     //! and nullptr if no sphere is encountered.
     //!
     //! The boolean is set to whether the ray intersected with the scene bounding box.
-    Sphere* traverse(const Ray&, float*, float&, bool&) const;
+    Sphere* traverse(const Ray&, float*, float&, float&, bool&) const;
 
     //! \brief Get the part of the ray that intersects with the scene bounding box.
     bool getRayIntersectionParameters(const Ray&, float&, float&) const;
