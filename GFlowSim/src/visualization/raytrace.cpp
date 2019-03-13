@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
 
-  RayTrace::RayTrace() : pix_x(768), pix_y(768), target_leaf_size(50), min_dimension(0.15), use_tree(true), adaptive_split(true) {
+  RayTrace::RayTrace() : pix_x(768), pix_y(768), target_leaf_size(50), min_dimension(0.15), use_tree(true), adaptive_split(true), chop_spheres(false) {
     // Camera center
     camera_center[0] = camera_center[1] = camera_center[2] = 0;
     // Camera orientation
@@ -121,43 +121,60 @@ namespace GFlowSimulation {
     float point[3];
     // Did the ray intersect with the scene bounding box?
     bool intersect = false;
+    // The distances at which the ray enters and exits the scene bounding box.
+    float tmin = 0, tmax = 0;
 
     // Use kd tree to find intersection.
     Sphere const* sphere = nullptr;
-    if (use_tree) sphere = kdTree.traverse      (ray, point, distance_near, distance_far, intersect);
-    else          sphere = brute_force_traverse (ray, point, distance_near, distance_far, intersect);
+    if (use_tree) sphere = kdTree.traverse      (ray, point, distance_near, distance_far, intersect, tmin, tmax);
+    else          sphere = brute_force_traverse (ray, point, distance_near, distance_far, intersect, tmin, tmax);
 
     // If the ray intersected with a sphere, figure out what kind of shading it should have.
     if (sphere) {
-      float norm[3];
-      subtractVec(point, sphere->center, norm, 3);
-      normalizeVec(norm, 3);
-      // Compute intensity - lambertian shading.
-      float intensity = (1.-base_illumination)*clamp(dotVec(norm, light_direction, 3)) + base_illumination;
-      // Return the color
-      return RGBApixel(0, intensity*255, 0);
+      // Check what kind of intersection occured:
+      // The intersection occured completely outside the bounding box
+      if (distance_far < tmin) { 
+        return RGB_Dark_Gray;
+      }
+      // The ray intersects with the sphere before it intersects with the scene bounding box
+      else if (chop_spheres && distance_near < tmin) { 
+        return RGB_Red;
+      }
+      // The intersection happened within the scene bounding box
+      else { 
+        float norm[3];
+        subtractVec(point, sphere->center, norm, 3);
+        normalizeVec(norm, 3);
+        // Compute intensity - lambertian shading.
+        float intensity = (1.-base_illumination)*clamp(dotVec(norm, light_direction, 3)) + base_illumination;
+        // Return the color
+        return RGBApixel(0, intensity*255, 0);
+      }
     }
     else return intersect ? RGB_Dark_Gray : RGB_Black;
   }
 
-  inline Sphere const * RayTrace::brute_force_traverse(const Ray& ray, float *point, float& distance_near, float& distance_far, bool& intersect) const {
+  inline Sphere const * RayTrace::brute_force_traverse(const Ray& ray, float *point, float& distance_near, float& distance_far, 
+    bool& intersect, float& tmin, float& tmax) const 
+  {
+    // Find tmin, tmax
+    tmin = 0; tmax = 0;
+    // Check if the ray intersected with the scene bounding box
+    intersect = kdTree.getRayIntersectionParameters(ray, tmin, tmax);
+    // If the ray does not intersect with the scene bounding box, return.
+    if (!intersect) return nullptr;
+    // Exhaustively test for ray-sphere intersection
     Sphere const * min_sphere = nullptr;
     float min = 10000, test_point[3], sphere_center[3];
     bool did_intersect = false;
     for (auto &sphere : sphere_list) {
-      if (sphere.intersect(ray, test_point, distance_near, distance_far) && distance_near<min) {
+      if (sphere.intersect(ray, test_point, distance_near, distance_far, tmin) && distance_near<min) {
         min = distance_near;
         min_sphere = &sphere;
         copyVec(test_point, point, 3);
       }
     }
     distance_near = min;
-    // Check if the ray intersected with the scene bounding box
-    if (min_sphere) intersect = true;
-    else {
-      float tmin = 0, tmax = 0;
-      intersect = kdTree.getRayIntersectionParameters(ray, tmin, tmax);
-    }
     // This returns nullptr if the ray did not intersect with any sphere
     return min_sphere;
   }

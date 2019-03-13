@@ -57,9 +57,21 @@ namespace GFlowSimulation {
     //! and nullptr if no sphere is encountered.
     //!
     //! The boolean is set to whether the ray intersected with the scene bounding box.
-    Sphere* traverse(const Ray&, float*, float&, float&, bool&) const;
+    //!
+    //! \param ray The ray that is marched through the tree.
+    //! \param point The intersection point of the ray with the first sphere it hits.
+    //! \param distance_near The distance at which the ray enters the sphere.
+    //! \param distance_far The distance at which the ray exits the sphere.
+    //! \param intersect Whether or not the ray intersects with the scene bounding box.
+    //! \param tmin The distance at which the ray enters the bounding box (0 if the ray's origin is within the bounding box).
+    //! \param tmax The distance at which the ray leaves the bounding box (0 if the ray never intersects with the bounding box).
+    Sphere* traverse(const Ray&, float*, float&, float&, bool&, float&, float&) const;
 
     //! \brief Get the part of the ray that intersects with the scene bounding box.
+    //!
+    //! \param ray The ray in question.
+    //! \param tmin The distance at which the ray enters the bounding box (0 if the ray's origin is within the bounding box).
+    //! \param tmax The distance at which the ray leaves the bounding box (0 if the ray never intersects with the bounding box).
     bool getRayIntersectionParameters(const Ray&, float&, float&) const;
 
     //! \brief Clean up the tree.

@@ -27,7 +27,7 @@ namespace GFlowSimulation {
     return *this;
   }
 
-  bool Sphere::intersect(const Ray& ray, float* point, float& distance_near, float& distance_far) const {
+  bool Sphere::intersect(const Ray& ray, float* point, float& distance_near, float& distance_far, const float tmin) const {
     // Vector from ray origin to sphere center: E = sphere.center - ray.origin
     float E[3];
     subtractVec(center, ray.origin, E, 3);
@@ -43,6 +43,10 @@ namespace GFlowSimulation {
     // Just find the closer point. This assumes the ray does not start within the sphere.
     distance_near = v - d;
     distance_far  = v + d; 
+
+    // Check if this is a real intersection, i.e. part of ray intersects with the sphere while inside the scene bounding box.
+    if (distance_far<tmin) return false;
+
     scalarMultVec(distance_near, ray.orientation, point, 3);
     plusEqVec(point, ray.origin, 3);
     // There was an intersection.

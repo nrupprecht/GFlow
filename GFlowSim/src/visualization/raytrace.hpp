@@ -81,7 +81,7 @@ namespace GFlowSimulation {
     //! \brief Find the sphere that the ray intersects with by brute force.
     //!
     //! Trys intersecting the ray with every sphere in the environment.
-    inline Sphere const* brute_force_traverse(const Ray&, float*, float&, float&, bool&) const;
+    inline Sphere const* brute_force_traverse(const Ray&, float*, float&, float&, bool&, float&, float&) const;
 
     //! \brief Create the KD tree by sorting the spheres.
     inline void createKDTree();
@@ -108,6 +108,9 @@ namespace GFlowSimulation {
     //! \brief If true, the kd tree's split dimension is determined on the fly. If not, the dimensions are
     //! cycled through.
     bool adaptive_split;
+
+    //! \brief If true, chop spheres at the scene bounding box.
+    bool chop_spheres;
 
     //! \brief The bitmap.
     BMP image;

@@ -37,7 +37,7 @@ namespace GFlowSimulation {
       Sphere *min_sphere = nullptr;
       // Go through all spheres in this node.
       for (const auto& sphere : sphere_list) {
-        if (sphere->intersect(ray, test_point, distance, d_far) && distance<distance_near) {
+        if (sphere->intersect(ray, test_point, distance, d_far, tmin) && distance<distance_near) {
           min_sphere = sphere;
           distance_near = distance;
           distance_far  = d_far;
@@ -115,11 +115,11 @@ namespace GFlowSimulation {
     if (head) head->insert(sphere);
   }
 
-  Sphere* RayKDTree::traverse(const Ray& ray, float *point, float& distance_near, float& distance_far, bool& intersect) const {
+  Sphere* RayKDTree::traverse(const Ray& ray, float *point, float& distance_near, float& distance_far, bool& intersect, float& tmin, float& tmax) const {
     // If the tree is empty, return nullptr.
     if (head==nullptr) return nullptr;
     // Find the tmin and tmax of the ray through the system bounding box.
-    float tmin = 0, tmax = 0;
+    tmin = 0; tmax = 0;
     // If the ray does not intersect with the bounding box, set the flag and return.
     if (!getRayIntersectionParameters(ray, tmin, tmax)) {
       intersect = false;
