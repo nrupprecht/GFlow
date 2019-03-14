@@ -50,6 +50,9 @@ namespace GFlowSimulation {
 
     //! \brief The radius of the sphere.
     float radius;
+
+    //! \brief How completely the sphere reflects colors.
+    float color_reflectivity[3];
   };
 
 }

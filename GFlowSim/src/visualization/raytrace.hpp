@@ -59,6 +59,9 @@ namespace GFlowSimulation {
     //! \brief Add a sphere to the world.
     void addSphere(const float*, const float);
 
+    //! \brief Add a sphere to the world, specifying the color.
+    void addSphere(const float*, const float, const RGBApixel);
+
     //! \brief Place the center of the camera.
     void setCameraPlacement(const float*);
 
@@ -129,6 +132,9 @@ namespace GFlowSimulation {
 
     //! \brief The direction of the infinitely distant light source.
     float light_direction[3];
+
+    //! \brief The color of the infinitely distant light source.
+    float light_color[3];
 
     //! \brief The indirect illumination level. Out of 1.
     float base_illumination = 0.1;

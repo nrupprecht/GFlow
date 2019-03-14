@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
 
-  RayTrace::RayTrace() : pix_x(768), pix_y(768), target_leaf_size(50), min_dimension(0.15), use_tree(true), adaptive_split(true), chop_spheres(false) {
+  RayTrace::RayTrace() : pix_x(768), pix_y(768), target_leaf_size(50), min_dimension(0.f), use_tree(true), adaptive_split(true), chop_spheres(false) {
     // Camera center
     camera_center[0] = camera_center[1] = camera_center[2] = 0;
     // Camera orientation
@@ -20,6 +20,8 @@ namespace GFlowSimulation {
     light_direction[1] = 1./sqrt(3);
     light_direction[2] = 1./sqrt(3);
     normalizeVec(light_direction, 3);
+    // Light color - white by default
+    light_color[0] = light_color[1] = light_color[2] = 1.f;
   }
 
   void RayTrace::initialize() {
@@ -58,13 +60,13 @@ namespace GFlowSimulation {
     // Ray trace each pixel
     for (int y=0; y<pix_y; ++y)
       for (int x=0; x<pix_x; ++x) {
-
+        // Calculate pixel shift
         float dx = (float(x) - pix_x/2.f)/float(pix_x);
         float dy = (float(y) - pix_y/2.f)/float(pix_y);
-
+        // Calculate pixel vector
         scalarMultVec(dx, camera_right, vx, 3);
         scalarMultVec(dy, camera_up, vy, 3);
-
+        // Calculate screen position
         addVec(camera_orientation, vx, acc, 3);
         addVec(acc, vy, orientation, 3);
         // Normalize the camera vector
@@ -73,8 +75,8 @@ namespace GFlowSimulation {
         Ray ray(camera_center, orientation);
         // Trace the ray to get the color
         color = trace(ray);
-        // Set the color
-        image.SetPixel(x, y, color);
+        // Set the color - because of how image is laid out, Y = pix_y - y - 1
+        image.SetPixel(x, pix_y-y-1, color);
       }
     // Timing
     auto end_time = current_time();
@@ -91,6 +93,14 @@ namespace GFlowSimulation {
 
   void RayTrace::addSphere(const float* center, const float sigma) {
     sphere_list.push_back(Sphere(center, sigma));
+  }
+
+  void RayTrace::addSphere(const float* center, const float sigma, const RGBApixel color) {
+    Sphere sphere(center, sigma);
+    sphere.color_reflectivity[0] = color.Red/255.;
+    sphere.color_reflectivity[1] = color.Green/255.;
+    sphere.color_reflectivity[2] = color.Blue/255.;
+    sphere_list.push_back(sphere);
   }
 
   void RayTrace::setCameraPlacement(const float* c) {
@@ -145,10 +155,18 @@ namespace GFlowSimulation {
         float norm[3];
         subtractVec(point, sphere->center, norm, 3);
         normalizeVec(norm, 3);
+        // Compute color
+        float resulting_color[3];
+        hadamardVec(sphere->color_reflectivity, light_color, resulting_color, 3);
+
         // Compute intensity - lambertian shading.
         float intensity = (1.-base_illumination)*clamp(dotVec(norm, light_direction, 3)) + base_illumination;
         // Return the color
-        return RGBApixel(0, intensity*255, 0);
+        return RGBApixel(
+          static_cast<int>(intensity*resulting_color[0]*255), 
+          static_cast<int>(intensity*resulting_color[1]*255), 
+          static_cast<int>(intensity*resulting_color[2]*255)
+        );
       }
     }
     else return intersect ? RGB_Dark_Gray : RGB_Black;
@@ -215,9 +233,13 @@ namespace GFlowSimulation {
 
     // Sort the particles 
     quick_sort(start, end, dim);
+
     // Pick position between center spheres to be the split
     int id = static_cast<int>(0.5*(start + end));
-    float split_value = sphere_list[id].center[dim];
+    float split_value = 0;
+    if (id+1<sphere_list.size()) split_value = 0.5*(sphere_list[id].center[dim]+sphere_list[id+1].center[dim]);
+    else return; // This must be the only particle
+    // Set split dim and split value
     node->split_dim = dim;
     node->split_value = split_value;
     

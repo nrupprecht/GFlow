@@ -2,15 +2,16 @@
 #define __PRINTING_UTILITY_HPP__GFLOW__
 
 #include "utility.hpp"
+#include <iomanip> // For std::setprecision
 
 namespace GFlowSimulation {
 
   template<typename T, int dimensions>
-  string toStr(const vec<T, dimensions> v) {
+  string toStr(const vec<T, dimensions> v, int precision=4) {
     stringstream stream;
     stream << "{";
     for (int d=0; d<dimensions; ++d) {
-      stream << v[d];
+      stream << std::setprecision(precision) << v[d];
       if (d!=dimensions-1) stream << ",";
     }
     stream << "}";
@@ -20,11 +21,11 @@ namespace GFlowSimulation {
   }
 
   //! \brief Convert a vector to csv format: x1, x2, x3, ...
-  template<typename T> inline string toCSV(const vector<T>& vec) {
+  template<typename T> inline string toCSV(const vector<T>& vec, int precision=5) {
     stringstream stream;
     for (int i=0; i<vec.size(); ++i) {
-      stream << vec[i];
-      if (i!=vec.size()-1) stream << ",";
+      stream << std::setprecision(precision) << vec[i];
+      if (i!=vec.size()-1) stream << std::setprecision(precision) << ",";
     }
     string str;
     stream >> str;

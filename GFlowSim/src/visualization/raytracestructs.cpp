@@ -11,19 +11,30 @@ namespace GFlowSimulation {
 
   Sphere::Sphere() : radius(1.f) {
     zeroVec(center, 3);
+    // Set color reflectivity
+    zeroVec(color_reflectivity, 3);
+    color_reflectivity[1] = 1.; // Green spheres by default
   }
 
   Sphere::Sphere(const float *c, const float r) : radius(r) {
     copyVec(c, center, 3);
+    // Set color reflectivity
+    zeroVec(color_reflectivity, 3);
+    color_reflectivity[1] = 1.; // Green spheres by default
   }
 
   Sphere::Sphere(const Sphere& s) : radius(s.radius) {
     copyVec(s.center, center, 3);
+    // Set color reflectivity
+    copyVec(s.color_reflectivity, color_reflectivity, 3);
   }
 
   Sphere& Sphere::operator=(const Sphere& s) {
     radius = s.radius;
     copyVec(s.center, center, 3);
+    // Set color reflectivity
+    copyVec(s.color_reflectivity, color_reflectivity, 3);
+    // Return the sphere
     return *this;
   }
 

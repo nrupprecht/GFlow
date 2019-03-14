@@ -87,6 +87,7 @@ namespace GFlowSimulation {
     // Find the maximum velocity (if needed)
     if (color_option==2)
       findMaxVSqr(data);
+    // Find the maximum distance (if needed)
     else if (color_option==4)
       findMaxDistance(data);
     // Create frames
@@ -104,14 +105,19 @@ namespace GFlowSimulation {
     cout << "Starting image write.\n";
     // Timing
     auto start_time = current_time();
+    // Find the maximum velocity (if needed)
+    if (color_option==2)
+      findMaxVSqr(data);
+    // Find the maximum distance (if needed)
+    else if (color_option==4)
+      findMaxDistance(data);
+
     // Set up the ray tracer - it should be empty
     tracer.setBounds(bounds);
     // Set the tracer's camera
     float bounds_center[3];
-
     float scale = 0.5*max_width(bounds);
     float camera[3] = {1.3f, 2.4f, 2.f};
-
     // Scale the camera placement vector
     scalarMultVec(scale, camera, 3);
     // Find the center of the bounds
@@ -263,13 +269,18 @@ namespace GFlowSimulation {
   void Visualization::createImage3d(string fileName, const vector<float>& data) {
     // Add all objects to the ray tracer.
     tracer.reserve(data.size()/dataWidth);
+    RGBApixel color;
+    // Do checks of positions
+    if (!do_checks(data)) return;
+    // Add all particles to the ray tracer
     for (int i=0; i<data.size(); i+=dataWidth) {
       // Get values
       const float *pos, *vel; float sigma, distance, stripex; int type;
       get_values(&data[i], pos, vel, sigma, type, distance, stripex);
-
+      // Determine the color
+      determine_color(color, i, pos, vel, type, distance, stripex);
       // Add the sphere to the ray tracer.
-      tracer.addSphere(pos, sigma);
+      tracer.addSphere(pos, sigma, color);
     }
     // Tells the ray tracer we are done adding objects. The tracer constructs a KD tree, and gets ready to render.
     tracer.initialize();
@@ -376,7 +387,6 @@ namespace GFlowSimulation {
       cout << "No stripe-x data detected. Switching to color option 0.\n";
       color_option = 0;
     }
-
     // Make sure we have the appropriate normalization factors.
     // This will generally only happen when we are making a single image.
     if (color_option==0 && ntypes>colorBank.size()) {
@@ -438,7 +448,7 @@ namespace GFlowSimulation {
         }
         case 5: { // Color by xstripe
           RealType width = bounds.wd(1);
-          const int nstripes = 80;
+          const int nstripes = 5;
           int s = (stripex - bounds.min[1])/bounds.wd(1) * nstripes;
           int c = s%4;
           switch (c) {

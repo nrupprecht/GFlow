@@ -23,6 +23,10 @@ namespace GFlowSimulation {
     return dt;
   }
 
+  template<typename T> void inline hadamardVec(const T *x, const T *y, T *z, int dimensions) {
+    for (int d=0; d<dimensions; ++d) z[d] = x[d]*y[d];
+  }
+
   //! \brief Cross product - assumes 3 dimensions.
   template<typename T> inline void crossVec(const T *x, const T *y, T *z) {
     z[0] = x[1]*y[2] - y[1]*x[2];
