@@ -8,20 +8,16 @@ Dimensions: 3
 Var: MinR=0.1
 Var: MaxR=0.12
 Var: Velocity=2
+Var: End=6
 
 // Set the simulation bounds
 Bounds: {
-  : -6, 18
-  : -6, 6
-  : -6, 6
+  : -4, End
+  : -4, 4
+  : -4, 4
 }
 
-Integrator: VelocityVerlet {
-  UseV: 1
-  // Delay: 2
-  // UseA: 1
-  // MaxDT: 0.0002
-}
+Integrator: VelocityVerlet
 
 Boundary: {
   : Wrap
@@ -51,11 +47,11 @@ Fill-area {
     Type: 0
   }
 
-  Number: Phi=0.93 {
+  Number: Phi=0.74 { // 3D max packing ~0.74
     TypeA : 1
   }
 
-  Relax: 1.5
+  Relax: 0.5
 
   Velocity: Zero
 }

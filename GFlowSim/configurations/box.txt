@@ -9,7 +9,10 @@ Bounds: {
 
 Integrator: VelocityVerlet
 
-Boundary: Wrap
+Boundary: {
+  : Wrap
+  : Wrap
+}
 
 // Set the number of particle types
 NTypes: 1
@@ -34,5 +37,7 @@ Fill-area {
     TypeA : 1
   }
 
-  Relax: 0.25
+  Relax: 0.5
 }
+
+
