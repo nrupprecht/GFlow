@@ -75,6 +75,9 @@ namespace GFlowSimulation {
   //! Int-Real pair
   typedef pair<int, RealType> IRPair;
 
+  //! \brief A pair containing a string and an int.
+  typedef pair<string, int> SIPair;
+
   // --- Common functions
 
   //! Convert an object to a string

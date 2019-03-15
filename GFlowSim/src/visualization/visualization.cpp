@@ -269,6 +269,7 @@ namespace GFlowSimulation {
   void Visualization::createImage3d(string fileName, const vector<float>& data) {
     // Add all objects to the ray tracer.
     tracer.reserve(data.size()/dataWidth);
+    tracer.setResolution(resolution);
     RGBApixel color;
     // Do checks of positions
     if (!do_checks(data)) return;

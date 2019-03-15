@@ -150,7 +150,7 @@ namespace GFlowSimulation {
 
     // --- Particle size information
 
-    //! \brief The size of the part of the arrays that contain valid particles.
+    //! \brief The size of the part of the arrays that may contain valid particles.
     int size() const;
 
     //! \brief Return the number of owned particles.
@@ -261,9 +261,6 @@ namespace GFlowSimulation {
     std::map<string, int> vector_data_map;
     std::map<string, int> scalar_data_map;
     std::map<string, int> integer_data_map;
-
-    //! \brief A pair containing a string and an int.
-    typedef pair<string, int> SIPair;
 
     // -*-*-*- Ids -*-*-*-
 

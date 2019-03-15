@@ -22,7 +22,7 @@ namespace GFlowSimulation {
   protected:
 
     //! \brief Check whether lists of bonds have the same size.
-    bool checkBondVectors();
+    virtual bool checkBondVectors();
 
     //! \brief The left and right particles of the bond.
     vector<int> left, right;

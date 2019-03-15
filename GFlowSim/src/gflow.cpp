@@ -401,10 +401,24 @@ namespace GFlowSimulation {
   }
 
   void GFlow::wrapPositions() {
-    // Get a pointer to position data and the number of particles in simData
-    RealType **x = simData->X();
-    int size = simData->size();
 
+    int size = simData->size();
+    for (int n=0; n<size; ++n) 
+      for (int d=0; d<sim_dimensions; ++d) {
+        if (boundaryConditions[d]==BCFlag::WRAP) {
+          // Create a local copy
+          RealType xlocal = simData->X(n, d); //x[n][d];
+          // Wrap xlocal
+          if (xlocal<bounds.min[d])
+            xlocal = bounds.max[d]-fmod(bounds.min[d]-xlocal, bounds.wd(d));
+          else if (bounds.max[d]<=xlocal)
+            xlocal = fmod(xlocal-bounds.min[d], bounds.wd(d))+bounds.min[d];
+          // Set
+          simData->X(n, d) = xlocal; // x[n][d] = xlocal;
+        }
+      }
+
+    /*
     // Wrap all particles
     for (int d=0; d<sim_dimensions; ++d) {
       if (boundaryConditions[d]==BCFlag::WRAP) { // Wrap the d-th dimension
@@ -421,6 +435,8 @@ namespace GFlowSimulation {
         }
       }
     }
+    */
+    
   }
 
   void GFlow::reflectPositions() {

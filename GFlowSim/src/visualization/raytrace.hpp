@@ -71,6 +71,9 @@ namespace GFlowSimulation {
     //! \brief Set the bounds of the KD tree.
     void setBounds(const Bounds&);
 
+    //! \brief Set the resolution of the images the tracer will create.
+    void setResolution(int);
+
     //! \brief Empty the sphere list and KD tree.
     void empty();
 

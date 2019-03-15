@@ -13,8 +13,6 @@ namespace GFlowSimulation {
     camera_orientation[1] = camera_orientation[2] = 0;
     // Camera right
     camera_up[0] = camera_up[2] = 0; camera_up[1] = 1;
-    // Set bitmap size
-    image.SetSize(pix_x, pix_y);
     // Create light direction
     light_direction[0] = 1./sqrt(3);
     light_direction[1] = 1./sqrt(3);
@@ -50,7 +48,8 @@ namespace GFlowSimulation {
     // Calculate camera up
     float camera_right[3];
     crossVec(camera_orientation, camera_up, camera_right);
-
+    // Set bitmap size
+    image.SetSize(pix_x, pix_y);
     // Timing
     auto start_time = current_time();
     // Pixel for storing color
@@ -113,6 +112,10 @@ namespace GFlowSimulation {
 
   void RayTrace::setBounds(const Bounds& b) {
     kdTree.bounds = b;
+  }
+
+  void RayTrace::setResolution(int res) {
+    pix_x = pix_y = res;
   }
 
   void RayTrace::empty() {
