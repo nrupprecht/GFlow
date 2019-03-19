@@ -65,6 +65,7 @@ int main(int argc, char **argv) {
   bool pressure = false;
   bool numberdata = false;
   bool stripex = false;
+  bool centercorr = false;
   
   // Other options
   int dimensions = 2;
@@ -111,6 +112,7 @@ int main(int argc, char **argv) {
   parser.get("pressure", pressure);
   parser.get("numberdata", numberdata);
   parser.get("stripex", stripex);
+  parser.get("centercorr", centercorr);
   parser.get("dimensions", dimensions);
   parser.get("skin", skin);
   parser.get("quiet", quiet);
@@ -212,11 +214,12 @@ int main(int argc, char **argv) {
   if (aveP) gflow->addDataObject(new AveragePositionData(gflow));
   if (minDistances) gflow->addDataObject(new MinInteractingDistance(gflow));
   if (percolation) gflow->addDataObject(new PercolationData(gflow, skin));
-  if (psnapshot) gflow->addDataObject(new PercolationSnapshot(gflow, skin));
-  if (memdist)  gflow->addDataObject(new MemoryDistance(gflow));
-  if (pressure) gflow->addDataObject(new PressureData(gflow));
-  if (numberdata) gflow->addDataObject(new NumberData(gflow));
-  if (stripex) gflow->addModifier(new StripeX(gflow));
+  if (psnapshot)   gflow->addDataObject(new PercolationSnapshot(gflow, skin));
+  if (memdist)     gflow->addDataObject(new MemoryDistance(gflow));
+  if (pressure)    gflow->addDataObject(new PressureData(gflow));
+  if (numberdata)  gflow->addDataObject(new NumberData(gflow));
+  if (stripex)     gflow->addModifier(new StripeX(gflow));
+  if (centercorr)  gflow->addDataObject(new CenterCorrelation(gflow));
   // Add this last, as it takes the most time.
   if (animate /*|| stripex*/) {
     auto pd = new PositionData(gflow);
@@ -248,9 +251,9 @@ int main(int argc, char **argv) {
     cout << "Running with " << gflow->getNumParticles() << " particles.\n";
   }
   if (gflow) {
-    try {
+    //try {
       gflow->run();
-    
+    /*
     }
     catch (Exception *exc) {
       if (!quiet && rank==0)
@@ -264,6 +267,7 @@ int main(int argc, char **argv) {
       // Rethrow the exception
       throw;
     }
+    */
     // More detailed exception handling
     // @todo Exception handling.
   }

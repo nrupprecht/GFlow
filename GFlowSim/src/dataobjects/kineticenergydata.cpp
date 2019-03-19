@@ -25,7 +25,7 @@ namespace GFlowSimulation {
       }
     ke *= 0.5;
     // If we want the average
-    if (useAve) ke /= count;
+    if (useAve && count>0) ke /= count;
     // Store data
     RealType time = Base::gflow->getElapsedTime();
     keData.push_back(RPair(time, ke));

@@ -110,7 +110,7 @@ namespace GFlowSimulation {
     // Tuples
     int *tuple1 = new int[sim_dimensions], *tuple2 = new int[sim_dimensions];
     int *cell_index = new int[sim_dimensions], *center = new int[sim_dimensions];
-
+    
     // Find potential neighbors
     RealType *sg = Base::simData->Sg();
     RealType **x = Base::simData->X();

@@ -5,10 +5,12 @@
 namespace GFlowSimulation {
 
   void PolymerCreator::createArea(HeadNode *head, GFlow *gflow, std::map<string, string>& variables) {
-    // Get number od dimensions
-    int sim_dimensions = gflow->sim_dimensions;
 
-   
+    createLine(head, gflow, variables);
+    return;
+
+    // Get number of dimensions
+    int sim_dimensions = gflow->sim_dimensions;
 
     ParseHelper parser(head);
     parser.set_variables(variables);
@@ -127,6 +129,49 @@ namespace GFlowSimulation {
     delete [] ZERO;
     delete [] V;
     delete [] dV;
+  }
+
+  void PolymerCreator::createLine(HeadNode *head, GFlow *gflow, std::map<string, string>& variable) {
+    // Get number of dimensions
+    int sim_dimensions = gflow->sim_dimensions;
+    // Get the bounds from gflow
+    Bounds bnds = gflow->getBounds();
+    RealType width = bnds.wd(0);
+    RealType phi = 0.5;
+    RealType sigma = 0.05;
+    // Calculate how many particles we should have
+    int number = static_cast<int>(phi*width/(2*sigma));
+
+    // Create place and offset lists
+    vector<RealType> places;
+    for (int i=0; i<number+1; ++i) {
+      places.push_back(drand48() * width*phi);
+    }
+    std::sort(places.begin(), places.end());
+    vector<RealType> offsets;
+    for (int i=0; i<number; ++i) {
+      offsets.push_back(places[i+1] - places[i]);
+    }
+
+    // Create a line of particles.
+    RealType *X = new RealType[sim_dimensions], *ZERO = new RealType[sim_dimensions];
+    zeroVec(X, sim_dimensions);
+    zeroVec(ZERO, sim_dimensions); 
+    // X will be in the center of the bounds.
+    for (int d=1; d<sim_dimensions; ++d) X[d] = bnds.min[d] + 0.5*bnds.wd(d);
+    SimData *sd = gflow->simData;
+    // Track the x coordinate
+    RealType x = offsets[0];
+    // Place all balls
+    for (int i=0; i<number; ++i) {
+      // Set x coordinate
+      X[0] = x;
+      // Add particle
+      sd->addParticle(X, ZERO, sigma, 0., 2); // IM is 0, and type is 2
+      // Update x
+      if (i<number-1) x += (offsets[i+1] + 2*sigma);
+    }
+
   }
 
 }

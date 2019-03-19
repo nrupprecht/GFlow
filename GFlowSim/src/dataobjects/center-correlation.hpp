@@ -1,14 +1,14 @@
-#ifndef __KINETIC_ENERGY_DATA_HPP__GFLOW__
-#define __KINETIC_ENERGY_DATA_HPP__GFLOW__
+#ifndef __CENTER_CORRELATION_HPP__GFLOW__
+#define __CENTER_CORRELATION_HPP__GFLOW__
 
 #include "../base/dataobject.hpp"
 
 namespace GFlowSimulation {
 
-  class KineticEnergyData : public DataObject {
+  class CenterCorrelation : public DataObject {
   public:
     //! \brief Constructor
-    KineticEnergyData(GFlow*, bool=true);
+    CenterCorrelation(GFlow*);
 
     //! \brief Collect the position data from simdata --- happens during the post-step phase
     virtual void post_step();
@@ -19,11 +19,15 @@ namespace GFlowSimulation {
     virtual bool writeToFile(string, bool=true);
 
   private:
-    //! \brief The data
-    vector<RPair> keData;
-    //! \brief Use ave
-    bool useAve;
+    //! \brief Bins
+    vector<int> bins;
+
+    //! \brief The radius of the cylinder of interest.
+    RealType radius;
+
+    //! \brief The number of desired bins
+    int nbins;
   };
 
 }
-#endif // __KINETIC_ENERGY_DATA_HPP__GFLOW__
+#endif // __CENTER_CORRELATION_HPP__GFLOW__
