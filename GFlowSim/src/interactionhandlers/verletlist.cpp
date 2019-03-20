@@ -31,6 +31,7 @@ namespace GFlowSimulation {
     return verlet.size();
   }
 
+  /*
   void VerletList::execute(const Kernel kernel, RealType *param_pack) const {
     // If the kernel is null, then there is no point looping through everything
     if (kernel==nullptr) return;
@@ -71,5 +72,6 @@ namespace GFlowSimulation {
       }
     }
   }
+  */
 
 }

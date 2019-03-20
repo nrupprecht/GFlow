@@ -17,22 +17,17 @@ namespace GFlowSimulation {
   */
   class Interaction : public Base {
   public:
-    //! \brief Constructor
+    //! \brief Default Constructor.
     Interaction(GFlow *);
 
-    //! \brief Destructor
+    //! \brief Constructor that sets the interaction handler.
+    Interaction(GFlow *, InteractionHandler*);
+
+    //! \brief Destructor.
     virtual ~Interaction();
 
-    //! \brief Calculate all the forces between atoms in the verlet lists
+    //! \brief Calculate all the forces between atoms in the verlet lists.
     virtual void interact() const;
-
-    //! \brief Compute and update interaction for pairs of particles.
-    //!
-    //! @param id1 Local id of the first particle.
-    //! @param id2 Local id of the second particle.
-    //! @param displacement The displacement from particle 1 to particle 2.
-    //! @param distance The distance between the particles.
-    virtual void compute(const int id1, const int id2, RealType *displacement, const RealType distance) const = 0;
 
     // --- Accessors
 
@@ -64,17 +59,11 @@ namespace GFlowSimulation {
     //! \brief The neighbor (verlet) lists for all the pairs of atoms between which this force is active
     InteractionHandler *handler;
 
-    //! \brief An interaction kernel that can be used for the computation of particle interactions.
-    Kernel kernel;
-
     //! \brief The virial, for calculating pressure.
     //!
     //! The pressure formula is: P = N k T/V + 1/(DIMENSIONS*V) \sum_i (r_i \dot F_i)
     //! This term should be used like: virial = \sum_i (r_i \dot F_i)
     mutable RealType virial = 0;
-
-    //! \brief A pack of parameters.
-    RealType *param_pack;
   };
 
 }

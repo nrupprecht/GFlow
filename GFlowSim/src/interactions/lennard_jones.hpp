@@ -1,43 +1,29 @@
-#ifndef __LENNARD_JONES__GFLOW__
-#define __LENNARD_JONES__GFLOW__
+#ifndef __LENNARD_JONES_HPP__GFLOW__
+#define __LENNARD_JONES_HPP__GFLOW__
 
 #include "../base/interaction.hpp"
-#include "../utility/simd_generic.hpp"
 
 namespace GFlowSimulation {
 
-  /**
-  *  \brief LennardJones where all particles have the same force strength.
-  *
-  *  Lennard Jones force. The particle sigma will represent the force cutoff,
-  *  generally 2.5*sig, where sig is the inter-particle distance where V=0.
-  *  We use cutoff=2.5 by default, but it can be changed. Strength is the
-  *  "epsilon" parameter in LJ.
-  *
-  *  The parameters for LJ are the LJ strength (parameters[0]), and the cuttoff (parameters[1]).
-  */
   class LennardJones : public Interaction {
   public:
-    //! @brief Constructor
-    LennardJones(GFlow *);
+    //! \brief Default constructor.
+    LennardJones(GFlow *gflow, InteractionHandler *hndlr) 
+      : Interaction(gflow, hndlr), cutoff(DEFAULT_LENNARD_JONES_CUTOFF), strength(DEFAULT_LENNARD_JONES_STRENGTH) {};
 
-    //! @brief Set the lennard jones interaction strength. Must be non-negative.
-    void setStrength(RealType);
+    //! \brief Set the cutoff factor.
+    void setCutoff(RealType c) { cutoff = c>0 ? c : cutoff; }
 
-    //! @brief Set the lennard jones cutoff range. Must be at least 1.
-    void setCutoff(RealType);
+    //! \brief Set the interaction strength.
+    void setStrength(RealType s) { strength = s; }
 
-    virtual void compute(const int, const int, RealType*, const RealType) const override;
-
-    //! \brief An interaction kernel.
-    static void kernel(SimData*, int, int, RealType*, RealType, RealType*, int);
-
-  private:
-    //! @brief The LJ force strength.
-    RealType strength;
-    //! @brief The LJ force cutoff.
+  protected:  
+    //! \brief The cutoff factor. Generally, this is 2.5 times the "radius" of the particle.
     RealType cutoff;
+
+    //! \brief Strength of the LJ force.
+    RealType strength;
   };
 
 }
-#endif // __LENNARD_JONES__GFLOW__
+#endif // __LENNARD_JONES_HPP__GFLOW__

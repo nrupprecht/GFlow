@@ -1,40 +1,27 @@
-#ifndef __HARD_SPHERE__GFLOW__
-#define __HARD_SPHERE__GFLOW__
+#ifndef __HARD_SPHERE_HPP__GFLOW__
+#define __HARD_SPHERE_HPP__GFLOW__
 
 #include "../base/interaction.hpp"
-#include "../utility/simd_generic.hpp"
 
 namespace GFlowSimulation {
 
-  /** 
-  *  @brief A hard sphere force where all particles have the same repulsion.
-  *
-  *  The force between particles is proportional to their overlap, (r1 + r2 - distance),
-  *  with a constant of proportionality [repulsion] which is a parameter of this class.
-  *  In other words, all hard spheres have the same constant of repulsion.
-  *
-  *  The repulsion of the hard spheres is stored as parameters[0]. The repulsion is assumed to be the same for all hard spheres.
+  /**
+  *  \brief Parent class for hard sphere interactions.
   */
   class HardSphere : public Interaction {
   public:
-    //! @brief Constructor
-    HardSphere(GFlow *);
+    //! \brief Default constructor.
+    HardSphere(GFlow *gflow, InteractionHandler *hndlr) 
+      : Interaction(gflow, hndlr), repulsion(DEFAULT_HARD_SPHERE_REPULSION) {};
+  
+    //! \brief Set the repulsion parameter.
+    void setRepulsion(RealType r) { repulsion = r; }
 
-    //! @brief Set the repulsion parameter.
-    void setRepulsion(RealType);
-
-    virtual void compute(const int, const int, RealType*, const RealType) const override;
-
-    //! \brief An interaction kernel.
-    static void kernel(SimData*, int, int, RealType*, RealType, RealType*, int);
-
-    static void kernel2d(SimData*, int, int, RealType*, RealType, RealType*, int);
-
-  private:
-    //! \brief The hard sphere repulsion.
+  protected:
+    //! \brief The hard sphere repulsion parameter.
     RealType repulsion;
-
   };
 
 }
-#endif // __HARD_SPHERE__GFLOW__
+
+#endif // __HARD_SPHERE_HPP__GFLOW__

@@ -57,11 +57,6 @@ namespace GFlowSimulation {
     //! handler will try. If unknown, the function returns -1. This could occur if e.g. we are travering 
     //! through linked cells, and don't have an accurate guess of how many interactions there will be.
     virtual int size() const = 0;
-
-    //! \brief Iterate through the pairs of interacting particles, applying a kernel function to all of them.
-    //! 
-    //! The pointer is for a parameter pack that may be used by the kernel function.
-    virtual void execute(const Kernel, RealType*) const = 0;
   };
 
 }
