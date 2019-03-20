@@ -30,10 +30,9 @@ namespace GFlowSimulation {
     //! Destructor
     virtual ~DomainBase();
 
-    virtual void pre_forces();
+    virtual void pre_integrate() override;
 
-    //! Exchange particles between processors
-    virtual void exchange_particles()=0;
+    virtual void pre_forces() override;
 
     // --- Accessors
 
@@ -137,6 +136,12 @@ namespace GFlowSimulation {
 
     //! Check whether particles might have move far enough to warrant verlet list remake.
     virtual bool check_needs_remake();
+
+    //! \brief Calculates the maximum "small sigma."
+    //!
+    //! Particles that are larger than max_small_sigma are "large particles," and must search more than
+    //! one sector around them.
+    virtual void calculate_max_small_sigma();
 
     // --- Data
 

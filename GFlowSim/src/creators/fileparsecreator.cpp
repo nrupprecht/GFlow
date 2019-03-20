@@ -506,6 +506,7 @@ namespace GFlowSimulation {
     string token = head->params[2]->partA;
     if (token=="HardSphere") {
       if (sim_dimensions==2) return new HardSphere_VerletPairs_2d(gflow);
+      else if (sim_dimensions==3) return new HardSphere_VerletPairs_3d(gflow);
       else throw false;
     }
     if (token=="HardSphereGeneral") {

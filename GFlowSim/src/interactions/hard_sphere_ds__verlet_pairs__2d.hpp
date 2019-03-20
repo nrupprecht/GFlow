@@ -14,6 +14,9 @@ namespace GFlowSimulation {
     //! \brief Default constructor.
     HardSphereDs_VerletPairs_2d(GFlow*);
 
+    //! \brief Check whether everything is fine.
+    virtual bool checks() override;
+
     //! \brief Calculate the interactions between particles.
     virtual void interact() const override;
   };

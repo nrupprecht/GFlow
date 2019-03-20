@@ -48,7 +48,8 @@ namespace GFlowSimulation {
     // Use hard sphere forces
     int ntypes = gflow->getNTypes();
     HardSphere *hsForce;
-    if (sim_dimensions==2) hsForce = new HardSphere_VerletPairs_2d(gflow);
+    if      (sim_dimensions==2) hsForce = new HardSphere_VerletPairs_2d(gflow);
+    else if (sim_dimensions==3) hsForce = new HardSphere_VerletPairs_3d(gflow);
     else throw false;
     
     // New force master - has only hard sphere forces.

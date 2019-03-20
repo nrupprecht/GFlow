@@ -25,6 +25,11 @@ namespace GFlowSimulation {
     //! \brief Initialize the base object - make sure all the pointers are pointing to up to date objects
     virtual void initialize();
 
+    //! \brief Any necessary checks that need to be made before the simulation runs. Returns true if everything is ok.
+    //!
+    //! For example, an object could check to make sure the dimensionality was correct, or that necessary data exists.
+    virtual bool checks() { return true; };
+
     // --> All the times when a base object can act during the run cycle
     virtual void pre_integrate()  {};
     virtual void pre_step()       {};

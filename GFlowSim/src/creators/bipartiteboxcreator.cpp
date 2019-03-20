@@ -108,6 +108,7 @@ namespace GFlowSimulation {
     else {
       HardSphere *hs_force;
       if (sim_dimensions==2) hs_force = new HardSphere_VerletPairs_2d(gflow);
+      else if (sim_dimensions==3) hs_force = new HardSphere_VerletPairs_3d(gflow);
       else throw false;
       hs_force->setRepulsion(repulsion*DEFAULT_HARD_SPHERE_REPULSION);
       force = hs_force;
