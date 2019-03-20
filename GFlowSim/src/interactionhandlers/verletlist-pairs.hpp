@@ -23,9 +23,6 @@ namespace GFlowSimulation {
     //! \brief Return the total length of the verlet list.
     virtual int size() const override;
 
-    //! \brief Iterate through the pairs of interacting particles, hand them to Interaction's compute function.
-    virtual void execute(const Interaction*) const override;
-
     virtual void execute(const Kernel, RealType*) const override;
 
   private:

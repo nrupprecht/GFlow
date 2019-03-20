@@ -7,7 +7,7 @@
 
 namespace GFlowSimulation {
 
-  SimData::SimData(GFlow *gflow) : Base(gflow), bounds(sim_dimensions) {
+  SimData::SimData(GFlow *gflow) : Base(gflow) {
     // Add default vector data entries
     addVectorData("X");
     addVectorData("V");
@@ -36,9 +36,6 @@ namespace GFlowSimulation {
   void SimData::initialize() {
     // Call base's initialize
     Base::initialize();
-
-    // For now
-    bounds = gflow->getBounds();
 
     // Get ntypes from force master
     _ntypes = forceMaster->getNTypes();
@@ -158,7 +155,7 @@ namespace GFlowSimulation {
       } while (Type(count_back)<0);
 
       if (count_back>id) {
-        move_particle(count_back, id);
+        swap_particle(count_back, id); //** Formerly move_particle
         ++removed;
       }
       else break;
@@ -508,7 +505,7 @@ namespace GFlowSimulation {
   }
 
   Bounds SimData::getBounds() const {
-    return bounds;
+    return gflow->getBounds();
   }
 
   bool SimData::getNeedsRemake() {
@@ -589,30 +586,6 @@ namespace GFlowSimulation {
     for (auto v : vdata) zeroVec(v[id], sim_dimensions);
     for (auto s : sdata) s[id] = 0.;
     for (auto i : idata) i[id] = -1;
-  }
-
-  void SimData::move_particle(int src, int dst) {
-    // Get global IDs
-    int gs = Id(src);
-    int gd = Id(dst);
-    // If we are overwriting a valid particle
-    if (Type(dst)>-1) {
-      --_number;
-      id_map.erase(gd);
-    }
-    // Transfer data
-    for (auto v : vdata) copyVec(v[src], v[dst], sim_dimensions);
-    for (auto s : sdata) s[dst] = s[src];
-    for (auto i : idata) i[dst] = i[src];
-
-    // Remap global id
-    auto it = id_map.find(gs);
-    if (id_map.end()!=it)
-      it->second = dst;
-    else throw false; // \todo Make an exception for this case.
-
-    // We have invalidated the local id
-    needs_remake = true;
   }
 
   void SimData::swap_particle(int id1, int id2) {

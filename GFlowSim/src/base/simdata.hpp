@@ -216,12 +216,10 @@ namespace GFlowSimulation {
     //! \brief Set all values for a particle to default values
     void reset_particle(int);
 
-    //! \brief Move a particle's data from one spot to another, overwriting the particle that was there before.
-    void move_particle(int, int);
-
     //! \brief Swap two particle's data.
     void swap_particle(int, int);
 
+    //! \brief Partitions the sublist, then calls sort on each sublist.
     void quick_sort_help(int, int, int);
 
     //! \brief The partition step for quicksort
@@ -231,9 +229,6 @@ namespace GFlowSimulation {
     void recursion_help(int, int, int);
 
     // --- Data
-
-    //! \brief The bounds of the domain this atom holder controls.
-    Bounds bounds;
 
     //! \brief A flag that can be set to true whenever something happens that might invalidate the current data.
     bool needs_remake = false;

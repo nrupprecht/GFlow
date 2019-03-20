@@ -58,8 +58,10 @@ namespace GFlowSimulation {
     if (fout.fail()) return false;
     // Write out data
     RealType dr = radius/nbins;
-    for (int i=0; i<bins.size(); ++i) 
-      fout << i*dr << "," << bins[i] << endl;
+    RealType norm = bins[bins.size()-1]*(radius-0.5*dr);
+    norm = norm==0. ? 1. : norm;
+    for (int i=0; i<bins.size(); ++i)
+      fout << i*dr << "," << bins[i]/((i+0.5)*dr)/norm << endl;
     // Close stream
     fout.close();
 

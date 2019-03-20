@@ -58,9 +58,6 @@ namespace GFlowSimulation {
     //! through linked cells, and don't have an accurate guess of how many interactions there will be.
     virtual int size() const = 0;
 
-    //! \brief Iterate through the pairs of interacting particles, hand them to Interaction's compute function.
-    virtual void execute(const class Interaction*) const = 0;
-
     //! \brief Iterate through the pairs of interacting particles, applying a kernel function to all of them.
     //! 
     //! The pointer is for a parameter pack that may be used by the kernel function.
