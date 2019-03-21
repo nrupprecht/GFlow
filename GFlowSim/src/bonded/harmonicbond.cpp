@@ -30,10 +30,12 @@ namespace GFlowSimulation {
     if (!checkBondVectors()) throw UnequalBondVectors();
     int nbonds = left.size();
 
+    // Check if local ids need updating.
+    if (simData->getNeedsRemake()) updateLocalIDs();
+
     // Get simdata, check if the local ids need updating
-    SimData *sd = Base::simData;
-    RealType **f = sd->F();
-    if (sd->getNeedsRemake()) updateLocalIDs();
+    RealType **x = simData->X();
+    RealType **f = simData->F();
     RealType dX[8]; // <-- Assumes that (sim_dimensions < 9)
 
     for (int i=0; i<nbonds; ++i) {
@@ -41,7 +43,7 @@ namespace GFlowSimulation {
       int id1 = left[i], id2 = right[i];
 
       // Calculate displacement
-      Base::gflow->getDisplacement(sd->X(id1), sd->X(id2), dX);
+      Base::gflow->getDisplacement(x[id1], x[id2], dX);
       RealType r = magnitudeVec(dX, sim_dimensions);
 
       // Calculate displacement from equilibrium

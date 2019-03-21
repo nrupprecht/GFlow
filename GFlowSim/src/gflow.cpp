@@ -175,9 +175,6 @@ namespace GFlowSimulation {
       dataMaster->pre_exchange();
       domain->pre_exchange();
 
-      // --- Exchange particles (potentially) ---
-      domain->exchange_particles();
-
       // --> Pre-force
       for (auto m : modifiers) m->pre_forces();
       fhs_timer.start();

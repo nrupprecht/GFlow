@@ -107,16 +107,25 @@ namespace GFlowSimulation {
     gflow->forceMaster->setNTypes(1); // Only one type of particle
     Interaction *force;
     if(lj_flag) {
-      auto *LJ = new LennardJones(gflow);
+      LennardJones *LJ;
+      if (sim_dimensions==2) LJ = new LennardJones_VerletPairs_2d(gflow);
+      else throw false;
+      // Set parameters
       LJ->setStrength(repulsion*DEFAULT_LENNARD_JONES_STRENGTH);
+      // Set pointer
       force = LJ;
     }
     else if (!interact_flag) {
       force = nullptr;
     }
     else {
-      auto *HS = new HardSphere(gflow);
+      HardSphere *HS;
+      if (sim_dimensions==2) HS = new HardSphere_VerletPairs_2d(gflow);
+      else if (sim_dimensions==3) HS = new HardSphere_VerletPairs_3d(gflow);
+      else throw false;
+      // Set parameters
       HS->setRepulsion(repulsion*DEFAULT_HARD_SPHERE_REPULSION);
+      // Set pointer
       force = HS;
     }
     gflow->forceMaster->setInteraction(0, 0, force);
@@ -124,7 +133,7 @@ namespace GFlowSimulation {
     // --- Set some parameters
     if (skinDepth>0) gflow->domain->setSkinDepth(skinDepth);
     if (cell_size>0) gflow->domain->setCellSize(cell_size);
-    if (sample>0) gflow->domain->setSampleSize(sample);
+    if (sample>0)    gflow->domain->setSampleSize(sample);
 
     // Relax the setup in two steps
     hs_relax(gflow, 0.1); // Make sure particles don't stop on top of one another

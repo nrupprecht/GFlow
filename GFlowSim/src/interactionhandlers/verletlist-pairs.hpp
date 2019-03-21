@@ -14,7 +14,8 @@ namespace GFlowSimulation {
     //! \brief Add a pair of interacting particles.
     virtual void addPair(const int, const int) override;
 
-    //! \brief Add a last entry to the heads list to denote the end of the verlet list (a sentinal value).
+    //! \brief This function lets the handler know that no more pairs will be added to it. 
+    //! For VerletListPairs, this function does nothing.
     virtual void close() override {};
 
     //! \brief Clear the vectors of data.
@@ -23,9 +24,6 @@ namespace GFlowSimulation {
     //! \brief Return the total length of the verlet list.
     virtual int size() const override;
 
-    virtual void execute(const Kernel, RealType*) const override;
-
-  private:
     //! \brief The verlet list
     vector<int> verlet;
 

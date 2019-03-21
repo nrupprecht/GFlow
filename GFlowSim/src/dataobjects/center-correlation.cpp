@@ -2,11 +2,10 @@
 // Other files
 #include "../base/simdata.hpp"
 #include "../utility/vectormath.hpp"
-#include "../visualization/palette.hpp"
 
 namespace GFlowSimulation {
-  // Constructor
-  CenterCorrelation::CenterCorrelation(GFlow *gflow) : DataObject(gflow, "CenterCorr"), nbins(100), radius(0.15) {
+
+  CenterCorrelation::CenterCorrelation(GFlow *gflow) : GraphObject(gflow, "CenterCorr", "distance", "counts"), nbins(100), radius(0.15) {
     bins = vector<int>(nbins, 0);
   };
 
@@ -41,31 +40,20 @@ namespace GFlowSimulation {
     delete [] acc;
   }
 
+  void CenterCorrelation::setRadius(RealType r) {
+    radius = r;
+  }
+
   bool CenterCorrelation::writeToFile(string fileName, bool useName) {
     // Check if there's anything to do
     if (bins.empty()) return true;
-    // The name of the directory for this data
-    string dirName = fileName;
-    if (*fileName.rbegin()=='/') // Make sure there is a /
-      dirName += dataName+"/";
-    else 
-      dirName += ("/"+dataName+"/");
 
-    // Write the data
-    // Create a directory for all the data
-    mkdir(dirName.c_str(), 0777);
-    ofstream fout(dirName+dataName+".csv");
-    if (fout.fail()) return false;
-    // Write out data
+    // Push data into the data vector
     RealType dr = radius/nbins;
-    RealType norm = bins[bins.size()-1]*(radius-0.5*dr);
-    norm = norm==0. ? 1. : norm;
     for (int i=0; i<bins.size(); ++i)
-      fout << i*dr << "," << bins[i]/((i+0.5)*dr)/norm << endl;
-    // Close stream
-    fout.close();
+      data.push_back(RPair(i*dr, bins[i]));
 
-    // Return success
-    return true;
+    // Graph object does the actual writing.
+    return GraphObject::writeToFile(fileName, useName);
   }
 }

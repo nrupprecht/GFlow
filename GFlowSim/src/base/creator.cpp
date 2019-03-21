@@ -37,6 +37,9 @@ namespace GFlowSimulation {
     // Check for valid object
     if (gflow==nullptr) return;
 
+    // Get sim dimensions
+    int sim_dimensions = gflow->getSimDimensions();
+
     // Save gflow's data
     Integrator *integrator = gflow->integrator; // Save integrator
     ForceMaster *master    = gflow->forceMaster; // Save old master
@@ -44,7 +47,11 @@ namespace GFlowSimulation {
 
     // Use hard sphere forces
     int ntypes = gflow->getNTypes();
-    HardSphere hsForce(gflow);
+    HardSphere *hsForce;
+    if      (sim_dimensions==2) hsForce = new HardSphere_VerletPairs_2d(gflow);
+    else if (sim_dimensions==3) hsForce = new HardSphere_VerletPairs_3d(gflow);
+    else throw false;
+    
     // New force master - has only hard sphere forces.
     ForceMaster forceMaster(gflow, ntypes);
     Integrator *rx_integrator;
@@ -59,7 +66,7 @@ namespace GFlowSimulation {
     // All particles interact as hard spheres
     for (int n1=0; n1<ntypes; ++n1) 
       for (int n2=0; n2<ntypes; ++n2)
-        forceMaster.setInteraction(n1, n2, &hsForce);
+        forceMaster.setInteraction(n1, n2, hsForce);
 
     // Make sure all forces are zero
     gflow->simData->clearF();
@@ -81,6 +88,7 @@ namespace GFlowSimulation {
 
     // Clean up
     delete rx_integrator;
+    delete hsForce;
   }
 
   void Creator::relax(class GFlow *gflow, RealType time) {

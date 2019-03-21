@@ -24,13 +24,13 @@ namespace GFlowSimulation {
     //! \brief Return the total length of the verlet list.
     virtual int size() const override;
 
-    virtual void execute(const Kernel, RealType*) const override;
-
-  private:
     //! \brief The verlet list.
     vector<int> verlet;
+    
     //! \brief Pointers to heads in the verlet list.
     vector<int> heads;
+
+  private:
     //! \brief The current head in the verlet list.
     int lastHead;
   };

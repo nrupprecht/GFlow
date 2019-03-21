@@ -4,26 +4,22 @@
 
 namespace GFlowSimulation {
 
-  Interaction::Interaction(GFlow *gflow) : Base(gflow), kernel(nullptr), param_pack(nullptr) {
+  Interaction::Interaction(GFlow *gflow) : Base(gflow) {
     // Set the interaction handler
     handler = new VerletListPairs(gflow);
   };
 
+  Interaction::Interaction(GFlow *gflow, InteractionHandler *hand) : Base(gflow), handler(hand) {
+    if (handler==nullptr) handler = new VerletListPairs(gflow);
+  };
+
   Interaction::~Interaction() {
     if (handler) delete handler;
-    if (param_pack) delete [] param_pack;
   }
 
   void Interaction::interact() const {
     // Reset virial
     virial = 0;
-    // Check if there are forces to calculate
-    if (handler->size()==0) return; 
-    // Execute the interaction
-    if (handler) {
-      //handler->execute(this);
-      handler->execute(kernel, param_pack);
-    }
   }
 
   int Interaction::size() const {

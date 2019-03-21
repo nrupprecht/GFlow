@@ -8,7 +8,6 @@
 
 // Accumulation files
 #include "../allbaseobjects.hpp"
-#include "../allforces.hpp"
 #include "../alldataobjects.hpp"
 #include "../allintegrators.hpp"
 #include "../allmodifiers.hpp"

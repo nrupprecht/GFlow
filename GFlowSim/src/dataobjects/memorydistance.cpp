@@ -5,7 +5,12 @@
 
 namespace GFlowSimulation {
 
-  MemoryDistance::MemoryDistance(GFlow *gflow) : DataObject(gflow, "MemDistance") {};
+  MemoryDistance::MemoryDistance(GFlow *gflow) : GraphObject(gflow, "MemDistance", "time", "ave. memory dist.") {
+
+    // This object is currently unimplemented.
+    throw false;
+
+  };
 
   void MemoryDistance::post_step() {
     // Only record if enough time has gone by
@@ -17,26 +22,6 @@ namespace GFlowSimulation {
     RealType time = Base::gflow->getElapsedTime();
     // Store the average L1 distance between (potentially) interacting particles
     data.push_back(RPair(time, average));
-  }
-
-  bool MemoryDistance::writeToFile(string fileName, bool) {
-    // The name of the directory for this data
-    string dirName = fileName;
-    if (*fileName.rbegin()=='/') // Make sure there is a /
-      dirName += dataName+"/";
-    else 
-      dirName += ("/"+dataName+"/");
-
-    // Write the data
-    // Create a directory for all the data
-    mkdir(dirName.c_str(), 0777);
-    ofstream fout(dirName+dataName+".csv");
-    if (fout.fail()) return false;
-    for (auto d : data) fout << d.first << "," << d.second << endl;
-    fout.close();
-
-    // Return success
-    return true;
   }
 
   RealType MemoryDistance::getAverageDistance() {

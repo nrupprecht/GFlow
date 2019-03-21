@@ -504,9 +504,18 @@ namespace GFlowSimulation {
 
   inline Interaction* FileParseCreator::choose_interaction(HeadNode *head) const {
     string token = head->params[2]->partA;
-    if      (token=="HardSphere")   return new HardSphere(gflow);
-    if      (token=="HardSphereGeneral") return new HardSphereGeneral(gflow);
-    else if (token=="LennardJones") return new LennardJones(gflow);
+    if (token=="HardSphere") {
+      if (sim_dimensions==2) return new HardSphere_VerletPairs_2d(gflow);
+      else if (sim_dimensions==3) return new HardSphere_VerletPairs_3d(gflow);
+      else throw false;
+    }
+    if (token=="HardSphereGeneral") {
+      if (sim_dimensions==2) return new HardSphereDs_VerletPairs_2d(gflow);
+      else throw false;
+    }
+    else if (token=="LennardJones") {
+      if (sim_dimensions==2) return new LennardJones_VerletPairs_2d(gflow);
+    }
     else if (token=="None")         return nullptr;
     else throw UnexpectedOption("Interaction choice was ["+token+"].");
   }
@@ -973,8 +982,8 @@ namespace GFlowSimulation {
 
   inline void FileParseCreator::makeRandomForces() {
     // Assign random interactions, either LennardJones or HardSphere (for now), and with equal probability (for now)
-    Interaction *hardSphere   = new HardSphere(gflow);
-    Interaction *lennardJones = new LennardJones(gflow);
+    Interaction *hardSphere   = new HardSphere_VerletPairs_2d(gflow);
+    Interaction *lennardJones = new LennardJones_VerletPairs_2d(gflow);
     // Assign random (but symmetric) interactions
     for (int i=0; i<NTypes; ++i) {
       // Self interaction

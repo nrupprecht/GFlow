@@ -101,10 +101,17 @@ namespace GFlowSimulation {
 
     gflow->forceMaster->setNTypes(ntypes);
     Interaction *force;
-    if (lj_flag) force = new LennardJones(gflow);
+    if (lj_flag) {
+      if (sim_dimensions==2) force = new LennardJones_VerletPairs_2d(gflow);
+      else throw false;
+    }
     else {
-      force = new HardSphere(gflow);
-      dynamic_cast<HardSphere*>(force)->setRepulsion(repulsion*DEFAULT_HARD_SPHERE_REPULSION);
+      HardSphere *hs_force;
+      if (sim_dimensions==2) hs_force = new HardSphere_VerletPairs_2d(gflow);
+      else if (sim_dimensions==3) hs_force = new HardSphere_VerletPairs_3d(gflow);
+      else throw false;
+      hs_force->setRepulsion(repulsion*DEFAULT_HARD_SPHERE_REPULSION);
+      force = hs_force;
     }
     for (int t1=0; t1<ntypes; ++t1) 
       for (int t2 = 0; t2<ntypes; ++t2) 

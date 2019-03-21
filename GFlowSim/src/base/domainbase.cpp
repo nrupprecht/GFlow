@@ -30,6 +30,13 @@ namespace GFlowSimulation {
     inverseW = nullptr;
   }
 
+  void DomainBase::pre_integrate() {
+    // Reset time points
+    lastCheck  = -1.;
+    lastUpdate = -1.;
+    updateDelay = 1.0e-4;
+  }
+
   void DomainBase::pre_forces() {
     // Increment timer
     ++steps_since_last_remake;
@@ -204,6 +211,46 @@ namespace GFlowSimulation {
 
     // Criteria for whether we need a remake
     return (max_motion>motionFactor*skin_depth);
+  }
+
+  void DomainBase::calculate_max_small_sigma() {
+    // Make sure force master has interaction array set up
+    forceMaster->initialize_does_interact(); 
+
+    // Find average sigma
+    RealType sigma = 0, max_sigma = 0;
+    int count = 0;
+    for (int n=0; n<Base::simData->size(); ++n) {
+      // Check that the type is valid, and is an interacting type
+      int type = Base::simData->Type(n);
+      if (type<0 || !Base::forceMaster->typeInteracts(type)) 
+        continue;
+      // Get the cutoff radius, use in the calculation
+      RealType s = Base::simData->Sg(n);
+      sigma += s;
+      if (s>max_sigma) max_sigma = s;
+      ++count;
+    }
+    if (count>0) sigma /= count;
+    else {
+      sigma = Base::simData->Sg(0);
+      max_sigma = sigma;
+    }
+
+    // Threshhold sigma is between average and maximum sigma
+    RealType threshold = 0.5*(sigma + max_sigma), max_under = sigma;
+    if (threshold!=sigma) {
+      for (int n=0; n<Base::simData->size(); ++n) {
+        // Check that the type is valid, and is an interacting type
+        int type = Base::simData->Type(n);
+        if (type<0 || !Base::forceMaster->typeInteracts(type)) 
+          continue;
+        // Get the cutoff radius, use in the calculation
+        RealType s = Base::simData->Sg(n);
+        if (s<threshold && max_under<s) max_under = s;
+      }
+    }
+    max_small_sigma = 1.025*max_under;
   }
 
 }

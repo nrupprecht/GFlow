@@ -17,11 +17,6 @@ namespace GFlowSimulation {
 
     virtual void initialize() override;
 
-    virtual void pre_integrate() override;
-
-    //! \brief Exchange particles between processors
-    virtual void exchange_particles() override;
-
     //! \brief Get all the particles within a radius of another particle
     //!
     //! Fills a passed in vector with the ids of all the particles that lie within
@@ -98,12 +93,6 @@ namespace GFlowSimulation {
     inline void do_halo_assignment();
 
     inline void halo_list_add(const vector<int>&, RealType*);
-
-    //! \brief Calculates the maximum "small sigma."
-    //!
-    //! Particles that are larger than max_small_sigma are "large particles," and must search more than
-    //! one sector around them.
-    inline void calculate_max_small_sigma();
 
     //! \brief Array of products, used to compute linear indices from vectors or tuple indices.
     int *products = nullptr;

@@ -1,22 +1,20 @@
 #ifndef __BOUNDARY_FORCE_DATA_HPP__GFLOW__
 #define __BOUNDARY_FORCE_DATA_HPP__GFLOW__
 
-#include "../base/dataobject.hpp"
+#include "graphobject.hpp"
 
 namespace GFlowSimulation {
 
-  class BoundaryForceData : public DataObject {
+  class BoundaryForceData : public GraphObject {
   public:
-    // Constuctor 
+    //! \brief Default constructor.
     BoundaryForceData(GFlow*);
 
-    void post_step();
+    //! \brief Collect boundary force data.
+    virtual void post_step() override;
 
-    bool writeToFile(string, bool);
-
+    //! \brief Get the average of the boundary forces, over time.
     RealType getAverage() const;
-  private:
-    vector<RPair> bForces;
   };
 
 }

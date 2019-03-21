@@ -13,7 +13,13 @@ namespace GFlowSimulation {
     virtual void createArea(HeadNode*, GFlow*, std::map<string, string>&) override;
 
   private:
+
+    void createPolymer(GFlow*, int, RealType, RealType, RealType, int, int);
+
     void createLine(HeadNode*, GFlow*, std::map<string, string>&);
+
+    //! \brief A unified group correlation object. Note - this is handed to gflow, so this object should not attempt to delete it.
+    GroupCorrelation *correlation;
   };
 
 }
