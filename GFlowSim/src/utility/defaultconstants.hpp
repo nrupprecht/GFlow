@@ -52,7 +52,7 @@ namespace GFlowSimulation {
   const RealType DEFAULT_TEMPERATURE_UPDATE_DELAY = 0.05;
 
   //! \brief Default constant for harmonic bonds.
-  const RealType DEFAULT_SPRING_CONSTANT = 25.0;
+  const RealType DEFAULT_SPRING_CONSTANT = 2.5;
   
   //! \brief The default maximum update delay.
   const RealType DEFAULT_MAX_UPDATE_DELAY = 0.05;

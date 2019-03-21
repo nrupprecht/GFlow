@@ -102,25 +102,61 @@ namespace GFlowSimulation {
     // --- Write a summary
     writeSummary(writeDirectory);
 
-    // --- Write the bounds and dimensions to a info file
-    if (!dataObjects.empty()) {
-      ofstream fout(writeDirectory+"/info.csv");
-      if (fout.fail()) success = false;
-      else {
-        // Write the number of dimensions
-        fout << sim_dimensions << endl;
-        // Write the bounds
-        for (int d=0; d<sim_dimensions; ++d) {
-          fout << Base::gflow->getBounds().min[d] << "," << Base::gflow->getBounds().max[d];
-          fout << endl;
-        }
-        fout.close();
+    // Check what type of data objects exist.
+    bool has_graph_objects = false;
+    bool has_multigraph_objects = false;
+    bool has_general_objects = false;
+    for (auto dob : dataObjects) {
+      switch (dob->getType()) {
+        case DataObjectType::GRAPH: 
+          has_graph_objects = true;
+          break;
+        case DataObjectType::MULTIGRAPH: 
+          has_multigraph_objects = true;
+          break;
+        case DataObjectType::GENERAL:
+          has_general_objects = true;
+          break;
+        default:
+          break;
       }
     }
 
+    // Directory names
+    string graphDirectory = writeDirectory+"/plots";
+    string multiGraphDirectory = writeDirectory+"/multigraph";
+    string generalDirectory = writeDirectory+"/general";
+
+    // Create the directory for graph object types.
+    if (has_graph_objects) 
+      mkdir(graphDirectory.c_str(), 0777);
+    if (has_general_objects)
+      mkdir(generalDirectory.c_str(), 0777);
+    if (has_multigraph_objects)
+      mkdir(multiGraphDirectory.c_str(), 0777);
+
     // --- Have all the data objects write their data
-    for (auto& dob : dataObjects)
-      if (dob) success &= dob->writeToFile(writeDirectory, true);
+    for (auto dob : dataObjects)
+      if (dob) {
+        // Write to one of the directories
+        switch (dob->getType()) {
+          case DataObjectType::GRAPH: {
+            success &= dob->writeToFile(graphDirectory, true);
+            break;
+          }
+          case DataObjectType::MULTIGRAPH: {
+            success &= dob->writeToFile(multiGraphDirectory, true);
+            break;
+          }
+          case DataObjectType::GENERAL: {
+            success &= dob->writeToFile(generalDirectory, true);
+            break;
+          }
+          default: {
+            break;
+          }
+        }
+      }
 
     // --- Write all files 
     for (auto& f : files) {

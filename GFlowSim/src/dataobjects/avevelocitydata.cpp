@@ -6,7 +6,7 @@
 
 namespace GFlowSimulation {
   // Constructor
-  AveVelocityData::AveVelocityData(GFlow *gflow) : DataObject(gflow, "AveV") {};
+  AveVelocityData::AveVelocityData(GFlow *gflow) : GraphObject(gflow, "AveV", "time", "average velocity") {};
 
   void AveVelocityData::post_step() {
     // Only record if enough time has gone by
@@ -27,38 +27,7 @@ namespace GFlowSimulation {
     av /= count;
     // Store data
     RealType time = Base::gflow->getElapsedTime();
-    vData.push_back(RPair(time, av));
+    data.push_back(RPair(time, av));
   }
 
-  bool AveVelocityData::writeToFile(string fileName, bool useName) {
-    // Check if there's anything to do
-    if (vData.empty()) return true;
-    // The name of the directory for this data
-    string dirName = fileName;
-    if (*fileName.rbegin()=='/') // Make sure there is a /
-      dirName += dataName+"/";
-    else 
-      dirName += ("/"+dataName+"/");
-
-    // Draw a graph using a palette object
-    Palette graph(1024,512);
-    GraphOptions options;
-    options.setMinY(0);
-    options.setBackground(RGB_White);
-    options.setLineColor(RGB_Red);
-    graph.drawGraph2d(vData, options);
-    graph.writeToFile(fileName+"/AveV.bmp");
-
-    // Write the data
-    // Create a directory for all the data
-    mkdir(dirName.c_str(), 0777);
-    ofstream fout(dirName+dataName+".csv");
-    if (fout.fail()) return false;
-    for (auto v : vData)
-      fout << v.first << "," << v.second << endl;
-    fout.close();
-
-    // Return success
-    return true;
-  }
 }

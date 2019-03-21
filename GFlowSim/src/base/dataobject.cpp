@@ -2,10 +2,18 @@
 
 namespace GFlowSimulation {
 
-  DataObject::DataObject(GFlow *gflow, string name) : Base(gflow), dataName(name), delay(1./20.), lastRecording(-10.) {};
+  DataObject::DataObject(GFlow *gflow, const string& name) 
+    : Base(gflow), dataName(name), delay(1./20.), lastRecording(-10.), type(DataObjectType::GENERAL) {};
 
-  string DataObject::getName() {
+  DataObject::DataObject(GFlow *gflow, const string& name, DataObjectType t)
+    : Base(gflow), dataName(name), delay(1./20.), lastRecording(-10.), type(t) {};
+
+  const string& DataObject::getName() const {
     return dataName;
+  }
+
+  DataObjectType DataObject::getType() const {
+    return type;
   }
 
   void DataObject::setFPS(RealType fps) {

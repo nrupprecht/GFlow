@@ -20,7 +20,7 @@ output = args['output']
 dir_path = args['directory']
 
 # Look for images in the 'Pos' subdirectory
-load_path = dir_path + "/Pos"
+load_path = dir_path + "/general/Pos"
 save_path = dir_path + "/" + output
 
 print ("Looking for images in ", load_path)

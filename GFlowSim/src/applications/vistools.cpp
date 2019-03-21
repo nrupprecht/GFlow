@@ -11,7 +11,7 @@ int main(int argc, char** argv) {
 
   // --- Options
   string directory = "RunData";
-  string subdirectory = "Pos";
+  string subdirectory = "general/Pos";
   string saveDirectory = "RunData";
   double radius_multiple = 1.;
   int colorOption = 0;

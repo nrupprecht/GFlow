@@ -1,17 +1,20 @@
 #ifndef __CENTER_CORRELATION_HPP__GFLOW__
 #define __CENTER_CORRELATION_HPP__GFLOW__
 
-#include "../base/dataobject.hpp"
+#include "graphobject.hpp"
 
 namespace GFlowSimulation {
 
-  class CenterCorrelation : public DataObject {
+  class CenterCorrelation : public GraphObject {
   public:
     //! \brief Constructor
     CenterCorrelation(GFlow*);
 
-    //! \brief Collect the position data from simdata --- happens during the post-step phase
+    //! \brief Collect the position data from simdata --- happens during the post-step phase.
     virtual void post_step();
+
+    //! \brief Set the radius of interest.
+    void setRadius(RealType);
 
     //! \brief Write data to a file - if true, the string is a path, and you should use your own name as the file name.
     //!
