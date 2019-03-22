@@ -6,27 +6,27 @@
 namespace GFlowSimulation {
 
   void PolymerCreator::createArea(HeadNode *head, GFlow *gflow, std::map<string, string>& variables) {
-
-    //createLine(head, gflow, variables);
-    //return;
-
-    
-
+    // Set up parser
     ParseHelper parser(head);
     parser.set_variables(variables);
     parser.addValidSubheading("Number");
+    parser.addValidSubheading("Atoms");
+    parser.addValidSubheading("Prob");
+    parser.addValidSubheading("R");
+    parser.addValidSubheading("r");
+    parser.addValidSubheading("Correlation");
     parser.sortOptions();
     HeadNode *hd = nullptr;
 
-
-    // Seed global random generator
-    seedNormalDistribution();
-
-    int number = 50;
+    // Parameters
+    int atoms = 50;
+    int number = 1;
     RealType prob = 0.2;
     RealType sg_big = 0.05;
     RealType sg_small = 0.01;
+    bool useCorr = true;
 
+    // Extract the number of chains to create.
     parser.getHeading_Optional("Number");
     hd = parser.first();
     if (hd) {
@@ -34,18 +34,107 @@ namespace GFlowSimulation {
       parser.extract_first_parameter(num, hd);
       if (num>0) number = num;
     }
+
+    // Extract the number of atoms per chain.
+    parser.getHeading_Optional("Atoms");
+    hd = parser.first();
+    if (hd) {
+      int a;
+      parser.extract_first_parameter(a, hd);
+      if (a>0) atoms = a;
+    }
+
+    // Extract the probability that an atom is a large particle.
+    parser.getHeading_Optional("Prob");
+    hd = parser.first();
+    if (hd) {
+      RealType p;
+      parser.extract_first_parameter(p, hd);
+      if (p>0) prob = p;
+    }
+
+    // Extract the radius of the large particles.
+    parser.getHeading_Optional("R");
+    hd = parser.first();
+    if (hd) {
+      RealType R;
+      parser.extract_first_parameter(R, hd);
+      if (R>0) sg_big = R;
+    }
+
+    // Extract the radius of the small (chain link) particles.
+    parser.getHeading_Optional("r");
+    hd = parser.first();
+    if (hd) {
+      RealType r;
+      parser.extract_first_parameter(r, hd);
+      if (r>0) sg_small = r;
+    }
+
+    // Whether to use a correlation functino or not.
+    parser.getHeading_Optional("Correlation");
+    hd = parser.first();
+    if (hd) {
+      bool c;
+      parser.extract_first_parameter(c, hd);
+      useCorr = c;
+    }
+
+    // --- Done gathering parameters, ready to act.
+
+    // Get number of dimensions
+    int sim_dimensions = gflow->sim_dimensions;
     
+    // Seed global random generator
+    seedNormalDistribution();
+
     // Create a group correlation object
-    if (correlation==nullptr) correlation = new GroupCorrelation(gflow);
-    correlation->setRadius(2.5*sg_big);
+    if (correlation==nullptr) {
+      correlation = new GroupCorrelation(gflow);
+      // Create a group correlation object
+      correlation = new GroupCorrelation(gflow);
+      correlation->setRadius(5*(sg_big + sg_small));
+      correlation->setNBins(400);
+      // Add the correlation object
+      gflow->addDataObject(correlation);
+    }
+
+    // Add bonds object to gflow
+    if (harmonicbonds==nullptr) {
+      if      (sim_dimensions==2) harmonicbonds = new HarmonicBond_2d(gflow);
+      else if (sim_dimensions==3) harmonicbonds = new HarmonicBond_3d(gflow);
+      else                        harmonicbonds = new HarmonicBond(gflow);
+      // Add the harmonic bonds modifier.
+      gflow->addModifier(harmonicbonds);
+    }
 
     // Seed global random generator
     seedNormalDistribution();
 
-    createPolymer(gflow, number, prob, sg_big, sg_small, 0, 1);
+    // Create all the polymers
+    for (int i=0; i<number; ++i) {
+      createPolymer(gflow, atoms, prob, sg_big, sg_small, 0, 1, useCorr);
+    }
+
+    // Need to relax
+    Creator::hs_relax(gflow, 0.5);
+    
+    // Give random normal velocities.
+    RealType vsgma = 0.001;
+    SimData *sd = gflow->simData;
+    for (int i=0; i<sd->size(); ++i) {
+      // Random velocity direction
+      randomNormalVec(sd->V(i), sim_dimensions);
+      // Random normal amount of kinetic energy
+      RealType K = vsgma*fabs(randNormal());
+      // Compute which velocity this implies
+      RealType v = sqrt(2*sd->Im(i)*K);
+      // Set the velocity vector of the particle
+      scalarMultVec(v, sd->V(i), sim_dimensions);
+    }
   }
 
-  void PolymerCreator::createPolymer(GFlow *gflow, int number, RealType prob, RealType sigmaP, RealType sigmaC, int idP, int idC) {
+  void PolymerCreator::createPolymer(GFlow *gflow, int number, RealType prob, RealType sigmaP, RealType sigmaC, int idP, int idC, bool useCorr) {
     // Valid probability, number, radii, and types are needed
     if (prob>1 || prob<0 || number<=0 || sigmaP<0 || sigmaC<0 || idP<0 || idP>=gflow->getNTypes() || idC<0 || idC>=gflow->getNTypes()) return;
 
@@ -58,13 +147,8 @@ namespace GFlowSimulation {
     RealType dx_types[2];
     dx_types[0] = sigmaP;
     dx_types[1] = sigmaC;
-    
-    // Create a group correlation object
-    GroupCorrelation *correlation = new GroupCorrelation(gflow);
-    correlation->setRadius(2.5*max(sigmaC, sigmaP));
 
-    // The bonds object
-    HarmonicBond *harmonicbonds = new HarmonicBond(gflow);
+    // Get simdata and bounds
     SimData *sd = gflow->simData;
     Bounds bnds = gflow->bounds;
 
@@ -89,7 +173,7 @@ namespace GFlowSimulation {
       gid2 = sd->getNextGlobalID();
 
       // Add gid2 to the correlation object
-      correlation->addToGroup(gid2);
+      if (correlation && useCorr) correlation->addToGroup(gid2);
 
       // What type of particle should be generated
       if (i==0 || drand48()<prob) next_type = idP; // Primary type
@@ -127,32 +211,6 @@ namespace GFlowSimulation {
 
       // Set last type
       last_type = next_type;
-    }
-
-    // Add bonds object to gflow
-    gflow->addModifier(harmonicbonds);
-    // Add the correlation object
-    gflow->addDataObject(correlation);
-
-    // Need to relax
-    Creator::hs_relax(gflow, 0.5);
-
-    RealType vsgma = 0.001;
-    for (int i=0; i<sd->size(); ++i) {
-      //if (sd->Type(i)!=idC) {
-        // Random velocity direction
-        randomNormalVec(dV, sim_dimensions);
-        // Random normal amount of kinetic energy
-        RealType K = vsgma*fabs(randNormal());
-        // Compute which velocity this implies
-        RealType v = sqrt(2*sd->Im(i)*K);
-        // Set the velocity vector of the particle
-        scalarMultVec(v, dV, sim_dimensions);
-        copyVec(dV, sd->V(i), sim_dimensions);
-        /*
-      }
-      else copyVec(ZERO, sd->V(i), sim_dimensions);
-      */
     }
 
     // Clean up
@@ -205,9 +263,9 @@ namespace GFlowSimulation {
     }
 
     // Create and add a center correlation object
-    CenterCorrelation *correlation = new CenterCorrelation(gflow);
-    correlation->setRadius(2.5*sigma);
-    gflow->addDataObject(correlation);
+    CenterCorrelation *center = new CenterCorrelation(gflow);
+    center->setRadius(2.5*sigma);
+    gflow->addDataObject(center);
 
   }
 

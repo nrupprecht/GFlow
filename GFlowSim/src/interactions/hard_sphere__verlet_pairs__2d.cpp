@@ -30,9 +30,7 @@ namespace GFlowSimulation {
     copyVec(Base::gflow->getBCs(), boundaryConditions, 2); // Keep a local copy of the bcs
     // Extract bounds related data
     RealType bnd_x = bounds.wd(0);
-    RealType inv_bnd_x = 1./bnd_x;
     RealType bnd_y = bounds.wd(1);
-    RealType inv_bnd_y = 1./bnd_y;
 
     // Needed constants
     RealType sg1, sg2, dx, dy, rsqr, r, invr, magnitude;

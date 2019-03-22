@@ -66,7 +66,11 @@ namespace GFlowSimulation {
 
     inline void get_values(const float*, const float* &, const float* &, float&, int&, float&, float&);
 
+    //! \brief Determine what color a particle should be.
     inline void determine_color(RGBApixel&, int, const float*, const float*, int, float, float);
+
+    //! \brief Set up the camera to be in the standard position.
+    inline void standard_camera_setup();
 
     //! \brief The dimensions of the image (it will be the same in x and y)
     int resolution = 1536;
@@ -106,6 +110,9 @@ namespace GFlowSimulation {
 
     //! \brief Whether to wrap at the boundaries or not
     bool do_wrap = true;
+
+    //! \brief Whether the (3D) camera has been set up by anyone or anything.
+    bool camera_set = false;
 
     float maxVsqr = -1.;
     float maxDistance = -1.;

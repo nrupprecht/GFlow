@@ -10,6 +10,9 @@ namespace GFlowSimulation {
     //! \brief Default constructor.
     Bond(GFlow*);
 
+    //! \brief Make sure local ids are set.
+    virtual void pre_integrate() override;
+
     //! \brief Add a bond - basic version.
     virtual void addBond(int, int)=0;
 
@@ -22,7 +25,10 @@ namespace GFlowSimulation {
   protected:
 
     //! \brief Check whether lists of bonds have the same size.
-    virtual bool checkBondVectors();
+    virtual bool checkBondVectors() const;
+
+    //! \brief Update the local ids.
+    void updateLocalIDs();
 
     //! \brief The left and right particles of the bond.
     vector<int> left, right;

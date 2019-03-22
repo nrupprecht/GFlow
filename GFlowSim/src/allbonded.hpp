@@ -6,4 +6,7 @@
 
 #include "bonded/harmonicbond.hpp"
 
+#include "bonded/harmonicbond_2d.hpp"
+#include "bonded/harmonicbond_3d.hpp"
+
 #endif // __ALL_BONDED_HPP__GFLOW__

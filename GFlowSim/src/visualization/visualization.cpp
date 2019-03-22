@@ -112,28 +112,8 @@ namespace GFlowSimulation {
     else if (color_option==4)
       findMaxDistance(data);
 
-    // Set up the ray tracer - it should be empty
-    tracer.setBounds(bounds);
-    // Set the tracer's camera
-    float bounds_center[3];
-    float scale = 0.5*max_width(bounds);
-    float camera[3] = {1.3f, 2.4f, 2.f};
-    // Scale the camera placement vector
-    scalarMultVec(scale, camera, 3);
-    // Find the center of the bounds
-    addVec(bounds.min, bounds.max, bounds_center, 3); 
-    scalarMultVec(0.5f, bounds_center, 3); 
-    // Shift the camera placement vector
-    plusEqVec(camera, bounds_center, 3);
-
-    // Have the orientation point towards the center of the bounds
-    float orientation[3];
-    subtractVec(bounds_center, camera, orientation, 3);
-    normalizeVec(orientation, 3);
-
-    // Set camera and orientation vectors
-    tracer.setCameraPlacement(camera);
-    tracer.setCameraOrientation(orientation);
+    // Set up the camera
+    standard_camera_setup();
 
     // Create all the images
     for (int i=0; i<data.size(); ++i) {
@@ -267,6 +247,8 @@ namespace GFlowSimulation {
   }
 
   void Visualization::createImage3d(string fileName, const vector<float>& data) {
+    // Set up the camera if it hasn't been set up before.
+    if (!camera_set) standard_camera_setup();
     // Add all objects to the ray tracer.
     tracer.reserve(data.size()/dataWidth);
     tracer.setResolution(resolution);
@@ -274,9 +256,10 @@ namespace GFlowSimulation {
     // Do checks of positions
     if (!do_checks(data)) return;
     // Add all particles to the ray tracer
+    const float *pos, *vel; float sigma, distance, stripex; 
+    int type;
     for (int i=0; i<data.size(); i+=dataWidth) {
       // Get values
-      const float *pos, *vel; float sigma, distance, stripex; int type;
       get_values(&data[i], pos, vel, sigma, type, distance, stripex);
       // Determine the color
       determine_color(color, i, pos, vel, type, distance, stripex);
@@ -469,6 +452,31 @@ namespace GFlowSimulation {
         }
       }
     }
+  }
+
+  inline void Visualization::standard_camera_setup() {
+    // Set up the ray tracer - it should be empty
+    tracer.setBounds(bounds);
+    // Set the tracer's camera
+    float bounds_center[3];
+    float scale = 0.5*max_width(bounds);
+    float camera[3] = {1.3f, 2.4f, 2.f};
+    // Scale the camera placement vector
+    scalarMultVec(scale, camera, 3);
+    // Find the center of the bounds
+    addVec(bounds.min, bounds.max, bounds_center, 3); 
+    scalarMultVec(0.5f, bounds_center, 3); 
+    // Shift the camera placement vector
+    plusEqVec(camera, bounds_center, 3);
+    // Have the orientation point towards the center of the bounds
+    float orientation[3];
+    subtractVec(bounds_center, camera, orientation, 3);
+    normalizeVec(orientation, 3);
+    // Set camera and orientation vectors
+    tracer.setCameraPlacement(camera);
+    tracer.setCameraOrientation(orientation);
+    // We have set up the camera
+    camera_set = true;
   }
 
 }

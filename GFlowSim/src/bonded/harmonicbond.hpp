@@ -5,6 +5,11 @@
 
 namespace GFlowSimulation {
 
+  /**
+  *  \brief The parent class for harmonic bonds.
+  *
+  *  The child classes are specific to the dimensionality of the system.
+  */
   class HarmonicBond : public Bond {
   public:
     //! \brief Default constructor.
@@ -13,14 +18,13 @@ namespace GFlowSimulation {
     //! \brief Constructor that sets spring constant.
     HarmonicBond(GFlow*, RealType);
 
-    virtual void addBond(int, int);
+    //! \brief Add a pair of bonded particles.
+    virtual void addBond(int, int) override;
 
-    virtual void post_forces();
+    //! \brief Calculate the interparticle forces.
+    virtual void post_forces() override;
 
-  private:
-    //! \brief Update the local id list from the global ids.
-    void updateLocalIDs();
-
+  protected:
     //! \brief The relaxation distances for the bonds.
     vector<RealType> distance;
 

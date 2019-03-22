@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
 
-  GroupCorrelation::GroupCorrelation(GFlow *gflow) : GraphObject(gflow, "GroupCorr", "distance", "counts"), nbins(100), radius(0.15) {
+  GroupCorrelation::GroupCorrelation(GFlow *gflow) : GraphObject(gflow, "GroupCorr", "distance", "counts") {
     bins = vector<int>(nbins, 0);
   };
 
@@ -18,7 +18,7 @@ namespace GFlowSimulation {
     RealType **x = simData->X();
     int      *id = simData->Id();
     int    *type = simData->Type();
-    int size = simData->size();
+    int     size = simData->size();
 
     // Find the local ids of the group atoms if simdata has altered the local ids.
     if (simData->getNeedsRemake() || local_group.empty()) {
@@ -63,6 +63,9 @@ namespace GFlowSimulation {
       }
     }
 
+    // Increment counter
+    ++data_iters;
+
     // Clean up 
     delete [] dx;
   }
@@ -76,14 +79,27 @@ namespace GFlowSimulation {
     radius = r;
   }
 
+  void GroupCorrelation::setNBins(int nb) {
+    nbins = nb;
+    bins = vector<int>(nbins, 0);
+  }
+
+  int GroupCorrelation::size() {
+    return global_group.size();
+  }
+
   bool GroupCorrelation::writeToFile(string fileName, bool useName) {
     // Check if there's anything to do
-    if (bins.empty()) return true;
+    if (bins.empty() || global_group.empty()) return true;
 
     // Push data into the data vector
     RealType dr = radius/nbins;
-    for (int i=0; i<bins.size(); ++i)
-      data.push_back(RPair(i*dr, bins[i]));
+    for (int i=0; i<bins.size(); ++i) {
+      RealType r = (i+0.5)*dr;
+      data.push_back(RPair(r, 
+        static_cast<RealType>(bins[i])/(static_cast<RealType>(data_iters)*r))
+      );
+    }
 
     // Graph object does the actual writing.
     return GraphObject::writeToFile(fileName, useName);

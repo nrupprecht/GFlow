@@ -19,6 +19,12 @@ namespace GFlowSimulation {
     //! \brief Set the radius of interest.
     void setRadius(RealType);
 
+    //! \brief Set the number of bins.
+    void setNBins(int);
+
+    //! \brief Get the number of particles in the group.
+    int size();
+
     //! \brief Set up the data vector for export.
     virtual bool writeToFile(string, bool=true) override;
 
@@ -35,10 +41,13 @@ namespace GFlowSimulation {
     //! \brief The cutoff radius for recording correlations.
     //!
     //! Only particles within "radius" of a group member will be binned.
-    RealType radius;
+    RealType radius = 0.15;
 
     //! \brief The number of desired bins
-    int nbins;
+    int nbins = 100;
+
+    //! \brief How many times data was collected. 
+    int data_iters = 0;
   };
 
 }

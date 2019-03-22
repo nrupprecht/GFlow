@@ -26,8 +26,8 @@ namespace GFlowSimulation {
   }
 
   void HarmonicBond::post_forces() {
-    // Make sure sizes are the same
-    if (!checkBondVectors()) throw UnequalBondVectors();
+    // Get the number of bonds. left and right will have the same size - we checked this last time
+    // updateLocalIDs was called.
     int nbonds = left.size();
 
     // Check if local ids need updating.
@@ -36,12 +36,12 @@ namespace GFlowSimulation {
     // Get simdata, check if the local ids need updating
     RealType **x = simData->X();
     RealType **f = simData->F();
-    RealType dX[8]; // <-- Assumes that (sim_dimensions < 9)
+    RealType *dX = new RealType[sim_dimensions];
 
     for (int i=0; i<nbonds; ++i) {
       // Get the global, then local ids of the particles.
       int id1 = left[i], id2 = right[i];
-
+      
       // Calculate displacement
       Base::gflow->getDisplacement(x[id1], x[id2], dX);
       RealType r = magnitudeVec(dX, sim_dimensions);
@@ -56,19 +56,9 @@ namespace GFlowSimulation {
       minusEqVec(f[id1], dX, sim_dimensions);
       plusEqVec (f[id2], dX, sim_dimensions);
     }
-  }
 
-  void HarmonicBond::updateLocalIDs() {
-    // Make sure sizes are the same
-    if (!checkBondVectors()) throw UnequalBondVectors();
-    int nbonds = left.size();
-
-    SimData *sd = Base::simData;
-    for (int i=0; i<nbonds; ++i) {
-      int gid1 = gleft[i], gid2 = gright[i];
-      int id1 = sd->getLocalID(gid1), id2 = sd->getLocalID(gid2);
-      left[i] = id1; right[i] = id2;
-    }
+    // Clean up.
+    delete [] dX;
   }
 
 }

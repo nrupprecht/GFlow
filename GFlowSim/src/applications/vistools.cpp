@@ -49,11 +49,11 @@ int main(int argc, char** argv) {
   // --- Load the data and create an image
   
   if (snapshot) {
-    visualization.load_and_create(directory+"/Snapshot/data.csv", saveDirectory+"/Snapshot");
+    visualization.load_and_create(directory+"/general/Snapshot/data.csv", saveDirectory+"/general/Snapshot");
     // Compute field properties
     if (field) {
       FieldProperties field_properties;
-      field_properties.load_and_create(directory+"/Snapshot/");
+      field_properties.load_and_create(directory+"/general/Snapshot/");
     }
   }
   else {

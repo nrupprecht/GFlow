@@ -1,8 +1,11 @@
 #include "datamaster.hpp"
+// Other files
 #include "simdata.hpp"
 #include "integrator.hpp"
 #include "domainbase.hpp"
 #include "interaction.hpp"
+
+#include "../alldataobjects.hpp"
 
 namespace GFlowSimulation {
 

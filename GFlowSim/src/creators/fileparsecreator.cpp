@@ -145,7 +145,7 @@ namespace GFlowSimulation {
     parser.addValidSubheading("MaxDT");
     parser.addValidSubheading("MinDT");
     parser.addValidSubheading("Reconcile");
-    parser.addValidSubheading("Test");
+    parser.addValidSubheading("Polymer");
     // Make sure only valid options were used
     if (!parser.checkValidSubHeads()) {
       cout << "Warning: Invalid Headings:\n";
@@ -384,8 +384,8 @@ namespace GFlowSimulation {
       if (min>0) gflow->integrator->setMinDT(min);
     }
 
-    // --- Run some sort of test
-    parser.getHeading_Optional("Test");
+    // --- Create a polymer
+    parser.getHeading_Optional("Polymer");
     hd = parser.first();
     if (hd) {
       PolymerCreator pc;
@@ -405,7 +405,7 @@ namespace GFlowSimulation {
         }
         else throw BadStructure("Unrecognized remove option, [" + m->params[0]->partA + "].");
     }
-
+    
     // Reconstruct domain
     gflow->domain->construct();
   }

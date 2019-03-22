@@ -70,7 +70,7 @@ namespace GFlowSimulation {
     friend class GFlow;
     friend class FileParserCreator;
 
-  protected:
+  //protected:
     // --- Helper functions
 
     //! \brief Write a summary of the run to a text file.
@@ -85,25 +85,29 @@ namespace GFlowSimulation {
     //! \brief Write more technical data to a separate file.
     inline bool writeLogFile(string);
 
-    // Command line arguments
+    //! \brief Command line arguments.
     int argc = 0;
     char **argv = nullptr;
 
-    //! \brief How long it took to initialize the simulation
+    //! \brief How long it took to initialize the simulation.
     RealType initialization_time = -1;
-    //! Run time (real time)
+
+    //! Run time (real time).
     RealType run_time = 0;
-    //! When the timer started
+
+    //! When the timer started.
     high_resolution_clock::time_point start_time;
-    //! Whether the timer is running
+
+    //! Whether the timer is running.
     bool timing = false; 
-    //! Time to start taking data
+
+    //! Time to start taking data.
     RealType startRecTime = 0;
 
-    //! The data objects we are responsible for
+    //! The data objects we are responsible for.
     vector<DataObject*> dataObjects;
 
-    //! \brief Files that should be written to the summary directory: {name, contents}
+    //! \brief Files that should be written to the summary directory: {name, contents}.
     vector<pair<string, string> > files;
   };
 
