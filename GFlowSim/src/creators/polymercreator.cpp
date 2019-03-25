@@ -25,6 +25,7 @@ namespace GFlowSimulation {
     RealType sg_big = 0.05;
     RealType sg_small = 0.01;
     bool useCorr = true;
+    bool useAngle = false;
 
     // Extract the number of chains to create.
     parser.getHeading_Optional("Number");
@@ -93,19 +94,29 @@ namespace GFlowSimulation {
       correlation = new GroupCorrelation(gflow);
       // Create a group correlation object
       correlation = new GroupCorrelation(gflow);
-      correlation->setRadius(5*(sg_big + sg_small));
-      correlation->setNBins(400);
+      correlation->setRadius(1.5*(sg_big + sg_small));
+      correlation->setNBins(250);
       // Add the correlation object
       gflow->addDataObject(correlation);
     }
 
     // Add bonds object to gflow
     if (harmonicbonds==nullptr) {
-      if      (sim_dimensions==2) harmonicbonds = new HarmonicBond_2d(gflow);
-      else if (sim_dimensions==3) harmonicbonds = new HarmonicBond_3d(gflow);
-      else                        harmonicbonds = new HarmonicBond(gflow);
+      if (sim_dimensions==2) {
+        harmonicbonds = new HarmonicBond_2d(gflow);
+        if (useAngle) harmonicchain = new AngleHarmonicChain_2d(gflow, 0.1*DEFAULT_SPRING_CONSTANT);
+      }
+      else if (sim_dimensions==3) {
+        harmonicbonds = new HarmonicBond_3d(gflow);
+        if (useAngle) harmonicchain = new AngleHarmonicChain_3d(gflow, 0.1*DEFAULT_SPRING_CONSTANT);
+      }
+      else {
+        harmonicbonds = new HarmonicBond(gflow);
+        if (useAngle) harmonicchain = nullptr; // <-----------
+      }
       // Add the harmonic bonds modifier.
       gflow->addModifier(harmonicbonds);
+      gflow->addModifier(harmonicchain);
     }
 
     // Seed global random generator
@@ -142,8 +153,10 @@ namespace GFlowSimulation {
     int sim_dimensions = gflow->sim_dimensions;
 
     // Create a random polymer according to the specification
-    RealType imP = 1./sphere_volume(sigmaP, sim_dimensions);
-    RealType imC = 1./sphere_volume(sigmaC, sim_dimensions);
+    RealType rhoP = 10.;
+    RealType rhoC = 10.;
+    RealType imP = 1./(rhoP*sphere_volume(sigmaP, sim_dimensions));
+    RealType imC = 1./(rhoC*sphere_volume(sigmaC, sim_dimensions));
     RealType dx_types[2];
     dx_types[0] = sigmaP;
     dx_types[1] = sigmaC;
@@ -181,7 +194,7 @@ namespace GFlowSimulation {
 
       // Calculate dx
       if (last_type!=-1)
-        dx = dx_types[next_type] + dx_types[last_type];
+        dx = 1.5*(dx_types[next_type] + dx_types[last_type]);
       else dx = 0;
 
       // Advance random path
@@ -192,7 +205,7 @@ namespace GFlowSimulation {
 
       // Wrap X
       for (int d=0; d<sim_dimensions; ++d) {
-        if (X[d]<bnds.min[d]) X[d] += bnds.wd(d);
+        if      (X[d]< bnds.min[d]) X[d] += bnds.wd(d);
         else if (X[d]>=bnds.max[d]) X[d] -= bnds.wd(d);
       }
 
@@ -207,7 +220,10 @@ namespace GFlowSimulation {
       }
 
       // Add bond
-      if (gid1!=-1) harmonicbonds->addBond(gid1, gid2);
+      if (gid1!=-1) {
+        harmonicbonds->addBond(gid1, gid2);
+      }
+      if (harmonicchain) harmonicchain->addAtom(gid2);
 
       // Set last type
       last_type = next_type;

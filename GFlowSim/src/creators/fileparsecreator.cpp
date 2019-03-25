@@ -2,6 +2,7 @@
 // Other files
 #include "../utility/printingutility.hpp"
 #include "../allmodifiers.hpp"
+#include "../interactions/interaction-choice.hpp"
 #include "polymercreator.hpp"
 
 namespace GFlowSimulation {
@@ -504,20 +505,7 @@ namespace GFlowSimulation {
 
   inline Interaction* FileParseCreator::choose_interaction(HeadNode *head) const {
     string token = head->params[2]->partA;
-    if (token=="HardSphere") {
-      if (sim_dimensions==2) return new HardSphere_VerletPairs_2d(gflow);
-      else if (sim_dimensions==3) return new HardSphere_VerletPairs_3d(gflow);
-      else throw false;
-    }
-    if (token=="HardSphereGeneral") {
-      if (sim_dimensions==2) return new HardSphereDs_VerletPairs_2d(gflow);
-      else throw false;
-    }
-    else if (token=="LennardJones") {
-      if (sim_dimensions==2) return new LennardJones_VerletPairs_2d(gflow);
-    }
-    else if (token=="None")         return nullptr;
-    else throw UnexpectedOption("Interaction choice was ["+token+"].");
+    return InteractionChoice::choose(gflow, token, sim_dimensions);
   }
 
   inline BCFlag FileParseCreator::choose_bc(string& token) const {

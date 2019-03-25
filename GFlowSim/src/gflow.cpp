@@ -512,15 +512,15 @@ namespace GFlowSimulation {
   }
 
   void GFlow::removeOverlapping(RealType fraction) {
-    domain->removeOverlapping(fraction);
+    if (domain) domain->removeOverlapping(fraction);
   }
 
   void GFlow::addDataObject(class DataObject* dob) {
-    dataMaster->addDataObject(dob);
+    if (dob) dataMaster->addDataObject(dob);
   }
 
   void GFlow::addModifier(class Modifier* mod) {
-    modifiers.push_back(mod);
+    if (mod) modifiers.push_back(mod);
   }
 
   void GFlow::resetAllTimes() {
@@ -532,27 +532,27 @@ namespace GFlowSimulation {
   }
 
   void GFlow::setStartRecTime(RealType t) {
-    dataMaster->setStartRecTime(t);
+    if (dataMaster) dataMaster->setStartRecTime(t);
   }
 
   void GFlow::setFPS(RealType fps) {
-    dataMaster->setFPS(fps);
+    if (dataMaster) dataMaster->setFPS(fps);
   }
 
   void GFlow::setFPS(int dob_id, RealType fps) {
-    dataMaster->setFPS(dob_id, fps);
+    if (dataMaster) dataMaster->setFPS(dob_id, fps);
   }
 
   void GFlow::setDT(RealType dt) {
-    integrator->setDT(dt);
+    if (integrator) integrator->setDT(dt);
   }
 
   void GFlow::setDMCmd(int argc, char** argv) {
-    dataMaster->setCommand(argc, argv);
+    if (dataMaster) dataMaster->setCommand(argc, argv);
   }
 
   void GFlow::giveFileToDataMaster(string filename, string file_contents) {
-    dataMaster->giveFile(filename, file_contents);
+    if (dataMaster) dataMaster->giveFile(filename, file_contents);
   }
 
   inline void GFlow::clearForces() {

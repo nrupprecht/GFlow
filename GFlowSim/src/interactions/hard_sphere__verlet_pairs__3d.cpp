@@ -37,7 +37,7 @@ namespace GFlowSimulation {
     RealType inv_bnd_z = 1./bnd_z;
 
     // Needed constants
-    RealType sg1, sg2, dx, dy, dz, rsqr, r, invr, magnitude;
+    RealType sg1, sg2, dx, dy, dz, rsqr, r, invr, Fn;
     // Point to the actual list from the verlet list object. Since we set the handler at initialization to 
     // be of type VerletListPairs, this cast should always succeed.
     vector<int> &verlet = dynamic_cast<VerletListPairs*>(handler)->verlet;
@@ -81,14 +81,14 @@ namespace GFlowSimulation {
         dy *= invr;
         dz *= invr;
         // Calculate the magnitude of the force.
-        magnitude = repulsion*(sg1 + sg2 - r);
+        Fn = repulsion*(sg1 + sg2 - r);
         // Update forces
-        f[id1][0] += magnitude * dx;
-        f[id2][0] -= magnitude * dx;
-        f[id1][1] += magnitude * dy;
-        f[id2][1] -= magnitude * dy;
-        f[id1][2] += magnitude * dz;
-        f[id2][2] -= magnitude * dz;
+        f[id1][0] += Fn * dx;
+        f[id2][0] -= Fn * dx;
+        f[id1][1] += Fn * dy;
+        f[id2][1] -= Fn * dy;
+        f[id1][2] += Fn * dz;
+        f[id2][2] -= Fn * dz;
       }
     }
   }

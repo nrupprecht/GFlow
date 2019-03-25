@@ -13,7 +13,7 @@ namespace GFlowSimulation {
     
     // Do dimensional check.
     // \todo Should probably have some sort of global error message system.
-    if (sim_dimensions!=2) return;
+    if (sim_dimensions!=3) return;
 
     // Get the data pointers.
     RealType **x = Base::simData->X();
@@ -87,16 +87,16 @@ namespace GFlowSimulation {
         dvx = v[id2][0] - v[id1][0];
         dvy = v[id2][1] - v[id1][1];
         dvz = v[id2][2] - v[id1][2];
-        // Caluclate normal velocity.
+        // Calculate normal velocity.
         vn = dvx*dx + dvy*dy + dvz*dz;
         // Dissipation only occurs on loading the spring.
         Fn += dissipation * un_clamp(vn);
         // Update forces.
         f[id1][0] += Fn * dx;
-        f[id2][0] -= Fn * dx;
         f[id1][1] += Fn * dy;
-        f[id2][1] -= Fn * dy;
         f[id1][2] += Fn * dz;
+        f[id2][0] -= Fn * dx;
+        f[id2][1] -= Fn * dy;
         f[id2][2] -= Fn * dz;
       }
     }

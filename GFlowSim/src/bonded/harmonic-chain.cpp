@@ -34,8 +34,8 @@ namespace GFlowSimulation {
     RealType **f = sd->F();
     if (sd->getNeedsRemake()) updateLocalIDs();
     RealType dX[8]; // <-- Assumes that (sim_dimensions < 9)
-
-    for (int i=0; i<local_ids.size()-1; ++i) {
+    
+    for (int i=0; i+1<local_ids.size(); ++i) {
       // Get the global, then local ids of the particles.
       int id1 = local_ids[i], id2 = local_ids[i+1];
 

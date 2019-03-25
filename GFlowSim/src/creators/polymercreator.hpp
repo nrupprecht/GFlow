@@ -22,6 +22,8 @@ namespace GFlowSimulation {
     class GroupCorrelation *correlation = nullptr;
 
     class HarmonicBond *harmonicbonds = nullptr;
+
+    class AngleHarmonicChain *harmonicchain = nullptr;
   };
 
 }
