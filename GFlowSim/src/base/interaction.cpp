@@ -34,6 +34,10 @@ namespace GFlowSimulation {
     return virial;
   }
 
+  RealType Interaction::getCutoff() const {
+    return cutoff;
+  }
+
   void Interaction::clear() {
     handler->clear();
   }

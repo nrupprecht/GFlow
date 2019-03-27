@@ -8,8 +8,9 @@ namespace GFlowSimulation {
   class LennardJones : public Interaction {
   public:
     //! \brief Default constructor.
-    LennardJones(GFlow *gflow, InteractionHandler *hndlr) 
-      : Interaction(gflow, hndlr), cutoff(DEFAULT_LENNARD_JONES_CUTOFF), strength(DEFAULT_LENNARD_JONES_STRENGTH) {};
+    LennardJones(GFlow *gflow, InteractionHandler *hndlr) : Interaction(gflow, hndlr), strength(DEFAULT_LENNARD_JONES_STRENGTH) { 
+      cutoff = 2.5; 
+    };
 
     //! \brief Set the cutoff factor.
     void setCutoff(RealType c) { cutoff = c>0 ? c : cutoff; }
@@ -17,9 +18,7 @@ namespace GFlowSimulation {
     //! \brief Set the interaction strength.
     void setStrength(RealType s) { strength = s; }
 
-  protected:  
-    //! \brief The cutoff factor. Generally, this is 2.5 times the "radius" of the particle.
-    RealType cutoff;
+  protected:
 
     //! \brief Strength of the LJ force.
     RealType strength;

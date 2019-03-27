@@ -126,7 +126,7 @@ namespace GFlowSimulation {
     int requestVectorData(string);
     int requestScalarData(string);
     int requestIntegerData(string);
-
+    
     // The get versions do not *create* the data entries, they just look for them.
     int getVectorData(string);
     int getScalarData(string);
@@ -194,7 +194,7 @@ namespace GFlowSimulation {
     // --- Mutators
 
     //! \brief Set the needs remake flag.
-    void setNeedsRemake(bool);
+    void setNeedsRemake(bool=true);
 
     //! \brief Add a vector data entry.
     void addVectorData(string);

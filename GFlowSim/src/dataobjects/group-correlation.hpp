@@ -10,6 +10,9 @@ namespace GFlowSimulation {
     //! \brief Constructor
     GroupCorrelation(GFlow*);
 
+    //! \brief Clear preexisting data.
+    virtual void pre_integrate() override;
+
     //! \brief Collect the position data from simdata --- happens during the post-step phase
     virtual void post_step() override;
 

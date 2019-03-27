@@ -3,10 +3,10 @@
 namespace GFlowSimulation {
 
   DataObject::DataObject(GFlow *gflow, const string& name) 
-    : Base(gflow), dataName(name), delay(1./20.), lastRecording(-10.), type(DataObjectType::GENERAL) {};
+    : Base(gflow), dataName(name), delay(1./20.), lastRecording(-10.), type(DataObjectType::GENERAL), locals_changed(false) {};
 
   DataObject::DataObject(GFlow *gflow, const string& name, DataObjectType t)
-    : Base(gflow), dataName(name), delay(1./20.), lastRecording(-10.), type(t) {};
+    : Base(gflow), dataName(name), delay(1./20.), lastRecording(-10.), type(t), locals_changed(false) {};
 
   const string& DataObject::getName() const {
     return dataName;
@@ -18,6 +18,10 @@ namespace GFlowSimulation {
 
   void DataObject::setFPS(RealType fps) {
     delay = 1./fps;
+  }
+
+  void DataObject::setLocalsChanged(bool r) {
+    locals_changed = r;
   }
 
   string DataObject::_correctDirName(string fileName) {

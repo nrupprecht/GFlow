@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
   bool quiet = false;
   RealType gravity = 0.;
   bool damping = false;
-  bool adjustDT = false;
+  bool adjustDT = true;
   int target_steps = -1;
   int step_delay = -1;
   RealType startRecTime = 0;
@@ -243,6 +243,7 @@ int main(int argc, char **argv) {
     return 0;
   }
   gflow->setDT(dt);
+  gflow->getIntegrator()->setAdjustDT(adjustDT);
   gflow->requestTime(time);
 
   // Run the simulation

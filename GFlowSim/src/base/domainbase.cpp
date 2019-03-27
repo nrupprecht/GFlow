@@ -72,7 +72,7 @@ namespace GFlowSimulation {
   }
 
   RealType DomainBase::getCutoff() const {
-    return cutoff;
+    return min_small_cutoff;
   }
 
   RealType DomainBase::getMvRatioTolerance() const {
@@ -226,14 +226,14 @@ namespace GFlowSimulation {
       if (type<0 || !Base::forceMaster->typeInteracts(type)) 
         continue;
       // Get the cutoff radius, use in the calculation
-      RealType s = Base::simData->Sg(n);
+      RealType s = Base::simData->Sg(n) * forceMaster->getMaxCutoff(type);
       sigma += s;
       if (s>max_sigma) max_sigma = s;
       ++count;
     }
     if (count>0) sigma /= count;
     else {
-      sigma = Base::simData->Sg(0);
+      sigma = Base::simData->Sg(0) * forceMaster->getMaxCutoff(simData->Type(0));
       max_sigma = sigma;
     }
 
@@ -246,7 +246,7 @@ namespace GFlowSimulation {
         if (type<0 || !Base::forceMaster->typeInteracts(type)) 
           continue;
         // Get the cutoff radius, use in the calculation
-        RealType s = Base::simData->Sg(n);
+        RealType s = Base::simData->Sg(n) * forceMaster->getMaxCutoff(simData->Type(n));
         if (s<threshold && max_under<s) max_under = s;
       }
     }

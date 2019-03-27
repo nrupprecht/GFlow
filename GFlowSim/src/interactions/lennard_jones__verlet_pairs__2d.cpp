@@ -66,7 +66,7 @@ namespace GFlowSimulation {
       sg1 = sg[id1];
       sg2 = sg[id2];
       // If close, interact.
-      if (rsqr < sqr(sg1 + sg2)) {
+      if (rsqr < sqr((sg1 + sg2)*cutoff)) {
         // Calculate distance, inverse distance.
         r = sqrt(rsqr);
         invr = 1./r;
@@ -74,7 +74,7 @@ namespace GFlowSimulation {
         dx *= invr;
         dy *= invr;
         // Calculate the magnitude of the force
-        gamma = (sg1+sg2)/cutoff*invr;
+        gamma = (sg1+sg2)*invr;
         g3  = gamma*gamma*gamma; 
         g6  = g3*g3;
         g12 = g6*g6;
@@ -82,8 +82,8 @@ namespace GFlowSimulation {
         magnitude = 24.*strength*(2.*g12 - g6)*invr;
         // Update forces
         f[id1][0] += magnitude * dx;
-        f[id2][0] -= magnitude * dx;
         f[id1][1] += magnitude * dy;
+        f[id2][0] -= magnitude * dx;
         f[id2][1] -= magnitude * dy;
       }
     }

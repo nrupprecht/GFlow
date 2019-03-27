@@ -6,7 +6,7 @@
 namespace GFlowSimulation {
 
   /*
-  *  @class DataMaster
+  *  \class DataMaster
   *
   *  Contains and coordinates data objects. GFlow has a single DataMaster, which in turn
   *  can have many data objects it uses to gather data. Data master is responsible for 
@@ -15,26 +15,26 @@ namespace GFlowSimulation {
   */
   class DataMaster : public Base {
   public:
-    //! Constructor.
+    //! \brief Constructor.
     DataMaster(GFlow *);
 
-    //! Destructor.
+    //! \brief Destructor.
     ~DataMaster();
 
     virtual void initialize() override;
     
-    //! Add a data object - we are subsequently in charge of the data object
+    //! \brief Add a data object - we are subsequently in charge of the data object
     void addDataObject(DataObject*);
 
-    //! Set the command data
+    //! \brief Set the command data
     void setCommand(int, char**);
 
     void setInitializationTime(RealType);
 
-    //! Start a timer
+    //! \brief Start a timer
     void startTimer();
 
-    //! End the timer and add the new time to the record
+    //! \brief End the timer and add the new time to the record
     void endTimer();
 
     // Call the corresponding routeens of the managed data objects - data
@@ -47,30 +47,35 @@ namespace GFlowSimulation {
     virtual void post_step() override;
     virtual void post_integrate() override;
 
-    //! Do a coordinated write to a directory. Returns true if all writes were successful
+    //! \brief Do a coordinated write to a directory. Returns true if all writes were successful
     bool writeToDirectory(string);
 
-    //! Reset the time - use e.g. after relaxation step
+    //! \brief Reset the time - use e.g. after relaxation step
     void resetTimer();
 
-    //! Set start recording time
+    //! \brief Set start recording time
     void setStartRecTime(RealType);
 
-    //! Set the fps of all the data objects
+    //! \brief Set the fps of all the data objects
     void setFPS(RealType);
 
-    //! Set the fps of particular data objects
+    //! \brief Set the fps of particular data objects
     void setFPS(int, RealType);
 
     void giveFile(string, string);
 
     RealType getRatio() const;
 
+    //! \brief Set the locals changed flag for all data objects managed by this data master.
+    //!
+    //! This flag indicates that local ids have changed for sim data.
+    void setLocalsChanged(bool);
+
     // GFlow is a friend class
     friend class GFlow;
     friend class FileParserCreator;
 
-  //protected:
+  protected:
     // --- Helper functions
 
     //! \brief Write a summary of the run to a text file.

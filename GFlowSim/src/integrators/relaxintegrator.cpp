@@ -21,8 +21,9 @@ namespace GFlowSimulation {
   void RelaxIntegrator::pre_step() {
     // Calculates maximum_acceleration, sets time step.
     OverdampedIntegrator::pre_step();
+    
     // If accelerations are slow enough, end the simulation.
-    if (0<maximum_acceleration && maximum_acceleration<allowable_acceleration && min_iterations<gflow->getIter()) gflow->setRunning(false);
+    if (maximum_acceleration<allowable_acceleration && min_iterations<gflow->getIter()) gflow->setRunning(false);
   }
 
 }

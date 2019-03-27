@@ -2,6 +2,7 @@
 // Other files
 #include "../utility/memory.hpp"
 #include "../base/forcemaster.hpp"
+#include "../base/datamaster.hpp"
 
 #include "integrator.hpp"
 
@@ -170,7 +171,7 @@ namespace GFlowSimulation {
     // We need to update. Removed could be zero if, e.g. only and all of the N particles were removed.
     // Arguably, you still might want to remake. There could be extra entries in the verlet list that 
     // it would be better to get rid of.
-    if (removed>0) needs_remake = true;
+    if (removed>0) setNeedsRemake();
   }
 
   void SimData::exchangeParticles() {
@@ -184,7 +185,7 @@ namespace GFlowSimulation {
     quick_sort_help(0, _number-1, 0);
     recursion_help (0, _number-1, 1);
     // Set needs remake flag
-    needs_remake = true;
+    setNeedsRemake(true);
   }
 
   void SimData::updateHaloParticles() {
@@ -514,6 +515,7 @@ namespace GFlowSimulation {
 
   void SimData::setNeedsRemake(bool r) {
     needs_remake = r;
+    if (r) dataMaster->setLocalsChanged(r);
   }
 
   void SimData::addVectorData(string name) {
@@ -604,7 +606,7 @@ namespace GFlowSimulation {
       std::swap(it1->second, it2->second);
 
     // Set flag
-    needs_remake = true;
+    setNeedsRemake(true);
   }
 
   void SimData::quick_sort_help(int start, int end, int dim) {

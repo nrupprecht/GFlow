@@ -5,7 +5,8 @@ namespace GFlowSimulation {
   StripeX::StripeX(GFlow *gflow) : Modifier(gflow), window(0.5), lastUpdate(0), updateDelay(0.1) {};
 
   void StripeX::pre_integrate() {
-    entry = simData->requestScalarData("StripeX");
+    // Get the strip x entry.
+    entry = simData->getScalarData("StripeX");
     // Entry must be positive. Otherwise, something is wrong.
     if (entry<0) throw false;
     // Initialize all values

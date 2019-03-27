@@ -201,6 +201,10 @@ namespace GFlowSimulation {
     return Base::gflow->getTotalRequestedTime()/run_time;
   }
 
+  void DataMaster::setLocalsChanged(bool c) {
+    for (auto dob : dataObjects) dob->setLocalsChanged(c);
+  }
+
   inline bool DataMaster::writeSummary(string writeDirectory) {
     std::ofstream fout(writeDirectory+"/run_summary.txt");
     if (fout.fail()) {

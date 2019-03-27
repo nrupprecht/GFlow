@@ -10,8 +10,8 @@ namespace GFlowSimulation {
     ParseHelper parser(head);
     parser.set_variables(variables);
     parser.addValidSubheading("Number");
-    parser.addValidSubheading("Atoms");
-    parser.addValidSubheading("Prob");
+    parser.addValidSubheading("Length");
+    parser.addValidSubheading("Phi");
     parser.addValidSubheading("R");
     parser.addValidSubheading("r");
     parser.addValidSubheading("Correlation");
@@ -19,9 +19,9 @@ namespace GFlowSimulation {
     HeadNode *hd = nullptr;
 
     // Parameters
-    int atoms = 50;
     int number = 1;
-    RealType prob = 0.2;
+    RealType length = 5.;
+    RealType phi = 0.2;
     RealType sg_big = 0.05;
     RealType sg_small = 0.01;
     bool useCorr = true;
@@ -37,21 +37,21 @@ namespace GFlowSimulation {
     }
 
     // Extract the number of atoms per chain.
-    parser.getHeading_Optional("Atoms");
+    parser.getHeading_Optional("Length");
     hd = parser.first();
     if (hd) {
-      int a;
-      parser.extract_first_parameter(a, hd);
-      if (a>0) atoms = a;
+      int l;
+      parser.extract_first_parameter(l, hd);
+      if (l>0) length = l;
     }
 
     // Extract the probability that an atom is a large particle.
-    parser.getHeading_Optional("Prob");
+    parser.getHeading_Optional("Phi");
     hd = parser.first();
     if (hd) {
       RealType p;
       parser.extract_first_parameter(p, hd);
-      if (p>0) prob = p;
+      if (p>0) phi = p;
     }
 
     // Extract the radius of the large particles.
@@ -94,7 +94,7 @@ namespace GFlowSimulation {
       correlation = new GroupCorrelation(gflow);
       // Create a group correlation object
       correlation = new GroupCorrelation(gflow);
-      correlation->setRadius(1.5*(sg_big + sg_small));
+      correlation->setRadius(15.*sg_big);
       correlation->setNBins(250);
       // Add the correlation object
       gflow->addDataObject(correlation);
@@ -124,7 +124,7 @@ namespace GFlowSimulation {
 
     // Create all the polymers
     for (int i=0; i<number; ++i) {
-      createPolymer(gflow, atoms, prob, sg_big, sg_small, 0, 1, useCorr);
+      createPolymer(gflow, length, phi, sg_big, sg_small, 0, 1, useCorr);
     }
 
     // Need to relax
@@ -145,9 +145,9 @@ namespace GFlowSimulation {
     }
   }
 
-  void PolymerCreator::createPolymer(GFlow *gflow, int number, RealType prob, RealType sigmaP, RealType sigmaC, int idP, int idC, bool useCorr) {
+  void PolymerCreator::createPolymer(GFlow *gflow, RealType length, RealType phi, RealType sigmaP, RealType sigmaC, int idP, int idC, bool useCorr) {
     // Valid probability, number, radii, and types are needed
-    if (prob>1 || prob<0 || number<=0 || sigmaP<0 || sigmaC<0 || idP<0 || idP>=gflow->getNTypes() || idC<0 || idC>=gflow->getNTypes()) return;
+    if (phi>1 || phi<0 || length<=0 || sigmaP<0 || sigmaC<0 || idP<0 || idP>=gflow->getNTypes() || idC<0 || idC>=gflow->getNTypes()) return;
 
     // Get number of dimensions
     int sim_dimensions = gflow->sim_dimensions;
@@ -160,6 +160,34 @@ namespace GFlowSimulation {
     RealType dx_types[2];
     dx_types[0] = sigmaP;
     dx_types[1] = sigmaC;
+    RealType space = 0.;
+
+    // Calculate numbers of balls, spacings
+    int np = floor(0.5*phi*length/sigmaP);
+    int nc = ceil (0.5*(1.-phi)*length/sigmaC);
+
+    // Create marks
+    vector<RealType> marks;
+    marks.push_back(0);
+    for (int i=0; i<np; ++i) marks.push_back(drand48()*length*(1.-phi));
+    marks.push_back(length*(1.-phi));
+    std::sort(marks.begin(), marks.end());
+
+    // Create ordering of particle type for the polymer
+    vector<bool> chain_ordering;
+    int i;
+    for (i=1; i<marks.size()-1; ++i) {
+      // The number of chain links to add.
+      int ncl = ceil(0.5*(marks[i] - marks[i-1])/sigmaC);
+      // Add the chain links
+      for (int j=0; j<ncl; ++j) chain_ordering.push_back(false);
+      // Add the primary ball
+      chain_ordering.push_back(true);
+    }
+    // The last links
+    int ncl = ceil(0.5*(marks[i] - marks[i-1])/sigmaC);
+    // Add the chain links
+    for (int j=0; j<ncl; ++j) chain_ordering.push_back(false);
 
     // Get simdata and bounds
     SimData *sd = gflow->simData;
@@ -168,7 +196,9 @@ namespace GFlowSimulation {
     // Keep track of the random walk
     RealType *X = new RealType[sim_dimensions], *dX = new RealType[sim_dimensions], *ZERO = new RealType[sim_dimensions];
     RealType *V = new RealType[sim_dimensions], *dV = new RealType[sim_dimensions];
-    zeroVec(ZERO, sim_dimensions); 
+    zeroVec(dX, sim_dimensions);
+    zeroVec(ZERO, sim_dimensions);
+    zeroVec(dV, sim_dimensions);
     randomNormalVec(V, sim_dimensions); // Randomly initial orientation
 
     // Initialize X to start at a random position.
@@ -180,7 +210,7 @@ namespace GFlowSimulation {
     // Create chain
     int last_type = -1, next_type = -1;
     int counts = 0; // Links since last large ball
-    for (int i=0; i<number; ++i) {
+    for (int i=0; i<chain_ordering.size(); ++i) {
       // Swap global ids
       gid1 = gid2;
       gid2 = sd->getNextGlobalID();
@@ -189,12 +219,11 @@ namespace GFlowSimulation {
       if (correlation && useCorr) correlation->addToGroup(gid2);
 
       // What type of particle should be generated
-      if (i==0 || drand48()<prob) next_type = idP; // Primary type
-      else next_type = idC; // Chain link type
+      next_type = chain_ordering[i] ? 0 : 1;
 
       // Calculate dx
       if (last_type!=-1)
-        dx = 1.5*(dx_types[next_type] + dx_types[last_type]);
+        dx = dx_types[next_type] + dx_types[last_type] + space;
       else dx = 0;
 
       // Advance random path

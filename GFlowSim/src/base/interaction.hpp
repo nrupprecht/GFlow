@@ -40,6 +40,9 @@ namespace GFlowSimulation {
     //! \brief Get the virial, used for calculating pressure
     int getVirial() const;
 
+    //! \brief Get the cutoff for the interaction.
+    RealType getCutoff() const;
+
     // --- Mutators
 
     //! \brief Clear this force's interaction handler
@@ -58,6 +61,12 @@ namespace GFlowSimulation {
 
     //! \brief The neighbor (verlet) lists for all the pairs of atoms between which this force is active
     InteractionHandler *handler;
+
+    //! \brief The cutoff, i.e. how many times greater than the particle radius can a particle interact with other particles.
+    //!
+    //! For example, for hard sphere interactions, the cutoff is 1. For Lennard jones particles, the cutoff is generally 2.5 or so.
+    //! The default value is 1.
+    RealType cutoff = 1.;
 
     //! \brief The virial, for calculating pressure.
     //!

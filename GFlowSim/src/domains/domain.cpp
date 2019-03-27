@@ -54,7 +54,7 @@ namespace GFlowSimulation {
     extended_bounds = domain_bounds;
 
     // If bounds are unset, then don't make sectors. We cannot initialize if simdata is null
-    if (domain_bounds.vol()<=0 || simData==nullptr) return; 
+    if (domain_bounds.vol()<=0 || simData==nullptr) return;
 
     // Assign border types - do this before creating cells.
     assign_border_types();
@@ -63,7 +63,7 @@ namespace GFlowSimulation {
     calculate_max_small_sigma();
 
     // Use max_small_sigma
-    cutoff = minCutoff = 2*max_small_sigma+skin_depth;
+    min_small_cutoff = target_cell_size = 2*max_small_sigma+skin_depth;
 
     // Calculate cell grid data
     calculate_domain_cell_dimensions();
@@ -215,6 +215,8 @@ namespace GFlowSimulation {
     if (forceMaster==nullptr) return;
     // Make sure force master has interaction array set up
     forceMaster->initialize_does_interact();
+    // Get the array of max cutoffs
+    const vector<RealType> & max_cutoffs = forceMaster->getMaxCutoff();
 
     // A tuple
     int *tuple1 = new int[sim_dimensions], *tuple2 = new int[sim_dimensions];
@@ -223,6 +225,7 @@ namespace GFlowSimulation {
     // Find potential neighbors
     RealType *sg = Base::simData->Sg();
     RealType **x = Base::simData->X();
+    int    *type = Base::simData->Type();
     // Get the boundary conditions
     const BCFlag *bcs = gflow->getBCs();
     int *search_dims = new int[sim_dimensions];
@@ -230,28 +233,29 @@ namespace GFlowSimulation {
       for (auto p=c.particle_ids.begin(); p!=c.particle_ids.end(); ++p) {
         // The id of the particle
         int id1 = *p;
+        RealType sigma1 = sg[id1]*max_cutoffs[type[id1]];
         // If sigma is <= than min_small_sigma, only look through cell stencil
-        if (sg[id1]<=max_small_sigma) {
+        if (sigma1<=max_small_sigma) {
           // All other particles in the same sector
           auto q = p;
           ++q;
           for (; q!=c.particle_ids.end(); ++q) {
             int id2 = *q;
             // If the other particle is a large particle, it will take care of this interaction
-            if (sg[id2]>max_small_sigma) continue;
+            if (sg[id2]*max_cutoffs[type[id2]]>max_small_sigma) continue;
             // Look for distance between particles
             RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
-            if (r2 < sqr(sg[id1] + sg[id2] + skin_depth))
+            if (r2 < sqr(sigma1 + sg[id2]*max_cutoffs[type[id2]] + skin_depth))
               pair_interaction(id1, id2);
           }
           // Seach through list of adjacent cells
           for (const auto &d : c.adjacent)
             for (const auto id2 : d->particle_ids) {
               // If the other particle is a large particle, it will take care of this interaction
-              if (sg[id2]>max_small_sigma) continue;
+              if (sg[id2]*max_cutoffs[type[id2]]>max_small_sigma) continue;
               // Look for distance between particles
               RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
-              if (r2 < sqr(sg[id1] + sg[id2] + skin_depth) || max_reasonable<r2)
+              if (r2 < sqr(sigma1 + sg[id2]*max_cutoffs[type[id2]] + skin_depth) || max_reasonable<r2)
                 pair_interaction(id1, id2);
             }
         }
@@ -259,7 +263,7 @@ namespace GFlowSimulation {
         // If sigma is > min_small_sigma, we have to look through more cells
         else {
           // Calculate sweep "radius"
-          RealType search_width = 2*sg[id1]+skin_depth;
+          RealType search_width = 2*sigma1+skin_depth;
           int prod = 1;
           for (int d=0; d<sim_dimensions; ++d) {
             center[d] = static_cast<int>(ceil(search_width/widths[d]));
@@ -287,7 +291,7 @@ namespace GFlowSimulation {
                 // If the other particle is a larger particle, it will take care of this interaction
                 if (id1==id2 || sg[id2]>sg[id1]) continue;
                 RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
-                if (r2 < sqr(sg[id1] + sg[id2] + skin_depth) || max_reasonable<r2)
+                if (r2 < sqr(sigma1 + sg[id2]*max_cutoffs[type[id2]] + skin_depth) || max_reasonable<r2)
                   pair_interaction(id1, id2);
               }
             }
@@ -334,7 +338,7 @@ namespace GFlowSimulation {
 
   inline void Domain::calculate_domain_cell_dimensions() {
     for (int d=0; d<sim_dimensions; ++d) {
-      dims[d] = static_cast<int>(domain_bounds.wd(d)/cutoff);
+      dims[d] = static_cast<int>(domain_bounds.wd(d)/target_cell_size);
       // Check that the bounds are good
       if (dims[d]<=0) throw BadBounds();
       widths[d] = domain_bounds.wd(d)/dims[d];
@@ -372,7 +376,7 @@ namespace GFlowSimulation {
     int *tuple1 = new int[sim_dimensions], *tuple2 = new int[sim_dimensions];
     
     // --- Create a neighborhood stencil to help us find adjacent cells.
-    int sweep = ceil(minCutoff/min(widths, sim_dimensions));
+    int sweep = ceil(min_small_cutoff/min(widths, sim_dimensions));
     vector<int*> neighbor_indices;
     int *little_dims = new int[sim_dimensions], *center = new int[sim_dimensions];
     for (int d=0; d<sim_dimensions; ++d) little_dims[d] = 2*sweep+1;
@@ -435,8 +439,6 @@ namespace GFlowSimulation {
       if (forceMaster->typeInteracts(type[i]))
         add_to_cell(x[i], i);
     }
-    
-    do_halo_assignment();
 
     // Clean up
     delete [] tuple;
@@ -501,89 +503,6 @@ namespace GFlowSimulation {
     int linear = get_cell_index(Base::simData->X(id));
     // Stores the *local* id of the particle
     cells[linear].particle_ids.push_back(id);
-  }
-
-  inline void Domain::do_halo_assignment() {
-
-    return;
-
-    // TWO DIMENSIONS
-    int count = 0, linear = 0, *tuple = new int[sim_dimensions];
-
-    vector<int> plus_list, minus_list;
-    RealType *dR = new RealType[sim_dimensions];
-    
-    if (border_type_up[0]) { // Wrap in X direction
-      // Bottom
-      for (int i=0; i<dims[0]; ++i) {
-        tuple[0] = 1; tuple[1] = i;
-        tuple_to_linear(linear, tuple);
-        // Create halo particle
-        for (auto id : cells[linear].particle_ids) {
-          ++count;
-          plus_list.push_back(id);
-        }
-      }
-      // Top
-      for (int i=0; i<dims[0]; ++i) {
-        tuple[0] = dims[1]-2; tuple[1] = i;
-        tuple_to_linear(linear, tuple);
-        for (auto id : cells[linear].particle_ids) {
-          ++count;
-          minus_list.push_back(id);
-        }
-      }
-      // Add particles to simdata and cells
-      dR[0] = domain_bounds.wd(0); dR[1] = 0;
-      halo_list_add(plus_list,  dR);
-      dR[0] = -domain_bounds.wd(0); dR[1] = 0;
-      halo_list_add(minus_list, dR);
-      plus_list.clear(); minus_list.clear();
-    }
-
-    if (border_type_up[1]) {
-      // Bottom
-      for (int i=0; i<dims[1]; ++i) {
-        tuple[0] = i; tuple[1] = 1;
-        tuple_to_linear(linear, tuple);
-        for (auto id : cells[linear].particle_ids) {
-          ++count;
-          plus_list.push_back(id);
-        }
-      }
-      // Top
-      for (int i=0; i<dims[1]; ++i) {
-        tuple[0] = i; tuple[1] = dims[0]-2;
-        tuple_to_linear(linear, tuple);
-        for (auto id : cells[linear].particle_ids) {
-          ++count;
-          minus_list.push_back(id);
-        }
-      }
-      // Add particles to simdata and cells
-      dR[0] = 0; dR[1] = domain_bounds.wd(1);
-      halo_list_add(plus_list,  dR);
-      dR[0] = 0; dR[1] = -domain_bounds.wd(1);
-      halo_list_add(minus_list, dR);
-      plus_list.clear(); minus_list.clear();
-    }
-
-    //! \todo Check edge cells for particles that should produce ghost particles
-    // ---
-
-    // Clean up
-    delete [] tuple;
-  }
-
-  inline void Domain::halo_list_add(const vector<int>& id_list, RealType *displacement) {
-
-    return; //**
-
-    for (auto id : id_list) {
-      Base::simData->createHaloOf(id, displacement);
-      int id2 = Base::simData->size()-1; // The id of the halo particle
-      add_to_cell(Base::simData->X(id2), id2); // Add the halo particle to the cells
-    }
   }
 
 }

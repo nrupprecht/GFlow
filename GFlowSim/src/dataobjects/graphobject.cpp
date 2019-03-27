@@ -9,6 +9,10 @@ namespace GFlowSimulation {
   GraphObject::GraphObject(GFlow *gflow, const string& name, const string& ax, const string& ay) 
     : DataObject(gflow, name, DataObjectType::GRAPH), axis_x(ax), axis_y(ay) {};
 
+  void GraphObject::pre_integrate() {
+    data.clear();
+  }
+
   bool GraphObject::writeToFile(string fileName, bool useName) {
     // Check if there's anything to do
     if (data.empty()) return true;

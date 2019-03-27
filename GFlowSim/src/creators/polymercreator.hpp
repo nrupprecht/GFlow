@@ -14,7 +14,7 @@ namespace GFlowSimulation {
 
   private:
     //! \brief Create a polymer chain.
-    void createPolymer(GFlow*, int, RealType, RealType, RealType, int, int, bool);
+    void createPolymer(GFlow*, RealType, RealType, RealType, RealType, int, int, bool);
 
     void createLine(HeadNode*, GFlow*, std::map<string, string>&);
 

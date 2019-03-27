@@ -42,6 +42,14 @@ namespace GFlowSimulation {
     return ntypes;
   }
 
+  RealType ForceMaster::getMaxCutoff(int type) const {
+    return max_cutoffs[type];
+  }
+
+  const vector<RealType>& ForceMaster::getMaxCutoff() const {
+    return max_cutoffs;
+  }
+
   void ForceMaster::setNTypes(int n) {
     // Set ntypes for this object
     ntypes = n;
@@ -52,16 +60,23 @@ namespace GFlowSimulation {
     if (doesInteract) delete [] doesInteract;
     doesInteract = new bool[ntypes];
     for (int i=0; i<ntypes; ++i) doesInteract[i] = false; // Since all interactions in the grid are null
+    // Resize max_cutoffs array
+    max_cutoffs = vector<RealType>(ntypes, 1.);
   }
   
   void ForceMaster::setInteraction(int type1, int type2, Interaction *it) {
-    //grid.at(type1, type2) = it;
     grid[type1][type2] = it;
     // Add to the list if it is not already there and isn't null.
     if (it!=nullptr && !contains(interactions, it)) 
       interactions.push_back(it);
     // Add to gflow's list if it is not already there and isn't null. GFlow will check for this.
     gflow->addInteraction(it);
+    // Update max_cutoffs
+    if (it) {
+      RealType cutoff = it->getCutoff();
+      if (max_cutoffs[type1]<cutoff) max_cutoffs[type1] = cutoff;
+      if (max_cutoffs[type2]<cutoff) max_cutoffs[type2] = cutoff;
+    }
   }
 
   bool ForceMaster::typeInteracts(int type) {

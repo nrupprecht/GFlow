@@ -25,6 +25,9 @@ namespace GFlowSimulation {
     // Check if enough time has gone by
     if (step_count < step_delay) {
       ++step_count;
+      // If max acceleration is zero, it may because we have never checked what it is.
+      maximum_acceleration = get_max_acceleration();
+      // Return
       return;
     }
     // Reset step count

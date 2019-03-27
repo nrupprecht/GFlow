@@ -182,12 +182,12 @@ namespace GFlowSimulation {
     //! Cells will be at least this wide in each dimension, but since an integral number of them have
     //! to fit in the domain in each dimension, the actual widths will be different. They will be at
     //! least this large though.
-    RealType cutoff = 0.;
+    RealType target_cell_size = 0.;
 
-    //! \brief The minimum allowable cutoff, 2*max_small_sigma + skin_depth
-    RealType minCutoff = 0.; 
+    //! \brief The minimum allowable cutoff for small particles, 2*max_small_sigma + skin_depth
+    RealType min_small_cutoff = 0.; 
 
-    //! \brief How much larger than the minimum cutoff should the default cutoff be.
+    //! \brief How much larger than the minimum cutoff should the targer cutoff be.
     RealType cutoffFactor = 1.;
 
     // --- Timers

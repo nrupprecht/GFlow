@@ -135,14 +135,14 @@ namespace GFlowSimulation {
     RealType maxA = 0.;
     const int total = sim_dimensions*simData->size();
 
-    // Find minT
-    #if SIMD_TYPE==SIMD_NONE
+    //#if SIMD_TYPE==SIMD_NONE
     // Do serially
     for (int i=0; i<total; ++i) {
       int id = i/sim_dimensions;
       RealType a = fabs(f[i]*im[id]);
       if (a>maxA) maxA = a;
     }
+    /*
     #else 
     // Do as much as we can in parallel
     simd_float MaxA = simd_set1(0.);
@@ -152,7 +152,7 @@ namespace GFlowSimulation {
       //simd_float Im = simd_load_constant(im, i, sim_dimensions);
       simd_float Im = simd_load_constant<2>(im, i);
       simd_float A = F*Im;
-      simd_float mask = simd_less_than(MaxA, MaxA);
+      simd_float mask = simd_less_than(MaxA, A);
       simd_update_masked(MaxA, A, mask);
     }
     // Consolidate MaxA
@@ -166,6 +166,7 @@ namespace GFlowSimulation {
       if (maxA<a) maxA = a;
     }
     #endif
+    */
 
     // Return the max acceleration
     return maxA*sqrt(sim_dimensions);

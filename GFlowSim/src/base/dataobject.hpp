@@ -29,7 +29,7 @@ namespace GFlowSimulation {
         break;
       }
       default: {
-        out << "unrecognized";
+        out << "Unrecognized";
         break;
       }
     }
@@ -61,7 +61,12 @@ namespace GFlowSimulation {
     DataObjectType getType() const;
 
     // --- Mutators
+
+    //! \brief Set the data rate.
     void setFPS(RealType);
+
+    //! \brief Set the locals_changed flag.
+    void setLocalsChanged(bool);
 
     // GFlow is a friend class
     friend class GFlow;
@@ -78,17 +83,23 @@ namespace GFlowSimulation {
     //! \brief Checks whether enough time has gone by to gather data again. If so, it updates [lastRecording].
     bool _check();
 
+    //! \brief Whether the local ids for sim data have changed. This will be set from the outside.
+    bool locals_changed;
+
     // --- Data
 
-    //! \brief The name of the data we are gathering - will be used to write to files
+    //! \brief The name of the data we are gathering - will be used to write to files.
     string dataName;
 
+    //! \brief What type of data object this is.
+    //! 
+    //! The type refers to data format. Different types can be children of the same child classes of dataobject.
     DataObjectType type;
 
-    //! \brief The delay between recording
+    //! \brief The delay between recording.
     RealType delay; // 1./fps
 
-    //! \brief The last time data was recorded
+    //! \brief The last time data was recorded.
     RealType lastRecording;
   };
 

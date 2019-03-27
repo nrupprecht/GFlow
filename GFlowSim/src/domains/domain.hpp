@@ -90,10 +90,6 @@ namespace GFlowSimulation {
     //! \brief Add a particle to the cell it belongs in.
     inline void add_to_cell(const RealType*, int);
 
-    inline void do_halo_assignment();
-
-    inline void halo_list_add(const vector<int>&, RealType*);
-
     //! \brief Array of products, used to compute linear indices from vectors or tuple indices.
     int *products = nullptr;
 

@@ -19,12 +19,12 @@ namespace GFlowSimulation {
     //! \brief Default constructor.
     ForceMaster(GFlow*);
 
-    //! \brief Constructor - also includes number of forces/
+    //! \brief Constructor - also includes number of types.
     ForceMaster(GFlow*, int);
 
-    virtual void initialize();
+    virtual void initialize() override;
 
-    virtual void pre_integrate();
+    virtual void pre_integrate() override;
 
     //! \brief Get a pointer to the force that the particle pair belongs in. Null means no force.
     Interaction* getInteraction(int, int);
@@ -39,6 +39,12 @@ namespace GFlowSimulation {
 
     //! \brief Get the number of types of particles in the simulation.
     int getNTypes() const;
+
+    //! \brief Get the maximum cutoff factor for any interaction that a given particle type participates in.
+    RealType getMaxCutoff(int) const;
+
+    //! \brief Get the array of max cutoffs
+    const vector<RealType>& getMaxCutoff() const;
 
     // --- Mutators
 
@@ -58,6 +64,9 @@ namespace GFlowSimulation {
   private:
     //! \brief Interaction grid.
     vector<vector<Interaction*> > grid;
+
+    //! \brief Cutoff factors for each particle type
+    vector<RealType> max_cutoffs;
 
     //! \brief Pointers to all the forces that exist in the simulation.
     vector<Interaction*> interactions;
