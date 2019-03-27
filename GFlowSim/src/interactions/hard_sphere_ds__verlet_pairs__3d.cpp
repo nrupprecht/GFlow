@@ -105,7 +105,7 @@ namespace GFlowSimulation {
         }
         // Calculate virial
         if (do_virial) {
-          virial += rsqr*repulsion*(sg1 + sg2 - r);
+          virial += repulsion*(sg1 + sg2 - r)*r;
         }
       }
     }

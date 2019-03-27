@@ -96,7 +96,7 @@ namespace GFlowSimulation {
         }
         // Calculate virial
         if (do_virial) {
-          virial += rsqr*Fn;
+          virial += Fn*r;
         }
       }
     }

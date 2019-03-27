@@ -1,6 +1,8 @@
 // This is a 2d simulation
 Dimensions: 2
 
+Var: phi=0.5
+
 // Set the simulation bounds
 Bounds: {
   : 0, 4 // X
@@ -33,7 +35,7 @@ Fill-area {
     Type: 0
   }
 
-  Number: Phi=0.5 {
+  Number: Phi=phi {
     TypeA : 1
   }
 

@@ -1,14 +1,14 @@
-#include "hard_sphere__verlet_pairs__2d.hpp"
+#include "buckingham__verlet_pairs__2d.hpp"
 // Other files
 #include "../interactionhandlers/verletlist-pairs.hpp"
 
 namespace GFlowSimulation {
 
-  HardSphere_VerletPairs_2d::HardSphere_VerletPairs_2d(GFlow *gflow) : HardSphere(gflow, new VerletListPairs(gflow)) {};
+  Buckingham_VerletPairs_2d::Buckingham_VerletPairs_2d(GFlow *gflow) : Buckingham(gflow, new VerletListPairs(gflow)) {};
 
-  void HardSphere_VerletPairs_2d::interact() const {
+  void Buckingham_VerletPairs_2d::interact() const {
     // Common tasks
-    HardSphere::interact();
+    Buckingham::interact();
 
     // Do dimensional check.
     // \todo Should probably have some sort of global error message system.
@@ -33,7 +33,7 @@ namespace GFlowSimulation {
     RealType bnd_y = bounds.wd(1);
 
     // Needed constants
-    RealType sg1, sg2, dx, dy, rsqr, r, invr, magnitude;
+    RealType sg1, sg2, dx, dy, rsqr, r, invr, Fn, sigma, exp1, sigma2, sigma6;
     // Point to the actual list from the verlet list object. Since we set the handler at initialization to 
     // be of type VerletListPairs, this cast should always succeed.
     vector<int> &verlet = dynamic_cast<VerletListPairs*>(handler)->verlet;
@@ -62,7 +62,7 @@ namespace GFlowSimulation {
       sg1 = sg[id1];
       sg2 = sg[id2];
       // If close, interact.
-      if (rsqr < sqr(sg1 + sg2)) {
+      if (rsqr < sqr((sg1 + sg2)*cutoff)) {
         // Calculate distance, inverse distance.
         r = sqrt(rsqr);
         invr = 1./r;
@@ -70,20 +70,28 @@ namespace GFlowSimulation {
         dx *= invr;
         dy *= invr;
         // Calculate the magnitude of the force
-        magnitude = repulsion*(sg1 + sg2 - r);
+        sigma = (sg1+sg2)*invr;
+        exp1 = expf(-ratio/sigma);
+        sigma2 = sigma*sigma;
+        sigma6 = sigma2*sigma2*sigma2;
+        Fn = strength*invr*(ratio*exp1 - 6*sigma6);
+
+        if (Fn>1) Fn = 1;
+        else if (Fn<-1) Fn = -1;
+
         // Update forces
-        f[id1][0] += magnitude * dx;
-        f[id2][0] -= magnitude * dx;
-        f[id1][1] += magnitude * dy;
-        f[id2][1] -= magnitude * dy;
+        f[id1][0] += Fn * dx;
+        f[id2][0] -= Fn * dx;
+        f[id1][1] += Fn * dy;
+        f[id2][1] -= Fn * dy;
 
         // Calculate potential
         if (do_potential) {
-          potential += 0.5*repulsion*sqr(r - sg1 - sg2);
+          potential += strength*(exp1 - sigma6);
         }
         // Calculate virial
         if (do_virial) {
-          virial += magnitude*r;
+          virial += Fn * r;
         }
       }
     }
