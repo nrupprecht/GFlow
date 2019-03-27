@@ -19,7 +19,8 @@ namespace GFlowSimulation {
 
   void Interaction::interact() const {
     // Reset virial
-    virial = 0;
+    virial    = 0;
+    potential = 0;
   }
 
   int Interaction::size() const {
@@ -30,12 +31,16 @@ namespace GFlowSimulation {
     return handler;
   }
 
-  int Interaction::getVirial() const {
+  RealType Interaction::getCutoff() const {
+    return cutoff;
+  }
+
+  RealType Interaction::getVirial() const {
     return virial;
   }
 
-  RealType Interaction::getCutoff() const {
-    return cutoff;
+  RealType Interaction::getPotential() const {
+    return potential;
   }
 
   void Interaction::clear() {

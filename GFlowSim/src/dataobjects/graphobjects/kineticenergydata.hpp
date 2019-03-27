@@ -1,7 +1,7 @@
 #ifndef __KINETIC_ENERGY_DATA_HPP__GFLOW__
 #define __KINETIC_ENERGY_DATA_HPP__GFLOW__
 
-#include "graphobject.hpp"
+#include "../dataobjecttypes/graphobject.hpp"
 
 namespace GFlowSimulation {
 
@@ -14,7 +14,7 @@ namespace GFlowSimulation {
     virtual void post_step() override;
 
   private:
-    //! \brief Whether to use the average kinetic energy (as opposed to the total kinetic energy).
+    //! \brief Whether to use the average kinetic energy per particle (as opposed to the total kinetic energy).
     bool useAve; 
   };
 

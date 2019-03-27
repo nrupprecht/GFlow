@@ -94,7 +94,7 @@ namespace GFlowSimulation {
       correlation = new GroupCorrelation(gflow);
       // Create a group correlation object
       correlation = new GroupCorrelation(gflow);
-      correlation->setRadius(15.*sg_big);
+      correlation->setRadius(4.0*sg_big);
       correlation->setNBins(250);
       // Add the correlation object
       gflow->addDataObject(correlation);
@@ -155,8 +155,8 @@ namespace GFlowSimulation {
     // Create a random polymer according to the specification
     RealType rhoP = 10.;
     RealType rhoC = 10.;
-    RealType imP = 1./(rhoP*sphere_volume(sigmaP, sim_dimensions));
-    RealType imC = 1./(rhoC*sphere_volume(sigmaC, sim_dimensions));
+    RealType imP = 0; // 1./(rhoP*sphere_volume(sigmaP, sim_dimensions));
+    RealType imC = 0; // 1./(rhoC*sphere_volume(sigmaC, sim_dimensions));
     RealType dx_types[2];
     dx_types[0] = sigmaP;
     dx_types[1] = sigmaC;
@@ -202,7 +202,7 @@ namespace GFlowSimulation {
     randomNormalVec(V, sim_dimensions); // Randomly initial orientation
 
     // Initialize X to start at a random position.
-    RealType dt = 0.1, dx;
+    RealType variance = 0., dx;
     int type = 1, gid1 = -1, gid2 = -1;
     for (int d=0; d<sim_dimensions; ++d)
       X[d] = drand48()*bnds.wd(d) + bnds.min[d];
@@ -228,7 +228,7 @@ namespace GFlowSimulation {
 
       // Advance random path
       randomNormalVec(dV, sim_dimensions);
-      plusEqVecScaled(V, dV, dt, sim_dimensions);      
+      plusEqVecScaled(V, dV, variance, sim_dimensions);      
       normalizeVec(V, sim_dimensions);
       plusEqVecScaled(X, V, dx, sim_dimensions);
 

@@ -1,7 +1,7 @@
 #ifndef __TIME_STEP_DATA_HPP__GFLOW__
 #define __TIME_STEP_DATA_HPP__GFLOW__
 
-#include "graphobject.hpp"
+#include "../dataobjecttypes/graphobject.hpp"
 
 namespace GFlowSimulation {
 

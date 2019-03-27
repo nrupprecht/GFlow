@@ -28,7 +28,7 @@ namespace GFlowSimulation {
     calculate_max_small_sigma();
 
     // Use max_small_sigma
-    cutoff = minCutoff = 2*max_small_sigma+skin_depth;
+    target_cell_size = min_small_cutoff = 2*max_small_sigma+skin_depth;
 
     // Calculate cell grid data
     calculate_domain_cell_dimensions();
@@ -50,10 +50,6 @@ namespace GFlowSimulation {
   }
 
   void Domain2D::setCellSize(RealType) {
-
-  }
-
-  void Domain2D::setCutoffFactor(RealType) {
 
   }
 
@@ -135,7 +131,7 @@ namespace GFlowSimulation {
   inline void Domain2D::calculate_domain_cell_dimensions() {
     // sim_dimensions = 2
     for (int d=0; d<sim_dimensions; ++d) {
-      dims[d] = static_cast<int>(domain_bounds.wd(d)/cutoff);
+      dims[d] = static_cast<int>(domain_bounds.wd(d)/target_cell_size);
       // Check that the bounds are good.
       if (dims[d]<=0) throw BadBounds();
       widths[d] = domain_bounds.wd(d)/dims[d];

@@ -1,7 +1,7 @@
 #ifndef __BOUNDARY_FORCE_DATA_HPP__GFLOW__
 #define __BOUNDARY_FORCE_DATA_HPP__GFLOW__
 
-#include "graphobject.hpp"
+#include "../dataobjecttypes/graphobject.hpp"
 
 namespace GFlowSimulation {
 

@@ -1,7 +1,7 @@
 #ifndef __CHAIN_CORRELATION_HPP__GFLOW__
 #define __CHAIN_CORRELATION_HPP__GFLOW__
 
-#include "graphobject.hpp"
+#include "../dataobjecttypes/graphobject.hpp"
 
 namespace GFlowSimulation {
 

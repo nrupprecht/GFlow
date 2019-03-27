@@ -1,7 +1,7 @@
 #include "center-correlation.hpp"
 // Other files
-#include "../base/simdata.hpp"
-#include "../utility/vectormath.hpp"
+#include "../../base/simdata.hpp"
+#include "../../utility/vectormath.hpp"
 
 namespace GFlowSimulation {
 

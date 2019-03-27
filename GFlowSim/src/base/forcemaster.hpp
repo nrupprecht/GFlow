@@ -46,6 +46,15 @@ namespace GFlowSimulation {
     //! \brief Get the array of max cutoffs
     const vector<RealType>& getMaxCutoff() const;
 
+    //! \brief Get the sum of all the potential energies of all the interactions.
+    RealType getTotalPotentialEnergy() const;
+
+    //! \brief Get the sum of all the virials of all the interactions.
+    RealType getTotalVirial() const;
+
+    //! \brief Returns whether the particle type interacts with other particles.
+    bool typeInteracts(int) const;
+
     // --- Mutators
 
     //! \brief Set the number of particle types.
@@ -54,9 +63,6 @@ namespace GFlowSimulation {
     //! \brief Set the force in the force grid - this also adds it to the force vector here and in the GFlow
     //! object if it is not already in those locations.
     void setInteraction(int, int, Interaction*);
-
-    //! \brief Returns whether the particle type interacts with other particles.
-    bool typeInteracts(int);
 
     //! \brief Initialize the does interact array.
     void initialize_does_interact();

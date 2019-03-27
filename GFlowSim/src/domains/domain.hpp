@@ -114,8 +114,6 @@ namespace GFlowSimulation {
 
     //! \brief A vector holding all the cells in the domain.
     vector<Cell> cells;
-
-    Bounds extended_bounds;
   };
 
 }

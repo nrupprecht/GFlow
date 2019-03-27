@@ -1,8 +1,8 @@
 #include "avevelocitydata.hpp"
 // Other files
-#include "../base/simdata.hpp"
-#include "../utility/vectormath.hpp"
-#include "../visualization/palette.hpp"
+#include "../../base/simdata.hpp"
+#include "../../utility/vectormath.hpp"
+#include "../../visualization/palette.hpp"
 
 namespace GFlowSimulation {
   // Constructor

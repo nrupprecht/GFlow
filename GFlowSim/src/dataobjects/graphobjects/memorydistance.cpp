@@ -1,7 +1,7 @@
 #include "memorydistance.hpp"
 // Other files
-#include "../base/interaction.hpp"
-#include "../base/interactionhandler.hpp"
+#include "../../base/interaction.hpp"
+#include "../../base/interactionhandler.hpp"
 
 namespace GFlowSimulation {
 

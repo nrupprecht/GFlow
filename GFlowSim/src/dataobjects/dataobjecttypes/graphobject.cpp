@@ -1,6 +1,6 @@
 #include "graphobject.hpp"
 // Other files
-#include "../visualization/palette.hpp"
+#include "../../visualization/palette.hpp"
 
 namespace GFlowSimulation {
 

@@ -37,11 +37,14 @@ namespace GFlowSimulation {
     //! \brief Get the verlet list (get it as a const reference)
     InteractionHandler* getInteractionHandler() const;
 
-    //! \brief Get the virial, used for calculating pressure
-    int getVirial() const;
-
     //! \brief Get the cutoff for the interaction.
     RealType getCutoff() const;
+
+    //! \brief Get the virial, used for calculating pressure
+    RealType getVirial() const;
+
+    //! \brief Get the potential energy.
+    RealType getPotential() const;
 
     // --- Mutators
 
@@ -73,6 +76,15 @@ namespace GFlowSimulation {
     //! The pressure formula is: P = N k T/V + 1/(DIMENSIONS*V) \sum_i (r_i \dot F_i)
     //! This term should be used like: virial = \sum_i (r_i \dot F_i)
     mutable RealType virial = 0;
+
+    //! \brief The potential energy for the interaction.
+    mutable RealType potential = 0;
+
+    //! \brief Whether to do virial calculation.
+    bool do_virial = true;
+
+    //! \brief Whether to do potential energy calculation.
+    bool do_potential = true;
   };
 
 }

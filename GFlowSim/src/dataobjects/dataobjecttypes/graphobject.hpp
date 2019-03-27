@@ -1,7 +1,7 @@
 #ifndef __GRAPH_OBJECT_HPP__GFLOW__
 #define __GRAPH_OBJECT_HPP__GFLOW__
 
-#include "../base/dataobject.hpp"
+#include "../../base/dataobject.hpp"
 
 namespace GFlowSimulation {
 

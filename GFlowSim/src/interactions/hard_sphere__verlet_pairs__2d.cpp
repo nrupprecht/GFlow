@@ -76,6 +76,15 @@ namespace GFlowSimulation {
         f[id2][0] -= magnitude * dx;
         f[id1][1] += magnitude * dy;
         f[id2][1] -= magnitude * dy;
+
+        // Calculate potential
+        if (do_potential) {
+          potential += 0.5*repulsion*sqr(r - sg1 - sg2);
+        }
+        // Calculate virial
+        if (do_virial) {
+          virial += rsqr*magnitude;
+        }
       }
     }
   }

@@ -34,10 +34,6 @@ namespace GFlowSimulation {
     //! and must evenly divide the size of the domain.
     virtual void setCellSize(RealType) override;
 
-    //! \brief Set the cutoff factor. This function is virtual, as the inheriting class
-    //! may need to remake itself after doing this.
-    virtual void setCutoffFactor(RealType) override;
-
     //! \brief Remakes interactionhandlers (if neccessary).
     //!
     //! This function should be overridden by each child to remake the interaction handlers of the forces as they

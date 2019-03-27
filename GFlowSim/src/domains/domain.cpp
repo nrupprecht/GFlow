@@ -8,7 +8,7 @@
 
 namespace GFlowSimulation {
 
-  Domain::Domain(GFlow *gflow) : DomainBase(gflow), extended_bounds(2) {
+  Domain::Domain(GFlow *gflow) : DomainBase(gflow) {
     // Allocate arrays
     border_type_up = new int[sim_dimensions];
     border_type_down = new int[sim_dimensions];
@@ -21,8 +21,6 @@ namespace GFlowSimulation {
     zeroVec(dim_shift_up, sim_dimensions);
     zeroVec(dim_shift_down, sim_dimensions);
     zeroVec(products, sim_dimensions);
-    // Extended values
-    extended_bounds = Bounds(sim_dimensions);
   };
 
   Domain::~Domain() {
@@ -51,7 +49,6 @@ namespace GFlowSimulation {
     bounds = Base::gflow->getBounds();
     // Get the bounds from the gflow object - for now assumes this is the only domain, so bounds==domain_bounds
     domain_bounds = gflow->getBounds();
-    extended_bounds = domain_bounds;
 
     // If bounds are unset, then don't make sectors. We cannot initialize if simdata is null
     if (domain_bounds.vol()<=0 || simData==nullptr) return;
@@ -346,13 +343,11 @@ namespace GFlowSimulation {
 
       // Do border related work
       if (border_type_down[d]) {
-        extended_bounds.min[d] -= widths[d];
         ++dims[d];
         dim_shift_down[d] = 1;
       }
       else dim_shift_down[d] = 0;
       if (border_type_up[d]) {
-        extended_bounds.max[d] += widths[d];
         ++dims[d];
         dim_shift_up[d] = 1;
       }
@@ -484,13 +479,13 @@ namespace GFlowSimulation {
   inline void Domain::get_cell_index_tuple(const RealType *x, int *index) {
     // This function is (currently) only used for finding the linear index of the cell the large object is in.
     for (int d=0; d<sim_dimensions; ++d)
-      index[d] = static_cast<int>((x[d] - extended_bounds.min[d])*inverseW[d]);
+      index[d] = static_cast<int>((x[d] - bounds.min[d])*inverseW[d]) + dim_shift_down[d];
   }
 
   int Domain::get_cell_index(const RealType *x) {
     int linear = 0;
     for (int d=0; d<sim_dimensions; ++d) {
-      RealType index = static_cast<int>((x[d] - extended_bounds.min[d])*inverseW[d]);
+      RealType index = static_cast<int>((x[d] - bounds.min[d])*inverseW[d]) + dim_shift_down[d];
       if (index>=dims[d]) index = dims[d]-1;
       else if (index<0)   index = 0;
       linear += index*products[d+1];

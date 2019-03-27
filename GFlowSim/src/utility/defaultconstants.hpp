@@ -63,12 +63,12 @@ namespace GFlowSimulation {
   //!
   //! Adjusting these parameters (namely, making them larger) will increase the performance
   //! at the cost of possibly conserving energy more poorly.
-  const RealType DEFAULT_MV_RATIO_TOLERANCE = 1.1;
+  const RealType DEFAULT_MV_RATIO_TOLERANCE = 0.95;
   //! \brief The fraction of the skin depth the particles can move through before we remake the verlet lists.
   //!
   //! Similarly to [DEFAULT_MV_RATIO_TOLLERANCE], increasing this parameter will increase the
   //! performance of the program, but can cause energy non-conservation.
-  const RealType DEFAULT_MOTION_FACTOR = 1.;
+  const RealType DEFAULT_MOTION_FACTOR = 1.2;
 
   //! \brief The default spring constant for spring bonds.
   const RealType DEFAULT_SPRING_K = 10.;

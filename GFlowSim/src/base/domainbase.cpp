@@ -8,8 +8,7 @@
 
 namespace GFlowSimulation {
 
-  DomainBase::DomainBase(GFlow *gflow) : Base(gflow), domain_bounds(sim_dimensions), bounds(sim_dimensions)
-  {
+  DomainBase::DomainBase(GFlow *gflow) : Base(gflow), domain_bounds(sim_dimensions), bounds(sim_dimensions) {
     // Allocate arrays
     dims     = new int[sim_dimensions];
     widths   = new RealType[sim_dimensions];
@@ -32,9 +31,9 @@ namespace GFlowSimulation {
 
   void DomainBase::pre_integrate() {
     // Reset time points
-    lastCheck  = -1.;
-    lastUpdate = -1.;
-    updateDelay = 1.0e-4;
+    last_check  = -1.;
+    last_update = -1.;
+    update_delay = 1.0e-4;
   }
 
   void DomainBase::pre_forces() {
@@ -46,7 +45,7 @@ namespace GFlowSimulation {
     RealType current_time = Base::gflow->getElapsedTime();
     // If simdata needs a remake, we give it a remake
     if (Base::simData->getNeedsRemake()) construct();
-    else if (update_decision_type==0 && current_time-lastUpdate>updateDelay) {
+    else if (update_decision_type==0 && current_time-last_update>update_delay) {
       if (Base::gflow->getNumInteractions()>0 && check_needs_remake()) construct();
       else Base::gflow->wrapPositions();
     }
@@ -76,7 +75,7 @@ namespace GFlowSimulation {
   }
 
   RealType DomainBase::getMvRatioTolerance() const {
-    return mvRatioTolerance;
+    return mv_ratio_tolerance;
   }
 
   int DomainBase::getNumberOfRemakes() const {
@@ -99,10 +98,6 @@ namespace GFlowSimulation {
     skin_depth = s;
   }
 
-  void DomainBase::setCutoffFactor(RealType f) {
-    cutoffFactor = f;
-  }
-
   void DomainBase::setSampleSize(int s) {
     sample_size = s;
   }
@@ -120,7 +115,7 @@ namespace GFlowSimulation {
     // Wrap the particles, so they are in their cannonical positions
     Base::gflow->wrapPositions();
     // Set timer
-    lastUpdate = Base::gflow->getElapsedTime();
+    last_update = Base::gflow->getElapsedTime();
     // Reset
     steps_since_last_remake = 0;
     // Increment counter
@@ -143,8 +138,8 @@ namespace GFlowSimulation {
       xVL = alloc_array_2d<RealType>(length, sim_dimensions);
     }
 
-    // If there are few particles, use a low move ratio tollerance
-    if (length<10) mvRatioTolerance = 1.;
+    // If there are few particles, use a low move ratio tolerance
+    if (length<10) mv_ratio_tolerance = 0.9;
   }
 
   void DomainBase::fillXVL() {
@@ -196,21 +191,19 @@ namespace GFlowSimulation {
 
   bool DomainBase::check_needs_remake() {
     // Set time point
-    lastCheck = Base::gflow->getElapsedTime();
+    last_check = Base::gflow->getElapsedTime();
     // Don't go to long without updating
-    if (lastCheck - lastUpdate > max_update_delay) return true;
+    if (last_check - last_update > max_update_delay) return true;
     // Find the maximum possible motion
     RealType max_motion = maxMotion();
-
-    RealType motion_ratio = skin_depth/max_motion;
-    updateDelay = min(motionFactor*mvRatioTolerance*(lastCheck-lastUpdate)*motion_ratio, max_update_delay); 
-    if (motion_ratio<1.) {
+    // Calculate motion ratio, next update delay
+    RealType motion_ratio = max_motion/skin_depth;
+    update_delay = min(max_update_delay, mv_ratio_tolerance * motion_factor * (last_check - last_update) / motion_ratio);
+    if (motion_ratio > motion_factor) {
       ++missed_target;
-      ave_miss += 1./motion_ratio;
+      ave_miss += motion_ratio;
     }
-
-    // Criteria for whether we need a remake
-    return (max_motion>motionFactor*skin_depth);
+    return motion_ratio > mv_ratio_tolerance * motion_factor;
   }
 
   void DomainBase::calculate_max_small_sigma() {

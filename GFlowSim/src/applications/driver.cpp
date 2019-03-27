@@ -50,6 +50,7 @@ int main(int argc, char **argv) {
   bool snapshot = false;
   bool sectorData = false; // Record sector information
   bool ke = false; // Record kinetic energy
+  bool energy = false; // Record total energy
   bool keTypes = false;
   bool totalKE = false; // Record average kinetic energy (per particle)
   bool secRemake = false; 
@@ -97,6 +98,7 @@ int main(int argc, char **argv) {
   parser.get("snapshot", snapshot);
   parser.get("sectorData", sectorData);
   parser.get("KE", ke);
+  parser.get("energy", energy);
   parser.get("KETypes", keTypes);
   parser.get("totalKE", totalKE);
   parser.get("secRemake", secRemake);
@@ -206,6 +208,7 @@ int main(int argc, char **argv) {
   gflow->setStartRecTime(startRecTime);
   if (snapshot) gflow->addDataObject(new EndingSnapshot(gflow));
   if (totalKE || ke) gflow->addDataObject(new KineticEnergyData(gflow, ke));
+  if (energy)      gflow->addDataObject(new TotalEnergyData(gflow));
   if (keTypes)     gflow->addDataObject(new KineticEnergyTypesData(gflow, true));
   if (bdForces)    gflow->addDataObject(new BoundaryForceData(gflow));
   if (timestep)    gflow->addDataObject(new TimeStepData(gflow));

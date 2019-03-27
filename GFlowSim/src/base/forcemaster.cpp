@@ -46,6 +46,32 @@ namespace GFlowSimulation {
     return max_cutoffs[type];
   }
 
+  RealType ForceMaster::getTotalPotentialEnergy() const {
+    // Sum up all the potential energies of all the interactions.
+    RealType potential = 0;
+    for (auto it : interactions) potential += it->getPotential();
+    // Return the total potential
+    return potential;
+  }
+
+  RealType ForceMaster::getTotalVirial() const {
+    // Sum up all the potential energies of all the interactions.
+    RealType virial = 0;
+    for (auto it : interactions) virial += it->getVirial();
+    // Return the total potential
+    return virial;
+  }
+
+  bool ForceMaster::typeInteracts(int type) const {
+    // If type is -1, no interaction
+    if (type==-1) return false;
+    // Else, first make sure array is in bounds
+    if (type<0 && ntypes<=type) 
+      throw ParticleTypeError("From typeInteractions function.");
+    // If it is, return.
+    return doesInteract[type];
+  }
+
   const vector<RealType>& ForceMaster::getMaxCutoff() const {
     return max_cutoffs;
   }
@@ -77,16 +103,6 @@ namespace GFlowSimulation {
       if (max_cutoffs[type1]<cutoff) max_cutoffs[type1] = cutoff;
       if (max_cutoffs[type2]<cutoff) max_cutoffs[type2] = cutoff;
     }
-  }
-
-  bool ForceMaster::typeInteracts(int type) {
-    // If type is -1, no interaction
-    if (type==-1) return false;
-    // Else, first make sure array is in bounds
-    if (type<0 && ntypes<=type) 
-      throw ParticleTypeError("From typeInteractions function.");
-    // If it is, return.
-    return doesInteract[type];
   }
 
   void ForceMaster::initialize_does_interact() {

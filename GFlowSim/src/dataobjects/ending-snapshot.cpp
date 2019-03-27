@@ -1,4 +1,4 @@
-#include "ending_snapshot.hpp"
+#include "ending-snapshot.hpp"
 // Other files
 #include "../base/simdata.hpp"
 #include "../visualization/visualization.hpp"

@@ -1,7 +1,7 @@
 #ifndef __AVE_VELOCITY_DATA_HPP__GFLOW__
 #define __AVE_VELOCITY_DATA_HPP__GFLOW__
 
-#include "graphobject.hpp"
+#include "../dataobjecttypes/graphobject.hpp"
 
 namespace GFlowSimulation {
 

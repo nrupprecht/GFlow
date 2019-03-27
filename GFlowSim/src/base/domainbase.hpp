@@ -90,10 +90,6 @@ namespace GFlowSimulation {
     //! and must evenly divide the size of the domain.
     virtual void setCellSize(RealType)=0;
 
-    //! \brief Set the cutoff factor. This function is virtual, as the inheriting class
-    //! may need to remake itself after doing this.
-    virtual void setCutoffFactor(RealType);
-
     //! \brief Set the sample size variable.
     void setSampleSize(int);
 
@@ -187,15 +183,12 @@ namespace GFlowSimulation {
     //! \brief The minimum allowable cutoff for small particles, 2*max_small_sigma + skin_depth
     RealType min_small_cutoff = 0.; 
 
-    //! \brief How much larger than the minimum cutoff should the targer cutoff be.
-    RealType cutoffFactor = 1.;
-
     // --- Timers
 
     // Update timers and related
-    RealType lastCheck = -1.;
-    RealType lastUpdate = -1.;
-    RealType updateDelay = 1.0e-4;
+    RealType last_check = -1.;
+    RealType last_update = -1.;
+    RealType update_delay = 1.0e-4;
     RealType max_update_delay = DEFAULT_MAX_UPDATE_DELAY;
 
     //! \brief What criteria the domain should.
@@ -205,16 +198,18 @@ namespace GFlowSimulation {
     int update_decision_type = 0;
 
     //! \brief How many steps the domain should wait between domain redos.
-    int update_delay_steps = 7;
+    int update_delay_steps = 8;
 
     //! \brief How many steps since the last time the domain was remade.
     int steps_since_last_remake = 0;
 
-    //! \brief What fraction of the skin depth should particles move before the domain remake
-    RealType motionFactor = DEFAULT_MOTION_FACTOR;
+    //! \brief What fraction of the skin depth should particles move before the domain remake.
+    //!
+    //! If 
+    RealType motion_factor = DEFAULT_MOTION_FACTOR;
 
     //! \brief The target move ratio for remake
-    RealType mvRatioTolerance = DEFAULT_MV_RATIO_TOLERANCE;
+    RealType mv_ratio_tolerance = DEFAULT_MV_RATIO_TOLERANCE;
 
     //! \brief The number of times max_motion / skinDepth was > 1
     int missed_target = 0;
