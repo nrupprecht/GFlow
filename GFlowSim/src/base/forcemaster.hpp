@@ -64,6 +64,12 @@ namespace GFlowSimulation {
     //! object if it is not already in those locations.
     void setInteraction(int, int, Interaction*);
 
+    //! \brief Set the calculate potential flag for all interactions.
+    void setCalculatePotential(bool);
+
+    //! \brief Set the calculate virial flag for all interactions.
+    void setCalculateVirial(bool);
+
     //! \brief Initialize the does interact array.
     void initialize_does_interact();
 

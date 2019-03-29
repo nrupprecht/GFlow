@@ -43,6 +43,14 @@ namespace GFlowSimulation {
     return potential;
   }
 
+  void Interaction::setDoVirial(bool s) {
+    do_virial = s;
+  }
+
+  void Interaction::setDoPotential(bool s) {
+    do_potential = s;
+  }
+
   void Interaction::clear() {
     handler->clear();
   }

@@ -105,6 +105,14 @@ namespace GFlowSimulation {
     }
   }
 
+  void ForceMaster::setCalculatePotential(bool s) {
+    for (auto it : interactions) it->setDoPotential(s);
+  }
+
+  void ForceMaster::setCalculateVirial(bool s) {
+    for (auto it : interactions) it->setDoVirial(s);
+  }
+
   void ForceMaster::initialize_does_interact() {
     // Set up doesInteract array - default value is false
     for (int i=0; i<ntypes; ++i) 

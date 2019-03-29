@@ -24,6 +24,9 @@ namespace GFlowSimulation {
     //! \brief Calculate the interparticle forces.
     virtual void post_forces() override;
 
+    //! \brief Set the spring constant
+    void setSpringConstant(RealType);
+
   protected:
     //! \brief The relaxation distances for the bonds.
     vector<RealType> distance;

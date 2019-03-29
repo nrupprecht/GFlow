@@ -61,4 +61,8 @@ namespace GFlowSimulation {
     delete [] dX;
   }
 
+  void HarmonicBond::setSpringConstant(RealType s) {
+    springConstant = s;
+  }
+
 }

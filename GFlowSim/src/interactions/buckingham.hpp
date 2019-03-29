@@ -31,6 +31,9 @@ namespace GFlowSimulation {
 
     //! \brief The strength of the interaction.
     RealType strength;
+
+    //! \brief The minimum allowable force (a large negative force). The force that occurs at the inner cutoff
+    RealType inner_force = -1.;
   };
 
 }

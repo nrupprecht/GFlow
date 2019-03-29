@@ -2,6 +2,7 @@
 #define __POLYMER_CREATOR__HPP__GFLOW__
 
 #include "area-creator.hpp"
+#include "../other/group.hpp"
 
 namespace GFlowSimulation {
 
@@ -14,16 +15,37 @@ namespace GFlowSimulation {
 
   private:
     //! \brief Create a polymer chain.
-    void createPolymer(GFlow*, RealType, RealType, RealType, RealType, int, int, bool);
+    void createRandomPolymer(GFlow*, RealType, RealType, int, int);
 
-    void createLine(HeadNode*, GFlow*, std::map<string, string>&);
+    //! \brief Create a single polymer from a pattern and some random walk statistics, etc.
+    void createSinglePolymer(GFlow*, const RealType*, const RealType*, const vector<bool>&, RealType, int, int);
+
+    //! \brief Whether to use correlation objects.
+    bool useCorr = true;
 
     //! \brief A unified group correlation object. Note - this is handed to gflow, so this object should not attempt to delete it.
     class GroupCorrelation *correlation = nullptr;
 
+    //! \brief Harmonic bonds object.
     class HarmonicBond *harmonicbonds = nullptr;
 
+    //! \brief Angle harmonic chain object.
     class AngleHarmonicChain *harmonicchain = nullptr;
+
+    //! \brief The number of polymers created.
+    int n_polymers = 0;
+
+    //! \brief The radius of the large particles.
+    RealType rP = 0.05;
+
+    //! \brief The radius of the chain particles.
+    RealType rC = 0.01;
+
+    //! \brief The inverse mass of the large particles.
+    RealType imP = 0;
+
+    //! \brief The inverse mass of the chain particles.
+    RealType imC = 0;
   };
 
 }

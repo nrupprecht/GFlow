@@ -86,6 +86,8 @@ namespace GFlowSimulation {
         sigma2 = sigma*sigma;
         sigma6 = sigma2*sigma2*sigma2;
         Fn = strength*invr*(ratio*exp1 - 6*sigma6);
+        // Apply cutoff
+        Fn = Fn<inner_force ? inner_force : Fn;
         // Update forces
         f[id1][0] += Fn * dx;
         f[id2][0] -= Fn * dx;

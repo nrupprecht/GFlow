@@ -48,6 +48,12 @@ namespace GFlowSimulation {
 
     // --- Mutators
 
+    //! \brief Set the do virial flag.
+    void setDoVirial(bool);
+
+    //! \brief Set the do potential flag.
+    void setDoPotential(bool);
+
     //! \brief Clear this force's interaction handler
     void clear();
 
