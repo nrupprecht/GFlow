@@ -46,6 +46,9 @@ namespace GFlowSimulation {
     //! \brief Set the input vector to be the center of the bounds.
     void center(RealType*) const;
 
+    //! \brief Set the input vector to be a uniformly random position from within the bounds. 
+    void randomPoint(RealType*) const;
+
     //! \brief Find the maximum bounds width.
     friend RealType max_width(const Bounds&);
 

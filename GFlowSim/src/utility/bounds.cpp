@@ -91,6 +91,11 @@ namespace GFlowSimulation {
     }
   }
 
+  void Bounds::randomPoint(RealType *x) const {
+    for (int d=0; d<dimensions; ++d)
+      x[d] = drand48()*wd(d) + min[d];
+  }
+
   RealType max_width(const Bounds& bnds) {
     RealType a = bnds.wd(0), b = bnds.wd(1), c = bnds.wd(2);
     return max(a, b, c);

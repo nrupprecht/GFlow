@@ -25,6 +25,7 @@ namespace GFlowSimulation {
     // Store data
     RealType time = Base::gflow->getElapsedTime();
     data.push_back(RPair(time, ke));
+
     // A useful check
     if(isnan(ke)) throw NanValue("KE");
   }

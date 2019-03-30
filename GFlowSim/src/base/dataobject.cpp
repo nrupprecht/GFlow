@@ -8,6 +8,10 @@ namespace GFlowSimulation {
   DataObject::DataObject(GFlow *gflow, const string& name, DataObjectType t)
     : Base(gflow), dataName(name), delay(1./20.), lastRecording(-10.), type(t), locals_changed(false) {};
 
+  void DataObject::pre_integrate() {
+    lastRecording = -10;
+  }
+
   const string& DataObject::getName() const {
     return dataName;
   }

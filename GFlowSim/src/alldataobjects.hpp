@@ -27,4 +27,7 @@
 #include "dataobjects/graphobjects/timestepdata.hpp"
 #include "dataobjects/graphobjects/total-energy-data.hpp"
 
+// Multigraph objects
+#include "dataobjects/multigraphobjects/groupnetforce.hpp"
+
 #endif // __ALL_DATA_OBJECTS_HPP__GFLOW__

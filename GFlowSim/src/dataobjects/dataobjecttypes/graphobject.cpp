@@ -10,6 +10,9 @@ namespace GFlowSimulation {
     : DataObject(gflow, name, DataObjectType::GRAPH), axis_x(ax), axis_y(ay) {};
 
   void GraphObject::pre_integrate() {
+    // Parent class.
+    DataObject::pre_integrate();
+    // Clear data.
     data.clear();
   }
 

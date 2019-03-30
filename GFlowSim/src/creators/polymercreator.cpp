@@ -124,8 +124,10 @@ namespace GFlowSimulation {
     // Create all the polymers
     for (int i=0; i<number; ++i) {
       createRandomPolymer(gflow, length, phi, 0, 1);
-      ++n_polymers;
     }
+
+    //RealType h = 2.5;
+    //createParallelPolymers(gflow, h, phi, length);
 
     // Need to relax
     Creator::hs_relax(gflow, 0.5);
@@ -145,18 +147,9 @@ namespace GFlowSimulation {
     }
   }
 
-  void PolymerCreator::createRandomPolymer(GFlow *gflow, RealType length, RealType phi, int idP, int idC) {
-    // Valid probability, number, radii, and types are needed
-    if (phi>1 || phi<0 || length<=0 || rP<0 || rC<0 || idP<0 || idP>=gflow->getNTypes() || idC<0 || idC>=gflow->getNTypes()) return;
-
-    // Get number of dimensions
-    int sim_dimensions = gflow->sim_dimensions;
-
-    // Create a random polymer according to the specification
-    RealType rhoP = 10.;
-    RealType rhoC = 10.;
-    imP = 1./(rhoP*sphere_volume(rP, sim_dimensions));
-    imC = 1./(rhoC*sphere_volume(rC, sim_dimensions));
+  void PolymerCreator::createPolymerArrangement(vector<bool>& chain_ordering, RealType phi, RealType length) {
+    // Clear out vector
+    chain_ordering.clear();
 
     // Calculate numbers of balls, spacings
     int np = floor(0.5*phi*length/rP);
@@ -170,7 +163,6 @@ namespace GFlowSimulation {
     std::sort(marks.begin(), marks.end());
 
     // Create ordering of particle type for the polymer
-    vector<bool> chain_ordering;
     int i;
     for (i=1; i<marks.size()-1; ++i) {
       // The number of chain links to add.
@@ -184,19 +176,37 @@ namespace GFlowSimulation {
     int ncl = ceil(0.5*(marks[i] - marks[i-1])/rC);
     // Add the chain links
     for (int j=0; j<ncl; ++j) chain_ordering.push_back(false);
+    // We have created the chain ordering, and are done.
+  }
+
+  void PolymerCreator::createRandomPolymer(GFlow *gflow, RealType length, RealType phi, int idP, int idC) {
+    // Valid probability, number, radii, and types are needed
+    if (phi>1 || phi<0 || length<=0 || rP<0 || rC<0 || idP<0 || idP>=gflow->getNTypes() || idC<0 || idC>=gflow->getNTypes()) return;
+
+    // Get number of dimensions
+    int sim_dimensions = gflow->sim_dimensions;
+
+    // Create a random polymer according to the specification
+    RealType rhoP = 10.;
+    RealType rhoC = 10.;
+    imP = 1./(rhoP*sphere_volume(rP, sim_dimensions));
+    imC = 1./(rhoC*sphere_volume(rC, sim_dimensions));
+    RealType v_sigma = 0.1;
+
+    // Create a random polymer arrangement
+    vector<bool> chain_ordering;
+    createPolymerArrangement(chain_ordering, phi, length);
 
     // Random starting point
-    Bounds bnds = gflow->bounds;
     RealType *X = new RealType[sim_dimensions];
-    for (int d=0; d<sim_dimensions; ++d)
-      X[d] = drand48()*bnds.wd(d) + bnds.min[d];
+    gflow->bounds.randomPoint(X);
 
     // Random initial direction
     RealType *V = new RealType[sim_dimensions];
     randomNormalVec(V, sim_dimensions);
 
     // Create a polymer from the specifications
-    createSinglePolymer(gflow, X, V, chain_ordering, 0.1, idP, idC);
+    createSinglePolymer(gflow, X, V, chain_ordering, v_sigma, idP, idC);
 
     // Clean up
     delete [] X;
@@ -234,8 +244,10 @@ namespace GFlowSimulation {
     // Starting orientation
     copyVec(v0, V, sim_dimensions);
 
+    // Create a group
+    Group group;
+
     // Create chain
-    
     for (int i=0; i<chain_ordering.size(); ++i) {
       // Swap global ids
       gid1 = gid2;
@@ -265,7 +277,7 @@ namespace GFlowSimulation {
       }
 
       // Primary type
-      if (next_type==idP) sd->addParticle(X, ZERO, rP, imP, idP);
+      if (next_type==0) sd->addParticle(X, ZERO, rP, imP, idP);
       // Chain link type
       else sd->addParticle(X, ZERO, rC, imC, idC);
 
@@ -273,10 +285,58 @@ namespace GFlowSimulation {
       if (gid1!=-1) harmonicbonds->addBond(gid1, gid2);
       if (harmonicchain) harmonicchain->addAtom(gid2);
 
+      // Primary type
+      if (next_type==0) group.add(gid2);
+
       // Set last type
       last_type = next_type;
     }
 
+    if (n_polymers==0) {
+      GroupNetForce *gnf = new GroupNetForce(gflow);
+      gnf->setGroup(group);
+      gflow->addDataObject(gnf);
+    }
+
+    // Increment polymer counter
+    ++n_polymers;
+  }
+
+  void PolymerCreator::createParallelPolymers(GFlow *gflow, const RealType h, const RealType phi, const RealType length) {
+    // Get number of dimensions
+    int sim_dimensions = gflow->sim_dimensions;
+
+    // Create a random polymer according to the specification. Make the polymer infinitely massive, so it cant move.
+    imP = 0;
+    imC = 0;
+    RealType sigma_v = 0.;
+
+    // Initial point and normal vector
+    RealType *x = new RealType[sim_dimensions], *Yhat = new RealType[sim_dimensions];
+    zeroVec(Yhat, sim_dimensions);
+    Yhat[1] = 1;
+    // Find the center of the bounds
+    gflow->bounds.center(x);
+    x[1] -= 0.5*length;
+
+    // Create a random polymer arrangement
+    vector<bool> chain_ordering;
+    createPolymerArrangement(chain_ordering, phi, length);
+    // Shift x to the left 
+    x[0] -= h*rP/2;
+    // Create first chain.
+    createSinglePolymer(gflow, x, Yhat, chain_ordering, sigma_v, 0, 1);
+    
+    // Create another random arrangement
+    createPolymerArrangement(chain_ordering, phi, length);
+    // Shift x to the right
+    x[0] += h*rP;
+    // Create the second chain.
+    createSinglePolymer(gflow, x, Yhat, chain_ordering, sigma_v, 2, 1);
+
+    // Clean up
+    delete [] x;
+    delete [] Yhat;
   }
 
 }

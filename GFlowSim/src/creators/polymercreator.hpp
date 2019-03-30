@@ -17,8 +17,13 @@ namespace GFlowSimulation {
     //! \brief Create a polymer chain.
     void createRandomPolymer(GFlow*, RealType, RealType, int, int);
 
+    //! \brief Create a polymer ordering given a density and length.
+    void createPolymerArrangement(vector<bool>&, RealType, RealType);
+
     //! \brief Create a single polymer from a pattern and some random walk statistics, etc.
     void createSinglePolymer(GFlow*, const RealType*, const RealType*, const vector<bool>&, RealType, int, int);
+
+    void createParallelPolymers(GFlow*, const RealType, const RealType, const RealType);
 
     //! \brief Whether to use correlation objects.
     bool useCorr = true;

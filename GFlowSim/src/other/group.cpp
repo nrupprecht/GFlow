@@ -104,9 +104,11 @@ namespace GFlowSimulation {
     int sim_dimensions = simData->getSimDimensions();
     // Zero vector
     zeroVec(f, sim_dimensions);
+    // Force array
+    RealType **F = simData->F();
     // Compute net force
     for (auto id : local_ids) {
-      plusEqVec(f, simData->F(id), sim_dimensions);
+      plusEqVec(f, F[id], sim_dimensions);
     }
   }
 

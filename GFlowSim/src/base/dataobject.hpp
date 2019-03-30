@@ -49,6 +49,9 @@ namespace GFlowSimulation {
     //! Doesn't do anything, but keeps warnings from arising.
     virtual ~DataObject() {};
 
+    //! \brief Reset delay counter
+    virtual void pre_integrate() override;
+
     //! \brief  Write data to a file - if true, the string is a directory, and you should use your own name as the file name
     virtual bool writeToFile(string, bool=true) = 0;
 
