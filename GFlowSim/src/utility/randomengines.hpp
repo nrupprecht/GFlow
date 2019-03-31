@@ -9,7 +9,7 @@ namespace GFlowSimulation {
   public:
     virtual ~RandomEngine() {};
 
-    // @brief Generate a random number from the engine.
+    // \brief Generate a random number from the engine.
     virtual double generate() = 0;
 
     virtual RandomEngine* copy()=0;
@@ -20,12 +20,12 @@ namespace GFlowSimulation {
     UniformRandomEngine(double l, double u) : lower(l), upper(u) {
       uniform_dist = std::uniform_real_distribution<double>(l, u);
     };
-    //! @brief Generate a number.
-    virtual double generate() {
+    //! \brief Generate a number.
+    virtual double generate() override {
       return uniform_dist(global_generator);
     }
 
-    virtual RandomEngine* copy() {
+    virtual RandomEngine* copy() override {
       return new UniformRandomEngine(lower, upper);
     }
   private:
@@ -38,12 +38,12 @@ namespace GFlowSimulation {
     NormalRandomEngine(double a, double v) : ave(a), var(v) {
       nor_dist = std::normal_distribution<double>(a, v);
     };
-    //! @brief Generate a number.
-    virtual double generate() {
+    //! \brief Generate a number.
+    virtual double generate() override {
       // Uses the global generator
       return nor_dist(global_generator);
     }
-    virtual RandomEngine* copy() {
+    virtual RandomEngine* copy() override {
       return new NormalRandomEngine(ave, var);
     }
   private:
@@ -57,11 +57,11 @@ namespace GFlowSimulation {
       if (prbs.size()>vals.size()) throw false;
       discrete_dist = std::discrete_distribution<int>(prbs.begin(), prbs.end());
     };
-    //! @brief Generate a number.
-    virtual double generate() {
+    //! \brief Generate a number.
+    virtual double generate() override {
       return values[discrete_dist(global_generator)];
     }
-    virtual RandomEngine* copy() {
+    virtual RandomEngine* copy() override {
       return new DiscreteRandomEngine(probabilities, values);
     }
   private:
@@ -72,10 +72,10 @@ namespace GFlowSimulation {
   class DeterministicEngine : public RandomEngine {
   public:
     DeterministicEngine(double v) : value(v) {};
-    //! @brief Generate a number.
-    virtual double generate() { return value; }
+    //! \brief Generate a number.
+    virtual double generate() override { return value; }
 
-    virtual RandomEngine* copy() {
+    virtual RandomEngine* copy() override {
       return new DeterministicEngine(value);
     }
   private:

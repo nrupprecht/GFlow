@@ -11,7 +11,7 @@ namespace GFlowSimulation {
     //! \brief Create a chain of small, noninteracting particles with random large, interacting particles.
     //!
     //! The chain maintains cohesion via harmonic bonds.
-    virtual void createArea(HeadNode*, GFlow*, std::map<string, string>&) override;
+    virtual void createArea(HeadNode*, GFlow*, const std::map<string, string>&, vector<ParticleFixer>&) override;
 
   private:
     //! \brief Create a polymer chain.

@@ -103,11 +103,13 @@ namespace GFlowSimulation {
 
     const vector<class Interaction*>& getInteractions() const;
 
-    class SimData* getSimData() const;
+    class SimData* getSimData();
 
-    class DataMaster* getDataMaster() const;
+    class DataMaster* getDataMaster();
 
-    class Integrator* getIntegrator() const;
+    class ForceMaster* getForceMaster() ;
+
+    class Integrator* getIntegrator();
 
     const RealType* getVComCorrection() const;
 

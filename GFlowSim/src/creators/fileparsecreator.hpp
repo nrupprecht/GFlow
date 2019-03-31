@@ -56,10 +56,6 @@ namespace GFlowSimulation {
 
     // --- Creation helpers
 
-    inline void fillArea(HeadNode*) const;
-
-    inline FillBounds* getFillBounds(HeadNode*) const;
-
     inline void createParticle(HeadNode*) const;
 
     //! \brief Get all the headers with a certain heading, put into the supplied vector.

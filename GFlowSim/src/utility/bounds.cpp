@@ -70,6 +70,13 @@ namespace GFlowSimulation {
     return !(*this==b);
   }
 
+  bool Bounds::contains(RealType *x) const {
+    for (int d=0; d<dimensions; ++d)
+      if (x[d]<min[d] || max[d]<x[d]) return false;
+    // All clear.
+    return true;
+  }
+
   RealType Bounds::wd(int d) const { 
     return max[d] - min[d]; 
   }

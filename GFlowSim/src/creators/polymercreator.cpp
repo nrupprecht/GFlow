@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
 
-  void PolymerCreator::createArea(HeadNode *head, GFlow *gflow, std::map<string, string>& variables) {
+  void PolymerCreator::createArea(HeadNode *head, GFlow *gflow, const std::map<string, string>& variables, vector<ParticleFixer>& particle_fixers) {
     // Set up parser
     ParseHelper parser(head);
     parser.set_variables(variables);

@@ -197,6 +197,7 @@ namespace GFlowSimulation {
 // Include this after so RealType is defined
 #include "defaultconstants.hpp"
 #include "bounds.hpp"
+#include "vec.hpp"
 
 // Needs flag from "defaultconstants.hpp"
 #if USE_MPI == 1
@@ -214,8 +215,5 @@ namespace GFlowSimulation {
 
 // Include this after so string is defined
 #include "exceptions.hpp"
-
-// Other
-#include "vector_array.hpp"
 
 #endif // __UTILITY_HPP__GFLOW__
