@@ -5,6 +5,7 @@
 #include "../utility/ArgParse.hpp"
 #include "../utility/vectormath.hpp"
 #include "../gflow.hpp"
+#include "../creators/particlefixer.hpp"
 
 // Accumulation files
 #include "../allbaseobjects.hpp"
@@ -62,6 +63,9 @@ namespace GFlowSimulation {
     //! the discards the integrator and resets the timers.
     static void relax(class GFlow*, RealType=0.25);
 
+    //! \brief Use the particle fixers to assign particle velocities.
+    void fix_particle_velocities(SimData*);
+
   protected:
 
     // Command line arguments
@@ -93,6 +97,9 @@ namespace GFlowSimulation {
 
     //! \brief The dimensionality of the simulation.
     int sim_dimensions;
+
+    //! \brief Vector of particle fixers. These are used to assign velocities to particles after the relax step.
+    mutable vector<ParticleFixer> particle_fixers;
   };
 
 }

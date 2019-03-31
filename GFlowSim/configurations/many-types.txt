@@ -31,6 +31,4 @@ Fill-area {
   Number: Phi=0.75 {
     Particle : 1
   }
-
-  Relax: 1
 }

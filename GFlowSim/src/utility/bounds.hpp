@@ -34,6 +34,9 @@ namespace GFlowSimulation {
     //! \brief Boolean not equals operator
     bool operator!=(const Bounds&) const;
 
+    //! \brief Check whether the bounds contains a point.
+    bool contains(RealType*) const;
+
     //! \brief Get the widths in various dimensions of the bounds.
     RealType wd(int) const;
 

@@ -3,7 +3,7 @@
 #include "../utility/printingutility.hpp"
 #include "../allmodifiers.hpp"
 #include "../interactions/interaction-choice.hpp"
-#include "polymercreator.hpp"
+#include "../allareacreators.hpp"
 
 namespace GFlowSimulation {
 
@@ -13,7 +13,6 @@ namespace GFlowSimulation {
     seedGenerator(seed);
     generator = std::mt19937(seed);
     normal_dist = std::normal_distribution<RealType>(0., 1.);
-
   }
 
   FileParseCreator::FileParseCreator(ArgParse *p) : Creator(p), configFile(""), gflow(nullptr) {
@@ -137,7 +136,7 @@ namespace GFlowSimulation {
     parser.addValidSubheading(Types_Token);
     parser.addValidSubheading(Interactions_Token);
     parser.addValidSubheading("Template");
-    parser.addValidSubheading("Fill-area");
+    parser.addValidSubheading("Fill");
     parser.addValidSubheading("Particle");
     parser.addValidSubheading("Creation");
     parser.addValidSubheading("Destruction");
@@ -145,8 +144,8 @@ namespace GFlowSimulation {
     parser.addValidSubheading("MaxDomainUpdateDelay");
     parser.addValidSubheading("MaxDT");
     parser.addValidSubheading("MinDT");
+    parser.addValidSubheading("Relax");
     parser.addValidSubheading("Reconcile");
-    parser.addValidSubheading("Polymer");
     // Make sure only valid options were used
     if (!parser.checkValidSubHeads()) {
       cout << "Warning: Invalid Headings:\n";
@@ -298,62 +297,17 @@ namespace GFlowSimulation {
     for (auto h : parser) getParticleTemplate(h, global_templates);
 
     // --- Fill an area with particles
-    parser.getHeading_Optional("Fill-area");
-    for (auto h : parser) fillArea(h); 
+    parser.getHeading_Optional("Fill");
+    FillAreaCreator fillarea;
+    PolymerCreator pc;
+    for (auto h : parser) {
+      if (h->params[0]->partA=="Area") fillarea.createArea(h, gflow, variables, particle_fixers);
+      else if (h->params[0]->partA=="Polymer") pc.createArea(hd, gflow, variables, particle_fixers);
+    }
 
     // --- Create a single particle
     parser.getHeading_Optional("Particle");
     for (auto h : parser) createParticle(h);
-
-    // --- Rules for creating particles
-    parser.getHeading_Optional("Creation");
-    hd = parser.first();
-    if (hd) {
-      // The subheads have no bodies, and are of the form: [type i] : [type j], [rate].
-      // For now, we only allow reproduction to create the same type.
-      std::map<int, RealType> birth;
-      for (auto s : hd->subHeads) {
-        if (s->params.size()!=2) 
-          throw BadStructure("Expected a type and a rate (2 options). Found "+toStr(s->params.size())+".");
-        birth.insert(std::pair<int, RealType>(
-          convert<int>(s->heading), 
-          convert<RealType>(s->params[1]->partA)
-        ));
-      }
-      // Create a vector of birth rates - we must already know NTypes.
-      if (!birth.empty()) {
-        vector<RealType> birthRates(NTypes, 0);
-        for (int i=0; i<NTypes; ++i) {
-          if (contains(birth, i)) birthRates[i] = birth.find(i)->second;
-        }
-        gflow->addModifier(new BirthRate(gflow, birthRates));
-      }
-    }
-
-    // --- Rules for destroying particles
-    parser.getHeading_Optional("Destruction");
-    hd = parser.first();
-    if (hd) {
-      // The subheads have no bodies, and are of the form: [type i] : [rate].
-      // For now, we only allow reproduction to create the same type.
-      std::map<int, RealType> death;
-      for (auto s : hd->subHeads) {
-        if (s->params.size()!=1) 
-          throw BadStructure("Expected a rate (1 option). Found "+toStr(s->params.size())+".");
-        death.insert(std::pair<int, RealType>(
-          convert<int>(s->heading),
-          convert<RealType>(s->params[0]->partA)
-        ));
-      }
-      // Create a vector of birth rates - we must already know NTypes.
-      if (!death.empty()) {
-        vector<RealType> deathRates(NTypes, 0);
-        for (int i=0; i<NTypes; ++i) {
-          if (contains(death, i)) deathRates[i] = death.find(i)->second;
-        }
-        gflow->addModifier(new DeathRate(gflow, deathRates));
-      }
-    }
 
     parser.getHeading_Optional("Modifier");
     for (auto h : parser) add_modifier(h);
@@ -385,16 +339,18 @@ namespace GFlowSimulation {
       if (min>0) gflow->integrator->setMinDT(min);
     }
 
-    // --- Create a polymer
-    parser.getHeading_Optional("Polymer");
-    hd = parser.first();
-    if (hd) {
-      PolymerCreator pc;
-      pc.createArea(hd, gflow, variables);
-    }
-
     // Initialize domain
     gflow->domain->initialize();
+
+    // --- Relax the simulation
+    parser.getHeading_Optional("Relax");
+    hd = parser.first();
+    // Default relax time is 0.5
+    RealType relax_time = 0.5;
+    if (hd) {
+      parser.extract_first_parameter(relax_time);
+    }
+    if (relax_time>0) hs_relax(gflow, relax_time);
 
     // --- Look for particle reconcilliation (should we remove overlapping particles?). Must do this after domain initialization.
     parser.getHeading_Optional("Reconcile");
@@ -409,6 +365,9 @@ namespace GFlowSimulation {
     
     // Reconstruct domain
     gflow->domain->construct();
+
+    // Fix velocities
+    fix_particle_velocities(gflow->simData);
   }
 
   inline Integrator* FileParseCreator::choose_integrator(HeadNode *head) const {
@@ -522,292 +481,6 @@ namespace GFlowSimulation {
     if (token=="WindTunnel")
       gflow->addModifier(new WindTunnel(gflow, parser.value<RealType>(head->params[0]->partB)));
     else throw UnexpectedOption("Modifier choice was ["+token+"].");
-  }
-
-  inline void FileParseCreator::fillArea(HeadNode *head) const {
-    // Check if head is good
-    if (head==nullptr) return;
-    // For local particle templates
-    std::map<string, ParticleTemplate> particle_templates;
-
-    // Create a parse helper
-    ParseHelper parser(head);
-    parser.set_variables(variables);
-    // Declare valid options
-    parser.addValidSubheading("Bounds");
-    parser.addValidSubheading("Template");
-    parser.addValidSubheading("Number");
-    parser.addValidSubheading("Velocity");
-    parser.addValidSubheading("Relax");
-    parser.addValidSubheading("Attraction");
-    // Make sure only valid options were used
-    if (!parser.checkValidSubHeads()) {
-      cout << "Warning: Invalid Headings:\n";
-      for (auto ih : parser.getInvalidSubHeads())
-        cout << " -- Heading: " << ih << endl;
-    }
-    // Sort options
-    parser.sortOptions();
-    // Pointer for head nodes
-    HeadNode *hd = nullptr;
-
-    // --- Look for bounds
-    parser.getHeading_Necessary("Bounds", "We need bounds!");
-    FillBounds *bnds;
-    bnds = getFillBounds(parser.first());
-
-    // --- Local Particle Template. Defines "types" of particles, e.g. radius distribution, density/mass, etc.
-    parser.getHeading_Optional("Template");
-    for (auto h : parser) getParticleTemplate(h, particle_templates);
-
-    // --- Number. How to choose which particles to fill the space with.
-    parser.getHeading_Necessary("Number", "We need number information!");
-    // Create a structure for recording probabilities or numbers
-    std::map<string, double> particle_template_numbers;
-    bool useNumber = false, usePhi = false, singleType = false;
-    int number(0); 
-    double phi(0);
-    // Get the first head with the correct heading
-    hd = parser.first();
-    // Check if this is using phi or number 
-    if (parser.extract_parameter(hd, "Phi", phi)) usePhi = true;
-    else {
-      useNumber = true;
-      parser.extract_first_parameter(number, hd);
-    }
-    // No body - we must have something in one of two forms:
-    // Number: #
-    // Number: Phi=#
-    if (hd->subHeads.empty()) singleType = true;
-    // Yes body - either the total number, or total phi is given, and particles are generated
-    // randomly with certain probabilities. Subheads must be in one of the two forms:
-    //
-    // Number: Phi=# {
-    //   Template: #[prob]
-    //   ...
-    // }
-    // <or>
-    // Number: {
-    //   Template: #
-    //   ...
-    // }
-    else {
-      // Loop through subheads of hd - these are the templates
-      ParseHelper subParser(hd);
-      subParser.set_variables(variables);
-      // Record template name, number
-      for (auto m=subParser.begin(); m!=subParser.end(); ++m) {
-        particle_template_numbers.insert(pair<string, double>(m.heading(), m.convert_param<double>()));
-      }
-    }
-
-    // --- Velocity. How to choose particle velocities. We will find a better / more expressive way to do this later.
-    parser.getHeading_Optional("Velocity");
-    // Velocity option
-    // 0 - Normal
-    // 1 - Specified vector
-    RealType *Vs = new RealType[sim_dimensions];
-    int velocityOption = 0; // Normal velocities by default.
-    hd = parser.first();
-    if (hd) {
-      string opt;
-      parser.extract_first_parameter(opt, hd);
-      if (opt=="Zero") velocityOption = 1; // Zero velocity
-      else {
-        parser.set_vector_argument(Vs, hd, sim_dimensions);
-        velocityOption = 1;
-      }
-      // --- Other options go here
-    }
-
-    // --- Relaxation. How long to relax the particles
-    parser.getHeading_Optional("Relax");
-    RealType relax_length = -1;
-    hd = parser.first();
-    if (hd) parser.set_scalar_argument(relax_length, hd);
-
-    // --- Check that we have defined a good area
-    if (!usePhi && number<=0 && singleType)
-      throw BadStructure("If using a single type, we need a nonzero number of particles.");
-
-    // --- We have found all the options we need so far. Fill the area.
-    GFlow filler(sim_dimensions);
-    filler.setBounds(bnds->getBounds());
-    // Default bounds are repulsive
-    filler.setAllBCs(BCFlag::REPL);
-    // If fill area has full bounds in any dimension, use the natural bounds
-    for (int d=0; d<sim_dimensions; ++d) 
-      if (
-        filler.getBounds().min[d]==gflow->getBounds().min[d] 
-        && filler.getBounds().max[d]==gflow->getBounds().max[d]
-      ) filler.setBC(d, gflow->getBCs()[d]);
-
-    // Delete filler's force master
-    delete filler.forceMaster;
-    // Set the new force master
-    filler.forceMaster = gflow->forceMaster; // Make sure the particles treat each other in the same way
-
-    // Get the simdata
-    SimData *simData = filler.simData;
-
-    // --- Attraction towards the center of the domain
-    parser.getHeading_Optional("Attraction");
-    hd = parser.first();
-    if (hd) {
-      RealType g;
-      parser.set_scalar_argument(g, hd);
-      filler.setAttraction(g);
-    }
-    
-    // --- Fill with particles
-    RealType *X = new RealType[sim_dimensions], *V = new RealType[sim_dimensions], sigma(0.), im(0.);
-    int type(0);
-    zeroVec(V, sim_dimensions);
-    // If we are filling to a specified packing fraction
-    if (usePhi) {
-      // Create discrete distribution
-      vector<double> probabilities;
-      vector<ParticleTemplate> template_vector;
-
-      // Map particle type to probability
-      for (auto &pr : particle_template_numbers) {
-        auto it = particle_templates.find(pr.first);
-        if (it==particle_templates.end())
-          throw BadStructure("An undefined particle type was encountered: "+pr.first);
-        template_vector.push_back(it->second);
-        probabilities.push_back(pr.second);
-      }
-
-      // @todo Make a guess as to how much space is needed, so simdata doesn't have to keep allocating data.
-
-      // A discrete distribution we use to choose which particle template to use next
-      std::discrete_distribution<int> choice(probabilities.begin(), probabilities.end());
-      int i(0);
-      RealType vol = 0, Vol = bnds->vol();
-      while (vol/Vol < phi) {
-        // Select a position for the particle (random uniform)
-        bnds->pick_position(X);
-        // Choose a type of particle to create
-        int pt = choice(generator);
-        ParticleTemplate &particle_creator = particle_template_numbers.empty() ? particle_templates[0] : template_vector.at(pt);
-        // Select other characteristics
-        particle_creator.createParticle(X, sigma, im, type, i, sim_dimensions);
-        // Add the particle
-        simData->addParticle(X, V, sigma, im, type);
-        // Increment volume and counter
-        vol += sphere_volume(sigma, sim_dimensions);
-        ++i;
-      }
-    }
-    // Else, we are filling to a specified number
-    else {
-      // Insert the requested number of each particle type
-      for (auto &pr : particle_template_numbers) {
-        auto it = particle_templates.find(pr.first);
-        if (it==particle_templates.end())
-          throw BadStructure("An undefined particle type was encountered: "+pr.first);
-        int num = static_cast<int>(pr.second);
-
-        ParticleTemplate &particle_creator = it->second;
-        for (int i=0; i<num; ++i) {
-          // Select a position for the particle (random uniform)
-          bnds->pick_position(X);
-          // Select other characteristics
-          particle_creator.createParticle(X, sigma, im, type, i, sim_dimensions);
-          // Add the particle
-          simData->addParticle(X, V, sigma, im, type);
-        }
-      }
-    }
-
-    // Print status
-    build_message += "From Fill Area: Done with initial particle assigmnemt. There are " + toStr(simData->size()) + " particles.\n"; 
-    cout << "Relaxing " << simData->size() << " particles.\n";
-
-    // --- Relax the simulation
-    if (relax_length<0) relax_length = 0.1; // Default relax length is 0.1
-    if (relax_length>0) build_message += "From Fill Area: Relaxing for " + toStr(relax_length) + ".\n";
-    hs_relax(&filler, relax_length); // To make sure particles don't stop on top of one another
-
-    // Select a velocity
-    auto select_velocity = [&] (RealType *V, RealType *X, RealType sigma, RealType im, int type) -> void {
-      RealType vsgma = 0.25;
-      // Velocity based on KE
-      double ke = fabs(vsgma*normal_dist(generator));
-      double velocity = sqrt(2*im*ke/127.324);
-      // Random normal vector
-      randomNormalVec(V, sim_dimensions);
-      // Set the velocity
-      scalarMultVec(velocity, V, sim_dimensions);
-    };
-
-    // --- Fill gflow with the particles
-    copyVec(Vs, V, sim_dimensions);
-    for (int i=0; i<simData->number(); ++i) {
-      // Extract the particle properties
-      copyVec(simData->X(i), X, sim_dimensions);
-      int type = simData->Type(i);
-      RealType sigma = simData->Sg(i);
-      RealType im = simData->Im(i);
-      if (type!=-1) {
-        // Select the velocity for the final particle
-        if (velocityOption==0) select_velocity(V, X, sigma, im, type);
-        else if (velocityOption==1) zeroVec(V, sim_dimensions); // We already set V to be Vs
-        else zeroVec(V, sim_dimensions);
-        // Infinitely heavy objects do not move.
-        if (im==0) zeroVec(V, sim_dimensions);
-        gflow->simData->addParticle(X, V, sigma, im, type);
-      }
-    }
-      
-    // So we don't delete the force master when filler cleans up
-    filler.forceMaster = nullptr; 
-
-    // Clean up
-    delete [] Vs;
-    delete [] X;
-    delete [] V;
-    delete bnds;
-  }
-
-  inline FillBounds* FileParseCreator::getFillBounds(HeadNode *h) const {
-    FillBounds *fbnds = nullptr;
-    // Check if we should use the full simulation bounds - the bounds are then rectangular
-    if (h->subHeads.empty() && h->params.size()>0 && h->params[0]->partA=="Full")
-      fbnds = new RectangularBounds(simBounds, sim_dimensions);
-
-    // Spherical bounds
-    else if (h->params.size()>0 && h->params[0]->partA=="Sphere") {
-      if (h->subHeads.size()!=2)
-        throw BadStructure("Expected position and radius for spherical bounds.");
-      if (h->subHeads[0]->params.size()!=sim_dimensions)
-        throw BadStructure("Vector needs the correct number of dimensions.");
-      SphericalBounds *sbnds = new SphericalBounds(sim_dimensions);
-      // Get the center
-      for (int d=0; d<sim_dimensions; ++d)
-        sbnds->center[d] = convert<float>(h->subHeads[0]->params[d]->partA);
-      // Get the radius
-      sbnds->radius = convert<float>(h->subHeads[1]->params[0]->partA);
-      fbnds = sbnds;
-    }
-    // Otherwise, rectangular bounds
-    else {
-      if (h->subHeads.size()!=sim_dimensions) 
-        throw BadStructure("Expected "+toStr(sim_dimensions)+" arguments, found "+toStr(h->subHeads.size()));
-      // Set bounds
-      RectangularBounds *rbnds = new RectangularBounds(sim_dimensions);
-      for (int d=0; d<h->subHeads.size(); ++d) {
-        // Check for well formed options.
-        if (h->subHeads[d]->params.size()!=2 || !h->subHeads[d]->subHeads.empty()) 
-          throw BadStructure("Bounds need a min and a max, we found "+toStr(h->subHeads[d]->params.size())+" parameters.");
-        // Extract the bounds.
-        rbnds->min[d] = convert<float>( h->subHeads[d]->params[0]->partA );
-        rbnds->max[d] = convert<float>( h->subHeads[d]->params[1]->partA );
-      }
-      fbnds = rbnds;
-    }
-
-    return fbnds;
   }
 
   inline void FileParseCreator::createParticle(HeadNode *head) const {
@@ -970,22 +643,22 @@ namespace GFlowSimulation {
 
   inline void FileParseCreator::makeRandomForces() {
     // Assign random interactions, either LennardJones or HardSphere (for now), and with equal probability (for now)
-    Interaction *hardSphere   = new HardSphere_VerletPairs_2d(gflow);
-    Interaction *lennardJones = new LennardJones_VerletPairs_2d(gflow);
+    Interaction *hs   = InteractionChoice::choose(gflow, InteractionChoice::HardSphereToken, sim_dimensions); 
+    Interaction *lj = InteractionChoice::choose(gflow, InteractionChoice::LennardJonesToken, sim_dimensions);
     // Assign random (but symmetric) interactions
     for (int i=0; i<NTypes; ++i) {
       // Self interaction
-      if (drand48()>0.5) gflow->forceMaster->setInteraction(i, i, hardSphere);
-      else gflow->forceMaster->setInteraction(i, i, lennardJones);
+      if (drand48()>0.5) gflow->forceMaster->setInteraction(i, i, hs);
+      else gflow->forceMaster->setInteraction(i, i, lj);
 
       for (int j=i+1; j<NTypes; ++j) {
         if (drand48()>0.5) {
-          gflow->forceMaster->setInteraction(i, j, hardSphere);
-          gflow->forceMaster->setInteraction(j, i, hardSphere);
+          gflow->forceMaster->setInteraction(i, j, hs);
+          gflow->forceMaster->setInteraction(j, i, hs);
         }
         else {
-          gflow->forceMaster->setInteraction(i, j, lennardJones);
-          gflow->forceMaster->setInteraction(j, i, lennardJones);
+          gflow->forceMaster->setInteraction(i, j, lj);
+          gflow->forceMaster->setInteraction(j, i, lj);
         }
       }
     }

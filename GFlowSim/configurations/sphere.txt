@@ -24,7 +24,7 @@ Force-grid: {
 }
 
 // Fill an area with particles
-Fill-area {
+Fill: Area {
   // Fill all the simulation with particles
   Bounds: Sphere {
     : 0, 0 // Centered
@@ -47,8 +47,6 @@ Fill-area {
   }
 
   Velocity: Zero
-
-  Relax: 0.25
 
   Attraction: 1
 }

@@ -76,7 +76,7 @@ namespace GFlowSimulation {
         // Calculate distance, inverse distance.
         r = sqrt(rsqr);
         invr = 1./r;
-        // Create a normal vector.
+        // Create a normal vector
         dx *= invr;
         dy *= invr;
         dz *= invr;

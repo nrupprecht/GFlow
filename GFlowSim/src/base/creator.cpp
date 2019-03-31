@@ -1,4 +1,6 @@
 #include "creator.hpp"
+// Other files
+#include "../interactions/interaction-choice.hpp"
 
 namespace GFlowSimulation {
 
@@ -32,11 +34,11 @@ namespace GFlowSimulation {
   void Creator::setDimensions(int d) {
     sim_dimensions = d;
   }
-
+  
   void Creator::hs_relax(GFlow* gflow, RealType time, bool relax_integrator) {
     // Check for valid object
     if (gflow==nullptr) return;
-
+    
     // Get sim dimensions
     int sim_dimensions = gflow->getSimDimensions();
 
@@ -47,10 +49,7 @@ namespace GFlowSimulation {
 
     // Use hard sphere forces
     int ntypes = gflow->getNTypes();
-    HardSphere *hsForce;
-    if      (sim_dimensions==2) hsForce = new HardSphere_VerletPairs_2d(gflow);
-    else if (sim_dimensions==3) hsForce = new HardSphere_VerletPairs_3d(gflow);
-    else throw false;
+    Interaction *hsForce = InteractionChoice::choose(gflow, InteractionChoice::HardSphereToken, sim_dimensions);
     
     // New force master - has only hard sphere forces.
     ForceMaster forceMaster(gflow, ntypes);
@@ -73,15 +72,16 @@ namespace GFlowSimulation {
 
     // Relax simulation
     gflow->requestTime(time);
-    gflow->run();
+    gflow->run(); // GFlow run calls initialize, so all the base objects' pointers will be correct.
     // Reset times
-    gflow->dataMaster->resetTimer(); // So the setup does not count towards the run time
+    gflow->dataMaster->resetTimer(); // So the setup does not count towards the run time.
     gflow->resetAllTimes();
 
     // Reset GFlow
     gflow->integrator   = integrator;
     gflow->forceMaster  = master;
     gflow->interactions = interactions;
+    gflow->initialize(); // Correct all the base objects' pointers.
 
     // Clear forces
     gflow->simData->clearF();
@@ -111,6 +111,15 @@ namespace GFlowSimulation {
     
     // Reset integrator
     gflow->integrator = integrator;
+  }
+
+  void Creator::fix_particle_velocities(SimData *simData) {
+    for (auto &fix : particle_fixers) {
+      // Get local id of the particle
+      int id = simData->getLocalID(fix.global_id);
+      // Set the initial velocity of the particle.
+      copyVec(fix.velocity, simData->V(id), sim_dimensions);
+    }
   }
 
 }

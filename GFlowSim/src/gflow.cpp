@@ -311,15 +311,19 @@ namespace GFlowSimulation {
     return interactions;
   }
 
-  SimData* GFlow::getSimData() const {
+  SimData* GFlow::getSimData() {
     return simData;
   }
 
-  DataMaster* GFlow::getDataMaster() const {
+  DataMaster* GFlow::getDataMaster() {
     return dataMaster;
   }
 
-  Integrator* GFlow::getIntegrator() const {
+  ForceMaster* GFlow::getForceMaster() {
+    return forceMaster;
+  }
+
+  Integrator* GFlow::getIntegrator() {
     return integrator;
   }
 

@@ -6,20 +6,6 @@
 
 namespace GFlowSimulation {
 
-  template<typename T, int dimensions>
-  string toStr(const vec<T, dimensions> v, int precision=4) {
-    stringstream stream;
-    stream << "{";
-    for (int d=0; d<dimensions; ++d) {
-      stream << std::setprecision(precision) << v[d];
-      if (d!=dimensions-1) stream << ",";
-    }
-    stream << "}";
-    string str;
-    stream >> str;
-    return str;
-  }
-
   //! \brief Convert a vector to csv format: x1, x2, x3, ...
   template<typename T> inline string toCSV(const vector<T>& vec, int precision=5) {
     stringstream stream;

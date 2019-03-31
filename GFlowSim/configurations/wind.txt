@@ -36,7 +36,7 @@ Force-grid: {
 }
 
 // Fill an area with particles
-Fill-area {
+Fill: Area {
   // Fill all the simulation with particles
   Bounds: Full
 
@@ -52,8 +52,6 @@ Fill-area {
   Number: Phi=0.93 {
     TypeA : 1
   }
-
-  Relax: 0.2
 
   Velocity: Zero
 }

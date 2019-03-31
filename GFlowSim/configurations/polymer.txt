@@ -1,5 +1,5 @@
 
-Dimensions: 3
+Dimensions: 2
 
 Var: width=4
 Var: length=5
@@ -10,7 +10,7 @@ Var: phi=0.5
 Bounds: {
   : 0, width
   : 0, width
-  : 0, width
+  // : 0, width
 }
 
 Integrator: VelocityVerlet
@@ -30,7 +30,7 @@ Force-grid: {
   : 1, 2, None
 }
 
-Polymer: {
+Fill: Polymer {
   Length: length
   Number: number
   R: 0.05
@@ -39,19 +39,17 @@ Polymer: {
 }
 
 // Fill an area with particles
-Fill-area {
+Fill: Area {
   // Fill all the simulation with particles
   Bounds: Full
-
+  
   Template: TypeA {
     Radius: 0.05
     Mass: Density=1
     Type: 2
   }
 
-  Number: Phi=0.01 {
+  Number: Phi=0.1 {
     TypeA : 1
   }
-
-  Relax: 0.5
 }
