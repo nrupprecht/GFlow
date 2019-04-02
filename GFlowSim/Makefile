@@ -42,7 +42,11 @@ SRC   = src
 OBJ   = obj
 BIN   = bin
 
-EXCLUDE = src/applications/percolationanalysis.cpp src/applications/pressureanalysis.cpp src/applications/driver.cpp src/applications/vistools.cpp
+EXCLUDE = src/applications/percolationanalysis.cpp
+EXCLUDE += src/applications/pressureanalysis.cpp
+EXCLUDE += src/applications/driver.cpp
+EXCLUDE += src/applications/vistools.cpp
+EXCLUDE += src/applications/lineattraction.cpp
 EXCLUDE += src/utility/argparse2.cpp
 
 SRCS1   := $(shell find $(SRC) -name '*.cpp')
@@ -64,7 +68,7 @@ endif
 #OPENCV   := $(shell pkg-config --cflags --libs opencv)
 CFLAGS   := -c $(CSTD) $(DEBUG) $(OPTIMIZE) $(FLAGS)
 
-all: $(BIN)/$(APP) $(BIN)/vistools
+all: $(BIN)/$(APP) $(BIN)/vistools $(BIN)/lineattraction
 
 # Executables
 
@@ -78,6 +82,11 @@ $(BIN)/vistools: obj/vistools.o $(OBJS)
 	@echo "Linking $@..."
 	@$(CC) -o $@ obj/vistools.o $(OBJS) $(LDFLAGS)
 
+$(BIN)/lineattraction: obj/lineattraction.o $(OBJS)
+	@mkdir -p `dirname $@`
+	@echo "Linking $@..."
+	@$(CC) -o $@ obj/lineattraction.o $(OBJS) $(LDFLAGS)
+
 # General object files
 
 $(OBJ)/%.o: %.cpp
@@ -87,12 +96,17 @@ $(OBJ)/%.o: %.cpp
 
 # Excluded object files
 
-obj/driver.o: src/applications/driver.cpp
+$(OBJ)/driver.o: src/applications/driver.cpp
 	@mkdir -p `dirname $@`
 	@echo "Compiling $<..."
 	@$(CC) $(CFLAGS) $< -o $@
 
-obj/vistools.o: src/applications/vistools.cpp
+$(OBJ)/vistools.o: src/applications/vistools.cpp
+	@mkdir -p `dirname $@`
+	@echo "Compiling $<..."
+	@$(CC) $(CFLAGS) $< -o $@
+
+$(OBJ)/lineattraction.o: src/applications/lineattraction.cpp
 	@mkdir -p `dirname $@`
 	@echo "Compiling $<..."
 	@$(CC) $(CFLAGS) $< -o $@

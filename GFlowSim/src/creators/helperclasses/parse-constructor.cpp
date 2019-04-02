@@ -21,9 +21,9 @@ namespace GFlowSimulation {
       SphericalRegion *sreg = new SphericalRegion(sim_dimensions);
       // Get the center
       for (int d=0; d<sim_dimensions; ++d)
-        sreg->center(d) = convert<float>(head->subHeads[0]->params[d]->partA);
+        sreg->center(d) = cast<float>(head->subHeads[0]->params[d]->partA, variables);
       // Get the radius
-      sreg->radius() = convert<float>(head->subHeads[1]->params[0]->partA);
+      sreg->radius() = cast<float>(head->subHeads[1]->params[0]->partA, variables);
       region = sreg;
     }
     // Otherwise, rectangular bounds
@@ -37,8 +37,8 @@ namespace GFlowSimulation {
         if (head->subHeads[d]->params.size()!=2 || !head->subHeads[d]->subHeads.empty()) 
           throw BadStructure("Bounds need a min and a max, we found "+toStr(head->subHeads[d]->params.size())+" parameters.");
         // Extract the bounds.
-        rreg->min(d) = convert<float>( head->subHeads[d]->params[0]->partA );
-        rreg->max(d) = convert<float>( head->subHeads[d]->params[1]->partA );
+        rreg->min(d) = cast<float>( head->subHeads[d]->params[0]->partA, variables );
+        rreg->max(d) = cast<float>( head->subHeads[d]->params[1]->partA, variables );
       }
       region = rreg;
     }

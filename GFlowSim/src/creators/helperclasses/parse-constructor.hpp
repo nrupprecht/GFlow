@@ -5,6 +5,7 @@
 #include "../../base/creator.hpp"
 #include "../../utility/parsehelper.hpp"
 #include "../particletemplate.hpp"
+#include "evaluation.hpp"
 
 namespace GFlowSimulation {
 

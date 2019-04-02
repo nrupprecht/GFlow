@@ -5,6 +5,8 @@
 #include "../interactions/interaction-choice.hpp"
 #include "../allareacreators.hpp"
 
+#include "../utility/treeparser.hpp"
+
 namespace GFlowSimulation {
 
   FileParseCreator::FileParseCreator(int argc, char **argv) : Creator(argc, argv), configFile(""), gflow(nullptr) {
@@ -36,12 +38,10 @@ namespace GFlowSimulation {
     auto start_time = current_time();
 
     // Command line arguments
-    RealType skinDepth = -1.;
-    RealType cell_size = -1;
-
+    bool parse_trace = false;
+    // Get command line arguments
     if (parserPtr) {
-      parserPtr->get("skinDepth", skinDepth);
-      parserPtr->get("cell_size", cell_size);
+      parserPtr->get("parse-trace", parse_trace);
     }
 
     // We treat the file as one giant body. Get that body.
@@ -74,16 +74,13 @@ namespace GFlowSimulation {
 
     // Create the scenario from the options
     if (gflow) delete gflow;
-    // Set skin depth
-    //if (skinDepth>0) gflow->domain->setSkinDepth(skinDepth);
-    //if (cell_size>0) gflow->domain->setCellSize(cell_size);
     // Create from the options
     build_message += "Starting simulation setup... ";
     try {
       createFromOptions(root);
     }
     catch (BadStructure bs) {
-      cout << "Caught Bad Structure error: " << bs.message << endl;
+      cout << "Caught Bad Structure error: Message: [" << bs.message << "]\n";
       cout << "Build Message:\n" << build_message << endl;
       // Print the parse tree to a file so we can debug
       ofstream fout("ParseTrace.txt");
@@ -108,259 +105,237 @@ namespace GFlowSimulation {
     }
     build_message += "Done.\n";
 
+    // If requested, print out the parse trace.
+    if (parse_trace) {
+      // Print the parse tree to a file so we can debug
+      ofstream fout("ParseTrace.txt");
+      if (fout.fail());
+      else {
+        fout << parse_message;
+        fout.close();
+      }
+    }
+
     // Clean up
     delete root;
     
     // Timing
     auto end_time = current_time();
     gflow->dataMaster->setInitializationTime(time_span(end_time, start_time));
-
+    // Give the setup file to the datamaster.
     gflow->dataMaster->giveFile("setup.txt", file);
 
     // Clean up and return
-    return gflow;
+    GFlow *ret = gflow;
+    gflow = nullptr;
+    return ret;
+  }
+
+  void FileParseCreator::setVariable(const string& name, const string& value) {
+    // Insert a variable if it does not already exist.
+    if (variables.find(name)==variables.end())
+      variables.insert(pair<string, string>(name, value));
   }
 
   inline void FileParseCreator::createFromOptions(HeadNode *head) {
-    // Create a parse helper
-    ParseHelper parser(head);
-    // Declare valid options
-    parser.addValidSubheading("Var");
-    parser.addValidSubheading("Dimensions");
-    parser.addValidSubheading("Seed");
-    parser.addValidSubheading("Bounds");
-    parser.addValidSubheading("Boundary");
-    parser.addValidSubheading("Gravity");
-    parser.addValidSubheading("Attraction");
-    parser.addValidSubheading("Integrator");
-    parser.addValidSubheading(Types_Token);
-    parser.addValidSubheading(Interactions_Token);
-    parser.addValidSubheading("Template");
-    parser.addValidSubheading("Fill");
-    parser.addValidSubheading("Particle");
-    parser.addValidSubheading("Creation");
-    parser.addValidSubheading("Destruction");
-    parser.addValidSubheading("Modifier");
-    parser.addValidSubheading("MaxDomainUpdateDelay");
-    parser.addValidSubheading("MaxDT");
-    parser.addValidSubheading("MinDT");
-    parser.addValidSubheading("Relax");
-    parser.addValidSubheading("Reconcile");
-    // Make sure only valid options were used
-    if (!parser.checkValidSubHeads()) {
-      cout << "Warning: Invalid Headings:\n";
-      for (auto ih : parser.getInvalidSubHeads())
-        cout << " -- Heading: " << ih << endl;
-    }
-    // Sort options
-    parser.sortOptions();
-    // Pointer for head nodes
-    HeadNode *hd = nullptr;
+    // Create a parser
+    TreeParser parser(head);
+    // Declare valid options.
+    parser.addHeadingNecessary("Bounds", "We need bounds!");
+    parser.addHeadingNecessary(Interactions_Token, "We need interaction information!");
+    parser.addHeadingOptional("Var");
+    parser.addHeadingOptional("Dimensions");
+    parser.addHeadingOptional("Seed");
+    parser.addHeadingOptional("Boundary");
+    parser.addHeadingOptional("Gravity");
+    parser.addHeadingOptional("Attraction");
+    parser.addHeadingOptional("Integrator");
+    parser.addHeadingOptional(Types_Token);
+    parser.addHeadingOptional("Template");
+    parser.addHeadingOptional("Fill");
+    parser.addHeadingOptional("Particle");
+    parser.addHeadingOptional("Modifier");
+    parser.addHeadingOptional("Relax");
+    parser.addHeadingOptional("Reconcile");
+    // Check headings for validity.
+    parser.check();
 
     // --- Look for variables
-    parser.getHeading_Optional("Var");
-    for (auto v=parser.begin(); v!=parser.end(); ++v) {
+    if (parser.begin("Var")) {
       string name, value;
-      name  = v.first_param();
-      value = v.first_arg<string>();
-      // Check for command line argument
-      parserPtr->get(name, value);
-      // Add to variables
-      variables.insert(pair<string, string>(name, value));
+      do {
+        // Get the name of the variable, and its value.
+        parser.argvalName(name, value);
+        // Check for command line argument
+        parserPtr->get(name, value);
+        // Add to variables if a variable does not already exist.
+        setVariable(name, value);
+      } while (parser.next());
+      // Set the variables
+      parser.set_variables(variables);
     }
-    // Set the variables
-    parser.set_variables(variables);
 
     // --- Look for dimensions
-    parser.getHeading_Optional("Dimensions");
-    hd = parser.first();
-    sim_dimensions = 2; // Default value
-    if (hd) {
-      parser.extract_first_parameter(sim_dimensions);
-      if (sim_dimensions<=0) throw BadDimension();
-    }
+    sim_dimensions = 2;
+    parser.firstArg("Dimensions", sim_dimensions);
+    if (sim_dimensions<=0) throw BadDimension();
+
+    // Set up GFlow
+    if (gflow) delete gflow;
     gflow = new GFlow(sim_dimensions);
 
     // --- Look for seed information for random generators
-    parser.getHeading_Optional("Seed");
-    hd = parser.first();
-    // Read in a random seed
-    if (parser.extract_first_parameter(seed));
-    // Generate a random seed
+    if (parser.firstArg("Seed", seed));
     else seed = std::chrono::system_clock::now().time_since_epoch().count();
+    // Set up random number generators
     seedGenerator(seed);
     srand48(seed);
     normal_dist = std::normal_distribution<RealType>(0., 1.);
 
     // --- Look for bounds
-    parser.getHeading_Necessary("Bounds");
-    hd = parser.first();
-    ParseHelper subParser(hd);
-    subParser.set_variables(variables);
-    simBounds = Bounds(subParser.size());
-    int d=0;
-    for (int d=0; d<sim_dimensions; ++d) {
-      subParser.extract_parameter(simBounds.min[d], d, 0);
-      subParser.extract_parameter(simBounds.max[d], d, 1);
-    }
-    gflow->setBounds(simBounds);
+    parser.focus("Bounds"); // This will be true, since Bounds is a required heading.
+    // Parse to find the bounds
+    Region *region = ParseConstructor::parse_region(parser.getNode(), variables, gflow);
+    gflow->setBounds(region->get_bounding_box());
+    delete region;
+    // Return to original level
+    parser.up();
 
     // --- Look for boundary conditions
-    parser.getHeading_Optional("Boundary");
-    hd = parser.first();
-    if (hd) {
-      string opt;
-      if (parser.extract_first_parameter(opt)) gflow->setBC(d, choose_bc(opt));
-      else {
-        ParseHelper subParser(hd);
-        subParser.set_variables(variables);
-        // Record template name, number
-        int d=0;
-        for (auto m=subParser.begin() ; m!=subParser.end(); ++m, ++d) {
-          opt = m.convert_param<string>();
-          gflow->setBC(d, choose_bc(opt));
+    if (parser.focus("Boundary")) {
+      // Set all the boundary conditions to be the same.
+      if (parser.argName()!="") gflow->setAllBCs(choose_bc(parser.argName()));
+      // Each boundary condition is different.
+      else if (parser.body_size()==sim_dimensions) {
+        // Get all the boundary conditions
+        int d = 0;
+        for (parser.begin(); parser.next(); ++d) {
+          gflow->setBC(d, choose_bc(parser.argName()));
         }
       }
+      else throw BadDimension();
+      // Return to original level
+      parser.up();
     }
     else gflow->setAllBCs(BCFlag::WRAP);
 
-    parser.getHeading_Optional("Gravity");
-    hd = parser.first();
-    if (hd) {
-      RealType *g = new RealType[sim_dimensions];
-      parser.set_vector_argument(g, hd, sim_dimensions);
-      gflow->addModifier(new ConstantAcceleration(gflow, g));
-      delete [] g;
-    }
+    // --- Constant, uniform acceleration.
+    Vec g(0);
+    parser.argVec("Gravity");
+    if (g.size()!=0) gflow->addModifier(new ConstantAcceleration(gflow, g.data));
 
     // --- Attraction towards the center of the domain
-    parser.getHeading_Optional("Attraction");
-    RealType g;
-    if (parser.extract_first_parameter(g)) gflow->setAttraction(g);
+    RealType att = 0;
+    if (parser.firstArg("Attraction", att)) gflow->setAttraction(att);
 
     // --- Look for integrator
-    parser.getHeading_Optional("Integrator");
-    hd = parser.first();
-    if (hd) gflow->integrator = choose_integrator(hd);
+    if (parser.focus("Integrator")) {
+      gflow->integrator = choose_integrator(parser.getNode());
+      // Return to original level
+      parser.up();
+    }
     else gflow->integrator = new VelocityVerlet(gflow);
 
     // --- Look for number of particle types
-    parser.getHeading_Optional(Types_Token);
-    int n;
-    if(parser.extract_first_parameter(NTypes));
+    if (parser.firstArg(Types_Token, NTypes));
     else NTypes = 1;
     gflow->forceMaster->setNTypes(NTypes);
 
     // --- Look for interactions
-    parser.getHeading_Necessary(Interactions_Token); 
-    hd = parser.first();   
-    // If we expect something like ": Random" instead of a force grid
-    if (hd->subHeads.empty()) {
-      if (hd->params.size()!=1) 
-        throw BadStructure("Expect one parameter for force grid, since the body is empty.");
-      // Read the parameter and do what it says
-      if (hd->params[0]->partA=="Random") {
-        // Assign random interactions, either LennardJones or HardSphere (for now), and with equal probability (for now)
+    parser.focus(Interactions_Token);
+    // An interaction grid is not specified.
+    if (parser.body_size()==0) {
+      // If all types interact with the same interaction, or some interaction command is given.
+      if (parser.argName()=="Random") { 
         makeRandomForces();
       }
-      else throw BadStructure("Unrecognized force grid parameter.");
-    }
-    // Otherwise 
-    else {
-      // Collect all the interactions we need
-      std::map<string, Interaction*> interactions;
-      // The body specifies the force grid
-      for (auto fg : hd->subHeads) {
-        // Look for type1, type2, interaction-type [, possibly "R"]
-        if (fg->params.size()!=3 && fg->params.size()!=4) 
-          throw BadStructure("Force grid needs three or four parameters per line to specify interaction, found "+toStr(fg->params.size())+".");
-        // Check if we don't want reflexive forces
-        if (fg->params.size()==4 && fg->params[3]->partA!="NR")
-          throw BadStructure("Fourth argument must be 'NR' if anything.");
-        // What type of interaction do we need
-        string i_token = fg->params[2]->partA;
-        // Check if this is a new interaction type
-        if (interactions.find(i_token)==interactions.end()) 
-          interactions.insert(std::pair<string, Interaction*>(i_token, choose_interaction(fg)));
-        // Get the type ids
-        int t1 = convert<int>(fg->params[0]->partA), t2 = convert<int>(fg->params[1]->partA);
-        // Add the interaction
-        gflow->forceMaster->setInteraction(t1, t2, interactions.find(i_token)->second);
-        // We already checked that the fourth parameter is an 'R' if it exists. Only add if t1!=t2
-        if (fg->params.size()!=4 && t1!=t2) 
-          gflow->forceMaster->setInteraction(t2, t1, interactions.find(i_token)->second);
+      // Expect the force type. Every particle type interacts via the same interaction.
+      else {
+        gflow->forceMaster->setInteraction(InteractionChoice::choose(gflow, parser.argName(), sim_dimensions));
       }
     }
+    // The interaction grid is specified.
+    else { 
+      std::map<string, Interaction*> interactions;
+      string token;
+      int t1, t2;
+      parser.begin();
+      // Go through each entry in the force table (each head is an entry).
+      do {
+        // CASE: [ : type1, type2, interaction-type ]
+        if (parser.args_size()==3) {
+          // Get the interaction token
+          token = parser.argName(2);
+          // Get the particle types
+          t1 = parser.arg_cast<int>(0);
+          t2 = parser.arg_cast<int>(1);
+          // If the interaction has not occured yet, create one.
+          if (interactions.find(token)==interactions.end()) 
+            interactions.insert(std::pair<string, Interaction*>(token, InteractionChoice::choose(gflow, token, sim_dimensions)));
+          // Set the interparticle interaction
+          gflow->forceMaster->setInteraction(t1, t2, interactions.find(token)->second);
+        }
+        // NOT A VALID CASE
+        else throw BadStructure("Force grid: unrecognized structure.");
+      } while (parser.next());
+      // We have scanned all the entries.
+    }
+    // Return to the original level.
+    parser.up();
 
     // --- Global Particle Template. Defines "types" of particles, e.g. radius distribution, density/mass, etc.
-    parser.getHeading_Optional("Template");
-    for (auto h : parser) getParticleTemplate(h, global_templates);
+    if (parser.begin("Template")) {
+      do {
+        getParticleTemplate(parser.getNode(), global_templates);
+      } while (parser.next());
+    }
 
     // --- Fill an area with particles
-    parser.getHeading_Optional("Fill");
-    FillAreaCreator fillarea;
-    PolymerCreator pc;
-    for (auto h : parser) {
-      if (h->params[0]->partA=="Area") fillarea.createArea(h, gflow, variables, particle_fixers);
-      else if (h->params[0]->partA=="Polymer") pc.createArea(hd, gflow, variables, particle_fixers);
+    if (parser.begin("Fill")) {
+      FillAreaCreator fa;
+      PolymerCreator pc;
+      do {
+        if      (parser.argName()=="Area")    fa.createArea(parser.getNode(), gflow, variables, particle_fixers);
+        else if (parser.argName()=="Polymer") pc.createArea(parser.getNode(), gflow, variables, particle_fixers);
+        else throw BadStructure("Unrecognized fill option: [" + parser.argName() + "].");
+      } while (parser.next());
     }
 
-    // --- Create a single particle
-    parser.getHeading_Optional("Particle");
-    for (auto h : parser) createParticle(h);
-
-    parser.getHeading_Optional("Modifier");
-    for (auto h : parser) add_modifier(h);
-
-    // --- Get a maximum domain update delay time
-    parser.getHeading_Optional("MaxDomainUpdateDelay");
-    hd = parser.first();
-    if (hd) {
-      RealType max = -1;
-      parser.extract_first_parameter(max);
-      if (max>0) gflow->domain->setMaxUpdateDelay(max);
+    // --- Create single particles
+    if (parser.begin("Particle")) {
+      do {
+        createParticle(parser.getNode());
+      } while (parser.next());
     }
 
-    // --- Get a maximum allowed timestep
-    parser.getHeading_Optional("MaxDT");
-    hd = parser.first();
-    if (hd) {
-      RealType max = -1;
-      parser.extract_first_parameter(max);
-      if (max>0) gflow->integrator->setMaxDT(max);
-    }
-
-    // --- Get a maximum allowed timestep
-    parser.getHeading_Optional("MinDT");
-    hd = parser.first();
-    if (hd) {
-      RealType min = -1;
-      parser.extract_first_parameter(min);
-      if (min>0) gflow->integrator->setMinDT(min);
+    // --- Create single particles
+    if (parser.begin("Modifier")) {
+      do {
+        add_modifier(parser.getNode());
+      } while (parser.next());
     }
 
     // Initialize domain
     gflow->domain->initialize();
 
     // --- Relax the simulation
-    parser.getHeading_Optional("Relax");
-    hd = parser.first();
-    // Default relax time is 0.5
     RealType relax_time = 0.5;
-    if (hd) {
-      parser.extract_first_parameter(relax_time);
-    }
+    parser.firstArg("Relax", relax_time);
     if (relax_time>0) hs_relax(gflow, relax_time);
 
-    // --- Look for particle reconcilliation (should we remove overlapping particles?). Must do this after domain initialization.
-    parser.getHeading_Optional("Reconcile");
-    for (auto m : parser) {
-      if (m->params.empty()) throw BadStructure("Need a remove option.");
-        if (m->params[0]->partA=="Remove") {
-          if (m->params[0]->partB.empty()) gflow->removeOverlapping(2.); // Remove particles overlapping by a large amount
-          else gflow->removeOverlapping(convert<RealType>(m->params[0]->partB));
+    // --- Reconcile overlaps
+    if (parser.begin("Reconcile")) {
+      do {
+        if (parser.argName()=="Remove") {
+          // Default remove overlap cutoff.
+          RealType rem = 2.;
+          // Remove overlap cutoff
+          parser.val(rem);
+          // Do the removal
+          gflow->removeOverlapping(rem);
         }
-        else throw BadStructure("Unrecognized remove option, [" + m->params[0]->partA + "].");
+        else throw BadStructure("Unrecognized remove option, [" + parser.argName() + "].");
+      } while (parser.next());
     }
     
     // Reconstruct domain
@@ -467,7 +442,7 @@ namespace GFlowSimulation {
     return InteractionChoice::choose(gflow, token, sim_dimensions);
   }
 
-  inline BCFlag FileParseCreator::choose_bc(string& token) const {
+  inline BCFlag FileParseCreator::choose_bc(const string& token) const {
     if      (token=="Wrap")     return BCFlag::WRAP;
     else if (token=="Reflect")  return BCFlag::REFL;
     else if (token=="Repulse") return BCFlag::REPL;

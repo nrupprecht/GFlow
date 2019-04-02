@@ -28,17 +28,20 @@ namespace GFlowSimulation {
   */
   class FileParseCreator : public Creator {
   public:
-    //! Constructor.
+    //! \brief Constructor.
     FileParseCreator(int, char**);
 
-    //! Constructor -- pass in a pointer to an ArgParse object.
+    //! \brief Constructor -- pass in a pointer to an ArgParse object.
     FileParseCreator(ArgParse*);
 
-    //! Constructor -- pass in a pointer to an ArgParse object, and the configuration file name.
+    //! \brief Constructor -- pass in a pointer to an ArgParse object, and the configuration file name.
     FileParseCreator(ArgParse*, string);
 
-    //! Create a simulation.
+    //! \brief Create a simulation.
     virtual GFlow* createSimulation();
+
+    //! \brief Set a variable: name and value.
+    void setVariable(const string&, const string&);
 
   private:
 
@@ -50,7 +53,7 @@ namespace GFlowSimulation {
 
     inline Interaction* choose_interaction(HeadNode*) const;
 
-    inline BCFlag choose_bc(string&) const;
+    inline BCFlag choose_bc(const string&) const;
 
     inline void add_modifier(HeadNode*) const;
 

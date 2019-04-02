@@ -26,6 +26,10 @@ namespace GFlowSimulation {
     dataObjects.push_back(dob);
   }
 
+  const vector<DataObject*>& DataMaster::getDataObjects() const {
+    return dataObjects;
+  }
+
   void DataMaster::setCommand(int ac, char **av) {
     argc = ac; argv = av;
   }
@@ -126,7 +130,7 @@ namespace GFlowSimulation {
     }
 
     // Directory names
-    string graphDirectory = writeDirectory+"/plots";
+    string graphDirectory = writeDirectory+"/graph";
     string multiGraphDirectory = writeDirectory+"/multigraph";
     string generalDirectory = writeDirectory+"/general";
 

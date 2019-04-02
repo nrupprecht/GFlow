@@ -1,10 +1,11 @@
 
 Dimensions: 2
 
-Var: width=4
-Var: length=5
+Var: width=8
+Var: length=4
 Var: number=1
 Var: phi=0.5
+Var: h=0.5
 
 // Set the simulation bounds
 Bounds: {
@@ -31,6 +32,9 @@ Force-grid: {
 }
 
 Fill: Polymer {
+  Parallel: 1
+  H: h  
+
   Length: length
   Number: number
   R: 0.05
@@ -51,5 +55,10 @@ Fill: Area {
 
   Number: Phi=0.1 {
     TypeA : 1
+  }
+
+  Excluded: {
+    : 3.7, 4.3
+    : 1.8, 6.2
   }
 }

@@ -56,7 +56,7 @@ namespace GFlowSimulation {
     Integrator *rx_integrator;
     if (relax_integrator) rx_integrator = new RelaxIntegrator(gflow);
     else rx_integrator = new OverdampedIntegrator(gflow);
-    
+
     // Give gflow new data
     gflow->interactions.clear(); // Clear old forces
     gflow->integrator = rx_integrator;
@@ -69,7 +69,6 @@ namespace GFlowSimulation {
 
     // Make sure all forces are zero
     gflow->simData->clearF();
-
     // Relax simulation
     gflow->requestTime(time);
     gflow->run(); // GFlow run calls initialize, so all the base objects' pointers will be correct.

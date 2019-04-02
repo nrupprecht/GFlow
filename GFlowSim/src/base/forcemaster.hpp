@@ -62,7 +62,10 @@ namespace GFlowSimulation {
 
     //! \brief Set the force in the force grid - this also adds it to the force vector here and in the GFlow
     //! object if it is not already in those locations.
-    void setInteraction(int, int, Interaction*);
+    void setInteraction(int, int, Interaction*, bool=true);
+
+    //! \brief Set all the interactions to be of the same type.
+    void setInteraction(Interaction*);
 
     //! \brief Set the calculate potential flag for all interactions.
     void setCalculatePotential(bool);

@@ -3,81 +3,43 @@
 #include "../allbonded.hpp"
 #include "../alldataobjects.hpp"
 
+#include "../utility/treeparser.hpp"
+
 namespace GFlowSimulation {
 
   void PolymerCreator::createArea(HeadNode *head, GFlow *gflow, const std::map<string, string>& variables, vector<ParticleFixer>& particle_fixers) {
-    // Set up parser
-    ParseHelper parser(head);
-    parser.set_variables(variables);
-    parser.addValidSubheading("Number");
-    parser.addValidSubheading("Length");
-    parser.addValidSubheading("Phi");
-    parser.addValidSubheading("R");
-    parser.addValidSubheading("r");
-    parser.addValidSubheading("Correlation");
-    parser.sortOptions();
-    HeadNode *hd = nullptr;
+    // Create parser, with variables.
+    TreeParser parser(head, variables);
+    // Declare valid options
+    parser.addHeadingOptional("Number");
+    parser.addHeadingOptional("Length");
+    parser.addHeadingOptional("Phi");
+    parser.addHeadingOptional("R");
+    parser.addHeadingOptional("r");
+    parser.addHeadingOptional("Correlation");
+    parser.addHeadingOptional("Parallel");
+    parser.addHeadingOptional("H");
+    // Check headings for validity
+    parser.check();
 
     // Parameters
     int number = 1;
     RealType length = 5.;
     RealType phi = 0.2;
     bool useAngle = false;
+    bool pair = false;
+    RealType h = 2.5;
 
-    // Extract the number of chains to create.
-    parser.getHeading_Optional("Number");
-    hd = parser.first();
-    if (hd) {
-      int num;
-      parser.extract_first_parameter(num, hd);
-      if (num>0) number = num;
-    }
-
-    // Extract the number of atoms per chain.
-    parser.getHeading_Optional("Length");
-    hd = parser.first();
-    if (hd) {
-      int l;
-      parser.extract_first_parameter(l, hd);
-      if (l>0) length = l;
-    }
-
-    // Extract the probability that an atom is a large particle.
-    parser.getHeading_Optional("Phi");
-    hd = parser.first();
-    if (hd) {
-      RealType p;
-      parser.extract_first_parameter(p, hd);
-      if (p>0) phi = p;
-    }
-
-    // Extract the radius of the large particles.
-    parser.getHeading_Optional("R");
-    hd = parser.first();
-    if (hd) {
-      RealType R;
-      parser.extract_first_parameter(R, hd);
-      if (R>0) rP = R;
-    }
-
-    // Extract the radius of the small (chain link) particles.
-    parser.getHeading_Optional("r");
-    hd = parser.first();
-    if (hd) {
-      RealType r;
-      parser.extract_first_parameter(r, hd);
-      if (r>0) rC = r;
-    }
-
-    // Whether to use a correlation functino or not.
-    parser.getHeading_Optional("Correlation");
-    hd = parser.first();
-    if (hd) {
-      bool c;
-      parser.extract_first_parameter(c, hd);
-      useCorr = c;
-    }
-
+    // Gather parameters
+    parser.firstArg("Number", number);
+    parser.firstArg("Length", length);
+    parser.firstArg("Phi", phi);
+    parser.firstArg("R", rP);
+    parser.firstArg("r", rC);
+    parser.firstArg("Correlation", useCorr);
+    parser.firstArg("Parallel", pair);
+    parser.firstArg("H", h);
+    
     // --- Done gathering parameters, ready to act.
 
     // Get number of dimensions
@@ -121,16 +83,15 @@ namespace GFlowSimulation {
     // Seed global random generator
     seedNormalDistribution();
 
-    // Create all the polymers
-    for (int i=0; i<number; ++i) {
-      createRandomPolymer(gflow, length, phi, 0, 1);
+    if (pair) {
+      createParallelPolymers(gflow, h, phi, length);
     }
-
-    //RealType h = 2.5;
-    //createParallelPolymers(gflow, h, phi, length);
-
-    // Need to relax
-    Creator::hs_relax(gflow, 0.5);
+    else {
+      // Create all the polymers
+      for (int i=0; i<number; ++i) {
+        createRandomPolymer(gflow, length, phi, 0, 1);
+      }
+    }
     
     // Give random normal velocities.
     RealType vsgma = 0.001;
@@ -282,7 +243,7 @@ namespace GFlowSimulation {
       else sd->addParticle(X, ZERO, rC, imC, idC);
 
       // Add bond
-      if (gid1!=-1) harmonicbonds->addBond(gid1, gid2);
+      if (gid1!=-1 && harmonicbonds) harmonicbonds->addBond(gid1, gid2);
       if (harmonicchain) harmonicchain->addAtom(gid2);
 
       // Primary type
@@ -310,6 +271,7 @@ namespace GFlowSimulation {
     imP = 0;
     imC = 0;
     RealType sigma_v = 0.;
+    RealType dx = (1.+h)*rP;
 
     // Initial point and normal vector
     RealType *x = new RealType[sim_dimensions], *Yhat = new RealType[sim_dimensions];
@@ -319,20 +281,27 @@ namespace GFlowSimulation {
     gflow->bounds.center(x);
     x[1] -= 0.5*length;
 
+    // Remove harmonic bonds, so the particles will not be added.
+    HarmonicBond *bonds = harmonicbonds;
+    harmonicbonds = nullptr;
+
     // Create a random polymer arrangement
     vector<bool> chain_ordering;
     createPolymerArrangement(chain_ordering, phi, length);
     // Shift x to the left 
-    x[0] -= h*rP/2;
+    x[0] -= dx;
     // Create first chain.
     createSinglePolymer(gflow, x, Yhat, chain_ordering, sigma_v, 0, 1);
     
     // Create another random arrangement
     createPolymerArrangement(chain_ordering, phi, length);
     // Shift x to the right
-    x[0] += h*rP;
+    x[0] += 2*dx;
     // Create the second chain.
-    createSinglePolymer(gflow, x, Yhat, chain_ordering, sigma_v, 2, 1);
+    createSinglePolymer(gflow, x, Yhat, chain_ordering, sigma_v, 0, 1);
+
+    // Give back harmonic bonds
+    harmonicbonds = bonds;
 
     // Clean up
     delete [] x;
