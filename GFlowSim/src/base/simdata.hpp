@@ -260,7 +260,7 @@ namespace GFlowSimulation {
     // -*-*-*- Ids -*-*-*-
 
     //! \brief The next global id a particle will be given.
-    int next_global_id;
+    int next_global_id = 0;
 
     //! \brief A map between global and local ids, <global, local>.
     std::unordered_map<int, int> id_map;
@@ -292,7 +292,7 @@ namespace GFlowSimulation {
     int _capacity = 0;
 
     //! \brief Copy this data from force master.
-    int _ntypes;
+    int _ntypes = 0;
 
     // -*-*-*- MPI related -*-*-*-
 

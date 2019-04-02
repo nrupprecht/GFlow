@@ -52,4 +52,14 @@ namespace GFlowSimulation {
     return true;
   }
 
+  RealType GraphObject::ave() {
+    if (data.empty()) return 0;
+    // Accumulator
+    RealType total = 0;
+    // Tally 
+    for (auto v : data) total += v.second;
+    // Temporal average
+    return total / (data.size());
+  }
+
 }

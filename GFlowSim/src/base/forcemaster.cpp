@@ -90,8 +90,9 @@ namespace GFlowSimulation {
     max_cutoffs = vector<RealType>(ntypes, 1.);
   }
   
-  void ForceMaster::setInteraction(int type1, int type2, Interaction *it) {
+  void ForceMaster::setInteraction(int type1, int type2, Interaction *it, bool reflexive) {
     grid[type1][type2] = it;
+    if (reflexive) grid[type2][type1] = it;
     // Add to the list if it is not already there and isn't null.
     if (it!=nullptr && !contains(interactions, it)) 
       interactions.push_back(it);
@@ -102,6 +103,32 @@ namespace GFlowSimulation {
       RealType cutoff = it->getCutoff();
       if (max_cutoffs[type1]<cutoff) max_cutoffs[type1] = cutoff;
       if (max_cutoffs[type2]<cutoff) max_cutoffs[type2] = cutoff;
+    }
+  }
+
+  void ForceMaster::setInteraction(Interaction *it) {
+    // Get new cutoff.
+    RealType cutoff = 10;
+    if (it!=nullptr) { 
+      // Get the cutoff
+      cutoff = it->getCutoff();
+      // Set interacts to true for everyone
+      for (int i=0; i<ntypes; ++i) doesInteract[i] = true;
+    }
+    else { // Nothing interacts
+      // Set interacts to false for everyone
+      for (int i=0; i<ntypes; ++i) doesInteract[i] = false;
+    }
+    // Add to the list if it is not already there and isn't null.
+    if (it!=nullptr && !contains(interactions, it)) 
+      interactions.push_back(it);
+    // Set the force grid.
+    for (int y=0; y<ntypes; ++y) {
+      for (int x=0; x<ntypes; ++x) {
+        grid[y][x] = it;
+      }
+      // Reset the cutoff for this type.
+      max_cutoffs[y] = cutoff;
     }
   }
 

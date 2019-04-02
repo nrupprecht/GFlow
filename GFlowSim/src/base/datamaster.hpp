@@ -26,6 +26,9 @@ namespace GFlowSimulation {
     //! \brief Add a data object - we are subsequently in charge of the data object
     void addDataObject(DataObject*);
 
+    //! \brief Get a reference to the data objects vector.
+    const vector<DataObject*>& getDataObjects() const;
+
     //! \brief Set the command data
     void setCommand(int, char**);
 

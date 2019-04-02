@@ -24,6 +24,9 @@ namespace GFlowSimulation {
     //! Returns true for success.
     virtual bool writeToFile(string, bool=true) override;
 
+    //! \brief Compute averages of data.
+    RealType ave(int);
+
     //! \brief Exception class for trying to access data when there is none.
     struct EmptyData : public Exception {
       EmptyData() : Exception() {};

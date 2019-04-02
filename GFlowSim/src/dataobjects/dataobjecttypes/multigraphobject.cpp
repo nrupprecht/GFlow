@@ -70,6 +70,15 @@ namespace GFlowSimulation {
     return true;
   }
 
+  RealType MultiGraphObject::ave(int i) {
+    if (i<0 || ndata<=i || ndata_points==0) return 0;
+    RealType total = 0;
+    // Tally 
+    for (auto v : multi_data[i+1]) total += v;
+    // Return the average
+    return total/ndata_points;
+  }
+
   void MultiGraphObject::resetData() {
     // Clear the data vector by recreating it.
     multi_data = vector< vector<RealType> >(ndata+1, vector<RealType>());

@@ -24,6 +24,9 @@ namespace GFlowSimulation {
     //! \brief Collect the position data from simdata --- happens during the post-step phase.
     virtual void post_step() override = 0;
 
+    //! \brief Compute averages of data.
+    RealType ave();
+
     //! \brief Write data to a file - if true, the string is a path, and you should use your own name as the file name.
     //!
     //! Returns true for success.
