@@ -2,16 +2,14 @@
 #define __FORCE_MASTER_HPP__GFLOW__
 
 #include "../gflow.hpp"
-#include "../utility/array.hpp"
 
 namespace GFlowSimulation {
 
   /*
-  *  \class ForceMaster
-  *
-  *  Force master keeps a record of which interaction happens between pairs of particles.
-  *  This allows, for example, interactions 0<-->0 to be hard spheres, 0<-->1 is sphere-triangle, etc...
-  *  ForceMaster is not responsible for deleting or managing force objects, GFlow is.
+  *  \brief Force master is in charge of short range, non-bonded interaction. It keeps a record of which 
+  *  interaction happens between pairs of particles. This allows, for example, interactions 0<-->0 to be 
+  *  hard spheres, 0<-->1 is sphere-triangle, etc... ForceMaster is not responsible for deleting or managing 
+  *  force objects, GFlow is.
   *
   */
   class ForceMaster : public Base {

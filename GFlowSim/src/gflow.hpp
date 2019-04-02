@@ -231,9 +231,12 @@ namespace GFlowSimulation {
     //! \brief A vector of objects that should modify the simulation at some point(s) during execution.
     std::list<class Modifier*> modifiers;
 
-    //! \brief All the forces that can happen - which ones correspond to which pairs of particles is controlled by
+    //! \brief All the short range, non-bonded, forces that can happen - which ones correspond to which pairs of particles is controlled by
     // the ForceMaster object.
     vector<class Interaction*> interactions;
+
+    //! \brief All the bonded forces that can happen. They are tracked by the BondedMaster object.
+    vector<class Bonded*> bondedInteractions;
 
     //! \brief If true, the simulation should continue to run.
     bool running;

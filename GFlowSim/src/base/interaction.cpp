@@ -18,7 +18,7 @@ namespace GFlowSimulation {
   }
 
   void Interaction::interact() const {
-    // Reset virial
+    // Reset virial and potential
     virial    = 0;
     potential = 0;
   }

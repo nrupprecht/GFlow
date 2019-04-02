@@ -254,31 +254,26 @@ int main(int argc, char **argv) {
     cout << "Initialized, ready to run:\t" << time_span(current_time(), start_time) << "\n";
     cout << "Running with " << gflow->getNumParticles() << " particles.\n";
   }
-  if (gflow) {
-    //try {
-      gflow->run();
-    /*
-    }
-    catch (Exception *exc) {
-      if (!quiet && rank==0)
-        cout << "Message: " << exc->message << endl;
-      throw;
-    }
-    catch (...) {
-      if (!quiet && rank==0) cout << "Exited with exception.\n";
-      // Write accumulated data to files
-      if (rank==0) gflow->writeData(writeDirectory);
-      // Rethrow the exception
-      throw;
-    }
-    */
-    // More detailed exception handling
-    // @todo Exception handling.
+  //try {
+  gflow->run();
+  /*
   }
-  else {
-    if (!quiet && rank==0) cout << "GFlow pointer was null. Exiting.\n";
-    return 0;
+  catch (Exception *exc) {
+    if (!quiet && rank==0)
+      cout << "Message: " << exc->message << endl;
+    throw;
   }
+  catch (...) {
+    if (!quiet && rank==0) cout << "Exited with exception.\n";
+    // Write accumulated data to files
+    if (rank==0) gflow->writeData(writeDirectory);
+    // Rethrow the exception
+    throw;
+  }
+  */
+  // More detailed exception handling
+  // @todo Exception handling.
+
   if (!quiet && rank==0) cout << "Run is over:\t\t\t" << time_span(current_time(), start_time) << "\n";
   if (!quiet && rank==0) cout << "Ratio was:  \t\t\t" << gflow->getDataMaster()->getRatio() << "\n";
 

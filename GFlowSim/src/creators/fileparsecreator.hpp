@@ -4,7 +4,6 @@
 #include "../base/creator.hpp"
 #include "../utility/parsehelper.hpp"
 #include "particletemplate.hpp"
-#include "fillbounds.hpp"
 
 #include <map>
 
@@ -44,32 +43,35 @@ namespace GFlowSimulation {
     void setVariable(const string&, const string&);
 
   private:
-
+    //! \brief Create gflow from the options contained in the parse tree.
     inline void createFromOptions(HeadNode*);
 
     // --- Object selection
 
+    //! \brief Parse a tree to select an integrator.
     inline Integrator* choose_integrator(HeadNode*) const;
 
+    //! \brief Parse a tree to select an interaction.
     inline Interaction* choose_interaction(HeadNode*) const;
 
+    //! \brief Convert a string to a BCFlag.
     inline BCFlag choose_bc(const string&) const;
 
+    //! \brief Parse a tree to add a modifier.
     inline void add_modifier(HeadNode*) const;
 
     // --- Creation helpers
 
+    //! \brief Parse a tree to add a single particle to gflow.
     inline void createParticle(HeadNode*) const;
 
-    //! \brief Get all the headers with a certain heading, put into the supplied vector.
-    inline void getAllMatches(string, vector<HeadNode*>&, std::multimap<string, HeadNode*>&) const;
-
-    inline void getParticleTemplate(HeadNode*, std::map<string, ParticleTemplate>&) const;
-
+    //! \brief Create a random force grid.
     inline void makeRandomForces();
 
+    //! \brief Parse a head node to create a random engine.
     inline RandomEngine* getRandomEngine(HeadNode*, string&) const;
 
+    //! \brief Load the config file, and return it as a string.
     inline string copyFile() const;
 
     //! \brief The name of the file to load from

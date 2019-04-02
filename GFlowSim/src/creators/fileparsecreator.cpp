@@ -286,7 +286,7 @@ namespace GFlowSimulation {
     // --- Global Particle Template. Defines "types" of particles, e.g. radius distribution, density/mass, etc.
     if (parser.begin("Template")) {
       do {
-        getParticleTemplate(parser.getNode(), global_templates);
+        ParseConstructor::parse_particle_template(parser.getNode(), variables, global_templates, gflow);
       } while (parser.next());
     }
 
@@ -445,7 +445,7 @@ namespace GFlowSimulation {
   inline BCFlag FileParseCreator::choose_bc(const string& token) const {
     if      (token=="Wrap")     return BCFlag::WRAP;
     else if (token=="Reflect")  return BCFlag::REFL;
-    else if (token=="Repulse") return BCFlag::REPL;
+    else if (token=="Repulse")  return BCFlag::REPL;
     else throw UnexpectedOption("Boundary condition choice was ["+token+"].");
   }
 
@@ -491,19 +491,20 @@ namespace GFlowSimulation {
     std::vector<HeadNode*> container;
 
     // --- Look for options
-    RealType *X = new RealType[sim_dimensions], *V = new RealType[sim_dimensions], sigma, im;
+    Vec X(sim_dimensions), V(sim_dimensions);
+    RealType sigma, im;
     int type;
 
     // --- Look for position
     parser.getHeading_Necessary("Position", "Particle needs a position!");
     hd = parser.first();
-    parser.set_vector_argument(X, hd, sim_dimensions);
+    parser.set_vector_argument(X.data, hd, sim_dimensions);
 
     // --- Look for velocity
     parser.getHeading_Optional("Velocity");
     hd = parser.first();
-    if (hd) parser.set_vector_argument(V, hd, sim_dimensions);
-    else zeroVec(V, sim_dimensions);
+    if (hd) parser.set_vector_argument(V.data, hd, sim_dimensions);
+    else V.zero();
 
     // --- Look for sigma
     parser.getHeading_Necessary("Sigma", "Particle needs a sigma!");
@@ -532,93 +533,21 @@ namespace GFlowSimulation {
     parser.getHeading_Optional("Modifier");
     int g_id = gflow->simData->getNextGlobalID();
     for (auto m=parser.begin(); m!=parser.end(); ++m) {
-      if (m.first_param()=="CV") gflow->addModifier(new ConstantVelocity(gflow, g_id, V));
+      if (m.first_param()=="CV") gflow->addModifier(new ConstantVelocity(gflow, g_id, V.data));
       else if (m.first_param()=="CV-D") {
         RealType D = m.first_arg<RealType>();
-        gflow->addModifier(new ConstantVelocityDistance(gflow, g_id, V, D));
+        gflow->addModifier(new ConstantVelocityDistance(gflow, g_id, V.data, D));
       }
       else BadStructure("Unrecognized modifer option, ["+m.first_param()+"].");
     }
 
     // Add the particle to the system
-    gflow->simData->addParticle(X, V, sigma, im, type);
-
-    // Clean up
-    delete [] X;
-    delete [] V;
-  }
-
-  inline void FileParseCreator::getAllMatches(string heading, vector<HeadNode*>& container, std::multimap<string, HeadNode*>& options) const {
-    // Clear container in case there is stuff left over in it.
-    container.clear();
-    // Look for options
-    for (auto it=options.find(heading); it!=options.end(); ++it) {
-      // If the head has the propper heading, store it.
-      if (it->first==heading) container.push_back(it->second);
-    }
-  }
-
-  //! Valid headers for particle templates are:
-  //! Radius: [Random | Uniform | Normal | #]
-  //! Mass:   [Density=# | #]
-  //! Type:   [Random | #]
-  inline void FileParseCreator::getParticleTemplate(HeadNode *head, std::map<string, ParticleTemplate>& particle_templates) const {
-    // Create a particle template to set
-    ParticleTemplate p_template;
-
-    ParseHelper parser(head);
-    parser.set_variables(variables);
-    // Declare valid options
-    parser.addValidSubheading("Radius");
-    parser.addValidSubheading("Mass");
-    parser.addValidSubheading("Type");
-    // Make sure only valid options were used
-    if (!parser.checkValidSubHeads()) {
-      cout << "Warning: Invalid Headings:\n";
-      for (auto ih : parser.getInvalidSubHeads())
-        cout << " -- Heading: " << ih << endl;
-    }
-    // Sort options
-    parser.sortOptions();
-    // Pointer for head nodes
-    HeadNode *hd = nullptr;
-    
-    // --- Look for options
-    string option, type;
-    
-    // --- Look for Radius option
-    parser.getHeading_Necessary("Radius");
-    hd = parser.first();
-    p_template.radius_engine = getRandomEngine(hd, type);
-    p_template.radius_string = type;
-
-    // --- Look for Mass option
-    parser.getHeading_Necessary("Mass");
-    hd = parser.first();
-    parser.extract_first_parameter(option, hd);
-    RealType m;
-    if (option=="Density" && parser.extract_first_arg(m)) {
-      p_template.mass_engine = new DeterministicEngine(m);
-      p_template.mass_string = "Density";
-    }
-    else if (parser.extract_first_arg(m)) {
-      p_template.mass_engine = new DeterministicEngine(m);
-      p_template.mass_string = "Mass";
-    }
-
-    // --- Look for Type option
-    parser.getHeading_Necessary("Type");
-    hd = parser.first();
-    p_template.type_engine = getRandomEngine(hd, type);
-    p_template.type_string = type;
-
-    // Add to particle templates
-    particle_templates.insert(std::pair<string, ParticleTemplate>(head->params[0]->partA, p_template));
+    gflow->simData->addParticle(X.data, V.data, sigma, im, type);
   }
 
   inline void FileParseCreator::makeRandomForces() {
     // Assign random interactions, either LennardJones or HardSphere (for now), and with equal probability (for now)
-    Interaction *hs   = InteractionChoice::choose(gflow, InteractionChoice::HardSphereToken, sim_dimensions); 
+    Interaction *hs = InteractionChoice::choose(gflow, InteractionChoice::HardSphereToken, sim_dimensions); 
     Interaction *lj = InteractionChoice::choose(gflow, InteractionChoice::LennardJonesToken, sim_dimensions);
     // Assign random (but symmetric) interactions
     for (int i=0; i<NTypes; ++i) {
