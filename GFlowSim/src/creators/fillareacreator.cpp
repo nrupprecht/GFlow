@@ -2,6 +2,8 @@
 // Other files
 #include "../utility/treeparser.hpp"
 
+#include <functional>
+
 namespace GFlowSimulation {
 
   void FillAreaCreator::createArea(HeadNode *head, GFlow *gflow, const std::map<string, string>& variables, vector<ParticleFixer>& particle_fixers) {
@@ -90,16 +92,36 @@ namespace GFlowSimulation {
 
     // --- Velocity. How to choose particle velocities. We will find a better / more expressive way to do this later.
     Vec Vs(sim_dimensions);
-    int velocityOption = 0; // Normal velocities by default.
+    int velocityOption = 2;         // Use temperature by default.
+    RealType kinetic = 0.00196;     // Default kinetic energy factor --> 0.25/127.324
+    RealType temperature = 0.00156; // Default temperature
     // Velocity option
     // 0 - Normal
     // 1 - Specified vector
+    // 2 - Exponential distribution of kinetic energies.
     if (parser.focus("Velocity")) {
-      if (parser.argName()=="Zero") velocityOption = 1; // Zero velocity
-      else {
+      // Choose velocity to be a random normal magnitude vector
+      if (parser.argName()=="" || parser.argName()=="Normal") {
+        // Get the target kinetic energy, if specified.
+        parser.val(kinetic);
+        // Set velocity option
+        velocityOption = 0;
+      }
+      else if (parser.argName()=="Temperature") {
+        parser.val(temperature);
+        // Set velocity option
+        velocityOption = 2;
+      }
+      // Otherwise, a specific velocity vector is specified.
+      else if (parser.argName()=="Zero") velocityOption = 1; // Zero velocity
+      else { 
+        // Get the velocity vector
         Vs = parser.argVec();
+        // Set velocity option
         velocityOption = 1;
       }
+      // Initialize particles to a certain temperature
+
       // --- Other options would go here
     }
 
@@ -110,17 +132,39 @@ namespace GFlowSimulation {
     // Get the simdata
     SimData *simData = gflow->getSimData();
 
-    // Velocity selecting function
-    auto select_velocity = [&] (RealType *V, RealType *X, RealType sigma, RealType im, int type) -> void {
-      RealType vsgma = 0.25;
+    // Normal velocities
+    auto choose_by_normal = [&] (RealType *V, RealType *X, RealType sigma, RealType im, int type) -> void {
       // Velocity based on KE
-      double ke = fabs(vsgma*normal_dist(generator));
-      double velocity = sqrt(2*im*ke/127.324);
+      double ke = fabs(normal_dist(generator));
+      double velocity = sqrt(2*im*ke*kinetic);
       // Random normal vector
       randomNormalVec(V, sim_dimensions);
       // Set the velocity
       scalarMultVec(velocity, V, sim_dimensions);
     };
+
+    // Constant velocity vector
+    auto constant_velocity = [&] (RealType *V, RealType *X, RealType sigma, RealType im, int type) -> void {
+      // Velocity based on KE
+      copyVec(Vs.data, V, sim_dimensions);
+    };
+
+    // Expontial distribution
+    std::exponential_distribution<double> exp_distribution(1./(gflow->KB * temperature));
+    auto choose_by_temperature = [&] (RealType *V, RealType *X, RealType sigma, RealType im, int type) -> void {
+      double ke = exp_distribution(generator);
+      double velocity = sqrt(2*im*ke);
+      // Random normal vector
+      randomNormalVec(V, sim_dimensions);
+      // Set the velocity
+      scalarMultVec(velocity, V, sim_dimensions);
+    };
+
+    // Choose the function to use to assign velocities
+    std::function<void(RealType*, RealType*, RealType, RealType, int)> select_velocity;
+    if      (velocityOption==0) select_velocity = choose_by_normal;
+    else if (velocityOption==1) select_velocity = constant_velocity;
+    else if (velocityOption==2) select_velocity = choose_by_temperature;
 
     // A lambda for checking if a particle falls within any excluded region.
     auto excluded_contains = [&] (Vec x) {
@@ -131,7 +175,7 @@ namespace GFlowSimulation {
     // The maximum number of attempts to make
     int max_attempts = 50;
     
-    // --- Fill with particles
+    // --- Fill the region with particles
     Vec X(sim_dimensions), V(sim_dimensions);
     RealType sigma(0.), im(0.);
     int type(0);
@@ -174,10 +218,8 @@ namespace GFlowSimulation {
         // Add the particle
         simData->addParticle(X.data, V.data, sigma, im, type);
         // Pick an initial velocity and create the particle fixer
-        if      (im==0)             V.zero();
-        else if (velocityOption==0) select_velocity(V.data, X.data, sigma, im, type);
-        else if (velocityOption==1) V = Vs;
-        else zeroVec(V.data, sim_dimensions);
+        if (im==0) V.zero();
+        else select_velocity(V.data, X.data, sigma, im, type);
         ParticleFixer pfix(sim_dimensions, gid);
         copyVec(V.data, pfix.velocity, sim_dimensions);
         particle_fixers.push_back(pfix);
@@ -212,10 +254,8 @@ namespace GFlowSimulation {
           // Add the particle
           simData->addParticle(X.data, V.data, sigma, im, type);
           // Pick an initial velocity and create the particle fixer
-          if      (im==0)             V.zero();
-          else if (velocityOption==0) select_velocity(V.data, X.data, sigma, im, type);
-          else if (velocityOption==1) V = Vs;
-          else zeroVec(V.data, sim_dimensions);
+          if (im==0) V.zero();
+          else select_velocity(V.data, X.data, sigma, im, type);
           ParticleFixer pfix(sim_dimensions, gid);
           copyVec(V.data, pfix.velocity, sim_dimensions);
           particle_fixers.push_back(pfix);

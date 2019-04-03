@@ -202,7 +202,7 @@ namespace GFlowSimulation {
     // Make sure the heading exists.
     if (p!=headings.end()) {
       HeadNode *node = p->second;
-      if (!node->params.empty()) {
+      if (!node->params.empty() && node->params[0]->partA!="") {
         val = cast<T>(node->params[0]->partA);
         // Return true.
         return true;
@@ -216,7 +216,7 @@ namespace GFlowSimulation {
 
   template<typename T> bool TreeParser::firstArg(T& val) const {
     // Make sure the argument exists.
-    if (focus_node->params.size()>0) {
+    if (!focus_node->params.empty() && focus_node->params[0]->partA!="") {
       val = cast<T>(focus_node->params[0]->partA);
       return true;
     }
@@ -225,7 +225,7 @@ namespace GFlowSimulation {
   }
 
   template<typename T> bool TreeParser::val(T& val, int i) const {
-    if (-1<i || i<focus_node->params.size()) {
+    if ((-1<i || i<focus_node->params.size()) && focus_node->params[i]->partB!="") {
       val = cast<T>(focus_node->params[i]->partB);
       // Return true.
       return true;

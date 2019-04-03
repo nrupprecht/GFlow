@@ -25,7 +25,9 @@ namespace GFlowSimulation {
     distance.push_back(r);
   }
 
-  void HarmonicBond::post_forces() {
+  void HarmonicBond::interact() const {
+    // Call parent class.
+    Bond::interact();
     // Get the number of bonds. left and right will have the same size - we checked this last time
     // updateLocalIDs was called.
     int nbonds = left.size();

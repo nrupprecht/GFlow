@@ -1,11 +1,11 @@
 #ifndef __HARMONIC_CHAIN_HPP__GFLOW__
 #define __HARMONIC_CHAIN_HPP__GFLOW__
 
-#include "../base/modifier.hpp"
+#include "../base/bonded.hpp"
 
 namespace GFlowSimulation {
 
-  class HarmonicChain : public Modifier {
+  class HarmonicChain : public Bonded {
   public:
     //! \brief Default constructor.
     HarmonicChain(GFlow*);
@@ -16,18 +16,21 @@ namespace GFlowSimulation {
     //! \brief Add another atom to the chain.
     virtual void addAtom(int);
 
-    //! \brief Applies the forces to the atoms.
-    virtual void post_forces();
+    //! \brief Get the number of bonds.
+    virtual int size() const override;
+
+    //! \brief Bonded interactions.
+    virtual void interact() const override;
 
   private:
     //! \brief Update the local id list from the global ids.
-    void updateLocalIDs();
+    void updateLocalIDs() const;
 
     //! \brief The global ids of the particles in the chain.
     vector<int> global_ids;
 
     //! \brief The local ids of the particles in the chain.
-    vector<int> local_ids;
+    mutable vector<int> local_ids;
 
     //! \brief The relaxation distances for the bonds.
     vector<RealType> distance;

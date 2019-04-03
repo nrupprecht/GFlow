@@ -27,6 +27,39 @@ namespace GFlowSimulation {
     return i;
   }
 
+  //! \brief Convert a realtype to a string, with set precision.
+  inline string toStr(RealType x, int precision) {
+    stringstream stream;
+    string str;
+    stream << std::setprecision(precision) << x;
+    stream >> str;
+    return str;
+  }
+
+  //! \brief Pretty print a string so the decimal point is at a fixed place.
+  inline string pprint(RealType x, int lead, int follow) {
+    stringstream stream;
+    string str;
+    stream << x;
+    stream >> str;
+    // Split string
+    bool front = true;
+    string leading, following;
+    for (auto c : str) {
+      if (c=='.') front = false;
+      else if (front) leading.push_back(c);
+      else following.push_back(c);
+    }
+    // Work with leading part
+    int ds = max(0, static_cast<int>(lead - leading.size()));
+    string L(ds, ' ');
+    L += leading;
+    // Work with following part
+    following.resize(follow, ' ');
+    // Return the pretty string
+    return L+"."+following;
+  }
+
   //! \brief Convert a string to whatever type is specified.
   //!
   //! Use like "double x = convert<double>(str);"

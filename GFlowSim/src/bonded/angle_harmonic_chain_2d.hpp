@@ -9,7 +9,8 @@ namespace GFlowSimulation {
   public:
     AngleHarmonicChain_2d(GFlow*);
     AngleHarmonicChain_2d(GFlow*, RealType);
-    virtual void post_forces() override;
+
+    virtual void interact() const override;
   };
 
 }

@@ -67,6 +67,7 @@ int main(int argc, char **argv) {
   auto start_time = current_time();
 
   // --- Make sure we didn't enter any illegal tokens - do this after gflow creation since creator uses flags
+  /*
   try {
     parser.check();
   }
@@ -74,6 +75,7 @@ int main(int argc, char **argv) {
     if (!quiet) cout << "Illegal option: [" << illegal.token << "]. Exiting.\n";
     exit(1);
   }
+  */ 
 
   // Record data.
   vector<RPair> data;
@@ -85,6 +87,7 @@ int main(int argc, char **argv) {
     // Set variables in creator
     FileParseCreator creator(&parser, load);
     creator.setVariable("h", toStr(h));
+    creator.setVariable("pair", "1");
     // Create the simulation
     GFlow *gflow = creator.createSimulation();
 

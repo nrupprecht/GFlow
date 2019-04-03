@@ -115,6 +115,41 @@ namespace GFlowSimulation {
     return a<0 ? T(-1.) : T(1.);
   }
 
+  //! \brief A helper function that turns a linear address into a tuple address.
+  //!
+  //! Store in [ [ x00, x01 ... ], [ x10, x11, ...] ... ] -> row major form
+  //! This is the template dimension version of the function. It is overloaded for
+  //! the zero through three dimensional cases (at the time of this writing).
+  inline void getAddress(int linear, int *dims, int *address, int dimensions) {
+    // Multiply dims[0] * dims[1] * ... * dims[c-1]
+    // If c==0, returns 1
+    auto product = [&] (int c) -> int {
+      int p=1;
+      for (int i=0; i<c; ++i) p *= dims[i];
+      return p;
+    };
+
+    for (int d=dimensions-1; d>=0; --d) {
+      int prod = product(d);
+      address[d] = linear / prod;
+      linear %= prod;
+    }
+  }
+
+  inline void getAddressCM(int linear, int *dims, int *address, int dimensions) {
+    auto product = [&] (int c) -> int {
+      int p = 1;
+      for (int i=c; i<dimensions; ++i) p*=dims[i];
+      return p;
+    };
+
+    for (int d=0; d<dimensions; ++d) {
+      int prod = product(d+1);
+      address[d] = linear / prod;
+      linear %= prod;
+    }
+  }
+
   //! Check if a vector contains a specified object
   template<typename T> inline bool contains(const vector<T>& vec, T obj) {
     return std::find(vec.begin(), vec.end(), obj) != vec.end();

@@ -6,7 +6,9 @@ namespace GFlowSimulation {
 
   AngleHarmonicChain_3d::AngleHarmonicChain_3d(GFlow *gflow, RealType K) : AngleHarmonicChain(gflow, K) {};
 
-  void AngleHarmonicChain_3d::post_forces() {
+  void AngleHarmonicChain_3d::interact() const {
+    // Call parent class.
+    AngleHarmonicChain::interact();
     // Get simdata, check if the local ids need updating
     SimData *sd = Base::simData;
     RealType **x = sd->X();

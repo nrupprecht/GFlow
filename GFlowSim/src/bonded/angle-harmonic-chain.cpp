@@ -3,10 +3,10 @@
 namespace GFlowSimulation {
 
   AngleHarmonicChain::AngleHarmonicChain(GFlow *gflow) 
-    : Modifier(gflow), springConstant(DEFAULT_SPRING_CONSTANT), angleConstant(DEFAULT_SPRING_CONSTANT) {};
+    : Bonded(gflow), springConstant(DEFAULT_SPRING_CONSTANT), angleConstant(DEFAULT_SPRING_CONSTANT) {};
 
   AngleHarmonicChain::AngleHarmonicChain(GFlow *gflow, RealType K) 
-    : Modifier(gflow), springConstant(K), angleConstant(DEFAULT_SPRING_CONSTANT) {};
+    : Bonded(gflow), springConstant(K), angleConstant(DEFAULT_SPRING_CONSTANT) {};
 
   void AngleHarmonicChain::addAtom(int gid) {
     SimData *sd = Base::simData;
@@ -30,7 +30,11 @@ namespace GFlowSimulation {
     }
   }
 
-  void AngleHarmonicChain::updateLocalIDs() {
+  int AngleHarmonicChain::size() const {
+    return global_ids.size();
+  }
+
+  void AngleHarmonicChain::updateLocalIDs() const {
     // Make sure sizes are the same
     int nbonds = global_ids.size();
     // Update local ids

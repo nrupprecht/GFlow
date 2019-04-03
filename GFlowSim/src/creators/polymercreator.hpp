@@ -27,7 +27,7 @@ namespace GFlowSimulation {
     void createParallelPolymers(GFlow*, const RealType, const RealType, const RealType);
 
     //! \brief Whether to use correlation objects.
-    bool useCorr = true;
+    bool useCorr = false;
 
     //! \brief A unified group correlation object. Note - this is handed to gflow, so this object should not attempt to delete it.
     class GroupCorrelation *correlation = nullptr;

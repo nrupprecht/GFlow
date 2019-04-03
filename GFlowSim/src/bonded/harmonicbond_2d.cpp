@@ -6,7 +6,9 @@ namespace GFlowSimulation {
 
   HarmonicBond_2d::HarmonicBond_2d(GFlow *gflow, RealType K) : HarmonicBond(gflow, K) {};
 
-  void HarmonicBond_2d::post_forces() {
+  void HarmonicBond_2d::interact() const {
+    // Call parent class.
+    HarmonicBond::interact();
     // This object only acts in two dimensions.
     if (sim_dimensions!=2) return;
     // Get the number of bonds. left and right will have the same size - we checked this last time

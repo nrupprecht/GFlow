@@ -2,17 +2,21 @@
 
 namespace GFlowSimulation {
 
-  Bond::Bond(GFlow *gflow) : Modifier(gflow) {};
+  Bond::Bond(GFlow *gflow) : Bonded(gflow) {};
 
   void Bond::pre_integrate() {
     updateLocalIDs();
+  }
+
+  int Bond::size() const {
+    return left.size();
   }
 
   bool Bond::checkBondVectors() const {
     return left.size()==right.size() && left.size()==gleft.size() && gleft.size()==gright.size();
   }
 
-  void Bond::updateLocalIDs() {
+  void Bond::updateLocalIDs() const {
     // Make sure sizes are the same
     if (!checkBondVectors()) throw UnequalBondVectors();
     int nbonds = left.size();

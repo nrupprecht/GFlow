@@ -22,7 +22,7 @@ namespace GFlowSimulation {
     virtual void addBond(int, int) override;
 
     //! \brief Calculate the interparticle forces.
-    virtual void post_forces() override;
+    virtual void interact() const override;
 
     //! \brief Set the spring constant
     void setSpringConstant(RealType);

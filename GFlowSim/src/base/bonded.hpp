@@ -2,6 +2,8 @@
 #define __BONDED_HPP__GFLOW__
 
 #include "../gflow.hpp"
+#include "simdata.hpp"
+#include "../utility/vectormath.hpp"
 
 namespace GFlowSimulation {
 

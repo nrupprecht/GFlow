@@ -124,6 +124,9 @@ namespace GFlowSimulation {
     //! GFlow only adds the interaction if it is non null.
     void addInteraction(Interaction*);
 
+    //! \brief Add a bonded interaction.
+    void addBonded(class Bonded*);
+
     //! \brief Set the command info
     void setCommand(int, char**);
 
@@ -201,16 +204,13 @@ namespace GFlowSimulation {
     friend class FlowCreator;
     friend class FileParseCreator;
     friend class LineCrystalCreator;
-
-    // Force master is a friend class
-    friend class ForceMaster;
-
-    // Data master is a friend class
-    friend class DataMaster;
-
-    friend class Base;
-
     friend class PolymerCreator;
+    friend class FillAreaCreator;
+
+    // Other friend classes
+    friend class ForceMaster;
+    friend class DataMaster;
+    friend class Base;
 
   protected:
     // --- Private helper functions
@@ -235,7 +235,7 @@ namespace GFlowSimulation {
     // the ForceMaster object.
     vector<class Interaction*> interactions;
 
-    //! \brief All the bonded forces that can happen. They are tracked by the BondedMaster object.
+    //! \brief All the bonded forces that can happen.
     vector<class Bonded*> bondedInteractions;
 
     //! \brief If true, the simulation should continue to run.
@@ -289,10 +289,16 @@ namespace GFlowSimulation {
     Timer shs_timer;
     Timer domain_timer;
     Timer forces_timer;
+    Timer bonded_timer;
 
     // MPI
     int rank = 0;
     int numProc = 1;
+
+    // --- Physical constants. These are static, since they should be the same for all objects
+
+    //! \brief Boltzmann constant.
+    RealType KB = 1.; 
   };
 
 }

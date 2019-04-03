@@ -2,9 +2,9 @@
 
 namespace GFlowSimulation {
 
-  HarmonicChain::HarmonicChain(GFlow *gflow) : Modifier(gflow), springConstant(DEFAULT_SPRING_CONSTANT) {};
+  HarmonicChain::HarmonicChain(GFlow *gflow) : Bonded(gflow), springConstant(DEFAULT_SPRING_CONSTANT) {};
 
-  HarmonicChain::HarmonicChain(GFlow *gflow, RealType K) : Modifier(gflow), springConstant(K) {};
+  HarmonicChain::HarmonicChain(GFlow *gflow, RealType K) : Bonded(gflow), springConstant(K) {};
 
   void HarmonicChain::addAtom(int gid) {
     SimData *sd = Base::simData;
@@ -28,7 +28,11 @@ namespace GFlowSimulation {
     }
   }
 
-  void HarmonicChain::post_forces() {
+  int HarmonicChain::size() const {
+    return global_ids.size();
+  }
+
+  void HarmonicChain::interact() const {
     // Get simdata, check if the local ids need updating
     SimData *sd = Base::simData;
     RealType **f = sd->F();
@@ -55,7 +59,7 @@ namespace GFlowSimulation {
     }
   }
 
-  void HarmonicChain::updateLocalIDs() {
+  void HarmonicChain::updateLocalIDs() const {
     // Make sure sizes are the same
     int nbonds = global_ids.size();
     // Update local ids

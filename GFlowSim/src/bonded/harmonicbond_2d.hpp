@@ -14,7 +14,7 @@ namespace GFlowSimulation {
     HarmonicBond_2d(GFlow*, RealType);
 
     //! \brief Calculate the interparticle forces.
-    virtual void post_forces() override;
+    virtual void interact() const override;
   };
 
 }

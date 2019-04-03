@@ -5,6 +5,7 @@
 #include "allparallelobjects.hpp"
 #include "allmodifiers.hpp"
 #include "alltopologies.hpp"
+#include "allbonded.hpp"
 
 namespace GFlowSimulation {
 
@@ -193,11 +194,17 @@ namespace GFlowSimulation {
       repulsePositions(); // But this needs to be done after clear forces.
       attractPositions(); // This does too.
 
-      // Calculate current forces
+      // Calculate interactions and forces.
       if (useForces) {
+        // Calculate short range interactions
         forces_timer.start(); 
         for (auto &it : interactions) it->interact();
         forces_timer.stop(); 
+
+        // Calculate bonded interactions
+        bonded_timer.start();
+        for (auto &bd : bondedInteractions) bd->interact();
+        bonded_timer.stop();
       }
       // Update halo particles
       simData->updateHaloParticles();
@@ -353,6 +360,11 @@ namespace GFlowSimulation {
   void GFlow::addInteraction(Interaction *inter) {
     if (inter!=nullptr && !contains(interactions, inter))
       interactions.push_back(inter);
+  }
+
+  void GFlow::addBonded(Bonded *bnd) {
+    if (bnd!=nullptr && !contains(bondedInteractions, bnd))
+      bondedInteractions.push_back(bnd);
   }
 
   void GFlow::setCommand(int argc, char **argv) {

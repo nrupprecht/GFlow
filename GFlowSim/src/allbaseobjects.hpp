@@ -4,6 +4,7 @@
 #include "base/simdata.hpp"
 #include "base/integrator.hpp"
 #include "base/interaction.hpp"
+#include "base/bonded.hpp"
 #include "base/interactionhandler.hpp"
 #include "base/domainbase.hpp"
 

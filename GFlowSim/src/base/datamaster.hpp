@@ -117,6 +117,9 @@ namespace GFlowSimulation {
 
     //! \brief Files that should be written to the summary directory: {name, contents}.
     vector<pair<string, string> > files;
+
+    //! \brief Keeps track of how much time is spent running data objects.
+    Timer data_timer;
   };
 
 }

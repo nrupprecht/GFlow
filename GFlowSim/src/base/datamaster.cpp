@@ -60,33 +60,43 @@ namespace GFlowSimulation {
   }
 
   void DataMaster::pre_step() {
+    data_timer.start();
     if (Base::gflow->getElapsedTime()<startRecTime) return;
     for (auto& dob : dataObjects)
       if (dob) dob->pre_step();
+    data_timer.stop();
   }
   
   void DataMaster::pre_exchange() {
+    data_timer.start();
     if (Base::gflow->getElapsedTime()<startRecTime) return;
     for (auto& dob : dataObjects)
       if (dob) dob->pre_exchange();
+    data_timer.stop();
   }
 
   void DataMaster::pre_forces() {
+    data_timer.start();
     if (Base::gflow->getElapsedTime()<startRecTime) return;
     for (auto& dob : dataObjects)
       if (dob) dob->pre_forces();
+    data_timer.stop();
   }
 
   void DataMaster::post_forces() {
+    data_timer.start();
     if (Base::gflow->getElapsedTime()<startRecTime) return;
     for (auto& dob : dataObjects)
       if (dob) dob->post_forces();
+    data_timer.stop();
   }
 
   void DataMaster::post_step() {
+    data_timer.start();
     if (Base::gflow->getElapsedTime()<startRecTime) return;
     for (auto& dob : dataObjects)
       if (dob) dob->post_step();
+    data_timer.stop();
   }
 
   void DataMaster::post_integrate() {
@@ -115,17 +125,21 @@ namespace GFlowSimulation {
     bool has_general_objects = false;
     for (auto dob : dataObjects) {
       switch (dob->getType()) {
-        case DataObjectType::GRAPH: 
+        case DataObjectType::GRAPH: {
           has_graph_objects = true;
           break;
-        case DataObjectType::MULTIGRAPH: 
+        }
+        case DataObjectType::MULTIGRAPH: {
           has_multigraph_objects = true;
           break;
-        case DataObjectType::GENERAL:
+        }
+        case DataObjectType::GENERAL: {
           has_general_objects = true;
           break;
-        default:
+        }
+        default: {
           break;
+        }
       }
     }
 
@@ -237,8 +251,8 @@ namespace GFlowSimulation {
     RealType ratio = Base::gflow->getTotalTime()/run_time;
     int iterations = Base::gflow->getIter(), particles = Base::simData->number();
     // Helper lambda - checks whether run_time was non-zero
-    auto toStrRT = [&] (RealType x) -> string {
-      return (run_time>0 ? toStr(x) : "--");
+    auto toStrRT = [&] (RealType x, int precision=3) -> string {
+      return (run_time>0 ? pprint(x, 3, 3) : "--");
     };
     // Print data
     fout << "Timing and performance:\n";
@@ -255,14 +269,16 @@ namespace GFlowSimulation {
     fout << "\n";
 
     fout << "Timing breakdown:\n";
-    const int entries = 4;
+    const int entries = 6;
     double timing[entries], total = 0;
     fout << "  -- Pre-forces, integrator:  " << toStrRT(timing[0] = gflow->fhs_timer.time()/run_time*100) << "%,\t" << gflow->fhs_timer.time() << "\n";
     fout << "  -- Post-forces, integrator: " << toStrRT(timing[1] = gflow->shs_timer.time()/run_time*100) << "%,\t" << gflow->shs_timer.time() << "\n";
     fout << "  -- Pre-forces, domain:      " << toStrRT(timing[2] = gflow->domain_timer.time()/run_time*100) << "%,\t" << gflow->domain_timer.time() << "\n";
-    fout << "  -- Interactions:            " << toStrRT(timing[3] = gflow->forces_timer.time()/run_time*100) << "%,\t" << gflow->forces_timer.time() << "\n";
+    fout << "  -- Non-bonded:              " << toStrRT(timing[3] = gflow->forces_timer.time()/run_time*100) << "%,\t" << gflow->forces_timer.time() << "\n";
+    fout << "  -- Bonded:                  " << toStrRT(timing[4] = gflow->bonded_timer.time()/run_time*100) << "%,\t" << gflow->bonded_timer.time() << "\n";
+    fout << "  -- Data objects:            " << toStrRT(timing[5] = data_timer.time()/run_time*100) << "%,\t" << data_timer.time() << "\n";
     for (int i=0; i<entries; ++i) total += timing[i];
-    fout << "  - Uncounted:                " << toStrRT((100. - total)) << "%,\t" << run_time*(100. - total)*0.01 << "\n";
+    fout << "  - Uncounted:                " << std::setprecision(3) << toStrRT((100. - total)) << "%,\t" << run_time*(100. - total)*0.01 << "\n";
     fout << "\n";
 
     // --- Print simulation summary
@@ -395,9 +411,10 @@ namespace GFlowSimulation {
       maxspeed = magnitudeVec(Base::simData->V(0), sim_dimensions), 
       maxke = sqr(magnitudeVec(Base::simData->V(0), sim_dimensions))*(1./Base::simData->Im(0));
     RealType minsigma = maxsigma, minmass = maxmass, minden = maxden, minspeed = maxspeed, minke = maxke;
-    for (int n=0; n<Base::simData->number(); ++n) {
-      if (Base::simData->Type(n)<0) continue;
-      // Cutoff
+    int count = 0; // There may be infinitely massive objects, or invalid objects. We do not count these in the averages.
+    for (int n=0; n<Base::simData->size(); ++n) {
+      if (Base::simData->Type(n)<0 || Base::simData->Im(n)<=0) continue;
+      // Radius
       RealType sig = Base::simData->Sg(n);
       asigma += sig; 
       if (sig<minsigma) minsigma = sig;
@@ -407,27 +424,26 @@ namespace GFlowSimulation {
       aspeed += speed;
       if (speed<minspeed) minspeed = speed;
       if (speed>maxspeed) maxspeed = speed;
-      // Only evaluate the following if the mass is not infinite
-      if (Base::simData->Im(n)>0) {
-        // Mass
-        RealType mass = 1./Base::simData->Im(n);
-        amass += mass;
-        if (mass<minmass) minmass = mass;
-        if (mass>maxmass) maxmass = mass;
-        // Density
-        RealType den = 1./(Base::simData->Im(n)*sphere_volume(sig, sim_dimensions));
-        aden += den;
-        if (den<minden) minden = den;
-        if (den>maxden) maxden = den;
-        // Kinetic energy
-        RealType ke = sqr(magnitudeVec(Base::simData->V(n), sim_dimensions))*(1./Base::simData->Im(n));
-        ake += ke;
-        if (ke<minke) minke = ke;
-        if (ke>maxke) maxke = ke;
-      }
+      // Mass
+      RealType mass = 1./Base::simData->Im(n);
+      amass += mass;
+      if (mass<minmass) minmass = mass;
+      if (mass>maxmass) maxmass = mass;
+      // Density
+      RealType den = 1./(Base::simData->Im(n)*sphere_volume(sig, sim_dimensions));
+      aden += den;
+      if (den<minden) minden = den;
+      if (den>maxden) maxden = den;
+      // Kinetic energy
+      RealType ke = sqr(magnitudeVec(Base::simData->V(n), sim_dimensions))*(1./Base::simData->Im(n));
+      ake += ke;
+      if (ke<minke) minke = ke;
+      if (ke>maxke) maxke = ke;
+      // Increment count
+      ++count;
     }
     // Normalize
-    RealType invN = 1./static_cast<RealType>(Base::simData->number());
+    RealType invN = 1./static_cast<RealType>(count);
     asigma *= invN;
     amass  *= invN;
     aden   *= invN;

@@ -29,6 +29,7 @@ namespace GFlowSimulation {
     bool useAngle = false;
     bool pair = false;
     RealType h = 2.5;
+    useCorr = false;
 
     // Gather parameters
     parser.firstArg("Number", number);
@@ -74,8 +75,8 @@ namespace GFlowSimulation {
         if (useAngle) harmonicchain = nullptr; // <-----------
       }
       // Add the harmonic bonds modifier.
-      gflow->addModifier(harmonicbonds);
-      gflow->addModifier(harmonicchain);
+      gflow->addBonded(harmonicbonds);
+      gflow->addBonded(harmonicchain);
       // Adjust strength of harmonic bonds
       harmonicbonds->setSpringConstant(8.*pow(rC/0.01, sim_dimensions-1)*DEFAULT_SPRING_CONSTANT);
     }
