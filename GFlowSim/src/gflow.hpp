@@ -195,6 +195,9 @@ namespace GFlowSimulation {
 
     void giveFileToDataMaster(string, string);
 
+    //! \brief Get the boltzmann constant.
+    RealType getKB();
+
     // Creators are a friend classes --- all must be since friendship is not inherited
     friend class Creator;
     friend class BoxCreator;

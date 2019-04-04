@@ -16,7 +16,8 @@ namespace GFlowSimulation {
     int count = 0;
     for (int n=0; n<size; ++n)
       if (im[n]>0) {
-        ke += sqr(v[n], sim_dimensions)/im[n];
+        RealType m = 1./im[n];
+        ke += m*sqr(v[n], sim_dimensions);
         ++count;
       }
     ke *= 0.5;
@@ -28,6 +29,24 @@ namespace GFlowSimulation {
 
     // A useful check
     if(isnan(ke)) throw NanValue("KE");
+  }
+
+  RealType KineticEnergyData::calculate_kinetic(SimData *simData, bool average) {
+    RealType ke = 0;
+    RealType **v = simData->V();
+    RealType *im = simData->Im();
+    int size = simData->size();
+    int sim_dimensions = simData->getSimDimensions();
+    int count = 0;
+    for (int n=0; n<size; ++n)
+      if (im[n]>0) {
+        RealType m = 1./im[n];
+        ke += m*sqr(v[n], sim_dimensions);
+        ++count;
+      }
+    ke *= 0.5;
+    // Return the total kinetic energy
+    return average ? ke/static_cast<RealType>(count) : ke;
   }
 
 }

@@ -1,8 +1,9 @@
 #include "groupnetforce.hpp"
 
 namespace GFlowSimulation {
-  // Constructor
-  GroupNetForce::GroupNetForce(GFlow *gflow) : MultiGraphObject(gflow, "GroupForce", "time", "force", gflow->getSimDimensions()) {};
+
+  GroupNetForce::GroupNetForce(GFlow *gflow) 
+    : MultiGraphObject(gflow, "GroupForce", "time", "force", gflow->getSimDimensions()) {};
 
   void GroupNetForce::post_step() {
     // Only record if enough time has gone by

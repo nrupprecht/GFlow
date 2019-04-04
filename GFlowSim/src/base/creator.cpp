@@ -116,9 +116,15 @@ namespace GFlowSimulation {
     for (auto &fix : particle_fixers) {
       // Get local id of the particle
       int id = simData->getLocalID(fix.global_id);
-      // Set the initial velocity of the particle.
-      copyVec(fix.velocity, simData->V(id), sim_dimensions);
+      if (0<=id && id<simData->size()) {
+        // Set the initial velocity of the particle.
+        copyVec(fix.velocity, simData->V(id), sim_dimensions);
+      }
     }
+  }
+
+  void Creator::clear_particle_fixers() {
+    particle_fixers.clear();
   }
 
 }

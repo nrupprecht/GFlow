@@ -52,7 +52,8 @@ namespace GFlowSimulation {
       root = parser.parseFile(configFile); // A file parse class does the parsing
     }
     catch (FileParse::UnexpectedToken ut) {
-      cout << "Caught unexpected token error from file parsing. Trace:\n";
+      cout << "Caught unexpected token error from file parsing. Message: " << ut.message << endl;
+      cout << " Trace:\n";
       cout << parser.getMessage();
       throw;
     }
@@ -71,6 +72,17 @@ namespace GFlowSimulation {
       options.insert(std::pair<string, HeadNode*> (op->heading, op));
     }
     build_message += "Done.\n";
+
+    // If requested, print out the parse trace.
+    if (parse_trace) {
+      // Print the parse tree to a file so we can debug
+      ofstream fout("ParseTrace.txt");
+      if (fout.fail());
+      else {
+        fout << parse_message;
+        fout.close();
+      }
+    }
 
     // Create the scenario from the options
     if (gflow) delete gflow;
@@ -105,17 +117,6 @@ namespace GFlowSimulation {
     }
     build_message += "Done.\n";
 
-    // If requested, print out the parse trace.
-    if (parse_trace) {
-      // Print the parse tree to a file so we can debug
-      ofstream fout("ParseTrace.txt");
-      if (fout.fail());
-      else {
-        fout << parse_message;
-        fout.close();
-      }
-    }
-
     // Clean up
     delete root;
     
@@ -144,6 +145,7 @@ namespace GFlowSimulation {
     parser.addHeadingNecessary("Bounds", "We need bounds!");
     parser.addHeadingNecessary(Interactions_Token, "We need interaction information!");
     parser.addHeadingOptional("Var");
+    parser.addHeadingOptional("Value");
     parser.addHeadingOptional("Dimensions");
     parser.addHeadingOptional("Seed");
     parser.addHeadingOptional("Boundary");
@@ -160,6 +162,9 @@ namespace GFlowSimulation {
     // Check headings for validity.
     parser.check();
 
+    // Clear particle fixers
+    clear_particle_fixers();
+
     // --- Look for variables
     if (parser.begin("Var")) {
       string name, value;
@@ -173,6 +178,24 @@ namespace GFlowSimulation {
       } while (parser.next());
       // Set the variables
       parser.set_variables(variables);
+    }
+
+    // --- Look for values
+    if (parser.begin("Value")) {
+      string name, value;
+      do {
+        // Get the name of the variable, and its value.
+        parser.argvalName(name, value);
+        // Check for command line argument
+        parserPtr->get(name, value);
+        // Evaluate the value
+        RealType val = Eval::evaluate(value, variables);
+        // Add to variables if a variable does not already exist.
+        setVariable(name, toStr(val));
+        // Set the variables each time, so later values can depend on earlier values
+        parser.set_variables(variables);
+      } while (parser.next());
+      
     }
 
     // --- Look for dimensions
@@ -582,20 +605,20 @@ namespace GFlowSimulation {
       // A type is specified
       type = h->params[0]->partA;
       // We expect a number in partB
-      return new DeterministicEngine(parser.value<double>(h->params[0]->partB));
+      return new DeterministicEngine(parser.value<RealType>(h->params[0]->partB));
     }
     // If there is no body
     else if (h->subHeads.empty()) {
       string token = h->params[0]->partA;
       // We expect either a number in partA, or a string (e.g. "Inf").
       if (isdigit(token.at(0))) {
-        return new DeterministicEngine(parser.value<double>(token));
+        return new DeterministicEngine(parser.value<RealType>(token));
       }
       else if (h->heading=="Type" && token=="Equiprobable") {
         type = token;
         // Only for type - Create each type with equal probability
         RealType p = 1./NTypes;
-        vector<double> probabilities, values;
+        vector<RealType> probabilities, values;
         for (int i=0; i<NTypes; ++i) {
           probabilities.push_back(p);
           values.push_back(i);
@@ -614,7 +637,7 @@ namespace GFlowSimulation {
     // Check for options:
     if (param=="Random") {
       // Discrete Random, with specified values and probabilities
-      vector<double> probabilities, values;
+      vector<RealType> probabilities, values;
       for (auto sh : h->subHeads) {
         if (sh->heading!="P")
           throw BadStructure("Discrete probability should be indicated with a 'P.'");
@@ -623,8 +646,8 @@ namespace GFlowSimulation {
         if (!sh->params[0]->partB.empty() || !sh->params[1]->partB.empty())
           throw BadStructure("Expected one part parameters in discrete probability specification.");
         // Store the value and its probability
-        values.push_back(parser.value<double>(sh->params[0]->partA)); 
-        probabilities.push_back(parser.value<double>(sh->params[1]->partA));
+        values.push_back(parser.value<RealType>(sh->params[0]->partA)); 
+        probabilities.push_back(parser.value<RealType>(sh->params[1]->partA));
       }
       return new DiscreteRandomEngine(probabilities, values);
     }
@@ -641,7 +664,7 @@ namespace GFlowSimulation {
         throw BadStructure("More than one parameter for uniform distribution.");
       // Set the uniform random engine
       return new UniformRandomEngine(
-        parser.value<double>(lwr->params[0]->partA), parser.value<double>(upr->params[0]->partA)
+        parser.value<RealType>(lwr->params[0]->partA), parser.value<RealType>(upr->params[0]->partA)
       );
     }
     else if (param=="Normal") {
@@ -657,7 +680,7 @@ namespace GFlowSimulation {
         throw BadStructure("More than one parameter for normal distribution.");
       // Set the uniform random engine
       return new NormalRandomEngine(
-        parser.value<double>(ave->params[0]->partA), parser.value<double>(var->params[0]->partA)
+        parser.value<RealType>(ave->params[0]->partA), parser.value<RealType>(var->params[0]->partA)
       );
     }
     else throw BadStructure("Unrecognized choice for a random engine.");

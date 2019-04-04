@@ -1,11 +1,10 @@
 
 Dimensions: 2
 
-Var: width=8
-Var: length=4
+Var: width=16
+Var: length=10
 Var: number=1
 Var: phi=0.5
-Var: h=0.5
 
 // Set the simulation bounds
 Bounds: {
@@ -25,16 +24,13 @@ NTypes: 3
 Force-grid: {
   : 0, 0, HardSphere
   : 0, 2, HardSphere
-  : 2, 2, HardSphere
+  : 2, 2, None
   : 1, 1, None
   : 1, 0, None
   : 1, 2, None
 }
 
 Fill: Polymer {
-  Parallel: 1
-  H: h  
-
   Length: length
   Number: number
   R: 0.05
@@ -58,7 +54,7 @@ Fill: Area {
   }
 
   Excluded: {
-    : 3.7, 4.3
-    : 1.8, 6.2
+    : 7.7, 8.3
+    : -100, 100
   }
 }

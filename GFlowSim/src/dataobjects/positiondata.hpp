@@ -31,6 +31,8 @@ namespace GFlowSimulation {
     void add_scalar_data_entry(string);
     void add_integer_data_entry(string);
 
+    void clear_all_data_entries();
+
   private:
 
     //! \brief  The time steps of when the data was gathered

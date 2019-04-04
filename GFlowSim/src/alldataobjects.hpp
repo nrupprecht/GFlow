@@ -29,5 +29,6 @@
 
 // Multigraph objects
 #include "dataobjects/multigraphobjects/groupnetforce.hpp"
+#include "dataobjects/multigraphobjects/lineentropicforce.hpp"
 
 #endif // __ALL_DATA_OBJECTS_HPP__GFLOW__

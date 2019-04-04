@@ -21,9 +21,9 @@ namespace GFlowSimulation {
       SphericalRegion *sreg = new SphericalRegion(sim_dimensions);
       // Get the center
       for (int d=0; d<sim_dimensions; ++d)
-        sreg->center(d) = cast<float>(head->subHeads[0]->params[d]->partA, variables);
+        sreg->center(d) = Eval::evaluate(head->subHeads[0]->params[d]->partA, variables);
       // Get the radius
-      sreg->radius() = cast<float>(head->subHeads[1]->params[0]->partA, variables);
+      sreg->radius() = Eval::evaluate(head->subHeads[1]->params[0]->partA, variables);
       region = sreg;
     }
     // Otherwise, rectangular bounds
@@ -37,8 +37,8 @@ namespace GFlowSimulation {
         if (head->subHeads[d]->params.size()!=2 || !head->subHeads[d]->subHeads.empty()) 
           throw BadStructure("Bounds need a min and a max, we found "+toStr(head->subHeads[d]->params.size())+" parameters.");
         // Extract the bounds.
-        rreg->min(d) = cast<float>( head->subHeads[d]->params[0]->partA, variables );
-        rreg->max(d) = cast<float>( head->subHeads[d]->params[1]->partA, variables );
+        rreg->min(d) = Eval::evaluate( head->subHeads[d]->params[0]->partA, variables );
+        rreg->max(d) = Eval::evaluate( head->subHeads[d]->params[1]->partA, variables );
       }
       region = rreg;
     }
@@ -114,21 +114,21 @@ namespace GFlowSimulation {
       // A type is specified
       type = h->params[0]->partA;
       // We expect a number in partB
-      return new DeterministicEngine(parser.value<double>(h->params[0]->partB));
+      return new DeterministicEngine(parser.value<RealType>(h->params[0]->partB));
     }
     // If there is no body
     else if (h->subHeads.empty()) {
       string token = h->params[0]->partA;
       // We expect either a number in partA, or a string (e.g. "Inf").
       if (isdigit(token.at(0))) {
-        return new DeterministicEngine(parser.value<double>(token));
+        return new DeterministicEngine(parser.value<RealType>(token));
       }
       else if (h->heading=="Type" && token=="Equiprobable") {
         type = token;
         int NTypes = gflow->getNTypes();
         // Only for type - Create each type with equal probability
         RealType p = 1./NTypes;
-        vector<double> probabilities, values;
+        vector<RealType> probabilities, values;
         for (int i=0; i<NTypes; ++i) {
           probabilities.push_back(p);
           values.push_back(i);
@@ -147,7 +147,7 @@ namespace GFlowSimulation {
     // Check for options:
     if (param=="Random") {
       // Discrete Random, with specified values and probabilities
-      vector<double> probabilities, values;
+      vector<RealType> probabilities, values;
       for (auto sh : h->subHeads) {
         if (sh->heading!="P")
           throw BadStructure("Discrete probability should be indicated with a 'P.'");
@@ -156,8 +156,8 @@ namespace GFlowSimulation {
         if (!sh->params[0]->partB.empty() || !sh->params[1]->partB.empty())
           throw BadStructure("Expected one part parameters in discrete probability specification.");
         // Store the value and its probability
-        values.push_back(parser.value<double>(sh->params[0]->partA)); 
-        probabilities.push_back(parser.value<double>(sh->params[1]->partA));
+        values.push_back(parser.value<RealType>(sh->params[0]->partA)); 
+        probabilities.push_back(parser.value<RealType>(sh->params[1]->partA));
       }
       return new DiscreteRandomEngine(probabilities, values);
     }
@@ -174,7 +174,7 @@ namespace GFlowSimulation {
         throw BadStructure("More than one parameter for uniform distribution.");
       // Set the uniform random engine
       return new UniformRandomEngine(
-        parser.value<double>(lwr->params[0]->partA), parser.value<double>(upr->params[0]->partA)
+        parser.value<RealType>(lwr->params[0]->partA), parser.value<RealType>(upr->params[0]->partA)
       );
     }
     else if (param=="Normal") {
@@ -190,7 +190,7 @@ namespace GFlowSimulation {
         throw BadStructure("More than one parameter for normal distribution.");
       // Set the uniform random engine
       return new NormalRandomEngine(
-        parser.value<double>(ave->params[0]->partA), parser.value<double>(var->params[0]->partA)
+        parser.value<RealType>(ave->params[0]->partA), parser.value<RealType>(var->params[0]->partA)
       );
     }
     else throw BadStructure("Unrecognized choice for a random engine.");

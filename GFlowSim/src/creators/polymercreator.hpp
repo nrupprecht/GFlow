@@ -38,6 +38,9 @@ namespace GFlowSimulation {
     //! \brief Angle harmonic chain object.
     class AngleHarmonicChain *harmonicchain = nullptr;
 
+    //! \brief The most recently created line entropic force.
+    class LineEntropicForce *entropicForce = nullptr;
+
     //! \brief The number of polymers created.
     int n_polymers = 0;
 

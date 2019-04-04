@@ -9,11 +9,11 @@ namespace GFlowSimulation {
   // Constructor
   PositionData::PositionData(GFlow *gflow) : DataObject(gflow, "Pos") {
     // The data to gather
-    vector_data_entries.push_back("X");
-    vector_data_entries.push_back("V");
-    scalar_data_entries.push_back("Sg");
-    scalar_data_entries.push_back("StripeX");
-    integer_data_entries.push_back("Type");
+    add_vector_data_entry("X");
+    add_vector_data_entry("V");
+    add_scalar_data_entry("Sg");
+    add_scalar_data_entry("StripeX");
+    add_integer_data_entry("Type");
   };
 
   void PositionData::pre_integrate() {
@@ -63,6 +63,12 @@ namespace GFlowSimulation {
 
   void PositionData::add_integer_data_entry(string entry) {
     integer_data_entries.push_back(entry);
+  }
+
+  void PositionData::clear_all_data_entries() {
+    vector_data_entries.clear();
+    scalar_data_entries.clear();
+    integer_data_entries.clear();
   }
 
 }

@@ -5,15 +5,6 @@
 
 namespace GFlowSimulation {
 
-  // G  --> -G | (G) | A * G |  A + G | A * G | A / G | N
-  // N  --> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | .
-
-  /*
-  struct OperationsNode {
-    OperationsNode *left, *right;
-  }
-  */
-
   /**
   *  \brief A parameter node.
   *

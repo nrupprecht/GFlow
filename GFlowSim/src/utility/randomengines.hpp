@@ -10,18 +10,18 @@ namespace GFlowSimulation {
     virtual ~RandomEngine() {};
 
     // \brief Generate a random number from the engine.
-    virtual double generate() = 0;
+    virtual RealType generate() = 0;
 
     virtual RandomEngine* copy()=0;
   };
 
   class UniformRandomEngine : public RandomEngine {
   public:
-    UniformRandomEngine(double l, double u) : lower(l), upper(u) {
-      uniform_dist = std::uniform_real_distribution<double>(l, u);
+    UniformRandomEngine(RealType l, RealType u) : lower(l), upper(u) {
+      uniform_dist = std::uniform_real_distribution<RealType>(l, u);
     };
     //! \brief Generate a number.
-    virtual double generate() override {
+    virtual RealType generate() override {
       return uniform_dist(global_generator);
     }
 
@@ -29,17 +29,17 @@ namespace GFlowSimulation {
       return new UniformRandomEngine(lower, upper);
     }
   private:
-    double lower, upper;
-    std::uniform_real_distribution<double> uniform_dist;
+    RealType lower, upper;
+    std::uniform_real_distribution<RealType> uniform_dist;
   };
 
   class NormalRandomEngine : public RandomEngine {
   public:
-    NormalRandomEngine(double a, double v) : ave(a), var(v) {
-      nor_dist = std::normal_distribution<double>(a, v);
+    NormalRandomEngine(RealType a, RealType v) : ave(a), var(v) {
+      nor_dist = std::normal_distribution<RealType>(a, v);
     };
     //! \brief Generate a number.
-    virtual double generate() override {
+    virtual RealType generate() override {
       // Uses the global generator
       return nor_dist(global_generator);
     }
@@ -47,39 +47,39 @@ namespace GFlowSimulation {
       return new NormalRandomEngine(ave, var);
     }
   private:
-    double ave, var;
-    std::normal_distribution<double> nor_dist;
+    RealType ave, var;
+    std::normal_distribution<RealType> nor_dist;
   };
 
   class DiscreteRandomEngine : public RandomEngine {
   public:
-    DiscreteRandomEngine(vector<double>& prbs, vector<double>& vals) : probabilities(prbs), values(vals) {
+    DiscreteRandomEngine(vector<RealType>& prbs, vector<RealType>& vals) : probabilities(prbs), values(vals) {
       if (prbs.size()>vals.size()) throw false;
       discrete_dist = std::discrete_distribution<int>(prbs.begin(), prbs.end());
     };
     //! \brief Generate a number.
-    virtual double generate() override {
+    virtual RealType generate() override {
       return values[discrete_dist(global_generator)];
     }
     virtual RandomEngine* copy() override {
       return new DiscreteRandomEngine(probabilities, values);
     }
   private:
-    vector<double> probabilities, values;
+    vector<RealType> probabilities, values;
     std::discrete_distribution<int> discrete_dist;
   };
 
   class DeterministicEngine : public RandomEngine {
   public:
-    DeterministicEngine(double v) : value(v) {};
+    DeterministicEngine(RealType v) : value(v) {};
     //! \brief Generate a number.
-    virtual double generate() override { return value; }
+    virtual RealType generate() override { return value; }
 
     virtual RandomEngine* copy() override {
       return new DeterministicEngine(value);
     }
   private:
-    double value;
+    RealType value;
   };
 
 }

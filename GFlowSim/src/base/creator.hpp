@@ -66,6 +66,9 @@ namespace GFlowSimulation {
     //! \brief Use the particle fixers to assign particle velocities.
     void fix_particle_velocities(SimData*);
 
+    //! \brief Clear all the particle fixers
+    void clear_particle_fixers();
+
   protected:
 
     // Command line arguments

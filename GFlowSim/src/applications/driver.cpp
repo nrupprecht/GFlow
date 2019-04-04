@@ -22,6 +22,8 @@
 
 using namespace GFlowSimulation;
 
+#include "../other/evaluation.hpp"
+
 int main(int argc, char **argv) {
   int rank(0);
   #if USE_MPI == 1

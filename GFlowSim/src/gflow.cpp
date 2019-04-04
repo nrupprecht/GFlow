@@ -588,4 +588,8 @@ namespace GFlowSimulation {
     for (auto &m : remove) modifiers.erase(m);
   }
 
+  RealType GFlow::getKB() {
+    return KB;
+  }
+
 }

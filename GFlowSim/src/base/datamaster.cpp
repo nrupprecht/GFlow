@@ -157,7 +157,7 @@ namespace GFlowSimulation {
       mkdir(multiGraphDirectory.c_str(), 0777);
 
     // --- Have all the data objects write their data
-    for (auto dob : dataObjects)
+    for (auto dob : dataObjects) {
       if (dob) {
         // Write to one of the directories
         switch (dob->getType()) {
@@ -178,6 +178,7 @@ namespace GFlowSimulation {
           }
         }
       }
+    }
 
     // --- Write all files 
     for (auto& f : files) {
@@ -251,8 +252,11 @@ namespace GFlowSimulation {
     RealType ratio = Base::gflow->getTotalTime()/run_time;
     int iterations = Base::gflow->getIter(), particles = Base::simData->number();
     // Helper lambda - checks whether run_time was non-zero
-    auto toStrRT = [&] (RealType x, int precision=3) -> string {
+    auto toStrPP = [&] (RealType x, int precision=3) -> string {
       return (run_time>0 ? pprint(x, 3, 3) : "--");
+    };
+    auto toStrRT = [&] (RealType x, int precision=3) -> string {
+      return (run_time>0 ? toStr(x) : "--");
     };
     // Print data
     fout << "Timing and performance:\n";
@@ -271,14 +275,14 @@ namespace GFlowSimulation {
     fout << "Timing breakdown:\n";
     const int entries = 6;
     double timing[entries], total = 0;
-    fout << "  -- Pre-forces, integrator:  " << toStrRT(timing[0] = gflow->fhs_timer.time()/run_time*100) << "%,\t" << gflow->fhs_timer.time() << "\n";
-    fout << "  -- Post-forces, integrator: " << toStrRT(timing[1] = gflow->shs_timer.time()/run_time*100) << "%,\t" << gflow->shs_timer.time() << "\n";
-    fout << "  -- Pre-forces, domain:      " << toStrRT(timing[2] = gflow->domain_timer.time()/run_time*100) << "%,\t" << gflow->domain_timer.time() << "\n";
-    fout << "  -- Non-bonded:              " << toStrRT(timing[3] = gflow->forces_timer.time()/run_time*100) << "%,\t" << gflow->forces_timer.time() << "\n";
-    fout << "  -- Bonded:                  " << toStrRT(timing[4] = gflow->bonded_timer.time()/run_time*100) << "%,\t" << gflow->bonded_timer.time() << "\n";
-    fout << "  -- Data objects:            " << toStrRT(timing[5] = data_timer.time()/run_time*100) << "%,\t" << data_timer.time() << "\n";
+    fout << "  -- Pre-forces, integrator:  " << toStrPP(timing[0] = gflow->fhs_timer.time()/run_time*100) << "%,\t" << gflow->fhs_timer.time() << "\n";
+    fout << "  -- Post-forces, integrator: " << toStrPP(timing[1] = gflow->shs_timer.time()/run_time*100) << "%,\t" << gflow->shs_timer.time() << "\n";
+    fout << "  -- Pre-forces, domain:      " << toStrPP(timing[2] = gflow->domain_timer.time()/run_time*100) << "%,\t" << gflow->domain_timer.time() << "\n";
+    fout << "  -- Non-bonded:              " << toStrPP(timing[3] = gflow->forces_timer.time()/run_time*100) << "%,\t" << gflow->forces_timer.time() << "\n";
+    fout << "  -- Bonded:                  " << toStrPP(timing[4] = gflow->bonded_timer.time()/run_time*100) << "%,\t" << gflow->bonded_timer.time() << "\n";
+    fout << "  -- Data objects:            " << toStrPP(timing[5] = data_timer.time()/run_time*100) << "%,\t" << data_timer.time() << "\n";
     for (int i=0; i<entries; ++i) total += timing[i];
-    fout << "  - Uncounted:                " << std::setprecision(3) << toStrRT((100. - total)) << "%,\t" << run_time*(100. - total)*0.01 << "\n";
+    fout << "  - Uncounted:                " << std::setprecision(3) << toStrPP((100. - total)) << "%,\t" << run_time*(100. - total)*0.01 << "\n";
     fout << "\n";
 
     // --- Print simulation summary

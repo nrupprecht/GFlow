@@ -10,6 +10,8 @@
 // All the modifiers
 #include "../allmodifiers.hpp"
 
+#include <unistd.h>
+
 using namespace GFlowSimulation;
 
 int main(int argc, char **argv) {
@@ -34,8 +36,10 @@ int main(int argc, char **argv) {
   RealType maxh = 1;
   bool quiet = false;
   int iters = 10;
+  int trials = 5;
+  string writeDirectory = "LineAttraction/";
   // Other values
-  string load = "configurations/polymer.txt";
+  string load = "configurations/lines.txt";
 
   // --- For getting command line arguments
   ArgParse parser(argc, argv);
@@ -44,6 +48,8 @@ int main(int argc, char **argv) {
   parser.get("maxh", maxh);
   parser.get("quiet", quiet);
   parser.get("iters", iters);
+  parser.get("trials", trials);
+  parser.get("writeDirectory", writeDirectory);
 
   if (!quiet && rank==0) {
     #if DEBUG==1
@@ -66,51 +72,69 @@ int main(int argc, char **argv) {
   // Record the time at which the program started.
   auto start_time = current_time();
 
-  // --- Make sure we didn't enter any illegal tokens - do this after gflow creation since creator uses flags
-  /*
-  try {
-    parser.check();
-  }
-  catch (ArgParse::UncheckedToken illegal) {
-    if (!quiet) cout << "Illegal option: [" << illegal.token << "]. Exiting.\n";
-    exit(1);
-  }
-  */ 
-
   // Record data.
   vector<RPair> data;
+
+  // Create the directory
+  rmdir(writeDirectory.c_str());
+  mkdir(writeDirectory.c_str(), 0777);
 
   // Do many data gathering runs.
   RealType dh = (maxh - minh)/(iters-1);
   RealType h = minh;
   for (int i=0; i<iters; ++i) {
-    // Set variables in creator
+    // A creator.
     FileParseCreator creator(&parser, load);
-    creator.setVariable("h", toStr(h));
-    creator.setVariable("pair", "1");
-    // Create the simulation
-    GFlow *gflow = creator.createSimulation();
+    // Set variables in creator
+    creator.setVariable("h", toStr(h)); // Line spacing
+    // Accumulator for getting the average
+    float ave = 0;
+    // Run some trials
+    for (int t=0; t<trials; ++t) {
+      // Delete old gflow
+      GFlow *gflow = creator.createSimulation();
+      if (gflow==nullptr) throw false;
 
-    // If successful, run.
-    if (gflow) {
+      // Add an ending snapshot object
+      if (t==trials-1) gflow->addDataObject(new EndingSnapshot(gflow));
+
+      auto pd = new PositionData(gflow);
+      pd->clear_all_data_entries();
+      pd->add_vector_data_entry("X");
+      pd->add_scalar_data_entry("Sg");
+      pd->add_integer_data_entry("Type");
+
+      gflow->addDataObject(pd);
+      RealType videoLength = 10;
+      pd->setFPS((20.*videoLength)/time);
+
       // Find data objects.
       DataMaster *master = gflow->getDataMaster();
       auto &dataObjects = master->getDataObjects();
       // Find the group force object
       DataObject *dob = nullptr;
       for (auto obj : dataObjects) {
-        if (obj->getName()=="GroupForce") dob = obj;
+        if (obj->getName()=="LineEntropicForce") dob = obj;
       }
+      if (dob==nullptr) throw false;
 
       // Run the program
       gflow->run(time);
       
       // Gather data
-      auto *gnf = dynamic_cast<GroupNetForce*>(dob);
-      if (gnf) data.push_back(RPair(h, gnf->ave(0)));
-      // Delete gflow
+      auto *gnf = dynamic_cast<LineEntropicForce*>(dob);
+      if (gnf==nullptr) throw false;
+      ave += gnf->ave(0);
+
+      // Write other data
+      if (t==trials-1) gflow->writeData(writeDirectory+"data"+toStr(i));
+      // Clean up
       delete gflow;
     }
+    // Record
+    ave /= static_cast<float>(trials);
+    data.push_back(RPair(h, ave));
+
     // Increment h
     h += dh;
   }

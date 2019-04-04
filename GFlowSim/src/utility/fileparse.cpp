@@ -173,7 +173,7 @@ namespace GFlowSimulation {
       else if (c=='\n' || c=='\r' || c==' ') whitespace = true;
       else { // Just a regular character. Could be a whitespace
         if (whitespace) { // Error
-          throw UnexpectedToken();
+          throw UnexpectedToken("In getHeading: Found whitespace.");
         }
         else heading.push_back(c);
       }
@@ -204,7 +204,12 @@ namespace GFlowSimulation {
     string a(""), b("");
     while (!fin.eof()) {
       if (c=='/') {
-        checkComment(fin);
+        // Check if this is really a comment
+        char d = fin.peek();
+        if (d=='*' || d=='/') checkComment(fin);
+        // If not, it is a division sign.
+        else if (a_part) a.push_back(c);
+        else             b.push_back(c);
       }
       else if (c=='=') {
         a_part = false;
@@ -256,7 +261,7 @@ namespace GFlowSimulation {
     // Check what kind of comment this is
     if (c=='/')      passComment(fin, false);
     else if (c=='*') passComment(fin, true);
-    else             throw UnexpectedToken("Token: ["+toStr(c)+"].");
+    else             throw UnexpectedToken("In checkComment: Token: ["+toStr(c)+"].");
   }
 
   inline string FileParse::tabs() {

@@ -50,7 +50,7 @@ namespace GFlowSimulation {
     seedNormalDistribution();
 
     // Create a group correlation object
-    if (correlation==nullptr) {
+    if (correlation==nullptr && useCorr) {
       correlation = new GroupCorrelation(gflow);
       // Create a group correlation object
       correlation = new GroupCorrelation(gflow);
@@ -169,6 +169,7 @@ namespace GFlowSimulation {
 
     // Create a polymer from the specifications
     createSinglePolymer(gflow, X, V, chain_ordering, v_sigma, idP, idC);
+    if (entropicForce) entropicForce->setLength(length);
 
     // Clean up
     delete [] X;
@@ -255,9 +256,9 @@ namespace GFlowSimulation {
     }
 
     if (n_polymers==0) {
-      GroupNetForce *gnf = new GroupNetForce(gflow);
-      gnf->setGroup(group);
-      gflow->addDataObject(gnf);
+      entropicForce = new LineEntropicForce(gflow);
+      entropicForce->setGroup(group);
+      gflow->addDataObject(entropicForce);
     }
 
     // Increment polymer counter
@@ -296,6 +297,7 @@ namespace GFlowSimulation {
     
     // Create another random arrangement
     createPolymerArrangement(chain_ordering, phi, length);
+    if (entropicForce) entropicForce->setLength(length);
     // Shift x to the right
     x[0] += 2*dx;
     // Create the second chain.
