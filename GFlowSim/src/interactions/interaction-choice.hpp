@@ -11,6 +11,7 @@ namespace GFlowSimulation {
     const string HardSphereDsToken = "HardSphereDs";
     const string LennardJonesToken = "LennardJones";
     const string BuckinghamToken = "Buckingham";
+    const string DetectorToken = "Detector";
 
     /**
     *  \brief Error class for trying to pick an interaction that doesn't exist.
@@ -53,6 +54,11 @@ namespace GFlowSimulation {
           return new Buckingham_VerletPairs_2d(gflow);
         else if (sim_dimensions==3)
           return new Buckingham_VerletPairs_3d(gflow);
+        else throw InvalidInteraction(token + ", " + toStr(sim_dimensions));
+      }
+      else if (token==DetectorToken) {
+        if (sim_dimensions==3)
+          return new Detector(gflow);
         else throw InvalidInteraction(token + ", " + toStr(sim_dimensions));
       }
       else {

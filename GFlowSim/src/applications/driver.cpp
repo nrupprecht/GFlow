@@ -52,6 +52,7 @@ int main(int argc, char **argv) {
   bool snapshot = false;
   bool sectorData = false; // Record sector information
   bool ke = false; // Record kinetic energy
+  RealType kebin = 0;
   bool energy = false; // Record total energy
   bool keTypes = false;
   bool totalKE = false; // Record average kinetic energy (per particle)
@@ -100,6 +101,7 @@ int main(int argc, char **argv) {
   parser.get("snapshot", snapshot);
   parser.get("sectorData", sectorData);
   parser.get("KE", ke);
+  parser.get("KEBin", kebin);
   parser.get("energy", energy);
   parser.get("KETypes", keTypes);
   parser.get("totalKE", totalKE);
@@ -210,6 +212,7 @@ int main(int argc, char **argv) {
   gflow->setStartRecTime(startRecTime);
   if (snapshot) gflow->addDataObject(new EndingSnapshot(gflow));
   if (totalKE || ke) gflow->addDataObject(new KineticEnergyData(gflow, ke));
+  if (kebin>0)       gflow->addDataObject(new KineticEnergyBin(gflow, kebin));
   if (energy)      gflow->addDataObject(new TotalEnergyData(gflow));
   if (keTypes)     gflow->addDataObject(new KineticEnergyTypesData(gflow, true));
   if (bdForces)    gflow->addDataObject(new BoundaryForceData(gflow));

@@ -1,10 +1,8 @@
+// This is a 2d simulation
+Dimensions: 3
 
-Dimensions: 2
-
-Var: width=16
-Var: length=10
-Var: number=1
-Var: phi=0.5
+Var: phi=0.01
+Var: width=8
 
 // Set the simulation bounds
 Bounds: Box=width
@@ -14,43 +12,37 @@ Integrator: VelocityVerlet
 Boundary: Wrap
 
 // Set the number of particle types
-NTypes: 3
+NTypes: 2
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
 Force-grid: {
   : 0, 0, HardSphere
-  : 0, 2, HardSphere
-  : 2, 2, None
-  : 1, 1, None
-  : 1, 0, None
-  : 1, 2, None
-}
-
-Fill: Polymer {
-  Length: length
-  Number: number
-  R: 0.05
-  r: 0.01
-  Phi: phi
+  : 0, 1, Detector
 }
 
 // Fill an area with particles
 Fill: Area {
   // Fill all the simulation with particles
   Bounds: Full
-  
+
   Template: TypeA {
-    Radius: 0.05
+    Radius: 0.05 // Radius of the particle.
     Mass: Density=1
-    Type: 2
+    Type: 0
   }
 
-  Number: Phi=0.1 {
-    TypeA : 1
+  Number: Phi=phi {
+    TypeA: 1
   }
 
-  Excluded: {
-    : 7.7, 8.3
-    : -100, 100
-  }
+  Velocity: Temperature=0.0005
 }
+
+Particle {
+  Position: 0, 0, 0
+  Sigma: 0.1 // Radius of the detector.
+  Velocity: 0, 0, 0
+  Type: 1
+  Mass: inf
+}
+

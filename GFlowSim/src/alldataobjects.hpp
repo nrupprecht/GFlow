@@ -20,6 +20,7 @@
 #include "dataobjects/graphobjects/boundaryforcedata.hpp"
 #include "dataobjects/graphobjects/center-correlation.hpp"
 #include "dataobjects/graphobjects/group-correlation.hpp"
+#include "dataobjects/graphobjects/kineticenergybin.hpp"
 #include "dataobjects/graphobjects/kineticenergydata.hpp"
 #include "dataobjects/graphobjects/memorydistance.hpp"
 #include "dataobjects/graphobjects/mininteractingdistance.hpp"

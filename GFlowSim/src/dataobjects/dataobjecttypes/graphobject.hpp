@@ -21,9 +21,6 @@ namespace GFlowSimulation {
     //! \brief Clear the data.
     virtual void pre_integrate() override;
 
-    //! \brief Collect the position data from simdata --- happens during the post-step phase.
-    virtual void post_step() override = 0;
-
     //! \brief Compute averages of data.
     RealType ave();
 

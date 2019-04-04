@@ -20,4 +20,6 @@
 #include "interactions/buckingham__verlet_pairs__2d.hpp"
 #include "interactions/buckingham__verlet_pairs__3d.hpp"
 
+#include "interactions/detector.hpp"
+
 #endif // __ALL_FORCES_HPP__GFLOW__
