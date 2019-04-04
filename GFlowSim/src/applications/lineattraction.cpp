@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
   bool quiet = false;
   int iters = 10;
   int trials = 5;
-  string writeDirectory = "LineAttraction/";
+  string writeDirectory = "LineAttraction";
   // Other values
   string load = "configurations/lines.txt";
 
@@ -73,10 +73,10 @@ int main(int argc, char **argv) {
   auto start_time = current_time();
 
   // Record data.
-  vector<RPair> data;
+  vector<vector<RealType> > data;
 
   // Create the directory
-  rmdir(writeDirectory.c_str());
+  //rmdir(writeDirectory.c_str());
   mkdir(writeDirectory.c_str(), 0777);
 
   // Do many data gathering runs.
@@ -89,6 +89,9 @@ int main(int argc, char **argv) {
     creator.setVariable("h", toStr(h)); // Line spacing
     // Accumulator for getting the average
     float ave = 0;
+    vector<RealType> forces;
+    // First entry is h
+    forces.push_back(h); 
     // Run some trials
     for (int t=0; t<trials; ++t) {
       // Delete old gflow
@@ -98,11 +101,13 @@ int main(int argc, char **argv) {
       // Add an ending snapshot object
       if (t==trials-1) gflow->addDataObject(new EndingSnapshot(gflow));
 
+      /*
       auto pd = new PositionData(gflow);
       pd->clear_all_data_entries();
       pd->add_vector_data_entry("X");
       pd->add_scalar_data_entry("Sg");
       pd->add_integer_data_entry("Type");
+      */
 
       gflow->addDataObject(pd);
       RealType videoLength = 10;
@@ -124,16 +129,16 @@ int main(int argc, char **argv) {
       // Gather data
       auto *gnf = dynamic_cast<LineEntropicForce*>(dob);
       if (gnf==nullptr) throw false;
-      ave += gnf->ave(0);
+      RealType f = gnf->ave(0);;
+      forces.push_back(f);
 
       // Write other data
-      if (t==trials-1) gflow->writeData(writeDirectory+"data"+toStr(i));
+      if (t==trials-1) gflow->writeData(writeDirectory+"/data"+toStr(i));
       // Clean up
       delete gflow;
     }
     // Record
-    ave /= static_cast<float>(trials);
-    data.push_back(RPair(h, ave));
+    data.push_back(forces);
 
     // Increment h
     h += dh;
@@ -142,13 +147,14 @@ int main(int argc, char **argv) {
   // Timing message
   cout << "Runs are over. Total time:\t\t\t" << time_span(current_time(), start_time) << "\n";
 
-  // Print out data.
-  cout << "data={";
+  ofstream fout(writeDirectory+"/forces.csv");
   for (int i=0; i<data.size(); ++i) {
-    cout << "{" << data[i].first << "," << data[i].second << "}";
-    if (i!=data.size()-1) cout << ",";
+    for (int j=0; j<data[i].size(); ++j) {
+      fout << data[i][j];
+      if (j!=data[i].size()-1) fout << ",";
+    }
+    fout << endl;
   }
-  cout << "};";
   
   // Finalize mpi
   #if USE_MPI == 1

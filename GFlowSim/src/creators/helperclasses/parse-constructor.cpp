@@ -11,7 +11,6 @@ namespace GFlowSimulation {
     // Check if we should use the full simulation bounds - the bounds are then rectangular
     if (head->subHeads.empty() && head->params.size()>0 && head->params[0]->partA=="Full")
       region = new RectangularRegion(sim_dimensions, gflow->getBounds());
-
     // Spherical bounds
     else if (head->params.size()>0 && head->params[0]->partA=="Sphere") {
       if (head->subHeads.size()!=2)
@@ -28,19 +27,37 @@ namespace GFlowSimulation {
     }
     // Otherwise, rectangular bounds
     else {
-      if (head->subHeads.size()!=sim_dimensions) 
-        throw BadStructure("Expected "+toStr(sim_dimensions)+" arguments, found "+toStr(head->subHeads.size()));
-      // Set bounds
-      RectangularRegion *rreg = new RectangularRegion(sim_dimensions);
-      for (int d=0; d<head->subHeads.size(); ++d) {
-        // Check for well formed options.
-        if (head->subHeads[d]->params.size()!=2 || !head->subHeads[d]->subHeads.empty()) 
-          throw BadStructure("Bounds need a min and a max, we found "+toStr(head->subHeads[d]->params.size())+" parameters.");
-        // Extract the bounds.
-        rreg->min(d) = Eval::evaluate( head->subHeads[d]->params[0]->partA, variables );
-        rreg->max(d) = Eval::evaluate( head->subHeads[d]->params[1]->partA, variables );
+      // If the bounds is a Bounds: Box=[width]
+      if (head->params.size()>0 && head->params[0]->partA=="Box") {
+        if (head->subHeads.size()!=0)
+          throw BadStructure("Box bounds should not have any subheads");
+        if (head->params.size()!=1)
+          throw BadStructure("Box bounds needs one parameter, found "+toStr(head->params.size())+".");
+        RectangularRegion *rreg = new RectangularRegion(sim_dimensions);
+        RealType width = Eval::evaluate( head->params[0]->partB, variables );
+        // Set all min/max to be 0/width
+        for (int d=0; d<sim_dimensions; ++d) {
+          rreg->min(d) = 0;
+          rreg->max(d) = width;
+        }
+        region = rreg;
       }
-      region = rreg;
+      // Otherwise, all bounds min/max are specified.
+      else {
+        if (head->subHeads.size()!=sim_dimensions) 
+          throw BadStructure("Expected "+toStr(sim_dimensions)+" arguments, found "+toStr(head->subHeads.size()));
+        // Set bounds
+        RectangularRegion *rreg = new RectangularRegion(sim_dimensions);
+        for (int d=0; d<head->subHeads.size(); ++d) {
+          // Check for well formed options.
+          if (head->subHeads[d]->params.size()!=2 || !head->subHeads[d]->subHeads.empty()) 
+            throw BadStructure("Bounds need a min and a max, we found "+toStr(head->subHeads[d]->params.size())+" parameters.");
+          // Extract the bounds.
+          rreg->min(d) = Eval::evaluate( head->subHeads[d]->params[0]->partA, variables );
+          rreg->max(d) = Eval::evaluate( head->subHeads[d]->params[1]->partA, variables );
+        }
+        region = rreg;
+      }
     }
 
     return region;

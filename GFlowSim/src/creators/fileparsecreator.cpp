@@ -188,6 +188,8 @@ namespace GFlowSimulation {
         parser.argvalName(name, value);
         // Check for command line argument
         parserPtr->get(name, value);
+        // If there is no value, something is wrong
+        if (value=="") throw BadStructure("Value definition should not be empty for value: ["+name+"].");
         // Evaluate the value
         RealType val = Eval::evaluate(value, variables);
         // Add to variables if a variable does not already exist.

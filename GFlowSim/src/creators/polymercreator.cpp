@@ -303,6 +303,8 @@ namespace GFlowSimulation {
     // Create the second chain.
     createSinglePolymer(gflow, x, Yhat, chain_ordering, sigma_v, 0, 1);
 
+    gflow->integrator->setTargetSteps(40);
+
     // Give back harmonic bonds
     harmonicbonds = bonds;
 

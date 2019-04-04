@@ -8,23 +8,10 @@ namespace GFlowSimulation {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
 
-    // Get and store data
-    RealType ke = 0;
-    RealType **v = Base::simData->V();
-    RealType *im = Base::simData->Im();
-    int size = Base::simData->size();
-    int count = 0;
-    for (int n=0; n<size; ++n)
-      if (im[n]>0) {
-        RealType m = 1./im[n];
-        ke += m*sqr(v[n], sim_dimensions);
-        ++count;
-      }
-    ke *= 0.5;
-    // If we want the average
-    if (useAve && count>0) ke /= count;
-    // Store data
+    // Get data.
     RealType time = Base::gflow->getElapsedTime();
+    RealType ke = calculate_kinetic(simData, useAve);
+    // Store data.
     data.push_back(RPair(time, ke));
 
     // A useful check

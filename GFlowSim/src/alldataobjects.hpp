@@ -13,7 +13,6 @@
 #include "dataobjects/percolationdata.hpp"
 #include "dataobjects/percolationsnapshot.hpp"
 #include "dataobjects/positiondata.hpp"
-#include "dataobjects/pressuredata.hpp"
 #include "dataobjects/twogroupstatistics.hpp"
 
 // Graph objects
@@ -24,6 +23,7 @@
 #include "dataobjects/graphobjects/kineticenergydata.hpp"
 #include "dataobjects/graphobjects/memorydistance.hpp"
 #include "dataobjects/graphobjects/mininteractingdistance.hpp"
+#include "dataobjects/graphobjects/pressuredata.hpp"
 #include "dataobjects/graphobjects/timestepdata.hpp"
 #include "dataobjects/graphobjects/total-energy-data.hpp"
 
