@@ -196,15 +196,18 @@ namespace GFlowSimulation {
 
       // Calculate interactions and forces.
       if (useForces) {
-        // Calculate short range interactions
-        forces_timer.start(); 
-        for (auto &it : interactions) it->interact();
-        forces_timer.stop(); 
-
+        // Calculate short range, nonbonded interactions
+        if (!interactions.empty()) {
+          forces_timer.start(); 
+          for (auto &it : interactions) it->interact();
+          forces_timer.stop(); 
+        }
         // Calculate bonded interactions
-        bonded_timer.start();
-        for (auto &bd : bondedInteractions) bd->interact();
-        bonded_timer.stop();
+        if (!bondedInteractions.empty()) {
+          bonded_timer.start();
+          for (auto &bd : bondedInteractions) bd->interact();
+          bonded_timer.stop();
+        }
       }
       // Update halo particles
       simData->updateHaloParticles();

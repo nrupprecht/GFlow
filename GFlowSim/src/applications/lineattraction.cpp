@@ -107,11 +107,10 @@ int main(int argc, char **argv) {
       pd->add_vector_data_entry("X");
       pd->add_scalar_data_entry("Sg");
       pd->add_integer_data_entry("Type");
-      */
-
       gflow->addDataObject(pd);
       RealType videoLength = 10;
       pd->setFPS((20.*videoLength)/time);
+      */
 
       // Find data objects.
       DataMaster *master = gflow->getDataMaster();
