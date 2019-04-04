@@ -13,8 +13,6 @@ namespace GFlowSimulation {
     //! \brief Default constructor
     KineticEnergyBin(GFlow*, RealType);
 
-    void post_step() override {};
-
     //! \brief Look at the data once the simulation ends.
     void post_integrate() override;
 
@@ -23,7 +21,7 @@ namespace GFlowSimulation {
     int bins = 50;
 
     //! \brief Cutoff radius.
-    RealType radius;
+    RealType radius = 2;
 
     //! \brief Reference point.
     Vec center;

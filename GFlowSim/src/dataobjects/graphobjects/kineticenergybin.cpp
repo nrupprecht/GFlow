@@ -2,9 +2,9 @@
 
 namespace GFlowSimulation {
 
-  KineticEnergyBin::KineticEnergyBin(GFlow *gflow) : GraphObject(gflow, "KEBin", "bin", "kinetic energy"), center(sim_dimensions), radius(2) {};
+  KineticEnergyBin::KineticEnergyBin(GFlow *gflow) : GraphObject(gflow, "KEBin", "r", "kinetic energy"), center(sim_dimensions) {};
 
-  KineticEnergyBin::KineticEnergyBin(GFlow *gflow, RealType r) : GraphObject(gflow, "KEBin", "bin", "kinetic energy"), center(sim_dimensions), radius(r) {};
+  KineticEnergyBin::KineticEnergyBin(GFlow *gflow, RealType r) : GraphObject(gflow, "KEBin", "r", "kinetic energy"), center(sim_dimensions), radius(r) {};
 
   void KineticEnergyBin::post_integrate() {
     // Bin width
