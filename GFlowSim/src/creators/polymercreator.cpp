@@ -16,9 +16,11 @@ namespace GFlowSimulation {
     parser.addHeadingOptional("Phi");
     parser.addHeadingOptional("R");
     parser.addHeadingOptional("r");
-    parser.addHeadingOptional("Correlation");
     parser.addHeadingOptional("Parallel");
+    parser.addHeadingOptional("IdP");
+    parser.addHeadingOptional("IdC");
     parser.addHeadingOptional("H");
+    parser.addHeadingOptional("Correlation");
     // Check headings for validity
     parser.check();
 
@@ -37,9 +39,11 @@ namespace GFlowSimulation {
     parser.firstArg("Phi", phi);
     parser.firstArg("R", rP);
     parser.firstArg("r", rC);
-    parser.firstArg("Correlation", useCorr);
     parser.firstArg("Parallel", pair);
+    parser.firstArg("IdP", idP);
+    parser.firstArg("IdC", idC);
     parser.firstArg("H", h);
+    parser.firstArg("Correlation", useCorr);
     
     // --- Done gathering parameters, ready to act.
 
@@ -90,7 +94,7 @@ namespace GFlowSimulation {
     else {
       // Create all the polymers
       for (int i=0; i<number; ++i) {
-        createRandomPolymer(gflow, length, phi, 0, 1);
+        createRandomPolymer(gflow, length, phi, idP, idC);
       }
     }
     
@@ -301,7 +305,7 @@ namespace GFlowSimulation {
     // Shift x to the right
     x[0] += 2*dx;
     // Create the second chain.
-    createSinglePolymer(gflow, x, Yhat, chain_ordering, sigma_v, 0, 1);
+    createSinglePolymer(gflow, x, Yhat, chain_ordering, sigma_v, idP, idC);
 
     gflow->integrator->setTargetSteps(40);
 

@@ -13,9 +13,9 @@ Configuration files are loaded, parsed, and converted into simulations by the pr
     ./bin/driver -load=[configuration file] -time=[time]
     
 where the configuration file should be the path to the file relative to the working directory, and the amount of time should be in seconds. 
-Another common example would be a run where kinetic energy data and particle trajectory data is recorded:
+Another common example would be a run where kinetic energy data and particle trajectory data is recorded, to make a video of a specified length:
 
-    ./bin/driver -load=[configuration file] -time=[time] -KE -animate
+    ./bin/driver -load=[configuration file] -time=[time] -KE -animate -videoLength=[v time]
 
 ### Basic setup.
 
@@ -47,7 +47,7 @@ This section describes the various options available for creating simulations.
 
 ### Variables.
 
-Variables can be defined for use in configuration files. Anywhere a parameter or value is expected, a variable can be used. A variable may be either a string or a number, the file parse creator will interpret it to be whatever it should be in the context in which it is used. Variables should be defined as follows:
+Variables can be defined for use in configuration files. Anywhere a parameter or value is expected, a variable can be used. A variable may be either a string or a number, the file parse creator will interpret it to be whatever it should be in the context in which it is used. Since variables can represent strings or numerical values, mathematical expressions will not be parsed for variables. Variables should be defined as follows:
 
     Var: [Name]=[Default value]
     
@@ -55,11 +55,21 @@ Any number of variable statements can be included in the configuration file. Var
 
 The other useful thing about variables is that they can have their values set from the command line by adding the flag *-[Name]=[Value]*. For example, if you have defined a variable to specify the temperature of a simulation,
 
-    Var: Temperature=0.25
+    Var: temperature=0.25
     
 you can set the Temperature variable to be 1.0 from the command line by running the driver,
 
-    ./bin/driver -load=my-configuration.txt -Temperature=1.0
+    ./bin/driver -load=my-configuration.txt -temperature=1.0
+    
+### Values.
+
+Values are similar for variables, but cannot be set from the command line, and can be functions of variables and previously defines values. Another difference is a value **must** be a numerical value (it will evaluate as a float type). Therefore, any variables that the value depends on must evaluate as numbers. Arithmetic expressions with '+' '-' '*' '/' '(' and ')' may be used. For example, a value called "length" can be defined as
+
+    Value: lenth = (width + 1)/2
+  
+and used to define subsequent values, e.g.
+
+    Value: volume = length*length
 
 ### Comments.
 Comments follow the C/C++ convention. Single line comments are started with a // and last until the end of the line. Multiline comments are of the form 
@@ -72,26 +82,43 @@ and are only terminated by the closing */, not by endline characters. Multiline 
 
 There are two top level heads that must be included in each configuration file: **Bounds**, and **Interactions**. Bounds specifies the simulation bounds, which currently must be rectangular. Bounds should be specified as follows,
 
+Full specification: the bound's min/max in each dimension is explicitly given. The number of pairs of bounds must match the dimensionality of the simulation.
+
     Bounds: {
       : [min x], [max x]
       : [min y], [max y]
       ...
       : [min d_n], [max w]
     }
+    
+Box specification: bounds with min / max of 0, [length] in each dimension is created,
 
-The body of the **Bounds** structure  is an example of where there are no head labels, only parameters. The number of pairs of bounds must match the dimensionality of the simulation.
+    Bounds: Box=[length]
 
 There are several options as to how to specify interactions. The usual way is to specify each pair of particles types, and what interaction should exist between them, e.g.
 
     Force-grid: {
       : 0, 0, HardSphere
       : 0, 1, LennardJones
-      : 1, 1, HardSphere
+      : 1, 1, None
     }
 
-Forces are by default reflexive, that is, it is unneccessary to also say *: 1, 0, LennardJones*. There is a way to make forces non-reflexive, but you shouldn't do that, so I'm not going to say what it is. The force options currently are **HardSphere**, **HardSphereGeneral**, **LennardJones**, and **None**. **HardSphere** is a hard sphere force without friction or dissipation, **HardSphereGeneral** is a hard sphere force with dissipation. **LennardJones** is simply the Lennard Jones interaction, and if **None** is specified, the particles will not interact with one another.
+Forces are by default reflexive, that is, it is unneccessary to also say *: 1, 0, LennardJones*. There is a way to make forces non-reflexive, but you shouldn't do that, so I'm not going to say what it is. The force options currently are summarized below.
 
-The second way to allocate forces is by the creation of a random force network. To choose this option, simply include
+| Token        | Description                                                                                           |
+|--------------|-------------------------------------------------------------------------------------------------------|
+| HardSphere   | Hard sphere force - spring like repulsion.                                                            |
+| HardSphereDs | Hard sphere force with dissipation                                                                    |
+| LennardJones | Lennard Jones 6-12 force.                                                                             |
+| Buckingham   | Buckingham force.                                                                                     |
+| Detector     | Not a force, but an interaction that stops the simulation  if a particle with enough kinetic hits it. |
+| None         | Explicit indication that there is no force.                                                           |
+
+A second way to specify the force is to make all particles of all types interact with the same force. To do this, use
+
+    Force-grid: [Interaction-token]
+
+The final way to allocate forces is by the creation of a random force network. To choose this option, simply include
 
     Force-grid: Random
     
@@ -138,7 +165,7 @@ All integrators can have the following options specified in their bodies,
 Additionally, both Langevin type integrators can take the following options,
 
     Temperature: [temperature]
-    Viscosity: [viscosity]
+    Viscosity:   [viscosity]
     
 which specify the simulation's temperature and viscosity.
   
@@ -179,9 +206,11 @@ Of course, to have a useful simulation, there should be particles. There are cur
 
     Attraction: [acceleration]
 
-### Fill Areas.
+### Particle Filling.
 
-This is the most useful, flexible, and complex way to create particles. Basically, some volume (area, hypervolume) is filled with particles, which are then relaxed so that they are not overlapping too much, and are assigned velocities. The types, velocities, radii, etc. for the particles can all be specified in different ways. The bounds of the area to be filled *must* be specified, as well as information on how many particles should be added. The header is just **Fill-area**, which takes no parameters. The body specifies how to create particles.
+This is the most useful, flexible, and complex way to create particles. Basically, some volume (area, hypervolume) has particles added to it. There are several types of fills. 
+
+The first is **Fill: Area**. This fills an area with particles by picking positions uniformly. The types, velocities, radii, etc. for the particles can all be specified in different ways. The bounds of the area to be filled *must* be specified, as well as information on how many particles should be added. There should be no parameters. The body specifies how to create particles.
 
 **Bounds**: The bounds can either be specified in the same format as the simulation bounds, or by 
 
@@ -246,10 +275,6 @@ Finally, there is a special option for type specification: **Equiprobable**. Thi
     }
     
 It is not neccessary to normalize the probabilities for the particle templates. If, for example, you want each particle template to occur with equal probability, you can just use "1" for each p-value.
-
-**Relax**: To ensure that the particles in the fill area do not overlap too much, which can cause catastrophic and unrealistic explosions and NAN values, the creator does a hard sphere relax on the particles for a default time of 0.2 seconds. For this, the interparticles forces are all set to be of the hard sphere type, and the simulation is integrated with an overdamped integrator (x' ~ F, instead of the usual x'' ~ F). This generally is enough time for particles to push one another out of aggregious overlaps. However, the amount of relaxation time can be specified to be any non-negative number (including 0) by the header
-
-    Relax: [time]
     
 **Velocity**: There are currently not many ways to specify the initial velocity of the particles. The default is to assign particles random normal velocities. To set all the particles to move at a specific velocity, use one of the following two headers
 
@@ -260,7 +285,52 @@ It is not neccessary to normalize the probabilities for the particle templates. 
 **Attraction**: This option adds a constant accelaration that attracts all particles towards the center of the simulation domain. This can be useful if there will be such an attraction included in the full simulation, as it will allow particles to rest naturally in place. This can be specified by:
 
     Attraction: [acceleration]
+    
+**Exclude**: Defines excluded regions within which particles will (probably) not be placed. If too many failures to pick a random point outside the exclude bounds occur, then particles may be placed within the exclude region. Also, particle relaxation could cause particles to be pushed into the excluded region. Regions may be defined via the same construction as the Fill: Area bounds (except for **Bounds: Full**).
+
+
+The second type of filling is **Fill: Polymer**. This creates one or more random polymer chains within the simulation bounds. Each polymer is created via a random walk out of two kinds of particles, (usually large) "primary" particles, and (usually small) "chain" particles. There are harmonic bonds between adjacent particles in the chain. There are several parameters that can all be set with the construction
+
+    [Heading]: [Value]
+
+**Number**: The number of polymers to create.
+
+**Length**: The length of each polymer.
+
+**R**: The radius of the primary particles.
+
+**r**: The radius of the chain particles.
+
+**Phi**: The target density of the polymer, Phi = 2 * R / length.
+
+**IdP**: The type of the primary particles.
+
+**IdC**: The type of the chain particles.
+
+**Correlation**: If true, a group correlation object is added to monitor correlations between the first polymer created and the rest of the particles in the simulation.
+
+**Parallel**: If this is set to true (non-zero), then two straight, parallel polymers are constructed.
+
+**H**: Only for use with **Parallel** (though no errors occur otherwise - it's just that nothing happens). This specifies how far apart (as a fraction of **R**) the polymers will be from one another.
+
+In addition, a LineEntropicForce data object is added to the simulation, attached to the first polymer created.
+
+### Particle Relaxation.
+
+Since particle positions are generally chosen randomly, e.g. by a fill area command, particles likely overlap with one another. To rectify this, the simulation setup is run for some amount of time with an overdamped integrator to force particles to exclude one another. The default relaxation time is 0.5, but the amount of time can be specified,
+
+    Relax: [time]
+    
+*After* the relaxation step, particles will have their velocities assigned.
+
+### Particle Reconciliation.
+
+If particles overlap each other by too much, they can be forcibly removed from the simulation via
+
+    Reconcile: Remove=[factor]
+
+where *factor* is the overlap factor between particles: (R1 + R2 - r) / min(R1, R2) where R1, R2 are the radii of the particles, and r is the distance between them. This is currently the only reconciliation option.
 
 ## Conclusion
 
-As development continues, more advanced configurations will become possible. This guide is current as of the time of its writing, on 1/11/2019. In the directory *GFlow/GFlowSimulation/configurations*, there are a number of sample configuration files.
+As development continues, more advanced configurations will become possible. This guide is current as of the time of its writing, on 4/4/2019. In the directory *GFlow/GFlowSimulation/configurations*, there are a number of sample configuration files.

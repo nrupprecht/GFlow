@@ -55,6 +55,12 @@ namespace GFlowSimulation {
 
     //! \brief The inverse mass of the chain particles.
     RealType imC = 0;
+
+    //! \brief The type of the primary particles.
+    int idP = 0;
+
+    //! \brief The type of the chain particles.
+    int idC = 1;
   };
 
 }
