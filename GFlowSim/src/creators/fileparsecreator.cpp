@@ -132,10 +132,15 @@ namespace GFlowSimulation {
     return ret;
   }
 
-  void FileParseCreator::setVariable(const string& name, const string& value) {
+  void FileParseCreator::setVariable(const string& name, const string& value, bool overwrite) {
+    // Try to find the variable
+    auto var = variables.find(name);
     // Insert a variable if it does not already exist.
-    if (variables.find(name)==variables.end())
+    if (var==variables.end())
       variables.insert(pair<string, string>(name, value));
+    // Else, if overwrite is true, overwrite the existing variable
+    else if (overwrite)
+      var->second = value;
   }
 
   inline void FileParseCreator::createFromOptions(HeadNode *head) {

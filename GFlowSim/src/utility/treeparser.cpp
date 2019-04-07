@@ -14,6 +14,17 @@ namespace GFlowSimulation {
     variables = vars;
   }
 
+  bool TreeParser::has_variable(const string& name) const {
+    return (variables.find(name)!=variables.end());
+  }
+
+  RealType TreeParser::get_variable(const string& name) const {
+    auto it = variables.find(name);
+    if (it!=variables.end())
+      return cast<RealType>(it->second);
+    else return 0;
+  }
+
   bool TreeParser::focus(const string& heading) {
     // Look for the heading.
     auto p = headings.find(heading);

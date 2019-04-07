@@ -27,11 +27,13 @@ namespace GFlowSimulation {
     getX() = time;
 
     // Compute the temperature of the system.
-    RealType ke = KineticEnergyData::calculate_kinetic(simData, true);
+    int n_solvent = simData->number() - 2*group.size();
     RealType KB = gflow->getKB();
+    // Get KE per (non infinitely massive) particle.
+    RealType ke = KineticEnergyData::calculate_kinetic(simData, true);
     RealType T = 2./static_cast<RealType>(sim_dimensions) * ke / KB;
     // Compute the number density. Do not include your own particles. Assumes the other line has roughly the same number of particles.
-    RealType rho = (simData->number() - 2*group.size()) / gflow->getBounds().vol();
+    RealType rho = n_solvent / gflow->getBounds().vol();
     // Compute the normalization
     RealType norm = 1./(rho * KB * T * length);
 
@@ -46,8 +48,14 @@ namespace GFlowSimulation {
     length = l;
   }
 
-  void LineEntropicForce::setGroup(const Group& g) {
+  void LineEntropicForce::setGroup(const Group& g, bool setLength) {
     group = g;
+    if (setLength) {
+      // Set length
+      int first = simData->getLocalID( group.g_at(0) );
+      int last = simData->getLocalID ( group.g_at(group.size()-1) );
+      length = simData->X(last, 1) - simData->X(first, 1);
+    }
   }
 
 }

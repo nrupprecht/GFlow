@@ -13,14 +13,13 @@ namespace GFlowSimulation {
     //! \brief Threshold setting constructor.
     Detector(GFlow*, RealType);
 
-    //! \brief Interact function. Checks if any particles with kinetic energy > ke_threshold are close.
-    //! If so, the simulation is terminated.
-    void interact() const override;
+    //! \brief Make sure this class stays purely abstract.
+    virtual void interact() const override = 0;
 
     //! \brief Set the ke threshold.
     void setKEThreshold(RealType);
 
-  private:
+  protected:
     //! \brief Threshold kinetic energy
     RealType ke_threshold;
   };

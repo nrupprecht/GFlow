@@ -62,6 +62,12 @@ namespace GFlowSimulation {
     // Use max_small_sigma
     min_small_cutoff = target_cell_size = 2*max_small_sigma+skin_depth;
 
+    // Try using larger cells
+    target_cell_size = max( 
+      static_cast<RealType>(pow(domain_bounds.vol() / simData->size() , 1./sim_dimensions)), 
+      min_small_cutoff
+    );
+
     // Calculate cell grid data
     calculate_domain_cell_dimensions();
 

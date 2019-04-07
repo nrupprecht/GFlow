@@ -18,17 +18,14 @@ namespace GFlowSimulation {
     // Add a new entry to modify
     addEntry();
 
-    // Store data
-    RealType time = Base::gflow->getElapsedTime();
     // Set the time
-    getX() = time;
-
+    getX() = Base::gflow->getElapsedTime();
     // Set the forces
     RealType *F = new RealType[sim_dimensions];
     group.findNetForce(F, simData);
     // Set each dimension of force.
     for (int d=0; d<sim_dimensions; ++d) getY(d) = F[d];
-
+    
     // Clean up
     delete [] F;
   }

@@ -31,11 +31,12 @@ int main(int argc, char **argv) {
   #endif
 
   // --- Options
-  RealType time = 10;
+  RealType time = 60;
+  RealType startRec = 0;
   RealType minh = 0;
-  RealType maxh = 1;
+  RealType maxh = 1.2;
   bool quiet = false;
-  int iters = 10;
+  int iters = 13;
   int trials = 5;
   string writeDirectory = "LineAttraction";
   // Other values
@@ -44,6 +45,7 @@ int main(int argc, char **argv) {
   // --- For getting command line arguments
   ArgParse parser(argc, argv);
   parser.get("time", time);
+  parser.get("startRec", startRec);
   parser.get("minh", minh);
   parser.get("maxh", maxh);
   parser.get("quiet", quiet);
@@ -86,7 +88,7 @@ int main(int argc, char **argv) {
     // A creator.
     FileParseCreator creator(&parser, load);
     // Set variables in creator
-    creator.setVariable("h", toStr(h)); // Line spacing
+    creator.setVariable("h", toStr(h), true); // Line spacing
     // Accumulator for getting the average
     float ave = 0;
     vector<RealType> forces;
@@ -101,17 +103,6 @@ int main(int argc, char **argv) {
       // Add an ending snapshot object
       if (t==trials-1) gflow->addDataObject(new EndingSnapshot(gflow));
 
-      /*
-      auto pd = new PositionData(gflow);
-      pd->clear_all_data_entries();
-      pd->add_vector_data_entry("X");
-      pd->add_scalar_data_entry("Sg");
-      pd->add_integer_data_entry("Type");
-      gflow->addDataObject(pd);
-      RealType videoLength = 10;
-      pd->setFPS((20.*videoLength)/time);
-      */
-
       // Find data objects.
       DataMaster *master = gflow->getDataMaster();
       auto &dataObjects = master->getDataObjects();
@@ -121,6 +112,8 @@ int main(int argc, char **argv) {
         if (obj->getName()=="LineEntropicForce") dob = obj;
       }
       if (dob==nullptr) throw false;
+      // Set start rec time.
+      master->setStartRecTime(startRec);
 
       // Run the program
       gflow->run(time);

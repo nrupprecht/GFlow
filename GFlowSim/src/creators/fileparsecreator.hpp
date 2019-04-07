@@ -40,7 +40,7 @@ namespace GFlowSimulation {
     virtual GFlow* createSimulation();
 
     //! \brief Set a variable: name and value.
-    void setVariable(const string&, const string&);
+    void setVariable(const string&, const string&, bool=false);
 
   private:
     //! \brief Create gflow from the options contained in the parse tree.

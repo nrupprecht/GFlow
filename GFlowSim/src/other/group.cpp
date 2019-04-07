@@ -98,17 +98,17 @@ namespace GFlowSimulation {
     scalarMultVec(1./mass, v, sim_dimensions);
   }
 
-  void Group::findNetForce(RealType *f, SimData *simData) const {
+  void Group::findNetForce(RealType *frc, SimData *simData) const {
     if (size()==0) return;
     // Get the dimensionaliry
     int sim_dimensions = simData->getSimDimensions();
     // Zero vector
-    zeroVec(f, sim_dimensions);
+    zeroVec(frc, sim_dimensions);
     // Force array
-    RealType **F = simData->F();
+    RealType **f = simData->F();
     // Compute net force
     for (auto id : local_ids) {
-      plusEqVec(f, F[id], sim_dimensions);
+      plusEqVec(frc, f[id], sim_dimensions);
     }
   }
 

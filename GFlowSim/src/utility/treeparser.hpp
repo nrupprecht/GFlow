@@ -41,6 +41,12 @@ namespace GFlowSimulation {
     //! \brief Set the variables for the parser.
     void set_variables(std::map<string, string>);
 
+    //! \brief Return whether a variable has been defined.
+    bool has_variable(const string&) const;
+
+    //! \brief Get the numerical value of a variable.
+    RealType get_variable(const string&) const;
+
     //! \brief Focus one of the body's head nodes, the first one to have the given heading. Retuns false if no such head node exists.
     bool focus(const string&);
 

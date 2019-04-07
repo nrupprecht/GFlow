@@ -36,17 +36,16 @@ namespace GFlowSimulation {
     // Gather parameters
     parser.firstArg("Number", number);
     parser.firstArg("Length", length);
-    parser.firstArg("Phi", phi);
     parser.firstArg("R", rP);
     parser.firstArg("r", rC);
     parser.firstArg("Parallel", pair);
     parser.firstArg("IdP", idP);
     parser.firstArg("IdC", idC);
-    parser.firstArg("H", h);
     parser.firstArg("Correlation", useCorr);
+    parser.firstArg("Phi", phi);
+    parser.firstArg("H", h);
     
     // --- Done gathering parameters, ready to act.
-
     // Get number of dimensions
     int sim_dimensions = gflow->sim_dimensions;
     
@@ -132,14 +131,18 @@ namespace GFlowSimulation {
     int i;
     for (i=1; i<marks.size()-1; ++i) {
       // The number of chain links to add.
-      int ncl = ceil(0.5*(marks[i] - marks[i-1])/rC);
+      RealType expected = 0.5*(marks[i] - marks[i-1])/rC;
+      int ncl = floor(expected);
+      if (drand48()<(static_cast<RealType>(ncl)-expected)) ++ncl;
       // Add the chain links
       for (int j=0; j<ncl; ++j) chain_ordering.push_back(false);
       // Add the primary ball
       chain_ordering.push_back(true);
     }
     // The last links
-    int ncl = ceil(0.5*(marks[i] - marks[i-1])/rC);
+    RealType expected = 0.5*(marks[i] - marks[i-1])/rC;
+    int ncl = floor(expected);
+    if (drand48()<(static_cast<RealType>(ncl)-expected)) ++ncl;
     // Add the chain links
     for (int j=0; j<ncl; ++j) chain_ordering.push_back(false);
     // We have created the chain ordering, and are done.
@@ -173,7 +176,6 @@ namespace GFlowSimulation {
 
     // Create a polymer from the specifications
     createSinglePolymer(gflow, X, V, chain_ordering, v_sigma, idP, idC);
-    if (entropicForce) entropicForce->setLength(length);
 
     // Clean up
     delete [] X;
@@ -259,10 +261,62 @@ namespace GFlowSimulation {
       last_type = next_type;
     }
 
+    // Add entropic force monitor
     if (n_polymers==0) {
       entropicForce = new LineEntropicForce(gflow);
       entropicForce->setGroup(group);
       gflow->addDataObject(entropicForce);
+    }
+
+    // Increment polymer counter
+    ++n_polymers;
+  }
+
+  void PolymerCreator::createRandomLine(GFlow *gflow, const RealType *x, const RealType phi, const RealType length) {
+    // Get simdata and bounds
+    SimData *sd = gflow->simData;
+    Bounds bnds = gflow->bounds;
+
+    // Get number of dimensions
+    int sim_dimensions = gflow->sim_dimensions;
+
+    // Calculate the number of particles.
+    int n = phi * length / (2 * rP);
+
+    vector<RealType> marks;
+    marks.push_back(0);
+    for (int i=0; i<n; ++i) marks.push_back(drand48()*length*(1.-phi));
+    //marks.push_back(length*(1.-phi));
+    std::sort(marks.begin(), marks.end());
+
+    // Create a group
+    Group group;
+
+    // Vectors
+    Vec X(sim_dimensions), ZERO(sim_dimensions);
+    copyVec(x, X);
+    // Add particles
+    for (int i=0; i<n; ++i) {
+      // Next particle position
+      X[1] += (marks[i+1] - marks[i] + 2*rP);
+      // Wrap X
+      for (int d=0; d<sim_dimensions; ++d) {
+        if      (X[d]< bnds.min[d]) X[d] += bnds.wd(d);
+        else if (X[d]>=bnds.max[d]) X[d] -= bnds.wd(d);
+      }
+      // Add particle
+      int gid = sd->getNextGlobalID();
+      sd->addParticle(X.data, ZERO.data, rP, 0, idP);
+      // Add particle
+      group.add(gid);
+    }
+
+    // Add entropic force monitor
+    if (n_polymers==0) {
+      entropicForce = new LineEntropicForce(gflow);
+      entropicForce->setGroup(group, false);
+      gflow->addDataObject(entropicForce);
+      entropicForce->setLength(length);
     }
 
     // Increment polymer counter
@@ -291,21 +345,16 @@ namespace GFlowSimulation {
     HarmonicBond *bonds = harmonicbonds;
     harmonicbonds = nullptr;
 
-    // Create a random polymer arrangement
-    vector<bool> chain_ordering;
-    createPolymerArrangement(chain_ordering, phi, length);
     // Shift x to the left 
     x[0] -= dx;
     // Create first chain.
-    createSinglePolymer(gflow, x, Yhat, chain_ordering, sigma_v, 0, 1);
+    createRandomLine(gflow, x, phi, length);
     
-    // Create another random arrangement
-    createPolymerArrangement(chain_ordering, phi, length);
-    if (entropicForce) entropicForce->setLength(length);
     // Shift x to the right
     x[0] += 2*dx;
     // Create the second chain.
-    createSinglePolymer(gflow, x, Yhat, chain_ordering, sigma_v, idP, idC);
+    //createSinglePolymer(gflow, x, Yhat, chain_ordering, sigma_v, idP, idC);
+    createRandomLine(gflow, x, phi, length);
 
     gflow->integrator->setTargetSteps(40);
 

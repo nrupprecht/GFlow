@@ -18,7 +18,7 @@ namespace GFlowSimulation {
     void setLength(RealType);
 
     //! \brief Set the group to track.
-    void setGroup(const Group&);
+    void setGroup(const Group&, bool=true);
 
   private:
     //! \brief The group of particles in question.
