@@ -1,0 +1,64 @@
+
+Dimensions: 2
+
+Var: width=16
+Var: fraction=0.5
+Var: number=1
+Var: phi=0.5
+Var: h=0.5
+Var: rP=0.05
+Var: rC=0.01
+
+Value: length = fraction*width
+
+// Set the simulation bounds
+Bounds: Box=width
+
+Integrator: VelocityVerlet
+
+Boundary: Wrap
+
+// Set the number of particle types
+NTypes: 3
+
+// Creates a random force network of HardSphere and Lennard-Jones forces
+Force-grid: {
+  : 0, 0, HardSphere
+  : 0, 2, HardSphere
+  : 2, 2, HardSphere
+  : 1, 1, None
+  : 1, 0, None
+  : 1, 2, None
+}
+
+Fill: Polymer {
+  Parallel: 1
+  H: h  
+  Length: length
+  Number: number
+  R: rP
+  r: rC
+  Phi: phi
+}
+
+// Fill an area with particles
+Fill: Area {
+  // Fill all the simulation with particles
+  Bounds: Full
+  
+  Template: TypeA {
+    Radius: 0.05
+    Mass: Density=1
+    Type: 2
+  }
+
+  Number: Phi=0.025 {
+    TypeA : 1
+  }
+
+  Excluded: {
+    : width/2 - (5+h)*rP, width/2 + (5+h)*rP
+    : (width-length-rP)/2, (width+length+rP)/2
+  }
+  
+}
