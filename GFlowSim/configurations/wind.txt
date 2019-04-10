@@ -11,7 +11,7 @@ Bounds: {
 }
 
 // VARIABLES
-Var: MinR=0.03
+Var: MinR=0.04
 Var: MaxR=0.05
 Var: Velocity=2
 
@@ -49,7 +49,7 @@ Fill: Area {
     Type: 0
   }
 
-  Number: Phi=0.93 {
+  Number: Phi=0.925 {
     TypeA : 1
   }
 

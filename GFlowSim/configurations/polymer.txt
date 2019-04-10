@@ -1,10 +1,11 @@
-
-Dimensions: 2
-
+// Variables
+Var: dimensions=2
 Var: width=16
 Var: length=10
 Var: number=1
 Var: phi=0.5
+
+Dimensions: dimensions
 
 // Set the simulation bounds
 Bounds: Box=width

@@ -69,7 +69,7 @@ namespace GFlowSimulation {
     void addHeadingNecessary(const string&, const string&);
 
     //! \brief Get the name of the i-th argument.
-    const string& argName(int=0) const;
+    string argName(int=0) const;
 
     //! \brief Get the arguments as a single Vec object. Returns an empty Vec if there are no arguments.
     Vec argVec() const;

@@ -1,6 +1,5 @@
-
-Dimensions: 2
-
+// Variables
+Var: dimensions=2
 Var: width=16
 Var: fraction=0.5
 Var: number=1
@@ -10,6 +9,8 @@ Var: rP=0.05
 Var: rC=0.01
 
 Value: length = fraction*width
+
+Dimensions: dimensions
 
 // Set the simulation bounds
 Bounds: Box=width
@@ -52,12 +53,13 @@ Fill: Area {
     Type: 2
   }
 
-  Number: Phi=0.025 {
+  Number: Phi=0.0025 {
     TypeA : 1
   }
 
   Excluded: {
     : width/2 - (5+h)*rP, width/2 + (5+h)*rP
+    : (width-length-rP)/2, (width+length+rP)/2
     : (width-length-rP)/2, (width+length+rP)/2
   }
   

@@ -73,9 +73,11 @@ namespace GFlowSimulation {
     necessaryHeadings.insert(pair<string, string>(heading, message));
   }
 
-  const string& TreeParser::argName(int i) const {
-    if (-1<i || i<focus_node->params.size()) return focus_node->params[i]->partA;
-    else throw ParserOutOfBounds();
+  string TreeParser::argName(int i) const {
+    // If there is an arg.
+    if (-1<i && i<focus_node->params.size()) return focus_node->params[i]->partA;
+    // If there isn't, return empty string.
+    return "";
   }
 
   Vec TreeParser::argVec() const {

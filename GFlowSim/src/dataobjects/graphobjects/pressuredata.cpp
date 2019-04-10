@@ -26,20 +26,25 @@ namespace GFlowSimulation {
     int sim_dimensions = simData->getSimDimensions();
     // Get data
     RealType ke = KineticEnergyData::calculate_kinetic(simData, true);
-    RealType T = 2.*ke/(sim_dimensions*gflow->getKB());
+    RealType KB = gflow->getKB();
+    RealType T = 2.*ke/(sim_dimensions*KB);
     RealType V = gflow->getBounds().vol();
     int number = simData->number();
-    RealType Ptot = 0;
+    RealType factor = 1./(sim_dimensions*V);
+    RealType Ptot = number*KB*T/V;
     const vector<Interaction*>& interactions = gflow->getInteractions();
     // Get the virials from all the interactions
     for (const auto it : interactions) {
       //! P = N k T/V + 1/(sim_dimensions*V) \sum_i (r_i \dot F_i)
       // virial = \sum_i (r_i \dot F_i)
       RealType virial = it->getVirial();
-      RealType P = number*T/V + virial/(sim_dimensions*V);
-      // Total pressure
-      Ptot += P;
+      // Update Ptot.
+      Ptot += factor*virial;
     }
+
+    // Normalize
+    Ptot /= (number*KB*T/V);
+
     // Return
     return Ptot;
   }

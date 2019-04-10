@@ -239,9 +239,11 @@ namespace GFlowSimulation {
       else if (parser.body_size()==sim_dimensions) {
         // Get all the boundary conditions
         int d = 0;
-        for (parser.begin(); parser.next(); ++d) {
+        parser.begin();
+        do {
           gflow->setBC(d, choose_bc(parser.argName()));
-        }
+          ++d;
+        } while (parser.next());
       }
       else throw BadDimension();
       // Return to original level
