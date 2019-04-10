@@ -1,6 +1,7 @@
 #include "gflow.hpp"
 // Other files
 #include "allbaseobjects.hpp"
+#include "allbodies.hpp"
 #include "alldomains.hpp"
 #include "allparallelobjects.hpp"
 #include "allmodifiers.hpp"
@@ -156,6 +157,7 @@ namespace GFlowSimulation {
     iter = 0;
     // Set up all objects
     for (auto m : modifiers) m->pre_integrate();
+    for (auto b : bodies) b->pre_integrate();
     simData->pre_integrate();
     integrator->pre_integrate();
     domain->pre_integrate();
@@ -199,16 +201,23 @@ namespace GFlowSimulation {
         // Calculate short range, nonbonded interactions
         if (!interactions.empty()) {
           forces_timer.start(); 
-          for (auto &it : interactions) it->interact();
+          for (auto it : interactions) it->interact();
           forces_timer.stop(); 
         }
         // Calculate bonded interactions
         if (!bondedInteractions.empty()) {
           bonded_timer.start();
-          for (auto &bd : bondedInteractions) bd->interact();
+          for (auto bd : bondedInteractions) bd->interact();
           bonded_timer.stop();
         }
       }
+      // Update bodies
+      if (!bodies.empty()) {
+        bodies_timer.start();
+        for (auto b : bodies) b->correct();
+        bodies_timer.stop();
+      }
+
       // Update halo particles
       simData->updateHaloParticles();
 
@@ -368,6 +377,11 @@ namespace GFlowSimulation {
   void GFlow::addBonded(Bonded *bnd) {
     if (bnd!=nullptr && !contains(bondedInteractions, bnd))
       bondedInteractions.push_back(bnd);
+  }
+
+  void GFlow::addBody(class Body *bdy) {
+    if (bdy!=nullptr && !contains(bodies, bdy))
+      bodies.push_back(bdy);
   }
 
   void GFlow::setCommand(int argc, char **argv) {

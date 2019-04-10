@@ -4,9 +4,7 @@
 
 namespace GFlowSimulation {
 
-  HardSphere_VerletPairs_2d::HardSphere_VerletPairs_2d(GFlow *gflow) : HardSphere(gflow, new VerletListPairs(gflow)) {
-    // setRepulsion(5*DEFAULT_HARD_SPHERE_REPULSION);
-  };
+  HardSphere_VerletPairs_2d::HardSphere_VerletPairs_2d(GFlow *gflow) : HardSphere(gflow, new VerletListPairs(gflow)) {};
 
   void HardSphere_VerletPairs_2d::interact() const {
     // Common tasks

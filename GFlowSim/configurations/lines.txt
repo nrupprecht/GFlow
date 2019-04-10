@@ -53,13 +53,12 @@ Fill: Area {
     Type: 2
   }
 
-  Number: Phi=0.0025 {
+  Number: Phi=0.025 {
     TypeA : 1
   }
 
   Excluded: {
     : width/2 - (5+h)*rP, width/2 + (5+h)*rP
-    : (width-length-rP)/2, (width+length+rP)/2
     : (width-length-rP)/2, (width+length+rP)/2
   }
   

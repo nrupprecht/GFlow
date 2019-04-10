@@ -1,12 +1,12 @@
 #ifndef __RIGID_BODY_HPP__GFLOW__
 #define __RIGID_BODY_HPP__GFLOW__
 
-#include "../base/modifier.hpp"
+#include "../base/body.hpp"
 #include "../other/group.hpp"
 
 namespace GFlowSimulation {
 
-  class RigidBody_2d : public Modifier, public Group {
+  class RigidBody_2d : public Body, public Group {
   public:
     //! \brief Default constructor.
     RigidBody_2d(GFlow*);

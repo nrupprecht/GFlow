@@ -2,6 +2,7 @@
 // Other files
 #include "../allbonded.hpp"
 #include "../alldataobjects.hpp"
+#include "../body/wallslidebody.hpp"
 
 #include "../utility/treeparser.hpp"
 
@@ -306,7 +307,7 @@ namespace GFlowSimulation {
       }
       // Add particle
       int gid = sd->getNextGlobalID();
-      sd->addParticle(X.data, ZERO.data, rP, 0, idP);
+      sd->addParticle(X.data, ZERO.data, rP, imP, idP);
       // Add particle
       group.add(gid);
     }
@@ -319,6 +320,9 @@ namespace GFlowSimulation {
       entropicForce->setLength(length);
     }
 
+    // Make the wall a body
+    gflow->addBody(new WallSlideBody(gflow, group));
+
     // Increment polymer counter
     ++n_polymers;
   }
@@ -328,10 +332,10 @@ namespace GFlowSimulation {
     int sim_dimensions = gflow->sim_dimensions;
 
     // Create a random polymer according to the specification. Make the polymer infinitely massive, so it cant move.
-    imP = 0;
+    imP = 1./0.007; //**
     imC = 0;
     RealType sigma_v = 0.;
-    RealType dx = (1.+h)*rP;
+    RealType dx = (1.+h/2)*rP;
 
     // Initial point and normal vector
     RealType *x = new RealType[sim_dimensions], *Yhat = new RealType[sim_dimensions];
@@ -356,6 +360,7 @@ namespace GFlowSimulation {
     //createSinglePolymer(gflow, x, Yhat, chain_ordering, sigma_v, idP, idC);
     createRandomLine(gflow, x, phi, length);
 
+    // Set the target steps to be high, to help prevent balls from slipping into areas they shouldn't be in.
     gflow->integrator->setTargetSteps(40);
 
     // Give back harmonic bonds

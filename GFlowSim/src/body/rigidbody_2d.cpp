@@ -1,8 +1,11 @@
 #include "rigidbody_2d.hpp"
+// Other files
+#include "../utility/vectormath.hpp"
+#include "../base/simdata.hpp"
 
 namespace GFlowSimulation {
 
-  RigidBody_2d::RigidBody_2d(GFlow *gflow) : Modifier(gflow) {};
+  RigidBody_2d::RigidBody_2d(GFlow *gflow) : Body(gflow) {};
 
   void RigidBody_2d::post_forces() {
     // If size is zero, this body is empty.

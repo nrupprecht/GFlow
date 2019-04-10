@@ -127,6 +127,9 @@ namespace GFlowSimulation {
     //! \brief Add a bonded interaction.
     void addBonded(class Bonded*);
 
+    //! \brief Add a body.
+    void addBody(class Body*);
+
     //! \brief Set the command info
     void setCommand(int, char**);
 
@@ -241,6 +244,9 @@ namespace GFlowSimulation {
     //! \brief All the bonded forces that can happen.
     vector<class Bonded*> bondedInteractions;
 
+    //! \brief All the bodies in the simulation.
+    vector<class Body*> bodies;
+
     //! \brief If true, the simulation should continue to run.
     bool running;
 
@@ -293,6 +299,7 @@ namespace GFlowSimulation {
     Timer domain_timer;
     Timer forces_timer;
     Timer bonded_timer;
+    Timer bodies_timer;
 
     // MPI
     int rank = 0;
