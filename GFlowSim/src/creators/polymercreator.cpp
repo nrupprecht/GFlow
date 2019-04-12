@@ -356,10 +356,15 @@ namespace GFlowSimulation {
     Group group2 = createRandomLine(gflow, x, phi, length);
 
     // Add the two wall modifier
-    gflow->addModifier(new TwoWallModifier(gflow, group1, group2));
+    TwoWallModifier *walls = new TwoWallModifier(gflow, group1, group2);
+    walls->setMaxDistance(6.*rP);
+    walls->setBinsDataObject(50);
+    walls->setMinDistanceDataObject(2.05*rP);
+    walls->setMaxDistanceDataObject(4.5*rP);
+    gflow->addModifier(walls);
 
     // Set the target steps to be high, to help prevent balls from slipping into areas they shouldn't be in.
-    gflow->integrator->setTargetSteps(40);
+    //gflow->integrator->setTargetSteps(40);
 
     // Give back harmonic bonds
     harmonicbonds = bonds;

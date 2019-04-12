@@ -26,7 +26,7 @@ NTypes: 3
 Force-grid: {
   : 0, 0, HardSphere
   : 0, 2, HardSphere
-  : 2, 2, HardSphere
+  : 2, 2, None // HardSphere
   : 1, 1, None
   : 1, 0, None
   : 1, 2, None

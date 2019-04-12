@@ -8,6 +8,7 @@ namespace GFlowSimulation {
   TwoWallBinForce::TwoWallBinForce(GFlow *gflow, WallSlideBody *wa, WallSlideBody *wb) : GraphObject(gflow, "TwoWallBinForce", "x", "<F>"), wallA(wa), wallB(wb) {
     // Data
     data = vector<RPair>(nbins, RPair(0,0));
+    counts = vector<int>(nbins, 0);
   }
 
   void TwoWallBinForce::pre_integrate() {
@@ -74,6 +75,22 @@ namespace GFlowSimulation {
 
     // Write to file
     GraphObject::writeToFile(fileName, useName);
+  }
+
+  void TwoWallBinForce::setMaxDistance(RealType md) {
+    max_distance = md;
+  }
+
+  void TwoWallBinForce::setMinDistance(RealType md) {
+    min_distance = md;
+  }
+
+  void TwoWallBinForce::setBins(int b) {
+    if (b>0) {
+      nbins = b;
+      data = vector<RPair>(nbins, RPair(0,0));
+      counts = vector<int>(nbins, 0);
+    }
   }
 
 }

@@ -3,6 +3,7 @@
 
 #include "../base/modifier.hpp"
 #include "../body/wallslidebody.hpp"
+#include "../dataobjects/graphobjects/twowallbinforce.hpp"
 
 namespace GFlowSimulation {
 
@@ -19,6 +20,18 @@ namespace GFlowSimulation {
     //! \brief Set the max distance parameter.
     void setMaxDistance(RealType);
 
+    //! \brief Set the acceleration per unit length.
+    void setAcceleration(RealType);
+
+    //! \brief Set the max distance parameter of the two wall bin force data object.
+    void setMaxDistanceDataObject(RealType);
+
+    //! \brief Set the min distance parameter of the two wall bin force data object.
+    void setMinDistanceDataObject(RealType);
+
+    //! \brief Set the number of bins of the two wall bin force data object.
+    void setBinsDataObject(int);
+
   private:
     //! \brief The walls.
     WallSlideBody wallA, wallB;
@@ -28,6 +41,9 @@ namespace GFlowSimulation {
 
     //! \brief The acceleration per unit length. A(x) = clamp(|x - max_distance|) * acceleration * sign(dx)
     RealType acceleration;
+
+    //! \brief Pointer to the data object that monitors the walls.
+    TwoWallBinForce *data_object = nullptr;
   };
 
 }

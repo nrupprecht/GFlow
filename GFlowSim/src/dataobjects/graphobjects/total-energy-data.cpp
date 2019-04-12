@@ -33,6 +33,13 @@ namespace GFlowSimulation {
     data.push_back(RPair(time, energy));
     // A useful check
     if(isnan(energy)) throw NanValue("Energy");
+    // Set initial energy
+    if (!initial_set) {
+      initial_energy = energy;
+      initial_set = true;
+    }
+    // Restrict energy
+    if (restrict_energy && initial_energy>0 && energy/initial_energy) gflow->setRunning(false);
   }
 
 }

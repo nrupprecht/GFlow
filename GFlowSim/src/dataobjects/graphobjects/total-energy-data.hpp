@@ -16,6 +16,18 @@ namespace GFlowSimulation {
   private:
     //! \brief Whether to use the average energy per particle (as opposed to the total energy).
     bool useAve;
+
+    //! \brief If restrict_energy = true and the total energy ever reaches a level larger than this fraction of the initial energy, the program ends.
+    RealType fraction = 1.1;
+
+    //! \brief The initial energy of the system.
+    RealType initial_energy = 0.;
+
+    //! \brief Whether we should limit the energy growth of the system.
+    bool restrict_energy = true;
+
+    //! \brief Whether the initial energy has been set.
+    bool initial_set = false;
   };
 
 }
