@@ -213,9 +213,9 @@ namespace GFlowSimulation {
       }
       // Update bodies
       if (!bodies.empty()) {
-        bodies_timer.start();
+        body_timer.start();
         for (auto b : bodies) b->correct();
-        bodies_timer.stop();
+        body_timer.stop();
       }
 
       // Update halo particles
@@ -354,6 +354,13 @@ namespace GFlowSimulation {
         if (dx<fabs(dis[d])) dis[d] = dis[d]>0 ? -dx : dx;
       }      
     }
+  }
+
+  void GFlow::minimumImage(RealType &dis, int d) {
+    if (boundaryConditions[d]==BCFlag::WRAP) {
+      RealType dx = bounds.wd(d) - fabs(dis);
+      if (dx<fabs(dis)) dis = dis>0 ? -dx : dx;
+    }  
   }
 
   RealType GFlow::getDistance(const RealType *x, const RealType *y) {

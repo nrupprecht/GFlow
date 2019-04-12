@@ -14,4 +14,7 @@
 #include "modifiers/windtunnel.hpp"
 #include "modifiers/stripe-x.hpp"
 
+// Specific
+#include "modifiers/twowallmodifier.hpp"
+
 #endif // __ALL_MODIFIERS_HPP__GFLOW__

@@ -1,0 +1,51 @@
+#include "twowallmodifier.hpp"
+// Other files
+#include "../utility/vec.hpp"
+#include "../dataobjects/graphobjects/twowallbinforce.hpp"
+
+namespace GFlowSimulation {
+
+  TwoWallModifier::TwoWallModifier(GFlow *gflow) : Modifier(gflow), wallA(WallSlideBody(gflow)), wallB(WallSlideBody(gflow)), 
+    max_distance(0.25), acceleration(10.) {
+    // Add the bodies to gflow
+    gflow->addBody(&wallA);
+    gflow->addBody(&wallB);
+    // Add a data object
+    gflow->addDataObject(new TwoWallBinForce(gflow, &wallA, &wallB));
+  };
+
+  TwoWallModifier::TwoWallModifier(GFlow *gflow, const Group& group1, const Group& group2) : Modifier(gflow), wallA(WallSlideBody(gflow, group1)), 
+    wallB(WallSlideBody(gflow, group2)), max_distance(0.25), acceleration(10.) {
+    // Add the bodies to gflow
+    gflow->addBody(&wallA);
+    gflow->addBody(&wallB);
+    // Add a data object
+    gflow->addDataObject(new TwoWallBinForce(gflow, &wallA, &wallB));
+  };
+
+  void TwoWallModifier::post_forces() {
+    // Get wall positions.
+    RealType x1 = wallA.getPosition();
+    RealType x2 = wallB.getPosition();
+    RealType dx = x2 - x1;
+    gflow->minimumImage(dx, 0);
+
+    // Calculate the acceleration
+    RealType a = clamp(fabs(dx) - max_distance) * sign(dx) * acceleration;
+
+    // If acceleration is nonzero.
+    if (a>0) {
+      Vec A(sim_dimensions);
+      A[0] = a;
+      wallA.addAcceleration(A.data, simData);
+      A.negate();
+      wallB.addAcceleration(A.data, simData);
+    }
+
+  }
+
+  void TwoWallModifier::setMaxDistance(RealType md) {
+    max_distance = md;
+  }
+
+}

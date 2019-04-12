@@ -2,6 +2,7 @@
 #define __VEC_TYPE_HPP__GFLOW__
 
 #include <ostream>
+#include "exceptions.hpp"
 
 namespace GFlowSimulation {
 
@@ -32,6 +33,11 @@ namespace GFlowSimulation {
       for (int i=0; i<dimensions; ++i) data[i] = v.data[i];
     }
 
+    Vec(Vec&& v) : dimensions(v.dimensions), data(v.data) {
+      // So v doesn't delete our data.
+      v.data = nullptr;
+    }
+
     //! \brief Destructor.
     ~Vec() {
       if (data) delete [] data;
@@ -48,6 +54,14 @@ namespace GFlowSimulation {
       for (int d=0; d<dimensions; ++d) data[d] = v.data[d];
       // Return this
       return *this;
+    }
+
+    Vec& operator=(Vec&& v) {
+      // Copy data
+      dimensions = v.dimensions;
+      data = v.data;
+      // So v doesn't delete our data.
+      v.data = nullptr;
     }
 
     friend std::ostream& operator<<(std::ostream& out, const Vec& v) {
@@ -67,9 +81,17 @@ namespace GFlowSimulation {
     //! \brief Access square brackets operator.
     RealType& operator[](int i) { return data[i]; }
 
+    //! \brief Access square brackets operator.
+    RealType& operator[](int i) const { return data[i]; }
+
     //! \brief Set the vector to be the zero vector.
     void zero() {
       for (int d=0; d<dimensions; ++d) data[d] = 0;
+    }
+
+    //! \brief Set the vector to be its addative inverse, V <- -V.
+    void negate() {
+      for (int d=0; d<dimensions; ++d) data[d] = -data[d];
     }
 
     //! \brief Return the size of the vector.
@@ -87,8 +109,44 @@ namespace GFlowSimulation {
       for (int d=0; d<dst.dimensions; ++d) dst.data[d] = src[d];
     }
 
+    friend Vec operator+(const Vec a, const Vec b) {
+      // Check dimensions
+      if (a.dimensions!=b.dimensions) throw DimensionMismatch("Plus vec.");
+      // Add
+      Vec out(a.dimensions);
+      for (int i=0; i<a.dimensions; ++i) out[i] = a[i] + b[i];
+      // Return vector
+      return out;
+    }
+
+    friend Vec operator-(const Vec a, const Vec b) {
+      // Check dimensions
+      if (a.dimensions!=b.dimensions) throw DimensionMismatch("Minus vec.");
+      // Subtract
+      Vec out(a.dimensions);
+      for (int i=0; i<a.dimensions; ++i) out[i] = a[i] - b[i];
+      // Return vector
+      return out;
+    }
+
+    friend RealType operator*(const Vec a, const Vec b) {
+      // Check dimensions
+      if (a.dimensions!=b.dimensions) throw DimensionMismatch("Dot vec.");
+      // Accumulate
+      RealType acc = 0;
+      for (int i=0; i<a.dimensions; ++i) acc = a[i]*b[i];
+      // Return vector
+      return acc;
+    }
+
     //! \brief The actual vector data.
     RealType *data;
+
+    //! \brief Exception class for vector - vector operations where the dimensionalities don't match.
+    struct DimensionMismatch : public Exception {
+      DimensionMismatch() : Exception() {};
+      DimensionMismatch(const string &mess) : Exception(mess) {};
+    };
 
   private:
     int dimensions;

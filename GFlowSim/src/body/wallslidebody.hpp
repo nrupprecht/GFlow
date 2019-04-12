@@ -20,9 +20,24 @@ namespace GFlowSimulation {
     //! \brief Do whatever corrections the body particles need.
     virtual void correct() override;
 
+    //! \brief Get the slide_dimension component of the wall position.
+    RealType getPosition();
+
+    //! \brief Get the length of the wall.
+    RealType getLength();
+
+    //! \brief Get the net force in the slide_dimension direction.
+    RealType getFnet();
+
   private:
     //! \brief What dimension the body is allowed to slide in.
     int slide_dimension = 0;
+
+    //! \brief The length of the wall.
+    RealType length;
+
+    //! \brief The net force in the slide_dimension direction.
+    RealType Fnet = 0;
   };
 
 }

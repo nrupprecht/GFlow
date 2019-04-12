@@ -4,6 +4,7 @@ Var: width=16
 Var: length=10
 Var: number=1
 Var: phi=0.5
+Var: corr=0
 
 Dimensions: dimensions
 
@@ -33,6 +34,7 @@ Fill: Polymer {
   R: 0.05
   r: 0.01
   Phi: phi
+  Correlation: corr
 }
 
 // Fill an area with particles

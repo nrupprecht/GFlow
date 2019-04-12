@@ -97,23 +97,32 @@ namespace GFlowSimulation {
     //! \brief Get the number of types of particles in the simulation
     int getNTypes() const;
 
+    //! \brief Get the dimensionality of the simulation.
     int getSimDimensions() const;
 
+    //! \brief Get the command line arguments.
     pair<int, char**> getCommand() const;
 
+    //! \brief Get the vector of interactions.
     const vector<class Interaction*>& getInteractions() const;
 
+    //! \brief Get the sim data object.
     class SimData* getSimData();
 
+    //! \brief Get the data master object.
     class DataMaster* getDataMaster();
 
+    //! \brief Get the force master object.
     class ForceMaster* getForceMaster() ;
 
+    //! \brief Get the integrator.
     class Integrator* getIntegrator();
 
-    const RealType* getVComCorrection() const;
-
+    //! \brief Get the minimum image displacement between two positions.
     void getDisplacement(const RealType*, const RealType*, RealType*);
+
+    //! \brief Get the minimum image distance of a single component.
+    void minimumImage(RealType&, int);
 
     RealType getDistance(const RealType*, const RealType*);
 
@@ -299,7 +308,7 @@ namespace GFlowSimulation {
     Timer domain_timer;
     Timer forces_timer;
     Timer bonded_timer;
-    Timer bodies_timer;
+    Timer body_timer;
 
     // MPI
     int rank = 0;

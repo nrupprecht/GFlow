@@ -13,10 +13,32 @@ namespace GFlowSimulation {
   }
 
   void WallSlideBody::pre_integrate() {
+    // Return if no particles in the wall
+    if (global_ids.empty()) return;
+
+    // Update local ids
+    update_local_ids(simData);
+
     // Set all velocities to zero
     RealType **v = simData->V();
     for (auto id : local_ids)
       zeroVec(v[id], sim_dimensions);
+
+    // Check length
+    RealType **x = simData->X();
+    Vec max(sim_dimensions), min(sim_dimensions);
+    copyVec(x[local_ids[0]], min);
+    max = min;
+    for (auto id : local_ids) {
+      for (int d=0; d<sim_dimensions; ++d) {
+        RealType xd = x[id][d];
+        if (xd<min[d]) min[d] = xd;
+        else if (max[d]<xd) max[d] = xd;
+      }
+    }
+    // Set length
+    Vec dl = max - min;
+    length = sqrt(dl*dl);
   }
 
   void WallSlideBody::correct() {
@@ -30,7 +52,7 @@ namespace GFlowSimulation {
     RealType *im = simData->Im();
 
     // Net force on and total mass of the body
-    RealType Fnet = 0;
+    Fnet = 0;
     RealType M = 0;
     bool has_inf = false;
 
@@ -57,5 +79,16 @@ namespace GFlowSimulation {
     }
   }
 
+  RealType WallSlideBody::getPosition() {
+    return simData->X(simData->getLocalID(global_ids[0]), slide_dimension);
+  }
+
+  RealType WallSlideBody::getLength() {
+    return length;
+  }
+
+  RealType WallSlideBody::getFnet() {
+    return Fnet;
+  }
 
 }

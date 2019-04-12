@@ -1,7 +1,7 @@
 // Variables
 Var: dimensions=2
 Var: width=16
-Var: fraction=0.5
+Var: fraction=0.625
 Var: number=1
 Var: phi=0.5
 Var: h=0.5
@@ -53,7 +53,7 @@ Fill: Area {
     Type: 2
   }
 
-  Number: Phi=0.025 {
+  Number: Phi=0.02 {
     TypeA : 1
   }
 

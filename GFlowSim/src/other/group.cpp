@@ -20,11 +20,6 @@ namespace GFlowSimulation {
     return global_ids.size();
   }
 
-  void Group::add(int id) {
-    global_ids.push_back(id);
-    local_ids.push_back(id);
-  }
-
   int Group::at(int i) const {
     return local_ids.at(i);
   }
@@ -96,6 +91,29 @@ namespace GFlowSimulation {
     }
     // Normalize
     scalarMultVec(1./mass, v, sim_dimensions);
+  }
+
+  void Group::addAcceleration(RealType *A, SimData *simData) const {
+    if (size()==0) return;
+    // Get the dimensionaliry
+    int sim_dimensions = simData->getSimDimensions();
+
+    // Get arrays
+    RealType **f = simData->F();
+    RealType *im = simData->Im();
+
+    for (auto id : local_ids) {
+      if (im[id]>0) {
+        RealType mass = 1./im[id];
+        plusEqVecScaled(f[id], A, mass, sim_dimensions);
+      }
+    }
+
+  }
+
+  void Group::add(int id) {
+    global_ids.push_back(id);
+    local_ids.push_back(id);
   }
 
   void Group::findNetForce(RealType *frc, SimData *simData) const {

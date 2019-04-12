@@ -27,6 +27,8 @@
 #include "dataobjects/graphobjects/pressuredata.hpp"
 #include "dataobjects/graphobjects/timestepdata.hpp"
 #include "dataobjects/graphobjects/total-energy-data.hpp"
+#include "dataobjects/graphobjects/twowallbinforce.hpp"
+
 
 // Multigraph objects
 #include "dataobjects/multigraphobjects/groupnetforce.hpp"

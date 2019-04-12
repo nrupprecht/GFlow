@@ -5,6 +5,7 @@
 #include "../body/wallslidebody.hpp"
 
 #include "../utility/treeparser.hpp"
+#include "../modifiers/twowallmodifier.hpp"
 
 namespace GFlowSimulation {
 
@@ -176,14 +177,21 @@ namespace GFlowSimulation {
     randomNormalVec(V, sim_dimensions);
 
     // Create a polymer from the specifications
-    createSinglePolymer(gflow, X, V, chain_ordering, v_sigma, idP, idC);
+    Group group = createSinglePolymer(gflow, X, V, chain_ordering, v_sigma, idP, idC);
+
+    // Add entropic force monitor
+    if (n_polymers==1) {
+      entropicForce = new LineEntropicForce(gflow);
+      entropicForce->setGroup(group);
+      gflow->addDataObject(entropicForce);
+    }
 
     // Clean up
     delete [] X;
     delete [] V;
   }
 
-  void PolymerCreator::createSinglePolymer(GFlow *gflow, const RealType *x0, const RealType *v0, const vector<bool>& chain_ordering, RealType sigma_v, int idP, int idC) {
+  Group PolymerCreator::createSinglePolymer(GFlow *gflow, const RealType *x0, const RealType *v0, const vector<bool>& chain_ordering, RealType sigma_v, int idP, int idC) {
     // Get simdata and bounds
     SimData *sd = gflow->simData;
     Bounds bnds = gflow->bounds;
@@ -262,18 +270,14 @@ namespace GFlowSimulation {
       last_type = next_type;
     }
 
-    // Add entropic force monitor
-    if (n_polymers==0) {
-      entropicForce = new LineEntropicForce(gflow);
-      entropicForce->setGroup(group);
-      gflow->addDataObject(entropicForce);
-    }
-
     // Increment polymer counter
     ++n_polymers;
+
+    // Return the group
+    return group;
   }
 
-  void PolymerCreator::createRandomLine(GFlow *gflow, const RealType *x, const RealType phi, const RealType length) {
+  Group PolymerCreator::createRandomLine(GFlow *gflow, const RealType *x, const RealType phi, const RealType length) {
     // Get simdata and bounds
     SimData *sd = gflow->simData;
     Bounds bnds = gflow->bounds;
@@ -312,19 +316,11 @@ namespace GFlowSimulation {
       group.add(gid);
     }
 
-    // Add entropic force monitor
-    if (n_polymers==0) {
-      entropicForce = new LineEntropicForce(gflow);
-      entropicForce->setGroup(group, false);
-      gflow->addDataObject(entropicForce);
-      entropicForce->setLength(length);
-    }
-
-    // Make the wall a body
-    gflow->addBody(new WallSlideBody(gflow, group));
-
     // Increment polymer counter
     ++n_polymers;
+
+    // Return group
+    return group;
   }
 
   void PolymerCreator::createParallelPolymers(GFlow *gflow, const RealType h, const RealType phi, const RealType length) {
@@ -352,13 +348,15 @@ namespace GFlowSimulation {
     // Shift x to the left 
     x[0] -= dx;
     // Create first chain.
-    createRandomLine(gflow, x, phi, length);
-    
+    Group group1 = createRandomLine(gflow, x, phi, length);
     // Shift x to the right
     x[0] += 2*dx;
     // Create the second chain.
     //createSinglePolymer(gflow, x, Yhat, chain_ordering, sigma_v, idP, idC);
-    createRandomLine(gflow, x, phi, length);
+    Group group2 = createRandomLine(gflow, x, phi, length);
+
+    // Add the two wall modifier
+    gflow->addModifier(new TwoWallModifier(gflow, group1, group2));
 
     // Set the target steps to be high, to help prevent balls from slipping into areas they shouldn't be in.
     gflow->integrator->setTargetSteps(40);
