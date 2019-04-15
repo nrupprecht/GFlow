@@ -33,10 +33,10 @@ namespace GFlowSimulation {
     bool initialize();
 
     //! \brief Initialize a base object to point at GFlow's data.
-    void initializeBase(Base *);
+    void initializeBase(Base*);
 
     //! \brief Run the simulation for some amount of time.
-    void run(RealType=-1);
+    void run(long double=-1);
 
     //! \brief Write data from data master to file.
     void writeData(string);
@@ -61,7 +61,7 @@ namespace GFlowSimulation {
     char** getArgV() const { return argv; }
 
     //! \brief Get the requested time.
-    RealType getRequestedTime() const;
+    long double getRequestedTime() const;
 
     //! \brief Get the total amount of time ever requested.
     //!
@@ -69,13 +69,13 @@ namespace GFlowSimulation {
     //! GFlow object. Time can be requested and run, and then more time can
     //! be requested and run, so the most recent amount of requested time is
     //! not necessarily the total amount of time ever requested.
-    RealType getTotalRequestedTime() const;
+    long double getTotalRequestedTime() const;
     
     //! \brief Get fulfilled time.
-    RealType getElapsedTime() const;
+    long double getElapsedTime() const;
 
     //! \brief Get all the time the simulation ran for.
-    RealType getTotalTime() const;
+    long double getTotalTime() const;
 
     //! \brief Get the strength of the boundary force.
     RealType getBoundaryForce() const;
@@ -84,7 +84,7 @@ namespace GFlowSimulation {
     RealType getDT() const;
 
     //! \brief Get the iteration.
-    int getIter() const;
+    long int getIter() const;
 
     //! \brief Get the number of forces
     int getNumInteractions() const;
@@ -282,19 +282,19 @@ namespace GFlowSimulation {
     bool useForces;
 
     //! \brief How much time we have been requested to run for.
-    RealType requested_time;
+    long double requested_time;
 
     //! \brief How much time has ever been requested.
-    RealType total_requested_time;
+    long double total_requested_time;
 
     //! \brief How much of the requested time has been run.
-    RealType elapsed_time; 
+    long double elapsed_time; 
 
     //! \brief How much time has been run over all runs.
-    RealType total_time;
+    long double total_time;
 
     //! \brief The number of iterations that have passed.
-    int iter;
+    long int iter;
 
     //! \brief The simulation bounds.
     Bounds bounds;

@@ -120,7 +120,7 @@ namespace GFlowSimulation {
     base->numProc = numProc;
   }
 
-  void GFlow::run(RealType rt) {
+  void GFlow::run(long double rt) {
     // If a parameter was passed in, it is the requested time
     if (rt>0) requested_time = rt;
 
@@ -243,6 +243,11 @@ namespace GFlowSimulation {
       RealType dt = integrator->getTimeStep();
       elapsed_time += dt;
       total_time += dt;
+      // Check for bad numerical precision
+      if (total_time - dt == total_time) {
+	cout << "Loss of precision. Stopping simulation.\n";
+	running = false;
+      }
       // Possibly print updates to the screen or to a file.
       if (print_updates && runMode==RunMode::SIM && 
         static_cast<int>((elapsed_time-dt)/update_interval) < static_cast<int>((elapsed_time)/update_interval)) 
@@ -250,7 +255,8 @@ namespace GFlowSimulation {
         RealType live_ratio = elapsed_time / timer.current();
         (*monitor) << "Simulation time: " << static_cast<int>(elapsed_time) << "\t";
         (*monitor) << "Ratio: " << elapsed_time / timer.current() << "\t";
-        (*monitor) << "Est. time: " << (requested_time - elapsed_time)/live_ratio << endl;
+        (*monitor) << "Est. time: " << (requested_time - elapsed_time)/live_ratio << "\t";
+	(*monitor) << endl;
       }
       
       // Reset simdata needs remake flag
@@ -281,19 +287,19 @@ namespace GFlowSimulation {
       cout << "Warning: Some writes failed.\n";
   }
 
-  RealType GFlow::getRequestedTime() const {
+  long double GFlow::getRequestedTime() const {
     return requested_time;
   }
 
-  RealType GFlow::getTotalRequestedTime() const {
+  long double GFlow::getTotalRequestedTime() const {
     return total_requested_time;
   }
 
-  RealType GFlow::getElapsedTime() const{
+  long double GFlow::getElapsedTime() const{
     return elapsed_time;
   }
 
-  RealType GFlow::getTotalTime() const {
+  long double GFlow::getTotalTime() const {
     return total_time;
   }
 
@@ -305,7 +311,7 @@ namespace GFlowSimulation {
     return integrator->getTimeStep();
   }
 
-  int GFlow::getIter() const {
+  long int GFlow::getIter() const {
     return iter;
   }
 
