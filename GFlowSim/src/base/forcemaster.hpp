@@ -2,6 +2,7 @@
 #define __FORCE_MASTER_HPP__GFLOW__
 
 #include "../gflow.hpp"
+#include "../other/timedobject.hpp"
 
 namespace GFlowSimulation {
 
@@ -12,7 +13,7 @@ namespace GFlowSimulation {
   *  force objects, GFlow is.
   *
   */
-  class ForceMaster : public Base {
+  class ForceMaster : public Base, public TimedObject {
   public:
     //! \brief Default constructor.
     ForceMaster(GFlow*);
@@ -22,7 +23,11 @@ namespace GFlowSimulation {
 
     virtual void initialize() override;
 
+    //! \brief Initialize the does-interact array.
     virtual void pre_integrate() override;
+
+    //! \brief Run all the interactions.
+    void interact();
 
     //! \brief Get a pointer to the force that the particle pair belongs in. Null means no force.
     Interaction* getInteraction(int, int);

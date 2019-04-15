@@ -2,10 +2,11 @@
 #define __INTEGRATOR_HPP__GFLOW__
 
 #include "../gflow.hpp"
+#include "../other/timedobject.hpp"
 
 namespace GFlowSimulation {
 
-  class Integrator : public Base {
+  class Integrator : public Base, public TimedObject {
   public:
     // Constructor
     Integrator(GFlow *);

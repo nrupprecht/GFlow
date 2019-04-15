@@ -5,6 +5,8 @@ namespace GFlowSimulation {
   MultiGraphObject::MultiGraphObject(GFlow *gflow, const string& name, int nd) : DataObject(gflow, name, DataObjectType::MULTIGRAPH), ndata(nd) {
     // Must have ndata >= 1
     if (ndata<=0) throw EmptyData("Must have ndata>=1");
+    // Write data flags are true by default.
+    write_data = vector<bool>(nd, true);
     // Set up data array.
     resetData();
   };
@@ -14,6 +16,8 @@ namespace GFlowSimulation {
   {
     // Must have ndata >= 1
     if (ndata<=0) throw EmptyData("Must have ndata>=1");
+    // Write data flags are true by default.
+    write_data = vector<bool>(nd, true);
     // Set up data array.
     resetData();
   };
@@ -38,8 +42,10 @@ namespace GFlowSimulation {
     // Print out the data
     for (int i=0; i<ndata_points; ++i) {
       for (int j=0; j<ndata+1; ++j) {
-        fout << multi_data[j][i];
-        if (j!=ndata) fout << ",";
+        if (j==0 || write_data[j-1]) {
+          fout << multi_data[j][i];
+          if (j!=ndata) fout << ",";
+        }
       }
       fout << endl;
     }
@@ -79,11 +85,16 @@ namespace GFlowSimulation {
     return total/ndata_points;
   }
 
-  void MultiGraphObject::resetData() {
+  void MultiGraphObject::resetData(int size) {
     // Clear the data vector by recreating it.
-    multi_data = vector< vector<RealType> >(ndata+1, vector<RealType>());
-    // Reset number of data points counter.
-    ndata_points = 0;
+    if (size>0) {
+      multi_data = vector< vector<RealType> >(ndata+1, vector<RealType>(size, 0));
+      ndata_points = size;
+    }
+    else {
+      multi_data = vector< vector<RealType> >(ndata+1, vector<RealType>());
+      ndata_points = 0;
+    }
   }
 
   void MultiGraphObject::addEntry() {
@@ -108,6 +119,14 @@ namespace GFlowSimulation {
     if (i<0 || ndata<=i) throw MultiDataOutOfBounds("Out of bounds: i="+toStr(i));
     // Otherwise, return data.
     return multi_data[i+1][ndata_points-1];
+  }
+
+  RealType& MultiGraphObject::atX(int i) {
+    return multi_data[0][i];
+  }
+
+  RealType& MultiGraphObject::atY(int d, int i) {
+    return multi_data[1+d][i];
   }
 
 }

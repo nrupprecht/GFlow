@@ -41,7 +41,7 @@ namespace GFlowSimulation {
 
   protected:
     //! \brief Reset the data array.
-    void resetData();
+    void resetData(int=0);
 
     //! \brief Add a set of zeros to all the data. This makes sure that all the data is of the same length.
     void addEntry();
@@ -52,10 +52,17 @@ namespace GFlowSimulation {
     //! \brief Get the different latest y values, so they can be set.
     RealType &getY(int);
 
+    RealType& atX(int);
+
+    RealType& atY(int, int);
+
     //! \brief The different types of data the multigraph is keeping track of.
     //!
     //! The first entry is the x value, the other [ndata] values are the data.
     vector<vector<RealType> > multi_data;
+
+    //! \brief Controls which entries to write to files.
+    vector<bool> write_data;
 
     //! \brief The number of types of data that the class is keeping track of.
     int ndata;

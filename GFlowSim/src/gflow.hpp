@@ -8,6 +8,13 @@
 
 namespace GFlowSimulation {
 
+  //! \brief What mode of running is going on.
+  //!
+  //! IDLE means the simulation is not currently running.
+  //! INIT is the mode for initialization, like relaxing objects.
+  //! SIM is the mode for actually running a simulation.
+  enum class RunMode { IDLE, INIT, SIM };
+
   /*
   *  \brief GFlow
   *
@@ -126,6 +133,9 @@ namespace GFlowSimulation {
 
     RealType getDistance(const RealType*, const RealType*);
 
+    //! \brief Get the run mode of the simulation.
+    RunMode getRunMode();
+
     // --- Mutators
 
     //! \brief Add an interaction. 
@@ -162,6 +172,15 @@ namespace GFlowSimulation {
 
     //! \brief Set the running flag.
     void setRunning(bool);
+
+    //! \brief Set the print updates flag.
+    void setPrintUpdates(bool);
+
+    //! \brief Set the update printing interval.
+    void setUpdateInterval(RealType);
+
+    //! \brief Set the run mode.
+    void setRunMode(RunMode);
 
     //! \brief Set the amount of time we should run for.
     void requestTime(RealType);
@@ -303,12 +322,25 @@ namespace GFlowSimulation {
     char **argv;
 
     // Timing
-    Timer fhs_timer;
-    Timer shs_timer;
     Timer domain_timer;
-    Timer forces_timer;
+
+    //! \brief Timer to time how long the bonded interactions take.
     Timer bonded_timer;
+
+    //! \brief Timer to time how long the body execution takes.
     Timer body_timer;
+
+    //! \brief Whether to print updates to a screen.
+    bool print_updates = true;
+
+    //! \brief The ostream with which to print updates.
+    std::ostream *monitor = &cout;
+
+    //! \brief At what intervals to print updates (in simulation seconds).
+    RealType update_interval = 250.;
+
+    //! \brief The run mode of the simulation.
+    RunMode runMode = RunMode::IDLE;
 
     // MPI
     int rank = 0;

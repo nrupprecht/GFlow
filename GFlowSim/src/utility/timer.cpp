@@ -19,5 +19,10 @@ namespace GFlowSimulation {
     return _t;
   }
 
+  double Timer::current() {
+    auto _e = current_time();
+    return _t + time_span(_e, _s);
+  }
+
 
 }

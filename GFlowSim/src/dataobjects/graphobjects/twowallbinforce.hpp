@@ -1,12 +1,12 @@
 #ifndef __TWO_WALL_BIN_FORCE_HPP__GFLOW__
 #define __TWO_WALL_BIN_FORCE_HPP__GFLOW__
 
-#include "../dataobjecttypes/graphobject.hpp"
+#include "../dataobjecttypes/multigraphobject.hpp"
 #include "../../body/wallslidebody.hpp"
 
 namespace GFlowSimulation {
 
-  class TwoWallBinForce : public GraphObject {
+  class TwoWallBinForce : public MultiGraphObject {
   public:
     //! \brief Default constructor
     TwoWallBinForce(GFlow*, WallSlideBody*, WallSlideBody*);
@@ -32,9 +32,6 @@ namespace GFlowSimulation {
   protected:
     //! \brief Number of bins
     int nbins = 100;
-
-    //! \brief Number of points in each bin.
-    vector<int> counts;
 
     //! \brief The min cutoff distance.
     RealType min_distance = 0.1;

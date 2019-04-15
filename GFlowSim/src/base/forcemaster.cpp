@@ -25,6 +25,17 @@ namespace GFlowSimulation {
     initialize_does_interact();
   }
 
+  void ForceMaster::interact() {
+    // Check if there are any interactions
+    if (interactions.empty()) return;
+    // Start timer
+    start_timer();
+    // Run all interactions
+    for (auto it : interactions) it->interact();
+    // Stop the timer
+    stop_timer();
+  }
+
   Interaction* ForceMaster::getInteraction(int type1, int type2) {
     if (ntypes<=type1 || ntypes<=type2 || type1<0 || type2<0) return nullptr;
     return grid[type1][type2];

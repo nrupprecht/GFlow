@@ -11,6 +11,12 @@ namespace GFlowSimulation {
   LangevinIntegrator::LangevinIntegrator(GFlow *gflow, RealType temp) : LangevinTypeIntegrator(gflow, temp, DEFAULT_VISCOSITY) {};
 
   void LangevinIntegrator::pre_forces() {
+    // Start the timer
+    timer.start();
+
+    // Call parent class
+    Integrator::pre_forces();
+
     // --- First half kick
 
     // Number of (real - non ghost) particles
@@ -37,9 +43,15 @@ namespace GFlowSimulation {
     // Update positions
     for (int i=0; i<size*sim_dimensions; ++i)
       x[i] += dt*v[i];
+
+    // Stop timer
+    timer.stop();
   }
 
   void LangevinIntegrator::post_forces() {
+    // Start the timer
+    timer.start();
+
     // Call to parent class
     Integrator::post_forces();
     
@@ -82,6 +94,9 @@ namespace GFlowSimulation {
       assert(fabs(f[i])<MAX_REASONABLE_F);
       #endif 
     }
+
+    // Stop the timer
+    timer.stop();
   }
 
 }

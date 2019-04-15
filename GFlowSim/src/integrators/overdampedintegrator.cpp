@@ -43,6 +43,9 @@ namespace GFlowSimulation {
   }
 
   void OverdampedIntegrator::post_forces() {
+    // Start the timer
+    timer.start();
+
     // Call to parent class
     Integrator::post_forces();
 
@@ -102,6 +105,9 @@ namespace GFlowSimulation {
       x[i] += dampingConstant*im[id]*f[i]*dt;
     }
     #endif
+
+    // Stop timer
+    timer.stop();
   }
 
   void OverdampedIntegrator::setDamping(RealType d) {

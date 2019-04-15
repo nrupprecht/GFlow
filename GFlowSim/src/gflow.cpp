@@ -135,10 +135,11 @@ namespace GFlowSimulation {
     }
 
     // Clear timers
-    fhs_timer.clear();
-    shs_timer.clear();
+    integrator->clear_timer();
     domain_timer.clear();
-    forces_timer.clear();
+    forceMaster->clear_timer();
+    bonded_timer.clear();
+    body_timer.clear();
 
     // Make sure we have initialized everything
     if (!initialize()) {
@@ -150,6 +151,9 @@ namespace GFlowSimulation {
     {
       throw UnexpectedNullPointer("Some array in simdata was null that shouldn't be.");
     }
+
+    // Set run mode, if it is currently "idle"
+    if (runMode==RunMode::IDLE) setRunMode(RunMode::SIM);
 
     // --> Pre-integrate
     running = true;
@@ -163,6 +167,9 @@ namespace GFlowSimulation {
     domain->pre_integrate();
     dataMaster->pre_integrate();
     forceMaster->pre_integrate();
+
+    Timer timer;
+    timer.start();
 
     // Do integration for the requested amount of time
     while (running) {
@@ -180,9 +187,7 @@ namespace GFlowSimulation {
 
       // --> Pre-force
       for (auto m : modifiers) m->pre_forces();
-      fhs_timer.start();
       integrator->pre_forces(); // -- This is where VV first half kick happens (if applicable)
-      fhs_timer.stop();
       dataMaster->pre_forces();
       domain_timer.start();
       if (useForces) domain->pre_forces();   // -- This is where resectorization / verlet list creation might happen
@@ -198,12 +203,9 @@ namespace GFlowSimulation {
 
       // Calculate interactions and forces.
       if (useForces) {
-        // Calculate short range, nonbonded interactions
-        if (!interactions.empty()) {
-          forces_timer.start(); 
-          for (auto it : interactions) it->interact();
-          forces_timer.stop(); 
-        }
+        // Calculate interactions
+        forceMaster->interact();
+
         // Calculate bonded interactions
         if (!bondedInteractions.empty()) {
           bonded_timer.start();
@@ -226,9 +228,7 @@ namespace GFlowSimulation {
 
       // --> Post-forces
       for (auto m : modifiers) m->post_forces(); // -- This is where modifiers should do forces (if they need to)
-      shs_timer.start();
       integrator->post_forces();                 // -- This is where VV second half kick happens (if applicable)
-      shs_timer.stop();
       dataMaster->post_forces();
       domain->post_forces();
 
@@ -243,9 +243,23 @@ namespace GFlowSimulation {
       RealType dt = integrator->getTimeStep();
       elapsed_time += dt;
       total_time += dt;
+      // Possibly print updates to the screen or to a file.
+      if (print_updates && runMode==RunMode::SIM && 
+        static_cast<int>((elapsed_time-dt)/update_interval) < static_cast<int>((elapsed_time)/update_interval)) 
+      {
+        RealType live_ratio = elapsed_time / timer.current();
+        (*monitor) << "Simulation time: " << static_cast<int>(elapsed_time) << "\t";
+        (*monitor) << "Ratio: " << elapsed_time / timer.current() << "\t";
+        (*monitor) << "Est. time: " << (requested_time - elapsed_time)/live_ratio << endl;
+      }
       
       // Reset simdata needs remake flag
       simData->setNeedsRemake(false);
+    }
+
+    // Possibly print a closing update
+    if (print_updates && runMode==RunMode::SIM) {
+      (*monitor) << " ---- End of run ----\n\n";
     }
 
     // --> Post-integrate
@@ -256,6 +270,9 @@ namespace GFlowSimulation {
     dataMaster->post_integrate();
     forceMaster->post_integrate();
     for (auto m : modifiers) m->post_integrate();
+
+    // Back to idle mode
+    setRunMode(RunMode::IDLE);
   }
 
   void GFlow::writeData(string dirName) {
@@ -430,6 +447,18 @@ namespace GFlowSimulation {
 
   void GFlow::setRunning(bool r) {
     running = r;
+  }
+
+  void GFlow::setPrintUpdates(bool p) {
+    print_updates = p;
+  }
+
+  void GFlow::setUpdateInterval(RealType u) {
+    if (u>0) update_interval = u;
+  }
+
+  void GFlow::setRunMode(RunMode m) {
+    runMode = m;
   }
 
   void GFlow::requestTime(RealType t) {

@@ -98,20 +98,13 @@ namespace GFlowSimulation {
         createRandomPolymer(gflow, length, phi, idP, idC);
       }
     }
+
+    // Set the target steps to be high, to help prevent balls from slipping into areas they shouldn't be in.
+    //gflow->integrator->setTargetSteps(40);
     
-    // Give random normal velocities.
-    RealType vsgma = 0.001;
-    SimData *sd = gflow->simData;
-    for (int i=0; i<sd->size(); ++i) {
-      // Random velocity direction
-      randomNormalVec(sd->V(i), sim_dimensions);
-      // Random normal amount of kinetic energy
-      RealType K = vsgma*fabs(randNormal());
-      // Compute which velocity this implies
-      RealType v = sqrt(2*sd->Im(i)*K);
-      // Set the velocity vector of the particle
-      scalarMultVec(v, sd->V(i), sim_dimensions);
-    }
+    // Add local fixers to the particle fixers master list
+    particle_fixers.insert(particle_fixers.end(), p_fixers.begin(), p_fixers.end());
+    
   }
 
   void PolymerCreator::createPolymerArrangement(vector<bool>& chain_ordering, RealType phi, RealType length) {
@@ -224,12 +217,13 @@ namespace GFlowSimulation {
 
     // Create a group
     Group group;
+    int start_id = sd->getNextGlobalID(), end_id;
 
     // Create chain
     for (int i=0; i<chain_ordering.size(); ++i) {
       // Swap global ids
       gid1 = gid2;
-      gid2 = sd->getNextGlobalID();
+      gid2 = end_id = sd->getNextGlobalID();
 
       // Add gid2 to the correlation object
       if (correlation && useCorr) correlation->addToGroup(gid2);
@@ -268,6 +262,24 @@ namespace GFlowSimulation {
 
       // Set last type
       last_type = next_type;
+    }
+
+
+    RealType vsgma = 0.001;
+    for (int id=start_id; id<=end_id; ++id) {
+      Vec V(sim_dimensions);
+      // Random velocity direction
+      randomNormalVec(V.data, sim_dimensions);
+      // Random normal amount of kinetic energy
+      RealType K = vsgma*fabs(randNormal());
+      // Compute which velocity this implies - the global id should be the local id at this point ... hopefully
+      RealType v = sqrt(2*sd->Im(id)*K);
+      // Set the velocity vector of the particle
+      scalarMultVec(v, V.data, sim_dimensions);
+      // Add to fixers
+      ParticleFixer fix = ParticleFixer(sim_dimensions, id);
+      fix.velocity = V;
+      p_fixers.push_back(fix);
     }
 
     // Increment polymer counter
@@ -328,7 +340,9 @@ namespace GFlowSimulation {
     int sim_dimensions = gflow->sim_dimensions;
 
     // Create a random polymer according to the specification. Make the polymer infinitely massive, so it cant move.
-    imP = 1./0.007; //**
+    RealType rhoP = 1.;
+    RealType m = rhoP*sphere_volume(rP, sim_dimensions);
+    imP = 1./m;
     imC = 0;
     RealType sigma_v = 0.;
     RealType dx = (1.+h/2)*rP;
@@ -352,19 +366,15 @@ namespace GFlowSimulation {
     // Shift x to the right
     x[0] += 2*dx;
     // Create the second chain.
-    //createSinglePolymer(gflow, x, Yhat, chain_ordering, sigma_v, idP, idC);
     Group group2 = createRandomLine(gflow, x, phi, length);
 
     // Add the two wall modifier
     TwoWallModifier *walls = new TwoWallModifier(gflow, group1, group2);
-    walls->setMaxDistance(6.*rP);
-    walls->setBinsDataObject(50);
-    walls->setMinDistanceDataObject(2.05*rP);
+    walls->setMaxDistance(8.*rP);
+    walls->setBinsDataObject(25);
+    walls->setMinDistanceDataObject(2.0*rP);
     walls->setMaxDistanceDataObject(4.5*rP);
     gflow->addModifier(walls);
-
-    // Set the target steps to be high, to help prevent balls from slipping into areas they shouldn't be in.
-    //gflow->integrator->setTargetSteps(40);
 
     // Give back harmonic bonds
     harmonicbonds = bonds;

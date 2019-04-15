@@ -3,6 +3,7 @@
 #include "simdata.hpp"
 #include "integrator.hpp"
 #include "domainbase.hpp"
+#include "forcemaster.hpp"
 #include "interaction.hpp"
 
 #include "../alldataobjects.hpp"
@@ -273,15 +274,14 @@ namespace GFlowSimulation {
     fout << "\n";
 
     fout << "Timing breakdown:\n";
-    const int entries = 7;
+    const int entries = 6;
     double timing[entries], total = 0;
-    fout << "  -- Pre-forces, integrator:  " << toStrPP(timing[0] = gflow->fhs_timer.time()/run_time*100) << "%,\t" << gflow->fhs_timer.time() << "\n";
-    fout << "  -- Post-forces, integrator: " << toStrPP(timing[1] = gflow->shs_timer.time()/run_time*100) << "%,\t" << gflow->shs_timer.time() << "\n";
-    fout << "  -- Pre-forces, domain:      " << toStrPP(timing[2] = gflow->domain_timer.time()/run_time*100) << "%,\t" << gflow->domain_timer.time() << "\n";
-    fout << "  -- Non-bonded:              " << toStrPP(timing[3] = gflow->forces_timer.time()/run_time*100) << "%,\t" << gflow->forces_timer.time() << "\n";
-    fout << "  -- Bonded:                  " << toStrPP(timing[4] = gflow->bonded_timer.time()/run_time*100) << "%,\t" << gflow->bonded_timer.time() << "\n";
-    fout << "  -- Body:                    " << toStrPP(timing[5] = gflow->body_timer.time()/run_time*100) << "%,\t" << gflow->body_timer.time() << "\n";
-    fout << "  -- Data objects:            " << toStrPP(timing[6] = data_timer.time()/run_time*100) << "%,\t" << data_timer.time() << "\n";
+    fout << "  -- Integration:             " << toStrPP(timing[0] = integrator->get_time()/run_time*100) << "%,\t" << integrator->get_time() << "\n";
+    fout << "  -- Pre-forces, domain:      " << toStrPP(timing[1] = gflow->domain_timer.time()/run_time*100) << "%,\t" << gflow->domain_timer.time() << "\n";
+    fout << "  -- Non-bonded:              " << toStrPP(timing[2] = forceMaster->get_time()/run_time*100) << "%,\t" << forceMaster->get_time() << "\n";
+    fout << "  -- Bonded:                  " << toStrPP(timing[3] = gflow->bonded_timer.time()/run_time*100) << "%,\t" << gflow->bonded_timer.time() << "\n";
+    fout << "  -- Body:                    " << toStrPP(timing[4] = gflow->body_timer.time()/run_time*100) << "%,\t" << gflow->body_timer.time() << "\n";
+    fout << "  -- Data objects:            " << toStrPP(timing[5] = data_timer.time()/run_time*100) << "%,\t" << data_timer.time() << "\n";
     for (int i=0; i<entries; ++i) total += timing[i];
     fout << "  - Uncounted:                " << std::setprecision(3) << toStrPP((100. - total)) << "%,\t" << run_time*(100. - total)*0.01 << "\n";
     fout << "\n";
@@ -338,6 +338,7 @@ namespace GFlowSimulation {
     vol *= pow(PI, sim_dimensions/2.) / tgamma(sim_dimensions/2. + 1.);
     RealType phi = vol/Base::gflow->getBounds().vol();
     fout << "  - Packing fraction:         " << phi << "\n";
+    fout << "  - Temperature:              " << KineticEnergyData::calculate_temperature(simData) <<"\n";
     fout << "\n";
 
     // --- Print integration summary

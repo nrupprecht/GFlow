@@ -36,4 +36,11 @@ namespace GFlowSimulation {
     return average ? ke/static_cast<RealType>(count) : ke;
   }
 
+  RealType KineticEnergyData::calculate_temperature(SimData *simData) {
+    // Get the kinetic energy.
+    RealType ke = KineticEnergyData::calculate_kinetic(simData, true);
+    // Calculate temperature.
+    return 2./simData->getSimDimensions() * ke / simData->getGFlow()->getKB();
+  }
+
 }

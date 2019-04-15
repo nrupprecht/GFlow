@@ -5,18 +5,18 @@
 
 namespace GFlowSimulation {
 
-  TwoWallBinForce::TwoWallBinForce(GFlow *gflow, WallSlideBody *wa, WallSlideBody *wb) : GraphObject(gflow, "TwoWallBinForce", "x", "<F>"), wallA(wa), wallB(wb) {
+  TwoWallBinForce::TwoWallBinForce(GFlow *gflow, WallSlideBody *wa, WallSlideBody *wb) : MultiGraphObject(gflow, "TwoWallBinForce", "x", "<F>", 2), wallA(wa), wallB(wb) {
     // Data
-    data = vector<RPair>(nbins, RPair(0,0));
-    counts = vector<int>(nbins, 0);
+    resetData(nbins);
+    // Set counts to not be written
+    write_data[1] = false;
   }
 
   void TwoWallBinForce::pre_integrate() {
     // Clear data vector
-    GraphObject::pre_integrate();
+    MultiGraphObject::pre_integrate();
     // Clear data
-    data = vector<RPair>(nbins, RPair(0,0));
-    counts = vector<int>(nbins, 0);
+    resetData(nbins);
   }
 
   void TwoWallBinForce::post_step() {
@@ -44,37 +44,43 @@ namespace GFlowSimulation {
     RealType dx = x2 - x1;
 
     // Correct for harmonic bc's
-    RealType width = gflow->getBounds().wd(0);
-    if (gflow->getBC(0)==BCFlag::WRAP && fabs(dx)>0.5*width)
-      dx = dx>0 ? dx - 0.5*width : dx + 0.5*width;
+    gflow->minimumImage(dx, 0);
 
     // Check cutoff
     if (min_distance <= dx && dx<max_distance) {
       // Distance bin
-      int bx = static_cast<int>((dx-min_distance)/(max_distance-min_distance)*nbins);
+      RealType dr = (max_distance - min_distance)/nbins;
+      int bx = static_cast<int>((dx-min_distance)/dr);
 
       // Get the forces for left wall
       RealType F = wallA->getFnet()*sign(dx);
-      data[bx].second += F*norm;
+      atY(0, bx) += F*norm;
       // Get the forces for the right wall
       F = wallB->getFnet()*sign(dx);
-      data[bx].second -= F*norm;
+      atY(0, bx) -= F*norm;
 
       // Increment counts
-      counts[bx] += 2;
+      atY(1, bx) += 2;
     }
   }
 
   bool TwoWallBinForce::writeToFile(string fileName, bool useName) {
     // Process data
-    RealType dr = (max_distance - min_distance)/(nbins-1);
+    RealType dr = (max_distance - min_distance)/nbins;
+    
+    cout << "\ndata={";
     for (int i=0; i<nbins; ++i) {
-      data[i].first = (i+0.5)*dr + min_distance;
-      if (counts[i]>0) data[i].second /= counts[i];
+      atX(i) = (i+0.5)*dr + min_distance;
+      if (atY(1, i)>0) atY(0, i) /= atY(1, i);
+      else atY(0, i) = 0;
+
+      cout << "{" << atY(0, i) << ", " << atY(1, i) << "}";
+      if (i!=nbins-1) cout << ",";
     }
+    cout << "};\n\n";
 
     // Write to file
-    GraphObject::writeToFile(fileName, useName);
+    MultiGraphObject::writeToFile(fileName, useName);
   }
 
   void TwoWallBinForce::setMaxDistance(RealType md) {
@@ -88,8 +94,7 @@ namespace GFlowSimulation {
   void TwoWallBinForce::setBins(int b) {
     if (b>0) {
       nbins = b;
-      data = vector<RPair>(nbins, RPair(0,0));
-      counts = vector<int>(nbins, 0);
+      resetData(nbins);
     }
   }
 

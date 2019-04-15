@@ -28,6 +28,9 @@ namespace GFlowSimulation {
     //! \brief Create a pair of infinitely massive polymers some distance away from one another, oriented in the y direction.
     void createParallelPolymers(GFlow*, const RealType, const RealType, const RealType);
 
+    //! \brief Local particle fixers
+    vector<ParticleFixer> p_fixers;
+
     //! \brief Whether to use correlation objects.
     bool useCorr = false;
 

@@ -9,6 +9,9 @@ namespace GFlowSimulation {
   OverdampedLangevinIntegrator::OverdampedLangevinIntegrator(GFlow *gflow, RealType temp) : LangevinTypeIntegrator(gflow, temp, DEFAULT_VISCOSITY) {};
 
   void OverdampedLangevinIntegrator::post_forces() {
+    // Start the timer
+    timer.start();
+
     // Call to parent class
     Integrator::post_forces();
     
@@ -46,6 +49,9 @@ namespace GFlowSimulation {
       assert(fabs(v[i])<MAX_REASONABLE_V);
       #endif 
     }
+
+    // Stop timer
+    timer.stop();
   }
 
 }

@@ -16,6 +16,9 @@ namespace GFlowSimulation {
     //! \brief Calculate the kinetic energy of the particles in the simdata.
     static RealType calculate_kinetic(SimData*, bool=true);
 
+    //! \brief Calculate the temperature of the particles in the simdata.
+    static RealType calculate_temperature(SimData*);
+
   private:
     //! \brief Whether to use the average kinetic energy per particle (as opposed to the total kinetic energy).
     bool useAve; 

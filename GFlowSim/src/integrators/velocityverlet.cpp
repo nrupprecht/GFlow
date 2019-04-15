@@ -9,6 +9,9 @@ namespace GFlowSimulation {
   VelocityVerlet::VelocityVerlet(GFlow *gflow) : Integrator(gflow) {};
 
   void VelocityVerlet::pre_forces() {
+    // Start the timer
+    timer.start();
+
     // Call base class
     Integrator::pre_forces();
 
@@ -131,9 +134,15 @@ namespace GFlowSimulation {
       #endif 
     }
     #endif
+
+    // Stop timer
+    timer.stop();
   }
 
   void VelocityVerlet::post_forces() {
+    // Start the timer
+    timer.start();
+
     // Call to parent class
     Integrator::post_forces();
     
@@ -208,6 +217,9 @@ namespace GFlowSimulation {
       v[i] += hdt*im[id]*f[i];
     }
     #endif
+
+    // Stop timer
+    timer.stop();
   }
 
 }

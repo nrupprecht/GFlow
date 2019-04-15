@@ -71,6 +71,7 @@ namespace GFlowSimulation {
     gflow->simData->clearF();
     // Relax simulation
     gflow->requestTime(time);
+    gflow->setRunMode(RunMode::INIT);
     gflow->run(); // GFlow run calls initialize, so all the base objects' pointers will be correct.
     // Reset times
     gflow->dataMaster->resetTimer(); // So the setup does not count towards the run time.
@@ -118,7 +119,7 @@ namespace GFlowSimulation {
       int id = simData->getLocalID(fix.global_id);
       if (0<=id && id<simData->size()) {
         // Set the initial velocity of the particle.
-        copyVec(fix.velocity, simData->V(id), sim_dimensions);
+        copyVec(fix.velocity, simData->V(id));
       }
     }
   }

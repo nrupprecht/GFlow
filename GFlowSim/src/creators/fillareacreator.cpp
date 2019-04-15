@@ -221,7 +221,7 @@ namespace GFlowSimulation {
         if (im==0) V.zero();
         else select_velocity(V.data, X.data, sigma, im, type);
         ParticleFixer pfix(sim_dimensions, gid);
-        copyVec(V.data, pfix.velocity, sim_dimensions);
+        pfix.velocity = V;
         particle_fixers.push_back(pfix);
         // Increment volume and counter
         vol += sphere_volume(sigma, sim_dimensions);
@@ -257,7 +257,7 @@ namespace GFlowSimulation {
           if (im==0) V.zero();
           else select_velocity(V.data, X.data, sigma, im, type);
           ParticleFixer pfix(sim_dimensions, gid);
-          copyVec(V.data, pfix.velocity, sim_dimensions);
+          pfix.velocity = V;
           particle_fixers.push_back(pfix);
         }
       }
