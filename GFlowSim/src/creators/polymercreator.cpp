@@ -100,7 +100,7 @@ namespace GFlowSimulation {
     }
 
     // Set the target steps to be high, to help prevent balls from slipping into areas they shouldn't be in.
-    //gflow->integrator->setTargetSteps(40);
+    gflow->integrator->setTargetSteps(40);
     
     // Add local fixers to the particle fixers master list
     particle_fixers.insert(particle_fixers.end(), p_fixers.begin(), p_fixers.end());
@@ -345,7 +345,7 @@ namespace GFlowSimulation {
     imP = 1./m;
     imC = 0;
     RealType sigma_v = 0.;
-    RealType dx = (1.+h/2)*rP;
+    RealType dx = (1.+h/2)*rP; // h \el [0, 2]
 
     // Initial point and normal vector
     RealType *x = new RealType[sim_dimensions], *Yhat = new RealType[sim_dimensions];
@@ -370,7 +370,7 @@ namespace GFlowSimulation {
 
     // Add the two wall modifier
     TwoWallModifier *walls = new TwoWallModifier(gflow, group1, group2);
-    walls->setMaxDistance(8.*rP);
+    walls->setMaxDistance(5.*rP);
     walls->setBinsDataObject(25);
     walls->setMinDistanceDataObject(2.0*rP);
     walls->setMaxDistanceDataObject(4.5*rP);

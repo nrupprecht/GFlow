@@ -43,8 +43,9 @@ namespace GFlowSimulation {
     for (int i=0; i<ndata_points; ++i) {
       for (int j=0; j<ndata+1; ++j) {
         if (j==0 || write_data[j-1]) {
+          // Prepend with a "," (if not the first entry) so there will not be null entries if the last entry should not be printed.
+          if (j!=0) fout << ",";
           fout << multi_data[j][i];
-          if (j!=ndata) fout << ",";
         }
       }
       fout << endl;
@@ -56,21 +57,6 @@ namespace GFlowSimulation {
     if (fout.fail()) return false;
     fout << axis_x << endl << axis_y << endl;
     fout.close();
-    
-    /*
-    // Optionally print a plot of the data using vistools.
-    if (print_plot) {
-      // Draw a graph using a palette object
-      Palette graph(1024,512);
-      GraphOptions options;
-      options.setMinY(0);
-      options.setBackground(RGB_White);
-      options.setLineColor(RGB_Red);
-      // Draw the graph
-      graph.drawGraph2d(data, options);
-      graph.writeToFile(dirName+"/"+dataName+".bmp");
-    }
-    */
 
     // Return success
     return true;
@@ -83,6 +69,16 @@ namespace GFlowSimulation {
     for (auto v : multi_data[i+1]) total += v;
     // Return the average
     return total/ndata_points;
+  }
+
+  vector<RPair> MultiGraphObject::getEntry(int i) {
+    if (i<0 || ndata<=i || ndata_points==0) return vector<RPair>();
+    // Accumulate data
+    vector<RPair> entry;
+    for (int j=0; j<ndata_points; ++j)
+      entry.push_back(RPair(multi_data[0][j], multi_data[i+1][j]));
+    // Return data
+    return entry;
   }
 
   void MultiGraphObject::resetData(int size) {

@@ -27,6 +27,9 @@ namespace GFlowSimulation {
     //! \brief Compute averages of data.
     RealType ave(int);
 
+    //! \brief Get a single data entry as a vector or RPairs.
+    vector<RPair> getEntry(int);
+
     //! \brief Exception class for trying to access data when there is none.
     struct EmptyData : public Exception {
       EmptyData() : Exception() {};

@@ -23,6 +23,9 @@ namespace GFlowSimulation {
     //! \brief Get the slide_dimension component of the wall position.
     RealType getPosition();
 
+    //! \brief Get the slide_dimension component of the wall velocity.
+    RealType getVelocity();
+
     //! \brief Get the length of the wall.
     RealType getLength();
 

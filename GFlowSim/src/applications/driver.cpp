@@ -85,6 +85,7 @@ int main(int argc, char **argv) {
   RealType videoLength = -1.;
   RealType dt = 0.0001;
   long double time = 10.;
+  bool print = false;
   string writeDirectory = "RunData";
   int boundary = 1;
   string monitor = ""; // Monitor file
@@ -132,6 +133,7 @@ int main(int argc, char **argv) {
   parser.get("videoLength", videoLength);
   parser.get("dt", dt);
   parser.get("time", time);
+  parser.get("print", print);
   parser.get("writeDirectory", writeDirectory);
   parser.get("temperature", temperature);
   parser.get("boundary", boundary);
@@ -234,8 +236,9 @@ int main(int argc, char **argv) {
     gflow->addDataObject(pd);
     if (videoLength>0) pd->setFPS((20.*videoLength)/time);
   }
-  if (fps>0)    gflow->setFPS(fps); // Do after data objects are loaded
+  if (fps>0) gflow->setFPS(fps); // Do after data objects are loaded
   gflow->setDMCmd(argc, argv);
+  gflow->setPrintUpdates(print);
 
   // --- Add modifiers
   if (temperature>0) gflow->addModifier(new TemperatureModifier(gflow, temperature));

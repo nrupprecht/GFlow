@@ -331,7 +331,7 @@ namespace GFlowSimulation {
     Timer body_timer;
 
     //! \brief Whether to print updates to a screen.
-    bool print_updates = true;
+    bool print_updates = false;
 
     //! \brief The ostream with which to print updates.
     std::ostream *monitor = &cout;

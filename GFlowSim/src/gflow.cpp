@@ -243,10 +243,11 @@ namespace GFlowSimulation {
       RealType dt = integrator->getTimeStep();
       elapsed_time += dt;
       total_time += dt;
+
       // Check for bad numerical precision
       if (total_time - dt == total_time) {
-	cout << "Loss of precision. Stopping simulation.\n";
-	running = false;
+        cout << "Loss of precision. Stopping simulation.\n";
+	      running = false;
       }
       // Possibly print updates to the screen or to a file.
       if (print_updates && runMode==RunMode::SIM && 
@@ -256,7 +257,7 @@ namespace GFlowSimulation {
         (*monitor) << "Simulation time: " << static_cast<int>(elapsed_time) << "\t";
         (*monitor) << "Ratio: " << elapsed_time / timer.current() << "\t";
         (*monitor) << "Est. time: " << (requested_time - elapsed_time)/live_ratio << "\t";
-	(*monitor) << endl;
+	      (*monitor) << endl;
       }
       
       // Reset simdata needs remake flag

@@ -105,6 +105,7 @@ namespace GFlowSimulation {
 
     // Relax simulation
     gflow->requestTime(time); // Should be long enough
+    gflow->setRunMode(RunMode::INIT);
     gflow->run();
     gflow->dataMaster->resetTimer(); // So the setup does not count towards the run time
     gflow->resetAllTimes();

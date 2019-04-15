@@ -83,6 +83,10 @@ namespace GFlowSimulation {
     return simData->X(simData->getLocalID(global_ids[0]), slide_dimension);
   }
 
+  RealType WallSlideBody::getVelocity() {
+    return simData->V(simData->getLocalID(global_ids[0]), slide_dimension);
+  }
+
   RealType WallSlideBody::getLength() {
     return length;
   }

@@ -1,7 +1,7 @@
 // Variables
 Var: dimensions=2
-Var: width=16
-Var: fraction=0.625
+Var: width=32
+Var: fraction=0.31245
 Var: number=1
 Var: phi=0.5
 Var: h=0.5
@@ -53,13 +53,15 @@ Fill: Area {
     Type: 2
   }
 
-  Number: Phi=0.02 {
+  Number: Phi=0.01 {
     TypeA : 1
   }
 
+  /*
   Excluded: {
     : width/2 - (5+h)*rP, width/2 + (5+h)*rP
     : (width-length-rP)/2, (width+length+rP)/2
   }
+  */
   
 }

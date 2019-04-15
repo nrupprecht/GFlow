@@ -47,6 +47,7 @@ EXCLUDE += src/applications/pressureanalysis.cpp
 EXCLUDE += src/applications/driver.cpp
 EXCLUDE += src/applications/vistools.cpp
 EXCLUDE += src/applications/lineattraction.cpp
+EXCLUDE += src/applications/wallattraction.cpp
 EXCLUDE += src/utility/argparse2.cpp
 
 SRCS1   := $(shell find $(SRC) -name '*.cpp')
@@ -68,7 +69,7 @@ endif
 #OPENCV   := $(shell pkg-config --cflags --libs opencv)
 CFLAGS   := -c $(CSTD) $(DEBUG) $(OPTIMIZE) $(FLAGS)
 
-all: $(BIN)/$(APP) $(BIN)/vistools $(BIN)/lineattraction
+all: $(BIN)/$(APP) $(BIN)/vistools $(BIN)/lineattraction $(BIN)/wallattraction
 
 # Executables
 
@@ -86,6 +87,11 @@ $(BIN)/lineattraction: obj/lineattraction.o $(OBJS)
 	@mkdir -p `dirname $@`
 	@echo "Linking $@..."
 	@$(CC) -o $@ obj/lineattraction.o $(OBJS) $(LDFLAGS)
+
+$(BIN)/wallattraction: obj/wallattraction.o $(OBJS)
+	@mkdir -p `dirname $@`
+	@echo "Linking $@..."
+	@$(CC) -o $@ obj/wallattraction.o $(OBJS) $(LDFLAGS)
 
 # General object files
 
@@ -107,6 +113,11 @@ $(OBJ)/vistools.o: src/applications/vistools.cpp
 	@$(CC) $(CFLAGS) $< -o $@
 
 $(OBJ)/lineattraction.o: src/applications/lineattraction.cpp
+	@mkdir -p `dirname $@`
+	@echo "Compiling $<..."
+	@$(CC) $(CFLAGS) $< -o $@
+
+$(OBJ)/wallattraction.o: src/applications/wallattraction.cpp
 	@mkdir -p `dirname $@`
 	@echo "Compiling $<..."
 	@$(CC) $(CFLAGS) $< -o $@

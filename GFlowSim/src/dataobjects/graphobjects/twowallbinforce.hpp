@@ -17,8 +17,8 @@ namespace GFlowSimulation {
     //! \brief Collect the position data from simdata --- happens during the post-step phase
     virtual void post_step() override;
 
-    //! \brief Set up the data vector for export.
-    virtual bool writeToFile(string, bool=true) override;
+    //! \brief Set data to be ready for writing to a file or to be read by something else.
+    virtual void post_integrate() override;
 
     //! \brief Set the max distance.
     void setMaxDistance(RealType);

@@ -64,23 +64,15 @@ namespace GFlowSimulation {
     }
   }
 
-  bool TwoWallBinForce::writeToFile(string fileName, bool useName) {
+  void TwoWallBinForce::post_integrate() {
     // Process data
     RealType dr = (max_distance - min_distance)/nbins;
-    
-    cout << "\ndata={";
+    // Process data
     for (int i=0; i<nbins; ++i) {
       atX(i) = (i+0.5)*dr + min_distance;
       if (atY(1, i)>0) atY(0, i) /= atY(1, i);
       else atY(0, i) = 0;
-
-      cout << "{" << atY(0, i) << ", " << atY(1, i) << "}";
-      if (i!=nbins-1) cout << ",";
     }
-    cout << "};\n\n";
-
-    // Write to file
-    MultiGraphObject::writeToFile(fileName, useName);
   }
 
   void TwoWallBinForce::setMaxDistance(RealType md) {
