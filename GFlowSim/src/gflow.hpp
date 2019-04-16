@@ -128,6 +128,9 @@ namespace GFlowSimulation {
     //! \brief Get the minimum image displacement between two positions.
     void getDisplacement(const RealType*, const RealType*, RealType*);
 
+    //! \brief Get the minimum image of a displacement vector.
+    void minimumImage(RealType*);
+
     //! \brief Get the minimum image distance of a single component.
     void minimumImage(RealType&, int);
 

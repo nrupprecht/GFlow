@@ -37,6 +37,13 @@ namespace GFlowSimulation {
       // Second bond
       dx2 = x[id3][0] - x[id2][0];
       dy2 = x[id3][1] - x[id2][1];
+
+      gflow->minimumImage(dx1, 0);
+      gflow->minimumImage(dx2, 0);
+      gflow->minimumImage(dy1, 0);
+      gflow->minimumImage(dy2, 0);
+
+      /*
       // Harmonic corrections to distance.
       if (boundaryConditions[0]==BCFlag::WRAP) {
         RealType dX = bnd_x - fabs(dx1);
@@ -50,6 +57,8 @@ namespace GFlowSimulation {
         dY = bnd_y - fabs(dy2);
         if (dY<fabs(dy2)) dy2 = dy1>0 ? -dY : dY;
       } 
+      */
+      
       // Get distance squared, distance
       rsqr1 = dx1*dx1 + dy1*dy1;
       r1 = sqrt(rsqr1);

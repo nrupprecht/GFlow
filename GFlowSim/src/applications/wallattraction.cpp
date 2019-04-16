@@ -72,11 +72,9 @@ int main(int argc, char **argv) {
   auto start_time = current_time();
 
   // Record data.
-  vector<RPair> data(bins, RPair(0,0));
-
-  // Create the directory
-  //rmdir(writeDirectory.c_str());
-  mkdir(writeDirectory.c_str(), 0777);
+  vector<RPair> average(bins, RPair(0,0));
+  // All the data from the runs
+  vector<vector<RealType> > allData;
 
   // Do many data gathering runs.
   
@@ -117,15 +115,14 @@ int main(int argc, char **argv) {
     
     // Accumulate
     auto entry = gnf->getEntry(0);
-    cout << "{";
+    vector<RealType> single_data(bins, 0);
     for (int i=0; i<bins; ++i) {
-      data[i].first = entry[i].first;
-      data[i].second += entry[i].second;
-
-      cout << "{" << data[i].first << "," << data[i].second << "}";
-      if (i!=bins-1) cout << ",";
+      average[i].first = entry[i].first;
+      average[i].second += entry[i].second;
+      single_data[i] = entry[i].second;
     }
-    cout << "};\n";
+    // Store data
+    allData.push_back(single_data);
 
     // Clean up
     delete gflow;
@@ -134,10 +131,55 @@ int main(int argc, char **argv) {
   // Timing message
   cout << "Runs are over. Total time:\t\t\t" << time_span(current_time(), start_time) << "\n";
 
-  ofstream fout(writeDirectory+"/forces.csv");
-  for (int i=0; i<data.size(); ++i) {
-    fout << data[i].first << "," << data[i].second / static_cast<double>(trials) << endl;
+  // Create the directory
+  //rmdir(writeDirectory.c_str());
+  mkdir(writeDirectory.c_str(), 0777);
+
+  // Make data into an average
+  for (auto & datum : average) datum.second /= static_cast<double>(trials);
+  // Find standard deviations
+  vector<RealType> std(bins, 0);
+  for (auto d : allData) {
+    for (int i=0; i<bins; ++i) std[i] += sqr(d[i] - average[i].second);
   }
+  for (int i=0; i<bins; ++i) std[i] = sqrt(std[i] / (trials - 1));
+
+  // Print average and std dev data
+  ofstream fout(writeDirectory+"/forces.csv");
+  if (fout.fail()) {
+    cout << "Ofstream failed to open file. Exiting.\n";
+    return 0;
+  }
+  for (int i=0; i<average.size(); ++i) {
+    fout << average[i].first << "," << average[i].second << "," << std[i] << endl;
+  }
+  // Close file stream.
+  fout.close();
+
+  // Print all data
+  fout.open(writeDirectory+"/alldata.csv");
+  if (fout.fail()) {
+    cout << "Ofstream failed to open file. Exiting.\n";
+    return 0;
+  } 
+  // First, print bins
+  for (int i=0; i<bins; ++i) {
+    fout << average[i].first;
+    if (i!=bins-1) fout << ",";
+  }
+  fout << endl;
+  // Then, print data (just <F>)
+  for (const auto & datum : allData) {
+    for (int i=0; i<datum.size(); ++i) {
+      fout << datum[i];
+      if (i!=datum.size()-1) fout << ",";
+    }
+    fout << endl;
+  }
+  // Close file stream.
+  fout.close();
+
+
   
   // Finalize mpi
   #if USE_MPI == 1

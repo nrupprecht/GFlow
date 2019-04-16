@@ -380,6 +380,15 @@ namespace GFlowSimulation {
     }
   }
 
+  void GFlow::minimumImage(RealType *dis) {
+    for (int d=0; d<sim_dimensions; ++d) {
+      if (boundaryConditions[d]==BCFlag::WRAP) {
+        RealType dx = bounds.max[d] - bounds.min[d] - fabs(dis[d]);
+        if (dx<fabs(dis[d])) dis[d] = dis[d]>0 ? -dx : dx;
+      }      
+    }
+  }
+
   void GFlow::minimumImage(RealType &dis, int d) {
     if (boundaryConditions[d]==BCFlag::WRAP) {
       RealType dx = bounds.wd(d) - fabs(dis);
