@@ -1,7 +1,6 @@
 #include "twowallmodifier.hpp"
 // Other files
 #include "../utility/vec.hpp"
-#include "../dataobjects/graphobjects/twowallbinforce.hpp"
 
 namespace GFlowSimulation {
 

@@ -29,9 +29,21 @@ namespace GFlowSimulation {
 
   //! \brief Cross product - assumes 3 dimensions.
   template<typename T> inline void crossVec(const T *x, const T *y, T *z) {
-    z[0] = x[1]*y[2] - y[1]*x[2];
+    z[0] = x[1]*y[2]  - y[1]*x[2];
     z[1] = -x[0]*y[2] + y[0]*x[2];
-    z[2] = x[0]*y[1] - y[0]*x[1];
+    z[2] = x[0]*y[1]  - y[0]*x[1];
+  }
+
+  //! \brief Cross product of two 2d vectors. Answer is just a number (vector in the z direction)
+  template<typename T> inline T crossVec2(const T *x, const T *y) {
+    return x[0]*y[1] - x[1]*y[0];
+  }
+
+  //! \brief Triple product of two dimensional vectors, a x ( b x c).
+  template<typename T> inline T tripleProduct2(const T *x, const T *y, const T *z, T *out) {
+    RealType yz = y[0]*z[1] - y[1]*z[0];
+    out[0] = x[1]*yz;
+    out[1] = x[0]*yz;
   }
 
   // Generic squaring function
@@ -115,6 +127,10 @@ namespace GFlowSimulation {
 
   template<typename T> inline T magnitudeVec(T *vec, int dimensions) {
     return sqrt(sqr(vec, dimensions));
+  }
+
+  template<typename T> inline void negateVec(T *vec, int dimensions) {
+    for (int d=0; d<dimensions; ++d) vec[d] = -vec[d];
   }
 
   template<typename T> inline void normalVec(const T *x, T *norm, int dimensions) {

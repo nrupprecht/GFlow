@@ -1,6 +1,6 @@
 #include "twowallbinforce.hpp"
 // Other files
-#include "kineticenergydata.hpp"
+#include "../graphobjects/kineticenergydata.hpp"
 #include "../../base/simdata.hpp"
 
 namespace GFlowSimulation {
@@ -69,7 +69,7 @@ namespace GFlowSimulation {
     RealType dr = (max_distance - min_distance)/nbins;
     // Process data
     for (int i=0; i<nbins; ++i) {
-      atX(i) = (i+0.5)*dr + min_distance;
+      atX(i) = (i+1.)*dr + min_distance;
       if (atY(1, i)>0) atY(0, i) /= atY(1, i);
       else atY(0, i) = 0;
     }

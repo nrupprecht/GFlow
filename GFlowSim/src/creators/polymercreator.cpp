@@ -30,7 +30,7 @@ namespace GFlowSimulation {
     int number = 1;
     RealType length = 5.;
     RealType phi = 0.2;
-    bool useAngle = false;
+    bool useAngle = true;
     bool pair = false;
     RealType h = 2.5;
     useCorr = false;

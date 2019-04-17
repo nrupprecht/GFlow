@@ -31,8 +31,8 @@ int main(int argc, char **argv) {
   #endif
 
   // --- Options
-  RealType time = 1000;
-  RealType startRec = 100;
+  RealType time = 2000;
+  RealType startRec = 200;
   RealType phi = 0.5;
   bool quiet = false;
   int trials = 5;
@@ -124,16 +124,20 @@ int main(int argc, char **argv) {
     // Store data
     allData.push_back(single_data);
 
+    // At the last trial
+    if (t==trials-1) {
+      // Create the directory
+      mkdir(writeDirectory.c_str(), 0777);
+      // Write data for the last trial
+      gflow->writeData(writeDirectory+"/data"+toStr(t));
+    }
+
     // Clean up
     delete gflow;
   }
 
   // Timing message
   cout << "Runs are over. Total time:\t\t\t" << time_span(current_time(), start_time) << "\n";
-
-  // Create the directory
-  //rmdir(writeDirectory.c_str());
-  mkdir(writeDirectory.c_str(), 0777);
 
   // Make data into an average
   for (auto & datum : average) datum.second /= static_cast<double>(trials);

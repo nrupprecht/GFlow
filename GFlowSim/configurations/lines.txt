@@ -1,7 +1,7 @@
 // Variables
 Var: dimensions=2
 Var: width=32
-Var: fraction=0.31245
+Var: fraction=0.125
 Var: number=1
 Var: phi=0.5
 Var: h=0.5

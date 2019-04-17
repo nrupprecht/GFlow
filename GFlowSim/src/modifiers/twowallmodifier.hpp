@@ -3,7 +3,7 @@
 
 #include "../base/modifier.hpp"
 #include "../body/wallslidebody.hpp"
-#include "../dataobjects/graphobjects/twowallbinforce.hpp"
+#include "../dataobjects/multigraphobjects/twowallbinforce.hpp"
 
 namespace GFlowSimulation {
 
