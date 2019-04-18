@@ -65,10 +65,14 @@ namespace GFlowSimulation {
   //! Use like "double x = convert<double>(str);"
   template<typename T> inline T convert(const string s) {
     stringstream stream;
-    T data;
+    T data(0);
     stream << s;
     stream >> data;
     return data;
+  }
+
+  template<> inline string convert<string>(const string s) {
+    return s;
   }
 
   template<typename T> bool writeVectorToFile(vector<T>& vec, string fileName) {

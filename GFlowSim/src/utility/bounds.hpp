@@ -34,6 +34,8 @@ namespace GFlowSimulation {
     //! \brief Boolean not equals operator
     bool operator!=(const Bounds&) const;
 
+    friend std::ostream& operator<<(std::ostream &out, Bounds bnds);
+
     //! \brief Check whether the bounds contains a point.
     bool contains(RealType*) const;
 

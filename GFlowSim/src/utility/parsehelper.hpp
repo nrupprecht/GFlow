@@ -117,11 +117,12 @@ namespace GFlowSimulation {
 
     string get_variable_value(const string&);
 
-    template<typename T> T value(string v) {
+    template<typename T> T value(string v); /* {
       string var = get_variable_value(v);
       if (var=="") var = v;
       return convert<T>(var);
     }
+					    */
 
     struct iterator {
       //! \brief Copy constructor.
@@ -212,6 +213,16 @@ namespace GFlowSimulation {
     //! \brief Variables.
     std::map<string, string> variables;
   };
+
+  template<typename T> T ParseHelper::value(string v) {
+    string var = get_variable_value(v);
+    if (var=="") var = v;
+    return convert<T>(var);
+  }
+
+  template<> string ParseHelper::value<string>(string v) {
+    return get_variable_value(v);
+  }
 
 }
 

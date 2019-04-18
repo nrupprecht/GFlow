@@ -51,7 +51,7 @@ namespace GFlowSimulation {
     domain_bounds = gflow->getBounds();
 
     // If bounds are unset, then don't make sectors. We cannot initialize if simdata is null
-    if (domain_bounds.vol()<=0 || simData==nullptr) return;
+    if (domain_bounds.vol()<=0 || isnan(domain_bounds.vol()) || simData==nullptr) return;
 
     // Assign border types - do this before creating cells.
     assign_border_types();

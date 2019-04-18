@@ -53,8 +53,10 @@ namespace GFlowSimulation {
           if (head->subHeads[d]->params.size()!=2 || !head->subHeads[d]->subHeads.empty()) 
             throw BadStructure("Bounds need a min and a max, we found "+toStr(head->subHeads[d]->params.size())+" parameters.");
           // Extract the bounds.
-          rreg->min(d) = Eval::evaluate( head->subHeads[d]->params[0]->partA, variables );
-          rreg->max(d) = Eval::evaluate( head->subHeads[d]->params[1]->partA, variables );
+	  RealType mn = Eval::evaluate( head->subHeads[d]->params[0]->partA, variables );
+	  RealType mx = Eval::evaluate( head->subHeads[d]->params[1]->partA, variables );
+          rreg->min(d) = mn;
+          rreg->max(d) = mx;
         }
         region = rreg;
       }

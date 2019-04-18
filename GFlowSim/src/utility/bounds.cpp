@@ -70,6 +70,16 @@ namespace GFlowSimulation {
     return !(*this==b);
   }
 
+  std::ostream& operator<<(std::ostream &out, Bounds bnds) {
+    out << "{";
+    for (int d=0; d<bnds.dimensions; ++d) {
+      out << "{" << bnds.min[d] << ","  << bnds.max[d] << "}";
+      if (d!=bnds.dimensions-1) out << ",";
+    }
+    out << "}";
+    return out;
+  }
+
   bool Bounds::contains(RealType *x) const {
     for (int d=0; d<dimensions; ++d)
       if (x[d]<min[d] || max[d]<x[d]) return false;
