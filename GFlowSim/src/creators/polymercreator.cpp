@@ -315,12 +315,16 @@ namespace GFlowSimulation {
     // Add particles
     for (int i=0; i<n; ++i) {
       // Next particle position
-      X[1] += (marks[i+1] - marks[i] + 2*rP);
+      if (i==0)
+        X[1] += (marks[i+1] - marks[i] + rP);
+      else 
+        X[1] += (marks[i+1] - marks[i] + 2*rP);
       // Wrap X
       for (int d=0; d<sim_dimensions; ++d) {
         if      (X[d]< bnds.min[d]) X[d] += bnds.wd(d);
         else if (X[d]>=bnds.max[d]) X[d] -= bnds.wd(d);
       }
+
       // Add particle
       int gid = sd->getNextGlobalID();
       sd->addParticle(X.data, ZERO.data, rP, imP, idP);

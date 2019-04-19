@@ -2,7 +2,6 @@
 Var: dimensions=2
 Var: width=32
 Var: fraction=0.125
-Var: number=1
 Var: phi=0.5
 Var: h=0.5
 Var: rP=0.05
@@ -20,23 +19,19 @@ Integrator: VelocityVerlet
 Boundary: Wrap
 
 // Set the number of particle types
-NTypes: 3
+NTypes: 2
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
 Force-grid: {
   : 0, 0, HardSphere
-  : 0, 2, HardSphere
-  : 2, 2, HardSphere
-  : 1, 1, None
-  : 1, 0, None
-  : 1, 2, None
+  : 0, 1, HardSphere
+  : 1, 1, HardSphere
 }
 
 Fill: Polymer {
   Parallel: 1
   H: h  
   Length: length
-  Number: number
   R: rP
   r: rC
   Phi: phi
@@ -50,13 +45,11 @@ Fill: Area {
   Template: TypeA {
     Radius: 0.05
     Mass: Density=1
-    Type: 2
+    Type: 1
   }
 
   Number: Phi=0.01 {
     TypeA : 1
   }
-
-  //Velocity: Temperature=0.0035
   
 }
