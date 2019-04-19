@@ -69,50 +69,44 @@ namespace GFlowSimulation {
     // Create a particle template to set
     ParticleTemplate p_template;
 
-    ParseHelper parser(head);
-    parser.set_variables(variables);
-    // Declare valid options
-    parser.addValidSubheading("Radius");
-    parser.addValidSubheading("Mass");
-    parser.addValidSubheading("Type");
-    // Make sure only valid options were used
-    if (!parser.checkValidSubHeads()) {
-      cout << "Warning: Invalid Headings:\n";
-      for (auto ih : parser.getInvalidSubHeads())
-        cout << " -- Heading: " << ih << endl;
-    }
-    // Sort options
-    parser.sortOptions();
-    // Pointer for head nodes
-    HeadNode *hd = nullptr;
-    
+    // Create parser.
+    TreeParser parser(head, variables);
+    parser.addHeadingNecessary("Radius", "We need radius info for particle templates!");
+    parser.addHeadingNecessary("Mass", "We need mass info for particle templates!");
+    parser.addHeadingNecessary("Type", "We need type info for particle templates!");
+    // Check headings for validity.
+    parser.check();
+
     // --- Look for options
     string option, type;
-    
+
     // --- Look for Radius option
-    parser.getHeading_Necessary("Radius");
-    hd = parser.first();
-    p_template.radius_engine = getRandomEngine(hd, variables, type, gflow);
+    parser.focus0("Radius");
+    p_template.radius_engine = getRandomEngine(parser.getNode(), variables, type, gflow);
     p_template.radius_string = type;
 
     // --- Look for Mass option
-    parser.getHeading_Necessary("Mass");
-    hd = parser.first();
-    parser.extract_first_parameter(option, hd);
-    RealType m;
-    if (option=="Density" && parser.extract_first_arg(m)) {
+    parser.focus0("Mass");
+    RealType m = 0;
+    // Density
+    if (parser.argName()=="Density") {
+      // Extract the density value
+      if (!parser.val(m)) throw BadStructure("Mass specified as DENSITY, but value could not be extracted.");
+      // Set the mass engine
       p_template.mass_engine = new DeterministicEngine(m);
       p_template.mass_string = "Density";
     }
-    else if (parser.extract_first_arg(m)) {
+    // Mass
+    else if (parser.val(m)) {
       p_template.mass_engine = new DeterministicEngine(m);
       p_template.mass_string = "Mass";
     }
+    // Error
+    else throw BadStructure("Mass specification not recognized.");
 
     // --- Look for Type option
-    parser.getHeading_Necessary("Type");
-    hd = parser.first();
-    p_template.type_engine = getRandomEngine(hd, variables, type, gflow);
+    parser.focus0("Type");
+    p_template.type_engine = getRandomEngine(parser.getNode(), variables, type, gflow);
     p_template.type_string = type;
 
     // Add to particle templates
@@ -163,6 +157,7 @@ namespace GFlowSimulation {
 
     // Parameter string
     string param = h->params[0]->partA;
+
     // Check for options:
     if (param=="Random") {
       // Discrete Random, with specified values and probabilities

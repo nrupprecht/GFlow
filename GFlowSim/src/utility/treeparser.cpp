@@ -37,6 +37,15 @@ namespace GFlowSimulation {
     return true;
   }
 
+  bool TreeParser::focus0(const string& heading) {
+    // Reset head.
+    focus_node = head;
+    // Sort options.
+    sortOptions();
+    // Now, call focus.
+    return focus(heading);
+  }
+
   bool TreeParser::up() {
     // Make sure we are not already at the head node, and that there is a valid parent, which there should be.
     if (focus_node!=head && focus_node->parent!=nullptr) {

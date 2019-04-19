@@ -100,7 +100,7 @@ namespace GFlowSimulation {
     }
 
     // Set the target steps to be high, to help prevent balls from slipping into areas they shouldn't be in.
-    gflow->integrator->setTargetSteps(40);
+    //gflow->integrator->setTargetSteps(40);
     
     // Add local fixers to the particle fixers master list
     particle_fixers.insert(particle_fixers.end(), p_fixers.begin(), p_fixers.end());

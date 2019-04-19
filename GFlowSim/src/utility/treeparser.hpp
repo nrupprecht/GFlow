@@ -50,6 +50,9 @@ namespace GFlowSimulation {
     //! \brief Focus one of the body's head nodes, the first one to have the given heading. Retuns false if no such head node exists.
     bool focus(const string&);
 
+    //! \brief Return to the top level, then call focus.
+    bool focus0(const string&);
+
     //! \brief Go up a level. Returns false if we are at the top.
     bool up();
 

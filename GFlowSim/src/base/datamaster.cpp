@@ -102,9 +102,9 @@ namespace GFlowSimulation {
 
   void DataMaster::post_integrate() {
     endTimer();
-    if (Base::gflow->getElapsedTime()<startRecTime) return;
-    for (auto& dob : dataObjects)
+    for (auto& dob : dataObjects) {
       if (dob) dob->post_integrate();
+    }
   }
 
   bool DataMaster::writeToDirectory(string writeDirectory) {

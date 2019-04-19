@@ -35,6 +35,7 @@ int main(int argc, char **argv) {
   RealType startRec = 200;
   RealType phi = 0.5;
   bool quiet = false;
+  bool snapshot = false;
   int trials = 5;
   int bins = 25;
   string writeDirectory = "WallAttraction";
@@ -47,6 +48,7 @@ int main(int argc, char **argv) {
   parser.get("startRec", startRec);
   parser.get("phi", phi);
   parser.get("quiet", quiet);
+  parser.get("snapshot", snapshot);
   parser.get("trials", trials);
   parser.get("writeDirectory", writeDirectory);
 
@@ -91,7 +93,7 @@ int main(int argc, char **argv) {
     if (gflow==nullptr) throw false;
 
     // Add an ending snapshot object
-    if (t==trials-1) gflow->addDataObject(new EndingSnapshot(gflow));
+    if (snapshot && t==trials-1) gflow->addDataObject(new EndingSnapshot(gflow));
 
     // Find data objects.
     DataMaster *master = gflow->getDataMaster();
@@ -124,7 +126,7 @@ int main(int argc, char **argv) {
     // Store data
     allData.push_back(single_data);
 
-    // At the last trial
+    // At the last trial, record some data.
     if (t==trials-1) {
       // Create the directory
       mkdir(writeDirectory.c_str(), 0777);
