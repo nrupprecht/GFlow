@@ -326,9 +326,11 @@ namespace GFlowSimulation {
     if (parser.begin("Fill")) {
       FillAreaCreator fa;
       PolymerCreator pc;
+      WallCreator wc;
       do {
         if      (parser.argName()=="Area")    fa.createArea(parser.getNode(), gflow, variables, particle_fixers);
         else if (parser.argName()=="Polymer") pc.createArea(parser.getNode(), gflow, variables, particle_fixers);
+        else if (parser.argName()=="Wall")    wc.createArea(parser.getNode(), gflow, variables, particle_fixers);
         else throw BadStructure("Unrecognized fill option: [" + parser.argName() + "].");
       } while (parser.next());
     }
@@ -405,65 +407,29 @@ namespace GFlowSimulation {
         }
       }
     }
-    // Look for general options
-    ParseHelper parser(head);
-    parser.set_variables(variables);
-    parser.addValidSubheading("Delay");
-    parser.addValidSubheading("MaxDT");
-    parser.addValidSubheading("MinDT");
-    parser.addValidSubheading("Adjust");
-    parser.addValidSubheading("UseV");
-    parser.addValidSubheading("UseA");
-    parser.sortOptions();
-    HeadNode *hd = nullptr;
 
-    parser.getHeading_Optional("Delay");
-    hd = parser.first();
-    if (hd) {
-      int steps = 0;
-      parser.extract_first_parameter(steps, hd);
-      integrator->setStepDelay(steps);
-    }
+    // Create parser, with variables.
+    TreeParser parser(head, variables);
+    // Declare valid options.
+    parser.addHeadingOptional("Number");
+    parser.addHeadingOptional("MaxDT");
+    parser.addHeadingOptional("MinDT");
+    parser.addHeadingOptional("Adjust");
+    parser.addHeadingOptional("UseV");
+    parser.addHeadingOptional("UseA");
+    // Check headings for validity.
+    parser.check();
 
-    parser.getHeading_Optional("MaxDT");
-    hd = parser.first();
-    if (hd) {
-      RealType max_dt;
-      parser.extract_first_parameter(max_dt, hd);
-      if (max_dt>0) integrator->setMaxDT(max_dt);
-    }
+    int ivalue = 0;
+    RealType rvalue = 0.;
+    bool bvalue = false;
 
-    parser.getHeading_Optional("MinDT");
-    hd = parser.first();
-    if (hd) {
-      RealType min_dt;
-      parser.extract_first_parameter(min_dt, hd); 
-      if (min_dt>0) integrator->setMinDT(min_dt);
-    }
-
-    parser.getHeading_Optional("Adjust");
-    hd = parser.first();
-    if (hd) {
-      int adj;
-      parser.extract_first_parameter(adj, hd); 
-      if (adj>=0) integrator->setAdjustDT(adj);
-    }
-
-    parser.getHeading_Optional("UseV");
-    hd = parser.first();
-    if (hd) {
-      int u;
-      parser.extract_first_parameter(u, hd); 
-      if (u>=0) integrator->setUseV(u);
-    }
-
-    parser.getHeading_Optional("UseA");
-    hd = parser.first();
-    if (hd) {
-      int u;
-      parser.extract_first_parameter(u, hd); 
-      if (u>=0) integrator->setUseA(u);
-    }
+    if (parser.firstArg("Number", ivalue)) integrator->setStepDelay(ivalue);
+    if (parser.firstArg("MaxDT", rvalue) && rvalue>0) integrator->setMaxDT(rvalue);
+    if (parser.firstArg("MinDT", rvalue) && rvalue>0) integrator->setMinDT(rvalue);
+    if (parser.firstArg("Adjust", bvalue)) integrator->setAdjustDT(bvalue);
+    if (parser.firstArg("UseV", bvalue)) integrator->setUseV(bvalue);
+    if (parser.firstArg("UseA", bvalue)) integrator->setUseA(bvalue);
 
     // Return
     return integrator;
@@ -579,8 +545,8 @@ namespace GFlowSimulation {
 
   inline void FileParseCreator::makeRandomForces() {
     // Assign random interactions, either LennardJones or HardSphere (for now), and with equal probability (for now)
-    Interaction *hs = InteractionChoice::choose(gflow, InteractionChoice::HardSphereToken, sim_dimensions); 
-    Interaction *lj = InteractionChoice::choose(gflow, InteractionChoice::LennardJonesToken, sim_dimensions);
+    Interaction *hs = InteractionChoice::choose(gflow, HardSphereToken, sim_dimensions); 
+    Interaction *lj = InteractionChoice::choose(gflow, LennardJonesToken, sim_dimensions);
     // Assign random (but symmetric) interactions
     for (int i=0; i<NTypes; ++i) {
       // Self interaction

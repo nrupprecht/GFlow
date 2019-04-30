@@ -63,6 +63,9 @@ namespace GFlowSimulation {
     //! \brief Get the type of the data object.
     DataObjectType getType() const;
 
+    //! \brief Get the value of lastRecording.
+    RealType getLastRecording() const;
+
     // --- Mutators
 
     //! \brief Set the data rate.
@@ -70,6 +73,18 @@ namespace GFlowSimulation {
 
     //! \brief Set the locals_changed flag.
     void setLocalsChanged(bool);
+
+    //! \brief Reset the total objects counter to zero.
+    //static void resetTotalObjects();
+
+    //! \brief Get the object's counter.
+    int getObjectCounter();
+
+    //! \brief Set the data name.
+    void setDataName(const string&);
+
+    //! \brief Set the value of lastRecording.
+    void setLastRecording(RealType);
 
     // GFlow is a friend class
     friend class GFlow;
@@ -104,6 +119,12 @@ namespace GFlowSimulation {
 
     //! \brief The last time data was recorded.
     RealType lastRecording;
+
+    //! \brief How many data objects have ever been created.
+    static int total_objects;
+
+    //! \brief What number data object this is.
+    int object_counter;
   };
 
 }

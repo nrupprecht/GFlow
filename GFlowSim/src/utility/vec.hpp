@@ -64,6 +64,17 @@ namespace GFlowSimulation {
       v.data = nullptr;
     }
 
+    friend bool operator==(const Vec& v1, const RealType *v2) {
+      for (int d=0; d<v1.dimensions; ++d) 
+        if (v1.data[d]!=v2[d]) return false;
+      // Otherwise
+      return true;
+    }
+
+    friend bool operator!=(const Vec& v1, const RealType *v2) {
+      return !(v1==v2);
+    }
+
     friend std::ostream& operator<<(std::ostream& out, const Vec& v) {
       // Opening bracket
       out << "{";
@@ -84,6 +95,10 @@ namespace GFlowSimulation {
     //! \brief Access square brackets operator.
     RealType& operator[](int i) const { return data[i]; }
 
+    void set1(RealType r) {
+      for (int d=0; d<dimensions; ++d) data[d] = r;
+    }
+
     //! \brief Set the vector to be the zero vector.
     void zero() {
       for (int d=0; d<dimensions; ++d) data[d] = 0;
@@ -92,6 +107,13 @@ namespace GFlowSimulation {
     //! \brief Set the vector to be its addative inverse, V <- -V.
     void negate() {
       for (int d=0; d<dimensions; ++d) data[d] = -data[d];
+    }
+
+    void normalize() {
+      RealType acc = 0;
+      for (int d=0; d<dimensions; ++d) acc += data[d]*data[d];
+      acc = sqrt(acc);
+      for (int d=0; d<dimensions; ++d) data[d] /= acc;
     }
 
     //! \brief Return the size of the vector.
@@ -137,6 +159,23 @@ namespace GFlowSimulation {
       for (int i=0; i<a.dimensions; ++i) acc = a[i]*b[i];
       // Return vector
       return acc;
+    }
+
+    friend Vec operator*(const RealType scalar, const Vec v) {
+      Vec out(v.dimensions);
+      // Scalar multiply vector.
+      for (int i=0; i<v.dimensions; ++i) out[i] = scalar*v[i];
+      // Return vector
+      return out;
+    }
+
+    friend RealType distanceVec(const Vec a, const Vec b) {
+      // Check dimensions
+      if (a.dimensions!=b.dimensions) throw DimensionMismatch("Disctance vec.");
+      // Accumulate
+      RealType acc = 0;
+      for (int i=0; i<a.dimensions; ++i) acc += (a[i] - b[i])*(a[i] - b[i]);
+      return sqrt(acc);
     }
 
     //! \brief The actual vector data.

@@ -7,6 +7,7 @@
 #include "allmodifiers.hpp"
 #include "alltopologies.hpp"
 #include "allbonded.hpp"
+#include "base/dataobject.hpp"
 
 namespace GFlowSimulation {
 
@@ -23,7 +24,9 @@ namespace GFlowSimulation {
     numProc = MPI::COMM_WORLD.Get_size();
     #endif
     #endif
-    // Set up basic objects. The integrator will be created by the creator
+    // Set the static counter.
+    //DataObject::resetTotalObjects();
+    // Set up basic objects. The integrator will be created by the creator.
     simData      = new SimData(this);
     integrator   = nullptr;
     domain       = new Domain(this);
@@ -409,6 +412,10 @@ namespace GFlowSimulation {
     return sqrt(dist);
   }
 
+  RunMode GFlow::getRunMode() {
+    return runMode;
+  }
+
   void GFlow::addInteraction(Interaction *inter) {
     if (inter!=nullptr && !contains(interactions, inter))
       interactions.push_back(inter);
@@ -482,8 +489,11 @@ namespace GFlowSimulation {
     requested_time = t;
   }
 
-  void GFlow::wrapPositions() {
+  void GFlow::setElapsedTime(RealType t) {
+    elapsed_time = t;
+  }
 
+  void GFlow::wrapPositions() {
     int size = simData->size();
     for (int n=0; n<size; ++n) 
       for (int d=0; d<sim_dimensions; ++d) {

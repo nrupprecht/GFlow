@@ -68,7 +68,7 @@ namespace GFlowSimulation {
     gflow->forceMaster->setNTypes(1);
     Interaction *force;
     if (lj) force = new LennardJones_VerletPairs_2d(gflow);
-    else force = new HardSphere_VerletPairs_2d(gflow);
+    else force = new HardSphere_Reflecting_2d(gflow);
     gflow->forceMaster->setInteraction(0, 0, force);
 
     // Set skin depth

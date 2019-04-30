@@ -16,6 +16,25 @@ namespace GFlowSimulation {
     data.clear();
   }
 
+  void GraphObject::addEntry(RealType t, RealType f) {
+    data.push_back(RPair(t, f));
+  }
+
+  RealType GraphObject::ave() const {
+    if (data.empty()) return 0;
+    // Accumulator
+    RealType total = 0;
+    // Tally 
+    for (auto v : data) total += v.second;
+    // Temporal average
+    return total / (data.size());
+  }
+
+  void GraphObject::setAxes(const string& ax, const string& ay) {
+    axis_x = ax;
+    axis_y = ay;
+  }
+
   bool GraphObject::writeToFile(string fileName, bool useName) {
     // Check if there's anything to do
     if (data.empty()) return true;
@@ -24,7 +43,7 @@ namespace GFlowSimulation {
 
     // Create a directory for all the data
     mkdir(dirName.c_str(), 0777);
-    ofstream fout(dirName+dataName+".csv");
+    ofstream fout(dirName+dataName+"-"+toStr(object_counter)+".csv");
     if (fout.fail()) return false;
     // Print out the data
     for (auto v : data) fout << v.first << "," << v.second << endl;
@@ -50,16 +69,6 @@ namespace GFlowSimulation {
 
     // Return success
     return true;
-  }
-
-  RealType GraphObject::ave() {
-    if (data.empty()) return 0;
-    // Accumulator
-    RealType total = 0;
-    // Tally 
-    for (auto v : data) total += v.second;
-    // Temporal average
-    return total / (data.size());
   }
 
 }

@@ -21,8 +21,14 @@ namespace GFlowSimulation {
     //! \brief Clear the data.
     virtual void pre_integrate() override;
 
+    //! \brief Add an entry to the data array.
+    void addEntry(RealType, RealType);
+
     //! \brief Compute averages of data.
-    RealType ave();
+    RealType ave() const;
+
+    //! \brief Set the names of the axes.
+    void setAxes(const string&, const string&);
 
     //! \brief Write data to a file - if true, the string is a path, and you should use your own name as the file name.
     //!

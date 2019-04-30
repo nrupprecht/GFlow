@@ -33,6 +33,9 @@ namespace GFlowSimulation {
 
     void clear_all_data_entries();
 
+    // The demon modifer is a friend.
+    friend class Demon;
+
   private:
 
     //! \brief  The time steps of when the data was gathered

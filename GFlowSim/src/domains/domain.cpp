@@ -59,6 +59,9 @@ namespace GFlowSimulation {
     // Calculate the maxiumu "small sigma"
     calculate_max_small_sigma();
 
+    // Calculate skin depth
+    skin_depth = 0.5 * max_small_sigma;
+
     // Use max_small_sigma
     min_small_cutoff = target_cell_size = 2*max_small_sigma+skin_depth;
 

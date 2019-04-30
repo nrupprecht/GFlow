@@ -55,7 +55,7 @@ namespace GFlowSimulation {
     double phi(0);
     
     // There must be a "Number" heading, since it is required.
-    parser.focus("Number");
+    parser.focus0("Number");
     // Check if this is using phi or number 
     if (parser.argName()=="Phi") {
       parser.val(phi);
@@ -88,7 +88,6 @@ namespace GFlowSimulation {
       // Return the parser to the original level.
       parser.end();
     }
-    parser.up();
 
     // --- Velocity. How to choose particle velocities. We will find a better / more expressive way to do this later.
     Vec Vs(sim_dimensions);
@@ -99,7 +98,7 @@ namespace GFlowSimulation {
     // 0 - Normal
     // 1 - Specified vector
     // 2 - Exponential distribution of kinetic energies.
-    if (parser.focus("Velocity")) {
+    if (parser.focus0("Velocity")) {
       // Choose velocity to be a random normal magnitude vector
       if (parser.argName()=="" || parser.argName()=="Normal") {
         // Get the target kinetic energy, if specified.

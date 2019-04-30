@@ -49,7 +49,7 @@ namespace GFlowSimulation {
 
     // Use hard sphere forces
     int ntypes = gflow->getNTypes();
-    Interaction *hsForce = InteractionChoice::choose(gflow, InteractionChoice::HardSphereToken, sim_dimensions);
+    Interaction *hsForce = InteractionChoice::choose(gflow, HardSphereToken, sim_dimensions);
     
     // New force master - has only hard sphere forces.
     ForceMaster forceMaster(gflow, ntypes);

@@ -14,6 +14,8 @@
 #include "interactions/hard_sphere_ds__verlet_pairs__2d.hpp"
 #include "interactions/hard_sphere_ds__verlet_pairs__3d.hpp"
 
+#include "interactions/hard_sphere__reflecting__2d.hpp"
+
 #include "interactions/lennard_jones__verlet_pairs__2d.hpp"
 #include "interactions/lennard_jones__verlet_pairs__3d.hpp"
 
@@ -23,5 +25,8 @@
 #include "interactions/detector.hpp"
 #include "interactions/detector__2d.hpp"
 #include "interactions/detector__3d.hpp"
+
+// Specialized
+#include "interactions/demon_wall.hpp"
 
 #endif // __ALL_FORCES_HPP__GFLOW__

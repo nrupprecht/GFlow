@@ -137,7 +137,7 @@ namespace GFlowSimulation {
     if (wx>wy) res_y = wy/wx*resolution;
     else if (wy>wx) res_x = wx/wy*resolution;
     // Create the main palette
-    Palette palette(resolution, resolution);
+    Palette palette(res_x, res_y);
     palette.coverPalette(RGB_Black);
     Palette sub1 = palette.getSubPaletteCentered(0.01); // Get a centered subset
     sub1.coverPalette(RGB_White);

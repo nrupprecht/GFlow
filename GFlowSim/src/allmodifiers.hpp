@@ -16,5 +16,6 @@
 
 // Specific
 #include "modifiers/twowallmodifier.hpp"
+#include "modifiers/demon.hpp"
 
 #endif // __ALL_MODIFIERS_HPP__GFLOW__

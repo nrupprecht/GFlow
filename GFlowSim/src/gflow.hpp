@@ -188,6 +188,9 @@ namespace GFlowSimulation {
     //! \brief Set the amount of time we should run for.
     void requestTime(RealType);
 
+    //! \brief Set the elapsed time.
+    void setElapsedTime(RealType);
+
     //! \brief Keep positions in bounds.
     void wrapPositions();
 
@@ -247,6 +250,7 @@ namespace GFlowSimulation {
     // Other friend classes
     friend class ForceMaster;
     friend class DataMaster;
+    friend class DataObject;
     friend class Base;
 
   protected:

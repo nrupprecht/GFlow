@@ -3,10 +3,16 @@
 namespace GFlowSimulation {
 
   DataObject::DataObject(GFlow *gflow, const string& name) 
-    : Base(gflow), dataName(name), delay(1./20.), lastRecording(-10.), type(DataObjectType::GENERAL), locals_changed(false) {};
+    : Base(gflow), dataName(name), delay(1./20.), lastRecording(-10.), type(DataObjectType::GENERAL), locals_changed(false) {
+      object_counter = 1; //total_objects;
+      //++total_objects;
+    };
 
   DataObject::DataObject(GFlow *gflow, const string& name, DataObjectType t)
-    : Base(gflow), dataName(name), delay(1./20.), lastRecording(-10.), type(t), locals_changed(false) {};
+    : Base(gflow), dataName(name), delay(1./20.), lastRecording(-10.), type(t), locals_changed(false) {
+      object_counter = 1; //total_objects;
+      //++total_objects;
+    };
 
   void DataObject::pre_integrate() {
     lastRecording = -10;
@@ -20,6 +26,10 @@ namespace GFlowSimulation {
     return type;
   }
 
+  RealType DataObject::getLastRecording() const {
+    return lastRecording;
+  }
+
   void DataObject::setFPS(RealType fps) {
     delay = 1./fps;
   }
@@ -28,12 +38,30 @@ namespace GFlowSimulation {
     locals_changed = r;
   }
 
+  /*
+  void DataObject::resetTotalObjects() {
+    total_objects = 0;
+  }
+  */
+
+  int DataObject::getObjectCounter() {
+    return object_counter;
+  }
+
+  void DataObject::setDataName(const string& d) {
+    dataName = d;
+  }
+
+  void DataObject::setLastRecording(RealType t) {
+    lastRecording = t;
+  }
+
   string DataObject::_correctDirName(string fileName) {
     string dirName = fileName;
     if (*fileName.rbegin()=='/') // Make sure there is a /
       dirName += dataName+"/";
     else 
-      dirName += ("/"+dataName+"/");
+      dirName += ("/"+dataName+"-"+toStr(object_counter)+"/");
     return dirName;
   }
 
