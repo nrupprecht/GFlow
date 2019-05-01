@@ -14,6 +14,7 @@
 #include "dataobjects/percolationsnapshot.hpp"
 #include "dataobjects/positiondata.hpp"
 #include "dataobjects/twogroupstatistics.hpp"
+#include "dataobjects/parameters.hpp"
 
 // Graph objects
 #include "dataobjects/graphobjects/avevelocitydata.hpp"

@@ -127,6 +127,38 @@ namespace GFlowSimulation {
     }
   }
 
+  void Demon::post_integrate() {
+    // Only run in simulation mode
+    if (gflow->getRunMode()!=RunMode::SIM) return;
+
+    // Create parameters object
+    Parameters *parameters = new Parameters(gflow);
+
+    // Compute door area
+    RealType door_area = 0;
+    if (size()>0) {
+      // Update local variables
+      update_local_ids(simData);
+      // Look for bounding box.
+      RealType mn = door_positions[0][1], mx = door_positions[0][1];
+      for (const auto& v : door_positions) {        
+        RealType y = v[1];
+        if      (y<mn) mn = y;
+        else if (mx<y) mx = y;
+      }
+      // Compute door area
+      door_area = mx - mn;
+    }
+  
+    // Record parameters
+    parameters->addRecord("Vol", 0.5*gflow->getBounds().vol()); // This assumes the partitions have equal sizes.
+    parameters->addRecord("Tau", tau);
+    parameters->addRecord("Area", door_area);
+
+    // Add to gflow
+    gflow->addDataObject(parameters);
+  }
+
   bool Demon::should_door_open(int nl, int nr, RealType el, RealType er) {
     return check_choice(nl, nr, el, er);
   }

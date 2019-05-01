@@ -40,7 +40,7 @@ namespace GFlowSimulation {
   }
 
   //! \brief Triple product of two dimensional vectors, a x ( b x c).
-  template<typename T> inline T tripleProduct2(const T *x, const T *y, const T *z, T *out) {
+  template<typename T> inline void tripleProduct2(const T *x, const T *y, const T *z, T *out) {
     RealType yz = y[0]*z[1] - y[1]*z[0];
     out[0] = x[1]*yz;
     out[1] = x[0]*yz;

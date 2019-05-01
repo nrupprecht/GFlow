@@ -62,6 +62,8 @@ namespace GFlowSimulation {
       data = v.data;
       // So v doesn't delete our data.
       v.data = nullptr;
+      // Return 
+      return *this;
     }
 
     friend bool operator==(const Vec& v1, const RealType *v2) {

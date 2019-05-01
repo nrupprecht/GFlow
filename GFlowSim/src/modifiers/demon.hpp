@@ -25,6 +25,9 @@ namespace GFlowSimulation {
     //! \brief Checkpointing should take place pre forces, so the forces do not have to be checkpointed
     virtual void pre_forces() override;
 
+    //! \brief Set data in the parameters object.
+    virtual void post_integrate() override;
+
     //! \brief The decision criteria of whether to open the door or not.
     //!
     //! \param nl The number of particles that pass from left to right.

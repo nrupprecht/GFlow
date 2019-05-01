@@ -19,6 +19,8 @@ namespace GFlowSimulation {
     if (val=="-") return left->evaluate(variables) - right->evaluate(variables);
     if (val=="*") return left->evaluate(variables) * right->evaluate(variables);
     if (val=="/") return left->evaluate(variables) / right->evaluate(variables);
+    // Unrecognized.
+    else return 0;
   }
 
   void EvaluationNode::print(std::ostream& out, int level) const {

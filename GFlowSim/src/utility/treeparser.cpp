@@ -125,8 +125,11 @@ namespace GFlowSimulation {
     if (-1<i || i<focus_node->params.size()) {
       arg = focus_node->params[i]->partA;
       val = focus_node->params[i]->partB;
+      return true;
     }
-    else arg = val = "";
+    // Else
+    arg = val = "";
+    return false;
   }
 
   void TreeParser::check(bool quiet) const {
