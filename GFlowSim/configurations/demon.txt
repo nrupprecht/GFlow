@@ -5,6 +5,7 @@ Var: phi=0.025
 Var: radius=0.025
 Var: width=20 // Box width
 Var: length=0.5 // Door area (length)
+Var: tau=0.25
 
 // Set the simulation bounds - a box with a given width.
 Bounds: {
@@ -21,11 +22,11 @@ NTypes: 4
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
 Force-grid: {
-  : 0, 0, None
-  : 0, 1, None
-  : 1, 1, None
+  : 0, 0, None // HardSphereReflecting
+  : 0, 1, None // HardSphereReflecting
+  : 1, 1, None // HardSphereReflecting
 
-  : 0, 2, HardSphereReflecting // HardSphereReflecting
+  : 0, 2, HardSphereReflecting
   : 1, 2, HardSphereReflecting
   : 0, 3, DemonWall
   : 1, 3, DemonWall
@@ -93,6 +94,6 @@ Fill: Wall {
   Type: 3
 
   Modifier: Demon {
-    Tau: 0.25
+    Tau: tau
   }
 }

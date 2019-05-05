@@ -121,6 +121,38 @@ namespace GFlowSimulation {
     else return "";
   }
 
+  bool TreeParser::firstArgVec(const string& name, Vec& V) const {
+    // Look for the specified heading.
+    auto p = headings.find(name);
+    // The heading exists.
+    if (p!=headings.end()) {
+      HeadNode *h = p->second;
+      // If no arguments, don't modify V, and return false.
+      if (h->params.empty()) return false;
+      // Resize V
+      V = Vec(h->params.size());
+      // Set all components.
+      for (int i=0; i<h->params.size(); ++i)
+        V[i] = cast<RealType>(h->params[i]->partA);
+      // Return true.
+      return true;
+    }
+    // No such heading. Return and empty Vec.
+    return false; 
+  }
+
+  bool TreeParser::firstArgVec(Vec& V) const {
+    // If no arguments, return false.
+    if (focus_node->params.empty()) return false;
+    // Resize vector.
+    V = Vec(focus_node->params.size());
+    // Set vector.
+    for (int i=0; i<focus_node->params.size(); ++i)
+      V[i] = cast<RealType>(focus_node->params[i]->partA);
+    // Return true.
+    return true;
+  }
+
   bool TreeParser::argvalName(string& arg, string& val, int i) const {
     if (-1<i || i<focus_node->params.size()) {
       arg = focus_node->params[i]->partA;

@@ -26,6 +26,19 @@ namespace GFlowSimulation {
     ParserOutOfBounds(const string& mess) : Exception(mess) {};
   };
 
+  //! \brief Exception class for unexpected options.
+  struct UnexpectedOption : public Exception{
+    UnexpectedOption() : Exception() {};
+    UnexpectedOption(const string& m) : Exception(m) {};
+  };
+
+  //! \brief Exception class for bad parse structure.
+  struct BadStructure {
+    BadStructure() : message("") {};
+    BadStructure(string mess) : message(mess) {};
+    string message;
+  };
+
   /**
   *  \brief A class designed to make it easy to extract parameters from a file parse tree.
   *
@@ -82,22 +95,138 @@ namespace GFlowSimulation {
     Vec argVec(const string&) const;
 
     //! \brief Get the i-th argument name as a value. Only sets val if the argument exists. Otherwise, returns false.
-    template<typename T> bool arg(T&, int=0) const;
+    //! \brief Get the i-th argument name as a value. Only sets val if the argument exists. Otherwise, returns false.
+    template<typename T> bool arg(T &val, int i=0) const {
+      // Make sure the argument exists.
+      if (-1<i || i<focus_node->params.size()) {
+        string v = focus_node->params[i]->partA;
+        auto p = variables.find(v);
+        // If the string was a variable.
+        if (p!=variables.end()) val = convert<T>(p->second);
+        // Otherwise, it was a value.
+        else val = convert<T>(v);
+        // Return true.
+        return true;
+      }
+      // If the argument did not exist, do not set val. Return false.
+      return false;
+    }
 
-    //! \brief Return the i-th argument, cast as a type.
-    template<typename T> T arg_cast(int=0) const;
+    template<> bool arg<RealType>(RealType &val, int i) const {
+      // Make sure the argument exists.
+      if (-1<i || i<focus_node->params.size()) {
+        string v = focus_node->params[i]->partA;
+        auto p = variables.find(v);
+        // If the string was a variable.
+        if (p!=variables.end()) val = Eval::evaluate(p->second, variables);
+        // Otherwise, it was a value.
+        else val = Eval::evaluate(v, variables);
+        // Return true.
+        return true;
+      }
+      // If the argument did not exist, do not set val. Return false.
+      return false;
+    }
 
-    //! \brief Get the first argument of a heading as a value. Only sets val if the heading and argument exist. Otherwise, returns false.
-    template<typename T> bool firstArg(const string&, T&) const;
+    template<typename T> T arg_cast(int i=0) const {
+      // If the argument exists, convert it and return it.
+      if (-1<i || i<focus_node->params.size()) 
+        return cast<T>(focus_node->params[i]->partA);
+      // Otherwise, return zero.
+      else return T(0);
+    }
 
-    //! \brief Get the first argument of the focus node as a value. Only sets val if the heading and argument exist. Otherwise, returns false.
-    template<typename T> bool firstArg(T&) const;
+    template<> RealType arg_cast<RealType>(int i) const {
+      // If the argument exists, convert it and return it.
+      if (-1<i || i<focus_node->params.size()) 
+        return Eval::evaluate(focus_node->params[i]->partA, variables);
+      // Otherwise, return zero.
+      else return 0.;
+    }
+
+    template<typename T> bool firstArg(const string &name, T& val) const {
+      // Look for the heading
+      auto p = headings.find(name);
+      // Make sure the heading exists.
+      if (p!=headings.end()) {
+        HeadNode *node = p->second;
+        if (!node->params.empty() && node->params[0]->partA!="") {
+          val = cast<T>(node->params[0]->partA);
+          // Return true.
+          return true;
+        }
+        // If the argument did not exist, do not set val. Return false.
+        return false;
+      }
+      // If the heading does not exist, return false.
+      return false;
+    }
+
+    template<> bool firstArg<RealType>(const string &name, RealType& val) const {
+      // Look for the heading
+      auto p = headings.find(name);
+      // Make sure the heading exists.
+      if (p!=headings.end()) {
+        HeadNode *node = p->second;
+        if (!node->params.empty() && node->params[0]->partA!="") {
+          val = Eval::evaluate(node->params[0]->partA, variables);
+          // Return true.
+          return true;
+        }
+        // If the argument did not exist, do not set val. Return false.
+        return false;
+      }
+      // If the heading does not exist, return false.
+      return false;
+    }
+
+    template<typename T> bool firstArg(T& val) const {
+      // Make sure the argument exists.
+      if (!focus_node->params.empty() && focus_node->params[0]->partA!="") {
+        val = cast<T>(focus_node->params[0]->partA);
+        return true;
+      }
+      // There were no arguments
+      return false;
+    }
+
+    template<> bool firstArg<RealType>(RealType& val) const {
+      // Make sure the argument exists.
+      if (!focus_node->params.empty() && focus_node->params[0]->partA!="") {
+        val = Eval::evaluate(focus_node->params[0]->partA, variables);
+        return true;
+      }
+      // There were no arguments
+      return false;
+    }
+
+    //! \brief Get the arguments of a heading as a vector, if there are one or more of them. Otherwise, return false.
+    bool firstArgVec(const string&, Vec&) const;
+
+    //! \brief Get the arguments of the focus node as a vector, if there are one or more of them. Otherwise, return false.
+    bool firstArgVec(Vec&) const;
 
     //! \brief Get the value string of the i-th argument.
     string valName(int=0) const;
 
     //! \brief Get value of the i-th argument as a value. 
-    template<typename T> bool val(T&, int=0) const;
+    template<typename T> bool val(T& val, int i=0) const {
+      if ((-1<i || i<focus_node->params.size()) && focus_node->params[i]->partB!="") {
+        val = cast<T>(focus_node->params[i]->partB);
+        // Return true.
+        return true;
+      }
+      else return false;
+    }
+
+    template<> bool val<RealType>(RealType& val, int i) const {
+      if ((-1<i || i<focus_node->params.size()) && focus_node->params[i]->partB!="") {
+        val = Eval::evaluate(focus_node->params[i]->partB, variables);
+        // Return true.
+        return true;
+      }
+      else return false;
+    }
 
     //! \brief The the argument name and value of the i-th argument, via the string references.
     //! 
@@ -141,7 +270,18 @@ namespace GFlowSimulation {
   private:
 
     //! \brief Convert a string to a value, checking if the string is a variable.
-    template<typename T> T cast(const string&) const;
+    template<typename T> T cast(const string& val) const {
+      // Check if val is a variable.
+      auto p = variables.find(val);
+      // If the string was a variable.
+      if (p!=variables.end()) return convert<T>(p->second);
+      // Otherwise, it was a value.
+      else return convert<T>(val);
+    }
+
+    template<> RealType cast<RealType>(const string& val) const {
+      return Eval::evaluate(val, variables);
+    }
 
     //! \brief The head node for this parser. We cannot go up above this level.
     HeadNode *head;
@@ -176,146 +316,6 @@ namespace GFlowSimulation {
     int point = -1;
 
   };
-
-  // ---------------------------------
-  // --- Define template functions ---
-  // ---------------------------------
-
-  //! \brief Get the i-th argument name as a value. Only sets val if the argument exists. Otherwise, returns false.
-  template<typename T> bool TreeParser::arg(T &val, int i) const {
-    // Make sure the argument exists.
-    if (-1<i || i<focus_node->params.size()) {
-      string v = focus_node->params[i]->partA;
-      auto p = variables.find(v);
-      // If the string was a variable.
-      if (p!=variables.end()) val = convert<T>(p->second);
-      // Otherwise, it was a value.
-      else val = convert<T>(v);
-      // Return true.
-      return true;
-    }
-    // If the argument did not exist, do not set val. Return false.
-    return false;
-  }
-
-  template<> bool TreeParser::arg<RealType>(RealType &val, int i) const {
-    // Make sure the argument exists.
-    if (-1<i || i<focus_node->params.size()) {
-      string v = focus_node->params[i]->partA;
-      auto p = variables.find(v);
-      // If the string was a variable.
-      if (p!=variables.end()) val = Eval::evaluate(p->second, variables);
-      // Otherwise, it was a value.
-      else val = Eval::evaluate(v, variables);
-      // Return true.
-      return true;
-    }
-    // If the argument did not exist, do not set val. Return false.
-    return false;
-  }
-
-  template<typename T> T TreeParser::arg_cast(int i) const {
-    // If the argument exists, convert it and return it.
-    if (-1<i || i<focus_node->params.size()) 
-      return cast<T>(focus_node->params[i]->partA);
-    // Otherwise, return zero.
-    else return T(0);
-  }
-
-  template<> RealType TreeParser::arg_cast<RealType>(int i) const {
-    // If the argument exists, convert it and return it.
-    if (-1<i || i<focus_node->params.size()) 
-      return Eval::evaluate(focus_node->params[i]->partA, variables);
-    // Otherwise, return zero.
-    else return 0.;
-  }
-
-  template<typename T> bool TreeParser::firstArg(const string &name, T& val) const {
-    // Look for the heading
-    auto p = headings.find(name);
-    // Make sure the heading exists.
-    if (p!=headings.end()) {
-      HeadNode *node = p->second;
-      if (!node->params.empty() && node->params[0]->partA!="") {
-        val = cast<T>(node->params[0]->partA);
-        // Return true.
-        return true;
-      }
-      // If the argument did not exist, do not set val. Return false.
-      return false;
-    }
-    // If the heading does not exist, return false.
-    return false;
-  }
-
-  template<> bool TreeParser::firstArg<RealType>(const string &name, RealType& val) const {
-    // Look for the heading
-    auto p = headings.find(name);
-    // Make sure the heading exists.
-    if (p!=headings.end()) {
-      HeadNode *node = p->second;
-      if (!node->params.empty() && node->params[0]->partA!="") {
-        val = Eval::evaluate(node->params[0]->partA, variables);
-        // Return true.
-        return true;
-      }
-      // If the argument did not exist, do not set val. Return false.
-      return false;
-    }
-    // If the heading does not exist, return false.
-    return false;
-  }
-
-  template<typename T> bool TreeParser::firstArg(T& val) const {
-    // Make sure the argument exists.
-    if (!focus_node->params.empty() && focus_node->params[0]->partA!="") {
-      val = cast<T>(focus_node->params[0]->partA);
-      return true;
-    }
-    // There were no arguments
-    return false;
-  }
-
-  template<> bool TreeParser::firstArg<RealType>(RealType& val) const {
-    // Make sure the argument exists.
-    if (!focus_node->params.empty() && focus_node->params[0]->partA!="") {
-      val = Eval::evaluate(focus_node->params[0]->partA, variables);
-      return true;
-    }
-    // There were no arguments
-    return false;
-  }
-
-  template<typename T> bool TreeParser::val(T& val, int i) const {
-    if ((-1<i || i<focus_node->params.size()) && focus_node->params[i]->partB!="") {
-      val = cast<T>(focus_node->params[i]->partB);
-      // Return true.
-      return true;
-    }
-    else return false;
-  }
-
-  template<> bool TreeParser::val<RealType>(RealType& val, int i) const {
-    if ((-1<i || i<focus_node->params.size()) && focus_node->params[i]->partB!="") {
-      val = Eval::evaluate(focus_node->params[i]->partB, variables);
-      // Return true.
-      return true;
-    }
-    else return false;
-  }
-
-  template<typename T> T TreeParser::cast(const string& val) const {
-    // Check if val is a variable.
-    auto p = variables.find(val);
-    // If the string was a variable.
-    if (p!=variables.end()) return convert<T>(p->second);
-    // Otherwise, it was a value.
-    else return convert<T>(val);
-  }
-
-  template<> RealType TreeParser::cast<RealType>(const string& val) const {
-    return Eval::evaluate(val, variables);
-  }
 
 }
 #endif // __TREE_PARSER_HPP__GFLOW__

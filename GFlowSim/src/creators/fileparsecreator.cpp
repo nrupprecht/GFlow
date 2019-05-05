@@ -5,8 +5,6 @@
 #include "../interactions/interaction-choice.hpp"
 #include "../allareacreators.hpp"
 
-#include "../utility/treeparser.hpp"
-
 namespace GFlowSimulation {
 
   FileParseCreator::FileParseCreator(int argc, char **argv) : Creator(argc, argv), configFile(""), gflow(nullptr) {
@@ -92,7 +90,7 @@ namespace GFlowSimulation {
       createFromOptions(root);
     }
     catch (BadStructure bs) {
-      cout << "Caught Bad Structure error: Message: [" << bs.message << "]\n";
+      cout << "--> Caught Bad Structure error: Message: [" << bs.message << "]\n";
       cout << "Build Message:\n" << build_message << endl;
       // Print the parse tree to a file so we can debug
       ofstream fout("ParseTrace.txt");
@@ -104,7 +102,7 @@ namespace GFlowSimulation {
       throw;
     }
     catch (UnexpectedOption uo) {
-      cout << "Caught Unexpected Option error: " << uo.message << endl;
+      cout << "--> Caught Unexpected Option error: " << uo.message << endl;
       cout << "Build Message:\n" << build_message << endl;
       // Print the parse tree to a file so we can debug
       ofstream fout("ParseTrace.txt");
@@ -448,11 +446,14 @@ namespace GFlowSimulation {
   }
 
   inline void FileParseCreator::add_modifier(HeadNode *head) const {
-    ParseHelper parser(nullptr);
-    parser.set_variables(variables);
-    string token = head->params[0]->partA;
-    if (token=="WindTunnel")
-      gflow->addModifier(new WindTunnel(gflow, parser.value<RealType>(head->params[0]->partB)));
+    TreeParser parser(head, variables);
+    string token = parser.argName();
+
+    if (token=="WindTunnel") {
+      RealType velocity = 0;
+      parser.val(velocity);
+      gflow->addModifier(new WindTunnel(gflow, velocity));
+    }
     else throw UnexpectedOption("Modifier choice was ["+token+"].");
   }
 
@@ -460,83 +461,63 @@ namespace GFlowSimulation {
     // Check if head is good
     if (head==nullptr) return;
 
-    // Create a parse helper
-    ParseHelper parser(head);
-    parser.set_variables(variables);
-    // Declare valid options
-    parser.addValidSubheading("Position");
-    parser.addValidSubheading("Velocity");
-    parser.addValidSubheading("Sigma");
-    parser.addValidSubheading("Type");
-    parser.addValidSubheading("Mass");
-    parser.addValidSubheading("Modifier");
-    // Make sure only valid options were used
-    if (!parser.checkValidSubHeads()) {
-      cout << "Warning: Invalid Headings:\n";
-      for (auto ih : parser.getInvalidSubHeads())
-        cout << " -- Heading: " << ih << endl;
-    }
-    // Sort options
-    parser.sortOptions();
-    // Pointer for head nodes
-    HeadNode *hd = nullptr;
-
-    // --- Sort options
-    std::multimap<string, HeadNode*> options;
-    for (auto h : head->subHeads)
-      options.insert(std::pair<string, HeadNode*>(h->heading, h));
-    // Container to collect options in
-    std::vector<HeadNode*> container;
+    TreeParser parser(head, variables);
+    // Declare valid options.
+    parser.addHeadingNecessary("Position", "Particle needs position data.");
+    parser.addHeadingNecessary("Velocity", "Particle needs velocity data.");
+    parser.addHeadingNecessary("Sigma", "Particle needs radius data.");
+    parser.addHeadingOptional("Type");
+    parser.addHeadingOptional("Mass");
+    parser.addHeadingOptional("Modifier");
+    // Check headings for validity.
+    parser.check();
 
     // --- Look for options
     Vec X(sim_dimensions), V(sim_dimensions);
     RealType sigma, im;
     int type;
 
-    // --- Look for position
-    parser.getHeading_Necessary("Position", "Particle needs a position!");
-    hd = parser.first();
-    parser.set_vector_argument(X.data, hd, sim_dimensions);
+    parser.firstArgVec("Position", X);
+    parser.firstArgVec("Velocity", V);
+    parser.firstArg("Sigma", sigma);
+    parser.firstArg("Type", type);
 
-    // --- Look for velocity
-    parser.getHeading_Optional("Velocity");
-    hd = parser.first();
-    if (hd) parser.set_vector_argument(V.data, hd, sim_dimensions);
-    else V.zero();
-
-    // --- Look for sigma
-    parser.getHeading_Necessary("Sigma", "Particle needs a sigma!");
-    hd = parser.first();
-    parser.set_scalar_argument(sigma, hd);
-
-    // --- Look for type
-    parser.getHeading_Optional("Type");
-    hd = parser.first();
-    if (hd) parser.set_scalar_argument(type, hd);
-    else type = 0;
-
-    // --- Look for mass
-    parser.getHeading_Optional("Mass");
-    hd = parser.first();
-    if (hd) {
-      RealType d = 1.;
-      if (hd->params[0]->partA=="inf") im = 0;
-      else if (parser.extract_parameter(hd, "Density", d)) im = 1./(d*sphere_volume(sigma, sim_dimensions));
-      else if (parser.extract_parameter(hd, "Mass", d)) im = 1./d;
-      else throw BadStructure("Unrecognized option for mass in particle creation.");
+    // Get mass
+    if (parser.focus("Mass")) {
+      RealType d = 1;
+      string token = parser.argName();
+      if (token=="inf") im = 0;
+      else if (token=="Density") {
+        if (parser.val(d)) im = 1./(d*sphere_volume(sigma, sim_dimensions));
+        else throw BadStructure("Need to specify the density.");
+      }
+      else { // It must be the mass
+        if (parser.arg(d)) im = 1./d;
+        else throw BadStructure("Need to specify the mass.");
+      }
     }
     else im = 1./sphere_volume(sigma, sim_dimensions); // Default density is 1
+    // Return to top level.
+    parser.up();
 
-    // --- Look for modifiers
-    parser.getHeading_Optional("Modifier");
-    int g_id = gflow->simData->getNextGlobalID();
-    for (auto m=parser.begin(); m!=parser.end(); ++m) {
-      if (m.first_param()=="CV") gflow->addModifier(new ConstantVelocity(gflow, g_id, V.data));
-      else if (m.first_param()=="CV-D") {
-        RealType D = m.first_arg<RealType>();
-        gflow->addModifier(new ConstantVelocityDistance(gflow, g_id, V.data, D));
-      }
-      else BadStructure("Unrecognized modifer option, ["+m.first_param()+"].");
+    // If there is a modifier, set that up.
+    if (parser.begin("Modifier")) {
+      // Next global id - this will be the added particle's global id.
+      int g_id = gflow->simData->getNextGlobalID();
+      // Go through all modifiers.
+      do {
+        string token = parser.argName();
+        // Check token
+        if (token=="CV") {
+          gflow->addModifier(new ConstantVelocity(gflow, g_id, V.data));
+        }
+        else if (token=="CV-D") {
+          RealType D = 0;
+          if (parser.arg(D)) gflow->addModifier(new ConstantVelocityDistance(gflow, g_id, V.data, D));
+          else throw BadStructure("Distance needs to be specified for CV-D modifier.");
+        }
+        else throw BadStructure("Unrecognized modifer option, ["+token+"].");
+      } while (parser.next());
     }
 
     // Add the particle to the system
@@ -564,105 +545,6 @@ namespace GFlowSimulation {
         }
       }
     }
-  }
-
-  inline RandomEngine* FileParseCreator::getRandomEngine(HeadNode *h, string &type) const {
-    // Clear type string
-    type.clear();
-
-    ParseHelper parser(h);
-    parser.set_variables(variables);
-
-    // Check structure
-    if (h->params.size()!=1)
-      throw BadStructure("Random engine needs one parameter, found "+toStr(h->params.size())+".");
-    else if (!h->params[0]->partB.empty()) {
-      // A type is specified
-      type = h->params[0]->partA;
-      // We expect a number in partB
-      return new DeterministicEngine(parser.value<RealType>(h->params[0]->partB));
-    }
-    // If there is no body
-    else if (h->subHeads.empty()) {
-      string token = h->params[0]->partA;
-      // We expect either a number in partA, or a string (e.g. "Inf").
-      if (isdigit(token.at(0))) {
-        return new DeterministicEngine(parser.value<RealType>(token));
-      }
-      else if (h->heading=="Type" && token=="Equiprobable") {
-        type = token;
-        // Only for type - Create each type with equal probability
-        RealType p = 1./NTypes;
-        vector<RealType> probabilities, values;
-        for (int i=0; i<NTypes; ++i) {
-          probabilities.push_back(p);
-          values.push_back(i);
-        }
-        return new DiscreteRandomEngine(probabilities, values);
-      }
-      else {
-        type = token;
-        // The engine will not matter
-        return new DeterministicEngine(0);
-      }
-    }
-
-    // Parameter string
-    string param = h->params[0]->partA;
-    // Check for options:
-    if (param=="Random") {
-      // Discrete Random, with specified values and probabilities
-      vector<RealType> probabilities, values;
-      for (auto sh : h->subHeads) {
-        if (sh->heading!="P")
-          throw BadStructure("Discrete probability should be indicated with a 'P.'");
-        if (sh->params.size()!=2)
-          throw BadStructure("Expect value and probability, encountered "+toStr(sh->params.size())+" options.");
-        if (!sh->params[0]->partB.empty() || !sh->params[1]->partB.empty())
-          throw BadStructure("Expected one part parameters in discrete probability specification.");
-        // Store the value and its probability
-        values.push_back(parser.value<RealType>(sh->params[0]->partA)); 
-        probabilities.push_back(parser.value<RealType>(sh->params[1]->partA));
-      }
-      return new DiscreteRandomEngine(probabilities, values);
-    }
-    else if (param=="Uniform") {
-      if (h->subHeads.size()!=2) 
-        throw BadStructure("Uniform distribution needs a min and a max. Found "+toStr(h->subHeads.size())+" parameters.");
-      HeadNode *lwr = h->subHeads[0], *upr = h->subHeads[1];
-      // Swap if necessary
-      if (lwr->heading!="Min") std::swap(lwr, upr);
-      // Check structure
-      if (lwr->heading!="Min" || upr->heading!="Max") 
-        throw BadStructure("Headings incorrect for uniform distribution. Need [Min] and [Max]");
-      if (lwr->params.size()!=1 || upr->params.size()!=1) 
-        throw BadStructure("More than one parameter for uniform distribution.");
-      // Set the uniform random engine
-      return new UniformRandomEngine(
-        parser.value<RealType>(lwr->params[0]->partA), parser.value<RealType>(upr->params[0]->partA)
-      );
-    }
-    else if (param=="Normal") {
-      if (h->subHeads.size()!=2) 
-        throw BadStructure("Normal distribution needs average and variance. Found "+toStr(h->subHeads.size())+" parameters.");
-      HeadNode *ave = h->subHeads[0], *var = h->subHeads[1];
-      // Swap if necessary
-      if (ave->heading!="Ave") std::swap(ave, var);
-      // Check structure
-      if (ave->heading!="Ave" || var->heading!="Var")
-        throw BadStructure("Headings incorrect for normal distribution.");
-      if (ave->params.size()!=1 || var->params.size()!=1) 
-        throw BadStructure("More than one parameter for normal distribution.");
-      // Set the uniform random engine
-      return new NormalRandomEngine(
-        parser.value<RealType>(ave->params[0]->partA), parser.value<RealType>(var->params[0]->partA)
-      );
-    }
-    else throw BadStructure("Unrecognized choice for a random engine.");
-    // We should never reach here
-    throw BadStructure("An unreachable part of code was reached!");
-    // Token return
-    return nullptr;
   }
 
   inline string FileParseCreator::copyFile() const {

@@ -88,6 +88,7 @@ namespace GFlowSimulation {
           // Add the demon
           gflow->addModifier(demon);
         }
+        else throw false; // BadStructure("Unrecognized modifier in wall creator, ["+parser.argName()+"].");
       } while (parser.next());
     }
 

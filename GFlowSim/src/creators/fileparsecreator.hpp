@@ -2,7 +2,7 @@
 #define __FILE_PARSE_CREATOR_HPP__GFLOW__
 
 #include "../base/creator.hpp"
-#include "../utility/parsehelper.hpp"
+#include "../utility/treeparser.hpp"
 #include "particletemplate.hpp"
 
 #include <map>
@@ -67,9 +67,6 @@ namespace GFlowSimulation {
 
     //! \brief Create a random force grid.
     inline void makeRandomForces();
-
-    //! \brief Parse a head node to create a random engine.
-    inline RandomEngine* getRandomEngine(HeadNode*, string&) const;
 
     //! \brief Load the config file, and return it as a string.
     inline string copyFile() const;

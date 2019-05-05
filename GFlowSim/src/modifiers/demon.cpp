@@ -3,6 +3,7 @@
 #include "../base/domainbase.hpp"
 #include "../alldataobjects.hpp"
 #include "../base/datamaster.hpp"
+#include "../base/forcemaster.hpp"
 
 namespace GFlowSimulation {
 
@@ -149,11 +150,24 @@ namespace GFlowSimulation {
       // Compute door area
       door_area = mx - mn;
     }
+
+    // Check if the gas particles interact with one another.
+    bool doesInteract = (forceMaster->getInteraction(0, 0)!=nullptr);
   
+    RealType im = 0;
+    int iter = 0, sz = simData->size();
+    while (im==0 && iter<sz) {
+      im = simData->Im(iter);
+      ++iter;
+    }
+
     // Record parameters
     parameters->addRecord("Vol", 0.5*gflow->getBounds().vol()); // This assumes the partitions have equal sizes.
     parameters->addRecord("Tau", tau);
     parameters->addRecord("Area", door_area);
+    parameters->addRecord("Dimensions", sim_dimensions);
+    parameters->addRecord("Interact", doesInteract ? 1. : 0.);
+    if (im>0) parameters->addRecord("Mass", 1./im);
 
     // Add to gflow
     gflow->addDataObject(parameters);

@@ -2,7 +2,7 @@
 #define __AREA_CREATOR__HPP__GFLOW__
 
 #include "../base/creator.hpp"
-#include "../utility/parsehelper.hpp"
+#include "../utility/treeparser.hpp"
 #include "helperclasses/parse-constructor.hpp"
 #include "particlefixer.hpp"
 

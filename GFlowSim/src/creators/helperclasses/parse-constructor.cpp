@@ -117,32 +117,36 @@ namespace GFlowSimulation {
     // Clear type string
     type.clear();
 
-    ParseHelper parser(h);
-    parser.set_variables(variables);
+    // Create a parser
+    TreeParser parser(h, variables);
 
     // Check structure
-    if (h->params.size()!=1)
+    if (parser.args_size()!=1)
       throw BadStructure("Random engine needs one parameter, found "+toStr(h->params.size())+".");
-    else if (!h->params[0]->partB.empty()) {
+    else if (parser.valName()!="") {
       // A type is specified
-      type = h->params[0]->partA;
-      // We expect a number in partB
-      return new DeterministicEngine(parser.value<RealType>(h->params[0]->partB));
+      type = parser.argName();
+      // We expect a number as the value
+      RealType v;
+      if (parser.arg(v)) return new DeterministicEngine(v);
+      else throw BadStructure("Expected a value for Deterministic Engine.");
     }
     // If there is no body
-    else if (h->subHeads.empty()) {
-      string token = h->params[0]->partA;
-      // We expect either a number in partA, or a string (e.g. "Inf").
+    else if (parser.body_size()==0) {
+      string token = parser.argName();
+      // We expect either a number in partA, or a string (e.g. "inf").
       if (isdigit(token.at(0))) {
-        return new DeterministicEngine(parser.value<RealType>(token));
+        RealType v;
+        if (parser.arg(v)) return new DeterministicEngine(v);
+        else throw BadStructure("Expected a value for DeterministicEngine.");
       }
-      else if (h->heading=="Type" && token=="Equiprobable") {
+      else if (parser.heading()=="Type" && token=="Equiprobable") {
         type = token;
-        int NTypes = gflow->getNTypes();
         // Only for type - Create each type with equal probability
-        RealType p = 1./NTypes;
+        int ntypes = gflow->getNTypes();
+        RealType p = 1./ntypes;
         vector<RealType> probabilities, values;
-        for (int i=0; i<NTypes; ++i) {
+        for (int i=0; i<ntypes; ++i) {
           probabilities.push_back(p);
           values.push_back(i);
         }
@@ -156,56 +160,54 @@ namespace GFlowSimulation {
     }
 
     // Parameter string
-    string param = h->params[0]->partA;
-
+    string param = parser.argName();
     // Check for options:
     if (param=="Random") {
       // Discrete Random, with specified values and probabilities
       vector<RealType> probabilities, values;
-      for (auto sh : h->subHeads) {
-        if (sh->heading!="P")
-          throw BadStructure("Discrete probability should be indicated with a 'P.'");
-        if (sh->params.size()!=2)
-          throw BadStructure("Expect value and probability, encountered "+toStr(sh->params.size())+" options.");
-        if (!sh->params[0]->partB.empty() || !sh->params[1]->partB.empty())
-          throw BadStructure("Expected one part parameters in discrete probability specification.");
-        // Store the value and its probability
-        values.push_back(parser.value<RealType>(sh->params[0]->partA)); 
-        probabilities.push_back(parser.value<RealType>(sh->params[1]->partA));
+
+      if (parser.begin()) {
+        do {
+          if (parser.heading()!="P") 
+             throw BadStructure("Discrete probability should be indicated with a 'P.'");
+
+          if (parser.args_size()!=2)
+            throw BadStructure("Expect value and probability, encountered "+toStr(parser.args_size())+" options.");
+          if (parser.valName(0)!="" || parser.valName(1)!="")
+            throw BadStructure("Expected one part parameters in discrete probability specification.");
+          // Store the value and its probability
+          RealType v = 0, p = 0;
+          // If the value, probability are there, store them
+          if (parser.arg(v, 0) && parser.arg(p, 0)) {
+            values.push_back(v); 
+            probabilities.push_back(p);
+          }
+          // Otherwise, throw an exception
+          else throw BadStructure("Expected value, probability. One or both were missing.");
+        } while (parser.next());
+        // Return the random engine
+        return new DiscreteRandomEngine(probabilities, values);
       }
-      return new DiscreteRandomEngine(probabilities, values);
+      else throw BadStructure("Parser couldn't set up iteration.");
     }
     else if (param=="Uniform") {
-      if (h->subHeads.size()!=2) 
-        throw BadStructure("Uniform distribution needs a min and a max. Found "+toStr(h->subHeads.size())+" parameters.");
-      HeadNode *lwr = h->subHeads[0], *upr = h->subHeads[1];
-      // Swap if necessary
-      if (lwr->heading!="Min") std::swap(lwr, upr);
-      // Check structure
-      if (lwr->heading!="Min" || upr->heading!="Max") 
-        throw BadStructure("Headings incorrect for uniform distribution. Need [Min] and [Max]");
-      if (lwr->params.size()!=1 || upr->params.size()!=1) 
-        throw BadStructure("More than one parameter for uniform distribution.");
-      // Set the uniform random engine
-      return new UniformRandomEngine(
-        parser.value<RealType>(lwr->params[0]->partA), parser.value<RealType>(upr->params[0]->partA)
-      );
+      if (parser.body_size()!=2) 
+        throw BadStructure("Uniform distribution needs a min and a max. Found "+toStr(parser.body_size())+" parameters.");
+
+      RealType mn = 0, mx = 0;
+      // Set the uniform random engine if we have the data we need.
+      if (parser.firstArg("Min", mn) && parser.firstArg("Max", mx)) return new UniformRandomEngine(mn, mx);
+      // Otherwise, throw exception.
+      else throw BadStructure("Needed Min, Max, couldn't find one or both of those.");
     }
     else if (param=="Normal") {
-      if (h->subHeads.size()!=2) 
-        throw BadStructure("Normal distribution needs average and variance. Found "+toStr(h->subHeads.size())+" parameters.");
-      HeadNode *ave = h->subHeads[0], *var = h->subHeads[1];
-      // Swap if necessary
-      if (ave->heading!="Ave") std::swap(ave, var);
-      // Check structure
-      if (ave->heading!="Ave" || var->heading!="Var")
-        throw BadStructure("Headings incorrect for normal distribution.");
-      if (ave->params.size()!=1 || var->params.size()!=1) 
-        throw BadStructure("More than one parameter for normal distribution.");
-      // Set the uniform random engine
-      return new NormalRandomEngine(
-        parser.value<RealType>(ave->params[0]->partA), parser.value<RealType>(var->params[0]->partA)
-      );
+      if (parser.body_size()!=2) 
+        throw BadStructure("Normal distribution needs 2 parameters. Found "+toStr(parser.body_size())+" parameters.");
+      // Extract average, variance
+      RealType ave = 0, var = 0;
+      // Set up random engine
+      if (parser.firstArg("Ave", ave) && parser.firstArg("Var", var)) return new NormalRandomEngine(ave, var);
+      else throw BadStructure("Normal distribution needs Ave, Var, couldn't find one or both of those.");
     }
     else throw BadStructure("Unrecognized choice for a random engine.");
     // We should never reach here
