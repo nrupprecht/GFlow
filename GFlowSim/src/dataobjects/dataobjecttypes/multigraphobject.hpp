@@ -7,7 +7,7 @@ namespace GFlowSimulation {
 
   class MultiGraphObject : public DataObject {
   public:
-    //! \brief Default constructor.
+    //! \brief Default constructor. Takes the number of entries.
     MultiGraphObject(GFlow*, const string&, int);
 
     //! \brief Axis name setting constructor.

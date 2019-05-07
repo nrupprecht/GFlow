@@ -34,8 +34,8 @@ namespace GFlowSimulation {
     RealType T = 2./static_cast<RealType>(sim_dimensions) * ke / KB;
     // Compute the number density. Do not include your own particles. Assumes the other line has roughly the same number of particles.
     RealType rho = n_solvent / gflow->getBounds().vol();
-    // Compute the normalization
-    RealType length = wallA->getLength();
+    // Compute the normalization - HOPEFULLY sg(0) represents the size of solvent molecules.
+    RealType length = wallA->getLength() + 2*simData->Sg(0);
     RealType norm = 1./(rho * KB * T * length);
 
     // Get distance between walls

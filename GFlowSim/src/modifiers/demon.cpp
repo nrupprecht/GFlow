@@ -20,6 +20,10 @@ namespace GFlowSimulation {
     gflow->addDataObject(numberL);
     gflow->addDataObject(numberR);
 
+    // Create parameters object
+    parameters = new Parameters(gflow);
+    gflow->addDataObject(parameters);
+
     // Default door choice function
     check_choice = &direction_demon;
   };
@@ -132,9 +136,6 @@ namespace GFlowSimulation {
     // Only run in simulation mode
     if (gflow->getRunMode()!=RunMode::SIM) return;
 
-    // Create parameters object
-    Parameters *parameters = new Parameters(gflow);
-
     // Compute door area
     RealType door_area = 0;
     if (size()>0) {
@@ -168,9 +169,6 @@ namespace GFlowSimulation {
     parameters->addRecord("Dimensions", sim_dimensions);
     parameters->addRecord("Interact", doesInteract ? 1. : 0.);
     if (im>0) parameters->addRecord("Mass", 1./im);
-
-    // Add to gflow
-    gflow->addDataObject(parameters);
   }
 
   bool Demon::should_door_open(int nl, int nr, RealType el, RealType er) {

@@ -37,7 +37,7 @@ namespace GFlowSimulation {
 
     // Create a directory for all the data
     mkdir(dirName.c_str(), 0777);
-    ofstream fout(dirName+dataName+".csv");
+    ofstream fout(dirName+dataName+"-"+toStr(object_counter)+".csv");
     if (fout.fail()) return false;
     // Print out the data
     for (int i=0; i<ndata_points; ++i) {

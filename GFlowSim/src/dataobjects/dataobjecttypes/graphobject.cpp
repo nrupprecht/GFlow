@@ -30,6 +30,20 @@ namespace GFlowSimulation {
     return total / (data.size());
   }
 
+  RPair GraphObject::first() const {
+    if (!data.empty()) return data[0];
+    else return RPair(0., 0.);
+  }
+  
+  RPair GraphObject::last() const {
+    if (!data.empty()) return data[data.size()-1];
+    else return RPair(0., 0.);
+  }
+
+  int GraphObject::size() const {
+    return data.size();
+  }
+
   void GraphObject::setAxes(const string& ax, const string& ay) {
     axis_x = ax;
     axis_y = ay;

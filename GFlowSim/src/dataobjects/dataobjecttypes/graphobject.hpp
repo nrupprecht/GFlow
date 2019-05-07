@@ -27,6 +27,15 @@ namespace GFlowSimulation {
     //! \brief Compute averages of data.
     RealType ave() const;
 
+    //! \brief The first entry in data.
+    RPair first() const;
+    
+    //! \brief The last entry in data.
+    RPair last() const;
+
+    //! \brief The size of data.
+    int size() const;
+
     //! \brief Set the names of the axes.
     void setAxes(const string&, const string&);
 

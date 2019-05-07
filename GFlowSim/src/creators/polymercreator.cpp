@@ -324,7 +324,6 @@ namespace GFlowSimulation {
         if      (X[d]< bnds.min[d]) X[d] += bnds.wd(d);
         else if (X[d]>=bnds.max[d]) X[d] -= bnds.wd(d);
       }
-
       // Add particle
       int gid = sd->getNextGlobalID();
       sd->addParticle(X.data, ZERO.data, rP, imP, idP);
@@ -369,6 +368,8 @@ namespace GFlowSimulation {
     Group group1 = createRandomLine(gflow, x, phi, length);
     // Shift x to the right
     x[0] += 2*dx;
+    // Randomly change x[1]
+    x[1] += 2*drand48()*rP;
     // Create the second chain.
     Group group2 = createRandomLine(gflow, x, phi, length);
 

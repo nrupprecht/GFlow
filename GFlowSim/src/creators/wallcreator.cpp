@@ -50,6 +50,7 @@ namespace GFlowSimulation {
     
     // Correct spacing to fit the distance between starting and ending points.
     RealType distance = distanceVec(start, end);
+
     int n_particles = max(static_cast<int>(ceil((distance - 2*radius) / spacing)), 1);
     spacing = distance / n_particles;
 

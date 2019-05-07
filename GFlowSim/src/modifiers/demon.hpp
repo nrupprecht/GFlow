@@ -127,6 +127,9 @@ namespace GFlowSimulation {
     //! Having this allows us to modify the animation object to correctly animate what is happening.
     class PositionData *animate_object = nullptr;
 
+    //! \brief A pointer to a parameters object.
+    class Parameters *parameters = nullptr;
+
     //! \brief Save the last record time of the animation object.
     RealType animate_last_recording = 0;
     //! \brief Save the last size of the animation object

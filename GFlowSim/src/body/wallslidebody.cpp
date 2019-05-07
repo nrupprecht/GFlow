@@ -26,14 +26,16 @@ namespace GFlowSimulation {
 
     // Check length
     RealType **x = simData->X();
+    RealType *sg = simData->Sg();
     Vec max(sim_dimensions), min(sim_dimensions);
     copyVec(x[local_ids[0]], min);
     max = min;
     for (auto id : local_ids) {
       for (int d=0; d<sim_dimensions; ++d) {
         RealType xd = x[id][d];
-        if (xd<min[d]) min[d] = xd;
-        else if (max[d]<xd) max[d] = xd;
+        RealType r = sg[id];
+        if (xd-r<min[d]) min[d] = xd-r;
+        else if (max[d]<xd+r) max[d] = xd+r;
       }
     }
     // Set length

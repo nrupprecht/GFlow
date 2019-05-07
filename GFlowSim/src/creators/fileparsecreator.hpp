@@ -9,13 +9,13 @@
 
 namespace GFlowSimulation {
 
-  const string Dimensions_Token = "Dimensions";
-  const string Bounds_Token = "Bounds";
-  const string Integrator_Token = "Integrator";
-  const string Types_Token = "NTypes";
+  const string Dimensions_Token   = "Dimensions";
+  const string Bounds_Token       = "Bounds";
+  const string Integrator_Token   = "Integrator";
+  const string Types_Token        = "NTypes";
   const string Interactions_Token = "Force-grid";
-  const string Boundary_Token = "Boundary-conditions";
-  const string Fill_Token = "Fill-area";
+  const string Boundary_Token     = "Boundary-conditions";
+  const string Fill_Token         = "Fill-area";
 
   /**
   *  \brief A creator that creates a simulation from a file.
