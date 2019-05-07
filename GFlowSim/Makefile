@@ -1,6 +1,6 @@
 # Makefile snatched from <https://ubuntuforums.org/showthread.php?t=1204739>
 
-COMPILER ?= 0
+COMPILER ?= 1
 USE_MPI  ?= 0
 DEBUG    ?= 0
 NO_SIMD  ?= 0
@@ -41,13 +41,15 @@ APP   = driver
 SRC   = src
 OBJ   = obj
 BIN   = bin
+APPLICATIONS = $(SRC)/applications
 
-EXCLUDE = src/applications/percolationanalysis.cpp
-EXCLUDE += src/applications/pressureanalysis.cpp
-EXCLUDE += src/applications/driver.cpp
-EXCLUDE += src/applications/vistools.cpp
-EXCLUDE += src/applications/lineattraction.cpp
-EXCLUDE += src/applications/wallattraction.cpp
+EXCLUDE := $(shell find $(APPLICATIONS) -name '*.cpp')
+#EXCLUDE = src/applications/percolationanalysis.cpp
+#EXCLUDE += src/applications/pressureanalysis.cpp
+#EXCLUDE += src/applications/driver.cpp
+#EXCLUDE += src/applications/vistools.cpp
+#EXCLUDE += src/applications/lineattraction.cpp
+#EXCLUDE += src/applications/wallattraction.cpp
 EXCLUDE += src/utility/argparse2.cpp
 
 SRCS1   := $(shell find $(SRC) -name '*.cpp')
@@ -69,7 +71,7 @@ endif
 #OPENCV   := $(shell pkg-config --cflags --libs opencv)
 CFLAGS   := -c $(CSTD) $(DEBUG) $(OPTIMIZE) $(FLAGS)
 
-all: $(BIN)/$(APP) $(BIN)/vistools $(BIN)/lineattraction $(BIN)/wallattraction
+all: $(BIN)/$(APP) $(BIN)/vistools $(BIN)/lineattraction $(BIN)/wallattraction $(BIN)/demonrates
 
 # Executables
 
@@ -92,6 +94,11 @@ $(BIN)/wallattraction: obj/wallattraction.o $(OBJS)
 	@mkdir -p `dirname $@`
 	@echo "Linking $@..."
 	@$(CC) -o $@ obj/wallattraction.o $(OBJS) $(LDFLAGS)
+
+$(BIN)/demonrates: obj/demonrates.o $(OBJS)
+	@mkdir -p `dirname $@`
+	@echo "Linking $@..."
+	@$(CC) -o $@ obj/demonrates.o $(OBJS) $(LDFLAGS)
 
 # General object files
 
@@ -118,6 +125,11 @@ $(OBJ)/lineattraction.o: src/applications/lineattraction.cpp
 	@$(CC) $(CFLAGS) $< -o $@
 
 $(OBJ)/wallattraction.o: src/applications/wallattraction.cpp
+	@mkdir -p `dirname $@`
+	@echo "Compiling $<..."
+	@$(CC) $(CFLAGS) $< -o $@
+
+$(OBJ)/demonrates.o: src/applications/demonrates.cpp
 	@mkdir -p `dirname $@`
 	@echo "Compiling $<..."
 	@$(CC) $(CFLAGS) $< -o $@
