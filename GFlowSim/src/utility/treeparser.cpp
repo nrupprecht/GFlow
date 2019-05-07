@@ -296,4 +296,75 @@ namespace GFlowSimulation {
     return head_list.size();
   }
 
+  //*****************************
+  //*****************************
+  //*****************************
+
+  /*
+  template<> bool TreeParser::arg<RealType>(RealType &val, int i) {
+    // Make sure the argument exists.
+    if (-1<i || i<focus_node->params.size()) {
+      string v = focus_node->params[i]->partA;
+      auto p = variables.find(v);
+      // If the string was a variable.
+      if (p!=variables.end()) val = Eval::evaluate(p->second, variables);
+      // Otherwise, it was a value.
+      else val = Eval::evaluate(v, variables);
+      // Return true.
+      return true;
+    }
+    // If the argument did not exist, do not set val. Return false.
+    return false;
+  }
+
+  template<> RealType TreeParser::arg_cast<RealType>(int i) {
+    // If the argument exists, convert it and return it.
+    if (-1<i || i<focus_node->params.size())
+      return Eval::evaluate(focus_node->params[i]->partA, variables);
+    // Otherwise, return zero.
+    else return 0.;
+  }
+
+  template<> bool TreeParser::firstArg<RealType>(const string &name, RealType& val) {
+    // Look for the heading
+    auto p = headings.find(name);
+    // Make sure the heading exists.
+    if (p!=headings.end()) {
+      HeadNode *node = p->second;
+      if (!node->params.empty() && node->params[0]->partA!="") {
+        val = Eval::evaluate(node->params[0]->partA, variables);
+        // Return true.
+        return true;
+      }
+      // If the argument did not exist, do not set val. Return false.
+      return false;
+    }
+    // If the heading does not exist, return false.
+    return false;
+  }
+
+  template<> bool TreeParser::firstArg<RealType>(RealType& val) {
+    // Make sure the argument exists.
+    if (!focus_node->params.empty() && focus_node->params[0]->partA!="") {
+      val = Eval::evaluate(focus_node->params[0]->partA, variables);
+      return true;
+    }
+    // There were no arguments
+    return false;
+  }
+
+  template<> bool TreeParser::val<RealType>(RealType& val, int i) {
+    if ((-1<i || i<focus_node->params.size()) && focus_node->params[i]->partB!="") {
+      val = Eval::evaluate(focus_node->params[i]->partB, variables);
+      // Return true.
+      return true;
+    }
+    else return false;
+  }
+
+  template<> RealType TreeParser::cast<RealType>(const string& val) {
+    return Eval::evaluate(val, variables);
+  }
+  */
+
 }
