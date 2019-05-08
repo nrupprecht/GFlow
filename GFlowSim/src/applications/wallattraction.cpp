@@ -50,6 +50,7 @@ int main(int argc, char **argv) {
   parser.get("quiet", quiet);
   parser.get("snapshot", snapshot);
   parser.get("trials", trials);
+  parser.get("bins", bins);
   parser.get("writeDirectory", writeDirectory);
 
   if (!quiet && rank==0) {
