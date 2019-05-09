@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
   parser.get("snapshot", snapshot);
   parser.get("trials", trials);
   parser.get("bins", bins);
-  parser.get("writeDirectory", writeDirectory);
+  parser.get("directory", writeDirectory);
 
   if (!quiet && rank==0) {
     #if DEBUG==1

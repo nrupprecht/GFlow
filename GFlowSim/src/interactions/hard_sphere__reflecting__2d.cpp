@@ -79,14 +79,19 @@ namespace GFlowSimulation {
         // Only interact if particles are going towards each other.
         if (dx*dvx+dy*dvy>0) continue;
 
-        // \todo Correctly calculate final velocities based on momentum.
+        // Calculate final velocities based on momentum.
+        if (im[id1]>0 && im[id2]>0) {
 
-        // Elastic collision results in normal momenta reflecting
-        v[id1][0] -= 2*v1*dx;
-        v[id1][1] -= 2*v1*dy;
+        }
+        else {
+          // Elastic collision results in normal momenta reflecting
+          v[id1][0] -= 2*v1*dx;
+          v[id1][1] -= 2*v1*dy;
 
-        v[id2][0] -= 2*v2*dx;
-        v[id2][1] -= 2*v2*dy;
+          v[id2][0] -= 2*v2*dx;
+          v[id2][1] -= 2*v2*dy;
+        }
+
       }
     }
   }

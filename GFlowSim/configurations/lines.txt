@@ -14,7 +14,9 @@ Dimensions: dimensions
 // Set the simulation bounds
 Bounds: Box=width
 
-Integrator: VelocityVerlet
+Integrator: VelocityVerlet {
+  MaxDT: 0.0001
+}
 
 Boundary: Wrap
 
@@ -25,7 +27,7 @@ NTypes: 2
 Force-grid: {
   : 0, 0, HardSphere
   : 0, 1, HardSphere
-  : 1, 1, HardSphere
+  : 1, 1, None
 }
 
 Fill: Polymer {

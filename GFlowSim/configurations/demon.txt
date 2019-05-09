@@ -2,10 +2,11 @@
 Dimensions: 2
 
 Var: phi=0.025
-Var: radius=0.025
-Var: width=20 // Box width
+Var: width=20   // Box width
 Var: length=0.5 // Door area (length)
 Var: tau=0.25
+
+Value: sigma=0.05
 
 // Set the simulation bounds - a box with a given width.
 Bounds: {
@@ -73,24 +74,24 @@ Fill: Area {
 // Top part of the partition
 Fill: Wall {
   Start: width, width
-  End: width, width/2 + length/2
-  Radius: 0.05
+  End: width, width/2 + length/2 + sigma
+  Radius: sigma
   Type: 2
 }
 
 // Bottom part of the partition
 Fill: Wall {
-  Start: width, width/2 - length/2
+  Start: width, width/2 - length/2 - sigma
   End: width, 0
-  Radius: 0.05
+  Radius: sigma
   Type: 2
 }
 
 // The demon door
 Fill: Wall {
-  Start: width, width/2 + length/2
-  End: width, width/2 - length/2
-  Radius: 0.05
+  Start: width, width/2 + length/2 + sigma
+  End: width, width/2 - length/2 - sigma
+  Radius: sigma
   Type: 3
 
   Modifier: Demon {
