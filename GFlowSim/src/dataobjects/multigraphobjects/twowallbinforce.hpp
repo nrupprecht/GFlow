@@ -14,8 +14,8 @@ namespace GFlowSimulation {
     //! \brief Clear preexisting data.
     virtual void pre_integrate() override;
 
-    //! \brief Collect the position data from simdata --- happens during the post-step phase
-    virtual void post_step() override;
+    //! \brief Collect the position data from simdata --- happens during the post-forces phase
+    virtual void post_forces() override;
 
     //! \brief Set data to be ready for writing to a file or to be read by something else.
     virtual void post_integrate() override;

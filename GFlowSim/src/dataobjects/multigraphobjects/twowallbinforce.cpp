@@ -19,7 +19,7 @@ namespace GFlowSimulation {
     resetData(nbins);
   }
 
-  void TwoWallBinForce::post_step() {
+  void TwoWallBinForce::post_forces() {
     // Only record if enough time has gone by
     if (!DataObject::_check() || wallA==nullptr || wallB==nullptr) return;
 

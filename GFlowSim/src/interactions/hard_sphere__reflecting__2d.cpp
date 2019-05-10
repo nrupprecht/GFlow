@@ -81,13 +81,26 @@ namespace GFlowSimulation {
 
         // Calculate final velocities based on momentum.
         if (im[id1]>0 && im[id2]>0) {
-
+          // Mass related constants
+          RealType m1 = 1./im[id1], m2 = 1./im[id2];
+          RealType mT = m1+m2, mD = m1 - m2;
+          RealType invMT = 1./mT;
+          // Final velocities (in the projected direction)
+          RealType vf1 = mD*invMT * v1 + 2*m2*invMT * v2;
+          RealType vf2 = 2*m1*invMT * v1 - mD*invMT * v2;
+          // Adjust velocities
+          v[id1][0] -= (v1 - vf1)*dx;
+          v[id1][1] -= (v1 - vf1)*dy;
+          v[id2][0] -= (v2 - vf2)*dx;
+          v[id2][1] -= (v2 - vf2)*dy;
         }
+        // Both particles have infinite mass. No force.
+        else if (im[id1]==0 && im[id2]==0);
+        // One particle has infinite mass. 
         else {
           // Elastic collision results in normal momenta reflecting
           v[id1][0] -= 2*v1*dx;
           v[id1][1] -= 2*v1*dy;
-
           v[id2][0] -= 2*v2*dx;
           v[id2][1] -= 2*v2*dy;
         }
