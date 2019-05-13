@@ -10,6 +10,9 @@
 namespace GFlowSimulation {
 
   void PolymerCreator::createArea(HeadNode *head, GFlow *gflow, const std::map<string, string>& variables, vector<ParticleFixer>& particle_fixers) {
+    // Get the dimensions
+    int sim_dimensions = gflow->getSimDimensions();
+
     // Create parser, with variables.
     TreeParser parser(head, variables);
     // Declare valid options
@@ -21,10 +24,18 @@ namespace GFlowSimulation {
     parser.addHeadingOptional("Parallel");
     parser.addHeadingOptional("IdP");
     parser.addHeadingOptional("IdC");
+    parser.addHeadingOptional("DensityP");
+    parser.addHeadingOptional("DensityC");
     parser.addHeadingOptional("H");
     parser.addHeadingOptional("Correlation");
     // Check headings for validity
     parser.check();
+
+    // Default densities for primary and chain particles.
+    RealType rhoP = 5.;
+    RealType rhoC = 5.;
+    imP = 1./(rhoP*sphere_volume(rP, sim_dimensions));
+    imC = 1./(rhoC*sphere_volume(rC, sim_dimensions));
 
     // Parameters
     int number = 1;
@@ -34,6 +45,7 @@ namespace GFlowSimulation {
     bool pair = false;
     RealType h = 2.5;
     useCorr = false;
+    string dp = "", dc = "";
 
     // Gather parameters
     parser.firstArg("Number", number);
@@ -43,13 +55,27 @@ namespace GFlowSimulation {
     parser.firstArg("Parallel", pair);
     parser.firstArg("IdP", idP);
     parser.firstArg("IdC", idC);
+    parser.firstArg("DensityP", dp);
+    parser.firstArg("DensityC", dc);
     parser.firstArg("Correlation", useCorr);
     parser.firstArg("Phi", phi);
     parser.firstArg("H", h);
+
+    
+
+    // Potentially change masses.
+    if (dp!="") {
+      if (dp=="inf") imP = 0;
+      else imP = 1./(convert<RealType>(dp)*sphere_volume(rP, sim_dimensions));
+    }
+    if (dc!="") {
+      if (dc=="inf") imC = 0;
+      else imC = 1./(convert<RealType>(dc)*sphere_volume(rC, sim_dimensions));
+    }
+
+    cout << imP << ", " << imC << endl;
     
     // --- Done gathering parameters, ready to act.
-    // Get number of dimensions
-    int sim_dimensions = gflow->sim_dimensions;
     
     // Seed global random generator
     seedNormalDistribution();
@@ -151,10 +177,6 @@ namespace GFlowSimulation {
     int sim_dimensions = gflow->sim_dimensions;
 
     // Create a random polymer according to the specification
-    RealType rhoP = 10.;
-    RealType rhoC = 10.;
-    imP = 1./(rhoP*sphere_volume(rP, sim_dimensions));
-    imC = 1./(rhoC*sphere_volume(rC, sim_dimensions));
     RealType v_sigma = 0.1;
 
     // Create a random polymer arrangement
@@ -342,11 +364,8 @@ namespace GFlowSimulation {
     // Get number of dimensions
     int sim_dimensions = gflow->sim_dimensions;
 
-    // Create a random polymer according to the specification. Make the polymer infinitely massive, so it cant move.
+    // Create a random polymer according to the specification.
     RealType rhoP = 1.;
-    RealType m = rhoP*sphere_volume(rP, sim_dimensions);
-    imP = 1./m;
-    imC = 0;
     RealType sigma_v = 0.;
     RealType dx = (1.+h/2)*rP; // h \el [0, 2]
 

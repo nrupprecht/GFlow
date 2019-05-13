@@ -37,6 +37,8 @@ Fill: Polymer {
   R: rP
   r: rC
   Phi: phi
+
+  DensityP: 10
 }
 
 // Fill an area with particles
