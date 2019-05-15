@@ -5,7 +5,7 @@
 namespace GFlowSimulation {
 
   TwoWallModifier::TwoWallModifier(GFlow *gflow) : Modifier(gflow), wallA(WallSlideBody(gflow)), wallB(WallSlideBody(gflow)), 
-    max_distance(0.25), acceleration(10.), dissipation(0.) {
+    max_distance(0.25), acceleration(10.) {
     // Add the bodies to gflow
     gflow->addBody(&wallA);
     gflow->addBody(&wallB);
@@ -16,13 +16,18 @@ namespace GFlowSimulation {
   };
 
   TwoWallModifier::TwoWallModifier(GFlow *gflow, const Group& group1, const Group& group2) : Modifier(gflow), wallA(WallSlideBody(gflow, group1)), 
-    wallB(WallSlideBody(gflow, group2)), max_distance(0.25), acceleration(10.), dissipation(0.) {
+    wallB(WallSlideBody(gflow, group2)), max_distance(0.25), acceleration(10.) {
     // Add the bodies to gflow
     gflow->addBody(&wallA);
     gflow->addBody(&wallB);
     // Add a data object
     data_object = new TwoWallBinForce(gflow, &wallA, &wallB);
-    data_object->setMaxDistance(0.9*max_distance);
+    
+    //data_object->setMaxDistance(0.9*max_distance);
+    data_object->setMinDistance(0.05); //*********
+    data_object->setMaxDistance(1.1*max_distance); //*********
+
+
     gflow->addDataObject(data_object);
   };
 
@@ -34,10 +39,9 @@ namespace GFlowSimulation {
     RealType v2 = wallB.getVelocity();
     RealType dx = x2 - x1;
     gflow->minimumImage(dx, 0);
-    RealType dv = v2 - v1;
 
     // Calculate the acceleration
-    RealType a = clamp(fabs(dx) - max_distance) * (sign(dx) * acceleration - dissipation);
+    RealType a = clamp(fabs(dx) - max_distance) * (sign(dx) * acceleration);
 
     // If acceleration is nonzero.
     if (a>0) {

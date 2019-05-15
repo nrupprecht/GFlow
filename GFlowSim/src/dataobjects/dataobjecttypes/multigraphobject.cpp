@@ -30,6 +30,9 @@ namespace GFlowSimulation {
   }
 
   bool MultiGraphObject::writeToFile(string fileName, bool useName) {
+    // Only process if the run is in simulation mode. \todo CHANGE THIS LATER
+    if (gflow->getRunMode()!=RunMode::SIM) return true;
+
     // Check if there's anything to do
     if (multi_data.empty() || ndata_points==0) return true;
     // The name of the directory for this data

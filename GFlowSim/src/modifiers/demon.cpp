@@ -343,7 +343,7 @@ namespace GFlowSimulation {
   }
 
   bool Demon::direction_demon(int nl, int nr, RealType el, RealType er) {
-    return nr==0;
+    return nr==0 && er==0.;
   }
 
   bool Demon::energy_demon(int nl, int nr, RealType el, RealType er) {

@@ -42,7 +42,6 @@ namespace GFlowSimulation {
     RealType x1 = wallA->getPosition();
     RealType x2 = wallB->getPosition();
     RealType dx = x2 - x1;
-
     // Correct for harmonic bc's
     gflow->minimumImage(dx, 0);
 
@@ -65,6 +64,9 @@ namespace GFlowSimulation {
   }
 
   void TwoWallBinForce::post_integrate() {
+    // Only process if the run is in simulation mode.
+    if (gflow->getRunMode()!=RunMode::SIM) return;
+
     // Process data
     RealType dr = (max_distance - min_distance)/nbins;
     // Process data

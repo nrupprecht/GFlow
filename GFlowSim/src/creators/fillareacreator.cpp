@@ -50,20 +50,27 @@ namespace GFlowSimulation {
     // --- Number. How to choose which particles to fill the space with.
     // Create a structure for recording probabilities or numbers
     std::map<string, double> particle_template_numbers;
-    bool useNumber = false, usePhi = false, singleType = false;
+    bool singleType = false;
+    // Number option: 0 - phi, 1 - rho, 2 - number
+    int option = 0;
     int number(0); 
     double phi(0);
     
     // There must be a "Number" heading, since it is required.
     parser.focus0("Number");
-    // Check if this is using phi or number 
+    // Volume density
     if (parser.argName()=="Phi") {
       parser.val(phi);
-      usePhi = true;
+      option = 0;
+    }
+    // Number density
+    else if (parser.argName()=="Rho") {
+      parser.val(phi);
+      option = 1;
     }
     else {
       parser.arg(number);
-      useNumber = true;
+      option = 2;
     }
     // No body - we must have something in one of two forms:
     // Number: #
@@ -125,7 +132,7 @@ namespace GFlowSimulation {
     }
 
     // --- Check that we have defined a good area
-    if (!usePhi && number<=0 && singleType)
+    if (option!=0 && number<=0 && singleType)
       throw BadStructure("If using a single type, we need a nonzero number of particles.");
 
     // Get the simdata
@@ -179,8 +186,8 @@ namespace GFlowSimulation {
     RealType sigma(0.), im(0.);
     int type(0);
 
-    // If we are filling to a specified packing fraction
-    if (usePhi) {
+    // If we are filling to a specified volume fraction or number density.
+    if (option==0 || option==1) {
       // Create discrete distribution
       vector<double> probabilities;
       vector<ParticleTemplate> template_vector;
@@ -193,12 +200,24 @@ namespace GFlowSimulation {
         template_vector.push_back(it->second);
         probabilities.push_back(pr.second);
       }
-
       // A discrete distribution we use to choose which particle template to use next
       std::discrete_distribution<int> choice(probabilities.begin(), probabilities.end());
+
+      // Keep track of number and total volume of particle as we add them.
       int i(0);
       RealType vol = 0, Vol = region->vol();
-      while (vol/Vol < phi) {
+      // A function that checks if we should keep adding particles.
+      auto keep_adding = [&] () -> bool {
+        // Phi - fill to a volume fraction.
+        if (option==0) return vol/Vol<phi;
+        // Rho - fill to a number density.
+        else if (option==1) return i/Vol<phi;
+        // Else, error
+        else return false;
+      };
+
+      // Add particles as long as we should
+      while (keep_adding()) {
         // Select a position for the particle (random uniform) that does not fall within an excluded region
         int attempts = 0;
         do {

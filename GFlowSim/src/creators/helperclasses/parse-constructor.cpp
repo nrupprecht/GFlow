@@ -84,7 +84,7 @@ namespace GFlowSimulation {
     parser.focus0("Radius");
     p_template.radius_engine = getRandomEngine(parser.getNode(), variables, type, gflow);
     p_template.radius_string = type;
-
+    
     // --- Look for Mass option
     parser.focus0("Mass");
     RealType m = 0;
@@ -133,7 +133,10 @@ namespace GFlowSimulation {
     }
     // If there is no body
     else if (parser.body_size()==0) {
-      string token = parser.argName();
+      // This will allow us to recognize variables.
+      string token;
+      parser.arg(token);
+
       // We expect either a number in partA, or a string (e.g. "inf").
       if (isdigit(token.at(0))) {
         RealType v;

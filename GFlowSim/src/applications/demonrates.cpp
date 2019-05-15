@@ -194,9 +194,9 @@ int main(int argc, char **argv) {
   cout << "Runs are over. Total time:\t\t\t" << time_span(current_time(), start_time) << "\n";
 
   // Print average and std dev data
-  ofstream fout(writeDirectory+"/forces.csv");
+  ofstream fout(writeDirectory+"/rates.csv");
   if (fout.fail()) {
-    cout << "Failed to open file " << writeDirectory+"/forces.csv" << endl;
+    cout << "Failed to open file " << writeDirectory+"/rates.csv" << endl;
   }
   else {
     for (auto dp : data)

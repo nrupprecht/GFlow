@@ -42,9 +42,6 @@ namespace GFlowSimulation {
     //! \brief The acceleration per unit length. A(x) = clamp(|x - max_distance|) * acceleration * sign(dx)
     RealType acceleration;
 
-    //! \brief A dissipation.
-    RealType dissipation;
-
     //! \brief Pointer to the data object that monitors the walls.
     TwoWallBinForce *data_object = nullptr;
   };

@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
   auto start_time = current_time();
 
   // Record data.
-  vector<RPair> average(bins, RPair(0,0));
+  vector<RPair> average(bins, RPair(0,0)), counts(bins, RPair(0,0));
   // All the data from the runs
   vector<vector<RealType> > allData;
 
@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
     // Run the program
     gflow->run(time);
     
-    // Accumulate
+    // Accumulate forces
     auto entry = gnf->getEntry(0);
     vector<RealType> single_data(bins, 0);
     for (int i=0; i<bins; ++i) {
@@ -126,6 +126,13 @@ int main(int argc, char **argv) {
     }
     // Store data
     allData.push_back(single_data);
+
+    // Get counts
+    entry = gnf->getEntry(1);
+    for (int i=0; i<bins; ++i) {
+      counts[i].first = entry[i].first;
+      counts[i].second += entry[i].second;
+    }
 
     // At the last trial, record some data.
     if (t==trials-1) {
@@ -186,6 +193,15 @@ int main(int argc, char **argv) {
   // Close file stream.
   fout.close();
 
+  // Print count data
+  fout.open(writeDirectory+"/counts.csv");
+  if (fout.fail()) {
+    cout << "Ofstream failed to open file. Exiting.\n";
+    return 0;
+  }  
+  for (int i=0; i<counts.size(); ++i) {
+    fout << counts[i].first << "," << counts[i].second << endl;
+  }
 
   
   // Finalize mpi

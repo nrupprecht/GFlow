@@ -61,8 +61,6 @@ namespace GFlowSimulation {
     parser.firstArg("Phi", phi);
     parser.firstArg("H", h);
 
-    
-
     // Potentially change masses.
     if (dp!="") {
       if (dp=="inf") imP = 0;
@@ -72,8 +70,6 @@ namespace GFlowSimulation {
       if (dc=="inf") imC = 0;
       else imC = 1./(convert<RealType>(dc)*sphere_volume(rC, sim_dimensions));
     }
-
-    cout << imP << ", " << imC << endl;
     
     // --- Done gathering parameters, ready to act.
     
@@ -396,8 +392,10 @@ namespace GFlowSimulation {
     TwoWallModifier *walls = new TwoWallModifier(gflow, group1, group2);
     walls->setMaxDistance(5.*rP);
     walls->setBinsDataObject(25);
-    walls->setMinDistanceDataObject(2.0*rP);
-    walls->setMaxDistanceDataObject(4.5*rP);
+
+    //walls->setMinDistanceDataObject(2.0*rP);
+    //walls->setMaxDistanceDataObject(4.5*rP);
+    
     gflow->addModifier(walls);
 
     // Give back harmonic bonds
