@@ -23,9 +23,6 @@ namespace GFlowSimulation {
     // Only record if enough time has gone by
     if (!DataObject::_check() || wallA==nullptr || wallB==nullptr) return;
 
-    // Bin forces
-    int n = Base::simData->number();
-
     // Compute the temperature of the system.
     int n_solvent = simData->number(); //  - wallA->size() = wallB->size();
     RealType KB = gflow->getKB();
@@ -55,11 +52,11 @@ namespace GFlowSimulation {
       RealType F = wallA->getFnet()*sign(dx);
       atY(0, bx) += F*norm;
       // Get the forces for the right wall
-      F = wallB->getFnet()*sign(dx);
-      atY(0, bx) -= F*norm;
+      F = -wallB->getFnet()*sign(dx);
+      atY(0, bx) += F*norm;
 
       // Increment counts
-      atY(1, bx) += 2;
+      atY(1, bx) += 2; // We added two force data points.
     }
   }
 

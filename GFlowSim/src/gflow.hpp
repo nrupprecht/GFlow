@@ -227,6 +227,9 @@ namespace GFlowSimulation {
     //! \brief Set the time step.
     void setDT(RealType);
 
+    //! \brief Set the max timestep.
+    void setMaxDT(RealType);
+
     //! \brief Set data master command line data.
     void setDMCmd(int, char**);
 

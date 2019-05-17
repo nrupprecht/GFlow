@@ -273,19 +273,21 @@ namespace GFlowSimulation {
     fout << "  - Inverse Ratio:            " << toStrRT(1./ratio) << "\n";
     fout << "\n";
 
-    fout << "Timing breakdown:\n";
-    const int entries = 6;
-    double timing[entries], total = 0;
-    string separator = "%\t\t";
-    fout << "  -- Integration:             " << toStrPP(timing[0] = integrator->get_time()/run_time*100) <<separator << integrator->get_time() << "\n";
-    fout << "  -- Pre-forces, domain:      " << toStrPP(timing[1] = gflow->domain_timer.time()/run_time*100) << separator << gflow->domain_timer.time() << "\n";
-    fout << "  -- Non-bonded:              " << toStrPP(timing[2] = forceMaster->get_time()/run_time*100) << separator << forceMaster->get_time() << "\n";
-    fout << "  -- Bonded:                  " << toStrPP(timing[3] = gflow->bonded_timer.time()/run_time*100) << separator << gflow->bonded_timer.time() << "\n";
-    fout << "  -- Body:                    " << toStrPP(timing[4] = gflow->body_timer.time()/run_time*100) << separator << gflow->body_timer.time() << "\n";
-    fout << "  -- Data objects:            " << toStrPP(timing[5] = data_timer.time()/run_time*100) << separator << data_timer.time() << "\n";
-    for (int i=0; i<entries; ++i) total += timing[i];
-    fout << "  - Uncounted:                " << std::setprecision(3) << toStrPP((100. - total)) << separator << run_time*(100. - total)*0.01 << "\n";
-    fout << "\n";
+    if (Base::gflow->getTotalTime()>0) {
+      fout << "Timing breakdown:\n";
+      const int entries = 6;
+      double timing[entries], total = 0;
+      string separator = "%\t\t";
+      fout << "  -- Integration:             " << toStrPP(timing[0] = integrator->get_time()/run_time*100) <<separator << integrator->get_time() << "\n";
+      fout << "  -- Pre-forces, domain:      " << toStrPP(timing[1] = gflow->domain_timer.time()/run_time*100) << separator << gflow->domain_timer.time() << "\n";
+      fout << "  -- Non-bonded:              " << toStrPP(timing[2] = forceMaster->get_time()/run_time*100) << separator << forceMaster->get_time() << "\n";
+      fout << "  -- Bonded:                  " << toStrPP(timing[3] = gflow->bonded_timer.time()/run_time*100) << separator << gflow->bonded_timer.time() << "\n";
+      fout << "  -- Body:                    " << toStrPP(timing[4] = gflow->body_timer.time()/run_time*100) << separator << gflow->body_timer.time() << "\n";
+      fout << "  -- Data objects:            " << toStrPP(timing[5] = data_timer.time()/run_time*100) << separator << data_timer.time() << "\n";
+      for (int i=0; i<entries; ++i) total += timing[i];
+      fout << "  - Uncounted:                " << std::setprecision(3) << toStrPP((100. - total)) << separator << run_time*(100. - total)*0.01 << "\n";
+      fout << "\n";
+    }
 
     // --- Print simulation summary
     fout << "Simulation and space:\n";
@@ -342,12 +344,14 @@ namespace GFlowSimulation {
     fout << "\n";
 
     // --- Print integration summary
-    fout << "Integration:\n";
-    fout << "  - Iterations:               " << iterations << "\n";
-    fout << "  - Time per iteration:       " << toStrRT(run_time / static_cast<RealType>(iterations)) << "\n";
-    if (integrator) fout << "  - Time step (at end):       " << integrator->getTimeStep() << "\n";
-    fout << "  - Average dt:               " << Base::gflow->getTotalTime()/iterations << "\n";
-    fout << "\n";
+    if (Base::gflow->getTotalTime()>0) {
+      fout << "Integration:\n";
+      fout << "  - Iterations:               " << iterations << "\n";
+      fout << "  - Time per iteration:       " << toStrRT(run_time / static_cast<RealType>(iterations)) << "\n";
+      if (integrator) fout << "  - Time step (at end):       " << integrator->getTimeStep() << "\n";
+      fout << "  - Average dt:               " << Base::gflow->getTotalTime()/iterations << "\n";
+      fout << "\n";
+    }
     
     // --- Print the domain summary
     fout << "Domain summary (as of end of simulation):\n";

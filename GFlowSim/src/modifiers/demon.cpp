@@ -113,7 +113,6 @@ namespace GFlowSimulation {
           // Close the door.
           close_door();
           // Do not checkpoint data or assign side.
-
           assign_side();
         }
       }
@@ -121,6 +120,11 @@ namespace GFlowSimulation {
       else {
         // Door was closed, so nl = nr = el = er = 0. Store this.
         add_data(0, 0);
+        // Add data to data objects.
+        kineticL->addEntry(time, El);
+        kineticR->addEntry(time, Er);
+        numberL->addEntry(time, Nl);
+        numberR->addEntry(time, Nr);
         // Record the door time point.
         last_check = time;
         // Checkpoint

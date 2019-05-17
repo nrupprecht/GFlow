@@ -175,7 +175,7 @@ namespace GFlowSimulation {
     timer.start();
 
     // Do integration for the requested amount of time
-    while (running) {
+    while (running && requested_time>0) {
       // --> Pre-step
       for (auto m : modifiers) m->pre_step();
       integrator->pre_step();
@@ -640,6 +640,10 @@ namespace GFlowSimulation {
 
   void GFlow::setDT(RealType dt) {
     if (integrator) integrator->setDT(dt);
+  }
+
+  void GFlow::setMaxDT(RealType mdt) {
+    if (integrator) integrator->setMaxDT(mdt);
   }
 
   void GFlow::setDMCmd(int argc, char** argv) {

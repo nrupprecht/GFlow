@@ -392,10 +392,8 @@ namespace GFlowSimulation {
     TwoWallModifier *walls = new TwoWallModifier(gflow, group1, group2);
     walls->setMaxDistance(5.*rP);
     walls->setBinsDataObject(25);
-
-    //walls->setMinDistanceDataObject(2.0*rP);
-    //walls->setMaxDistanceDataObject(4.5*rP);
-    
+    walls->setMinDistanceDataObject(2.0*rP);
+    walls->setMaxDistanceDataObject(4.5*rP);
     gflow->addModifier(walls);
 
     // Give back harmonic bonds

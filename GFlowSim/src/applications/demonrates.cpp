@@ -143,17 +143,16 @@ int main(int argc, char **argv) {
       gflow->run(time);
       
       // Accumulate
-      RealType aveDEDT = -1, aveDNDT = -1;
       if (KL->size()>0 && NL->size()>0) {
-        aveDEDT = -(KL->last().second - KL->first().second)/(KL->last().first - KL->first().first);
-        aveDNDT = -(NL->last().second - NL->first().second)/(NL->last().first - NL->first().first);
+        RealType aveDEDT = -(KL->last().second - KL->first().second)/(KL->last().first - KL->first().first);
+        RealType aveDNDT = -(NL->last().second - NL->first().second)/(NL->last().first - NL->first().first);
+        // Update average accumulators and vectors.
+        aveE += aveDEDT;
+        aveN += aveDNDT;
+        pointsE.push_back(aveE);
+        pointsN.push_back(aveN);
       }
       else throw false;
-      // Update average accumulators and vectors.
-      aveE += aveDEDT;
-      aveN += aveDNDT;
-      pointsE.push_back(aveE);
-      pointsN.push_back(aveN);
 
       if (i==bins-1 && tr==trials-1) {
         // Create the directory
@@ -167,14 +166,14 @@ int main(int argc, char **argv) {
     }
 
     // Normalize
-    aveE /= trials;
-    aveN /= trials;
+    if (!pointsE.empty()) aveE /= pointsE.size();
+    if (!pointsN.empty()) aveN /= pointsN.size();
 
     // Compute sample standard deviation.
     for (auto en : pointsE) stdE += sqr(en - aveE);
     for (auto nm : pointsN) stdN += sqr(nm - aveN);
-    stdE /= (trials-1);
-    stdN /= (trials-1);
+    stdE /= (pointsE.size()-1);
+    stdN /= (pointsN.size()-1);
     stdE = sqrt(stdE);
     stdN = sqrt(stdN);
 

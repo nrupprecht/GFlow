@@ -39,6 +39,9 @@ namespace GFlowSimulation {
     //! \brief Max distance before force starts
     RealType max_distance;
 
+    //! \brief Min distance before force starts
+    RealType min_distance;
+
     //! \brief The acceleration per unit length. A(x) = clamp(|x - max_distance|) * acceleration * sign(dx)
     RealType acceleration;
 

@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
   bool quiet = false;
   bool snapshot = false;
   int trials = 5;
-  int bins = 25;
+  int bins = 100;
   string writeDirectory = "WallAttraction";
   // Other values
   string load = "configurations/lines.txt";
