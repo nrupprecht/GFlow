@@ -17,9 +17,7 @@ Boundary: Wrap
 NTypes: 1
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
-Force-grid: {
-  : 0, 0, HardSphere
-}
+Force-grid: HardSphere
 
 // Fill an area with particles
 Fill: Area {

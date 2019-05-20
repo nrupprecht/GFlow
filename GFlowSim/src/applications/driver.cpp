@@ -83,7 +83,8 @@ int main(int argc, char **argv) {
   RealType startRecTime = 0;
   RealType fps = -1.;
   RealType videoLength = -1.;
-  RealType dt = 0.0001;
+  RealType dt = 0.001;
+  RealType maxDT = -1;
   long double time = 10.;
   bool print = false;
   string writeDirectory = "RunData";
@@ -132,6 +133,7 @@ int main(int argc, char **argv) {
   parser.get("fps", fps);
   parser.get("videoLength", videoLength);
   parser.get("dt", dt);
+  parser.get("maxDT", maxDT);
   parser.get("time", time);
   parser.get("print", print);
   parser.get("writeDirectory", writeDirectory);
@@ -254,6 +256,7 @@ int main(int argc, char **argv) {
     return 0;
   }
   gflow->setDT(dt);
+  if (maxDT>0) gflow->setMaxDT(maxDT);
   gflow->getIntegrator()->setAdjustDT(adjustDT);
   gflow->requestTime(time);
 

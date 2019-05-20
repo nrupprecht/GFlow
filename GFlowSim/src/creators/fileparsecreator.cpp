@@ -276,13 +276,16 @@ namespace GFlowSimulation {
     // An interaction grid is not specified.
     if (parser.body_size()==0) {
       // If all types interact with the same interaction, or some interaction command is given.
-      if (parser.argName()=="Random") { 
-        makeRandomForces();
-      }
+      if (parser.argName()=="Random") makeRandomForces();
       // Expect the force type. Every particle type interacts via the same interaction.
       else {
-        gflow->forceMaster->setInteraction(InteractionChoice::choose(gflow, parser.argName(), sim_dimensions));
+        Interaction * it = ParseConstructor::getInteraction(parser.getNode(), variables, parser.argName(), gflow);
+        gflow->forceMaster->setInteraction(ParseConstructor::getInteraction(parser.getNode(), variables, parser.argName(), gflow));
       }
+    }
+    // Expect the force type, with a body specifying parameters. Every particle type interacts via the same interaction.
+    else if (parser.args_size()==1) {
+      gflow->forceMaster->setInteraction(ParseConstructor::getInteraction(parser.getNode(), variables, parser.argName(), gflow));
     }
     // The interaction grid is specified.
     else { 
@@ -300,8 +303,10 @@ namespace GFlowSimulation {
           t1 = parser.arg_cast<int>(0);
           t2 = parser.arg_cast<int>(1);
           // If the interaction has not occured yet, create one.
-          if (interactions.find(token)==interactions.end()) 
-            interactions.insert(std::pair<string, Interaction*>(token, InteractionChoice::choose(gflow, token, sim_dimensions)));
+          if (interactions.find(token)==interactions.end()) {
+            string token = parser.argName(2);
+            interactions.insert(std::pair<string, Interaction*>(token, ParseConstructor::getInteraction(parser.getNode(), variables, token, gflow)));
+          }
           // Set the interparticle interaction
           gflow->forceMaster->setInteraction(t1, t2, interactions.find(token)->second);
         }

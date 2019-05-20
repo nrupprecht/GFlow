@@ -22,7 +22,11 @@ namespace GFlowSimulation {
     //! \brief Parse a particle template and add it to the map.
     static void parse_particle_template(HeadNode*, const std::map<string, string>&, std::map<string, ParticleTemplate>&, GFlow*);
 
+    //! \brief Parse a node to create a random engine.
     static RandomEngine* getRandomEngine(HeadNode*, const std::map<string, string>&, string&, GFlow*);
+
+    //! \brief Parse a node to create an interaction.
+    static Interaction* getInteraction(HeadNode*, const std::map<string, string>&, string, GFlow*);
 
   };
 

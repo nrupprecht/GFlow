@@ -1,4 +1,6 @@
 #include "parse-constructor.hpp"
+// Other files
+#include "../../interactions/interaction-choice.hpp"
 
 namespace GFlowSimulation {
 
@@ -217,6 +219,24 @@ namespace GFlowSimulation {
     throw BadStructure("An unreachable part of code was reached!");
     // Token return
     return nullptr;
+  }
+
+  Interaction* ParseConstructor::getInteraction(HeadNode *head, const std::map<string, string>& variables, string token, GFlow *gflow) {
+    // Choose the interaction
+    Interaction *interaction = InteractionChoice::choose(gflow, token, gflow->getSimDimensions());
+
+    // Look for options
+    TreeParser parser(head, variables);
+    parser.addHeadingOptional("Repulsion");
+    // Repulsion - for hard spheres.
+    RealType rp = 0;
+    if (parser.firstArg("Repulsion", rp)) {
+      HardSphere *hs = dynamic_cast<HardSphere*>(interaction);
+      if (hs) hs->setRepulsion(rp);
+    }
+
+    // Return
+    return interaction;
   }
 
 }

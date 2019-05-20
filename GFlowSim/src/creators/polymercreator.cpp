@@ -307,7 +307,7 @@ namespace GFlowSimulation {
     return group;
   }
 
-  Group PolymerCreator::createRandomLine(GFlow *gflow, const RealType *x, const RealType phi, const RealType length) {
+  Group PolymerCreator::createRandomLine(GFlow *gflow, const RealType *x, const RealType phi, const RealType length, const RealType spacing) {
     // Get simdata and bounds
     SimData *sd = gflow->simData;
     Bounds bnds = gflow->bounds;
@@ -316,7 +316,7 @@ namespace GFlowSimulation {
     int sim_dimensions = gflow->sim_dimensions;
 
     // Calculate the number of particles.
-    int n = phi * length / (2 * rP);
+    int n = phi * length / (2 * spacing * rP);
 
     vector<RealType> marks;
     marks.push_back(0);
@@ -334,9 +334,9 @@ namespace GFlowSimulation {
     for (int i=0; i<n; ++i) {
       // Next particle position
       if (i==0)
-        X[1] += (marks[i+1] - marks[i] + rP);
+        X[1] += (marks[i+1] - marks[i] + spacing*rP);
       else 
-        X[1] += (marks[i+1] - marks[i] + 2*rP);
+        X[1] += (marks[i+1] - marks[i] + 2*spacing*rP);
       // Wrap X
       for (int d=0; d<sim_dimensions; ++d) {
         if      (X[d]< bnds.min[d]) X[d] += bnds.wd(d);
@@ -360,6 +360,10 @@ namespace GFlowSimulation {
     // Get number of dimensions
     int sim_dimensions = gflow->sim_dimensions;
 
+    RealType spacing = 1.;
+
+    imP /= spacing;
+
     // Create a random polymer according to the specification.
     RealType rhoP = 1.;
     RealType sigma_v = 0.;
@@ -380,24 +384,27 @@ namespace GFlowSimulation {
     // Shift x to the left 
     x[0] -= dx;
     // Create first chain.
-    Group group1 = createRandomLine(gflow, x, phi, length);
+    Group group1 = createRandomLine(gflow, x, phi, length, spacing);
     // Shift x to the right
     x[0] += 2*dx;
     // Randomly change x[1]
     x[1] += 2*drand48()*rP;
     // Create the second chain.
-    Group group2 = createRandomLine(gflow, x, phi, length);
+    Group group2 = createRandomLine(gflow, x, phi, length, spacing);
 
     // Add the two wall modifier
     TwoWallModifier *walls = new TwoWallModifier(gflow, group1, group2);
+    walls->setMinDistance(-1.); // No minimum distance
     walls->setMaxDistance(5.*rP);
-    walls->setBinsDataObject(25);
+    walls->setBinsDataObject(100);
     walls->setMinDistanceDataObject(2.0*rP);
     walls->setMaxDistanceDataObject(4.5*rP);
     gflow->addModifier(walls);
 
     // Give back harmonic bonds
     harmonicbonds = bonds;
+
+    imP *= spacing;
 
     // Clean up
     delete [] x;

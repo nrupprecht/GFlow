@@ -5,7 +5,7 @@
 namespace GFlowSimulation {
 
   TwoWallModifier::TwoWallModifier(GFlow *gflow) : Modifier(gflow), wallA(WallSlideBody(gflow)), wallB(WallSlideBody(gflow)), 
-    max_distance(0.23), min_distance(0.), acceleration(50.) {
+    max_distance(-1.), min_distance(-1.), acceleration(50.) {
     // Add the bodies to gflow
     gflow->addBody(&wallA);
     gflow->addBody(&wallB);
@@ -16,7 +16,7 @@ namespace GFlowSimulation {
   };
 
   TwoWallModifier::TwoWallModifier(GFlow *gflow, const Group& group1, const Group& group2) : Modifier(gflow), wallA(WallSlideBody(gflow, group1)), 
-    wallB(WallSlideBody(gflow, group2)), max_distance(0.), min_distance(0.23), acceleration(50.) {
+    wallB(WallSlideBody(gflow, group2)), max_distance(-1.), min_distance(-1.), acceleration(50.) {
     // Add the bodies to gflow
     gflow->addBody(&wallA);
     gflow->addBody(&wallB);
@@ -27,10 +27,6 @@ namespace GFlowSimulation {
   };
 
   void TwoWallModifier::post_forces() {
-
-    max_distance = 0.5;
-    min_distance = 0.;
-
     // Get wall positions.
     RealType x1 = wallA.getPosition();
     RealType x2 = wallB.getPosition();
@@ -55,6 +51,10 @@ namespace GFlowSimulation {
 
   void TwoWallModifier::setMaxDistance(RealType md) {
     max_distance = md;
+  }
+
+  void TwoWallModifier::setMinDistance(RealType md) {
+    min_distance = md;
   }
 
   void TwoWallModifier::setAcceleration(RealType a) {

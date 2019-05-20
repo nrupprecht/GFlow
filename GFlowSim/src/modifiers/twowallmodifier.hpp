@@ -20,6 +20,9 @@ namespace GFlowSimulation {
     //! \brief Set the max distance parameter.
     void setMaxDistance(RealType);
 
+    //! \brief Set the max distance parameter.
+    void setMinDistance(RealType);
+
     //! \brief Set the acceleration per unit length.
     void setAcceleration(RealType);
 

@@ -4,9 +4,7 @@
 
 namespace GFlowSimulation {
 
-  HardSphere_VerletPairs_2d::HardSphere_VerletPairs_2d(GFlow *gflow) : HardSphere(gflow, new VerletListPairs(gflow)) {
-    repulsion = 10*DEFAULT_HARD_SPHERE_REPULSION;
-  };
+  HardSphere_VerletPairs_2d::HardSphere_VerletPairs_2d(GFlow *gflow) : HardSphere(gflow, new VerletListPairs(gflow)) {};
 
   void HardSphere_VerletPairs_2d::interact() const {
     // Common tasks
@@ -73,6 +71,7 @@ namespace GFlowSimulation {
         dy *= invr;
         // Calculate the magnitude of the force
         magnitude = repulsion*(sg1 + sg2 - r);
+
         // Update forces
         f[id1][0] += magnitude * dx;
         f[id2][0] -= magnitude * dx;

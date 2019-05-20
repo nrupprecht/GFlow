@@ -6,6 +6,8 @@ Var: phi=0.5
 Var: h=0.5
 Var: rP=0.05
 Var: rC=0.01
+Var: repulsion=50
+Var: maxDT=0.002
 
 Value: length = fraction*width
 
@@ -15,7 +17,7 @@ Dimensions: dimensions
 Bounds: Box=width
 
 Integrator: VelocityVerlet {
-  MaxDT: 0.0001
+  MaxDT: maxDT
 }
 
 Boundary: Wrap
@@ -25,7 +27,9 @@ NTypes: 2
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
 Force-grid: {
-  : 0, 0, HardSphere
+  : 0, 0, HardSphere {
+    Repulsion: repulsion
+  }
   : 0, 1, HardSphere
   : 1, 1, None
 }
@@ -38,7 +42,7 @@ Fill: Polymer {
   r: rC
   Phi: phi
 
-  DensityP: 10
+  DensityP: 1
 }
 
 // Fill an area with particles
@@ -52,7 +56,7 @@ Fill: Area {
     Type: 1
   }
 
-  Number: Phi=0.01 {
+  Number: Phi=0.05 {
     TypeA : 1
   }
   
