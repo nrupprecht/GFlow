@@ -5,6 +5,8 @@ Var: phi=0.025
 Var: width=20   // Box width
 Var: length=0.5 // Door area (length)
 Var: tau=0.25
+Var: Tl=0.001
+Var: Tr=0.001
 
 Value: sigma=0.05
 
@@ -50,6 +52,8 @@ Fill: Area {
   Number: Phi=phi {
     TypeA : 1
   }
+
+  Velocity: Temperature=Tl
 }
 
 // Fill the right side
@@ -69,6 +73,8 @@ Fill: Area {
   Number: Phi=phi {
     TypeA : 1
   }
+
+  Velocity: Temperature=Tr
 }
 
 // Top part of the partition

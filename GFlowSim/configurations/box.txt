@@ -33,6 +33,8 @@ Fill: Area {
   Number: Phi=phi {
     TypeA : 1
   }
+
+  Velocity: Temperature=0.001
 }
 
 

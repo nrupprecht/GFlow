@@ -171,6 +171,17 @@ namespace GFlowSimulation {
       return out;
     }
 
+    friend Vec operator*=(const Vec& v, const RealType scalar) {
+      for (int i=0; i<v.dimensions; ++i) v.data[i] *= scalar;
+      return v;
+    }
+
+    friend RealType sqr(const Vec a) {
+      RealType s = 0;
+      for (int i=0; i<a.dimensions; ++i) s += a.data[i]*a.data[i];
+      return s;
+    }
+
     friend RealType distanceVec(const Vec a, const Vec b) {
       // Check dimensions
       if (a.dimensions!=b.dimensions) throw DimensionMismatch("Disctance vec.");

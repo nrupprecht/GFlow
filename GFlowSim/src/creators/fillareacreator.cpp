@@ -15,6 +15,9 @@ namespace GFlowSimulation {
     // Get the dimensions
     int sim_dimensions = gflow->getSimDimensions();
 
+    // Get the number of particle fixers - any additional elements were added by this creator.
+    int pf_size = particle_fixers.size();
+
     // Create parser, with variables.
     TreeParser parser(head, variables);
     // Declare valid options.
@@ -184,7 +187,8 @@ namespace GFlowSimulation {
     // --- Fill the region with particles
     Vec X(sim_dimensions), V(sim_dimensions);
     RealType sigma(0.), im(0.);
-    int type(0);
+    int type(0), N(0);
+    RealType ke(0.);
 
     // If we are filling to a specified volume fraction or number density.
     if (option==0 || option==1) {
@@ -204,14 +208,13 @@ namespace GFlowSimulation {
       std::discrete_distribution<int> choice(probabilities.begin(), probabilities.end());
 
       // Keep track of number and total volume of particle as we add them.
-      int i(0);
       RealType vol = 0, Vol = region->vol();
       // A function that checks if we should keep adding particles.
       auto keep_adding = [&] () -> bool {
         // Phi - fill to a volume fraction.
         if (option==0) return vol/Vol<phi;
         // Rho - fill to a number density.
-        else if (option==1) return i/Vol<phi;
+        else if (option==1) return N/Vol<phi;
         // Else, error
         else return false;
       };
@@ -230,7 +233,7 @@ namespace GFlowSimulation {
         ParticleTemplate &particle_creator = particle_template_numbers.empty() ? particle_templates[0] : template_vector.at(pt);
         
         // Select other characteristics
-        particle_creator.createParticle(X.data, sigma, im, type, i, sim_dimensions);
+        particle_creator.createParticle(X.data, sigma, im, type, N, sim_dimensions);
         // Get next global id
         int gid = simData->getNextGlobalID();
         // Add the particle
@@ -241,9 +244,10 @@ namespace GFlowSimulation {
         ParticleFixer pfix(sim_dimensions, gid);
         pfix.velocity = V;
         particle_fixers.push_back(pfix);
-        // Increment volume and counter
+        // Increment volume, KE, and counter
         vol += sphere_volume(sigma, sim_dimensions);
-        ++i;
+        ke  += 0.5*sqr(V)/im;
+        ++N;
       }
 
     }
@@ -257,7 +261,7 @@ namespace GFlowSimulation {
         int num = static_cast<int>(pr.second);
 
         ParticleTemplate &particle_creator = it->second;
-        for (int i=0; i<num; ++i) {
+        for (; N<num; ++N) {
           // Select a position for the particle (random uniform) that does not fall within an excluded region
           int attempts = 0;
           do {
@@ -266,7 +270,7 @@ namespace GFlowSimulation {
           } while (excluded_contains(X) && attempts<=max_attempts);
           
           // Select other characteristics
-          particle_creator.createParticle(X.data, sigma, im, type, i, sim_dimensions);
+          particle_creator.createParticle(X.data, sigma, im, type, N, sim_dimensions);
           // Get next global id
           int gid = simData->getNextGlobalID();
           // Add the particle
@@ -277,8 +281,17 @@ namespace GFlowSimulation {
           ParticleFixer pfix(sim_dimensions, gid);
           pfix.velocity = V;
           particle_fixers.push_back(pfix);
+          // Increment KE
+          ke  += 0.5*sqr(V)/im;
         }
       }
+    }
+
+    // If using temperature based velocity initialization, make sure the temperature is exactly right.
+    if (velocityOption==2) {
+      RealType Teff = ke / (N/2 * sim_dimensions * gflow->getKB()); 
+      RealType frac = sqrt(temperature/Teff);
+      for (int i=pf_size; i<particle_fixers.size(); ++i) particle_fixers[i].velocity *= frac;
     }
 
     // Clean up

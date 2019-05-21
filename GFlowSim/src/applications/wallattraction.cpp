@@ -12,6 +12,19 @@
 
 #include <unistd.h>
 
+bool check_parser(ArgParse& parser) {
+  // --- Make sure we didn't enter any illegal tokens - do this after gflow creation since creator uses flags
+  try {
+    parser.check();
+  }
+  catch (ArgParse::UncheckedToken illegal) {
+    cout << "Illegal option: [" << illegal.token << "]. Exiting.\n";
+    return false;
+  }
+  // Return all good.
+  return true;
+}
+
 using namespace GFlowSimulation;
 
 int main(int argc, char **argv) {
@@ -91,7 +104,12 @@ int main(int argc, char **argv) {
   for (int t=0; t<trials; ++t) {
     // Delete old gflow
     GFlow *gflow = creator.createSimulation();
-    if (gflow==nullptr) throw false;
+
+    if (!check_parser(parser)) exit(1);
+    if (gflow==nullptr) {
+      cout << "GFlow was null. Exiting.\n";
+      exit(1);
+    }
 
     // Add an ending snapshot object
     if (snapshot && t==trials-1) gflow->addDataObject(new EndingSnapshot(gflow));
