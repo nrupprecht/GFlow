@@ -4,7 +4,7 @@
 
 namespace GFlowSimulation {
 
-  Buckingham_VerletPairs_2d::Buckingham_VerletPairs_2d(GFlow *gflow) : Buckingham(gflow, new VerletListPairs(gflow)) {};
+  Buckingham_VerletPairs_2d::Buckingham_VerletPairs_2d(GFlow *gflow) : Buckingham(gflow) {};
 
   void Buckingham_VerletPairs_2d::interact() const {
     // Common tasks
@@ -34,9 +34,6 @@ namespace GFlowSimulation {
 
     // Needed constants
     RealType sg1, sg2, dx, dy, rsqr, r, invr, Fn, sigma, exp1, sigma2, sigma6;
-    // Point to the actual list from the verlet list object. Since we set the handler at initialization to 
-    // be of type VerletListPairs, this cast should always succeed.
-    vector<int> &verlet = dynamic_cast<VerletListPairs*>(handler)->verlet;
 
     // --- Go through all particles
     for (int i=0; i<verlet.size(); i+=2) {

@@ -4,7 +4,7 @@
 
 namespace GFlowSimulation {
 
-  HardSphere_VerletPairs_2d::HardSphere_VerletPairs_2d(GFlow *gflow) : HardSphere(gflow, new VerletListPairs(gflow)) {};
+  HardSphere_VerletPairs_2d::HardSphere_VerletPairs_2d(GFlow *gflow) : HardSphere(gflow) {};
 
   void HardSphere_VerletPairs_2d::interact() const {
     // Common tasks
@@ -34,9 +34,6 @@ namespace GFlowSimulation {
 
     // Needed constants
     RealType sg1, sg2, dx, dy, rsqr, r, invr, magnitude;
-    // Point to the actual list from the verlet list object. Since we set the handler at initialization to 
-    // be of type VerletListPairs, this cast should always succeed.
-    vector<int> &verlet = dynamic_cast<VerletListPairs*>(handler)->verlet;
 
     // --- Go through all particles
     for (int i=0; i<verlet.size(); i+=2) {

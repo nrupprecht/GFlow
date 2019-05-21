@@ -246,6 +246,10 @@ namespace GFlowSimulation {
     return pow(PI, D/2.) * pow(radius, D) / tgamma(D/2. + 1.);
   }
 
+  inline RealType inv_sphere_volume(const RealType v, const int D) {
+    return pow( tgamma(D/2. + 1.) * v/ pow(PI, D/2.), 1./D);
+  }
+
 }
 
 // Include this after so string is defined

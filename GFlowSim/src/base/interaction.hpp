@@ -18,24 +18,12 @@ namespace GFlowSimulation {
   class Interaction : public Base {
   public:
     //! \brief Default Constructor.
-    Interaction(GFlow *);
-
-    //! \brief Constructor that sets the interaction handler.
-    Interaction(GFlow *, InteractionHandler*);
-
-    //! \brief Destructor.
-    virtual ~Interaction();
+    Interaction(GFlow*);
 
     //! \brief Calculate all the forces between atoms in the verlet lists.
     virtual void interact() const;
 
     // --- Accessors
-
-    //! \brief Return the total length of the verlet list.
-    int size() const;
-
-    //! \brief Get the verlet list (get it as a const reference)
-    InteractionHandler* getInteractionHandler() const;
 
     //! \brief Get the cutoff for the interaction.
     RealType getCutoff() const;
@@ -54,22 +42,25 @@ namespace GFlowSimulation {
     //! \brief Set the do potential flag.
     void setDoPotential(bool);
 
-    //! \brief Clear this force's interaction handler
-    void clear();
-
-    //! \brief Add a pair pf particles - the first is the head
-    virtual void addPair(int, int);
+    //! \brief Add a pair of interacting particles.
+    virtual void addPair(const int, const int);
 
     //! \brief Signals that the pair additions are done.
-    virtual void close();
+    virtual void close() {};
+
+    //! \brief Clears the verlet list.
+    virtual void clear();
+
+    //! \brief Returns the size of the verlet list.
+    virtual int size() const;
 
     // GFlow is a friend class
     friend class GFlow;
 
   protected:
 
-    //! \brief The neighbor (verlet) lists for all the pairs of atoms between which this force is active
-    InteractionHandler *handler;
+    //! \brief The verlet list
+    vector<int> verlet;
 
     //! \brief The cutoff, i.e. how many times greater than the particle radius can a particle interact with other particles.
     //!

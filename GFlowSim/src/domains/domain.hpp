@@ -112,6 +112,9 @@ namespace GFlowSimulation {
     //! \brief The number of particles last time we built the cells.
     int number = 0;
 
+    //! \brief The target number of particles in each particle's verlet list.
+    RealType target_list_size;
+
     //! \brief A vector holding all the cells in the domain.
     vector<Cell> cells;
   };

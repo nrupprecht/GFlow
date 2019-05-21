@@ -8,7 +8,7 @@
 
 namespace GFlowSimulation {
 
-  Domain::Domain(GFlow *gflow) : DomainBase(gflow) {
+  Domain::Domain(GFlow *gflow) : DomainBase(gflow), target_list_size(4.) {
     // Allocate arrays
     border_type_up = new int[sim_dimensions];
     border_type_down = new int[sim_dimensions];
@@ -39,7 +39,7 @@ namespace GFlowSimulation {
   }
 
   void Domain::initialize() {
-    //! @todo Domains are generally initialized several times, though they doesn't need to be. Find a way to check whether we
+    //! \todo Domains are generally initialized several times, though they doesn't need to be. Find a way to check whether we
     //! actually need to initialize the domain.
 
     // Common initialization tasks
@@ -60,16 +60,12 @@ namespace GFlowSimulation {
     calculate_max_small_sigma();
 
     // Calculate skin depth
-    skin_depth = 0.5 * max_small_sigma;
+    RealType rho = simData->size() / domain_bounds.vol();
+    RealType candidate = inv_sphere_volume((target_list_size)/rho + 0.5*sphere_volume(max_small_sigma, sim_dimensions), sim_dimensions) - 2*max_small_sigma;
+    skin_depth = max(static_cast<RealType>(0.5 * max_small_sigma), candidate);
 
     // Use max_small_sigma
     min_small_cutoff = target_cell_size = 2*max_small_sigma+skin_depth;
-
-    // Try using larger cells
-    target_cell_size = max( 
-      static_cast<RealType>(pow(domain_bounds.vol() / simData->size() , 1./sim_dimensions)), 
-      min_small_cutoff
-    );
 
     // Calculate cell grid data
     calculate_domain_cell_dimensions();

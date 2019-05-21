@@ -4,31 +4,12 @@
 
 namespace GFlowSimulation {
 
-  Interaction::Interaction(GFlow *gflow) : Base(gflow) {
-    // Set the interaction handler
-    handler = new VerletListPairs(gflow);
-  };
-
-  Interaction::Interaction(GFlow *gflow, InteractionHandler *hand) : Base(gflow), handler(hand) {
-    if (handler==nullptr) handler = new VerletListPairs(gflow);
-  };
-
-  Interaction::~Interaction() {
-    if (handler) delete handler;
-  }
+  Interaction::Interaction(GFlow *gflow) : Base(gflow) {};
 
   void Interaction::interact() const {
     // Reset virial and potential
     virial    = 0;
     potential = 0;
-  }
-
-  int Interaction::size() const {
-    return handler->size();
-  }
-
-  InteractionHandler* Interaction::getInteractionHandler() const {
-    return handler;
   }
 
   RealType Interaction::getCutoff() const {
@@ -51,18 +32,17 @@ namespace GFlowSimulation {
     do_potential = s;
   }
 
+  void Interaction::addPair(const int id1, const int id2) {
+    verlet.push_back(id1);
+    verlet.push_back(id2);
+  }
+
   void Interaction::clear() {
-    handler->clear();
+    verlet.clear();
   }
 
-  void Interaction::addPair(int id1, int id2) {
-    // Add the head if it is new
-    handler->addPair(id1, id2);
-  }
-
-  void Interaction::close() {
-    // Add the head if it is new
-    handler->close();
+  int Interaction::size() const {
+    return verlet.size();
   }
 
 }

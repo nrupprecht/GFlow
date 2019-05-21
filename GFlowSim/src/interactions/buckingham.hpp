@@ -8,14 +8,12 @@ namespace GFlowSimulation {
   class Buckingham : public Interaction {
   public:
     //! \brief Default constructor.
-    Buckingham(GFlow *gflow, InteractionHandler *hndlr) 
-      : Interaction(gflow, hndlr), ratio(1.), strength(DEFAULT_LENNARD_JONES_STRENGTH) {
+    Buckingham(GFlow *gflow) : Interaction(gflow), ratio(1.), strength(DEFAULT_LENNARD_JONES_STRENGTH) {
       cutoff = 2.5; 
     };
 
     //! \brief Ratio setting constructor.
-    Buckingham(GFlow *gflow, RealType r, InteractionHandler *hndlr) 
-      : Interaction(gflow, hndlr), ratio(r), strength(DEFAULT_LENNARD_JONES_STRENGTH) {
+    Buckingham(GFlow *gflow, RealType r) : Interaction(gflow), ratio(r), strength(DEFAULT_LENNARD_JONES_STRENGTH) {
       cutoff = 2.5;   
     };
 

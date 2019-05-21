@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
 
-  HardSphereDs_VerletPairs_2d::HardSphereDs_VerletPairs_2d(GFlow *gflow) : HardSphereDs(gflow, new VerletListPairs(gflow)) {};
+  HardSphereDs_VerletPairs_2d::HardSphereDs_VerletPairs_2d(GFlow *gflow) : HardSphereDs(gflow) {};
 
   bool HardSphereDs_VerletPairs_2d::checks() {
     RealType **x = Base::simData->X();
@@ -48,9 +48,6 @@ namespace GFlowSimulation {
 
     // Needed constants
     RealType sg1, sg2, dx, dy, rsqr, r, invr, Fn, dvx, dvy, vn;
-    // Point to the actual list from the verlet list object. Since we set the handler at initialization to 
-    // be of type VerletListPairs, this cast should always succeed.
-    vector<int> &verlet = dynamic_cast<VerletListPairs*>(handler)->verlet;
 
     // --- Go through all particles
     for (int i=0; i<verlet.size(); i+=2) {

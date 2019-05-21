@@ -4,7 +4,7 @@
 
 namespace GFlowSimulation {
 
-  LennardJones_VerletPairs_2d::LennardJones_VerletPairs_2d(GFlow *gflow) : LennardJones(gflow, new VerletListPairs(gflow)) {};
+  LennardJones_VerletPairs_2d::LennardJones_VerletPairs_2d(GFlow *gflow) : LennardJones(gflow) {};
 
   void LennardJones_VerletPairs_2d::interact() const {
     // Common tasks
@@ -36,9 +36,6 @@ namespace GFlowSimulation {
 
     // Needed constants
     RealType sg1, sg2, dx, dy, rsqr, r, invr, gamma, g3, g6, g12, magnitude;
-    // Point to the actual list from the verlet list object. Since we set the handler at initialization to 
-    // be of type VerletListPairs, this cast should always succeed.
-    vector<int> &verlet = dynamic_cast<VerletListPairs*>(handler)->verlet;
 
     // --- Go through all particles
     for (int i=0; i<verlet.size(); i+=2) {

@@ -8,7 +8,7 @@ namespace GFlowSimulation {
   class LennardJones : public Interaction {
   public:
     //! \brief Default constructor.
-    LennardJones(GFlow *gflow, InteractionHandler *hndlr) : Interaction(gflow, hndlr), strength(DEFAULT_LENNARD_JONES_STRENGTH) { 
+    LennardJones(GFlow *gflow) : Interaction(gflow), strength(DEFAULT_LENNARD_JONES_STRENGTH) { 
       setCutoff(2.5);
     };
 

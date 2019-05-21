@@ -11,8 +11,7 @@ namespace GFlowSimulation {
   class HardSphere : public Interaction {
   public:
     //! \brief Default constructor.
-    HardSphere(GFlow *gflow, InteractionHandler *hndlr) 
-      : Interaction(gflow, hndlr), repulsion(DEFAULT_HARD_SPHERE_REPULSION) {};
+    HardSphere(GFlow *gflow) : Interaction(gflow), repulsion(DEFAULT_HARD_SPHERE_REPULSION) {};
   
     //! \brief Set the repulsion parameter.
     void setRepulsion(RealType r) { repulsion = r; }
