@@ -37,7 +37,7 @@ namespace GFlowSimulation {
     // Entry must be positive. Otherwise, something is wrong.
     if (side_entry<0) throw false;
     // Assign particles their side.
-    assign_side();
+    assign_side(false);
     // Check point the initial data.
     checkpoint_data();
     // Set the last check time.
@@ -109,7 +109,7 @@ namespace GFlowSimulation {
         // Otherwise, go back in time and keep the door closed.
         else {
           // Revert to last checkpoint. The particles' side data will be correct after this.
-          revert_to_last_checkpoint();
+          revert_to_last_checkpoint(false); // Don't rebuild, since closing the door will rebuild.
           // Close the door.
           close_door();
           // Do not checkpoint data or assign side.
@@ -183,6 +183,10 @@ namespace GFlowSimulation {
     partition_position = x;
   }
 
+  void Demon::setInteraction(DemonWall* w) {
+    demon_interaction = w;
+  }
+
   void Demon::setTau(RealType t) {
     if (t>0) tau = t;
   }
@@ -200,6 +204,7 @@ namespace GFlowSimulation {
     // Get data from simdata.
     RealType **x = simData->X();
     RealType **v = simData->V();
+    RealType *sg = simData->Sg();
     RealType *im = simData->Im();
     int *side = simData->IntegerData(side_entry);
 
@@ -208,7 +213,7 @@ namespace GFlowSimulation {
       // Don't count walls.
       if (im[i]==0) continue;
       // Find current side
-      int sd = get_side(x[i]);
+      int sd = get_side_literal(x[i]);
       // Calculate energy
       RealType ke = (1./im[i]) * 0.5 * sqr(v[i], sim_dimensions);
       // If the particle changed sides.
@@ -238,16 +243,19 @@ namespace GFlowSimulation {
     }
   }
 
-  inline void Demon::assign_side() {
+  inline void Demon::assign_side(bool nonliteral) {
     // Get data from simdata.
     RealType **x = simData->X();
+    RealType *sg = simData->Sg();
     int *side = simData->IntegerData(side_entry);
     // Make sure side is a valid array.
     if (side==nullptr) return;
     // Check all particles
     for (int i=0; i<simData->size(); ++i) {
       // Find current side
-      int sd = get_side(x[i]);
+      int sd;
+      if (nonliteral) sd = get_side(x[i], side[i], sg[i]);
+      else sd = get_side_literal(x[i]);
       // Write side data
       side[i] = sd;
     }
@@ -276,7 +284,7 @@ namespace GFlowSimulation {
     }
   }
 
-  inline void Demon::revert_to_last_checkpoint() {
+  inline void Demon::revert_to_last_checkpoint(bool construct) {
     // Check that sizes are the same
     if (simData->size()!=checkpoint_x.size()) throw false;
 
@@ -293,7 +301,7 @@ namespace GFlowSimulation {
     gflow->setElapsedTime(last_check);
 
     // Force a rebuild of domains and forces
-    domain->construct();
+    if (construct) domain->construct();
 
     // Modify animation object.
     if (animate_object) {
@@ -335,6 +343,11 @@ namespace GFlowSimulation {
     }
     // Set door open
     door_open = false;
+    // Set demon wall to open
+    if (demon_interaction) demon_interaction->turnOn();
+    // Need to construct the domain. 
+    // \todo Be able to add some particles to the domain without recreating the whole thing.
+    domain->construct();
   }
 
   inline void Demon::add_data(int dn, RealType de) {
@@ -342,7 +355,18 @@ namespace GFlowSimulation {
     dE.push_back(de);
   }
 
-  inline int Demon::get_side(RealType *x) {
+  inline int Demon::get_side(RealType *x, int current, RealType radius) {
+    if (current==0) {
+      if (partition_position + 2*radius <= x[0]) return 1;
+      else return 0;
+    }
+    else {
+      if (x[0] <= partition_position - 2*radius) return 0;
+      else return 1;
+    }
+  }
+
+  inline int Demon::get_side_literal(RealType *x) {
     return x[0]<=partition_position ? 0 : 1;
   }
 

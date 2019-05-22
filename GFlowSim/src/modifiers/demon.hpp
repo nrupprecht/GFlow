@@ -5,6 +5,7 @@
 #include "../other/group.hpp"
 #include "../utility/vec.hpp"
 #include "../dataobjects/dataobjecttypes/graphobject.hpp"
+#include "../interactions/demon_wall.hpp"
 
 namespace GFlowSimulation {
 
@@ -39,6 +40,9 @@ namespace GFlowSimulation {
     //! \brief Set the partition position.
     void setPartitionPosition(RealType);
 
+    //! \brief Set the demon wall interaction.
+    void setInteraction(DemonWall*);
+
     //! \brief Set the demon's tau.
     void setTau(RealType);
 
@@ -48,13 +52,15 @@ namespace GFlowSimulation {
     inline void count_changes(int&, int&, RealType&, RealType&);
 
     //! \brief Write particles' side data to simdata.
-    inline void assign_side();
+    inline void assign_side(bool=true);
 
     //! \brief Checkpoint the data.
     inline void checkpoint_data();
 
     //! \brief Reset the particles to be at the last checkpoint.
-    inline void revert_to_last_checkpoint();
+    //!
+    //! The flag is whether or not to force the domains to remake.
+    inline void revert_to_last_checkpoint(bool=true);
 
     //! \brief Open the door.
     inline void open_door();
@@ -65,8 +71,11 @@ namespace GFlowSimulation {
     //! \brief Add data to the vectors.
     inline void add_data(int, RealType);
 
-    //! \brief Get what side a particle is on based on position.
-    inline int get_side(RealType*);
+    //! \brief Get what side a particle is on based on position, previous side, and radius.
+    inline int get_side(RealType*, int, RealType);
+
+    //! \brief Get what side a particle is on based only on position.
+    inline int get_side_literal(RealType*);
 
     //! \brief A function pointer to the door open/close choice function.
     bool (*check_choice) (int, int, RealType, RealType);
@@ -77,6 +86,9 @@ namespace GFlowSimulation {
     static bool energy_demon(int, int, RealType, RealType);
     //! \brief Choice function to make a number demon.
     static bool number_demon(int, int, RealType, RealType);
+
+    //! \brief The demon wall interaction.
+    DemonWall *demon_interaction = nullptr;
 
     //! \brief Whether the door is open.
     bool door_open = true;
@@ -98,6 +110,9 @@ namespace GFlowSimulation {
 
     //! \brief The x position of the partition plane.
     RealType partition_position = 0.;
+
+    //! \brief Door half width
+    RealType hwidth = 0.;
 
     //! \brief The positions of the particles that make up the door.
     vector<Vec> door_positions;

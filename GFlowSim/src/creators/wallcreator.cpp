@@ -86,6 +86,15 @@ namespace GFlowSimulation {
           *dynamic_cast<Group*>(demon) = wall_group;
           RealType tau = 0;
           if (parser.firstArg("Tau", tau)) demon->setTau(tau);
+          // Find any demon wall interaction and give it to the demon.
+          for (auto it : gflow->getInteractions()) {
+            DemonWall* d = dynamic_cast<DemonWall*>(it);
+            if (d!=nullptr) {
+              demon->setInteraction(d);
+              break;
+            }
+          }
+
           // Add the demon
           gflow->addModifier(demon);
         }

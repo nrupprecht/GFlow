@@ -17,7 +17,10 @@ namespace GFlowSimulation {
     //! Fills a passed in vector with the ids of all the particles that lie within
     //! a specified distance of a given particle.\n
     //! This function must be overloaded by all children of DomainBase.
-    virtual void getAllWithin(int, RealType, vector<int>&) override;
+    virtual void getAllWithin(int, vector<int>&, RealType=-1.) override;
+
+    //! \brief Get all the particles withing a radius of some position.
+    virtual void getAllWithin(Vec, vector<int>&, RealType=-1.) override {};
 
     //! \brief Remove particles that are overlapping by more than some fraction.
     virtual void removeOverlapping(RealType) override;

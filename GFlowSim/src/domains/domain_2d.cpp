@@ -37,7 +37,7 @@ namespace GFlowSimulation {
     construct();
   }
 
-  void Domain2D::getAllWithin(int, RealType, vector<int>&) {
+  void Domain2D::getAllWithin(int id1, vector<int>& neighbors, RealType distance) {
     // STUB
   }
 

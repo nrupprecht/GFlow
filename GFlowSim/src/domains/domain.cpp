@@ -84,8 +84,120 @@ namespace GFlowSimulation {
     initialized = true;
   }
 
-  void Domain::getAllWithin(int, RealType, vector<int>&) {
-    //! @todo Implement this.
+  void Domain::getAllWithin(int id1, vector<int>& neighbors, RealType distance) {
+    // Default distance
+    if (distance<0) distance = 2*max_small_sigma;
+
+    // Set up
+    int *tuple1 = new int[sim_dimensions], *tuple2 = new int[sim_dimensions];
+    int *cell_index = new int[sim_dimensions], *center = new int[sim_dimensions];
+    
+    RealType **x = Base::simData->X();
+    int *type = Base::simData->Type();
+
+    // Get the boundary conditions
+    RealType *dX = new RealType[sim_dimensions];
+    int *search_dims = new int[sim_dimensions];
+
+    // Calculate sweep "radius"
+    int prod = 1;
+    for (int d=0; d<sim_dimensions; ++d) {
+      center[d] = static_cast<int>(ceil(distance/widths[d]));
+      search_dims[d] = 2*center[d]+1;
+      prod *= search_dims[d];
+    }
+
+    // The tuple address of the cell the particle is in
+    get_cell_index_tuple(x[id1], cell_index);
+    
+    // Look in a hypercube.
+    for (int j=0; j<prod; ++j) {
+      // Turn j into a tuple
+      getAddressCM(j, search_dims, tuple1, sim_dimensions);
+      // Shift so it is a displacement
+      subtractVec(tuple1, center, tuple2, sim_dimensions);
+      // Get the cell at the displacement from the particle's cell
+      addVec(tuple2, cell_index, tuple1, sim_dimensions);
+      // If the cell is valid, look for particles
+      if(correct_index(tuple1)) {
+        // Get the linear address of the other cell
+        int linear;
+        tuple_to_linear(linear, tuple1);
+        for (auto &id2 : cells[linear].particle_ids) {
+          // Don't count yourself.
+          if (id1==id2) continue;
+          // If the other particle is a larger particle, it will take care of this interaction
+          Base::gflow->getDisplacement(Base::simData->X(id1), Base::simData->X(id2), dX);
+          RealType r = magnitudeVec(dX, sim_dimensions);
+          if (r<distance) neighbors.push_back(id2);
+        }
+      }
+    }
+
+    // Clean up
+    delete [] tuple1;
+    delete [] tuple2;
+    delete [] cell_index;
+    delete [] center;
+    delete [] dX;
+    delete [] search_dims;
+  }
+
+  void Domain::getAllWithin(Vec X, vector<int>& neighbors, RealType distance) {
+    // Default distance
+    if (distance<0) distance = 2*max_small_sigma;
+
+    // Set up
+    int *tuple1 = new int[sim_dimensions], *tuple2 = new int[sim_dimensions];
+    int *cell_index = new int[sim_dimensions], *center = new int[sim_dimensions];
+    
+    RealType **x = Base::simData->X();
+    int *type = Base::simData->Type();
+
+    // Get the boundary conditions
+    RealType *dX = new RealType[sim_dimensions];
+    int *search_dims = new int[sim_dimensions];
+
+    // Calculate sweep "radius"
+    int prod = 1;
+    for (int d=0; d<sim_dimensions; ++d) {
+      center[d] = static_cast<int>(ceil(distance/widths[d]));
+      search_dims[d] = 2*center[d]+1;
+      prod *= search_dims[d];
+    }
+
+    // The tuple address of the cell the particle is in
+    get_cell_index_tuple(X.data, cell_index);
+    
+    // Look in a hypercube.
+    for (int j=0; j<prod; ++j) {
+      // Turn j into a tuple
+      getAddressCM(j, search_dims, tuple1, sim_dimensions);
+      // Shift so it is a displacement
+      subtractVec(tuple1, center, tuple2, sim_dimensions);
+      // Get the cell at the displacement from the particle's cell
+      addVec(tuple2, cell_index, tuple1, sim_dimensions);
+      // If the cell is valid, look for particles
+      if(correct_index(tuple1)) {
+        // Get the linear address of the other cell
+        int linear;
+        tuple_to_linear(linear, tuple1);
+        for (auto &id2 : cells[linear].particle_ids) {
+          // If the other particle is a larger particle, it will take care of this interaction
+          Base::gflow->getDisplacement(X.data, Base::simData->X(id2), dX);
+          RealType r = magnitudeVec(dX, sim_dimensions);
+          if (r<distance) neighbors.push_back(id2);
+        }
+      }
+    }
+
+    // Clean up
+    delete [] tuple1;
+    delete [] tuple2;
+    delete [] cell_index;
+    delete [] center;
+    delete [] dX;
+    delete [] search_dims;
   }
 
   void Domain::removeOverlapping(RealType factor) {
@@ -482,7 +594,6 @@ namespace GFlowSimulation {
   }
 
   inline void Domain::get_cell_index_tuple(const RealType *x, int *index) {
-    // This function is (currently) only used for finding the linear index of the cell the large object is in.
     for (int d=0; d<sim_dimensions; ++d)
       index[d] = static_cast<int>((x[d] - bounds.min[d])*inverseW[d]) + dim_shift_down[d];
   }

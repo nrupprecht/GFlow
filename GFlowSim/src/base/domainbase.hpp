@@ -70,10 +70,16 @@ namespace GFlowSimulation {
     // --- Locator functions
 
     //! \brief Get all the particles within a radius of another particle
+    //!
     //! Fills a passed in vector with the ids of all the particles that lie within
     //! a specified distance of a given particle.\n
     //! This function must be overloaded by all children of DomainBase.
-    virtual void getAllWithin(int, RealType, vector<int>&)=0;
+    virtual void getAllWithin(int, vector<int>&, RealType=-1.)=0;
+
+    //! \brief Get all the particles withing a radius of some position.
+    //!
+    //! This function must be overloaded by all children of DomainBase.
+    virtual void getAllWithin(Vec, vector<int>&, RealType=-1.)=0;
 
     //! \brief Remove particles that are overlapping by more than some fraction.
     virtual void removeOverlapping(RealType)=0;

@@ -1,10 +1,11 @@
 #include "demon_wall.hpp"
 // Other files
 #include "../interactionhandlers/verletlist-pairs.hpp"
+#include "../base/domainbase.hpp"
 
 namespace GFlowSimulation {
 
-  DemonWall::DemonWall(GFlow *gflow) : Interaction(gflow) {};
+  DemonWall::DemonWall(GFlow *gflow) : Interaction(gflow), repulsion(DEFAULT_HARD_SPHERE_REPULSION), buffer_time(0.01) {};
 
   void DemonWall::interact() const {
     // Do dimensional check.
@@ -14,6 +15,7 @@ namespace GFlowSimulation {
     // Get the data pointers.
     RealType **x = Base::simData->X();
     RealType **v = Base::simData->V();
+    RealType **f = Base::simData->F();
     RealType *sg = Base::simData->Sg();
     RealType *im = Base::simData->Im();
     int    *type = Base::simData->Type();
@@ -35,6 +37,9 @@ namespace GFlowSimulation {
 
     // Needed constants
     RealType sg1, sg2, dx, dy, rsqr, r, invr, magnitude;
+    Vec X(2);
+    vector<int> neighbors;
+    vector<int> moved;
 
     // --- Go through all particles
     for (int i=0; i<verlet.size(); i+=2) {
@@ -63,16 +68,73 @@ namespace GFlowSimulation {
       sg2 = sg[id2];
       // If close, interact.
       if (0<rsqr && rsqr < sqr(sg1 + sg2)) {
+        // If just turned on, remove all particles touching us.
+        if (turn_on) {
 
-        // Left side particle trying to go right
-        if (side[id1]==0 && -0.05<=dx+sg1 && 0<v[id1][0]) {
-          v[id1][0] = -v[id1][0];
+          if (side[id1]==0 /*v[id1][0]>0*/ && im[id1]>0) {
+            // Place the particle somewhere randomly on its side, where it does not overlap with anything else.
+            do {
+              neighbors.clear();
+              X[0] = bounds.min[0] + 0.025*bnd_x + drand48()*0.45*bnd_x; // Make sure we don't appear in a wall.
+              X[1] = bounds.min[1] + drand48()*bnd_y;
+              domain->getAllWithin(X, neighbors);
+            } while (!neighbors.empty());
+            // Place particle.
+            x[id1][0] = X[0];
+            x[id1][1] = X[1];
+            v[id1][0] = -v[id1][0];
+            moved.push_back(id1);
+          }
+          else if (side[id1]==1 /*v[id1][0]<0*/ && im[id1]>0) {
+            // Place the particle somewhere randomly on its side, where it does not overlap with anything else.
+            do {
+              neighbors.clear();
+              X[0] = bounds.min[0] + 0.525*bnd_x + drand48()*0.45*bnd_x; // Make sure we don't appear in a wall.
+              X[1] = bounds.min[1] + drand48()*bnd_y;
+              domain->getAllWithin(X, neighbors);
+            } while (!neighbors.empty());
+            // Place particle.
+            x[id1][0] = X[0];
+            x[id1][1] = X[1];
+            v[id1][0] = -v[id1][0];
+            moved.push_back(id1);
+          }
+
         }
-        // Right side particle trying to go left
-        else if (side[id1]==1 && dx-sg1<=0.05 && v[id1][0]<0)
-          v[id1][0] = -v[id1][0];
+        // Normal interaction
+        else {
+          // Calculate distance, inverse distance.
+          r = sqrt(rsqr);
+          invr = 1./r;
+          // Create a normal vector
+          dx *= invr;
+          dy *= invr;
+          // Calculate the magnitude of the force
+          magnitude = repulsion*(sg1 + sg2 - r);
+
+          // Update forces
+          f[id1][0] += magnitude * dx;
+          f[id2][0] -= magnitude * dx;
+          f[id1][1] += magnitude * dy;
+          f[id2][1] -= magnitude * dy;
+        }
+
       }
     }
+
+    if (turn_on && !moved.empty()) {
+      domain->construct();
+    }
+
+    //turn_on = false;
+    
+    // Always set turn_on to false.
+    //if (gflow->getElapsedTime()-start_time>buffer_time) turn_on = false;
+  }
+
+  void DemonWall::turnOn() {
+    turn_on = true;
+    start_time = gflow->getElapsedTime();
   }
 
 }

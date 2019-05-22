@@ -105,6 +105,7 @@ int main(int argc, char **argv) {
 
   // Record data.
   vector<datapoint> data;
+  vector< vector<pair<float, float> > > alldata; // Store each energy and number current for all runs.
 
   // Do many data gathering runs.
   
@@ -116,8 +117,11 @@ int main(int argc, char **argv) {
   // Pointers for data objects
   GraphObject *KL = nullptr, *KR = nullptr, *NL = nullptr, *NR = nullptr;
   Parameters *params = nullptr;
+
+  // Create the directory
+  mkdir(writeDirectory.c_str(), 0777);
   
-  RealType dt = (maxTau - minTau)/(bins-1);
+  RealType dt = bins>1 ? (maxTau - minTau)/(bins-1) : 0;
   // Iterate through different tau values.
   for (int i=0; i<bins; ++i) {
     // Set tau
@@ -127,6 +131,10 @@ int main(int argc, char **argv) {
     // Average energy and number currents.
     RealType aveE = 0, aveN = 0, stdE = 0, stdN = 0;
     vector<RealType> pointsE, pointsN;
+
+    // Add a new entry to alldata
+    alldata.push_back(vector<pair<float, float> >());
+
     // Run some trials
     for (int tr=0; tr<trials; ++tr) {
       // Delete old gflow
@@ -135,6 +143,7 @@ int main(int argc, char **argv) {
 
       // Add an ending snapshot object
       if (snapshot && tr==trials-1) gflow->addDataObject(new EndingSnapshot(gflow));
+
 
       // Find data objects.
       setDataObjects(gflow, KL, KR, NL, NR, params);
@@ -151,12 +160,11 @@ int main(int argc, char **argv) {
         aveN += aveDNDT;
         pointsE.push_back(aveE);
         pointsN.push_back(aveN);
+        alldata.at(i).push_back(pair<float,float>(aveDEDT, aveDNDT));
       }
       else throw false;
 
       if (i==bins-1 && tr==trials-1) {
-        // Create the directory
-        mkdir(writeDirectory.c_str(), 0777);
         // Write some data
         gflow->writeData(writeDirectory+"/data"+toStr(tr));
       }
@@ -201,6 +209,23 @@ int main(int argc, char **argv) {
     for (auto dp : data)
       fout << std::get<0>(dp) << "," << std::get<1>(dp) << "," << std::get<2>(dp) << "," << std::get<3>(dp) << "," << std::get<4>(dp) << "\n";
     fout.close();
+  }
+
+  fout.open(writeDirectory+"/allrates.csv");
+  if (fout.fail()) cout << "Failed to open file " << writeDirectory+"/allrates.csv" << endl;
+  else {
+    for (const auto &v : alldata) {
+      // Write energy current
+      for (int i=0; i<v.size(); ++i) {
+        fout << v[i].first << ",";
+      }
+      // Write number current
+      for (int i=0; i<v.size(); ++i) {
+        fout << v[i].second;
+        if (i!=v.size()-1) fout << ",";
+      }
+      fout << endl;
+    }
   }
   
   // Finalize mpi
