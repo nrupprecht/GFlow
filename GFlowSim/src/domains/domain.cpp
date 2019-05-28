@@ -548,7 +548,7 @@ namespace GFlowSimulation {
 
     // Bin all the particles
     for (int i=0; i<number; ++i) {
-      if (forceMaster->typeInteracts(type[i]))
+      if (0<=type[i] && forceMaster->typeInteracts(type[i]))
         add_to_cell(x[i], i);
     }
 

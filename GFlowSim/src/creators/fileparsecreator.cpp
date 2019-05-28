@@ -480,7 +480,7 @@ namespace GFlowSimulation {
     // --- Look for options
     Vec X(sim_dimensions), V(sim_dimensions);
     RealType sigma, im;
-    int type;
+    int type = 0;
 
     parser.firstArgVec("Position", X);
     parser.firstArgVec("Velocity", V);

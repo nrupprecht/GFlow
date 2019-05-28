@@ -76,7 +76,7 @@ namespace GFlowSimulation {
     RealType time = gflow->getElapsedTime();
 
     // Check if enough time has gone by.
-    if (time - last_check >= tau) {
+    if (time - last_check >= tau && startTime<time) {
       // If door was closed, then it was previously decided that the last time window should have been a closed window.
       // In this case, nl = nr = el = er = 0, and we can setup to check the next time window.
       // If the door was open, then we should count the changes and decide if we need to go back in time and keep the door
@@ -185,6 +185,10 @@ namespace GFlowSimulation {
 
   void Demon::setInteraction(DemonWall* w) {
     demon_interaction = w;
+  }
+
+  void Demon::setStartTime(RealType t) {
+    startTime = t;
   }
 
   void Demon::setTau(RealType t) {

@@ -5,7 +5,7 @@ namespace GFlowSimulation {
   Parameters::Parameters(GFlow *gflow) : DataObject(gflow, "Parameters") {};
 
   void Parameters::addRecord(string name, RealType value) {
-    data.push_back(pair<string, RealType>(name, value));
+    data.insert(pair<string, RealType>(name, value));
   }
 
   bool Parameters::writeToFile(string fileName, bool useName) {
@@ -27,6 +27,13 @@ namespace GFlowSimulation {
     fout.close();
 
     // Return success
+    return true;
+  }
+
+  bool Parameters::find(const string& name, RealType& value) const {
+    auto it = data.find(name);
+    if (it==data.end()) return false;
+    value = it->second;
     return true;
   }
 

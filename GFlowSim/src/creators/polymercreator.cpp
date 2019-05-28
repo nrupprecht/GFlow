@@ -41,7 +41,7 @@ namespace GFlowSimulation {
     int number = 1;
     RealType length = 5.;
     RealType phi = 0.2;
-    bool useAngle = true;
+    bool useAngle = false;
     bool pair = false;
     RealType h = 2.5;
     useCorr = false;
@@ -101,6 +101,7 @@ namespace GFlowSimulation {
         harmonicbonds = new HarmonicBond(gflow);
         if (useAngle) harmonicchain = nullptr; // <-----------
       }
+      
       // Add the harmonic bonds modifier.
       gflow->addBonded(harmonicbonds);
       gflow->addBonded(harmonicchain);

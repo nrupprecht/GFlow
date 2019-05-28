@@ -43,6 +43,9 @@ namespace GFlowSimulation {
     //! \brief Set the demon wall interaction.
     void setInteraction(DemonWall*);
 
+    //! \brief Set the start time for the door.
+    void setStartTime(RealType);
+
     //! \brief Set the demon's tau.
     void setTau(RealType);
 
@@ -92,6 +95,9 @@ namespace GFlowSimulation {
 
     //! \brief Whether the door is open.
     bool door_open = true;
+
+    //! \brief When the demon should start working.
+    RealType startTime = 0.;
 
     //! \brief The demon's time delay.
     RealType tau = 0.1;

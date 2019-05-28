@@ -20,9 +20,12 @@ namespace GFlowSimulation {
     //! \brief Write the data to a file.
     bool writeToFile(string, bool);
 
+    //! \brief Try to get a parameter by name. Returns true if successful.
+    bool find(const string&, RealType&) const;
+
   private:
     //! \brief Records of parameters.
-    vector<pair<string, RealType> > data;
+    std::map<string, RealType> data;
   };
 
 }

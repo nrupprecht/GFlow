@@ -34,6 +34,34 @@ inline void setDataObjects(GFlow *gflow, GraphObject* &KL, GraphObject* &KR, Gra
   if (KL==nullptr || KR==nullptr || NL==nullptr || NR==nullptr || params==nullptr) throw false;
 }
 
+inline float kappa(float rho, float beta, float area, float mass, float tau) {
+  return rho * tau * area / sqrt(2 * PI * beta * mass);
+}
+
+inline bool write_to_file(const vector<vector<pair<float,float> > >& all_data_type, const string& name) {
+  std::ofstream fout(name);
+  // If failure
+  if (fout.fail()) {
+    cout << "Failed to open file [" << name << "].\n";
+    return false;
+  }
+  for (const auto &v : all_data_type) {
+    // Write first
+    for (int i=0; i<v.size(); ++i) {
+      fout << v[i].first << ",";
+    }
+    // Write second
+    for (int i=0; i<v.size(); ++i) {
+      fout << v[i].second;
+      if (i!=v.size()-1) fout << ",";
+    }
+    fout << endl;
+  }
+  fout.close();
+  // Return success.
+  return true;
+}
+
 int main(int argc, char **argv) {
   int rank(0);
   #if USE_MPI == 1
@@ -106,6 +134,8 @@ int main(int argc, char **argv) {
   // Record data.
   vector<datapoint> data;
   vector< vector<pair<float, float> > > alldata; // Store each energy and number current for all runs.
+  vector< vector<pair<float, float> > > allkappa; // Store all \kappa_r, \kappa_l
+  vector< vector<pair<float, float> > > allratios; // Store all actual / prediction ratios.
 
   // Do many data gathering runs.
   
@@ -133,7 +163,9 @@ int main(int argc, char **argv) {
     vector<RealType> pointsE, pointsN;
 
     // Add a new entry to alldata
-    alldata.push_back(vector<pair<float, float> >());
+    alldata.push_back( vector<pair<float, float> >());
+    allkappa.push_back(vector<pair<float, float> >());
+    allratios.push_back(vector<pair<float, float> >());
 
     // Run some trials
     for (int tr=0; tr<trials; ++tr) {
@@ -143,7 +175,6 @@ int main(int argc, char **argv) {
 
       // Add an ending snapshot object
       if (snapshot && tr==trials-1) gflow->addDataObject(new EndingSnapshot(gflow));
-
 
       // Find data objects.
       setDataObjects(gflow, KL, KR, NL, NR, params);
@@ -158,6 +189,23 @@ int main(int argc, char **argv) {
         // Update average accumulators and vectors.
         aveE += aveDEDT;
         aveN += aveDNDT;
+
+        float area(0), mass(0), volume(0), energyL = KL->first().second, energyR = KR->first().second;
+        float numL = NL->first().second, numR = NR->first().second;
+        if (!params->find("Area", area)) cout << "Couldn't find area.\n";
+        if (!params->find("Mass", mass)) cout << "Couldn't find mass.\n";
+        if (!params->find("Vol", volume)) cout << "Couldn't find volume.\n";
+        float rhoL = numL / volume, rhoR = numR / volume;
+        float betaL = numL / energyL, betaR = numR / energyR;
+        // Compute kappas
+        float kappaL = kappa(rhoL, betaL, area, mass, t);
+        float kappaR = kappa(rhoR, betaR, area, mass, t);
+        allkappa.at(i).push_back(pair<float,float>(kappaL, kappaR));
+        // Simple demon prediction
+        float D = 3./2.;
+        float I_energy = D * kappaL / t * exp(-kappaR) / betaL;
+        float I_number = I_energy * betaL / D;
+        allratios.at(i).push_back(pair<float,float>(aveDEDT / I_energy, aveDNDT / I_number));
         pointsE.push_back(aveE);
         pointsN.push_back(aveN);
         alldata.at(i).push_back(pair<float,float>(aveDEDT, aveDNDT));
@@ -211,6 +259,8 @@ int main(int argc, char **argv) {
     fout.close();
   }
 
+  write_to_file(alldata, writeDirectory+"/allrates.csv");
+  /*
   fout.open(writeDirectory+"/allrates.csv");
   if (fout.fail()) cout << "Failed to open file " << writeDirectory+"/allrates.csv" << endl;
   else {
@@ -227,6 +277,10 @@ int main(int argc, char **argv) {
       fout << endl;
     }
   }
+  */
+
+  write_to_file(allkappa, writeDirectory+"/allkappa.csv");
+  write_to_file(allratios, writeDirectory+"/allratios.csv");
   
   // Finalize mpi
   #if USE_MPI == 1
