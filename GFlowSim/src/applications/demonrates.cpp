@@ -208,7 +208,7 @@ int main(int argc, char **argv) {
         float I_energy = D * kappaL / t * exp(-kappaR) / betaL;
         float I_number = I_energy * betaL / D;
 
-        cout << "Tau: " << t << " -- Ratios: " << aveDEDT / I_energy << ", " << aveDNDT / I_number << endl;
+        if (!quiet) cout << "Tau: " << t << " -- Ratios: " << aveDEDT / I_energy << ", " << aveDNDT / I_number << endl;
 
         allratios.at(i).push_back(pair<float,float>(aveDEDT / I_energy, aveDNDT / I_number));
 
