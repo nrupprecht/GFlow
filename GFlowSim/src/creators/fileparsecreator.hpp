@@ -36,6 +36,9 @@ namespace GFlowSimulation {
     //! \brief Constructor -- pass in a pointer to an ArgParse object, and the configuration file name.
     FileParseCreator(ArgParse*, string);
 
+    //! \brief Delete parser trees.
+    ~FileParseCreator();
+
     //! \brief Create a simulation.
     virtual GFlow* createSimulation();
 
@@ -43,6 +46,9 @@ namespace GFlowSimulation {
     void setVariable(const string&, const string&, bool=false);
 
   private:
+    //! \brief Create a parse tree from the specified file.
+    inline bool parseFile();
+
     //! \brief Create gflow from the options contained in the parse tree.
     inline void createFromOptions(HeadNode*);
 
@@ -74,8 +80,14 @@ namespace GFlowSimulation {
     //! \brief The name of the file to load from
     string configFile;
 
+    //! \brief A copy of the file loaded to create the parser tree.
+    string setup_file;
+
     //! \brief The GFlow object the creator is creating.
     GFlow *gflow;
+
+    //! \brief The parse tree's root node.
+    HeadNode *root = nullptr;
 
     //! \brief The number of particle types in the simulation
     int NTypes;

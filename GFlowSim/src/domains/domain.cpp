@@ -348,7 +348,7 @@ namespace GFlowSimulation {
         // The id of the particle
         int id1 = *p;
         RealType sigma1 = sg[id1]*max_cutoffs[type[id1]];
-        // If sigma is <= than min_small_sigma, only look through cell stencil
+        // If sigma is <= than max_small_sigma, only look through cell stencil
         if (sigma1<=max_small_sigma) {
           // All other particles in the same sector
           auto q = p;
@@ -374,7 +374,7 @@ namespace GFlowSimulation {
             }
         }
         
-        // If sigma is > min_small_sigma, we have to look through more cells
+        // If sigma is > max_small_sigma, we have to look through more cells
         else {
           // Calculate sweep "radius"
           RealType search_width = 2*sigma1+skin_depth;

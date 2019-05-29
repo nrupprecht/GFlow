@@ -12,7 +12,6 @@ namespace GFlowSimulation {
   const string BuckinghamToken = "Buckingham";
   const string DetectorToken = "Detector";
   const string HardSphereReflectingToken = "HardSphereReflecting";
-  
   const string DemonWallToken = "DemonWall";
 
   /**

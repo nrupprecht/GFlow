@@ -29,6 +29,13 @@ namespace GFlowSimulation {
     seedGenerator(seed);
     generator = std::mt19937(seed);
     normal_dist = std::normal_distribution<RealType>(0., 1.);
+    // Create the parse tree from the config file
+    parseFile();
+  }
+
+  FileParseCreator::~FileParseCreator() {
+    if (root) delete root;
+    root = nullptr;
   }
 
   GFlow* FileParseCreator::createSimulation() {
@@ -42,34 +49,9 @@ namespace GFlowSimulation {
       parserPtr->get("parse-trace", parse_trace);
     }
 
-    // We treat the file as one giant body. Get that body.
-    build_message = "Starting file parse... ";
-    FileParse parser;
-    HeadNode *root = nullptr;
-    try {
-      root = parser.parseFile(configFile); // A file parse class does the parsing
+    if (root==nullptr) {
+      if (!parseFile()) return nullptr;
     }
-    catch (FileParse::UnexpectedToken ut) {
-      cout << "Caught unexpected token error from file parsing. Message: " << ut.message << endl;
-      cout << " Trace:\n";
-      cout << parser.getMessage();
-      throw;
-    }
-    build_message += "Done.\n";
-
-    // Get the message from the parser.
-    parse_message = parser.getMessage();
-
-    // Save the file we just loaded
-    string file = copyFile();
-
-    // Sort and collect options
-    build_message += "Collecting options... ";
-    std::multimap<string, HeadNode*> options;
-    for (const auto &op : root->subHeads) {
-      options.insert(std::pair<string, HeadNode*> (op->heading, op));
-    }
-    build_message += "Done.\n";
 
     // If requested, print out the parse trace.
     if (parse_trace) {
@@ -114,15 +96,13 @@ namespace GFlowSimulation {
       throw;
     }
     build_message += "Done.\n";
-
-    // Clean up
-    delete root;
     
     // Timing
     auto end_time = current_time();
     gflow->dataMaster->setInitializationTime(time_span(end_time, start_time));
+
     // Give the setup file to the datamaster.
-    gflow->dataMaster->giveFile("setup.txt", file);
+    gflow->dataMaster->giveFile("setup.txt", setup_file);
 
     // Clean up and return
     GFlow *ret = gflow;
@@ -139,6 +119,34 @@ namespace GFlowSimulation {
     // Else, if overwrite is true, overwrite the existing variable
     else if (overwrite)
       var->second = value;
+  }
+
+  inline bool FileParseCreator::parseFile() {
+    // There needs to be a config file.
+    if (configFile.empty()) return false;
+    // We treat the file as one giant body. Get that body.
+    build_message = "Starting file parse... ";
+    // Create a file parser
+    FileParse parser;
+    // Clean up old tree
+    if (root!=nullptr) delete root;
+    // Try to parse the file.
+    try {
+      root = parser.parseFile(configFile); // A file parse class does the parsing
+    }
+    catch (FileParse::UnexpectedToken ut) {
+      cout << "Caught unexpected token error from file parsing. Message: " << ut.message << endl;
+      cout << " Trace:\n";
+      cout << parser.getMessage();
+      throw;
+    }
+    build_message += "Done.\n";
+    // Get the message from the parser.
+    parse_message = parser.getMessage();
+    // Save the file we just loaded
+    setup_file = copyFile();
+    // Return success.
+    return true;
   }
 
   inline void FileParseCreator::createFromOptions(HeadNode *head) {
@@ -327,10 +335,10 @@ namespace GFlowSimulation {
 
     // --- Fill an area with particles
     if (parser.begin("Fill")) {
-      FillAreaCreator fa;
-      PolymerCreator pc;
-      WallCreator wc;
-      do {
+      FillAreaCreator fa(global_templates);
+      PolymerCreator pc(global_templates);
+      WallCreator wc(global_templates);
+      do { 
         if      (parser.argName()=="Area")    fa.createArea(parser.getNode(), gflow, variables, particle_fixers);
         else if (parser.argName()=="Polymer") pc.createArea(parser.getNode(), gflow, variables, particle_fixers);
         else if (parser.argName()=="Wall")    wc.createArea(parser.getNode(), gflow, variables, particle_fixers);

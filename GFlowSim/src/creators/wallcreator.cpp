@@ -8,8 +8,6 @@ namespace GFlowSimulation {
   void WallCreator::createArea(HeadNode *head, GFlow *gflow, const std::map<string, string>& variables, vector<ParticleFixer>& particle_fixers) {
     // Check if head is good
     if (head==nullptr) return;
-    // For local particle templates
-    std::map<string, ParticleTemplate> particle_templates;
 
     // Get the dimensions
     int sim_dimensions = gflow->getSimDimensions();

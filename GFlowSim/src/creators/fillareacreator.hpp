@@ -7,6 +7,10 @@ namespace GFlowSimulation {
 
   class FillAreaCreator : public AreaCreator  {
   public:
+    FillAreaCreator();
+    
+    FillAreaCreator(const std::map<string, ParticleTemplate>& tmps) : AreaCreator(tmps) {};
+
     //! \brief Create some particles and objects from part of a parse tree.
     //!
     //! \param head The head node of the parse tree.

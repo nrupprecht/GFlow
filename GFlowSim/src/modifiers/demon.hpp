@@ -55,7 +55,7 @@ namespace GFlowSimulation {
     inline void count_changes(int&, int&, RealType&, RealType&);
 
     //! \brief Write particles' side data to simdata.
-    inline void assign_side(bool=true);
+    inline void assign_side();
 
     //! \brief Checkpoint the data.
     inline void checkpoint_data();
@@ -74,11 +74,8 @@ namespace GFlowSimulation {
     //! \brief Add data to the vectors.
     inline void add_data(int, RealType);
 
-    //! \brief Get what side a particle is on based on position, previous side, and radius.
-    inline int get_side(RealType*, int, RealType);
-
     //! \brief Get what side a particle is on based only on position.
-    inline int get_side_literal(RealType*);
+    inline int get_side(RealType*);
 
     //! \brief A function pointer to the door open/close choice function.
     bool (*check_choice) (int, int, RealType, RealType);
@@ -95,6 +92,9 @@ namespace GFlowSimulation {
 
     //! \brief Whether the door is open.
     bool door_open = true;
+
+    //! \brief Whether the door was opened last time step.
+    bool door_just_closed = false;
 
     //! \brief When the demon should start working.
     RealType startTime = 0.;
@@ -134,14 +134,8 @@ namespace GFlowSimulation {
     //! \brief Last number of particles on the right side.
     int Nr = -1;
 
-    //! \brief Recording of net energy flow during each time window.
-    vector<RealType> dE;
-
-    //! \brief Recording of net particle flow during each time window.
-    vector<RealType> dN;
-
     //! \brief Data objects for recording demon statistics.
-    GraphObject *kineticL, *kineticR, *numberL, *numberR;
+    GraphObject *kineticL, *kineticR, *numberL, *numberR, *current_E, *current_N;
 
     //! \brief A pointer to a position data object that we try to find in datamaster.
     //!

@@ -7,8 +7,10 @@ Var: length=0.5 // Door area (length)
 Var: tau=0.25
 Var: Tl=0.001
 Var: Tr=0.001
-
-Value: sigma=0.05
+Var: rhoL=3
+Var: rhoR=3
+Var: radius=0.05 // Radius of the gas particles.
+Var: sigma=0.05 // Radius of the wall particles.
 
 // Set the simulation bounds - a box with a given width.
 Bounds: {
@@ -18,21 +20,33 @@ Bounds: {
 
 Integrator: VelocityVerlet
 
-Boundary: Reflect
+Boundary: Repulse
 
 // Set the number of particle types
 NTypes: 4
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
 Force-grid: {
-  : 0, 0, None //HardSphere
-  : 0, 1, None //HardSphere
-  : 1, 1, None //HardSphere
+  : 0, 0, None
+  : 0, 1, None
+  : 1, 1, None
 
   : 0, 2, HardSphere
   : 1, 2, HardSphere
   : 0, 3, DemonWall
   : 1, 3, DemonWall
+}
+
+Template: TypeA {
+  Radius: radius
+  Mass: Density=1
+  Type: 0
+}
+
+Template: TypeB {
+  Radius: radius
+  Mass: Density=1
+  Type: 1
 }
 
 // Fill the left side
@@ -43,13 +57,7 @@ Fill: Area {
     : 0, width
   }
 
-  Template: TypeA {
-    Radius: 0.05
-    Mass: Density=1
-    Type: 0
-  }
-
-  Number: Phi=phi {
+  Number: Rho=rhoL {
     TypeA : 1
   }
 
@@ -64,14 +72,8 @@ Fill: Area {
     : 0, width
   }
 
-  Template: TypeA {
-    Radius: 0.05
-    Mass: Density=1
-    Type: 1
-  }
-
-  Number: Phi=phi {
-    TypeA : 1
+  Number: Rho=rhoR {
+    TypeB : 1
   }
 
   Velocity: Temperature=Tr
@@ -95,7 +97,7 @@ Fill: Wall {
 
 // The demon door
 Fill: Wall {
-  Start: width, width/2 + length/2 + sigma
+  Start: width, width/2 + length/2 + radius
   End: width, width/2 - length/2 - sigma
   Radius: sigma
   Type: 3

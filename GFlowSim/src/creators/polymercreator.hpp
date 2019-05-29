@@ -8,6 +8,10 @@ namespace GFlowSimulation {
 
   class PolymerCreator : public AreaCreator {
   public:
+    PolymerCreator();
+    
+    PolymerCreator(const std::map<string, ParticleTemplate>& tmps) : AreaCreator(tmps) {};
+
     //! \brief Create a chain of small, noninteracting particles with random large, interacting particles.
     //!
     //! The chain maintains cohesion via harmonic bonds.

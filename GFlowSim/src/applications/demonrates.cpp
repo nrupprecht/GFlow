@@ -17,7 +17,7 @@ typedef std::tuple<float, float, float, float, float> datapoint;
 
 using namespace GFlowSimulation;
 
-inline void setDataObjects(GFlow *gflow, GraphObject* &KL, GraphObject* &KR, GraphObject* &NL, GraphObject* &NR, Parameters* &params) {
+inline void setDataObjects(GFlow *gflow, GraphObject* &KL, GraphObject* &KR, GraphObject* &NL, GraphObject* &NR, GraphObject* &CE, GraphObject* &CN, Parameters* &params) {
   // Get vector of data objects
   auto &dataObjects = gflow->getDataMaster()->getDataObjects();
   // Reset to null
@@ -29,6 +29,8 @@ inline void setDataObjects(GFlow *gflow, GraphObject* &KL, GraphObject* &KR, Gra
     else if (obj->getName()=="KineticR") KR = dynamic_cast<GraphObject*>(obj);
     else if (obj->getName()=="NumberL" ) NL = dynamic_cast<GraphObject*>(obj);
     else if (obj->getName()=="NumberR" ) NR = dynamic_cast<GraphObject*>(obj);
+    else if (obj->getName()=="CurrentE" ) CE = dynamic_cast<GraphObject*>(obj);
+    else if (obj->getName()=="CurrentN" ) CN = dynamic_cast<GraphObject*>(obj);
     else if (obj->getName()=="Parameters") params = dynamic_cast<Parameters*>(obj);
   }
   if (KL==nullptr || KR==nullptr || NL==nullptr || NR==nullptr || params==nullptr) throw false;
@@ -145,7 +147,7 @@ int main(int argc, char **argv) {
   creator.setVariable("width", toStr(width), true);
   creator.setVariable("length", toStr(length), true);
   // Pointers for data objects
-  GraphObject *KL = nullptr, *KR = nullptr, *NL = nullptr, *NR = nullptr;
+  GraphObject *KL = nullptr, *KR = nullptr, *NL = nullptr, *NR = nullptr, *CE = nullptr, *CN = nullptr;
   Parameters *params = nullptr;
 
   // Create the directory
@@ -177,15 +179,15 @@ int main(int argc, char **argv) {
       if (snapshot && tr==trials-1) gflow->addDataObject(new EndingSnapshot(gflow));
 
       // Find data objects.
-      setDataObjects(gflow, KL, KR, NL, NR, params);
+      setDataObjects(gflow, KL, KR, NL, NR, CE, CN, params);
 
       // Run the program
       gflow->run(time);
       
       // Accumulate
       if (KL->size()>0 && NL->size()>0) {
-        RealType aveDEDT = -(KL->last().second - KL->first().second)/(KL->last().first - KL->first().first);
-        RealType aveDNDT = -(NL->last().second - NL->first().second)/(NL->last().first - NL->first().first);
+        RealType aveDEDT = CE->ave()/t; // -(KL->last().second - KL->first().second)/(KL->last().first - KL->first().first);
+        RealType aveDNDT = CN->ave()/t; //-(NL->last().second - NL->first().second)/(NL->last().first - NL->first().first);
         // Update average accumulators and vectors.
         aveE += aveDEDT;
         aveN += aveDNDT;
@@ -205,7 +207,11 @@ int main(int argc, char **argv) {
         float D = 3./2.;
         float I_energy = D * kappaL / t * exp(-kappaR) / betaL;
         float I_number = I_energy * betaL / D;
+
+        cout << "Tau: " << t << " -- Ratios: " << aveDEDT / I_energy << ", " << aveDNDT / I_number << endl;
+
         allratios.at(i).push_back(pair<float,float>(aveDEDT / I_energy, aveDNDT / I_number));
+
         pointsE.push_back(aveE);
         pointsN.push_back(aveN);
         alldata.at(i).push_back(pair<float,float>(aveDEDT, aveDNDT));

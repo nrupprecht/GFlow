@@ -22,12 +22,6 @@ namespace GFlowSimulation {
 
     //! \brief Magnitude of the repulsion.
     RealType repulsion;
-
-    //! \brief How long teleporation should be turned on.
-    RealType buffer_time;
-
-    //! \brief When the wall was turned on.
-    RealType start_time = 0.;
   };
 
 }

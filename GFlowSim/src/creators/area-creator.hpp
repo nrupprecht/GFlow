@@ -10,6 +10,15 @@ namespace GFlowSimulation {
 
   class AreaCreator {
   public:
+    AreaCreator() {};
+
+    AreaCreator(const std::map<string, ParticleTemplate>& tmps) : particle_templates(tmps) {};
+
+    //! \brief Add particle templates.
+    void addTemplates(const std::map<string, ParticleTemplate>& tmps) {
+      particle_templates.insert(tmps.begin(), tmps.end());
+    }
+
     //! \brief Create some particles and objects from part of a parse tree.
     //!
     //! \param head The head node of the parse tree.
@@ -20,6 +29,9 @@ namespace GFlowSimulation {
   protected:
     //! \brief Random number generator.
     mutable std::mt19937 generator;
+
+    //! \brief For particle templates.
+    std::map<string, ParticleTemplate> particle_templates;
   };
 
 }

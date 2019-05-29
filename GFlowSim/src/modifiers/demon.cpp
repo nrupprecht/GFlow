@@ -7,18 +7,22 @@
 
 namespace GFlowSimulation {
 
-  Demon::Demon(GFlow *gflow) : Modifier(gflow), tau(0.1) {
+  Demon::Demon(GFlow *gflow) : Modifier(gflow), tau(0.1), startTime(0) {
     // Set up data objects
     kineticL = new GraphObject(gflow, "KineticL", "t", "KE");
     kineticR = new GraphObject(gflow, "KineticR", "t", "KE");
     numberL  = new GraphObject(gflow, "NumberL", "t", "number");
     numberR  = new GraphObject(gflow, "NumberR", "t", "number");
+    current_E = new GraphObject(gflow, "CurrentE", "t", "dE");
+    current_N = new GraphObject(gflow, "CurrentN", "t", "dE");
     
     // Add data objects to gflow.
     gflow->addDataObject(kineticL);
     gflow->addDataObject(kineticR);
     gflow->addDataObject(numberL);
     gflow->addDataObject(numberR);
+    gflow->addDataObject(current_E);
+    gflow->addDataObject(current_N);
 
     // Create parameters object
     parameters = new Parameters(gflow);
@@ -37,7 +41,7 @@ namespace GFlowSimulation {
     // Entry must be positive. Otherwise, something is wrong.
     if (side_entry<0) throw false;
     // Assign particles their side.
-    assign_side(false);
+    assign_side();
     // Check point the initial data.
     checkpoint_data();
     // Set the last check time.
@@ -75,16 +79,18 @@ namespace GFlowSimulation {
     // Get the current time
     RealType time = gflow->getElapsedTime();
 
+    // For counting changes
+    int nl = 0, nr = 0;
+    RealType el = 0, er = 0;
+
     // Check if enough time has gone by.
     if (time - last_check >= tau && startTime<time) {
+
       // If door was closed, then it was previously decided that the last time window should have been a closed window.
       // In this case, nl = nr = el = er = 0, and we can setup to check the next time window.
       // If the door was open, then we should count the changes and decide if we need to go back in time and keep the door
       // closed or not.
       if (door_open) {
-
-        int nl = 0, nr = 0;
-        RealType el = 0, er = 0;
         // What happened during the last time window.
         count_changes(nl, nr, el, er);
         // Check whether door should open
@@ -103,7 +109,6 @@ namespace GFlowSimulation {
           kineticR->addEntry(time, Er);
           numberL->addEntry(time, Nl);
           numberR->addEntry(time, Nr);
-          
           // The door is still open, so we don't have to open it.
         }
         // Otherwise, go back in time and keep the door closed.
@@ -113,13 +118,14 @@ namespace GFlowSimulation {
           // Close the door.
           close_door();
           // Do not checkpoint data or assign side.
-          assign_side();
         }
       }
       // Door was closed.
       else {
         // Door was closed, so nl = nr = el = er = 0. Store this.
         add_data(0, 0);
+        // Update El, Er, Nl, Nr.
+        count_changes(nl, nr, el, er);
         // Add data to data objects.
         kineticL->addEntry(time, El);
         kineticR->addEntry(time, Er);
@@ -133,6 +139,12 @@ namespace GFlowSimulation {
         open_door();
         // The door was closed, so there is no need to reassign sided.
       }
+    }
+    else if (door_just_closed) {
+      // Assign side the timestep after the door closes so the door can teleport particles to their proper sides.
+      assign_side();
+      // Set flag to false
+      door_just_closed = false;
     }
   }
 
@@ -217,7 +229,7 @@ namespace GFlowSimulation {
       // Don't count walls.
       if (im[i]==0) continue;
       // Find current side
-      int sd = get_side_literal(x[i]);
+      int sd = get_side(x[i]);
       // Calculate energy
       RealType ke = (1./im[i]) * 0.5 * sqr(v[i], sim_dimensions);
       // If the particle changed sides.
@@ -232,9 +244,7 @@ namespace GFlowSimulation {
           ++nr;
           er += ke;
         }
-        else;
       }
-
       // Count up particles and energy on each side.
       if (sd==0) {
         ++Nl;
@@ -247,7 +257,7 @@ namespace GFlowSimulation {
     }
   }
 
-  inline void Demon::assign_side(bool nonliteral) {
+  inline void Demon::assign_side() {
     // Get data from simdata.
     RealType **x = simData->X();
     RealType *sg = simData->Sg();
@@ -257,9 +267,7 @@ namespace GFlowSimulation {
     // Check all particles
     for (int i=0; i<simData->size(); ++i) {
       // Find current side
-      int sd;
-      if (nonliteral) sd = get_side(x[i], side[i], sg[i]);
-      else sd = get_side_literal(x[i]);
+      int sd = get_side(x[i]);
       // Write side data
       side[i] = sd;
     }
@@ -352,25 +360,18 @@ namespace GFlowSimulation {
     // Need to construct the domain. 
     // \todo Be able to add some particles to the domain without recreating the whole thing.
     domain->construct();
+    // Set the flag
+    door_just_closed = true;
   }
 
   inline void Demon::add_data(int dn, RealType de) {
-    dN.push_back(dn);
-    dE.push_back(de);
+    // Get the current time
+    RealType time = gflow->getElapsedTime();
+    current_E->addEntry(time, de);
+    current_N->addEntry(time, dn);
   }
 
-  inline int Demon::get_side(RealType *x, int current, RealType radius) {
-    if (current==0) {
-      if (partition_position + 2*radius <= x[0]) return 1;
-      else return 0;
-    }
-    else {
-      if (x[0] <= partition_position - 2*radius) return 0;
-      else return 1;
-    }
-  }
-
-  inline int Demon::get_side_literal(RealType *x) {
+  inline int Demon::get_side(RealType *x) {
     return x[0]<=partition_position ? 0 : 1;
   }
 

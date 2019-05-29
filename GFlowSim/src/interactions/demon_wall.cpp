@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
 
-  DemonWall::DemonWall(GFlow *gflow) : Interaction(gflow), repulsion(DEFAULT_HARD_SPHERE_REPULSION), buffer_time(0.01) {};
+  DemonWall::DemonWall(GFlow *gflow) : Interaction(gflow), repulsion(DEFAULT_HARD_SPHERE_REPULSION) {};
 
   void DemonWall::interact() const {
     // Do dimensional check.
@@ -70,8 +70,7 @@ namespace GFlowSimulation {
       if (0<rsqr && rsqr < sqr(sg1 + sg2)) {
         // If just turned on, remove all particles touching us.
         if (turn_on) {
-
-          if (side[id1]==0 /*v[id1][0]>0*/ && im[id1]>0) {
+          if (side[id1]==0 && im[id1]>0) {
             // Place the particle somewhere randomly on its side, where it does not overlap with anything else.
             do {
               neighbors.clear();
@@ -85,7 +84,7 @@ namespace GFlowSimulation {
             v[id1][0] = -v[id1][0];
             moved.push_back(id1);
           }
-          else if (side[id1]==1 /*v[id1][0]<0*/ && im[id1]>0) {
+          else if (side[id1]==1 && im[id1]>0) {
             // Place the particle somewhere randomly on its side, where it does not overlap with anything else.
             do {
               neighbors.clear();
@@ -99,7 +98,6 @@ namespace GFlowSimulation {
             v[id1][0] = -v[id1][0];
             moved.push_back(id1);
           }
-
         }
         // Normal interaction
         else {
@@ -111,7 +109,6 @@ namespace GFlowSimulation {
           dy *= invr;
           // Calculate the magnitude of the force
           magnitude = repulsion*(sg1 + sg2 - r);
-
           // Update forces
           f[id1][0] += magnitude * dx;
           f[id2][0] -= magnitude * dx;
@@ -125,16 +122,12 @@ namespace GFlowSimulation {
     if (turn_on && !moved.empty()) {
       domain->construct();
     }
-
-    //turn_on = false;
-    
-    // Always set turn_on to false.
-    //if (gflow->getElapsedTime()-start_time>buffer_time) turn_on = false;
+    // Set the flag.
+    turn_on = false;
   }
 
   void DemonWall::turnOn() {
     turn_on = true;
-    start_time = gflow->getElapsedTime();
   }
 
 }
