@@ -81,18 +81,17 @@ int main(int argc, char **argv) {
   #endif
 
   // --- Options
-  RealType time = 250;
-  RealType phi = 0.05;
-  RealType width = 40;
+  RealType time = 500;
+  RealType width = 20;
   RealType length = 0.5;
   RealType tau = 0.1;
 
   RealType minTau = 0.05;
   RealType maxTau = 2.0;
-  int bins = 25;
+  int bins = 20;
   bool quiet = true;
   bool snapshot = false;
-  int trials = 5;
+  int trials = 1;
   string writeDirectory = "demon";
   // Other values
   string load = "configurations/demon.txt";
@@ -100,7 +99,6 @@ int main(int argc, char **argv) {
   // --- For getting command line arguments
   ArgParse parser(argc, argv);
   parser.get("time", time);
-  parser.get("phi", phi);
   parser.get("width", width);
   parser.get("length", length);
   parser.get("tau", tau);
@@ -135,6 +133,7 @@ int main(int argc, char **argv) {
 
   // Record data.
   vector<datapoint> data;
+  vector<pair<float, float> > prediction; // Predicted energy and number currents.
   vector< vector<pair<float, float> > > alldata; // Store each energy and number current for all runs.
   vector< vector<pair<float, float> > > allkappa; // Store all \kappa_r, \kappa_l
   vector< vector<pair<float, float> > > allratios; // Store all actual / prediction ratios.
