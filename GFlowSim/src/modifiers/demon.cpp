@@ -29,7 +29,7 @@ namespace GFlowSimulation {
     gflow->addDataObject(parameters);
 
     // Default door choice function
-    check_choice = &direction_demon;
+    check_choice = &energy_demon;
   };
 
   void Demon::pre_integrate() {
@@ -380,11 +380,11 @@ namespace GFlowSimulation {
   }
 
   bool Demon::energy_demon(int nl, int nr, RealType el, RealType er) {
-    return el-er>=0;
+    return el>=er;
   }
 
   bool Demon::number_demon(int nl, int nr, RealType el, RealType er) {
-    return nl-nr>=0;
+    return nl>=nr;
   }
 
 }
