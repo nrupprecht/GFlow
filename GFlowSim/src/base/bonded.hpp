@@ -38,7 +38,7 @@ namespace GFlowSimulation {
     //! \brief Set the do potential flag.
     void setDoPotential(bool);
 
-  private:
+  protected:
     //! \brief The virial, for calculating pressure.
     //!
     //! The pressure formula is: P = N k T/V + 1/(DIMENSIONS*V) \sum_i (r_i \dot F_i)

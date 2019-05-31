@@ -455,9 +455,11 @@ namespace GFlowSimulation {
       dims[d] = static_cast<int>(domain_bounds.wd(d)/target_cell_size);
       // Check that the bounds are good
       if (dims[d]<=0) throw BadBounds();
+      // Min dims
+      if (dims[d]<4) dims[d] = 4;
+      // Set widths 
       widths[d] = domain_bounds.wd(d)/dims[d];
       inverseW[d] = 1./widths[d];
-
       // Do border related work
       if (border_type_down[d]) {
         ++dims[d];

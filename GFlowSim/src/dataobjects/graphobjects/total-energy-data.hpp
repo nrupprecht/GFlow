@@ -24,7 +24,7 @@ namespace GFlowSimulation {
     RealType initial_energy = 0.;
 
     //! \brief Whether we should limit the energy growth of the system.
-    bool restrict_energy = true;
+    bool restrict_energy = false;
 
     //! \brief Whether the initial energy has been set.
     bool initial_set = false;

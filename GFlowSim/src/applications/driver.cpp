@@ -54,6 +54,7 @@ int main(int argc, char **argv) {
   bool ke = false; // Record kinetic energy
   RealType kebin = 0;
   bool energy = false; // Record total energy
+  bool bondenergy = false;
   bool keTypes = false;
   bool totalKE = false; // Record average kinetic energy (per particle)
   bool secRemake = false; 
@@ -105,6 +106,7 @@ int main(int argc, char **argv) {
   parser.get("KE", ke);
   parser.get("KEBin", kebin);
   parser.get("energy", energy);
+  parser.get("bondenergy", bondenergy);
   parser.get("KETypes", keTypes);
   parser.get("totalKE", totalKE);
   parser.get("secRemake", secRemake);
@@ -218,6 +220,7 @@ int main(int argc, char **argv) {
   if (totalKE || ke) gflow->addDataObject(new KineticEnergyData(gflow, ke));
   if (kebin>0)       gflow->addDataObject(new KineticEnergyBin(gflow, kebin));
   if (energy)      gflow->addDataObject(new TotalEnergyData(gflow));
+  if (bondenergy)  gflow->addDataObject(new BondedEnergyData(gflow));
   if (keTypes)     gflow->addDataObject(new KineticEnergyTypesData(gflow, true));
   if (bdForces)    gflow->addDataObject(new BoundaryForceData(gflow));
   if (timestep)    gflow->addDataObject(new TimeStepData(gflow));
