@@ -9,6 +9,8 @@ Var: Tl=0.001
 Var: Tr=0.001
 Var: rhoL=3
 Var: rhoR=3
+Var: type=0
+Var: force=HardSphere
 Var: radius=0.05 // Radius of the gas particles.
 Var: sigma=0.05 // Radius of the wall particles.
 
@@ -27,9 +29,9 @@ NTypes: 4
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
 Force-grid: {
-  : 0, 0, None
-  : 0, 1, None
-  : 1, 1, None
+  : 0, 0, force
+  : 0, 1, force
+  : 1, 1, force
 
   : 0, 2, HardSphere
   : 1, 2, HardSphere
@@ -102,7 +104,8 @@ Fill: Wall {
   Radius: sigma
   Type: 3
 
-  Modifier: Demon {
+  Modifier: Demon=1 {
     Tau: tau
+    Type: type
   }
 }

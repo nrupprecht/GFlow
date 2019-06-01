@@ -82,8 +82,12 @@ namespace GFlowSimulation {
           demon->setPartitionPosition(center[0]);
           // Set group.
           *dynamic_cast<Group*>(demon) = wall_group;
+	  // Check for demon's time constant
           RealType tau = 0;
           if (parser.firstArg("Tau", tau)) demon->setTau(tau);
+	  // Check for type of demon
+	  int demon_type = 0;
+	  if (parser.firstArg("Type", demon_type)) demon->setDemon(type);
           // Find any demon wall interaction and give it to the demon.
           for (auto it : gflow->getInteractions()) {
             DemonWall* d = dynamic_cast<DemonWall*>(it);

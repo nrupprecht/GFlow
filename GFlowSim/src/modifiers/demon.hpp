@@ -49,6 +49,11 @@ namespace GFlowSimulation {
     //! \brief Set the demon's tau.
     void setTau(RealType);
 
+    //! \brief Set the type of demon.
+    //!
+    //! Options: 0 - simple, 1 - energy, 2 - number.
+    void setDemon(int);
+
   private:
 
     //! \brief Count the particles and energy of transfered particles.
