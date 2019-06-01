@@ -3,10 +3,10 @@
 namespace GFlowSimulation {
 
   AngleHarmonicChain::AngleHarmonicChain(GFlow *gflow) 
-    : Bonded(gflow), springConstant(DEFAULT_SPRING_CONSTANT), angleConstant(DEFAULT_SPRING_CONSTANT) {};
+    : Bonded(gflow), springConstant(DEFAULT_SPRING_CONSTANT), angleConstant(0.01) {};
 
   AngleHarmonicChain::AngleHarmonicChain(GFlow *gflow, RealType K) 
-    : Bonded(gflow), springConstant(K), angleConstant(DEFAULT_SPRING_CONSTANT) {};
+    : Bonded(gflow), springConstant(K), angleConstant(0.01) {};
 
   void AngleHarmonicChain::addAtom(int gid) {
     SimData *sd = Base::simData;

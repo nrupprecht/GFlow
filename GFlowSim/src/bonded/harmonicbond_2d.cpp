@@ -23,7 +23,7 @@ namespace GFlowSimulation {
     RealType **f = simData->F();
     int    *type = simData->Type();
     // Displacement vector
-    RealType dx, dy, r, invr, dr, scale;
+    RealType dx[2], r, invr, dr, scale;
     // Get the bounds and boundary conditions
     Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
     BCFlag boundaryConditions[2];
@@ -39,32 +39,31 @@ namespace GFlowSimulation {
       // Check if the types are good
       if (type[id1]<0 || type[id2]<0) continue;
       // Calculate displacement
-      dx = x[id1][0] - x[id2][0];
-      dy = x[id1][1] - x[id2][1];
-      // Harmonic corrections to distance.
-      if (boundaryConditions[0]==BCFlag::WRAP) {
-        RealType dX = bnd_x - fabs(dx);
-        if (dX<fabs(dx)) dx = dx>0 ? -dX : dX;
-      }  
-      if (boundaryConditions[1]==BCFlag::WRAP) {
-        RealType dY = bnd_y - fabs(dy);
-        if (dY<fabs(dy)) dy = dy>0 ? -dY : dY;
-      } 
+      dx[0] = x[id1][0] - x[id2][0];
+      dx[1] = x[id1][1] - x[id2][1];
+      gflow->minimumImage(dx);
       // Get the distance, inverse distance
-      r = sqrtf(dx*dx + dy*dy);
+      r = sqrtf(dotVec(dx, dx, 2));
       invr = 1./r;
       // Calculate displacement from equilibrium
       dr = r - distance[i];
-      // Makes dX into the force. The springConstant*dr comes from the force, the invr comes from 
-      // normalizing {dx, dy}
+      // Makes dx into the force. The springConstant*dr comes from the force, the invr comes from normalizing dx
       scale = springConstant*dr*invr;
-      dx *= scale;
-      dy *= scale;
+      dx[0] *= scale;
+      dx[1] *= scale;
       // Add forces to particles
-      f[id1][0] -= dx;
-      f[id1][1] -= dy;
-      f[id2][0] += dx;
-      f[id2][1] += dy;
+      f[id1][0] -= dx[0];
+      f[id1][1] -= dx[1];
+      f[id2][0] += dx[0];
+      f[id2][1] += dx[1];
+
+      // Potential energy
+      if (do_potential) {
+        potential += springConstant*sqr(dr);
+      }
+      if (do_virial) {
+        virial += springConstant*dr*r;
+      }
     }
   }
 

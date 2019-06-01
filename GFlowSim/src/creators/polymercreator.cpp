@@ -41,7 +41,7 @@ namespace GFlowSimulation {
     int number = 1;
     RealType length = 5.;
     RealType phi = 0.2;
-    bool useAngle = false;
+    bool useAngle = true;
     bool pair = false;
     RealType h = 2.5;
     useCorr = false;
@@ -266,7 +266,6 @@ namespace GFlowSimulation {
         if      (X[d]< bnds.min[d]) X[d] += bnds.wd(d);
         else if (X[d]>=bnds.max[d]) X[d] -= bnds.wd(d);
       }
-
       // Primary type
       if (next_type==0) sd->addParticle(X, ZERO, rP, imP, idP);
       // Chain link type

@@ -7,17 +7,20 @@ namespace GFlowSimulation {
   AngleHarmonicChain_2d::AngleHarmonicChain_2d(GFlow *gflow, RealType K) : AngleHarmonicChain(gflow, K) {};
 
   void AngleHarmonicChain_2d::interact() const {
+
     // Call parent class.
     AngleHarmonicChain::interact();
     // Get simdata, check if the local ids need updating
     SimData *sd = Base::simData;
     RealType **x = sd->X();
+    RealType **v = sd->V();
     RealType **f = sd->F();
     if (sd->getNeedsRemake()) updateLocalIDs();
     // If there are not enough particles in the buffer
     if (local_ids.size()<3) return;
     // Variables and buffers
-    RealType dx1[2], dx2[2], rsqr1, rsqr2, r1, r2, invr1, invr2, angle_cos, a11, a12, a22;
+    RealType dx1[2], dx2[2], rsqr1, rsqr2, r1, r2, angle_cos;
+    RealType dv1[2], dv2[2];
     RealType f1[2], f3[2];
     // Get the bounds and boundary conditions
     Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
@@ -44,63 +47,60 @@ namespace GFlowSimulation {
       // Minimum image under harmonic b.c.s
       gflow->minimumImage(dx1);
       gflow->minimumImage(dx2);
-
-      /*
-      // Harmonic corrections to distance.
-      if (boundaryConditions[0]==BCFlag::WRAP) {
-        RealType dX = bnd_x - fabs(dx1);
-        if (dX<fabs(dx1)) dx1 = dx1>0 ? -dX : dX;
-        dX = bnd_x - fabs(dx2);
-        if (dX<fabs(dx2)) dx2 = dx2>0 ? -dX : dX;
-      }  
-      if (boundaryConditions[1]==BCFlag::WRAP) {
-        RealType dY = bnd_y - fabs(dy1);
-        if (dY<fabs(dy1)) dy1 = dy1>0 ? -dY : dY;
-        dY = bnd_y - fabs(dy2);
-        if (dY<fabs(dy2)) dy2 = dy1>0 ? -dY : dY;
-      } 
-      */
-
       
       // Get distance squared, distance
       rsqr1 = dx1[0]*dx1[0] + dx1[1]*dx1[1];
       r1 = sqrt(rsqr1);
       rsqr2 = dx2[0]*dx2[0] + dx2[1]*dx2[1];
       r2 = sqrt(rsqr2);
+      // Normalize dx1, dx2
+      dx1[0] /= r1; dx1[1] /= r1;
+      dx2[0] /= r2; dx2[1] /= r2;
       // Find the cosine of the angle between the atoms
-      angle_cos = dx1[0]*dx2[0] + dx1[1]*dx2[1];
-      angle_cos /= (r1*r2);
+      angle_cos = (dx1[0]*dx2[0] + dx1[1]*dx2[1]);
 
-      RealType theta = acos(angle_cos);
-      //cout << theta / (PI) << endl;
-
-
-      /*
-      // Calculate the force
-      a11 = angleConstant * angle_cos / rsqr1;
-      a12 = -angleConstant / (r1*r2);
-      a22 = angleConstant * angle_cos / rsqr2;
-      // Force buffers
-      f1[0] = a11*dx1 + a12*dx2;
-      f1[1] = a11*dy1 + a12*dy2;
-      f3[0] = a22*dx2 + a12*dx1;
-      f3[1] = a22*dy2 + a12*dy1;
-      */
-
+      RealType theta;
+      // If angle_cos is too large or small (probably due to inexactness of floating point), we can get nan-s.
+      if (angle_cos<-0.999) theta = PI;
+      else if (0.999<angle_cos) theta = 0;
+      else theta = acos(angle_cos);      
+      
       RealType pa[2], pb[2];
       tripleProduct2(dx1, dx1, dx2, pa);
       tripleProduct2(dx2, dx1, dx2, pb);
       negateVec(pb, 2);
+      // Normalize pa, pb
+      RealType pa_norm = sqrtf(pa[0]*pa[0] + pa[1]*pa[1]);
+      RealType pb_norm = sqrtf(pb[0]*pb[0] + pb[1]*pb[1]);
 
-      RealType str = -2*angleConstant*(theta - PI);
+      // In case vectors (dx1, dx2) are very close to being parallel or antiparallel.
+      if (pa_norm==0 || pb_norm==0) continue;
+      // Normalize pa, pb
+      pa[0] /= pa_norm; pa[1] /= pa_norm;
+      pb[0] /= pb_norm; pb[1] /= pb_norm;
+
+      // Calculate force strength
+      RealType str = -angleConstant*(theta - PI);
       RealType strength1 = str/r1;
       RealType strength2 = str/r2;
+      
+      /*
+      // Calculate damping
+      dv1[0] = v[id1][0] - v[id2][0];
+      dv1[1] = v[id1][1] - v[id2][1];
+      dv2[0] = v[id3][0] - v[id2][0];
+      dv2[1] = v[id3][1] - v[id2][1];
+      const RealType damping = 5;
+      RealType theta_dot = -( dotVec(dv1, dx2, 2) + dotVec(dx1, dv2, 2) )/sin(theta);
+      strength1 -= damping*theta_dot;
+      strength2 -= damping*theta_dot;
+      */
+
+      // Set force buffers
       f1[0] = strength1*pa[0];
       f1[1] = strength1*pa[1];
-
       f3[0] = strength2*pb[0];
       f3[1] = strength2*pb[1];
-
 
       // First atom
       f[id1][0] += f1[0];
@@ -111,7 +111,12 @@ namespace GFlowSimulation {
       // Third atom
       f[id3][0] += f3[0];
       f[id3][1] += f3[1];
+
+      if (do_potential) {
+        potential += 0.5*angleConstant*sqr(theta - PI);
+      }
     }
+
     // For two atoms, there is no angle. Just compute the bond force.
   }
 

@@ -1,6 +1,8 @@
 #ifndef __ANGLE_HARMONIC_CHAIN_HPP__GFLOW__
 #define __ANGLE_HARMONIC_CHAIN_HPP__GFLOW__
 
+// Useful: "Determination of Forces from a Potential in Molecular Dynamics"
+
 #include "../base/bonded.hpp"
 
 namespace GFlowSimulation {

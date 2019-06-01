@@ -216,6 +216,7 @@ namespace GFlowSimulation {
           bonded_timer.stop();
         }
       }
+
       // Update bodies
       if (!bodies.empty()) {
         body_timer.start();
@@ -246,7 +247,6 @@ namespace GFlowSimulation {
       RealType dt = integrator->getTimeStep();
       elapsed_time += dt;
       total_time += dt;
-
       // Check for bad numerical precision
       if (total_time - dt == total_time) {
         cout << "Loss of precision. Stopping simulation.\n";
@@ -261,8 +261,7 @@ namespace GFlowSimulation {
         (*monitor) << "Ratio: " << elapsed_time / timer.current() << "\t";
         (*monitor) << "Est. time: " << (requested_time - elapsed_time)/live_ratio << "\t";
 	      (*monitor) << endl;
-      }
-      
+      }      
       // Reset simdata needs remake flag
       simData->setNeedsRemake(false);
     }
@@ -355,6 +354,10 @@ namespace GFlowSimulation {
 
   const vector<class Interaction*>& GFlow::getInteractions() const {
     return interactions;
+  }
+
+  const vector<class Bonded*>& GFlow::getBondedInteractions() const {
+    return bondedInteractions;
   }
 
   SimData* GFlow::getSimData() {

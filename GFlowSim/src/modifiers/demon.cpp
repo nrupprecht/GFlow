@@ -386,11 +386,11 @@ namespace GFlowSimulation {
   }
 
   bool Demon::energy_demon(int nl, int nr, RealType el, RealType er) {
-    return el-er>=0;
+    return el>=er;
   }
 
   bool Demon::number_demon(int nl, int nr, RealType el, RealType er) {
-    return nl-nr>=0;
+    return nl>=nr;
   }
 
 }

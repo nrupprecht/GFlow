@@ -15,6 +15,8 @@
 // For tau, E, N, std E, std N
 typedef std::tuple<float, float, float, float, float> datapoint;
 
+typedef std::tuple<float, float, float, float, float, float, float> tuple7;
+
 using namespace GFlowSimulation;
 
 inline void setDataObjects(GFlow *gflow, GraphObject* &KL, GraphObject* &KR, GraphObject* &NL, GraphObject* &NR, GraphObject* &CE, GraphObject* &CN, Parameters* &params) {
@@ -133,6 +135,7 @@ int main(int argc, char **argv) {
 
   // Record data.
   vector<datapoint> data;
+  vector<tuple7> parameters;
   vector<pair<float, float> > prediction; // Predicted energy and number currents.
   vector< vector<pair<float, float> > > alldata; // Store each energy and number current for all runs.
   vector< vector<pair<float, float> > > allkappa; // Store all \kappa_r, \kappa_l
@@ -185,8 +188,8 @@ int main(int argc, char **argv) {
       
       // Accumulate
       if (KL->size()>0 && NL->size()>0) {
-        RealType aveDEDT = CE->ave()/t; // -(KL->last().second - KL->first().second)/(KL->last().first - KL->first().first);
-        RealType aveDNDT = CN->ave()/t; //-(NL->last().second - NL->first().second)/(NL->last().first - NL->first().first);
+        RealType aveDEDT = CE->ave()/t;
+        RealType aveDNDT = CN->ave()/t;
         // Update average accumulators and vectors.
         aveE += aveDEDT;
         aveN += aveDNDT;
@@ -198,16 +201,20 @@ int main(int argc, char **argv) {
         if (!params->find("Vol", volume)) cout << "Couldn't find volume.\n";
         float rhoL = numL / volume, rhoR = numR / volume;
         float betaL = numL / energyL, betaR = numR / energyR;
+        // Parameters
+        parameters.push_back(tuple7(rhoL, betaL, rhoR, betaR, t, area, mass));
         // Compute kappas
         float kappaL = kappa(rhoL, betaL, area, mass, t);
         float kappaR = kappa(rhoR, betaR, area, mass, t);
         allkappa.at(i).push_back(pair<float,float>(kappaL, kappaR));
         // Simple demon prediction
         float D = 3./2.;
-        float I_energy = D * kappaL / t * exp(-kappaR) / betaL;
+        float I_energy = D * kappaL * exp(-kappaR) / (betaL * t);
         float I_number = I_energy * betaL / D;
 
         if (!quiet) cout << "Tau: " << t << " -- Ratios: " << aveDEDT / I_energy << ", " << aveDNDT / I_number << endl;
+
+        cout << kappaL << " " << kappaR << " " << I_energy << " " << endl;
 
         allratios.at(i).push_back(pair<float,float>(aveDEDT / I_energy, aveDNDT / I_number));
 
@@ -240,9 +247,9 @@ int main(int argc, char **argv) {
 
     // Print messages to screen
     if (!quiet) {
-      cout << "Tau: " << t << endl;
+      cout << "Done with tau=" << t << endl;
       cout << "Final: " << aveE << ", " << aveN << endl;
-      cout << "Sample std dev: " << stdE/sqrt(trials) << ", " << stdN/sqrt(trials) << endl;
+      if (trials>1) cout << "Sample std dev: " << stdE/sqrt(trials) << ", " << stdN/sqrt(trials) << endl;
       cout << endl;
     }
 
@@ -261,29 +268,21 @@ int main(int argc, char **argv) {
   else {
     for (auto dp : data)
       fout << std::get<0>(dp) << "," << std::get<1>(dp) << "," << std::get<2>(dp) << "," << std::get<3>(dp) << "," << std::get<4>(dp) << "\n";
-    fout.close();
   }
+  fout.close();
+
+  // Print average and std dev data
+  fout.open(writeDirectory+"/params.csv");
+  if (fout.fail()) {
+    cout << "Failed to open file " << writeDirectory+"/params.csv" << endl;
+  }
+  else {
+    for (auto dp : parameters)
+      fout << std::get<0>(dp) << "," << std::get<1>(dp) << "," << std::get<2>(dp) << "," << std::get<3>(dp) << "," << std::get<4>(dp) << "\n";
+  }
+  fout.close();
 
   write_to_file(alldata, writeDirectory+"/allrates.csv");
-  /*
-  fout.open(writeDirectory+"/allrates.csv");
-  if (fout.fail()) cout << "Failed to open file " << writeDirectory+"/allrates.csv" << endl;
-  else {
-    for (const auto &v : alldata) {
-      // Write energy current
-      for (int i=0; i<v.size(); ++i) {
-        fout << v[i].first << ",";
-      }
-      // Write number current
-      for (int i=0; i<v.size(); ++i) {
-        fout << v[i].second;
-        if (i!=v.size()-1) fout << ",";
-      }
-      fout << endl;
-    }
-  }
-  */
-
   write_to_file(allkappa, writeDirectory+"/allkappa.csv");
   write_to_file(allratios, writeDirectory+"/allratios.csv");
   

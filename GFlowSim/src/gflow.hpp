@@ -110,8 +110,11 @@ namespace GFlowSimulation {
     //! \brief Get the command line arguments.
     pair<int, char**> getCommand() const;
 
-    //! \brief Get the vector of interactions.
+    //! \brief Get the vector of nonbonded interactions.
     const vector<class Interaction*>& getInteractions() const;
+
+    //! \brief Get the vector of bonded interactions.
+    const vector<class Bonded*>& getBondedInteractions() const;
 
     //! \brief Get the sim data object.
     class SimData* getSimData();

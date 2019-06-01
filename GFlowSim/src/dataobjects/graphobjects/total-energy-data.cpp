@@ -1,10 +1,11 @@
 #include "total-energy-data.hpp"
 // Other files
 #include "../../base/forcemaster.hpp"
+#include "../../base/bonded.hpp"
 
 namespace GFlowSimulation {
   // Constructor
-  TotalEnergyData::TotalEnergyData(GFlow *gflow, bool ave) : GraphObject(gflow, "Energy", "time", "total energy"), useAve(ave) {};
+  TotalEnergyData::TotalEnergyData(GFlow *gflow, bool ave) : GraphObject(gflow, "Energy", "time", "total energy"), useAve(ave), restrict_energy(false) {};
 
   void TotalEnergyData::post_step() {
     // Only record if enough time has gone by
@@ -26,6 +27,9 @@ namespace GFlowSimulation {
     energy *= 0.5;
     // Add potential energy
     energy += forceMaster->getTotalPotentialEnergy();
+    // Add potential energy from bonded interactions
+    auto bonded_interactions = gflow->getBondedInteractions();
+    for (auto it : bonded_interactions) energy += it->getPotential();
     // If we want the average
     if (useAve && count>0) energy /= count;
     // Store data

@@ -74,6 +74,11 @@ namespace GFlowSimulation {
       f[id2][0] += dx;
       f[id2][1] += dy;
       f[id2][2] += dz;
+
+      // Potential energy
+      if (do_potential) {
+        potential += 0.5*springConstant*sqr(dr);
+      }
     }
   }
 
