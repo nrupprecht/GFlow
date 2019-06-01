@@ -308,16 +308,14 @@ namespace GFlowSimulation {
       do {
         // CASE: [ : type1, type2, interaction-type ]
         if (parser.args_size()==3) {
-          // Get the interaction token
-          token = parser.argName(2);
+          // This allows the force string to be a variable.
+          string token = parser.get_variable_string(parser.argName(2));
+          if (token.empty()) token = parser.argName(2);
           // Get the particle types
           t1 = parser.arg_cast<int>(0);
           t2 = parser.arg_cast<int>(1);
           // If the interaction has not occured yet, create one.
           if (interactions.find(token)==interactions.end()) {	    
-	    // This allows the force string to be a variable.
-	    string token = parser.get_variable_string(parser.argName(2));
-	    if (token.empty()) token = parser.argName(2);
             interactions.insert(std::pair<string, Interaction*>(token, ParseConstructor::getInteraction(parser.getNode(), variables, token, gflow)));
           }
           // Set the interparticle interaction

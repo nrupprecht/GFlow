@@ -211,13 +211,9 @@ int main(int argc, char **argv) {
         float D = 3./2.;
         float I_energy = D * kappaL * exp(-kappaR) / (betaL * t);
         float I_number = I_energy * betaL / D;
-
+        // Print a message
         if (!quiet) cout << "Tau: " << t << " -- Ratios: " << aveDEDT / I_energy << ", " << aveDNDT / I_number << endl;
-
-        cout << kappaL << " " << kappaR << " " << I_energy << " " << endl;
-
         allratios.at(i).push_back(pair<float,float>(aveDEDT / I_energy, aveDNDT / I_number));
-
         pointsE.push_back(aveE);
         pointsN.push_back(aveN);
         alldata.at(i).push_back(pair<float,float>(aveDEDT, aveDNDT));

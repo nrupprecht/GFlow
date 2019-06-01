@@ -23,9 +23,9 @@ Force-grid: {
   : 0, 0, HardSphere
   : 0, 2, HardSphere
   : 2, 2, HardSphere
-  : 1, 1, None
-  : 1, 0, None
-  : 1, 2, None
+  : 1, 1, HardSphere // None
+  : 1, 0, HardSphere // None
+  : 1, 2, HardSphere // None
 }
 
 Fill: Polymer {
@@ -37,7 +37,6 @@ Fill: Polymer {
   Correlation: corr
 }
 
-/*
 // Fill an area with particles
 Fill: Area {
   // Fill all the simulation with particles
@@ -52,5 +51,6 @@ Fill: Area {
   Number: Phi=0.1 {
     TypeA : 1
   }
+
+  Velocity: Temperature=0.001
 }
-*/

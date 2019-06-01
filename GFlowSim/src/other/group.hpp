@@ -41,6 +41,8 @@ namespace GFlowSimulation {
     //! \brief Find the net force on the group.
     void findNetForce(RealType*, SimData*) const;
 
+    void findClosestObject(const RealType*, RealType*, SimData*) const;
+
     //! \brief Add whatever force is necessary to each particle to increase its acceleration by the given amount.
     void addAcceleration(RealType*, SimData*) const;
 

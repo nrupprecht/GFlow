@@ -108,7 +108,6 @@ namespace GFlowSimulation {
         plusEqVecScaled(f[id], A, mass, sim_dimensions);
       }
     }
-
   }
 
   void Group::add(int id) {
@@ -128,6 +127,25 @@ namespace GFlowSimulation {
     for (auto id : local_ids) {
       plusEqVec(frc, f[id], sim_dimensions);
     }
+  }
+
+  void Group::findClosestObject(const RealType *point, RealType *displacement, SimData *simData) const {
+    if (size()==0) return;
+    // Force array
+    int sim_dimensions = simData->getSimDimensions();
+    RealType **x = simData->X();
+    Vec disp(sim_dimensions), maxDisp(sim_dimensions);
+    RealType maxD = 0;
+    // Compute net force
+    for (auto id : local_ids) {
+      simData->getGFlow()->getDisplacement(x[id], point, disp.data);
+      RealType d = sqr(disp);
+      if (d>maxD) {
+        maxD = d;
+        maxDisp = disp;
+      }
+    }
+    copyVec(maxDisp, displacement);
   }
 
   void Group::update_local_ids(SimData *simData) {

@@ -41,11 +41,12 @@ namespace GFlowSimulation {
     int number = 1;
     RealType length = 5.;
     RealType phi = 0.2;
-    bool useAngle = true;
     bool pair = false;
     RealType h = 2.5;
     useCorr = false;
     string dp = "", dc = "";
+
+    useAngle = true;
 
     // Gather parameters
     parser.firstArg("Number", number);
@@ -72,6 +73,22 @@ namespace GFlowSimulation {
     }
     
     // --- Done gathering parameters, ready to act.
+
+    // Add bonds object to gflow
+    if (sim_dimensions==2) {
+      harmonicbonds = new HarmonicBond_2d(gflow);
+    }
+    else if (sim_dimensions==3) {
+      harmonicbonds = new HarmonicBond_3d(gflow);
+    }
+    else {
+      harmonicbonds = new HarmonicBond(gflow);
+    }
+    // Add the harmonic bonds modifier.
+    if (harmonicbonds) {
+      harmonicbonds->setSpringConstant(8.*pow(rC/0.01, sim_dimensions-1)*DEFAULT_SPRING_CONSTANT);
+      gflow->addBonded(harmonicbonds);
+    }
     
     // Seed global random generator
     seedNormalDistribution();
@@ -87,31 +104,6 @@ namespace GFlowSimulation {
       gflow->addDataObject(correlation);
     }
 
-    // Add bonds object to gflow
-    if (harmonicbonds==nullptr) {
-      if (sim_dimensions==2) {
-        harmonicbonds = new HarmonicBond_2d(gflow);
-        if (useAngle) harmonicchain = new AngleHarmonicChain_2d(gflow, 0.1*DEFAULT_SPRING_CONSTANT);
-      }
-      else if (sim_dimensions==3) {
-        harmonicbonds = new HarmonicBond_3d(gflow);
-        if (useAngle) harmonicchain = new AngleHarmonicChain_3d(gflow, 0.1*DEFAULT_SPRING_CONSTANT);
-      }
-      else {
-        harmonicbonds = new HarmonicBond(gflow);
-        if (useAngle) harmonicchain = nullptr; // <-----------
-      }
-      
-      // Add the harmonic bonds modifier.
-      gflow->addBonded(harmonicbonds);
-      gflow->addBonded(harmonicchain);
-      // Adjust strength of harmonic bonds
-      harmonicbonds->setSpringConstant(8.*pow(rC/0.01, sim_dimensions-1)*DEFAULT_SPRING_CONSTANT);
-    }
-
-    // Seed global random generator
-    seedNormalDistribution();
-
     if (pair) {
       createParallelPolymers(gflow, h, phi, length);
     }
@@ -121,13 +113,36 @@ namespace GFlowSimulation {
         createRandomPolymer(gflow, length, phi, idP, idC);
       }
     }
-
-    // Set the target steps to be high, to help prevent balls from slipping into areas they shouldn't be in.
-    //gflow->integrator->setTargetSteps(40);
     
     // Add local fixers to the particle fixers master list
     particle_fixers.insert(particle_fixers.end(), p_fixers.begin(), p_fixers.end());
     
+  }
+
+  inline void PolymerCreator::make_bond_objects(GFlow *gflow) {
+    // Get the dimensions
+    int sim_dimensions = gflow->getSimDimensions();
+
+    // Add bonds object to gflow
+    if (sim_dimensions==2) {
+      harmonicbonds = new HarmonicBond_2d(gflow);
+      if (useAngle) harmonicchain = new AngleHarmonicChain_2d(gflow, 0.1*DEFAULT_SPRING_CONSTANT);
+    }
+    else if (sim_dimensions==3) {
+      harmonicbonds = new HarmonicBond_3d(gflow);
+      if (useAngle) harmonicchain = new AngleHarmonicChain_3d(gflow, 0.1*DEFAULT_SPRING_CONSTANT);
+    }
+    else {
+      harmonicbonds = new HarmonicBond(gflow);
+      if (useAngle) harmonicchain = nullptr; // <-----------
+    }
+    
+    // Add the harmonic bonds modifier.
+    if (harmonicbonds) {
+      harmonicbonds->setSpringConstant(8.*pow(rC/0.01, sim_dimensions-1)*DEFAULT_SPRING_CONSTANT);
+      gflow->addBonded(harmonicbonds);
+    }
+    if (harmonicchain) gflow->addBonded(harmonicchain);
   }
 
   void PolymerCreator::createPolymerArrangement(vector<bool>& chain_ordering, RealType phi, RealType length) {
@@ -175,6 +190,9 @@ namespace GFlowSimulation {
 
     // Create a random polymer according to the specification
     RealType v_sigma = 0.1;
+
+    // Create bonded force objects
+    make_bond_objects(gflow);
 
     // Create a random polymer arrangement
     vector<bool> chain_ordering;

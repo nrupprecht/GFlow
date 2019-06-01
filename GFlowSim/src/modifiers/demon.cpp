@@ -28,8 +28,8 @@ namespace GFlowSimulation {
     parameters = new Parameters(gflow);
     gflow->addDataObject(parameters);
 
-    // Default door choice function
-    check_choice = &energy_demon;
+    // Default door choice function - direction demon.
+    setDemon(0); 
   };
 
   void Demon::pre_integrate() {
@@ -67,6 +67,11 @@ namespace GFlowSimulation {
       PositionData *ob = dynamic_cast<PositionData*>(obj);
       if (ob) animate_object = ob;
     }
+    // Reset
+    opened_tau = closed_tau = 0;
+
+
+    cout << "Tau: " << tau << endl;
 
     // Open the door
     open_door();
@@ -110,6 +115,7 @@ namespace GFlowSimulation {
           numberL->addEntry(time, Nl);
           numberR->addEntry(time, Nr);
           // The door is still open, so we don't have to open it.
+          ++opened_tau;
         }
         // Otherwise, go back in time and keep the door closed.
         else {
@@ -138,6 +144,7 @@ namespace GFlowSimulation {
         // Open the door to see what will happen.
         open_door();
         // The door was closed, so there is no need to reassign sided.
+        ++closed_tau;
       }
     }
     else if (door_just_closed) {
@@ -184,6 +191,7 @@ namespace GFlowSimulation {
     parameters->addRecord("Area", door_area);
     parameters->addRecord("Dimensions", sim_dimensions);
     parameters->addRecord("Interact", doesInteract ? 1. : 0.);
+    parameters->addRecord("Type", demon_type);
     if (im>0) parameters->addRecord("Mass", 1./im);
   }
 
@@ -208,9 +216,12 @@ namespace GFlowSimulation {
   }
 
   void Demon::setDemon(int choice) {
-    if (choice==0) check_choice = &direction_demon;
-    else if (choice==1) check_choice = &energy_demon;
-    else if (choice==2) check_choice = &number_demon;
+    if (0<=choice && choice<=2) {
+      demon_type = choice;
+      if (choice==0) check_choice = &direction_demon;
+      else if (choice==1) check_choice = &energy_demon;
+      else if (choice==2) check_choice = &number_demon;
+    }
   }
 
   inline void Demon::count_changes(int& nl, int& nr, RealType& el, RealType& er) {

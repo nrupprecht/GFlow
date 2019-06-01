@@ -18,6 +18,8 @@ namespace GFlowSimulation {
     virtual void createArea(HeadNode*, GFlow*, const std::map<string, string>&, vector<ParticleFixer>&) override;
 
   private:
+    inline void make_bond_objects(GFlow*);
+
     //! \brief Create a polymer chain.
     void createRandomPolymer(GFlow*, RealType, RealType, int, int);
 
@@ -37,6 +39,9 @@ namespace GFlowSimulation {
 
     //! \brief Whether to use correlation objects.
     bool useCorr = false;
+
+    //! \brief Whether to use angle bonds forces.
+    bool useAngle = true;
 
     //! \brief A unified group correlation object. Note - this is handed to gflow, so this object should not attempt to delete it.
     class GroupCorrelation *correlation = nullptr;

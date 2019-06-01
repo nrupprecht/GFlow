@@ -84,6 +84,8 @@ namespace GFlowSimulation {
 
     //! \brief A function pointer to the door open/close choice function.
     bool (*check_choice) (int, int, RealType, RealType);
+    //! \brief Integer representation of demon type.
+    int demon_type = 0;
 
     //! \brief Choice function to make a direction demon.
     static bool direction_demon(int, int, RealType, RealType);
@@ -138,6 +140,8 @@ namespace GFlowSimulation {
     int Nl = -1;
     //! \brief Last number of particles on the right side.
     int Nr = -1;
+
+    int opened_tau = 0, closed_tau = 0;
 
     //! \brief Data objects for recording demon statistics.
     GraphObject *kineticL, *kineticR, *numberL, *numberR, *current_E, *current_N;
