@@ -9,7 +9,7 @@ Var: Tl=0.001
 Var: Tr=0.001
 Var: rhoL=3
 Var: rhoR=3
-Var: type=0
+Var: type=2
 Var: force=HardSphere
 Var: radius=0.05 // Radius of the gas particles.
 Var: sigma=0.05 // Radius of the wall particles.
@@ -104,7 +104,7 @@ Fill: Wall {
   Radius: sigma
   Type: 3
 
-  Modifier: Demon=1 {
+  Modifier: Demon {
     Tau: tau
     Type: type
   }

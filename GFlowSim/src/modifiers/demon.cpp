@@ -69,10 +69,6 @@ namespace GFlowSimulation {
     }
     // Reset
     opened_tau = closed_tau = 0;
-
-
-    cout << "Tau: " << tau << endl;
-
     // Open the door
     open_door();
   }

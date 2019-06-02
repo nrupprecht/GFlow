@@ -87,6 +87,7 @@ int main(int argc, char **argv) {
   RealType width = 20;
   RealType length = 0.5;
   RealType tau = 0.1;
+  int type = 0; // Demontype
 
   RealType minTau = 0.05;
   RealType maxTau = 2.0;
@@ -104,6 +105,7 @@ int main(int argc, char **argv) {
   parser.get("width", width);
   parser.get("length", length);
   parser.get("tau", tau);
+  parser.get("type", type);
   parser.get("minTau", minTau);
   parser.get("maxTau", maxTau);
   parser.get("bins", bins);
@@ -148,6 +150,8 @@ int main(int argc, char **argv) {
   // Set variables in creator.
   creator.setVariable("width", toStr(width), true);
   creator.setVariable("length", toStr(length), true);
+  creator.setVariable("type", toStr(type), true);
+
   // Pointers for data objects
   GraphObject *KL = nullptr, *KR = nullptr, *NL = nullptr, *NR = nullptr, *CE = nullptr, *CN = nullptr;
   Parameters *params = nullptr;
