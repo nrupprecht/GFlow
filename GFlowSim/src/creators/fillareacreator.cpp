@@ -115,7 +115,7 @@ namespace GFlowSimulation {
         velocityOption = 0;
       }
       else if (parser.argName()=="Temperature") {
-        parser.val(temperature);
+        parser.val(temperature);	
         // Set velocity option
         velocityOption = 2;
       }

@@ -155,9 +155,6 @@ int main(int argc, char **argv) {
   // Pointers for data objects
   GraphObject *KL = nullptr, *KR = nullptr, *NL = nullptr, *NR = nullptr, *CE = nullptr, *CN = nullptr;
   Parameters *params = nullptr;
-
-  // Create the directory
-  mkdir(writeDirectory.c_str(), 0777);
   
   RealType dt = bins>1 ? (maxTau - minTau)/(bins-1) : 0;
   // Iterate through different tau values.
@@ -225,6 +222,8 @@ int main(int argc, char **argv) {
       else throw false;
 
       if (i==bins-1 && tr==trials-1) {
+        // Create the directory
+        mkdir(writeDirectory.c_str(), 0777);
         // Write some data
         gflow->writeData(writeDirectory+"/data"+toStr(tr));
       }
@@ -232,6 +231,9 @@ int main(int argc, char **argv) {
       // Clean up
       delete gflow;
     }
+
+    // Make sure directory has been created.
+    mkdir(writeDirectory.c_str(), 0777);
 
     // Normalize
     if (!pointsE.empty()) aveE /= pointsE.size();
