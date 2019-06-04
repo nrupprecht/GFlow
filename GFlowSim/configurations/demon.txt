@@ -1,18 +1,17 @@
 // This is a 2d simulation
 Dimensions: 2
 
-Var: phi=0.025
 Var: width=20   // Box width
-Var: length=0.5 // Door area (length)
+Var: length=0.75 // Door area (length)
 Var: tau=0.25
 Var: Tl=0.001
 Var: Tr=0.001
 Var: rhoL=3
 Var: rhoR=3
-Var: type=2
-Var: force=HardSphere
+Var: type=1
+Var: force=None
 Var: radius=0.05 // Radius of the gas particles.
-Var: sigma=0.05 // Radius of the wall particles.
+Var: sigma=0.025 // Radius of the wall particles.
 
 // Set the simulation bounds - a box with a given width.
 Bounds: {
