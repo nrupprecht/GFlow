@@ -176,6 +176,9 @@ int main(int argc, char **argv) {
     for (int tr=0; tr<trials; ++tr) {
       // Delete old gflow
       GFlow *gflow = creator.createSimulation();
+      // Check to make sure nothing illegal was entered 
+      parser.check();
+      // Make sure gflow is not null
       if (gflow==nullptr) throw false;
 
       // Add an ending snapshot object
