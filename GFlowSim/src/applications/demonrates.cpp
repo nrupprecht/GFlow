@@ -283,7 +283,7 @@ int main(int argc, char **argv) {
   }
   else {
     for (auto dp : parameters)
-      fout << std::get<0>(dp) << "," << std::get<1>(dp) << "," << std::get<2>(dp) << "," << std::get<3>(dp) << "," << std::get<4>(dp) << "\n";
+      fout << std::get<0>(dp) << "," << std::get<1>(dp) << "," << std::get<2>(dp) << "," << std::get<3>(dp) << "," << std::get<4>(dp) << "," << std::get<5>(dp) << "," << std::get<6>(dp) << "\n";
   }
   fout.close();
 
