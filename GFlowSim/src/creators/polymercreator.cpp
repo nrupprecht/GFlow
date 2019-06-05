@@ -75,20 +75,7 @@ namespace GFlowSimulation {
     // --- Done gathering parameters, ready to act.
 
     // Add bonds object to gflow
-    if (sim_dimensions==2) {
-      harmonicbonds = new HarmonicBond_2d(gflow);
-    }
-    else if (sim_dimensions==3) {
-      harmonicbonds = new HarmonicBond_3d(gflow);
-    }
-    else {
-      harmonicbonds = new HarmonicBond(gflow);
-    }
-    // Add the harmonic bonds modifier.
-    if (harmonicbonds) {
-      harmonicbonds->setSpringConstant(8.*pow(rC/0.01, sim_dimensions-1)*DEFAULT_SPRING_CONSTANT);
-      gflow->addBonded(harmonicbonds);
-    }
+    make_bond_objects(gflow);
     
     // Seed global random generator
     seedNormalDistribution();
@@ -125,22 +112,30 @@ namespace GFlowSimulation {
 
     // Add bonds object to gflow
     if (sim_dimensions==2) {
-      harmonicbonds = new HarmonicBond_2d(gflow);
+      if (harmonicbonds==nullptr) {
+        harmonicbonds = new HarmonicBond_2d(gflow);
+        gflow->addBonded(harmonicbonds);
+      }
       if (useAngle) harmonicchain = new AngleHarmonicChain_2d(gflow, 0.1*DEFAULT_SPRING_CONSTANT);
     }
     else if (sim_dimensions==3) {
-      harmonicbonds = new HarmonicBond_3d(gflow);
+      if (harmonicbonds==nullptr) {
+        harmonicbonds = new HarmonicBond_3d(gflow);
+        gflow->addBonded(harmonicbonds);
+      }
       if (useAngle) harmonicchain = new AngleHarmonicChain_3d(gflow, 0.1*DEFAULT_SPRING_CONSTANT);
     }
     else {
-      harmonicbonds = new HarmonicBond(gflow);
+      if (harmonicbonds==nullptr) {
+        harmonicbonds = new HarmonicBond(gflow);
+        gflow->addBonded(harmonicbonds);
+      }
       if (useAngle) harmonicchain = nullptr; // <-----------
     }
     
     // Add the harmonic bonds modifier.
     if (harmonicbonds) {
       harmonicbonds->setSpringConstant(8.*pow(rC/0.01, sim_dimensions-1)*DEFAULT_SPRING_CONSTANT);
-      gflow->addBonded(harmonicbonds);
     }
     if (harmonicchain) gflow->addBonded(harmonicchain);
   }

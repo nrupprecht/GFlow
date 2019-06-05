@@ -22,13 +22,6 @@ namespace GFlowSimulation {
     RealType dx1[2], dx2[2], rsqr1, rsqr2, r1, r2, angle_cos;
     RealType dv1[2], dv2[2];
     RealType f1[2], f3[2];
-    // Get the bounds and boundary conditions
-    Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
-    BCFlag boundaryConditions[2];
-    copyVec(Base::gflow->getBCs(), boundaryConditions, 2); // Keep a local copy of the bcs
-    // Extract bounds related data
-    RealType bnd_x = bounds.wd(0);
-    RealType bnd_y = bounds.wd(1);
 
     // If there are fewer than three particles, this loop will not execute
     for (int i=0; i+2<local_ids.size(); ++i) {
@@ -83,17 +76,11 @@ namespace GFlowSimulation {
       RealType str = -angleConstant*(theta - PI);
       RealType strength1 = str/r1;
       RealType strength2 = str/r2;
-      
+
       /*
-      // Calculate damping
-      dv1[0] = v[id1][0] - v[id2][0];
-      dv1[1] = v[id1][1] - v[id2][1];
-      dv2[0] = v[id3][0] - v[id2][0];
-      dv2[1] = v[id3][1] - v[id2][1];
-      const RealType damping = 5;
-      RealType theta_dot = -( dotVec(dv1, dx2, 2) + dotVec(dx1, dv2, 2) )/sin(theta);
-      strength1 -= damping*theta_dot;
-      strength2 -= damping*theta_dot;
+      const RealType max_strength = 1.;
+      if (fabs(strength1)>max_strength) strength1 = max_strength*(strength1<0. ? -1. : 1.);
+      if (fabs(strength2)>max_strength) strength2 = max_strength*(strength2<0. ? -1. : 1.);
       */
 
       // Set force buffers
