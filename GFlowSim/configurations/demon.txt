@@ -11,7 +11,8 @@ Var: rhoR=3
 Var: type=1
 Var: force=None
 Var: radius=0.05 // Radius of the gas particles.
-Var: sigma=0.025 // Radius of the wall particles.
+Var: sigma=0.05 // Radius of the wall particles.
+Var: mass=0.005
 
 // Set the simulation bounds - a box with a given width.
 Bounds: {
@@ -40,13 +41,13 @@ Force-grid: {
 
 Template: TypeA {
   Radius: radius
-  Mass: Density=1
+  Mass: mass
   Type: 0
 }
 
 Template: TypeB {
   Radius: radius
-  Mass: Density=1
+  Mass: mass
   Type: 1
 }
 
@@ -86,6 +87,7 @@ Fill: Wall {
   End: width, width/2 + length/2 + sigma
   Radius: sigma
   Type: 2
+  Spacing: sigma
 }
 
 // Bottom part of the partition
@@ -94,6 +96,7 @@ Fill: Wall {
   End: width, 0
   Radius: sigma
   Type: 2
+  Spacing: sigma
 }
 
 // The demon door
@@ -102,6 +105,7 @@ Fill: Wall {
   End: width, width/2 - length/2 - sigma
   Radius: sigma
   Type: 3
+  Spacing: sigma
 
   Modifier: Demon {
     Tau: tau

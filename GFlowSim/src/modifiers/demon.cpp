@@ -5,6 +5,8 @@
 #include "../base/datamaster.hpp"
 #include "../base/forcemaster.hpp"
 
+#include "../allinteractions.hpp"
+
 namespace GFlowSimulation {
 
   Demon::Demon(GFlow *gflow) : Modifier(gflow), tau(0.1), startTime(0) {
@@ -94,6 +96,7 @@ namespace GFlowSimulation {
       if (door_open) {
         // What happened during the last time window.
         count_changes(nl, nr, el, er);
+
         // Check whether door should open
         bool open = should_door_open(nl, nr, el, er);
         // If it was good that the door was open, then move on.

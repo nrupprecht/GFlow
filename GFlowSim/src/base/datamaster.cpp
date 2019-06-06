@@ -225,6 +225,13 @@ namespace GFlowSimulation {
     for (auto dob : dataObjects) dob->setLocalsChanged(c);
   }
 
+  void DataMaster::setAllPrintPlots(bool p) {
+    for (auto dob : dataObjects) {
+      auto ob = dynamic_cast<GraphObject*>(dob);
+      if (ob) ob->setPrintPlot(p);
+    }
+  }
+
   inline bool DataMaster::writeSummary(string writeDirectory) {
     std::ofstream fout(writeDirectory+"/run_summary.txt");
     if (fout.fail()) {

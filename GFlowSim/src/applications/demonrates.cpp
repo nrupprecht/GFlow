@@ -177,6 +177,8 @@ int main(int argc, char **argv) {
       // Delete old gflow
       GFlow *gflow = creator.createSimulation();
       if (gflow==nullptr) throw false;
+      // Don't create any bmp images of plots. This makes it faster to download the data.
+      gflow->getDataMaster()->setAllPrintPlots(false);
 
       // Add an ending snapshot object
       if (snapshot && tr==trials-1) gflow->addDataObject(new EndingSnapshot(gflow));

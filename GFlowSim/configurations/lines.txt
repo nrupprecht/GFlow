@@ -6,7 +6,6 @@ Var: phi=0.5
 Var: h=0.5
 Var: rP=0.05
 Var: rC=0.01
-Var: repulsion=50
 Var: maxDT=0.002
 
 Value: length = fraction*width
@@ -27,11 +26,9 @@ NTypes: 2
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
 Force-grid: {
-  : 0, 0, HardSphere {
-    Repulsion: repulsion
-  }
+  : 0, 0, HardSphere
   : 0, 1, HardSphere
-  : 1, 1, None
+  : 1, 1, HardSphere
 }
 
 Fill: Polymer {

@@ -45,8 +45,7 @@ namespace GFlowSimulation {
     RealType h = 2.5;
     useCorr = false;
     string dp = "", dc = "";
-
-    useAngle = true;
+    useAngle = false;
 
     // Gather parameters
     parser.firstArg("Number", number);
@@ -358,6 +357,10 @@ namespace GFlowSimulation {
       // Add particle
       int gid = sd->getNextGlobalID();
       sd->addParticle(X.data, ZERO.data, rP, imP, idP);
+
+      // Add gid2 to the correlation object
+      if (correlation && useCorr) correlation->addToGroup(gid);
+
       // Add particle
       group.add(gid);
     }

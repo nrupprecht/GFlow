@@ -99,7 +99,7 @@ namespace GFlowSimulation {
       p_template.mass_string = "Density";
     }
     // Mass
-    else if (parser.val(m)) {
+    else if (parser.arg(m)) {
       p_template.mass_engine = new DeterministicEngine(m);
       p_template.mass_string = "Mass";
     }

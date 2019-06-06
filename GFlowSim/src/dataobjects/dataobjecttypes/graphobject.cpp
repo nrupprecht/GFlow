@@ -49,6 +49,10 @@ namespace GFlowSimulation {
     axis_y = ay;
   }
 
+  void GraphObject::setPrintPlot(bool p) {
+    print_plot = p;
+  }
+
   bool GraphObject::writeToFile(string fileName, bool useName) {
     // Check if there's anything to do
     if (data.empty()) return true;
