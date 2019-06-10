@@ -77,12 +77,6 @@ namespace GFlowSimulation {
       RealType strength1 = str/r1;
       RealType strength2 = str/r2;
 
-      /*
-      const RealType max_strength = 1.;
-      if (fabs(strength1)>max_strength) strength1 = max_strength*(strength1<0. ? -1. : 1.);
-      if (fabs(strength2)>max_strength) strength2 = max_strength*(strength2<0. ? -1. : 1.);
-      */
-
       // Set force buffers
       f1[0] = strength1*pa[0];
       f1[1] = strength1*pa[1];

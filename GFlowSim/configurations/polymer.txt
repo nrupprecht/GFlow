@@ -23,7 +23,7 @@ Force-grid: {
   : 0, 0, HardSphere
   : 0, 2, HardSphere
   : 2, 2, HardSphere
-  : 1, 1, None
+  : 1, 1, HardSphere
   : 1, 0, None
   : 1, 2, None
 }

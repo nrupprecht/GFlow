@@ -45,7 +45,7 @@ namespace GFlowSimulation {
     RealType h = 2.5;
     useCorr = false;
     string dp = "", dc = "";
-    useAngle = false;
+    useAngle = true;
 
     // Gather parameters
     parser.firstArg("Number", number);
@@ -90,13 +90,22 @@ namespace GFlowSimulation {
       gflow->addDataObject(correlation);
     }
 
+    if (number==2) {
+      polycorr = new TwoPolymerBinForce(gflow);
+      gflow->addDataObject(polycorr);
+    }
+
     if (pair) {
       createParallelPolymers(gflow, h, phi, length);
     }
     else {
       // Create all the polymers
       for (int i=0; i<number; ++i) {
-        createRandomPolymer(gflow, length, phi, idP, idC);
+        Group group = createRandomPolymer(gflow, length, phi, idP, idC);
+        if (polycorr) {
+          if (n_polymers==1) polycorr->setFirstPolymer(group);
+          if (n_polymers==2) polycorr->setSecondPolymer(group);
+        }
       }
     }
     
@@ -175,9 +184,9 @@ namespace GFlowSimulation {
     // We have created the chain ordering, and are done.
   }
 
-  void PolymerCreator::createRandomPolymer(GFlow *gflow, RealType length, RealType phi, int idP, int idC) {
+  Group PolymerCreator::createRandomPolymer(GFlow *gflow, RealType length, RealType phi, int idP, int idC) {
     // Valid probability, number, radii, and types are needed
-    if (phi>1 || phi<0 || length<=0 || rP<0 || rC<0 || idP<0 || idP>=gflow->getNTypes() || idC<0 || idC>=gflow->getNTypes()) return;
+    if (phi>1 || phi<0 || length<=0 || rP<0 || rC<0 || idP<0 || idP>=gflow->getNTypes() || idC<0 || idC>=gflow->getNTypes()) return Group();
 
     // Get number of dimensions
     int sim_dimensions = gflow->sim_dimensions;
@@ -193,26 +202,24 @@ namespace GFlowSimulation {
     createPolymerArrangement(chain_ordering, phi, length);
 
     // Random starting point
-    RealType *X = new RealType[sim_dimensions];
-    gflow->bounds.randomPoint(X);
+    Vec X(sim_dimensions);
+    gflow->bounds.randomPoint(X.data);
 
     // Random initial direction
-    RealType *V = new RealType[sim_dimensions];
-    randomNormalVec(V, sim_dimensions);
+    Vec V(sim_dimensions);
+    randomNormalVec(V.data, sim_dimensions);
+
+    //*****
+    X[0] = (n_polymers+1.); X[1] = 1.;
+    V[0] = 0.; V[1] = 1.;
+    v_sigma = 0;
+    //*****
 
     // Create a polymer from the specifications
-    Group group = createSinglePolymer(gflow, X, V, chain_ordering, v_sigma, idP, idC);
+    Group group = createSinglePolymer(gflow, X.data, V.data, chain_ordering, v_sigma, idP, idC);
 
-    // Add entropic force monitor
-    if (n_polymers==1) {
-      entropicForce = new LineEntropicForce(gflow);
-      entropicForce->setGroup(group);
-      gflow->addDataObject(entropicForce);
-    }
-
-    // Clean up
-    delete [] X;
-    delete [] V;
+    // Return the group
+    return group;
   }
 
   Group PolymerCreator::createSinglePolymer(GFlow *gflow, const RealType *x0, const RealType *v0, const vector<bool>& chain_ordering, RealType sigma_v, int idP, int idC) {

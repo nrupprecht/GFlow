@@ -21,7 +21,7 @@ namespace GFlowSimulation {
     inline void make_bond_objects(GFlow*);
 
     //! \brief Create a polymer chain.
-    void createRandomPolymer(GFlow*, RealType, RealType, int, int);
+    Group createRandomPolymer(GFlow*, RealType, RealType, int, int);
 
     //! \brief Create a polymer ordering given a density and length.
     void createPolymerArrangement(vector<bool>&, RealType, RealType);
@@ -45,6 +45,9 @@ namespace GFlowSimulation {
 
     //! \brief A unified group correlation object. Note - this is handed to gflow, so this object should not attempt to delete it.
     class GroupCorrelation *correlation = nullptr;
+
+    //! \brief Two polymer correlation object.
+    class TwoPolymerBinForce *polycorr = nullptr;
 
     //! \brief Harmonic bonds object.
     class HarmonicBond *harmonicbonds = nullptr;

@@ -20,6 +20,10 @@ namespace GFlowSimulation {
     return global_ids.size();
   }
 
+  bool Group::empty() const {
+    return global_ids.empty();
+  }
+
   int Group::at(int i) const {
     return local_ids.at(i);
   }

@@ -26,6 +26,9 @@ namespace GFlowSimulation {
     //! \brief Get the number of particles in the group.
     int size() const;
 
+    //! \brief Whether the group is empty.
+    bool empty() const;
+
     //! \brief Get the local id of the i-th particle.
     int at(int) const;
 

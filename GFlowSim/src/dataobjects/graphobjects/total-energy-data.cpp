@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
   // Constructor
-  TotalEnergyData::TotalEnergyData(GFlow *gflow, bool ave) : GraphObject(gflow, "Energy", "time", "total energy"), useAve(ave), restrict_energy(false) {};
+  TotalEnergyData::TotalEnergyData(GFlow *gflow, bool ave) : GraphObject(gflow, "Energy", "time", "total energy"), useAve(ave), restrict_energy(true) {};
 
   void TotalEnergyData::post_step() {
     // Only record if enough time has gone by

@@ -163,6 +163,18 @@ namespace GFlowSimulation {
       return acc;
     }
 
+    friend RealType operator*(const Vec a, const RealType *b) {
+      // Accumulate
+      RealType acc = 0;
+      for (int i=0; i<a.dimensions; ++i) acc = a[i]*b[i];
+      // Return vector
+      return acc;
+    }
+
+    friend RealType operator*(const RealType *a, const Vec b) {
+      return b*a;
+    }
+
     friend Vec operator*(const RealType scalar, const Vec v) {
       Vec out(v.dimensions);
       // Scalar multiply vector.
@@ -189,6 +201,10 @@ namespace GFlowSimulation {
       RealType acc = 0;
       for (int i=0; i<a.dimensions; ++i) acc += (a[i] - b[i])*(a[i] - b[i]);
       return sqrt(acc);
+    }
+
+    friend RealType distance(const Vec a) {
+      return sqrt(sqr(a));
     }
 
     //! \brief The actual vector data.

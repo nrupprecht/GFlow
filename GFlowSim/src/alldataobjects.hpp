@@ -34,5 +34,6 @@
 #include "dataobjects/multigraphobjects/groupnetforce.hpp"
 #include "dataobjects/multigraphobjects/lineentropicforce.hpp"
 #include "dataobjects/multigraphobjects/twowallbinforce.hpp"
+#include "dataobjects/multigraphobjects/twopolymerbinforce.hpp"
 
 #endif // __ALL_DATA_OBJECTS_HPP__GFLOW__
