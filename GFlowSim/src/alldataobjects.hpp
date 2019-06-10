@@ -5,7 +5,6 @@
 
 // General objects
 #include "dataobjects/averagedata.hpp"
-#include "dataobjects/averagepositiondata.hpp"
 #include "dataobjects/clustering.hpp"
 #include "dataobjects/ending-snapshot.hpp"
 #include "dataobjects/kineticenergytypesdata.hpp"
@@ -35,5 +34,6 @@
 #include "dataobjects/multigraphobjects/lineentropicforce.hpp"
 #include "dataobjects/multigraphobjects/twowallbinforce.hpp"
 #include "dataobjects/multigraphobjects/twopolymerbinforce.hpp"
+#include "dataobjects/multigraphobjects/averagepositiondata.hpp"
 
 #endif // __ALL_DATA_OBJECTS_HPP__GFLOW__
