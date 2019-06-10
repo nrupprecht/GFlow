@@ -21,13 +21,10 @@ namespace GFlowSimulation {
     // Set the time
     getX() = Base::gflow->getElapsedTime();
     // Set the forces
-    RealType *F = new RealType[sim_dimensions];
-    group.findNetForce(F, simData);
+    Vec F(sim_dimensions);
+    group.findNetForce(F.data, simData);
     // Set each dimension of force.
     for (int d=0; d<sim_dimensions; ++d) getY(d) = F[d];
-    
-    // Clean up
-    delete [] F;
   }
 
   void GroupNetForce::setGroup(const Group& g) {

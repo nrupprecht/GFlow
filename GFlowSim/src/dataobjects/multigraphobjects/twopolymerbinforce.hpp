@@ -37,8 +37,14 @@ namespace GFlowSimulation {
     void setSecondPolymer(Group&);
 
   protected:
+    //! \brief Find the forces on the primary particles in the first group projected along the minimum
+    //! distance between the particle and the closest particle in the second group.
+    inline void find_forces(Group&, Group&, RealType);
+
     //! \brief Number of bins
     int nbins = 100;
+
+    int p_type = 0;
 
     //! \brief The min cutoff distance.
     RealType min_distance = 0.1;

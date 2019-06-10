@@ -111,11 +111,20 @@ namespace GFlowSimulation {
       for (int d=0; d<dimensions; ++d) data[d] = -data[d];
     }
 
-    void normalize() {
+    //! \brief Negation operator.
+    Vec operator-() {
+      Vec v = *this;
+      v.negate();
+      return v;
+    }
+
+    bool normalize() {
       RealType acc = 0;
       for (int d=0; d<dimensions; ++d) acc += data[d]*data[d];
       acc = sqrt(acc);
+      if (acc==0) return false;
       for (int d=0; d<dimensions; ++d) data[d] /= acc;
+      return true;
     }
 
     //! \brief Return the size of the vector.

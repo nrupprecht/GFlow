@@ -48,49 +48,8 @@ namespace GFlowSimulation {
     }
     locals_changed = false;
 
-    RealType **x = simData->X();
-    Vec X1(sim_dimensions), X2(sim_dimensions), dX(sim_dimensions), mdX(sim_dimensions);
-
-    // Check polymer A.
-    for (int i=0; i<polyA.size(); ++i) {
-      // Get id of particle from first group.
-      int id1 = polyA.at(i), min_id = -1;
-      RealType minD = 10000; // Minimum distance to any particle in the other group.
-      // Store position of first particle.
-      copyVec(x[id1], X1);
-      // Iterate through particles in second polymer
-      for (int j=0; j<polyB.size(); ++j) {
-        int id2 = polyB.at(j);
-
-        copyVec(x[id2], X2);
-        dX = X2 - X1;
-        gflow->minimumImage(dX.data);
-
-        RealType d = distance(dX);
-
-        if (d<minD) {
-          minD = d;
-          min_id = id2;
-          mdX = dX;
-        }
-      }
-
-      // Check cutoff
-      if (min_distance <= minD && minD<max_distance) {
-        // Distance bin
-        RealType dr = (max_distance - min_distance)/nbins;
-        int bx = static_cast<int>((minD-min_distance)/dr);
-
-        // Project force on particle from polymer A in the mdX direction.
-        mdX.normalize();
-        RealType F = mdX*simData->F(id1);
-        
-        atY(0, bx) += F*norm;
-
-        // Increment counts
-        ++atY(1, bx); // We added two force data points.
-      }
-    }
+    find_forces(polyA, polyB, norm);
+    find_forces(polyB, polyA, norm);
   }
 
   void TwoPolymerBinForce::post_integrate() {
@@ -130,6 +89,48 @@ namespace GFlowSimulation {
 
   void TwoPolymerBinForce::setSecondPolymer(Group& g) {
     polyB = g;
+  }
+
+  inline void TwoPolymerBinForce::find_forces(Group& first, Group& second, RealType norm) {
+    RealType **x = simData->X();
+    Vec X1(sim_dimensions), X2(sim_dimensions), dX(sim_dimensions), mdX(sim_dimensions);
+
+    // Check polymer A.
+    for (int i=0; i<first.size(); ++i) {
+      // Get id of particle from first group.
+      int id1 = first.at(i), min_id = -1;
+      // Only look at forces on the primary monomers, not the chain.
+      if (simData->Type(id1)!=p_type) continue;
+      RealType minD = 10000; // Minimum distance to any particle in the other group.
+      // Store position of first particle.
+      copyVec(x[id1], X1);
+      // Iterate through particles in second polymer
+      for (int j=0; j<second.size(); ++j) {
+        int id2 = second.at(j);
+        // Copy vector
+        copyVec(x[id2], X2);
+        dX = X2 - X1;
+        gflow->minimumImage(dX.data);
+        RealType d = distance(dX);
+        if (d<minD) {
+          minD = d;
+          min_id = id2;
+          mdX = dX;
+        }
+      }
+      // Check cutoff
+      if (min_distance <= minD && minD<max_distance) {
+        // Distance bin
+        RealType dr = (max_distance - min_distance)/nbins;
+        int bx = static_cast<int>((minD-min_distance)/dr);
+        // Project force on particle from polymer A in the mdX direction.
+        mdX.normalize();
+        RealType F = mdX*simData->F(id1);
+        atY(0, bx) += F*norm;
+        // Increment counts
+        ++atY(1, bx); // We added two force data points.
+      }
+    }
   }
 
 }
