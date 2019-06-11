@@ -32,7 +32,7 @@ Fill: Polymer {
   Length: length
   Number: number
   R: 0.05
-  r: 0.022 // 0.01
+  r: 0.018 // 0.01
   Phi: phi
   Correlation: corr
 }

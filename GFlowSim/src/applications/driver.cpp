@@ -88,6 +88,7 @@ int main(int argc, char **argv) {
   RealType maxDT = -1;
   long double time = 10.;
   bool print = false;
+  bool noplots = false;
   string writeDirectory = "RunData";
   int boundary = 1;
   string monitor = ""; // Monitor file
@@ -138,6 +139,7 @@ int main(int argc, char **argv) {
   parser.get("maxDT", maxDT);
   parser.get("time", time);
   parser.get("print", print);
+  parser.get("noplots", noplots);
   parser.get("writeDirectory", writeDirectory);
   parser.get("temperature", temperature);
   parser.get("boundary", boundary);
@@ -244,6 +246,7 @@ int main(int argc, char **argv) {
   if (fps>0) gflow->setFPS(fps); // Do after data objects are loaded
   gflow->setDMCmd(argc, argv);
   gflow->setPrintUpdates(print);
+  if (noplots) gflow->getDataMaster()->setAllPrintPlots(false);
 
   // --- Add modifiers
   if (temperature>0) gflow->addModifier(new TemperatureModifier(gflow, temperature));
