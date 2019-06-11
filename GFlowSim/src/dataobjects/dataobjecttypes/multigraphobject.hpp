@@ -16,9 +16,6 @@ namespace GFlowSimulation {
     //! \brief Clear the data.
     virtual void pre_integrate() override;
 
-    //! \brief Collect the position data from simdata --- happens during the post-step phase.
-    //virtual void post_step() override = 0;
-
     //! \brief Write data to a file - if true, the string is a path, and you should use your own name as the file name.
     //!
     //! Returns true for success.
@@ -74,7 +71,8 @@ namespace GFlowSimulation {
     int ndata_points = 0;
 
     //! \brief The axis labels.
-    string axis_x="x", axis_y="y";
+    string axis_x="x";
+    vector<string> axis_y;
 
     //! \brief If true, we use vistools to print the graph.
     bool print_plot = true;

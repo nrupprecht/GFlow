@@ -66,6 +66,13 @@ namespace GFlowSimulation {
       return *this;
     }
 
+    //! \brief Operator equals, assumes v has the right size.
+    Vec& operator=(RealType *v) {
+      copyVec(v, *this);
+      // Return 
+      return *this;
+    }
+
     friend bool operator==(const Vec& v1, const RealType *v2) {
       for (int d=0; d<v1.dimensions; ++d) 
         if (v1.data[d]!=v2[d]) return false;

@@ -4,11 +4,7 @@ namespace GFlowSimulation {
 
   AngleHarmonicChain_2d::AngleHarmonicChain_2d(GFlow *gflow) : AngleHarmonicChain(gflow) {};
 
-  AngleHarmonicChain_2d::AngleHarmonicChain_2d(GFlow *gflow, RealType K) : AngleHarmonicChain(gflow, K) {
-
-    angleConstant = 0.005;
-
-  };
+  AngleHarmonicChain_2d::AngleHarmonicChain_2d(GFlow *gflow, RealType K) : AngleHarmonicChain(gflow, K) {};
 
   void AngleHarmonicChain_2d::interact() const {
     // Call parent class.

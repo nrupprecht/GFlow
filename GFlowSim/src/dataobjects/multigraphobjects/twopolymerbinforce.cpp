@@ -8,15 +8,19 @@ namespace GFlowSimulation {
   TwoPolymerBinForce::TwoPolymerBinForce(GFlow *gflow) : MultiGraphObject(gflow, "TwoPolymerBinForce", "x", "<F>", 2) {
     // Data
     resetData(nbins);
-    // Set counts to not be written
-    write_data[1] = false;
+    // Set label.
+    axis_y[1] = "counts";
+
+    max_distance = 0.25; //*****
   }
 
   TwoPolymerBinForce::TwoPolymerBinForce(GFlow *gflow, Group& ga, Group& gb) : MultiGraphObject(gflow, "TwoPolymerBinForce", "x", "<F>", 2), polyA(ga), polyB(gb) {
     // Data
     resetData(nbins);
-    // Set counts to not be written
-    write_data[1] = false;
+    // Set label.
+    axis_y[1] = "counts";
+
+    max_distance = 0.25; //*****
   }
 
   void TwoPolymerBinForce::pre_integrate() {
@@ -47,7 +51,7 @@ namespace GFlowSimulation {
       polyB.update_local_ids(simData);
     }
     locals_changed = false;
-
+    // Find stats for both polymers.
     find_forces(polyA, polyB, norm);
     find_forces(polyB, polyA, norm);
   }
@@ -101,17 +105,19 @@ namespace GFlowSimulation {
       int id1 = first.at(i), min_id = -1;
       // Only look at forces on the primary monomers, not the chain.
       if (simData->Type(id1)!=p_type) continue;
-      RealType minD = 10000; // Minimum distance to any particle in the other group.
+      // Minimum distance to any particle in the other group. Start with a huge number
+      RealType minD = 10000.;
       // Store position of first particle.
-      copyVec(x[id1], X1);
+      X1 = x[id1];
       // Iterate through particles in second polymer
       for (int j=0; j<second.size(); ++j) {
         int id2 = second.at(j);
         // Copy vector
-        copyVec(x[id2], X2);
+        X2 = x[id2];
         dX = X2 - X1;
         gflow->minimumImage(dX.data);
         RealType d = distance(dX);
+        // Check if this is the new min
         if (d<minD) {
           minD = d;
           min_id = id2;

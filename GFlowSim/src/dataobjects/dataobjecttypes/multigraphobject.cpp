@@ -7,17 +7,21 @@ namespace GFlowSimulation {
     if (ndata<=0) throw EmptyData("Must have ndata>=1");
     // Write data flags are true by default.
     write_data = vector<bool>(nd, true);
+    // Default y axis name.
+    axis_y = vector<string>(nd, "y");
     // Set up data array.
     resetData();
   };
 
   MultiGraphObject::MultiGraphObject(GFlow *gflow, const string& name, const string& ax, const string& ay, int nd) 
-    : DataObject(gflow, name, DataObjectType::MULTIGRAPH), axis_x(ax), axis_y(ay), ndata(nd) 
+    : DataObject(gflow, name, DataObjectType::MULTIGRAPH), axis_x(ax), ndata(nd) 
   {
     // Must have ndata >= 1
     if (ndata<=0) throw EmptyData("Must have ndata>=1");
     // Write data flags are true by default.
     write_data = vector<bool>(nd, true);
+    // All y axes the same.
+    axis_y = vector<string>(nd, ay);
     // Set up data array.
     resetData();
   };
@@ -50,10 +54,11 @@ namespace GFlowSimulation {
       fout << endl;
     }
     fout.close();
-    // Print out the axes labels
+    // Print out all the axes labels.
     fout.open(dirName+"axes.csv");
     if (fout.fail()) return false;
-    fout << axis_x << endl << axis_y << endl;
+    for (int i=0; i<ndata; ++i)
+      if (write_data[i]) fout << axis_x << "," << axis_y[i] << endl;
     fout.close();
 
     // Return success
