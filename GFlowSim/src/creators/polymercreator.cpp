@@ -28,6 +28,7 @@ namespace GFlowSimulation {
     parser.addHeadingOptional("DensityC");
     parser.addHeadingOptional("H");
     parser.addHeadingOptional("Correlation");
+    parser.addHeadingOptional("Special");
     // Check headings for validity
     parser.check();
 
@@ -46,6 +47,7 @@ namespace GFlowSimulation {
     useCorr = false;
     string dp = "", dc = "";
     useAngle = true;
+    bool special = false;
 
     // Gather parameters
     parser.firstArg("Number", number);
@@ -60,6 +62,7 @@ namespace GFlowSimulation {
     parser.firstArg("Correlation", useCorr);
     parser.firstArg("Phi", phi);
     parser.firstArg("H", h);
+    parser.firstArg("Special", special);
 
     // Potentially change masses.
     if (dp!="") {
@@ -101,6 +104,12 @@ namespace GFlowSimulation {
     else {
       // Create all the polymers
       for (int i=0; i<number; ++i) {
+
+        if (special) {
+          if (i==0) idP = 0;
+          else idP = 4;
+        }
+
         Group group = createRandomPolymer(gflow, length, phi, idP, idC);
         if (polycorr) {
           if (n_polymers==1) polycorr->setFirstPolymer(group);

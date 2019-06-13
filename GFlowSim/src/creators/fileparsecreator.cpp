@@ -314,6 +314,8 @@ namespace GFlowSimulation {
           // Get the particle types
           t1 = parser.arg_cast<int>(0);
           t2 = parser.arg_cast<int>(1);
+          // Make sure types are fine.
+          if (t1<0 || t2<0 || NTypes<=t1 || NTypes<=t2) throw BadStructure("Illegal particle type in force grid.");
           // If the interaction has not occured yet, create one.
           if (interactions.find(token)==interactions.end()) {	    
             interactions.insert(std::pair<string, Interaction*>(token, ParseConstructor::getInteraction(parser.getNode(), variables, token, gflow)));

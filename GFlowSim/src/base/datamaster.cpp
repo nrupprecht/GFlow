@@ -339,7 +339,7 @@ namespace GFlowSimulation {
       for (int n=0; n<Base::simData->number(); ++n) ++count[Base::simData->Type(n)];
       for (int ty=0; ty<types; ++ty)
         fout << "     Type " << toStr(ty) << ":                  " << count[ty] << " (" << 
-          count[ty] / static_cast<RealType>(Base::simData->number()) << "%)\n";
+          100 * count[ty] / static_cast<RealType>(Base::simData->number()) << "%)\n";
       delete [] count;
     }
     RealType vol = 0;
