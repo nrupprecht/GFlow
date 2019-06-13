@@ -1,0 +1,87 @@
+// Variables
+Var: dimensions=2
+Var: width=16
+Var: length=10
+Var: number=1
+Var: phi=0.5
+Var: corr=0
+
+Dimensions: dimensions
+
+// Set the simulation bounds
+Bounds: Box=width
+
+Integrator: VelocityVerlet
+
+Boundary: Wrap
+
+// Set the number of particle types
+NTypes: 5
+
+// Creates a random force network of HardSphere and Lennard-Jones forces
+// Primary particle types will be types 0 and 4.
+// Chain particles are type 1.
+// Fluid particle types will be types 2 and 3.
+Force-grid: {
+  : 0, 0, HardSphere
+  : 0, 1, HardSphere
+  : 0, 2, HardSphere
+
+  : 1, 1, HardSphere  
+  : 2, 2, HardSphere
+  : 3, 3, HardSphere
+  
+  : 1, 2, None
+  : 2, 3, None
+  
+  : 0, 4, HardSphere
+  : 1, 4, HardSphere
+  : 3, 4, HardSphere
+  : 4, 4, HardSphere
+}
+
+Fill: Polymer {
+  Length: length
+  Number: number
+  R: 0.05
+  r: 0.018 // 0.01
+  Phi: phi
+  Correlation: corr
+  Special: 1
+}
+
+// Fill an area with particles of type 2
+Fill: Area {
+  // Fill all the simulation with particles
+  Bounds: Full
+  
+  Template: TypeA {
+    Radius: 0.05
+    Mass: Density=1
+    Type: 2
+  }
+
+  Number: Phi=0.1 {
+    TypeA : 1
+  }
+
+  Velocity: Temperature=0.001
+}
+
+// Fill an area with particles of type 3
+Fill: Area {
+  // Fill all the simulation with particles
+  Bounds: Full
+  
+  Template: TypeB {
+    Radius: 0.05
+    Mass: Density=1
+    Type: 3
+  }
+
+  Number: Phi=0.1 {
+    TypeB : 1
+  }
+
+  Velocity: Temperature=0.001
+}
