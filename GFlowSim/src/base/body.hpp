@@ -10,6 +10,9 @@ namespace GFlowSimulation {
     //! \brief Default constructor.
     Body(GFlow *gflow) : Base(gflow) {};
 
+    //! \brief Virtual destructor.
+    virtual ~Body() {};
+
     //! \brief Do whatever corrections the body particles need.
     virtual void correct() = 0;
 

@@ -247,20 +247,16 @@ namespace GFlowSimulation {
     int last_type = -1, next_type = -1;
 
     // Keep track of the random walk
-    RealType *X = new RealType[sim_dimensions], *dX = new RealType[sim_dimensions], *ZERO = new RealType[sim_dimensions];
-    RealType *V = new RealType[sim_dimensions], *dV = new RealType[sim_dimensions];
-    zeroVec(dX, sim_dimensions);
-    zeroVec(ZERO, sim_dimensions);
-    zeroVec(dV, sim_dimensions);
+    Vec X(sim_dimensions), dX(sim_dimensions), ZERO(sim_dimensions), V(sim_dimensions), dV(sim_dimensions);
 
     // Initialize X to start at a random position.
     RealType variance = 0.1, dx;
     int type = 1, gid1 = -1, gid2 = -1;
 
     // Starting point
-    copyVec(x0, X, sim_dimensions);
+    copyVec(x0, X);
     // Starting orientation
-    copyVec(v0, V, sim_dimensions);
+    copyVec(v0, V);
 
     // Create a group
     Group group;
@@ -284,10 +280,10 @@ namespace GFlowSimulation {
       else dx = 0;
 
       // Advance random path
-      randomNormalVec(dV, sim_dimensions);
-      plusEqVecScaled(V, dV, sigma_v, sim_dimensions);      
-      normalizeVec(V, sim_dimensions);
-      plusEqVecScaled(X, V, dx, sim_dimensions);
+      randomNormalVec(dV.data, sim_dimensions);
+      plusEqVecScaled(V.data, dV.data, sigma_v, sim_dimensions);     
+      V.normalize();
+      plusEqVecScaled(X.data, V.data, dx, sim_dimensions);
 
       // Wrap X
       for (int d=0; d<sim_dimensions; ++d) {
@@ -295,9 +291,9 @@ namespace GFlowSimulation {
         else if (X[d]>=bnds.max[d]) X[d] -= bnds.wd(d);
       }
       // Primary type
-      if (next_type==0) sd->addParticle(X, ZERO, rP, imP, idP);
+      if (next_type==0) sd->addParticle(X.data, ZERO.data, rP, imP, idP);
       // Chain link type
-      else sd->addParticle(X, ZERO, rC, imC, idC);
+      else sd->addParticle(X.data, ZERO.data, rC, imC, idC);
 
       // Add bond
       if (gid1!=-1 && harmonicbonds) harmonicbonds->addBond(gid1, gid2);
@@ -313,7 +309,6 @@ namespace GFlowSimulation {
 
     RealType vsgma = 0.001;
     for (int id=start_id; id<=end_id; ++id) {
-      Vec V(sim_dimensions);
       // Random velocity direction
       randomNormalVec(V.data, sim_dimensions);
       // Random normal amount of kinetic energy

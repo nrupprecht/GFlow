@@ -94,8 +94,7 @@ namespace GFlowSimulation {
     // Resize and erase array
     grid = vector<vector<Interaction*> >(n, vector<Interaction*>(n, nullptr));
     // Resize and reset doesInteract
-    if (doesInteract) delete [] doesInteract;
-    doesInteract = new bool[ntypes];
+    doesInteract = vector<bool>(ntypes, false);
     for (int i=0; i<ntypes; ++i) doesInteract[i] = false; // Since all interactions in the grid are null
     // Resize max_cutoffs array
     max_cutoffs = vector<RealType>(ntypes, 1.);

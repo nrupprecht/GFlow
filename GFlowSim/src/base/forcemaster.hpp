@@ -93,7 +93,7 @@ namespace GFlowSimulation {
     int ntypes;
 
     //! \brief Whether the i-th particle type interacts with any particles.
-    bool *doesInteract = nullptr;
+    vector<bool> doesInteract;
   };
 
 }

@@ -64,6 +64,14 @@ namespace GFlowSimulation {
       if (it) delete it;
       it = nullptr;
     }
+    for (auto &it : bondedInteractions) {
+      if (it) delete it;
+      it = nullptr;
+    }
+    for (auto &it : bodies) {
+      if (it) delete it;
+      it = nullptr;
+    }
     if (boundaryConditions) delete [] boundaryConditions;
     boundaryConditions = nullptr;
   }

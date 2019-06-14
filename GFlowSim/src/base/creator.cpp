@@ -53,7 +53,7 @@ namespace GFlowSimulation {
     
     // New force master - has only hard sphere forces.
     ForceMaster forceMaster(gflow, ntypes);
-    Integrator *rx_integrator;
+    Integrator *rx_integrator = nullptr;
     if (relax_integrator) rx_integrator = new RelaxIntegrator(gflow);
     else rx_integrator = new OverdampedIntegrator(gflow);
 

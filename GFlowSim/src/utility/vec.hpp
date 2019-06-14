@@ -14,7 +14,7 @@ namespace GFlowSimulation {
   */
   struct Vec {
     //! \brief Constructor. Sets up the array.
-    Vec(int d) : dimensions(d) {
+    Vec(int d) : dimensions(d), data(nullptr) {
       // Do not allow negative length vectors.
       if (d<0) d = 0;
       // If not a length zero vector, allocate data.
@@ -22,13 +22,11 @@ namespace GFlowSimulation {
         data = new RealType[d];
         for (int i=0; i<d; ++i) data[i] = 0;
       }
-      else data = nullptr;
     }
 
-    Vec(const Vec& v) : dimensions(v.dimensions) {
+    Vec(const Vec& v) : dimensions(v.dimensions), data(nullptr) {
       // If vector has positive length, allocate array.
       if (dimensions>0) data = new RealType[dimensions];
-      else data = nullptr;
       // Copy data
       for (int i=0; i<dimensions; ++i) data[i] = v.data[i];
     }
@@ -41,13 +39,14 @@ namespace GFlowSimulation {
     //! \brief Destructor.
     ~Vec() {
       if (data) delete [] data;
+      data = nullptr;
     }
 
     Vec& operator=(const Vec& v) {
       // Resize array if necessary.
       if (v.dimensions!=dimensions) {
-        if (data) delete [] data;
         dimensions = v.dimensions;
+        if (data) delete [] data;
         data = new RealType[dimensions];
       }
       // Copy data.

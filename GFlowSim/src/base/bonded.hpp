@@ -16,6 +16,9 @@ namespace GFlowSimulation {
     //! \brief Default constructor
     Bonded(GFlow*);
 
+    //! \brief Virtual destructor.
+    virtual ~Bonded() {};
+
     //! \brief Calculate all the forces between bonded atoms.
     virtual void interact() const;
 
