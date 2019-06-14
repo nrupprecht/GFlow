@@ -58,6 +58,7 @@ namespace GFlowSimulation {
     Vec& operator=(Vec&& v) {
       // Copy data
       dimensions = v.dimensions;
+      if (data) delete [] data;
       data = v.data;
       // So v doesn't delete our data.
       v.data = nullptr;
