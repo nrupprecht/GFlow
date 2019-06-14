@@ -4,14 +4,12 @@ namespace GFlowSimulation {
 
   DataObject::DataObject(GFlow *gflow, const string& name) 
     : Base(gflow), dataName(name), delay(1./20.), lastRecording(-10.), type(DataObjectType::GENERAL), locals_changed(false) {
-      object_counter = 1; //total_objects;
-      //++total_objects;
+      object_counter = 1;
     };
 
   DataObject::DataObject(GFlow *gflow, const string& name, DataObjectType t)
     : Base(gflow), dataName(name), delay(1./20.), lastRecording(-10.), type(t), locals_changed(false) {
-      object_counter = 1; //total_objects;
-      //++total_objects;
+      object_counter = 1;
     };
 
   void DataObject::pre_integrate() {
@@ -37,12 +35,6 @@ namespace GFlowSimulation {
   void DataObject::setLocalsChanged(bool r) {
     locals_changed = r;
   }
-
-  /*
-  void DataObject::resetTotalObjects() {
-    total_objects = 0;
-  }
-  */
 
   int DataObject::getObjectCounter() {
     return object_counter;

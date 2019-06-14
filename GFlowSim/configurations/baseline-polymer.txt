@@ -61,7 +61,7 @@ Fill: Area {
     Type: 2
   }
 
-  Number: Phi=0.1 {
+  Number: Phi=0.05 {
     TypeA : 1
   }
 
@@ -79,7 +79,7 @@ Fill: Area {
     Type: 3
   }
 
-  Number: Phi=0.1 {
+  Number: Phi=0.05 {
     TypeB : 1
   }
 

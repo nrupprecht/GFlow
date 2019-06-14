@@ -109,6 +109,9 @@ namespace GFlowSimulation {
     //! \brief The name of the data we are gathering - will be used to write to files.
     string dataName;
 
+    //! \brief The number of data entries that were added.
+    int ndata_points = 0;
+
     //! \brief What type of data object this is.
     //! 
     //! The type refers to data format. Different types can be children of the same child classes of dataobject.
@@ -119,9 +122,6 @@ namespace GFlowSimulation {
 
     //! \brief The last time data was recorded.
     RealType lastRecording;
-
-    //! \brief How many data objects have ever been created.
-    static int total_objects;
 
     //! \brief What number data object this is.
     int object_counter;
