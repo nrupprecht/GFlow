@@ -152,7 +152,7 @@ namespace GFlowSimulation {
     copyVec(maxDisp, displacement);
   }
 
-  void Group::update_local_ids(SimData *simData) {
+  void Group::update_local_ids(SimData *simData) const {
     // Make sure sizes are the same
     int _size = size();
     // Update local ids

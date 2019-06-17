@@ -5,13 +5,13 @@
 
 namespace GFlowSimulation {
   // Constructor
-  TotalEnergyData::TotalEnergyData(GFlow *gflow, bool ave) : GraphObject(gflow, "Energy", "time", "total energy"), useAve(ave), restrict_energy(true) {};
+  TotalEnergyData::TotalEnergyData(GFlow *gflow, bool ave) : GraphObject(gflow, "Energy", "time", "total energy"), useAve(ave), fraction(1.25), restrict_energy(false) {};
 
   void TotalEnergyData::post_step() {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
 
-    // Get and store data
+    // Compute kinetic energy.
     RealType energy = 0;
     RealType **v = simData->V();
     RealType *im = simData->Im();

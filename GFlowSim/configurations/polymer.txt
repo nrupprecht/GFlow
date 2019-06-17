@@ -11,7 +11,7 @@ Dimensions: dimensions
 // Set the simulation bounds
 Bounds: Box=width
 
-Integrator: VelocityVerlet
+Integrator: NoseHooverVelocityVerlet
 
 Boundary: Wrap
 

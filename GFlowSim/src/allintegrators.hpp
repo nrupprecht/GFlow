@@ -6,5 +6,6 @@
 #include "integrators/relaxintegrator.hpp"
 #include "integrators/overdampedlangevin.hpp"
 #include "integrators/langevinintegrator.hpp"
+#include "integrators/nose-hoover-velocityverlet.hpp"
 
 #endif // __ALL_INTEGRATORS_HPP__GFLOW__

@@ -39,7 +39,7 @@ namespace GFlowSimulation {
     RealType KB = gflow->getKB();
     // Get KE per (non infinitely massive) particle.
     RealType ke = KineticEnergyData::calculate_kinetic(simData, true);
-    RealType T = 2./static_cast<RealType>(sim_dimensions) * ke / KB;
+    RealType T = 2. * ke / (sim_dimensions * KB) ;
     // Compute the number density. Do not include your own particles. Assumes the other line has roughly the same number of particles.
     RealType rho = n_solvent / gflow->getBounds().vol();
     // Compute the normalization - HOPEFULLY sg(0) represents the size of solvent molecules.

@@ -129,21 +129,21 @@ namespace GFlowSimulation {
 
     // Add bonds object to gflow
     if (sim_dimensions==2) {
-      if (harmonicbonds==nullptr) {
+      if (harmonicbonds==nullptr && !useAngle) {
         harmonicbonds = new HarmonicBond_2d(gflow);
         gflow->addBonded(harmonicbonds);
       }
-      if (useAngle) harmonicchain = new AngleHarmonicChain_2d(gflow, 0.1*DEFAULT_SPRING_CONSTANT);
+      if (useAngle) harmonicchain = new AngleHarmonicChain_2d(gflow);
     }
     else if (sim_dimensions==3) {
-      if (harmonicbonds==nullptr) {
+      if (harmonicbonds==nullptr && !useAngle) {
         harmonicbonds = new HarmonicBond_3d(gflow);
         gflow->addBonded(harmonicbonds);
       }
-      if (useAngle) harmonicchain = new AngleHarmonicChain_3d(gflow, 0.1*DEFAULT_SPRING_CONSTANT);
+      if (useAngle) harmonicchain = new AngleHarmonicChain_3d(gflow);
     }
     else {
-      if (harmonicbonds==nullptr) {
+      if (harmonicbonds==nullptr && !useAngle) {
         harmonicbonds = new HarmonicBond(gflow);
         gflow->addBonded(harmonicbonds);
       }
@@ -154,7 +154,11 @@ namespace GFlowSimulation {
     if (harmonicbonds) {
       harmonicbonds->setSpringConstant(8.*pow(rC/0.01, sim_dimensions-1)*DEFAULT_SPRING_CONSTANT);
     }
-    if (harmonicchain) gflow->addBonded(harmonicchain);
+    if (harmonicchain) {
+      harmonicchain->setSpringConstant(8.*pow(rC/0.01, sim_dimensions-1)*DEFAULT_SPRING_CONSTANT);
+      harmonicchain->setAngleConstant(0.05);
+      gflow->addBonded(harmonicchain);
+    }
   }
 
   void PolymerCreator::createPolymerArrangement(vector<bool>& chain_ordering, RealType phi, RealType length) {
@@ -295,8 +299,8 @@ namespace GFlowSimulation {
       // Chain link type
       else sd->addParticle(X.data, ZERO.data, rC, imC, idC);
 
-      // Add bond
-      if (gid1!=-1 && harmonicbonds) harmonicbonds->addBond(gid1, gid2);
+      // Add bond - if we are using angle harmonic chains, then we only need to add particles to those.
+      if (gid1!=-1 && harmonicbonds && harmonicchain!=nullptr) harmonicbonds->addBond(gid1, gid2);
       if (harmonicchain) harmonicchain->addAtom(gid2);
 
       // Primary type

@@ -2,7 +2,6 @@
 // Other files
 #include "../base/simdata.hpp"
 #include "../utility/vectormath.hpp"
-#include "../utility/printingutility.hpp" // For debugging
 
 namespace GFlowSimulation {
 

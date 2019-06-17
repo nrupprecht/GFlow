@@ -57,14 +57,14 @@ namespace GFlowSimulation {
     virtual void add(int);
 
     //! \brief Update the vector of local ids to correspond to the correct particles.
-    void update_local_ids(SimData*);
+    void update_local_ids(SimData*) const;
 
   protected:
     //! \brief The global ids of the particles in the group.
     vector<int> global_ids;
 
     //! \brief The local ids of the particles in the group.
-    vector<int> local_ids;
+    mutable vector<int> local_ids;
 
   };
 

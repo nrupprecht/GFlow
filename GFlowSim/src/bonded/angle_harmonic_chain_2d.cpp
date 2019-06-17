@@ -14,7 +14,7 @@ namespace GFlowSimulation {
     RealType **x = sd->X();
     RealType **v = sd->V();
     RealType **f = sd->F();
-    if (sd->getNeedsRemake()) updateLocalIDs();
+    if (sd->getNeedsRemake()) update_local_ids(simData);
     // If there are not enough particles in the buffer
     if (local_ids.size()<3) return;
     // Variables and buffers
@@ -81,11 +81,15 @@ namespace GFlowSimulation {
       pb[0] /= pb_norm; pb[1] /= pb_norm;
       */
 
-      // Calculate force strength
+      // Calculate force strength due to angle
       RealType str = -angleConstant*dTh;
       RealType strength1 = str/r1;
       RealType strength2 = str/r2;
 
+      // Calculate force strength due to harmonic bond A-B
+      RealType dr = r1 - distance[i];
+      RealType repl = springConstant*dr;
+      
       // Set force buffers
       f1[0] = strength1*pa[0];
       f1[1] = strength1*pa[1];
@@ -93,18 +97,35 @@ namespace GFlowSimulation {
       f3[1] = strength2*pb[1];
 
       // First atom
-      f[id1][0] += f1[0];
-      f[id1][1] += f1[1];
+      f[id1][0] += (f1[0] - repl*dx1[0]);
+      f[id1][1] += (f1[1] - repl*dx1[1]);
       // Second atom
-      f[id2][0] -= (f1[0] + f3[0]);
-      f[id2][1] -= (f1[1] + f3[1]);
+      f[id2][0] -= (f1[0] + f3[0] - repl*dx1[0]);
+      f[id2][1] -= (f1[1] + f3[1] - repl*dx1[1]);
       // Third atom
       f[id3][0] += f3[0];
       f[id3][1] += f3[1];
 
       if (do_potential) {
-        potential += 0.5*angleConstant*sqr(theta - PI);
+        potential += 0.5*angleConstant*sqr(theta - PI) + springConstant*sqr(dr);
       }
+
+      // If this is the last angle, compute the B-C harmonic bond as well.
+      if (i+3==local_ids.size()) {
+        dr = r2 - distance[i+1];
+        repl = springConstant*dr;
+        // Second atom
+        f[id2][0] += repl*dx2[0];
+        f[id2][1] += repl*dx2[1];
+        // Third atom
+        f[id3][0] -= repl*dx2[0];
+        f[id3][1] -= repl*dx2[1];
+        // Extra potential from the last bond.
+        if (do_potential) {
+          potential += springConstant*sqr(dr);
+        }
+      }
+      
     }
 
     // For two atoms, there is no angle. Just compute the bond force.

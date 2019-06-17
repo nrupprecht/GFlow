@@ -13,7 +13,7 @@ namespace GFlowSimulation {
     SimData *sd = Base::simData;
     RealType **x = sd->X();
     RealType **f = sd->F();
-    if (sd->getNeedsRemake()) updateLocalIDs();
+    if (sd->getNeedsRemake()) update_local_ids(simData);
     // If there are not enough particles in the buffer
     if (local_ids.size()<3) return;
     // Variables and buffers

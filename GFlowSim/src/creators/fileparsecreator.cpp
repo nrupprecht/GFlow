@@ -401,7 +401,8 @@ namespace GFlowSimulation {
     if      (token=="VelocityVerlet")       integrator = new VelocityVerlet(gflow);
     else if (token=="OverdampedIntegrator") integrator = new OverdampedIntegrator(gflow);
     else if (token=="OverdampedLangevin")   integrator = new OverdampedLangevinIntegrator(gflow);
-    else if (token=="LangevinIntegrator")    integrator = new LangevinIntegrator(gflow);
+    else if (token=="LangevinIntegrator")   integrator = new LangevinIntegrator(gflow);
+    else if (token=="NoseHooverVelocityVerlet") integrator = new NoseHooverVelocityVerlet(gflow);
     else throw UnexpectedOption("Integrator choice was ["+token+"].");
     // Temperature and viscosity for LangevinType integrators
     LangevinTypeIntegrator* lti = dynamic_cast<LangevinTypeIntegrator*>(integrator);
