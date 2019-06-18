@@ -9,17 +9,21 @@ namespace GFlowSimulation {
   void AngleHarmonicChain_2d::interact() const {
     // Call parent class.
     AngleHarmonicChain::interact();
-    // Get simdata, check if the local ids need updating
-    SimData *sd = Base::simData;
-    RealType **x = sd->X();
-    RealType **v = sd->V();
-    RealType **f = sd->F();
-    if (sd->getNeedsRemake()) update_local_ids(simData);
+    // Get arrays
+    RealType **x = simData->X();
+    RealType **f = simData->F();
+    
     // If there are not enough particles in the buffer
     if (local_ids.size()<3) return;
     // Variables and buffers
     RealType rsqr1, rsqr2, r1, r2, angle_cos;
-    Vec dx1(2), dx2(2), dv1(2), dv2(2), f1(2), f3(2), pa(2), pb(2);
+    Vec dx1(2), dx2(2), f1(2), f3(2), pa(2), pb(2);
+
+    // Set forces to be the negative of their current value, so we can add the resulting forces at the end.
+    for (int i=0; i<local_ids.size(); ++i) {
+      forces[i][0] = -f[local_ids[i]][0];
+      forces[i][1] = -f[local_ids[i]][1];
+    }
 
     // If there are fewer than three particles, this loop will not execute
     for (int i=0; i+2<local_ids.size(); ++i) {
@@ -126,6 +130,12 @@ namespace GFlowSimulation {
         }
       }
       
+    }
+
+    // Add forces to buffer
+    for (int i=0; i<local_ids.size(); ++i) {
+      forces[i][0] += f[local_ids[i]][0];
+      forces[i][1] += f[local_ids[i]][1];
     }
 
     // For two atoms, there is no angle. Just compute the bond force.

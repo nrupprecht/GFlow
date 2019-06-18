@@ -3,13 +3,19 @@
 namespace GFlowSimulation {
 
   AngleHarmonicChain::AngleHarmonicChain(GFlow *gflow) 
-    : Bonded(gflow), springConstant(DEFAULT_SPRING_CONSTANT), angleConstant(0.005) {};
+    : Bonded(gflow), springConstant(DEFAULT_SPRING_CONSTANT), angleConstant(0.005) {
+    use_correspondence = true;
+  };
 
   AngleHarmonicChain::AngleHarmonicChain(GFlow *gflow, RealType K) 
-    : Bonded(gflow), springConstant(K), angleConstant(0.005) {};
+    : Bonded(gflow), springConstant(K), angleConstant(0.005) {
+    use_correspondence = true;
+  };
 
   AngleHarmonicChain::AngleHarmonicChain(GFlow *gflow, RealType K, RealType A)
-    : Bonded(gflow), springConstant(K), angleConstant(A) {};
+    : Bonded(gflow), springConstant(K), angleConstant(A) {
+    use_correspondence = true;
+  };
 
   void AngleHarmonicChain::addAtom(int gid) {
     SimData *sd = Base::simData;
@@ -26,10 +32,20 @@ namespace GFlowSimulation {
       // Add equilibrium distance
       distance.push_back(r);
     }
+    forces.push_back(Vec(sim_dimensions));
   }
 
   int AngleHarmonicChain::size() const {
     return Group::size();
+  }
+
+  void AngleHarmonicChain::interact() const {
+    // Sets potential, virials to zero
+    Bonded::interact();
+    // Zero force buffers.
+    for (auto &v : forces) v.zero();
+    // Possibly update local ids
+    if (simData->getNeedsRemake()) update_local_ids(simData);
   }
 
   void AngleHarmonicChain::setSpringConstant(RealType s) {
@@ -38,6 +54,18 @@ namespace GFlowSimulation {
 
   void AngleHarmonicChain::setAngleConstant(RealType s) {
     angleConstant = s;
+  }
+
+  const Vec& AngleHarmonicChain::getForce(int i) {
+    if (i<0 || forces.size()<=i) throw Exception("Angle harmonic chain get force out of range.");
+    return forces[i];
+  }
+
+  const Vec& AngleHarmonicChain::getForceByID(int id) {
+    if (!use_correspondence) throw Exception("Angle harmonic chain must have use_correspondence = true.");
+    auto it = correspondence.find(id);
+    if (it==correspondence.end()) throw Exception("Angle harmonic chain does not contain that local id.");
+    return forces[it->second];
   }
 
 }

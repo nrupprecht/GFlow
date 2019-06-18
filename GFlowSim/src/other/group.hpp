@@ -49,6 +49,11 @@ namespace GFlowSimulation {
     //! \brief Add whatever force is necessary to each particle to increase its acceleration by the given amount.
     void addAcceleration(RealType*, SimData*) const;
 
+    //! \brief Gets the index of where the local id is stored in the local_ids vector.
+    //!
+    //! Only works if use_correspondence is true. If not, or the local id is not in the group, returns -1.
+    int getIndex(int) const;
+
     // --- Mutators
 
     //! \brief Add a particle, via global id, to the body.
@@ -59,12 +64,22 @@ namespace GFlowSimulation {
     //! \brief Update the vector of local ids to correspond to the correct particles.
     void update_local_ids(SimData*) const;
 
+    void setUseCorrespondence(bool);
+
   protected:
+    //! \brief Remakes to correspondence map if use_correspondence is true.
+    void redo_correspondence() const;
+
     //! \brief The global ids of the particles in the group.
     vector<int> global_ids;
 
     //! \brief The local ids of the particles in the group.
     mutable vector<int> local_ids;
+
+    //! \brief Map from local ids to place in the local id vector.
+    mutable std::multimap<int, int> correspondence;
+    //! \brief Whether to use the correspondence object.
+    bool use_correspondence = false;
 
   };
 

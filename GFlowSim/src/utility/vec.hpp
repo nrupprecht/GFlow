@@ -159,6 +159,12 @@ namespace GFlowSimulation {
       return out;
     }
 
+    Vec& operator+=(const Vec v) {
+      if (dimensions!=v.dimensions) throw DimensionMismatch("Plus equals vec.");
+      for (int i=0; i<dimensions; ++i) data[i] += v[i];
+      return *this;
+    }
+
     friend Vec operator-(const Vec a, const Vec b) {
       // Check dimensions
       if (a.dimensions!=b.dimensions) throw DimensionMismatch("Minus vec.");
@@ -167,6 +173,12 @@ namespace GFlowSimulation {
       for (int i=0; i<a.dimensions; ++i) out[i] = a[i] - b[i];
       // Return vector
       return out;
+    }
+
+    Vec& operator-=(const Vec v) {
+      if (dimensions!=v.dimensions) throw DimensionMismatch("Minus equals vec.");
+      for (int i=0; i<dimensions; ++i) data[i] -= v[i];
+      return *this;
     }
 
     friend RealType operator*(const Vec a, const Vec b) {

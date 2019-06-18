@@ -25,11 +25,20 @@ namespace GFlowSimulation {
     //! \brief Get the number of bonds.
     virtual int size() const override;
 
+    //! \brief Common pre - interaction functions.
+    virtual void interact() const override;
+
     //! \brief Set the spring constant.
     void setSpringConstant(RealType);
 
     //! \brief Set the spring constant
     void setAngleConstant(RealType);
+
+    //! \brief Get a force buffer.
+    const Vec& getForce(int);
+
+    //! \brief Get a force buffer by providing the local id.
+    const Vec& getForceByID(int);
 
   protected:
 
@@ -41,6 +50,9 @@ namespace GFlowSimulation {
 
     //! \brief The strength of the angle.
     RealType angleConstant;
+
+    //! \brief Keeps track of the force applied by the harmonic chain.
+    mutable vector<Vec> forces;
   };
 
 }

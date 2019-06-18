@@ -9,11 +9,9 @@ namespace GFlowSimulation {
   void AngleHarmonicChain_3d::interact() const {
     // Call parent class.
     AngleHarmonicChain::interact();
-    // Get simdata, check if the local ids need updating
-    SimData *sd = Base::simData;
-    RealType **x = sd->X();
-    RealType **f = sd->F();
-    if (sd->getNeedsRemake()) update_local_ids(simData);
+    // Get arrays.
+    RealType **x = simData->X();
+    RealType **f = simData->F();
     // If there are not enough particles in the buffer
     if (local_ids.size()<3) return;
     // Variables and buffers

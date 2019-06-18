@@ -114,7 +114,15 @@ namespace GFlowSimulation {
     }
   }
 
+  int Group::getIndex(int id) const {
+    if (correspondence.empty()) return -1;
+    auto it = correspondence.find(id);
+    if (it==correspondence.end()) return -1;
+    return it->second;
+  }
+
   void Group::add(int id) {
+    if (use_correspondence) correspondence.insert(pair<int, int>(id, local_ids.size()));
     global_ids.push_back(id);
     local_ids.push_back(id);
   }
@@ -160,6 +168,24 @@ namespace GFlowSimulation {
       int gid = global_ids[i];;
       int lid = simData->getLocalID(gid);
       local_ids[i] = lid;
+    }
+    // Redo the correspondence set.
+    redo_correspondence();
+  }
+
+  void Group::setUseCorrespondence(bool u) {
+    if (u) redo_correspondence();
+    else correspondence.clear();
+    use_correspondence = u;
+  }
+
+  void Group::redo_correspondence() const {
+    if (!use_correspondence) return;
+    // Redo the correspondence set.
+    for (int i=0; i<local_ids.size(); ++i) {
+      auto it = correspondence.find(local_ids[i]);
+      if (it==correspondence.end()) correspondence.insert(pair<int, int>(local_ids[i], i));
+      else it->second = i;
     }
   }
 

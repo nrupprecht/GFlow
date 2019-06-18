@@ -32,19 +32,27 @@ namespace GFlowSimulation {
     //! \brief Set the number of bins to use.
     void setBins(int);
 
+    //! \brief Set the first polymer.
     void setFirstPolymer(Group&);
 
+    //! \brief Set the first angle harmonic chain.
+    void setFirstChain(class AngleHarmonicChain*);
+
+    //! \brief Set the second polymer.
     void setSecondPolymer(Group&);
+
+    //! \brief Set the second angle harmonic chain.
+    void setSecondChain(class AngleHarmonicChain*);
 
   protected:
     //! \brief Find the forces on the primary particles in the first group projected along the minimum
     //! distance between the particle and the closest particle in the second group.
-    inline void find_forces(Group&, Group&, RealType);
+    inline void find_forces(int, RealType);
 
     //! \brief Number of bins
     int nbins = 100;
 
-    int p_type = 0;
+    int c_type = 1;
 
     //! \brief The min cutoff distance.
     RealType min_distance = 0.1;
@@ -57,6 +65,12 @@ namespace GFlowSimulation {
     
     //! \brief The "right" wall.
     Group polyB;
+
+    //! \brief The "left" chain.
+    class AngleHarmonicChain *chainA = nullptr;
+
+    //! \brief The "right" chain.
+    class AngleHarmonicChain *chainB = nullptr;
 
   };
 

@@ -112,8 +112,14 @@ namespace GFlowSimulation {
 
         Group group = createRandomPolymer(gflow, length, phi, idP, idC);
         if (polycorr) {
-          if (n_polymers==1) polycorr->setFirstPolymer(group);
-          if (n_polymers==2) polycorr->setSecondPolymer(group);
+          if (n_polymers==1) {
+            polycorr->setFirstPolymer(group);
+            polycorr->setFirstChain(harmonicchain);
+          }
+          if (n_polymers==2) {
+            polycorr->setSecondPolymer(group);
+            polycorr->setSecondChain(harmonicchain);
+          }
         }
       }
     }
