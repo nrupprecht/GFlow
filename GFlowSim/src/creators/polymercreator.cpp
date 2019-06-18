@@ -107,7 +107,7 @@ namespace GFlowSimulation {
 
         if (special) {
           if (i==0) idP = 0;
-          else idP = 4;
+          else idP = 3;
         }
 
         Group group = createRandomPolymer(gflow, length, phi, idP, idC);

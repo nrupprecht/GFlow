@@ -16,16 +16,23 @@ Integrator: NoseHooverVelocityVerlet
 Boundary: Wrap
 
 // Set the number of particle types
-NTypes: 3
+// 0, 3 : Polymers A, B - primary particles.
+// 1 : Chain
+// 2 : Solvent
+NTypes: 4
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
 Force-grid: {
-  : 0, 0, HardSphere
+  : 0, 0, None  
+
   : 0, 2, HardSphere
-  : 2, 2, HardSphere
+  : 0, 3, HardSphere
   : 1, 1, HardSphere
-  : 1, 0, None
-  : 1, 2, None
+  : 2, 2, HardSphere
+  : 2, 3, HardSphere
+
+  : 3, 3, None
+  : 3, 3, HardSphere
 }
 
 Fill: Polymer {
@@ -35,6 +42,7 @@ Fill: Polymer {
   r: 0.018 // 0.01
   Phi: phi
   Correlation: corr
+  Special: 1
 }
 
 // Fill an area with particles

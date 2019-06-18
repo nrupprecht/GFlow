@@ -6,22 +6,30 @@
 
 namespace GFlowSimulation {
 
-  TwoPolymerBinForce::TwoPolymerBinForce(GFlow *gflow) : MultiGraphObject(gflow, "TwoPolymerBinForce", "x", "<F>", 2) {
+  TwoPolymerBinForce::TwoPolymerBinForce(GFlow *gflow) : MultiGraphObject(gflow, "TwoPolymerBinForce", "x", "<F>", 3) {
+
+    max_distance = 0.5; //*****
+    nbins = 500; //*****
+
     // Data
     resetData(nbins);
     // Set label.
-    axis_y[1] = "counts";
-
-    max_distance = 0.25; //*****
+    axis_y[1] = "<F> chain";
+    axis_y[2] = "counts";
   }
 
-  TwoPolymerBinForce::TwoPolymerBinForce(GFlow *gflow, Group& ga, Group& gb) : MultiGraphObject(gflow, "TwoPolymerBinForce", "x", "<F>", 2), polyA(ga), polyB(gb) {
+  TwoPolymerBinForce::TwoPolymerBinForce(GFlow *gflow, Group& ga, Group& gb) : MultiGraphObject(gflow, "TwoPolymerBinForce", "x", "<F>", 3), 
+    polyA(ga), polyB(gb) {
+
+    max_distance = 0.5; //*****
+    nbins = 500; //*****
+
     // Data
     resetData(nbins);
     // Set label.
-    axis_y[1] = "counts";
-
-    max_distance = 0.25; //*****
+    axis_y[1] = "<F> chain";
+    axis_y[2] = "counts";
+    
   }
 
   void TwoPolymerBinForce::pre_integrate() {
@@ -36,7 +44,7 @@ namespace GFlowSimulation {
     if (!DataObject::_check() || polyA.empty() || polyB.empty()) return;
 
     // Compute the temperature of the system.
-    int n_solvent = simData->number(); //  - wallA->size() = wallB->size();
+    int n_solvent = simData->number();
     RealType KB = gflow->getKB();
     // Get KE per (non infinitely massive) particle.
     RealType ke = KineticEnergyData::calculate_kinetic(simData, true);
@@ -55,6 +63,29 @@ namespace GFlowSimulation {
     // Find stats for both polymers.
     find_forces(0, norm);
     find_forces(1, norm);
+
+    /*
+    if (min_distance <= minD && minD<max_distance) {
+      // Distance bin
+      RealType dr = (max_distance - min_distance)/nbins;
+      int bx = static_cast<int>((minD-min_distance)/dr);
+     
+      /// Find angle of first polymer.
+      int id_i = polyA.at(0), id_f = polyA.at(polyA.size()-1);
+      Vec dX1(sim_dimensions), dX2(sim_dimensions);
+      subtractVec(simData->X(id_i), sinData->X(id_f), dX1.data, sim_dimensions);
+      gflow->minimumImage(dX1.data);
+      dX1.normalize();
+      // Find angle of second polymer.
+      id_i = polyB.at(0); id_f = polyB.at(polyA.size()-1);
+      subtractVec(simData->X(id_i), sinData->X(id_f), dX2.data, sim_dimensions);
+      gflow->minimumImage(dX2.data);
+      dX2.normalize();
+      // Find angle between polymers.
+      RealType angle_cos = dX1*dX2;
+      RealType theta = arccos(angle_cos);
+    }
+    */
   }
 
   void TwoPolymerBinForce::post_integrate() {
@@ -68,8 +99,10 @@ namespace GFlowSimulation {
       // Set distance
       atX(i) = (i+0.5)*dr + min_distance;
       // Normalize forces
-      if (atY(1, i)>0) atY(0, i) /= atY(1, i);
-      else atY(0, i) = 0;
+      if (atY(2, i)>0) {
+        atY(0, i) /= atY(2, i);
+        atY(1, i) /= atY(2, i);
+      }
     }
   }
 
@@ -149,13 +182,17 @@ namespace GFlowSimulation {
         // Get the net force on the particle.
         force = simData->F(id1);
         // If we can, subtract away the force of the polymer on itself.
-        if (firstCh) force -= firstCh->getForceByID(id1);
+        if (chainA && chainB) {
+          Vec fr = firstCh->getForceByID(id1);
+          force -= fr;
+          atY(1, bx) += mdX*fr;
+        }
         // Project force on particle from polymer A in the mdX direction.
         mdX.normalize();
         RealType F = mdX*force;
         atY(0, bx) += F*norm;
         // Increment counts
-        ++atY(1, bx); // We added two force data points.
+        ++atY(2, bx); // We added two force data points.
       }
     }
   }
