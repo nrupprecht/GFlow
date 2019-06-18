@@ -222,6 +222,10 @@ namespace GFlowSimulation {
       return s;
     }
 
+    friend inline RealType crossVec2(const Vec x, const Vec y) {
+      return x[0]*y[1] - x[1]*y[0];
+    }
+
     friend RealType distanceVec(const Vec a, const Vec b) {
       // Check dimensions
       if (a.dimensions!=b.dimensions) throw DimensionMismatch("Disctance vec.");

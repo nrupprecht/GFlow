@@ -6,6 +6,7 @@
 
 #include "../utility/treeparser.hpp"
 #include "../modifiers/twowallmodifier.hpp"
+#include "../modifiers/torque-remover.hpp"
 
 namespace GFlowSimulation {
 
@@ -109,8 +110,9 @@ namespace GFlowSimulation {
           if (i==0) idP = 0;
           else idP = 3;
         }
-
+        // Create the polymer, recording the group for future use.
         Group group = createRandomPolymer(gflow, length, phi, idP, idC);
+
         if (polycorr) {
           if (n_polymers==1) {
             polycorr->setFirstPolymer(group);
@@ -121,6 +123,8 @@ namespace GFlowSimulation {
             polycorr->setSecondChain(harmonicchain);
           }
         }
+
+        //gflow->addModifier(new TorqueRemover(gflow, group));
       }
     }
     
@@ -310,12 +314,11 @@ namespace GFlowSimulation {
       if (harmonicchain) harmonicchain->addAtom(gid2);
 
       // Primary type
-      if (next_type==0) group.add(gid2);
+      group.add(gid2);
 
       // Set last type
       last_type = next_type;
     }
-
 
     RealType vsgma = 0.001;
     for (int id=start_id; id<=end_id; ++id) {
@@ -354,7 +357,6 @@ namespace GFlowSimulation {
     vector<RealType> marks;
     marks.push_back(0);
     for (int i=0; i<n; ++i) marks.push_back(drand48()*length*(1.-phi));
-    //marks.push_back(length*(1.-phi));
     std::sort(marks.begin(), marks.end());
 
     // Create a group

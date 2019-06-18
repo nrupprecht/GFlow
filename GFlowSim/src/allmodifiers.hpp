@@ -13,6 +13,7 @@
 #include "modifiers/velocitylimiter.hpp"
 #include "modifiers/windtunnel.hpp"
 #include "modifiers/stripe-x.hpp"
+#include "modifiers/torque-remover.hpp"
 
 // Specific
 #include "modifiers/twowallmodifier.hpp"

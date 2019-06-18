@@ -17,8 +17,10 @@
 
 // Graph objects
 #include "dataobjects/graphobjects/avevelocitydata.hpp"
+#include "dataobjects/graphobjects/bonded-energy-data.hpp"
 #include "dataobjects/graphobjects/boundaryforcedata.hpp"
 #include "dataobjects/graphobjects/center-correlation.hpp"
+#include "dataobjects/graphobjects/grouptorque.hpp"
 #include "dataobjects/graphobjects/group-correlation.hpp"
 #include "dataobjects/graphobjects/kineticenergybin.hpp"
 #include "dataobjects/graphobjects/kineticenergydata.hpp"
@@ -27,7 +29,7 @@
 #include "dataobjects/graphobjects/pressuredata.hpp"
 #include "dataobjects/graphobjects/timestepdata.hpp"
 #include "dataobjects/graphobjects/total-energy-data.hpp"
-#include "dataobjects/graphobjects/bonded-energy-data.hpp"
+
 
 // Multigraph objects
 #include "dataobjects/multigraphobjects/groupnetforce.hpp"

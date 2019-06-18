@@ -63,29 +63,6 @@ namespace GFlowSimulation {
     // Find stats for both polymers.
     find_forces(0, norm);
     find_forces(1, norm);
-
-    /*
-    if (min_distance <= minD && minD<max_distance) {
-      // Distance bin
-      RealType dr = (max_distance - min_distance)/nbins;
-      int bx = static_cast<int>((minD-min_distance)/dr);
-     
-      /// Find angle of first polymer.
-      int id_i = polyA.at(0), id_f = polyA.at(polyA.size()-1);
-      Vec dX1(sim_dimensions), dX2(sim_dimensions);
-      subtractVec(simData->X(id_i), sinData->X(id_f), dX1.data, sim_dimensions);
-      gflow->minimumImage(dX1.data);
-      dX1.normalize();
-      // Find angle of second polymer.
-      id_i = polyB.at(0); id_f = polyB.at(polyA.size()-1);
-      subtractVec(simData->X(id_i), sinData->X(id_f), dX2.data, sim_dimensions);
-      gflow->minimumImage(dX2.data);
-      dX2.normalize();
-      // Find angle between polymers.
-      RealType angle_cos = dX1*dX2;
-      RealType theta = arccos(angle_cos);
-    }
-    */
   }
 
   void TwoPolymerBinForce::post_integrate() {

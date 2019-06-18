@@ -33,18 +33,15 @@ namespace GFlowSimulation {
   }
 
   void Group::findCenterOfMass(RealType *rcm, SimData *simData) const {
-    if (size()==0) return;
+    if (size()==0 || simData==nullptr) return;
     // Get the dimensionaliry
     int sim_dimensions = simData->getSimDimensions();
     // Dispacement vector
-    RealType *dr = new RealType[sim_dimensions], *r0 = new RealType[sim_dimensions];
-    zeroVec(rcm, sim_dimensions);
+    Vec dr(sim_dimensions), r0(sim_dimensions), Rcm(sim_dimensions);
 
     // Get the bounds and boundary conditions
     GFlow *gflow = simData->getGFlow();
     Bounds bounds = gflow->getBounds(); // Simulation bounds
-    BCFlag *boundaryConditions = new BCFlag[sim_dimensions];
-    copyVec(gflow->getBCs(), boundaryConditions, sim_dimensions); // Keep a local copy of the bcs
 
     // Get position, mass arrays
     RealType **x = simData->X();
@@ -52,32 +49,29 @@ namespace GFlowSimulation {
     RealType mass = 0;
 
     // Set reference point
-    copyVec(x[local_ids[0]], r0, sim_dimensions);
+    copyVec(x[local_ids[0]], r0.data, sim_dimensions);
     // Go through all particles
     for (auto id : local_ids) {
       // Get displacement between the particle and the reference point.
-      gflow->getDisplacement(x[id], r0, dr);
+      gflow->getDisplacement(x[id], r0.data, dr.data);
       // Get the mass of the particle - assumes none of the particles have infinite mass.
       RealType m = 1./im[id];
       mass += m;
-      // Update rcm
-      plusEqVecScaled(rcm, dr, m, sim_dimensions);
+      // Update Rcm
+      plusEqVecScaled(Rcm.data, dr.data, m, sim_dimensions);
     }
     // Divide by total mass and add to reference position to get the actual com position.
-    scalarMultVec(1./mass, rcm, sim_dimensions);
+    scalarMultVec(1./mass, Rcm.data, sim_dimensions);
     // Add to reference point, and do wrapping
-    plusEqVec(rcm, r0, sim_dimensions);
+    Rcm += r0;
 
     // Harmonic boundary conditions.
     for (int d=0; d<sim_dimensions; ++d) {
-      if (rcm[d]<bounds.min[d]) rcm[d] += bounds.wd(d);
-      else if (bounds.max[d]<rcm[d]) rcm[d] -= bounds.wd(d);
+      if (Rcm[d]<bounds.min[d]) Rcm[d] += bounds.wd(d);
+      else if (bounds.max[d]<Rcm[d]) Rcm[d] -= bounds.wd(d);
     }
 
-    // Clean up
-    delete [] boundaryConditions;
-    delete [] dr;
-    delete [] r0;
+    copyVec(Rcm, rcm);
   }
 
   void Group::findCOMVelocity(RealType *v, SimData *simData) const {
