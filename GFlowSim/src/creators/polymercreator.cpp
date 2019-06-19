@@ -96,6 +96,7 @@ namespace GFlowSimulation {
 
     if (number==2) {
       polycorr = new TwoPolymerBinForce(gflow);
+      polycorr->setCType(idC);
       gflow->addDataObject(polycorr);
     }
 
@@ -124,7 +125,7 @@ namespace GFlowSimulation {
           }
         }
 
-        //gflow->addModifier(new TorqueRemover(gflow, group));
+        gflow->addModifier(new TorqueRemover(gflow, group));
       }
     }
     

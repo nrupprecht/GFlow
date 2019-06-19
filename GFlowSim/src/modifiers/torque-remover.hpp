@@ -14,8 +14,11 @@ namespace GFlowSimulation {
     //! \brief Constructor that provides the group of atoms.
     TorqueRemover(GFlow*, Group&);
 
+    //! \brief Remove any angular momentum from the group.
+    virtual void pre_integrate() override;
+
     //! \brief Remove the net torque from the group of objects.
-    virtual void post_forces();
+    virtual void post_forces() override;
 
     //! \brief Set the group.
     void setGroup(Group&);

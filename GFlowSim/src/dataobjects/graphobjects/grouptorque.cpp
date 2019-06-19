@@ -33,8 +33,7 @@ namespace GFlowSimulation {
     Vec com(sim_dimensions);
     group.findCenterOfMass(com.data, simData);
 
-    // Compute total torque. We must use torque = dII/dt * omega + II * alpha 
-    // since II is non-constant.
+    // Compute total torque.
     Vec X(sim_dimensions), Acc(sim_dimensions);
     RealType omega = 0, torque = 0, II = 0, dII = 0;
     for (int i=0; i<group.size(); ++i) {
@@ -45,19 +44,8 @@ namespace GFlowSimulation {
       Acc = simData->F(id);
       X -= com;
       gflow->minimumImage(X.data);
-      //RealType mass = 1./simData->Im(id);
-      //II += mass*sqr(X);
-      // Update omega, torque.
       torque += crossVec2(X.data, Acc.data);
-      
-      //Acc = simData->V(id); // Set Acc to be velocity.
-      //RealType rsqr = sqr(X);
-      //omega  += rsqr>0 ? crossVec2(X, Acc) / rsqr : 0;
-      //dII += mass*(X*Acc);
     }
-    //dII *= 2;
-    //torque += dII*omega;
-
     return torque;
   }
 

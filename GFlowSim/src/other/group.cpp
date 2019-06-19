@@ -49,7 +49,8 @@ namespace GFlowSimulation {
     RealType mass = 0;
 
     // Set reference point
-    copyVec(x[local_ids[0]], r0.data, sim_dimensions);
+    int mid = floor(local_ids.size()/2);
+    copyVec(x[local_ids[mid]], r0.data, sim_dimensions);
     // Go through all particles
     for (auto id : local_ids) {
       // Get displacement between the particle and the reference point.

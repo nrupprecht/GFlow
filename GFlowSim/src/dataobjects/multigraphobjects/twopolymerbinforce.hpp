@@ -32,6 +32,9 @@ namespace GFlowSimulation {
     //! \brief Set the number of bins to use.
     void setBins(int);
 
+    //! \brief Set c_type.
+    void setCType(int);
+
     //! \brief Set the first polymer.
     void setFirstPolymer(Group&);
 
@@ -52,6 +55,7 @@ namespace GFlowSimulation {
     //! \brief Number of bins
     int nbins = 100;
 
+    //! \brief The particle type corresponding to chain monomers.
     int c_type = 1;
 
     //! \brief The min cutoff distance.

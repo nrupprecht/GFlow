@@ -7,10 +7,6 @@
 namespace GFlowSimulation {
 
   TwoPolymerBinForce::TwoPolymerBinForce(GFlow *gflow) : MultiGraphObject(gflow, "TwoPolymerBinForce", "x", "<F>", 3) {
-
-    max_distance = 0.5; //*****
-    nbins = 500; //*****
-
     // Data
     resetData(nbins);
     // Set label.
@@ -19,17 +15,13 @@ namespace GFlowSimulation {
   }
 
   TwoPolymerBinForce::TwoPolymerBinForce(GFlow *gflow, Group& ga, Group& gb) : MultiGraphObject(gflow, "TwoPolymerBinForce", "x", "<F>", 3), 
-    polyA(ga), polyB(gb) {
-
-    max_distance = 0.5; //*****
-    nbins = 500; //*****
-
+    polyA(ga), polyB(gb) 
+  {
     // Data
     resetData(nbins);
     // Set label.
     axis_y[1] = "<F> chain";
     axis_y[2] = "counts";
-    
   }
 
   void TwoPolymerBinForce::pre_integrate() {
@@ -96,6 +88,10 @@ namespace GFlowSimulation {
       nbins = b;
       resetData(nbins);
     }
+  }
+
+  void TwoPolymerBinForce::setCType(int t) {
+    c_type = t;
   }
 
   void TwoPolymerBinForce::setFirstPolymer(Group& g) {

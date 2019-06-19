@@ -33,6 +33,7 @@
 
 // Multigraph objects
 #include "dataobjects/multigraphobjects/groupnetforce.hpp"
+#include "dataobjects/multigraphobjects/groupangular.hpp"
 #include "dataobjects/multigraphobjects/lineentropicforce.hpp"
 #include "dataobjects/multigraphobjects/twowallbinforce.hpp"
 #include "dataobjects/multigraphobjects/twopolymerbinforce.hpp"
