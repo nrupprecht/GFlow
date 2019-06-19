@@ -7,6 +7,7 @@
 #include "../utility/treeparser.hpp"
 #include "../modifiers/twowallmodifier.hpp"
 #include "../modifiers/torque-remover.hpp"
+#include "../modifiers/force-remover.hpp"
 
 namespace GFlowSimulation {
 
@@ -94,10 +95,15 @@ namespace GFlowSimulation {
       gflow->addDataObject(correlation);
     }
 
+    TwoGroupHarmonic *groupharmonic = nullptr;
     if (number==2) {
       polycorr = new TwoPolymerBinForce(gflow);
       polycorr->setCType(idC);
       gflow->addDataObject(polycorr);
+      groupharmonic = new TwoGroupHarmonic(gflow);
+      gflow->addBonded(groupharmonic);
+      groupharmonic->setMinDistance(0); // No minimum distance
+      groupharmonic->setMaxDistance(25.*rP);
     }
 
     if (pair) {
@@ -118,14 +124,17 @@ namespace GFlowSimulation {
           if (n_polymers==1) {
             polycorr->setFirstPolymer(group);
             polycorr->setFirstChain(harmonicchain);
+            groupharmonic->setGroupA(group);
           }
           if (n_polymers==2) {
             polycorr->setSecondPolymer(group);
             polycorr->setSecondChain(harmonicchain);
+            groupharmonic->setGroupB(group);
           }
         }
 
         gflow->addModifier(new TorqueRemover(gflow, group));
+        gflow->addModifier(new ForceRemover (gflow, group));
       }
     }
     
@@ -233,8 +242,12 @@ namespace GFlowSimulation {
     Vec V(sim_dimensions);
     randomNormalVec(V.data, sim_dimensions);
 
+    // Set parameters for creating the polymer
     //*****
-    X[0] = (n_polymers+1.); X[1] = 1.;
+    RealType middleX = 0.5*gflow->getBounds().wd(0)+gflow->getBounds().min[0];
+    RealType dir = n_polymers & 0x1 ? 1. : -1.;
+    X[0] = middleX + 0.25*dir*floor(n_polymers+1)/2;
+    X[1] = 0.5*gflow->getBounds().wd(1)+gflow->getBounds().min[1] - 0.5*length;
     V[0] = 0.; V[1] = 1.;
     v_sigma = 0;
     //*****
@@ -321,6 +334,7 @@ namespace GFlowSimulation {
       last_type = next_type;
     }
 
+    // Give the polymer some initial energy.
     RealType vsgma = 0.001;
     for (int id=start_id; id<=end_id; ++id) {
       // Random velocity direction
@@ -401,7 +415,6 @@ namespace GFlowSimulation {
     int sim_dimensions = gflow->sim_dimensions;
 
     RealType spacing = 1.;
-
     imP /= spacing;
 
     // Create a random polymer according to the specification.
@@ -410,11 +423,9 @@ namespace GFlowSimulation {
     RealType dx = (1.+h/2)*rP; // h \el [0, 2]
 
     // Initial point and normal vector
-    RealType *x = new RealType[sim_dimensions], *Yhat = new RealType[sim_dimensions];
-    zeroVec(Yhat, sim_dimensions);
-    Yhat[1] = 1;
+    Vec x(sim_dimensions);
     // Find the center of the bounds
-    gflow->bounds.center(x);
+    gflow->bounds.center(x.data);
     x[1] -= 0.5*length;
 
     // Remove harmonic bonds, so the particles will not be added.
@@ -424,17 +435,17 @@ namespace GFlowSimulation {
     // Shift x to the left 
     x[0] -= dx;
     // Create first chain.
-    Group group1 = createRandomLine(gflow, x, phi, length, spacing);
+    Group group1 = createRandomLine(gflow, x.data, phi, length, spacing);
     // Shift x to the right
     x[0] += 2*dx;
     // Randomly change x[1]
     x[1] += 2*drand48()*rP;
     // Create the second chain.
-    Group group2 = createRandomLine(gflow, x, phi, length, spacing);
+    Group group2 = createRandomLine(gflow, x.data, phi, length, spacing);
 
     // Add the two wall modifier
     TwoWallModifier *walls = new TwoWallModifier(gflow, group1, group2);
-    walls->setMinDistance(-1.); // No minimum distance
+    walls->setMinDistance(0.); // No minimum distance
     walls->setMaxDistance(5.*rP);
     walls->setBinsDataObject(100);
     walls->setMinDistanceDataObject(2.0*rP);
@@ -445,10 +456,6 @@ namespace GFlowSimulation {
     harmonicbonds = bonds;
 
     imP *= spacing;
-
-    // Clean up
-    delete [] x;
-    delete [] Yhat;
   }
 
 }

@@ -92,15 +92,22 @@ namespace GFlowSimulation {
     scalarMultVec(1./mass, v, sim_dimensions);
   }
 
+  void Group::addVelocity(RealType *V, SimData *simData) const {
+    if (size()==0) return;
+    // Get the dimensionaliry
+    int sim_dimensions = simData->getSimDimensions();
+    // Get arrays
+    RealType **v = simData->V();
+    for (auto id : local_ids) plusEqVec(v[id], V, sim_dimensions);
+  }
+
   void Group::addAcceleration(RealType *A, SimData *simData) const {
     if (size()==0) return;
     // Get the dimensionaliry
     int sim_dimensions = simData->getSimDimensions();
-
     // Get arrays
     RealType **f = simData->F();
     RealType *im = simData->Im();
-
     for (auto id : local_ids) {
       if (im[id]>0) {
         RealType mass = 1./im[id];
@@ -114,6 +121,10 @@ namespace GFlowSimulation {
     auto it = correspondence.find(id);
     if (it==correspondence.end()) return -1;
     return it->second;
+  }
+
+  void Group::set(Group& group) {
+    *this = group;
   }
 
   void Group::add(int id) {
@@ -131,9 +142,20 @@ namespace GFlowSimulation {
     // Force array
     RealType **f = simData->F();
     // Compute net force
+    for (auto id : local_ids) plusEqVec(frc, f[id], sim_dimensions);
+  }
+
+  RealType Group::findTotalMass(SimData *simData) const {
+    if (size()==0) return 0;
+    // Total the mass
+    RealType m = 0, im = 0;;
     for (auto id : local_ids) {
-      plusEqVec(frc, f[id], sim_dimensions);
+      im = simData->Im(id);
+      if (im==0) return 0;
+      m += 1./im;
     }
+    // Return the mass.
+    return m;
   }
 
   void Group::findClosestObject(const RealType *point, RealType *displacement, SimData *simData) const {

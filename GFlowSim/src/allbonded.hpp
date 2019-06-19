@@ -13,4 +13,6 @@
 #include "bonded/angle_harmonic_chain_2d.hpp"
 #include "bonded/angle_harmonic_chain_3d.hpp"
 
+#include "bonded/twogroupharmonic.hpp"
+
 #endif // __ALL_BONDED_HPP__GFLOW__

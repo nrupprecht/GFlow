@@ -119,10 +119,9 @@ namespace GFlowSimulation {
     }
 
     //! \brief Negation operator.
-    Vec operator-() {
-      Vec v = *this;
-      v.negate();
-      return v;
+    Vec& operator-() {
+      this->negate();
+      return *this;
     }
 
     bool normalize() {

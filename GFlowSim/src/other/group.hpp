@@ -44,7 +44,13 @@ namespace GFlowSimulation {
     //! \brief Find the net force on the group.
     void findNetForce(RealType*, SimData*) const;
 
+    //! \brief Find the total mass of the objects in the group.
+    RealType findTotalMass(SimData*) const;
+
     void findClosestObject(const RealType*, RealType*, SimData*) const;
+
+    //! \brief Add a velocity to all the particles.
+    void addVelocity(RealType*, SimData*) const;
 
     //! \brief Add whatever force is necessary to each particle to increase its acceleration by the given amount.
     void addAcceleration(RealType*, SimData*) const;
@@ -55,6 +61,11 @@ namespace GFlowSimulation {
     int getIndex(int) const;
 
     // --- Mutators
+
+    //! \brief Set this group to be a different group, erasing the information contained in the original group.
+    //!
+    //! The same thing as *this = <other group>.
+    void set(Group&);
 
     //! \brief Add a particle, via global id, to the body.
     //!
