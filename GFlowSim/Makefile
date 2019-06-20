@@ -71,7 +71,7 @@ endif
 #OPENCV   := $(shell pkg-config --cflags --libs opencv)
 CFLAGS   := -c $(CSTD) $(DEBUG) $(OPTIMIZE) $(FLAGS)
 
-all: $(BIN)/$(APP) $(BIN)/vistools $(BIN)/lineattraction $(BIN)/wallattraction $(BIN)/demonrates
+all: $(BIN)/$(APP) $(BIN)/vistools $(BIN)/lineattraction $(BIN)/wallattraction $(BIN)/polymerattraction $(BIN)/demonrates
 
 # Executables
 
@@ -94,6 +94,11 @@ $(BIN)/wallattraction: obj/wallattraction.o $(OBJS)
 	@mkdir -p `dirname $@`
 	@echo "Linking $@..."
 	@$(CC) -o $@ obj/wallattraction.o $(OBJS) $(LDFLAGS)
+
+$(BIN)/polymerattraction: obj/polymerattraction.o $(OBJS)
+	@mkdir -p `dirname $@`
+	@echo "Linking $@..."
+	@$(CC) -o $@ obj/polymerattraction.o $(OBJS) $(LDFLAGS)
 
 $(BIN)/demonrates: obj/demonrates.o $(OBJS)
 	@mkdir -p `dirname $@`
@@ -125,6 +130,11 @@ $(OBJ)/lineattraction.o: src/applications/lineattraction.cpp
 	@$(CC) $(CFLAGS) $< -o $@
 
 $(OBJ)/wallattraction.o: src/applications/wallattraction.cpp
+	@mkdir -p `dirname $@`
+	@echo "Compiling $<..."
+	@$(CC) $(CFLAGS) $< -o $@
+
+$(OBJ)/polymerattraction.o: src/applications/polymerattraction.cpp
 	@mkdir -p `dirname $@`
 	@echo "Compiling $<..."
 	@$(CC) $(CFLAGS) $< -o $@

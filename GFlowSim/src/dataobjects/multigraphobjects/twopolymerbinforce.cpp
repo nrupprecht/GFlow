@@ -112,7 +112,7 @@ namespace GFlowSimulation {
 
   inline void TwoPolymerBinForce::find_forces(int choice, RealType norm) {
     RealType **x = simData->X();
-    Vec X1(sim_dimensions), X2(sim_dimensions), dX(sim_dimensions), mdX(sim_dimensions);
+    Vec X1(sim_dimensions), X2(sim_dimensions), dX(sim_dimensions), A(sim_dimensions), B(sim_dimensions);
 
     // Select objects
     Group& first  = (choice==0) ? polyA : polyB;
@@ -124,11 +124,11 @@ namespace GFlowSimulation {
     // Check polymer A.
     for (int i=0; i<first.size(); ++i) {
       // Get id of particle from first group.
-      int id1 = first.at(i), min_id = -1;
+      int id1 = first.at(i);
       // Only look at forces on the primary monomers, not the chain.
       if (simData->Type(id1)==c_type) continue;
-      // Minimum distance to any particle in the other group. Start with a huge number
-      RealType minD = 10000.;
+      // Two minimum distance to any particles in the other group. Start with a huge number.
+      RealType minD1 = 10000., minD2 = 10000;
       // Store position of first particle.
       X1 = x[id1];
       // Iterate through particles in second polymer
@@ -140,29 +140,49 @@ namespace GFlowSimulation {
         gflow->minimumImage(dX.data);
         RealType d = distance(dX);
         // Check if this is the new min
-        if (d<minD) {
-          minD = d;
-          min_id = id2;
-          mdX = dX;
+        if (d<minD1) {
+          // Previous min displacement becomes second smallest displacement
+          minD2 = minD1;
+          B = A;
+          // This is now the smallest displacement.
+          minD1 = d;
+          A = dX;
+        }
+        else if (d<minD2) {
+          minD2 = d;
+          B = dX;
         }
       }
 
+      // Calculate distance to line between the two closest particles.
+      if (second.size()>1) {
+        dX = B - A;
+        RealType lambda = -dX*A / (dX*dX);
+        // Set A to be the "actual" displacment, and minD1 to be the "actual" distance.
+        if (0<=lambda && lambda<=1) {
+          A += lambda*dX;
+          minD1 = distance(A);
+        }
+        // Else, nothing needs to be done.
+      }
+
       // Check cutoff
-      if (min_distance <= minD && minD<max_distance) {
+      if (min_distance <= minD1 && minD1<max_distance) {
         // Distance bin
         RealType dr = (max_distance - min_distance)/nbins;
-        int bx = static_cast<int>((minD-min_distance)/dr);
+        int bx = static_cast<int>((minD1-min_distance)/dr);
         // Get the net force on the particle.
         force = simData->F(id1);
+        // Normalize displacement vector.
+        A.normalize();
         // If we can, subtract away the force of the polymer on itself.
         if (chainA && chainB) {
           Vec fr = firstCh->getForceByID(id1);
           force -= fr;
-          atY(1, bx) += mdX*fr;
+          atY(1, bx) += A*fr;
         }
         // Project force on particle from polymer A in the mdX direction.
-        mdX.normalize();
-        RealType F = mdX*force;
+        RealType F = A*force;
         atY(0, bx) += F*norm;
         // Increment counts
         ++atY(2, bx); // We added two force data points.

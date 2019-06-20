@@ -95,15 +95,17 @@ namespace GFlowSimulation {
       gflow->addDataObject(correlation);
     }
 
-    TwoGroupHarmonic *groupharmonic = nullptr;
+    //TwoGroupHarmonic *groupharmonic = nullptr;
     if (number==2) {
       polycorr = new TwoPolymerBinForce(gflow);
       polycorr->setCType(idC);
       gflow->addDataObject(polycorr);
+      /*
       groupharmonic = new TwoGroupHarmonic(gflow);
       gflow->addBonded(groupharmonic);
       groupharmonic->setMinDistance(0); // No minimum distance
       groupharmonic->setMaxDistance(25.*rP);
+      */
     }
 
     if (pair) {
@@ -124,17 +126,18 @@ namespace GFlowSimulation {
           if (n_polymers==1) {
             polycorr->setFirstPolymer(group);
             polycorr->setFirstChain(harmonicchain);
-            groupharmonic->setGroupA(group);
+            //groupharmonic->setGroupA(group);
           }
           if (n_polymers==2) {
             polycorr->setSecondPolymer(group);
             polycorr->setSecondChain(harmonicchain);
-            groupharmonic->setGroupB(group);
+            //groupharmonic->setGroupB(group);
           }
         }
-
+        /*
         gflow->addModifier(new TorqueRemover(gflow, group));
         gflow->addModifier(new ForceRemover (gflow, group));
+        */
       }
     }
     
