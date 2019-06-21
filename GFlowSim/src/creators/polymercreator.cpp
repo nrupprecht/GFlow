@@ -99,6 +99,7 @@ namespace GFlowSimulation {
     if (number==2) {
       polycorr = new TwoPolymerBinForce(gflow);
       polycorr->setCType(idC);
+      polycorr->setRadius(rP);
       polycorr->setMaxDistance(10*rP);
       polycorr->setNBins(250);
       gflow->addDataObject(polycorr);
@@ -192,7 +193,9 @@ namespace GFlowSimulation {
 
     // Calculate numbers of balls, spacings
     int np = floor(0.5*phi*length/rP);
-    int nc = ceil (0.5*(1.-phi)*length/rC);
+
+    int extra = uniform_spacing ? static_cast<int>(floor((rP-rC)/rC)) : 0;
+    spacing_factor = rP / (static_cast<RealType>(extra+1)*rC);
 
     // Create marks
     vector<RealType> marks;
@@ -206,6 +209,9 @@ namespace GFlowSimulation {
     for (i=1; i<marks.size()-1; ++i) {
       // The number of chain links to add.
       RealType expected = 0.5*(marks[i] - marks[i-1])/rC;
+      // If using uniform spacing, there will (could) be chain particles "inside" the primary particles
+      if (uniform_spacing) expected += extra;
+
       int ncl = floor(expected);
       if (drand48()<(static_cast<RealType>(ncl)-expected)) ++ncl;
       // Add the chain links
@@ -308,8 +314,10 @@ namespace GFlowSimulation {
       next_type = chain_ordering[i] ? 0 : 1;
 
       // Calculate dx
-      if (last_type!=-1)
-        dx = dx_types[next_type] + dx_types[last_type];
+      if (last_type!=-1) {
+        if (uniform_spacing) dx = 2*rC*spacing_factor;
+        else dx = dx_types[next_type] + dx_types[last_type];
+      }
       else dx = 0;
 
       // Advance random path

@@ -58,6 +58,14 @@ namespace GFlowSimulation {
     //! \brief The most recently created line entropic force.
     class LineEntropicForce *entropicForce = nullptr;
 
+    //! \brief When true, space all particles an equal distance from each other, regardless of their radii.
+    //!
+    //! Space apart by a distance depending on the chain particle radii.
+    bool uniform_spacing = true;
+
+    //! \brief A factor to make up for the fact that small ball radii might not divide the large ball radii in exactly the right way.
+    RealType spacing_factor = 1.;
+
     //! \brief The number of polymers created.
     int n_polymers = 0;
 

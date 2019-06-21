@@ -69,8 +69,8 @@ namespace GFlowSimulation {
       atX(i) = (i+0.5)*dr + min_distance;
       // Normalize forces
       if (atY(2, i)>0) {
-        atY(0, i) /= atY(2, i);
-        atY(1, i) /= atY(2, i);
+        atY(0, i) /= (2*radius*atY(2, i));
+        atY(1, i) /= (2*radius*atY(2, i));
       }
     }
   }
@@ -92,6 +92,10 @@ namespace GFlowSimulation {
 
   void TwoPolymerBinForce::setCType(int t) {
     c_type = t;
+  }
+
+  void TwoPolymerBinForce::setRadius(RealType r) {
+    radius = r;
   }
 
   void TwoPolymerBinForce::setFirstPolymer(Group& g) {

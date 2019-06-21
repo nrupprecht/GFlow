@@ -58,6 +58,9 @@ namespace GFlowSimulation {
     //! \brief Returns whether the particle type interacts with other particles.
     bool typeInteracts(int) const;
 
+    //! \brief Return whether two particle types interact.
+    bool typesInteract(int, int) const;
+
     // --- Mutators
 
     //! \brief Set the number of particle types.

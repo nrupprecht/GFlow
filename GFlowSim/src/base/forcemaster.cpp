@@ -77,10 +77,20 @@ namespace GFlowSimulation {
     // If type is -1, no interaction
     if (type==-1) return false;
     // Else, first make sure array is in bounds
-    if (type<0 && ntypes<=type) 
+    if (type<0 || ntypes<=type) 
       throw ParticleTypeError("From typeInteractions function.");
     // If it is, return.
     return doesInteract[type];
+  }
+
+  bool ForceMaster::typesInteract(int type1, int type2) const {
+    // If type is -1, no interaction
+    if (type1==-1 || type2==-1) return false;
+    // Else, first make sure array is in bounds
+    if (type1<0 || ntypes<=type1 || type2<0 || ntypes<type2) 
+      throw ParticleTypeError("From typeInteractions function.");
+    // If it is, return.
+    return grid[type1][type2]!=nullptr;
   }
 
   const vector<RealType>& ForceMaster::getMaxCutoff() const {

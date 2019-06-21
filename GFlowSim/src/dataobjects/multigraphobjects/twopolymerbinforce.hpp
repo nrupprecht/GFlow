@@ -35,6 +35,9 @@ namespace GFlowSimulation {
     //! \brief Set c_type.
     void setCType(int);
 
+    //! \brief Tells the object the radius of the primary particles in the polymer.
+    void setRadius(RealType);
+
     //! \brief Set the first polymer.
     void setFirstPolymer(Group&);
 
@@ -63,6 +66,9 @@ namespace GFlowSimulation {
 
     //! \brief The max cutoff distance.
     RealType max_distance = 0.22;
+
+    //! \brief The radius of a primary particle in the polymers.
+    RealType radius = 0.05;
 
     //! \brief The "left" wall.
     Group polyA;

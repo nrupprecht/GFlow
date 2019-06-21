@@ -64,8 +64,10 @@ namespace GFlowSimulation {
 
     // All particles interact as hard spheres
     for (int n1=0; n1<ntypes; ++n1) 
-      for (int n2=0; n2<ntypes; ++n2)
-        forceMaster.setInteraction(n1, n2, hsForce);
+      for (int n2=n1; n2<ntypes; ++n2) {
+        if (master->typesInteract(n1, n2))
+          forceMaster.setInteraction(n1, n2, hsForce);
+      }
 
     // Make sure all forces are zero
     gflow->simData->clearF();
