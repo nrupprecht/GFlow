@@ -83,7 +83,7 @@ namespace GFlowSimulation {
     min_distance = md;
   }
 
-  void TwoPolymerBinForce::setBins(int b) {
+  void TwoPolymerBinForce::setNBins(int b) {
     if (b>0) {
       nbins = b;
       resetData(nbins);
@@ -136,8 +136,9 @@ namespace GFlowSimulation {
         int id2 = second.at(j);
         // Copy vector
         X2 = x[id2];
-        dX = X2 - X1;
-        gflow->minimumImage(dX.data);
+        gflow->getDisplacement(X2.data, X1.data, dX.data);
+        //dX = X2 - X1;
+        //gflow->minimumImage(dX.data);
         RealType d = distance(dX);
         // Check if this is the new min
         if (d<minD1) {

@@ -30,7 +30,7 @@ namespace GFlowSimulation {
     void setMinDistance(RealType);
 
     //! \brief Set the number of bins to use.
-    void setBins(int);
+    void setNBins(int);
 
     //! \brief Set c_type.
     void setCType(int);

@@ -99,6 +99,8 @@ namespace GFlowSimulation {
     if (number==2) {
       polycorr = new TwoPolymerBinForce(gflow);
       polycorr->setCType(idC);
+      polycorr->setMaxDistance(10*rP);
+      polycorr->setNBins(250);
       gflow->addDataObject(polycorr);
       /*
       groupharmonic = new TwoGroupHarmonic(gflow);

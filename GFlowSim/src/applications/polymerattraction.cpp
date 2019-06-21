@@ -126,7 +126,7 @@ int main(int argc, char **argv) {
     // Pointer
     auto *gnf = dynamic_cast<TwoPolymerBinForce*>(dob);
     if (gnf==nullptr) throw false;
-    gnf->setBins(bins);
+    gnf->setNBins(bins);
 
     // Set start rec time.
     master->setStartRecTime(startRec);

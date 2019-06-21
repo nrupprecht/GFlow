@@ -186,7 +186,7 @@ namespace GFlowSimulation {
       if (a.dimensions!=b.dimensions) throw DimensionMismatch("Dot vec.");
       // Accumulate
       RealType acc = 0;
-      for (int i=0; i<a.dimensions; ++i) acc = a[i]*b[i];
+      for (int i=0; i<a.dimensions; ++i) acc += a[i]*b[i];
       // Return vector
       return acc;
     }
@@ -194,7 +194,7 @@ namespace GFlowSimulation {
     friend RealType operator*(const Vec a, const RealType *b) {
       // Accumulate
       RealType acc = 0;
-      for (int i=0; i<a.dimensions; ++i) acc = a[i]*b[i];
+      for (int i=0; i<a.dimensions; ++i) acc += a[i]*b[i];
       // Return vector
       return acc;
     }
