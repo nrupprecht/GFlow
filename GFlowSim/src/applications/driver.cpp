@@ -227,7 +227,7 @@ int main(int argc, char **argv) {
   if (bdForces)    gflow->addDataObject(new BoundaryForceData(gflow));
   if (timestep)    gflow->addDataObject(new TimeStepData(gflow));
   if (averages)    gflow->addDataObject(new AverageData(gflow));
-  if (aveV) gflow->addDataObject(new AveVelocityData(gflow));
+  if (aveV) gflow->addDataObject(new AverageVelocityData(gflow));
   if (aveP) gflow->addDataObject(new AveragePositionData(gflow));
   if (minDistances) gflow->addDataObject(new MinInteractingDistance(gflow));
   if (percolation) gflow->addDataObject(new PercolationData(gflow, skin));

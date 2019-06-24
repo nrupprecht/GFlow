@@ -1,22 +1,22 @@
-#include "averagepositiondata.hpp"
+#include "averagevelocitydata.hpp"
 // Other files
 #include "../../base/simdata.hpp"
 
 namespace GFlowSimulation {
 
-  AveragePositionData::AveragePositionData(GFlow *gflow) : MultiGraphObject(gflow, "AvePos", "time", "position", gflow->getSimDimensions()) {
+  AverageVelocityData::AverageVelocityData(GFlow *gflow) : MultiGraphObject(gflow, "AvePos", "time", "position", gflow->getSimDimensions()) {
     for (int i=0; i<gflow->getSimDimensions(); ++i)
-      axis_y[i] = "Ave pos - X[" + toStr(i) + "]";
+      axis_y[i] = "Ave vel - V[" + toStr(i) + "]";
   };
 
-  void AveragePositionData::post_step() {
+  void AverageVelocityData::post_step() {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
 
     // Get and store data
     Vec ave(sim_dimensions);
 
-    RealType **x = Base::simData->X();
+    RealType **v = Base::simData->V();
     RealType *im = Base::simData->Im();
     int size = Base::simData->size(), *type = Base::simData->Type();
     // Compute totals
@@ -24,7 +24,7 @@ namespace GFlowSimulation {
     for (int n=0; n<size; ++n)
       if (im[n]>0 && type[n]>-1) {
         for (int d=0; d<sim_dimensions; ++d)
-          ave[d] += x[n][d];
+          ave[d] += v[n][d];
         ++count;
       }
     // Check if there was anything to store
@@ -32,9 +32,6 @@ namespace GFlowSimulation {
 
     // Add a new entry to modify
     addEntry(Base::gflow->getElapsedTime());
-
-    // Set the time
-    //getX() = Base::gflow->getElapsedTime();
 
     // Store data
     RealType c = static_cast<RealType>(count);

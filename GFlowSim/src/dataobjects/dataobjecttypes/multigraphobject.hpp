@@ -46,6 +46,9 @@ namespace GFlowSimulation {
     //! \brief Add a set of zeros to all the data. This makes sure that all the data is of the same length.
     void addEntry();
 
+    //! \brief Add a set of zeros to all the data, and sets the X value of the entry. This makes sure that all the data is of the same length.
+    void addEntry(RealType);
+
     //! \brief Get the latest x value so it can be set.
     RealType& getX();
 

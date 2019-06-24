@@ -5,6 +5,13 @@
 
 namespace GFlowSimulation {
 
+  inline int pair_compare(const void *A, const void *B) {
+    const pair<int, int> *a = static_cast<const pair<int, int>*>(A);
+    const pair<int, int> *b = static_cast<const pair<int, int>*>(B);
+    const auto p1 = *a, p2 = *b;
+    return p1<p2 ? -1 : (p1==p2 ? 0 : 1);
+  }
+
   class Domain2D : public DomainBase {
   public:
     //! \brief Default constructor.
@@ -74,9 +81,11 @@ namespace GFlowSimulation {
     //! \brief The number of cells
     int cells_size = 0;
 
-    //! \brief The linked cells - the i-th entry points to the next particle in the same cell as particle with local id i,
-    //! or to -1 if it is the last particle in the cell.
+    //! \brief The linked cells array - contains the ids of particles in the cells.
     int *linked_cells = nullptr;
+
+    //! \brief An array used to sort particles.
+    vector<pair<int, int> > sorting_array;
 
     //! \brief The size of the linked cells array, i.e. the number of particles stored in the linked cells.
     int list_size = 0;

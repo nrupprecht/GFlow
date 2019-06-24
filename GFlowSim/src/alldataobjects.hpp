@@ -30,13 +30,13 @@
 #include "dataobjects/graphobjects/timestepdata.hpp"
 #include "dataobjects/graphobjects/total-energy-data.hpp"
 
-
 // Multigraph objects
+#include "dataobjects/multigraphobjects/averagepositiondata.hpp"
+#include "dataobjects/multigraphobjects/averagevelocitydata.hpp"
 #include "dataobjects/multigraphobjects/groupnetforce.hpp"
 #include "dataobjects/multigraphobjects/groupangular.hpp"
 #include "dataobjects/multigraphobjects/lineentropicforce.hpp"
 #include "dataobjects/multigraphobjects/twowallbinforce.hpp"
 #include "dataobjects/multigraphobjects/twopolymerbinforce.hpp"
-#include "dataobjects/multigraphobjects/averagepositiondata.hpp"
 
 #endif // __ALL_DATA_OBJECTS_HPP__GFLOW__

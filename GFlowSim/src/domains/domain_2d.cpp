@@ -67,28 +67,33 @@ namespace GFlowSimulation {
     // Get data arrays.
     RealType **x = simData->X();
     RealType *sg = simData->Sg();
-    RealType dx, dy, rsqr;
+    RealType dx[2], rsqr;
 
     // Iterate through cells.
     for (int c=0; c<cells_size; ++c) {
-      int cell_start = cell_pointers[c];
+      // Get the first position in the array.
+      int array_start = cell_pointers[c];
       // Check if the cell is empty
-      if (cell_start<0) continue;
+      if (array_start==-1) continue;
+      // Get the last position in the array.
+      int array_end = cell_pointers[c+1];
 
       // Go through all particles in the cell
-      for (int p=linked_cells[cell_start]; p!=-1; p=linked_cells[p]) {
+      for (int i=array_start; i!=array_end; ++i) {
+        int id1 = linked_cells[i];
         // If the particle is a small particle
-        if (sg[p]<=max_small_sigma) {
+        if (sg[id1]<=max_small_sigma) {
           // Look at the other particles in the same cell
-          for (int q = linked_cells[p]; q!=-1; q=linked_cells[q]) {
+          for (int j=i+1; j<array_end; ++j) {
+            int id2 = linked_cells[j];
             // If the other particle is a big particle, continue.
-            if (sg[q]>max_small_sigma) continue;
-            dx = x[p][0] - x[q][0];
-            dy = x[p][1] - x[q][1];
-            rsqr = dx*dx + dy*dy;
+            if (sg[id2]>max_small_sigma) continue;
+            dx[0] = x[id1][0] - x[id2][0];
+            dx[1] = x[id1][1] - x[id2][1];
+            rsqr = sqr(dx[0]) + sqr(dx[1]);
             // If close enough, check if they interact.
-            if (rsqr < sqr(sg[p] + sg[q] + skin_depth))
-              pair_interaction(p, q);
+            if (rsqr < sqr(sg[id1] + sg[id2] + skin_depth))
+              pair_interaction(id1, id2);
           }
 
           // Look at the surrounding cells
@@ -97,19 +102,22 @@ namespace GFlowSimulation {
             int d = c + stencil[s];
             if (d<0 || cells_size<=d) continue;
             // Look at all particles in the cell
-            int cell_start_2 = cell_pointers[d];
+            int array_start_2 = cell_pointers[d];
             // If the cell is empty
-            if (cell_start_2<0) continue;
+            if (array_start_2<0) continue;
+            // Get the last position for the other cell.
+            int array_end_2 = cell_pointers[d+1];
             // Go through all the particles in the cell.
-            for (int q = linked_cells[cell_start_2]; q!=-1; q=linked_cells[q]) {
+            for (int j = array_start_2; j<array_end_2; ++j) {
+              int id2 = linked_cells[j];
               // If the other particle is a big particle, continue.
-              if (sg[q]>max_small_sigma) continue;
-              dx = x[p][0] - x[q][0];
-              dy = x[p][1] - x[q][1];
-              rsqr = dx*dx + dy*dy;
+              if (sg[id2]>max_small_sigma) continue;
+              dx[0] = x[id1][0] - x[id2][0];
+              dx[1] = x[id1][1] - x[id2][1];
+              rsqr = sqr(dx[0]) + sqr(dx[1]);
               // If close enough, check if they interact.
-              if (rsqr < sqr(sg[p] + sg[q] + skin_depth))
-                pair_interaction(p, q);
+              if (rsqr < sqr(sg[id1] + sg[id2] + skin_depth))
+                pair_interaction(id1, id2);
             }
           }
 
@@ -159,50 +167,39 @@ namespace GFlowSimulation {
 
     // First "clear" cells
     for (int i=0; i<cells_size; ++i) cell_pointers[i] = -1;
-    for (int i=0; i<list_size; ++i) linked_cells[i]  = -1;
+    for (int i=0; i<list_size; ++i)  linked_cells[i]  = -1;
 
     // Get data arrays
     RealType **x = simData->X();
     RealType *sg = simData->Sg();
 
     // Add particles to cells
+    RealType shiftX = domain_bounds.min[0]*inverseW[0], shiftY = domain_bounds.min[1]*inverseW[1];
     for (int i=0; i<size; ++i) {
       // Compute the cell index of the particle
-      int cx = (x[i][0] - domain_bounds.min[0])*inverseW[0];
-      int cy = (x[i][1] - domain_bounds.min[1])*inverseW[1];
-      cx += min_side_edge_cells[0];
-      cy += min_side_edge_cells[1];
+      int cx = static_cast<int>(x[i][0]*inverseW[0] - shiftX) + min_side_edge_cells[0];
+      int cy = static_cast<int>(x[i][1]*inverseW[1] - shiftY) + min_side_edge_cells[1];
       // Compute the linear cell index
-      int linear = cy*dims[0] + cx;
-
-      linked_cells[i] = cell_pointers[linear];
-      cell_pointers[linear] = i;
-
-      // Create halo cell if needed
-      if (halo_cells[0]) {
-
-        // If a "small particle," then we only need to check if the particle falls the boundary.
-        if (sg[i]<=max_small_sigma) {
-          if (cx==0 && cy==0) {
-            // Add three halo particles, top, right, and top right
-            RealType width = domain_bounds.wd(0);
-            RealType height = domain_bounds.wd(1);
-
-          }
-          else if (cx==0) {
-
-          }
-          else if (cy==0) {
-
-          }
-        }
-        // Have to check more things for large particles
-        else {
-
-        }
-      }
+      int index = cy*dims[0] + cx;
       
+      sorting_array.push_back(pair<int, int>(index, i));
     }
+
+    // Sort the array.
+    std::qsort(sorting_array.data(), sorting_array.size(), sizeof(pair<int, int>), pair_compare);
+
+    // Create cell_pointers, linked_cells.
+    int current = -1;
+    for (int i=0; i<sorting_array.size(); ++i) {
+      int cell = sorting_array[i].first;
+      if (cell!=current) {
+        cell_pointers[cell] = i;
+        current = sorting_array[i].first;
+      }
+      // Put local id into linked_cells array.
+      linked_cells[i] = sorting_array[i].second;
+    }
+
   }
 
 

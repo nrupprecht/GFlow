@@ -104,6 +104,16 @@ namespace GFlowSimulation {
     ++ndata_points;
   }
 
+  void MultiGraphObject::addEntry(RealType v) {
+    for (int i=0; i<multi_data.size(); ++i) {
+      multi_data[i].push_back(0);
+    }
+    // Set X value.
+    multi_data[0][ndata_points] = v;
+    // Increment counter
+    ++ndata_points;
+  }
+
   RealType& MultiGraphObject::getX() {
     // Check for multi data being empty.
     if (multi_data[0].empty()) throw EmptyData();
