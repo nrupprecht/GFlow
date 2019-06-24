@@ -192,7 +192,7 @@ namespace GFlowSimulation {
     chain_ordering.clear();
 
     // Calculate numbers of balls, spacings
-    int np = floor(0.5*phi*length/rP);
+    int np = ceil(0.5*phi*length/rP);
 
     int extra = uniform_spacing ? static_cast<int>(floor((rP-rC)/rC)) : 0;
     spacing_factor = rP / (static_cast<RealType>(extra+1)*rC);

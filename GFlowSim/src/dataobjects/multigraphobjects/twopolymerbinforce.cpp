@@ -43,7 +43,7 @@ namespace GFlowSimulation {
     RealType T = 2. * ke / (sim_dimensions * KB) ;
     // Compute the number density. Do not include your own particles. Assumes the other line has roughly the same number of particles.
     RealType rho = n_solvent / gflow->getBounds().vol();
-    // Compute the normalization - HOPEFULLY sg(0) represents the size of solvent molecules.
+    // Compute the normalization.
     RealType norm = 1./(rho * KB * T);
 
     // Make sure local ids are up to date.
