@@ -4,7 +4,7 @@
 
 namespace GFlowSimulation {
 
-  AverageVelocityData::AverageVelocityData(GFlow *gflow) : MultiGraphObject(gflow, "AvePos", "time", "position", gflow->getSimDimensions()) {
+  AverageVelocityData::AverageVelocityData(GFlow *gflow) : MultiGraphObject(gflow, "AveVel", "time", "velocity", gflow->getSimDimensions()) {
     for (int i=0; i<gflow->getSimDimensions(); ++i)
       axis_y[i] = "Ave vel - V[" + toStr(i) + "]";
   };

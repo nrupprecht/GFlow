@@ -11,6 +11,8 @@ namespace GFlowSimulation {
     //! \brief Reserve some space size.
     void resize(int);
 
+    void 
+
   private:
     //! \brief Array for cell-#, local id. We then sort this.
     vector<pair<int, int> > array;
