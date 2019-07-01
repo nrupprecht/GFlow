@@ -373,31 +373,34 @@ namespace GFlowSimulation {
     
     // --- Print the domain summary
     fout << "Domain summary (as of end of simulation):\n";
-    fout << "  - Grid dimensions:          ";
-    for (int d=0; d<sim_dimensions; ++d) {
-      fout << Base::domain->getDims()[d];
-      if (d!=sim_dimensions-1) fout << ", ";
+    DomainBase *domain = dynamic_cast<DomainBase*>(handler);
+    if (domain) {
+      fout << "  - Grid dimensions:          ";
+      for (int d=0; d<sim_dimensions; ++d) {
+        fout << domain->getDims()[d];
+        if (d!=sim_dimensions-1) fout << ", ";
+      }
+      fout << "\n";
+      fout << "  - Total sectors:            " << domain->getNumCells() << "\n";
+      fout << "  - Grid lengths:             ";
+      for (int d=0; d<sim_dimensions; ++d) {
+        fout << domain->getWidths()[d];
+        if (d!=sim_dimensions-1) fout << ", ";
+      }
+      fout << "\n";
+      fout << "  - Cutoff:                   " << domain->getCutoff() << "\n";
     }
-    fout << "\n";
-    fout << "  - Total sectors:            " << Base::domain->getNumCells() << "\n";
-    fout << "  - Grid lengths:             ";
-    for (int d=0; d<sim_dimensions; ++d) {
-      fout << Base::domain->getWidths()[d];
-      if (d!=sim_dimensions-1) fout << ", ";
-    }
-    fout << "\n";
-    if (Base::domain) {
-      fout << "  - Cutoff:                   " << Base::domain->getCutoff() << "\n";
-      fout << "  - Skin depth:               " << Base::domain->getSkinDepth() << "\n";
-      fout << "  - Move ratio tolerance:     " << Base::domain->getMvRatioTolerance() << "\n";
-      fout << "  - Delay missed target:      " << Base::domain->getMissedTarget() << "\n";
-      fout << "  - Average miss:             " << Base::domain->getAverageMiss() << "\n";
+    if (handler) {
+      fout << "  - Skin depth:               " << handler->getSkinDepth() << "\n";
+      fout << "  - Move ratio tolerance:     " << handler->getMvRatioTolerance() << "\n";
+      fout << "  - Delay missed target:      " << handler->getMissedTarget() << "\n";
+      fout << "  - Average miss:             " << handler->getAverageMiss() << "\n";
       if (run_time>0) {
-        fout << "  - Sector remakes:           " << Base::domain->getNumberOfRemakes() << "\n";
-        RealType re_ps = Base::domain->getNumberOfRemakes() / Base::gflow->getTotalTime();
+        fout << "  - Sector remakes:           " << handler->getNumberOfRemakes() << "\n";
+        RealType re_ps = handler->getNumberOfRemakes() / gflow->getTotalTime();
         fout << "  - Remakes per second:       " << re_ps << "\n";
         fout << "  - Average remake delay:     " << 1./re_ps << "\n";
-        fout << "  - Average iters per delay:  " << static_cast<RealType>(iterations) / Base::domain->getNumberOfRemakes() <<"\n";
+        fout << "  - Average iters per delay:  " << static_cast<RealType>(iterations) / handler->getNumberOfRemakes() <<"\n";
       }
     }
     fout << "\n";

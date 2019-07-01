@@ -58,6 +58,9 @@ namespace GFlowSimulation {
     //! \brief Do a quick sort based on the particle's positions.
     void sortParticles();
 
+    //! \brief Do a quick sort based on particle's position, projected onto a vector.
+    void sortParticles(Vec&);
+
     //! \brief Update the primary particle that halo particles correspond to.
     void updateHaloParticles();
 

@@ -45,7 +45,7 @@ namespace GFlowSimulation {
     class GFlow* getGFlow();
     class SimData* getSimData();
     class Integrator* getIntegrator();
-    class DomainBase* getDomain();
+    class InteractionHandler* getHandler();
     class DataMaster* getDataMaster();
     class ForceMaster* getForceMaster();
 
@@ -55,7 +55,7 @@ namespace GFlowSimulation {
     class GFlow        *gflow;
     class SimData      *simData;
     class Integrator   *integrator;
-    class DomainBase   *domain;
+    class InteractionHandler *handler;
     class DataMaster   *dataMaster; 
     class ForceMaster  *forceMaster; 
     // References to vectors

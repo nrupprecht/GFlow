@@ -188,6 +188,17 @@ namespace GFlowSimulation {
     setNeedsRemake(true);
   }
 
+  void SimData::sortParticles(Vec& direction) {
+    // Make sure all particles are valid, and compressed
+    doParticleRemoval(); // This only sets the needs remake flag if it removes particles.
+
+    // FOR NOW: JUST SORT ALONG X AXIS
+    quick_sort_help(0, _number-1, 0);
+
+    // Set needs remake flag
+    setNeedsRemake(true);
+  }
+
   void SimData::updateHaloParticles() {
     for (int i=0; i<halo_map.size(); i+=2) {
       int hid = halo_map[i];

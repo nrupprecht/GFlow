@@ -47,8 +47,8 @@ namespace GFlowSimulation {
     bool hasSimData()     { return simData!=nullptr; }
     //! \brief Whether an integrator has been allocated.
     bool hasIntegrator()  { return integrator!=nullptr; }
-    //! \brief Whether a domain has been allocated.
-    bool hasDomain()      { return domain!=nullptr; }
+    //! \brief Whether an interaction handler has been allocated.
+    bool hasHandler()      { return handler!=nullptr; }
     //! \brief Whether a data master has been allocated.
     bool hasDataMaster()  { return dataMaster!=nullptr; }
     //! \brief Whether a force master has been allocated.
@@ -206,7 +206,7 @@ namespace GFlowSimulation {
     //! \brief Apply a harmonic force to keep particles attracted to the center of the simulation
     void attractPositions();
 
-    //! \brief Instructs the domain to remove particles that are overlapping by more than some fraction.
+    //! \brief Instructs the interaction handler to remove particles that are overlapping by more than some fraction.
     void removeOverlapping(RealType);
 
     //! \brief Add a data object.
@@ -270,7 +270,7 @@ namespace GFlowSimulation {
     // --- Data - public so anyone can access it
     class SimData     *simData = nullptr;      // Particle data
     class Integrator  *integrator = nullptr;   // Integrator
-    class DomainBase  *domain = nullptr;       // Domain
+    class InteractionHandler *handler = nullptr;      
     class DataMaster  *dataMaster = nullptr;   // DataMaster object for unified data collection  
     class ForceMaster *forceMaster = nullptr;  // ForceMaster object for defining and storing interparticle forces  
     class Topology    *topology = nullptr;     // Processor topology

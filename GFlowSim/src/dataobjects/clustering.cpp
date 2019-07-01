@@ -1,7 +1,7 @@
 #include "clustering.hpp"
 // Other files
 #include "../base/simdata.hpp"
-#include "../base/domainbase.hpp"
+#include "../base/interactionhandler.hpp"
 #include "../utility/printingutility.hpp"
 
 namespace GFlowSimulation {
@@ -21,7 +21,7 @@ namespace GFlowSimulation {
     const int *type = Base::simData->Type();
     // Stack for clustering
     std::stack<int> check_stack;
-    // Pass into the domain [getAllWithin] function
+    // Pass into the handler's [getAllWithin] function
     vector<int> neighbors;
 
     // --- Cluster all particles
@@ -41,7 +41,7 @@ namespace GFlowSimulation {
         // Particle with id [id] belongs in the same cluster as particle with id [head]
         clusters[id] = n_clusters;
         // Fill the neighbors array with ids. The [getAllWithin] function clears [neighbors] before filling it.
-        Base::domain->getAllWithin(id, neighbors, 2*Base::simData->Sg(id) + skin);
+        handler->getAllWithin(id, neighbors, 2*Base::simData->Sg(id) + skin);
         for (auto n : neighbors) {
           // Only put on the stack if it is not already on the stack, and has not had its
           if (clusters[n]==-1 && (!same_type_clusters || type[n]==head_type) && type[n]!=-1) {

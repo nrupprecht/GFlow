@@ -100,8 +100,8 @@ namespace GFlowSimulation {
       for (int d=0; d<sim_dimensions; ++d) X[d] = (drand48()-0.5)*width;
       simData->addParticle(X, V, radius, im, 0);
     }
-    // --- Initialize domain
-    gflow->domain->initialize();
+    // --- Initialize handler
+    gflow->handler->initialize();
 
     // --- Handle forces
     gflow->forceMaster->setNTypes(1); // Only one type of particle
@@ -131,9 +131,8 @@ namespace GFlowSimulation {
     gflow->forceMaster->setInteraction(0, 0, force);
 
     // --- Set some parameters
-    if (skinDepth>0) gflow->domain->setSkinDepth(skinDepth);
-    if (cell_size>0) gflow->domain->setCellSize(cell_size);
-    if (sample>0)    gflow->domain->setSampleSize(sample);
+    if (skinDepth>0) gflow->handler->setSkinDepth(skinDepth);
+    if (sample>0)    gflow->handler->setSampleSize(sample);
 
     // Relax the setup in two steps
     hs_relax(gflow, 0.1); // Make sure particles don't stop on top of one another

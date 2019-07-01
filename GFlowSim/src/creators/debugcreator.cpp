@@ -72,7 +72,7 @@ namespace GFlowSimulation {
     gflow->forceMaster->setInteraction(0, 0, force);
 
     // Set skin depth
-    if (skinDepth>0) gflow->domain->setSkinDepth(skinDepth);
+    if (skinDepth>0) gflow->handler->setSkinDepth(skinDepth);
 
     // Make sure all forces are zero
     gflow->simData->clearF();

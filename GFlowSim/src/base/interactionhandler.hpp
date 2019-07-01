@@ -18,7 +18,7 @@ namespace GFlowSimulation {
     InteractionHandler(GFlow*);
 
     //! \brief Destructor.
-    ~InteractionHandler();
+    virtual ~InteractionHandler();
 
     //! \brief Reset values.
     virtual void pre_integrate() override;
