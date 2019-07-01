@@ -1,6 +1,4 @@
 #include "hard_sphere__verlet_pairs__2d.hpp"
-// Other files
-#include "../interactionhandlers/verletlist-pairs.hpp"
 
 namespace GFlowSimulation {
 
@@ -25,12 +23,11 @@ namespace GFlowSimulation {
     if (x==nullptr || f==nullptr || sg==nullptr || type==nullptr) return;
 
     // Get the bounds and boundary conditions
-    Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
     BCFlag boundaryConditions[2];
     copyVec(Base::gflow->getBCs(), boundaryConditions, 2); // Keep a local copy of the bcs
     // Extract bounds related data
-    RealType bnd_x = bounds.wd(0);
-    RealType bnd_y = bounds.wd(1);
+    RealType bnd_x = gflow->getBounds().wd(0);
+    RealType bnd_y = gflow->getBounds().wd(1);
 
     // Needed constants
     RealType sg1, sg2, dx, dy, rsqr, r, invr, magnitude;

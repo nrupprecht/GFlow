@@ -1,6 +1,5 @@
 #include "demon_wall.hpp"
 // Other files
-#include "../interactionhandlers/verletlist-pairs.hpp"
 #include "../base/domainbase.hpp"
 
 namespace GFlowSimulation {

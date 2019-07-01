@@ -3,7 +3,6 @@
 #include "../gflow.hpp"
 #include "../base/simdata.hpp"
 #include "../utility/vectormath.hpp"
-#include "../interactionhandlers/verletlist.hpp"
 #include "../base/forcemaster.hpp"
 
 namespace GFlowSimulation {

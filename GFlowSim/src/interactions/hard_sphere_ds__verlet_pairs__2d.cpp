@@ -1,6 +1,5 @@
 #include "hard_sphere_ds__verlet_pairs__2d.hpp"
 // Other files
-#include "../interactionhandlers/verletlist-pairs.hpp"
 #include "../utility/simd_generic.hpp" // For un_clamp
 
 namespace GFlowSimulation {

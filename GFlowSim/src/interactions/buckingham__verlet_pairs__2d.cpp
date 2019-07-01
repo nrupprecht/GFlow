@@ -1,6 +1,4 @@
 #include "buckingham__verlet_pairs__2d.hpp"
-// Other files
-#include "../interactionhandlers/verletlist-pairs.hpp"
 
 namespace GFlowSimulation {
 

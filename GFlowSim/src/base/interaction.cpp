@@ -1,6 +1,4 @@
 #include "interaction.hpp"
-// Other files
-#include "../allinteractionhandlers.hpp"
 
 namespace GFlowSimulation {
 

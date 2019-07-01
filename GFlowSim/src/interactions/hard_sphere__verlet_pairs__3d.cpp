@@ -1,6 +1,4 @@
 #include "hard_sphere__verlet_pairs__3d.hpp"
-// Other files
-#include "../interactionhandlers/verletlist-pairs.hpp"
 
 namespace GFlowSimulation {
 

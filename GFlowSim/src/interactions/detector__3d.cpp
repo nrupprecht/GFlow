@@ -1,6 +1,4 @@
 #include "detector__3d.hpp"
-// Other files
-#include "../interactionhandlers/verletlist-pairs.hpp"
 
 namespace GFlowSimulation {
 
