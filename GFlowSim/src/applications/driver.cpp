@@ -71,6 +71,7 @@ int main(int argc, char **argv) {
   bool numberdata = false;
   bool stripex = false;
   bool centercorr = false;
+  bool velocityvp = false;
   
   // Other options
   int dimensions = 2;
@@ -124,6 +125,7 @@ int main(int argc, char **argv) {
   parser.get("numberdata", numberdata);
   parser.get("stripex", stripex);
   parser.get("centercorr", centercorr);
+  parser.get("velocityvp", velocityvp);
   parser.get("dimensions", dimensions);
   parser.get("skin", skin);
   parser.get("quiet", quiet);
@@ -237,6 +239,7 @@ int main(int argc, char **argv) {
   if (numberdata)  gflow->addDataObject(new NumberData(gflow));
   if (stripex)     gflow->addModifier(new StripeX(gflow));
   if (centercorr)  gflow->addDataObject(new CenterCorrelation(gflow));
+  if (velocityvp)  gflow->addDataObject(new VelocityVolumePlot(gflow));
   // Add this last, as it takes the most time.
   if (animate /*|| stripex*/) {
     auto pd = new PositionData(gflow);

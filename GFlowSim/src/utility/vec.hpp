@@ -239,6 +239,19 @@ namespace GFlowSimulation {
       return sqrt(sqr(a));
     }
 
+    //! \brief Allows the vec to be a wrapper for a pointer. Use with caution.
+    void wrap(RealType *x, int d) {
+      if (data) delete [] data;
+      data = x;
+      dimensions = d;
+    }
+
+    //! \brief Releases the pointer that a vec is wrapping. Does not delete it. Use with caution.
+    void unwrap() {
+      data = nullptr;
+      dimensions = 0;
+    }
+
     //! \brief The actual vector data.
     RealType *data;
 

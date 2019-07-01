@@ -6,18 +6,7 @@
 namespace GFlowSimulation {
 
   /** 
-  *  \brief The base class for domain decomposition and sectorization classes.
-  *
-  *  DomainBase classes are responsible for a subvolume (possibly the whole volume)
-  *  of the simulation, keeping track of where the particles are and where they need 
-  *  to be transfered to (if using MPI parallelization).\n
-  *
-  *  They are responsible for creating verlet lists for all the forces (if deemed 
-  *  necessary) during the pre-forces step of the simulation.\n
-  *  
-  *  The natural way to do this is to divide the domain into sectors, or cells, and 
-  *  slot particles into these cells so we can easily lookup potential neighbors of 
-  *  each particle.\n
+  *  \brief The base class for domain decomposition classes.
   *
   *  MPI tutorials: <http://mpitutorial.com/>
   *

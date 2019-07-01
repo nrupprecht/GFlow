@@ -93,8 +93,10 @@ namespace GFlowSimulation {
     // Create frames
     for (int i=0; i<data.size(); ++i) {
       string fileName = dirName + "/frame" + toStr(i) + ".bmp";
+      frame = i;
       createImage(fileName, data[i]);
     }
+    frame = -1;
     // Timing
     auto end_time = current_time();
     // Print timing.
@@ -118,6 +120,7 @@ namespace GFlowSimulation {
     // Create all the images
     for (int i=0; i<data.size(); ++i) {
       string fileName = dirName + "/frame" + toStr(i) + ".bmp";
+      frame = i;
       createImage3d(fileName, data[i]);
       // projectImage(fileName, data[i]); // For now, we just draw a projected image
     }
@@ -294,6 +297,25 @@ namespace GFlowSimulation {
     maxVsqr = sqrt(maxVsqr);
   }
 
+  inline void Visualization::findAverageVelocity(const vector<vector<float> >& dataVector) {
+    // Check that we have velocity data
+    if (vel_place<0) return;
+    aveV.zero();
+    // Average velocity.
+    int total = 0;
+    for (int iter=0; iter<dataVector.size(); ++iter) {
+      const float *data = &dataVector[iter][0];
+      int number = dataVector[iter].size()/dataWidth;
+      for (int i=0; i<number; ++i) {
+        // Accumulate velocity.
+        plusEqVec(aveV.data, &data[i*dataWidth + vel_place], 2);
+      }
+      total += number;  
+    }
+    // Average the velocity vector.
+    scalarMultVec(1./total, aveV.data, 2);
+  }
+
   inline void Visualization::findMaxDistance(const vector<vector<float> >& dataVector) {
     // Check that we have distance data
     if (distance_place<0) return;
@@ -344,8 +366,8 @@ namespace GFlowSimulation {
     vel_place = find("V", vector_data)*dimensions;
 
     // Scalar data
-    int shift = vector_data.size()*dimensions;
-    sg_place = find("Sg", scalar_data) + shift;
+    int shift     = vector_data.size()*dimensions;
+    sg_place      = find("Sg", scalar_data) + shift;
     stripex_place = find("StripeX", scalar_data) + shift;    
 
     // Integer data
@@ -379,6 +401,10 @@ namespace GFlowSimulation {
     if (color_option==2 && maxVsqr<0) {
       auto pack_data = vector<vector<float> >(1, data);
       findMaxVSqr(pack_data);
+    }
+    if (color_option==3) {
+      auto pack_data = vector<vector<float> >(1, data);
+      findAverageVelocity(pack_data); // This finds the average velocity.
     }
     else if (color_option==4 && maxDistance<0) {
       auto pack_data = vector<vector<float> >(1, data);
@@ -420,7 +446,7 @@ namespace GFlowSimulation {
         }
         case 3: { // Color by orientation
           if (vel) {
-            float theta = atan2(vel[1], vel[0]);
+            float theta = atan2(vel[1] - aveV[1], vel[0] - aveV[0]);
             color = colorAngle(theta);
           }
           break;

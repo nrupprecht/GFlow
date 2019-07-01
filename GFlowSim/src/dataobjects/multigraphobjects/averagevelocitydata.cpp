@@ -12,7 +12,7 @@ namespace GFlowSimulation {
   void AverageVelocityData::post_step() {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
-
+    
     // Get and store data
     Vec ave(sim_dimensions);
 

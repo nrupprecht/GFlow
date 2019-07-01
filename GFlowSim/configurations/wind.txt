@@ -6,14 +6,17 @@ Dimensions: 2
 
 // Set the simulation bounds
 Bounds: {
-  : -6, 18 // X
-  : -6, 6  // Y
+  : -Front, Length // X
+  : -Height, Height      // Y
 }
 
 // VARIABLES
 Var: MinR=0.04
 Var: MaxR=0.05
 Var: Velocity=2
+Var: Length=18
+Var: Height=6
+Var: Front=6
 
 Integrator: VelocityVerlet {
   UseV: 1

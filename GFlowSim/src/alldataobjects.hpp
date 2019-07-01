@@ -39,4 +39,7 @@
 #include "dataobjects/multigraphobjects/twowallbinforce.hpp"
 #include "dataobjects/multigraphobjects/twopolymerbinforce.hpp"
 
+// Volume plot objects
+#include "dataobjects/volumeplotobjects/velocity-volumeplot.hpp"
+
 #endif // __ALL_DATA_OBJECTS_HPP__GFLOW__

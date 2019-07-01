@@ -52,6 +52,8 @@ namespace GFlowSimulation {
 
     inline void findMaxVSqr(const vector<vector<float> >&);
 
+    inline void findAverageVelocity(const vector<vector<float> >&);
+
     inline void findMaxDistance(const vector<vector<float> >&);
 
     inline void createColorBank(int);
@@ -71,6 +73,9 @@ namespace GFlowSimulation {
 
     //! \brief Set up the camera to be in the standard position.
     inline void standard_camera_setup();
+
+    //! \brief The current frame being animated.
+    int frame = -1;
 
     //! \brief The dimensions of the image (it will be the same in x and y)
     int resolution = 1536;
@@ -115,6 +120,7 @@ namespace GFlowSimulation {
     bool camera_set = false;
 
     float maxVsqr = -1.;
+    Vec aveV = Vec(2);
     float maxDistance = -1.;
     float radius_multiple = 1.;
 

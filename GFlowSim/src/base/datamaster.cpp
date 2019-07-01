@@ -123,6 +123,7 @@ namespace GFlowSimulation {
     // Check what type of data objects exist.
     bool has_graph_objects = false;
     bool has_multigraph_objects = false;
+    bool has_volumeplot_objects = false;
     bool has_general_objects = false;
     for (auto dob : dataObjects) {
       switch (dob->getType()) {
@@ -133,6 +134,9 @@ namespace GFlowSimulation {
         case DataObjectType::MULTIGRAPH: {
           has_multigraph_objects = true;
           break;
+        }
+        case DataObjectType::VOLUMEPLOT: {
+          has_volumeplot_objects = true;
         }
         case DataObjectType::GENERAL: {
           has_general_objects = true;
@@ -147,15 +151,18 @@ namespace GFlowSimulation {
     // Directory names
     string graphDirectory = writeDirectory+"/graph";
     string multiGraphDirectory = writeDirectory+"/multigraph";
+    string volumePlotDirectory = writeDirectory+"/volumeplot";
     string generalDirectory = writeDirectory+"/general";
 
     // Create the directory for graph object types.
     if (has_graph_objects) 
       mkdir(graphDirectory.c_str(), 0777);
-    if (has_general_objects)
-      mkdir(generalDirectory.c_str(), 0777);
     if (has_multigraph_objects)
       mkdir(multiGraphDirectory.c_str(), 0777);
+    if (has_volumeplot_objects)
+      mkdir(volumePlotDirectory.c_str(), 0777);
+    if (has_general_objects)
+      mkdir(generalDirectory.c_str(), 0777);
 
     // --- Have all the data objects write their data
     for (auto dob : dataObjects) {
@@ -168,6 +175,10 @@ namespace GFlowSimulation {
           }
           case DataObjectType::MULTIGRAPH: {
             success &= dob->writeToFile(multiGraphDirectory, true);
+            break;
+          }
+          case DataObjectType::VOLUMEPLOT: {
+            success &= dob->writeToFile(volumePlotDirectory, true);
             break;
           }
           case DataObjectType::GENERAL: {

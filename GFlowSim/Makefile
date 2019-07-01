@@ -44,12 +44,6 @@ BIN   = bin
 APPLICATIONS = $(SRC)/applications
 
 EXCLUDE := $(shell find $(APPLICATIONS) -name '*.cpp')
-#EXCLUDE = src/applications/percolationanalysis.cpp
-#EXCLUDE += src/applications/pressureanalysis.cpp
-#EXCLUDE += src/applications/driver.cpp
-#EXCLUDE += src/applications/vistools.cpp
-#EXCLUDE += src/applications/lineattraction.cpp
-#EXCLUDE += src/applications/wallattraction.cpp
 EXCLUDE += src/utility/argparse2.cpp
 
 SRCS1   := $(shell find $(SRC) -name '*.cpp')
@@ -71,7 +65,8 @@ endif
 #OPENCV   := $(shell pkg-config --cflags --libs opencv)
 CFLAGS   := -c $(CSTD) $(DEBUG) $(OPTIMIZE) $(FLAGS)
 
-all: $(BIN)/$(APP) $(BIN)/vistools $(BIN)/lineattraction $(BIN)/wallattraction $(BIN)/polymerattraction $(BIN)/demonrates
+all: $(BIN)/$(APP) $(BIN)/vistools
+#$(BIN)/lineattraction $(BIN)/wallattraction $(BIN)/polymerattraction $(BIN)/demonrates
 
 # Executables
 
@@ -85,25 +80,25 @@ $(BIN)/vistools: obj/vistools.o $(OBJS)
 	@echo "Linking $@..."
 	@$(CC) -o $@ obj/vistools.o $(OBJS) $(LDFLAGS)
 
-$(BIN)/lineattraction: obj/lineattraction.o $(OBJS)
-	@mkdir -p `dirname $@`
-	@echo "Linking $@..."
-	@$(CC) -o $@ obj/lineattraction.o $(OBJS) $(LDFLAGS)
+#$(BIN)/lineattraction: obj/lineattraction.o $(OBJS)
+#	@mkdir -p `dirname $@`
+#	@echo "Linking $@..."
+#	@$(CC) -o $@ obj/lineattraction.o $(OBJS) $(LDFLAGS)
 
-$(BIN)/wallattraction: obj/wallattraction.o $(OBJS)
-	@mkdir -p `dirname $@`
-	@echo "Linking $@..."
-	@$(CC) -o $@ obj/wallattraction.o $(OBJS) $(LDFLAGS)
+#$(BIN)/wallattraction: obj/wallattraction.o $(OBJS)
+#	@mkdir -p `dirname $@`
+#	@echo "Linking $@..."
+#	@$(CC) -o $@ obj/wallattraction.o $(OBJS) $(LDFLAGS)
 
-$(BIN)/polymerattraction: obj/polymerattraction.o $(OBJS)
-	@mkdir -p `dirname $@`
-	@echo "Linking $@..."
-	@$(CC) -o $@ obj/polymerattraction.o $(OBJS) $(LDFLAGS)
+#$(BIN)/polymerattraction: obj/polymerattraction.o $(OBJS)
+#	@mkdir -p `dirname $@`
+#	@echo "Linking $@..."
+#	@$(CC) -o $@ obj/polymerattraction.o $(OBJS) $(LDFLAGS)
 
-$(BIN)/demonrates: obj/demonrates.o $(OBJS)
-	@mkdir -p `dirname $@`
-	@echo "Linking $@..."
-	@$(CC) -o $@ obj/demonrates.o $(OBJS) $(LDFLAGS)
+#$(BIN)/demonrates: obj/demonrates.o $(OBJS)
+#	@mkdir -p `dirname $@`
+#	@echo "Linking $@..."
+#	@$(CC) -o $@ obj/demonrates.o $(OBJS) $(LDFLAGS)
 
 # General object files
 
@@ -124,25 +119,25 @@ $(OBJ)/vistools.o: src/applications/vistools.cpp
 	@echo "Compiling $<..."
 	@$(CC) $(CFLAGS) $< -o $@
 
-$(OBJ)/lineattraction.o: src/applications/lineattraction.cpp
-	@mkdir -p `dirname $@`
-	@echo "Compiling $<..."
-	@$(CC) $(CFLAGS) $< -o $@
+#$(OBJ)/lineattraction.o: src/applications/lineattraction.cpp
+#	@mkdir -p `dirname $@`
+#	@echo "Compiling $<..."
+#	@$(CC) $(CFLAGS) $< -o $@
 
-$(OBJ)/wallattraction.o: src/applications/wallattraction.cpp
-	@mkdir -p `dirname $@`
-	@echo "Compiling $<..."
-	@$(CC) $(CFLAGS) $< -o $@
+#$(OBJ)/wallattraction.o: src/applications/wallattraction.cpp
+#	@mkdir -p `dirname $@`
+#	@echo "Compiling $<..."
+#	@$(CC) $(CFLAGS) $< -o $@
 
-$(OBJ)/polymerattraction.o: src/applications/polymerattraction.cpp
-	@mkdir -p `dirname $@`
-	@echo "Compiling $<..."
-	@$(CC) $(CFLAGS) $< -o $@
+#$(OBJ)/polymerattraction.o: src/applications/polymerattraction.cpp
+#	@mkdir -p `dirname $@`
+#	@echo "Compiling $<..."
+#	@$(CC) $(CFLAGS) $< -o $@
 
-$(OBJ)/demonrates.o: src/applications/demonrates.cpp
-	@mkdir -p `dirname $@`
-	@echo "Compiling $<..."
-	@$(CC) $(CFLAGS) $< -o $@
+#$(OBJ)/demonrates.o: src/applications/demonrates.cpp
+#	@mkdir -p `dirname $@`
+#	@echo "Compiling $<..."
+#	@$(CC) $(CFLAGS) $< -o $@
 
 .PHONY : clean
 clean:
