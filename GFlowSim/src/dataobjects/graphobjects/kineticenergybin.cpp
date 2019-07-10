@@ -19,7 +19,6 @@ namespace GFlowSimulation {
     RealType *im = simData->Im();
     int size = simData->size();
     int sim_dimensions = simData->getSimDimensions();
-    int count = 0;
     for (int n=0; n<size; ++n)
       if (im[n]>0) {
         // Compute distance.

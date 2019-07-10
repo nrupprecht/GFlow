@@ -156,8 +156,11 @@ namespace GFlowSimulation {
     //! \brief The size of the part of the arrays that may contain valid particles.
     int size() const;
 
-    //! \brief Return the number of owned particles.
+    //! \brief Return the number of particles on the processor.
     int number() const;
+
+    //! \brief Returns the number of owned particles on this processor (does not count halo or ghost particles).
+    int number_owned() const;
 
     //! \brief Return the number of types of particles.
     int ntypes() const;
@@ -300,8 +303,12 @@ namespace GFlowSimulation {
 
     // -*-*-*- Numbers -*-*-*-
 
-    //! \brief Number of particles on this processor.
+    //! \brief Number of particles on this processor. Counts halo or ghost particle.
     int _number = 0; 
+    //! \brief Number of halo particle on this processor.
+    int _number_halo = 0;
+    //! \brief Number of ghost particles on this processor.
+    int _number_ghost = 0;
 
     //! \brief The last part of the array that might contain valid particles.
     //!

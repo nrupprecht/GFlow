@@ -27,7 +27,7 @@ namespace GFlowSimulation {
     // Set up basic objects. The integrator will be created by the creator.
     simData      = new SimData(this);
     integrator   = nullptr;
-    if (sim_dimensions==2) handler = new Domain(this); //ProjectionSorter(this);
+    if (sim_dimensions==2) handler = new Domain2D(this);
     else handler = new Domain(this);
     dataMaster   = new DataMaster(this);
     forceMaster  = new ForceMaster(this);
@@ -318,6 +318,10 @@ namespace GFlowSimulation {
     return boundaryForce;
   }
 
+  RealType GFlow::getBoundaryEnergy() const {
+    return boundaryEnergy;
+  }
+
   RealType GFlow::getDT() const {
     return integrator->getTimeStep();
   }
@@ -331,7 +335,7 @@ namespace GFlowSimulation {
   }
 
   int GFlow::getNumParticles() const {
-    return simData->number();
+    return simData->number_owned();
   }
 
   Bounds GFlow::getBounds() const {
@@ -509,36 +513,14 @@ namespace GFlowSimulation {
       for (int d=0; d<sim_dimensions; ++d) {
         if (boundaryConditions[d]==BCFlag::WRAP) {
           // Create a local copy
-          RealType xlocal = simData->X(n, d); //x[n][d];
+          RealType xlocal = simData->X(n, d);
           // Wrap xlocal
-          if (xlocal<bounds.min[d])
-            xlocal = bounds.max[d]-fmod(bounds.min[d]-xlocal, bounds.wd(d));
-          else if (bounds.max[d]<=xlocal)
-            xlocal = fmod(xlocal-bounds.min[d], bounds.wd(d))+bounds.min[d];
+          if (xlocal<bounds.min[d]) xlocal = bounds.max[d]-fmod(bounds.min[d]-xlocal, bounds.wd(d));
+          else if (bounds.max[d]<=xlocal) xlocal = fmod(xlocal-bounds.min[d], bounds.wd(d))+bounds.min[d];
           // Set
-          simData->X(n, d) = xlocal; // x[n][d] = xlocal;
+          simData->X(n, d) = xlocal;
         }
       }
-
-    /*
-    // Wrap all particles
-    for (int d=0; d<sim_dimensions; ++d) {
-      if (boundaryConditions[d]==BCFlag::WRAP) { // Wrap the d-th dimension
-        for (int n=0; n<size; ++n) {
-          // Create a local copy
-          RealType xlocal = x[n][d];
-          // Wrap xlocal
-          if (xlocal<bounds.min[d])
-            xlocal = bounds.max[d]-fmod(bounds.min[d]-xlocal, bounds.wd(d));
-          else if (bounds.max[d]<=x[n][d])
-            xlocal = fmod(xlocal-bounds.min[d], bounds.wd(d))+bounds.min[d];
-          // Set
-          x[n][d] = xlocal;
-        }
-      }
-    }
-    */
-    
   }
 
   void GFlow::reflectPositions() {
@@ -569,22 +551,27 @@ namespace GFlowSimulation {
     // Get a pointer to position data and the number of particles in simData
     RealType **x = simData->X(), **v = simData->V(), **f = simData->F();
     int size = simData->size();
-    // Reset boundary force
+    // Reset boundary force and energy
     boundaryForce = 0;
+    boundaryEnergy = 0;
     // Reflect all the particles
     for (int d=0; d<sim_dimensions; ++d)
       if (boundaryConditions[d]==BCFlag::REPL) { 
         for (int n=0; n<size; ++n) {
           // Create a local copy
           if (x[n][d]<bounds.min[d]) {
-            RealType F = (repulsion*(bounds.min[d] - x[n][d]) + dissipation*clamp(-v[n][d]));
+            RealType dx = bounds.min[d] - x[n][d];
+            RealType F = repulsion*dx + dissipation*clamp(-v[n][d]);
             f[n][d] += F;
             boundaryForce += F;
+            boundaryEnergy += 0.5*repulsion*sqr(dx);
           }
           else if (bounds.max[d]<x[n][d]) {
-            RealType F = repulsion*(x[n][d] - bounds.max[d]) + dissipation*clamp(v[n][d]);
+            RealType dx = (x[n][d] - bounds.max[d]);
+            RealType F = repulsion*dx + dissipation*clamp(v[n][d]);
             f[n][d] -= F;
             boundaryForce += F;
+            boundaryEnergy += 0.5*repulsion*sqr(dx);
           }
         }
       }

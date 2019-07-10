@@ -19,19 +19,21 @@ namespace GFlowSimulation {
     int size = Base::simData->size();
     int count = 0;
     for (int n=0; n<size; ++n) {
-      if (im[n]>0 && -1<type[n]) {
+      if (im[n]>0 && -1<type[n] && simData->isReal(n)) {
         energy += sqr(v[n], sim_dimensions)/im[n];
         ++count;
       }
     }
     energy *= 0.5;
-    // Add potential energy
+    // Add potential energy.
     energy += forceMaster->getTotalPotentialEnergy();
+    // Get boundary energy from gflow.
+    energy += gflow->getBoundaryEnergy();
     // Add potential energy from bonded interactions
     auto bonded_interactions = gflow->getBondedInteractions();
     for (auto it : bonded_interactions) energy += it->getPotential();
     // If we want the average
-    if (useAve && count>0) energy /= count;
+    if (useAve && count>0) energy /= static_cast<RealType>(count);
     // Store data
     RealType time = gflow->getElapsedTime();
     data.push_back(RPair(time, energy));

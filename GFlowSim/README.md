@@ -35,9 +35,9 @@ Run with
 
 ## TODO:
 
-- [ ] Bodies, rigid and otherwise.
+- [x] Bodies, rigid and otherwise.
 
-- [ ] Walls.
+- [x] Walls.
 
 - [ ] Angles / torque.
 
@@ -45,7 +45,7 @@ Run with
 
 - [ ] Hard triangles.
 
-- [ ] Bond/angle modifier.
+- [x] Bond/angle modifier.
 
 - [x] Time step monitoring.
 

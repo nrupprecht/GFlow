@@ -134,7 +134,7 @@ namespace GFlowSimulation {
 
   void Visualization::createImage(string fileName, const vector<float>& data) {
     // Get some data from the bounds
-    float buffer = 0.;
+    float buffer = 0.f;
     float wx = bounds.wd(0) + 2*buffer, wy = bounds.wd(1) + 2*buffer, left = bounds.min[0] - buffer, bott = bounds.min[1] - buffer;
     // Figure out the needed resolution
     int res_x = resolution, res_y = resolution;

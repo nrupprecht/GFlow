@@ -209,23 +209,6 @@ namespace GFlowSimulation {
   }
 
   void SimData::updateHaloParticles() {
-
-    /*
-    Vec dx(2);
-    for (int i=0; i<halo_map.size(); i+=2) {
-      int hid = halo_map[i]; // Halo id.
-      int pid = halo_map[i+1]; // Primary id.
-      // Update force
-      subtractVec(X(hid), X(pid), dx.data, 2);
-      cout << sqrt(dx*dx) << ", ";
-      subtractVec(V(hid), V(pid), dx.data, 2);
-      cout << sqrt(dx*dx) << endl;
-    }
-    */
-
-
-    return;
-
     // First pass: update the primary (actual) particle from the force data of the halo particles.
     // Doing this in two passes takes care of the fact that some particles may generate multiple halos.
     // We only have to update the forces, and then let the integrator take care of the rest.
@@ -492,6 +475,8 @@ namespace GFlowSimulation {
     addParticle(x.data, v.data, radius, im, type);
     int id2 = _size-1;
     plusEqVec(X(id2), displacement.data, sim_dimensions); // Displace halo particle
+    // Increment the halo particles counter.
+    ++_number_halo;
     //! \todo There may be other data we should copy
   }
 
@@ -501,6 +486,8 @@ namespace GFlowSimulation {
       markForRemoval(halo_map[i]);
     // Clear halo data
     halo_map.clear();
+    // Clear the halo particle counter.
+    _number_halo = 0;
   }
 
   void SimData::removeGhostParticles() {
@@ -509,6 +496,8 @@ namespace GFlowSimulation {
       markForRemoval(ghost_map[i]);
     // Clear halo data
     ghost_map.clear();
+    // Clear the ghost particle counter.
+    _number_ghost = 0;
   }
 
   void SimData::removeHaloAndGhostParticles() {
@@ -522,6 +511,10 @@ namespace GFlowSimulation {
 
   int SimData::number() const {
     return _number;
+  }
+
+  int SimData::number_owned() const {
+    return _number - _number_halo - _number_ghost;
   }
 
   int SimData::ntypes() const {

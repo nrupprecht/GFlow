@@ -8,7 +8,7 @@ namespace GFlowSimulation {
   Domain2D::Domain2D(GFlow *gflow) : DomainBase(gflow) {
     // Initialize to 0.
     min_side_edge_cells[0] = 1;
-    min_side_edge_cells[1] = 1;
+    min_side_edge_cells[1] = 0;
     max_side_edge_cells[0] = 1;
     max_side_edge_cells[1] = 1;
     // Initialize to false.
@@ -93,10 +93,9 @@ namespace GFlowSimulation {
           bool is_small = (simData->Sg(id1)<=max_small_sigma);
           // Go through all the particles in the same cells.
           int id2 = linked_cells[id1];
-
-          // Check cells.
+          // Check this cell.
           check_cell(id1, id2);
-
+          // Check surrounding cells.
           if (is_small) {
             // Go through particles in adjacent cells.
             for (int s=0; s<stencil_size; ++s) {
@@ -217,50 +216,23 @@ namespace GFlowSimulation {
     for (int i=0; i<size; ++i) {
       // Get the position of the particle
       x = simData->X(i);
-      // Check in X direction.
-      if (wrapX) {
-        if (x[0]<=left) simData->createHaloOf(i, dx);
-        else if (right<x[0]) {
-          dx.negate();
-          simData->createHaloOf(i, dx);
-          dx.negate();
-        }
-      }
+      // Halo in the (+1, 0) direction.
+      if (wrapX &&x[0]<=left) simData->createHaloOf(i, dx);
       // Check in Y direction
       if (wrapY) { 
         if (x[1]<=bottom) {
+          // Halo in the (0, +1) direction.
           simData->createHaloOf(i, dy);
-          
+
+          // Special cases: corner cells
           if (wrapX) {
             // Also needs a halo in the (+1, +1) direction.
-            if(x[0]<=left) {
-              simData->createHaloOf(i, dz);
-            }
+            if(x[0]<=left) simData->createHaloOf(i, dz);
             // Also needs a halo in the (-1, +1) direction.
             else if (right<x[0]) {
               dz[0] = -dz[0];
               simData->createHaloOf(i, dz);
               dz[0] = -dz[0];
-            }
-          }
-        }
-        else if (top<x[1]) {
-          dy.negate();
-          simData->createHaloOf(i, dy);
-          dy.negate();
-
-          if (wrapX) {
-            // Also needs a halo in the (+1, -1) direction
-            if (x[0]<=left) {
-              dz[1] = -dz[1];
-              simData->createHaloOf(i, dz);
-              dz[1] = -dz[1];
-            }
-            // Also needs a halo in the (-1, -1) direction
-            else if (right<x[0]) {
-              dz.negate();
-              simData->createHaloOf(i, dz);
-              dz.negate();
             }
           }
         }

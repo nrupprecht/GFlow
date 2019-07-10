@@ -22,12 +22,14 @@ namespace GFlowSimulation {
     // \todo Should probably have some sort of global error message system.
     if (x==nullptr || f==nullptr || sg==nullptr || type==nullptr) return;
 
+    /*
     // Get the bounds and boundary conditions
     BCFlag boundaryConditions[2];
     copyVec(Base::gflow->getBCs(), boundaryConditions, 2); // Keep a local copy of the bcs
     // Extract bounds related data
     RealType bnd_x = gflow->getBounds().wd(0);
     RealType bnd_y = gflow->getBounds().wd(1);
+    */
 
     // Needed constants
     RealType sg1, sg2, dx, dy, rsqr, r, invr, magnitude;
@@ -42,6 +44,7 @@ namespace GFlowSimulation {
       dx = x[id1][0] - x[id2][0];
       dy = x[id1][1] - x[id2][1];
       
+      /*
       // Harmonic corrections to distance.
       if (boundaryConditions[0]==BCFlag::WRAP) {
         RealType dX = bnd_x - fabs(dx);
@@ -50,7 +53,8 @@ namespace GFlowSimulation {
       if (boundaryConditions[1]==BCFlag::WRAP) {
         RealType dY = bnd_y - fabs(dy);
         if (dY<fabs(dy)) dy = dy>0 ? -dY : dY;
-      }  
+      } 
+      */
 
       // Calculate squared distance
       rsqr = dx*dx + dy*dy;

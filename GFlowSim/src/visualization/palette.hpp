@@ -108,6 +108,9 @@ namespace GFlowSimulation {
     bool *is_set;
   };
 
+  /**
+  *  \brief Structure for encoding graphing options.
+  */
   struct GraphOptions {
     void setMinX(float m) { useMinX = true; minX = m; }
     void setMaxX(float m) { useMaxX = true; maxX = m; }
@@ -127,7 +130,7 @@ namespace GFlowSimulation {
     bool paintBackground = true;
   };
 
-
+  //! \brief A function for coloring an object based on the angle.
   inline RGBApixel colorAngle(float theta) {
     const static Vec3 C(1./3., 1./3., 1./3.);
     const static Vec3 N1(0.4*sqrt(2./3.), -0.2*sqrt(2./3.), 0.2*sqrt(2./3.));
@@ -143,8 +146,7 @@ namespace GFlowSimulation {
   }
 
   /**
-  *  \brief The Palette class, used to draw images
-  *
+  *  \brief The Palette class, used to draw images.
   */
   class Palette {
   public:

@@ -80,6 +80,9 @@ namespace GFlowSimulation {
     //! \brief Get the strength of the boundary force.
     RealType getBoundaryForce() const;
 
+    //! \brief Get the energy associated with the domain.
+    RealType getBoundaryEnergy() const;
+
     //! \brief Get the current time step.
     RealType getDT() const;
 
@@ -327,8 +330,11 @@ namespace GFlowSimulation {
     //! \brief The attraction towards the center of the simulation
     RealType center_attraction;
 
-    //! Total boundary force applied this iteration.
+    //! \brief Total boundary force applied this iteration.
     RealType boundaryForce;
+
+    //! \brief Energy due to e.g. particles being repulsed by a boundary potential.
+    RealType boundaryEnergy = 0;
 
     // The command info (optional)
     int argc;
