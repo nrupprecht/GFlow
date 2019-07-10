@@ -110,7 +110,7 @@ namespace GFlowSimulation {
     Interaction *force;
     if(lj_flag) {
       LennardJones *LJ;
-      if (sim_dimensions==2) LJ = new LennardJones_VerletPairs_2d(gflow);
+      if (sim_dimensions==2) LJ = new LennardJones_2d(gflow);
       else throw false;
       // Set parameters
       LJ->setStrength(repulsion*DEFAULT_LENNARD_JONES_STRENGTH);
@@ -122,8 +122,8 @@ namespace GFlowSimulation {
     }
     else {
       HardSphere *HS;
-      if (sim_dimensions==2) HS = new HardSphere_VerletPairs_2d(gflow);
-      else if (sim_dimensions==3) HS = new HardSphere_VerletPairs_3d(gflow);
+      if (sim_dimensions==2) HS = new HardSphere_2d(gflow);
+      else if (sim_dimensions==3) HS = new HardSphere_3d(gflow);
       else throw false;
       // Set parameters
       HS->setRepulsion(repulsion*DEFAULT_HARD_SPHERE_REPULSION);
