@@ -42,8 +42,15 @@ namespace GFlowSimulation {
     //! \brief Set the do potential flag.
     void setDoPotential(bool);
 
-    //! \brief Add a pair of interacting particles.
+    //! \brief Add a pair of particles whose distance may need to be wrapped.
+    //!
+    //! Adds the pair to the verlet_wrap list.
     virtual void addPair(const int, const int);
+    
+    //! \brief Add a pair of interacting particles that do not need to have their distances wrapped.
+    //!
+    //! Adds the pair to the verlet_wrap list.
+    virtual void addPairNW(const int, const int);
 
     //! \brief Signals that the pair additions are done.
     virtual void close() {};
@@ -59,8 +66,12 @@ namespace GFlowSimulation {
 
   protected:
 
-    //! \brief The verlet list
+    //! \brief The verlet list for interactions that do not need to worry about wrapping distances.
     vector<int> verlet;
+
+    //! \brief The verlet list for interactions that potentially need to wrap distances.
+    vector<int> verlet_wrap;
+
 
     //! \brief The cutoff, i.e. how many times greater than the particle radius can a particle interact with other particles.
     //!

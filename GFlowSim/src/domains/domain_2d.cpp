@@ -109,8 +109,62 @@ namespace GFlowSimulation {
               check_cell(id1, id2);
             }
           }
-          else {
-            // "Large" particle.
+          else { // "Large" particle.
+
+            cout << "Start large" << endl;
+
+            // How far around us must we search.
+            RealType search_radius = 2*simData->Sg(id1) + skin_depth;
+            // Compute
+            int sx = static_cast<int>(ceil(search_radius / widths[0]));
+            int sy = static_cast<int>(ceil(search_radius / widths[1]));
+
+            for (int dx=-sx; dx<0; ++dx) {
+              for (int dy=-sy; dy<=sy; ++dy) {
+                // Get the cell. This involved correcting the cell index.
+                int cx = x + dx, cy = y + dy;
+                // Potentially correct cx.
+                if (gflow->getBC(0)==BCFlag::WRAP) {
+                  if (cx<min_side_edge_cells[0])
+                    cx += dims[0] - min_side_edge_cells[0] - max_side_edge_cells[0];
+                  if (min_side_edge_cells[0] + dims[0] <= cx)
+                    cx -= dims[0] - min_side_edge_cells[0] - max_side_edge_cells[0];
+                }
+                // Potentially correct cy.
+                if (gflow->getBC(1)==BCFlag::WRAP) {
+                  if (cy<min_side_edge_cells[1]) 
+                    cy += dims[1] - min_side_edge_cells[1] - max_side_edge_cells[1];
+                  else if (dims[1] + min_side_edge_cells[1] <= cy)
+                    cy -= dims[1] - min_side_edge_cells[1] - max_side_edge_cells[1];
+                }
+                // If cx, cy are good cells, search that cell for neighbors.
+                if (0<=cx && cx<dims[0] && 0<=cy && cy<dims[1]) {
+                  int c2 = cy*dims[0] + cx;
+                  id2 = cell_pointers[c2];
+                  check_cell(id1, id2, false);
+                }
+              }
+            }
+            // Cells below the center cell
+            for (int dy=-sy; dy<0; ++dy) {
+              int cy = y + dy;
+              // Potentially correct cy.
+              if (gflow->getBC(1)==BCFlag::WRAP) {
+                if (cy<min_side_edge_cells[1]) 
+                  cy += dims[1] - min_side_edge_cells[1] - max_side_edge_cells[1];
+                else if (dims[1] + min_side_edge_cells[1] <= cy)
+                  cy -= dims[1] - min_side_edge_cells[1] - max_side_edge_cells[1];
+              }
+              // If cy is now a good cell, search that cell for neighbors.
+              if (0<=cy && cy < dims[1]) {
+                int c2 = cy*dims[0] + x;
+                id2 = cell_pointers[c2];
+                check_cell(id1, id2, false);
+              }
+            }
+
+            cout << "End large" << endl;
+
           }
 
           // "Increment" the cell id.
@@ -289,6 +343,7 @@ namespace GFlowSimulation {
 
   inline void Domain2D::check_cell(int id1, int id2, bool only_small) {
     if (id2<0) return;
+
     // Set up.
     RealType dx[2], radius1 = simData->Sg(id1) + skin_depth, rsqr = 0;
     RealType **x = simData->X();
@@ -297,13 +352,14 @@ namespace GFlowSimulation {
     while (-1<id2) {
       // If the other particle is large, continue.
       if (only_small && simData->Sg(id2)>max_small_sigma) continue;
+      if (!only_small && simData->Sg(id2)>simData->Sg(id1)) continue;
       // Get distance between particles.
       dx[0] = x[id1][0] - x[id2][0];
       dx[1] = x[id1][1] - x[id2][1];
       rsqr = sqr(dx[0]) + sqr(dx[1]);
       // If close enough, check if they interact.
       if (rsqr < sqr(radius1 + sg[id2]))
-        pair_interaction(id1, id2);
+        pair_interaction_nw(id1, id2);
 
       // "Increment" id2
       id2 = linked_cells[id2];

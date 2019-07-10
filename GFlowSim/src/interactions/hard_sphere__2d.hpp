@@ -16,6 +16,10 @@ namespace GFlowSimulation {
 
     //! \brief Calculate the interactions between particles.
     virtual void interact() const override;
+
+  private:
+    //! \brief Helper function that computes the force between particles, given their distances and radii.
+    inline void compute_force(int, int, RealType, RealType, RealType, RealType, RealType, RealType**);
   };
 
 }

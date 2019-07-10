@@ -112,8 +112,15 @@ namespace GFlowSimulation {
 
     //! \brief If the two particles interact, and the interaction is handled by this interaction handler, add to the relevant interaction.
     //!
+    //! This version adds particles to the verlet_wrap list.
     //! If the flag is true, interactions between ghost particles are disallowed.
     void pair_interaction(int, int, bool=true);
+
+    //! \brief If the two particles interact, and the interaction is handled by this interaction handler, add to the relevant interaction.
+    //!
+    //! This version adds particles to the verlet (no wrapping) list.
+    //! If the flag is true, interactions between ghost particles are disallowed.
+    void pair_interaction_nw(int, int, bool=true);
 
     // --- Data ---
 

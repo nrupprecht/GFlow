@@ -246,4 +246,20 @@ namespace GFlowSimulation {
     if (it) it->addPair(id1, id2);
   }
 
+  void InteractionHandler::pair_interaction_nw(int id1, int id2, bool no_ghosts) {
+    /*
+    // Check if this force exists and should be handled by this handler.
+    Interaction *it = grid[id1][id2];
+    // A null force means no interaction
+    if (it) it->addPairNW(id1, id2);
+    */
+
+    if (no_ghosts && !simData->isReal(id1) && !simData->isReal(id2)) return;
+
+    // Check with force master
+    Interaction *it = forceMaster->getInteraction(simData->Type(id1), simData->Type(id2));
+    // A null force means no interaction
+    if (it) it->addPairNW(id1, id2);
+  }
+
 }
