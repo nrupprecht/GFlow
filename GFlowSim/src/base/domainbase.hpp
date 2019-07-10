@@ -49,21 +49,15 @@ namespace GFlowSimulation {
     friend class GFlow;
 
   protected:
-    // --- Helper functions
 
-    //! \brief Calculates the maximum "small sigma."
-    //!
-    //! Particles that are larger than max_small_sigma are "large particles," and must search more than
-    //! one sector around them.
-    virtual void calculate_max_small_sigma();
+    //! \brief Overload the set bounds function to recalculate cell sizes, product arrays, etc.
+    virtual void setBounds(const Bounds&) override;
+
+    //! \brief Calculates the domain cell dimensions, widths, and inverse widths given 
+    //! that the cutoff has been calculated.
+    virtual void calculate_domain_cell_dimensions()=0;
 
     // --- Data
-
-    //! \brief The bounds of the domain
-    Bounds domain_bounds;
-    
-    //! \brief The bounds of the entire simulation
-    Bounds bounds;
 
     //! \brief Number of cells in each dimension
     int *dims;
@@ -82,6 +76,12 @@ namespace GFlowSimulation {
     //! to fit in the domain in each dimension, the actual widths will be different. They will be at
     //! least this large though.
     RealType target_cell_size = 0.;
+
+    //! \brief The target number of particles in each particle's verlet list.
+    //!
+    //! Despite the fact that particles come in integer numbers, the target list size is a real, since it
+    //! determines the skin depth via multiplication, and the *average* list size can be a real.
+    RealType target_list_size = 4.;
 
     //! \brief The minimum allowable cutoff for small particles, 2*max_small_sigma + skin_depth
     RealType min_small_cutoff = 0.; 

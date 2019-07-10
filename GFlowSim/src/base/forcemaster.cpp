@@ -73,6 +73,10 @@ namespace GFlowSimulation {
     return virial;
   }
 
+  bool ForceMaster::interactingTypes() const {
+    return any_interactions;
+  }
+
   bool ForceMaster::typeInteracts(int type) const {
     // If type is -1, no interaction
     if (type==-1) return false;
@@ -150,6 +154,7 @@ namespace GFlowSimulation {
         if (grid[i][j]!=nullptr) {
           doesInteract[i] = true;
           doesInteract[j] = true;
+          any_interactions = true;
         }
       }
   }

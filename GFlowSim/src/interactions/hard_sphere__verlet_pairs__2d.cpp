@@ -41,6 +41,7 @@ namespace GFlowSimulation {
       // Calculate displacement.
       dx = x[id1][0] - x[id2][0];
       dy = x[id1][1] - x[id2][1];
+      
       // Harmonic corrections to distance.
       if (boundaryConditions[0]==BCFlag::WRAP) {
         RealType dX = bnd_x - fabs(dx);
@@ -50,6 +51,7 @@ namespace GFlowSimulation {
         RealType dY = bnd_y - fabs(dy);
         if (dY<fabs(dy)) dy = dy>0 ? -dY : dY;
       }  
+
       // Calculate squared distance
       rsqr = dx*dx + dy*dy;
       // Get radii

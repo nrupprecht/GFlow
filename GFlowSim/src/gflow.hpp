@@ -158,14 +158,14 @@ namespace GFlowSimulation {
     //! \brief Set the command info
     void setCommand(int, char**);
 
-    //! \brief Set the bounds
-    void setBounds(Bounds);
-
     //! \brief Set all wrap values to the same value.
     void setAllBCs(BCFlag);
 
     //! \brief Set a single boundary condition.
     void setBC(const int, const BCFlag);
+
+    //! \brief Set the simulation bounds.
+    void setBounds(const Bounds&);
 
     //! \brief Set the repulsion stength for repulsing boundary conditions.
     void setRepulsion(RealType);

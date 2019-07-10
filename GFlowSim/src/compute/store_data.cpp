@@ -100,7 +100,7 @@ namespace GFlowSimulation {
       }
       for (auto i : integer_data_positions) {
         int *id = simData->IntegerData(i);
-        if (id!=nullptr) data[data_pointer] = id[n];
+        if (id!=nullptr) data[data_pointer] = id[n]; // simData->isReal(n) ? 0 : 1; // 
         ++data_pointer;
       }
     }

@@ -24,12 +24,11 @@ namespace GFlowSimulation {
     numProc = MPI::COMM_WORLD.Get_size();
     #endif
     #endif
-    // Set the static counter.
-    //DataObject::resetTotalObjects();
     // Set up basic objects. The integrator will be created by the creator.
     simData      = new SimData(this);
     integrator   = nullptr;
-    handler      = new Domain(this);
+    if (sim_dimensions==2) handler = new Domain(this); //ProjectionSorter(this);
+    else handler = new Domain(this);
     dataMaster   = new DataMaster(this);
     forceMaster  = new ForceMaster(this);
     topology     = new GridTopology(sim_dimensions);
@@ -214,10 +213,10 @@ namespace GFlowSimulation {
 
       // Calculate interactions and forces.
       if (useForces) {
-        // Calculate interactions
+        // Calculate interactions.
         forceMaster->interact();
 
-        // Calculate bonded interactions
+        // Calculate bonded interactions.
         if (!bondedInteractions.empty()) {
           bonded_timer.start();
           for (auto bd : bondedInteractions) bd->interact();
@@ -225,21 +224,22 @@ namespace GFlowSimulation {
         }
       }
 
-      // Update bodies
+      // Update bodies - this may include forces.
       if (!bodies.empty()) {
         body_timer.start();
         for (auto b : bodies) b->correct();
         body_timer.stop();
       }
 
-      // Update halo particles
-      simData->updateHaloParticles();
-
       // Do modifier removal
       handleModifiers();
 
       // --> Post-forces
       for (auto m : modifiers) m->post_forces(); // -- This is where modifiers should do forces (if they need to)
+      // Update halo particles. This should be done after all force calculations, but before the next integration steps.
+      // For this reason, this occurs *after* modifiers do their post-force routine.
+      simData->updateHaloParticles();
+      // Continue with normal order of updates.
       integrator->post_forces();                 // -- This is where VV second half kick happens (if applicable)
       dataMaster->post_forces();
       handler->post_forces();
@@ -449,13 +449,6 @@ namespace GFlowSimulation {
     }
   }
 
-  void GFlow::setBounds(Bounds b) {
-    bounds = b;
-
-    topology->setSimulationBounds(b);
-    // Sectorization updates its bounds in pre_integrate()
-  }
-
   void GFlow::setAllBCs(BCFlag type) {
     for (int d=0; d<sim_dimensions; ++d) 
       boundaryConditions[d] = type;
@@ -463,6 +456,12 @@ namespace GFlowSimulation {
 
   void GFlow::setBC(const int d, const BCFlag type) {
     boundaryConditions[d] = type;
+  }
+
+  void GFlow::setBounds(const Bounds& bnds) {
+    bounds = bnds;
+    if (handler) handler->setBounds(bnds);
+    if (topology) topology->setSimulationBounds(bnds);
   }
 
   void GFlow::setRepulsion(RealType r) {

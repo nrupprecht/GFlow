@@ -8,7 +8,7 @@
 
 namespace GFlowSimulation {
 
-  DomainBase::DomainBase(GFlow *gflow) : InteractionHandler(gflow), domain_bounds(sim_dimensions), bounds(sim_dimensions) {
+  DomainBase::DomainBase(GFlow *gflow) : InteractionHandler(gflow) {
     // Allocate arrays
     dims     = new int[sim_dimensions];
     widths   = new RealType[sim_dimensions];
@@ -51,44 +51,10 @@ namespace GFlowSimulation {
     min_small_cutoff = 2*max_small_sigma + skin_depth;
   }
 
-  void DomainBase::calculate_max_small_sigma() {
-    // Make sure force master has interaction array set up
-    forceMaster->initialize_does_interact();
-
-    // Find average sigma
-    RealType sigma = 0, max_sigma = 0;
-    int count = 0;
-    for (int n=0; n<Base::simData->size(); ++n) {
-      // Check that the type is valid, and is an interacting type
-      int type = Base::simData->Type(n);
-      if (type<0 || !Base::forceMaster->typeInteracts(type)) 
-        continue;
-      // Get the cutoff radius, use in the calculation
-      RealType s = Base::simData->Sg(n) * forceMaster->getMaxCutoff(type);
-      sigma += s;
-      if (s>max_sigma) max_sigma = s;
-      ++count;
-    }
-    if (count>0) sigma /= count;
-    else {
-      sigma = Base::simData->Sg(0) * forceMaster->getMaxCutoff(simData->Type(0));
-      max_sigma = sigma;
-    }
-
-    // Threshhold sigma is between average and maximum sigma
-    RealType threshold = 0.5*(sigma + max_sigma), max_under = sigma;
-    if (threshold!=sigma) {
-      for (int n=0; n<Base::simData->size(); ++n) {
-        // Check that the type is valid, and is an interacting type
-        int type = Base::simData->Type(n);
-        if (type<0 || !Base::forceMaster->typeInteracts(type)) 
-          continue;
-        // Get the cutoff radius, use in the calculation
-        RealType s = Base::simData->Sg(n) * forceMaster->getMaxCutoff(simData->Type(n));
-        if (s<threshold && max_under<s) max_under = s;
-      }
-    }
-    max_small_sigma = 1.025*max_under;
+  void DomainBase::setBounds(const Bounds& bnds) {
+    InteractionHandler::setBounds(bnds);
+    // Recalculate dimensions. The domain must be initialized to be able to do this.
+    if (initialized) calculate_domain_cell_dimensions();
   }
 
 }

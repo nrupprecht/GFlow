@@ -5,9 +5,11 @@
 #include "../utility/vectormath.hpp"
 #include "../base/forcemaster.hpp"
 
+#include "../base/interaction.hpp"
+
 namespace GFlowSimulation {
 
-  Domain::Domain(GFlow *gflow) : DomainBase(gflow), target_list_size(4.) {
+  Domain::Domain(GFlow *gflow) : DomainBase(gflow) {
     // Allocate arrays
     border_type_up = new int[sim_dimensions];
     border_type_down = new int[sim_dimensions];
@@ -41,22 +43,14 @@ namespace GFlowSimulation {
     //! \todo Domains are generally initialized several times, though they doesn't need to be. Find a way to check whether we
     //! actually need to initialize the domain.
 
-    // Common initialization tasks
-    Base::initialize();
-
-    // Get the simulation bounds from gflow
-    bounds = Base::gflow->getBounds();
-    // Get the bounds from the gflow object - for now assumes this is the only domain, so bounds==domain_bounds
-    domain_bounds = gflow->getBounds();
+    // Common initialization tasks. Calculates max small sigma.
+    DomainBase::initialize();
 
     // If bounds are unset, then don't make sectors. We cannot initialize if simdata is null
-    if (domain_bounds.vol()<=0 || isnan(domain_bounds.vol()) || simData==nullptr) return;
+    if (domain_bounds.vol()<=0 || isnan(domain_bounds.vol()) || simData==nullptr || simData->size()==0) return;
 
     // Assign border types - do this before creating cells.
     assign_border_types();
-
-    // Calculate the maxiumu "small sigma"
-    calculate_max_small_sigma();
 
     // Calculate skin depth
     RealType rho = simData->size() / domain_bounds.vol();
@@ -64,19 +58,15 @@ namespace GFlowSimulation {
     skin_depth = max(static_cast<RealType>(0.5 * max_small_sigma), candidate);
 
     // Use max_small_sigma
-    min_small_cutoff = target_cell_size = 2*max_small_sigma+skin_depth;
+    target_cell_size = min_small_cutoff = 2*max_small_sigma+skin_depth;
 
     // Calculate cell grid data
     calculate_domain_cell_dimensions();
-
-    // Initialize products array
-    calculate_product_array();
 
     // Create the cells
     create_cells();
 
     // Construct the interaction handlers for the forces
-    number = 0; // To make sure we do a full clear, fill when we construct.
     construct();
 
     // The domain has been initialized
@@ -200,9 +190,6 @@ namespace GFlowSimulation {
   }
 
   void Domain::removeOverlapping(RealType factor) {
-    // Domain base common tasks
-    DomainBase::construct();
-    
     // Update particles in the cells
     update_cells();
 
@@ -413,7 +400,8 @@ namespace GFlowSimulation {
       }
     }
     // Close all
-    Base::forceMaster->close();
+    forceMaster->close();
+
     // Clean up
     delete [] tuple1;
     delete [] tuple2;
@@ -429,8 +417,19 @@ namespace GFlowSimulation {
   inline void Domain::update_cells() {
     clear_cells();
     fill_cells();
-    // Record how many particles there were
-    number = simData->number();
+  }
+
+
+  void Domain::migrate_particles() {
+    
+  }
+
+  void Domain::construct_halo_particles() {
+
+  }
+
+  void Domain::construct_ghost_particles() {
+
   }
 
   inline void Domain::assign_border_types() {
@@ -449,7 +448,7 @@ namespace GFlowSimulation {
     }
   }
 
-  inline void Domain::calculate_domain_cell_dimensions() {
+  void Domain::calculate_domain_cell_dimensions() {
     for (int d=0; d<sim_dimensions; ++d) {
       dims[d] = static_cast<int>(domain_bounds.wd(d)/target_cell_size);
       // Check that the bounds are good
@@ -471,6 +470,9 @@ namespace GFlowSimulation {
       }
       else dim_shift_up[d] = 0;
     }
+
+    // Initialize products array
+    calculate_product_array();
   }
 
   inline void Domain::calculate_product_array() {
@@ -546,10 +548,9 @@ namespace GFlowSimulation {
     int number = Base::simData->number();
     int *type = Base::simData->Type();
     int *tuple = new int[sim_dimensions], linear;
-
     // Bin all the particles
     for (int i=0; i<number; ++i) {
-      if (0<=type[i] && forceMaster->typeInteracts(type[i]))
+      if (0<=type[i] && forceMaster->typeInteracts(type[i])) 
         add_to_cell(x[i], i);
     }
 

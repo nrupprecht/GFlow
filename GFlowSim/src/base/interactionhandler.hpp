@@ -20,6 +20,9 @@ namespace GFlowSimulation {
     //! \brief Destructor.
     virtual ~InteractionHandler();
 
+    //! \brief Common initialization tasks.
+    virtual void initialize() override;
+
     //! \brief Reset values.
     virtual void pre_integrate() override;
 
@@ -77,7 +80,26 @@ namespace GFlowSimulation {
     //! \brief Set the maximum update delay.
     void setMaxUpdateDelay(RealType);
 
+    // So GFlow can set the bounds.
+    friend class GFlow;
+
   protected:
+
+    //! \brief Migrate particles to another processor.
+    virtual void migrate_particles()=0;
+    //! \brief Make halo particles.
+    virtual void construct_halo_particles()=0;
+    //! \brief Communicate with other processors to create ghost particles.
+    virtual void construct_ghost_particles()=0;
+
+    //! \brief Set the simulation bounds.
+    virtual void setBounds(const Bounds&);
+
+    //! \brief Calculates the maximum "small sigma."
+    //!
+    //! Particles that are larger than max_small_sigma are "large particles," and must search more than
+    //! one sector around them.
+    virtual void calculate_max_small_sigma();
 
     //! \brief Check if the interactions need to be remade.
     bool check_needs_remake();
@@ -89,9 +111,17 @@ namespace GFlowSimulation {
     RealType find_max_motion();
 
     //! \brief If the two particles interact, and the interaction is handled by this interaction handler, add to the relevant interaction.
-    void pair_interaction(int, int);
+    //!
+    //! If the flag is true, interactions between ghost particles are disallowed.
+    void pair_interaction(int, int, bool=true);
 
     // --- Data ---
+
+    //! \brief The bounds of the domain
+    Bounds domain_bounds;
+    
+    //! \brief The bounds of the entire simulation
+    Bounds bounds;
 
     //! \brief Interaction grid.
     vector<vector<Interaction*> > grid;
@@ -154,6 +184,9 @@ namespace GFlowSimulation {
     //! \brief A vector that can be used to record the positions of particles at the last remake.
     RealType **positions = nullptr;
 
+    //! \brief If true, the base construct function will record positions.
+    bool auto_record_positions = true;
+
     //! \brief A velocity to use as a reference frame when computing the max motion.
     Vec velocity;
 
@@ -175,6 +208,9 @@ namespace GFlowSimulation {
     //! into particles, which means that the domain may miss this if the domain only sample a subset of the 
     //! particles. In this case, set sample_size to zero. Or risk it. Your choice.
     int sample_size = -1;
+
+    //! \brief Whether the domain has been initialized or not.
+    bool initialized = false;
 
   };
 

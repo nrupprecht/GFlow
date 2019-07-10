@@ -64,18 +64,20 @@ namespace GFlowSimulation {
     gflow->setAllBCs(bcFlag);
 
     // Set the bounds of the gflow object
+    Bounds bnds = gflow->getBounds();
     if (width<=0) width = 1.; // In case of bad argument
     if (height<=0) height = width;
     for (int d=0; d<sim_dimensions; ++d) {
       if (d!=1) {
-        gflow->bounds.min[d] = -0.5*width;
-        gflow->bounds.max[d] =  0.5*width;
+        bnds.min[d] = -0.5*width;
+        bnds.max[d] =  0.5*width;
       }
       else {
-        gflow->bounds.min[d] = -0.5*height;
-        gflow->bounds.max[d] = 0.5*height;
+        bnds.min[d] = -0.5*height;
+        bnds.max[d] = 0.5*height;
       }
     }
+    gflow->setBounds(bnds);
 
     // --- Set initial particle data
     // Find how many objects to use
