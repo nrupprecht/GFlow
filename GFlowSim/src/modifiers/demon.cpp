@@ -1,6 +1,6 @@
 #include "demon.hpp"
 // Other files
-#include "../base/domainbase.hpp"
+#include "../base/interactionhandler.hpp"
 #include "../alldataobjects.hpp"
 #include "../base/datamaster.hpp"
 #include "../base/forcemaster.hpp"
@@ -328,8 +328,8 @@ namespace GFlowSimulation {
     // Reset the time in gflow.
     gflow->setElapsedTime(last_check);
 
-    // Force a rebuild of domains and forces
-    if (construct) domain->construct();
+    // Force a rebuild of handler and forces
+    if (construct) handler->construct();
 
     // Modify animation object.
     if (animate_object) {
@@ -373,9 +373,9 @@ namespace GFlowSimulation {
     door_open = false;
     // Set demon wall to open
     if (demon_interaction) demon_interaction->turnOn();
-    // Need to construct the domain. 
-    // \todo Be able to add some particles to the domain without recreating the whole thing.
-    domain->construct();
+    // Need to construct the handler. 
+    // \todo Be able to add some particles to the handler without recreating the whole thing.
+    handler->construct();
     // Set the flag
     door_just_closed = true;
   }

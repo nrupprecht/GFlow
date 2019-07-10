@@ -262,7 +262,7 @@ namespace GFlowSimulation {
     parser.argVec("Gravity");
     if (g.size()!=0) gflow->addModifier(new ConstantAcceleration(gflow, g.data));
 
-    // --- Attraction towards the center of the domain
+    // --- Attraction towards the center of the bounds
     RealType att = 0;
     if (parser.firstArg("Attraction", att)) gflow->setAttraction(att);
 
@@ -365,8 +365,8 @@ namespace GFlowSimulation {
       } while (parser.next());
     }
 
-    // Initialize domain
-    gflow->domain->initialize();
+    // Initialize handler
+    gflow->handler->initialize();
 
     // --- Relax the simulation
     RealType relax_time = 0.5;
@@ -388,8 +388,8 @@ namespace GFlowSimulation {
       } while (parser.next());
     }
     
-    // Reconstruct domain
-    gflow->domain->construct();
+    // Reconstruct handler.
+    gflow->handler->construct();
 
     // Fix velocities
     fix_particle_velocities(gflow->simData);

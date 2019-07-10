@@ -46,14 +46,21 @@ namespace GFlowSimulation {
 
   private:
 
+    //! \brief Migrate particles to another processor.
+    virtual void migrate_particles() override;
+    //! \brief Make halo particles.
+    virtual void construct_halo_particles() override;
+    //! \brief Communicate with other processors to create ghost particles.
+    virtual void construct_ghost_particles() override;
+
     //! \brief Determine what type of borders the domain has.
     //!
     //! This effects the dimensions of the domain, since there may need to be halo/ghost cells in some dimensions.
     inline void assign_border_types();
 
     //! \brief Calculates the domain cell dimensions, widths, and inverse widths given 
-    //! that the cutoff has been calculated.
-    inline void calculate_domain_cell_dimensions();
+    //! that the cutoff has been calculated. 
+    inline void calculate_domain_cell_dimensions() override;
 
     //! \brief Calculates the array of products used to convert between linear and tuple indices.
     inline void calculate_product_array();
@@ -94,29 +101,20 @@ namespace GFlowSimulation {
     inline void add_to_cell(const RealType*, int);
 
     //! \brief Array of products, used to compute linear indices from vectors or tuple indices.
-    int *products = nullptr;
+    int *products;
 
     //! \brief What type of borders there are in the "up" directions.
     //!
     //! 0 - None, 1 - Halo, 2 - Wrap.
-    int *border_type_up   = nullptr;
+    int *border_type_up;
 
     //! \brief What type of borders there are in the "down" directions.
     //!
     //! 0 - None, 1 - Halo, 2 - Wrap.
-    int *border_type_down = nullptr;
+    int *border_type_down;
 
     int *dim_shift_up;
     int *dim_shift_down;
-
-    //! \brief Whether the domain has been initialized or not.
-    bool initialized = false;
-
-    //! \brief The number of particles last time we built the cells.
-    int number = 0;
-
-    //! \brief The target number of particles in each particle's verlet list.
-    RealType target_list_size;
 
     //! \brief A vector holding all the cells in the domain.
     vector<Cell> cells;

@@ -1,13 +1,12 @@
-#include "hard_sphere_ds__verlet_pairs__3d.hpp"
+#include "hard_sphere_ds__3d.hpp"
 // Other files
-#include "../interactionhandlers/verletlist-pairs.hpp"
-#include "../utility/simd_generic.hpp" // For un_clamp
+#include "../utility/simd_generic.hpp"
 
 namespace GFlowSimulation {
 
-  HardSphereDs_VerletPairs_3d::HardSphereDs_VerletPairs_3d(GFlow *gflow) : HardSphereDs(gflow) {};
+  HardSphereDs_3d::HardSphereDs_3d(GFlow *gflow) : HardSphereDs(gflow) {};
 
-  void HardSphereDs_VerletPairs_3d::interact() const {
+  void HardSphereDs_3d::interact() const {
     // Common tasks
     HardSphereDs::interact();
     

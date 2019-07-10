@@ -55,6 +55,9 @@ namespace GFlowSimulation {
     //! \brief Get the sum of all the virials of all the interactions.
     RealType getTotalVirial() const;
 
+    //! \brief Returns whether any particle types have interactions.
+    bool interactingTypes() const;
+
     //! \brief Returns whether the particle type interacts with other particles.
     bool typeInteracts(int) const;
 
@@ -97,6 +100,9 @@ namespace GFlowSimulation {
 
     //! \brief Whether the i-th particle type interacts with any particles.
     vector<bool> doesInteract;
+
+    //! \brief Whether there are any interactions.
+    bool any_interactions = false;
   };
 
 }

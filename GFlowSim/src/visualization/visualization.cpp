@@ -6,7 +6,7 @@
 
 namespace GFlowSimulation {
 
-  Visualization::Visualization() {
+  Visualization::Visualization() : do_wrap(false) {
     createColorBank(10); // Default size - 10
     resolution = 1536;
   };
@@ -134,7 +134,8 @@ namespace GFlowSimulation {
 
   void Visualization::createImage(string fileName, const vector<float>& data) {
     // Get some data from the bounds
-    float wx = bounds.wd(0), wy = bounds.wd(1), left = bounds.min[0], bott = bounds.min[1];
+    float buffer = 0.;
+    float wx = bounds.wd(0) + 2*buffer, wy = bounds.wd(1) + 2*buffer, left = bounds.min[0] - buffer, bott = bounds.min[1] - buffer;
     // Figure out the needed resolution
     int res_x = resolution, res_y = resolution;
     if (wx>wy) res_y = wy/wx*resolution;

@@ -25,8 +25,8 @@ namespace GFlowSimulation {
     return integrator;
   }
 
-  class DomainBase* Base::getDomain() {
-    return domain;
+  class InteractionHandler* Base::getHandler() {
+    return handler;
   }
 
   class DataMaster* Base::getDataMaster() {

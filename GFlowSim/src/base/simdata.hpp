@@ -58,6 +58,9 @@ namespace GFlowSimulation {
     //! \brief Do a quick sort based on the particle's positions.
     void sortParticles();
 
+    //! \brief Do a quick sort based on particle's position, projected onto a vector.
+    void sortParticles(Vec&);
+
     //! \brief Update the primary particle that halo particles correspond to.
     void updateHaloParticles();
 
@@ -135,7 +138,7 @@ namespace GFlowSimulation {
     // --- Halo and Ghost particles
 
     //! \brief Create a halo particle of a certain particle, with a certain displacement from the original particle.
-    void createHaloOf(int, const RealType*);
+    void createHaloOf(int, const Vec&);
 
     //! \brief Mark all halo particles for removal and clear halo particle data.
     void removeHaloParticles();
@@ -191,7 +194,28 @@ namespace GFlowSimulation {
     //! \brief Get the needs remake flag.
     bool getNeedsRemake();
 
+    //! \brief Get the position of the first halo particle in the array.
+    int getFirstHalo();
+
+    //! \brief Get the position of the first ghost particle in the array.
+    int getFirstGhost();
+
+    //! \brief Is this the local id of an owned particle.
+    bool isReal(int);
+
+    //! \brief Is this the local id of a halo particle.
+    bool isHalo(int);
+
+    //! \brief Is this the local id of a ghost particle.
+    bool isGhost(int);
+
     // --- Mutators
+
+    //! \brief Set the position of the first halo particle in the array.
+    void setFirstHalo(int);
+
+    //! \brief Set the position of the first ghost particle in the array.
+    void setFirstGhost(int);
 
     //! \brief Set the needs remake flag.
     void setNeedsRemake(bool=true);
@@ -268,9 +292,6 @@ namespace GFlowSimulation {
     //! \brief A map between local halo particle ids and primary (local) IDs.
     std::vector<int> halo_map;
 
-    //! \brief A list of displacement vectors for halo particles
-    std::vector<RealType> halo_displacement;
-
     //! \brief A map between global id of ghost particles and local IDs.
     std::vector<int> ghost_map;
 
@@ -291,11 +312,18 @@ namespace GFlowSimulation {
     //! \brief The total capacity of the particle data arrays.
     int _capacity = 0;
 
+    //! \brief The position of the first halo particle. This assumes that halo particles are stored contiguously.
+    //!
+    //! If this value is == to _size, then there are no halo particles.
+    int _first_halo = 0;
+
+    //! \brief The position of the first ghost particle. This assumes that ghost particles are stored contiguously.
+    //!
+    //! If this value is == to _size, then there are no ghost particles.
+    int _first_ghost = 0;
+
     //! \brief Copy this data from force master.
     int _ntypes = 0;
-
-    // -*-*-*- MPI related -*-*-*-
-
   };
 
 }

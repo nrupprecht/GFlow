@@ -17,6 +17,9 @@ namespace GFlowSimulation {
     //! \brief Default constructor.
     Domain2D(GFlow*);
 
+    //! \brief Destructor.
+    ~Domain2D();
+
     //! \brief Set up the domain.
     virtual void initialize() override;
 
@@ -60,11 +63,25 @@ namespace GFlowSimulation {
  
   private:
 
+    //! \brief Migrate particles to another processor.
+    virtual void migrate_particles() override;
+
+    //! \brief Make halo particles.
+    //!
+    //! This function assumes that there are currently no halo or ghost particles stored in simdata.
+    virtual void construct_halo_particles() override;
+
+    //! \brief Communicate with other processors to create ghost particles.
+    virtual void construct_ghost_particles() override;
+
     //! \brief Calculates the dimensions of the grid, and the cell widths and inverse widths.
-    inline void calculate_domain_cell_dimensions();
+    virtual void calculate_domain_cell_dimensions() override;
 
     //! \brief Fill the cells with particle ids.
     inline void make_cells();
+
+    //! \brief Go through a cell, starting with a certain particle, checking all the particles for interactions with a specified particle.
+    inline void check_cell(int, int, bool=true);
 
     //! \brief Adjustments for halo or ghost cells on the min side.
     int min_side_edge_cells[2];
@@ -75,21 +92,17 @@ namespace GFlowSimulation {
     //! \brief Whether there are is halo duplication in the 0, 1 directions
     bool halo_cells[2];
 
-    //! \brief The i-th entry points to the start of the i-th cell in the linked cells array, or to -1 if the cell is empty.
+    //! \brief The i-th entry points to the first particle in the i-th cell, or to -1 if empty.
     int *cell_pointers = nullptr;
 
     //! \brief The number of cells
     int cells_size = 0;
 
-    //! \brief The linked cells array - contains the ids of particles in the cells.
+    //! \brief The linked cells array - the i-th entry points to the next particle in the same cell, or to -1 if it is the last.
     int *linked_cells = nullptr;
-
-    //! \brief An array used to sort particles.
-    vector<pair<int, int> > sorting_array;
 
     //! \brief The size of the linked cells array, i.e. the number of particles stored in the linked cells.
     int list_size = 0;
-
   };
 
 }

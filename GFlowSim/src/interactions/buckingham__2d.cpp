@@ -1,12 +1,10 @@
-#include "buckingham__verlet_pairs__2d.hpp"
-// Other files
-#include "../interactionhandlers/verletlist-pairs.hpp"
+#include "buckingham__2d.hpp"
 
 namespace GFlowSimulation {
 
-  Buckingham_VerletPairs_2d::Buckingham_VerletPairs_2d(GFlow *gflow) : Buckingham(gflow) {};
+  Buckingham_2d::Buckingham_2d(GFlow *gflow) : Buckingham(gflow) {};
 
-  void Buckingham_VerletPairs_2d::interact() const {
+  void Buckingham_2d::interact() const {
     // Common tasks
     Buckingham::interact();
 

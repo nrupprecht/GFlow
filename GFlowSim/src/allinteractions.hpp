@@ -8,19 +8,19 @@
 #include "interactions/buckingham.hpp"
 
 // Specific classes
-#include "interactions/hard_sphere__verlet_pairs__2d.hpp"
-#include "interactions/hard_sphere__verlet_pairs__3d.hpp"
+#include "interactions/hard_sphere__2d.hpp"
+#include "interactions/hard_sphere__3d.hpp"
 
-#include "interactions/hard_sphere_ds__verlet_pairs__2d.hpp"
-#include "interactions/hard_sphere_ds__verlet_pairs__3d.hpp"
+#include "interactions/hard_sphere_ds__2d.hpp"
+#include "interactions/hard_sphere_ds__3d.hpp"
 
 #include "interactions/hard_sphere__reflecting__2d.hpp"
 
-#include "interactions/lennard_jones__verlet_pairs__2d.hpp"
-#include "interactions/lennard_jones__verlet_pairs__3d.hpp"
+#include "interactions/lennard_jones__2d.hpp"
+#include "interactions/lennard_jones__3d.hpp"
 
-#include "interactions/buckingham__verlet_pairs__2d.hpp"
-#include "interactions/buckingham__verlet_pairs__3d.hpp"
+#include "interactions/buckingham__2d.hpp"
+#include "interactions/buckingham__3d.hpp"
 
 #include "interactions/detector.hpp"
 #include "interactions/detector__2d.hpp"

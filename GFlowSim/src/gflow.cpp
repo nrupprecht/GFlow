@@ -24,12 +24,11 @@ namespace GFlowSimulation {
     numProc = MPI::COMM_WORLD.Get_size();
     #endif
     #endif
-    // Set the static counter.
-    //DataObject::resetTotalObjects();
     // Set up basic objects. The integrator will be created by the creator.
     simData      = new SimData(this);
     integrator   = nullptr;
-    domain       = new Domain(this);
+    if (sim_dimensions==2) handler = new Domain(this); //ProjectionSorter(this);
+    else handler = new Domain(this);
     dataMaster   = new DataMaster(this);
     forceMaster  = new ForceMaster(this);
     topology     = new GridTopology(sim_dimensions);
@@ -46,13 +45,13 @@ namespace GFlowSimulation {
   GFlow::~GFlow() {
     if (simData)      delete simData;
     if (integrator)   delete integrator;
-    if (domain)       delete domain;
+    if (handler)      delete handler;
     if (dataMaster)   delete dataMaster;
     if (forceMaster)  delete forceMaster;
     if (topology)     delete topology;
     simData = nullptr;
     integrator = nullptr;
-    domain = nullptr;
+    handler = nullptr;
     dataMaster = nullptr;
     forceMaster = nullptr;
     topology = nullptr;
@@ -85,10 +84,10 @@ namespace GFlowSimulation {
     if(integrator) integrator->initialize();
     else non_null = false;
 
-    if (forceMaster) forceMaster->initialize(); // Should go before domain
+    if (forceMaster) forceMaster->initialize(); // Should go before handler
     else non_null = false;
 
-    if (domain) domain->initialize();
+    if (handler) handler->initialize();
     else non_null = false;
 
     if (dataMaster) dataMaster->initialize();
@@ -119,7 +118,7 @@ namespace GFlowSimulation {
     // Set other objects
     base->simData      = simData;
     base->integrator   = integrator;
-    base->domain       = domain;
+    base->handler      = handler;
     base->dataMaster   = dataMaster;
     base->forceMaster  = forceMaster;
     base->topology     = topology;
@@ -175,7 +174,7 @@ namespace GFlowSimulation {
     for (auto b : bodies) b->pre_integrate();
     simData->pre_integrate();
     integrator->pre_integrate();
-    domain->pre_integrate();
+    handler->pre_integrate();
     dataMaster->pre_integrate();
     forceMaster->pre_integrate();
 
@@ -188,20 +187,20 @@ namespace GFlowSimulation {
       for (auto m : modifiers) m->pre_step();
       integrator->pre_step();
       dataMaster->pre_step();
-      domain->pre_step();
+      handler->pre_step();
 
       // --> Pre-exchange
       for (auto m : modifiers) m->pre_exchange();
       integrator->pre_exchange();
       dataMaster->pre_exchange();
-      domain->pre_exchange();
+      handler->pre_exchange();
 
       // --> Pre-force
       for (auto m : modifiers) m->pre_forces();
       integrator->pre_forces(); // -- This is where VV first half kick happens (if applicable)
       dataMaster->pre_forces();
       domain_timer.start();
-      if (useForces) domain->pre_forces();   // -- This is where resectorization / verlet list creation might happen
+      if (useForces) handler->pre_forces();   // -- This is where resectorization / verlet list creation might happen
       domain_timer.stop();
       
       // --- Do interactions
@@ -214,10 +213,10 @@ namespace GFlowSimulation {
 
       // Calculate interactions and forces.
       if (useForces) {
-        // Calculate interactions
+        // Calculate interactions.
         forceMaster->interact();
 
-        // Calculate bonded interactions
+        // Calculate bonded interactions.
         if (!bondedInteractions.empty()) {
           bonded_timer.start();
           for (auto bd : bondedInteractions) bd->interact();
@@ -225,31 +224,32 @@ namespace GFlowSimulation {
         }
       }
 
-      // Update bodies
+      // Update bodies - this may include forces.
       if (!bodies.empty()) {
         body_timer.start();
         for (auto b : bodies) b->correct();
         body_timer.stop();
       }
 
-      // Update halo particles
-      simData->updateHaloParticles();
-
       // Do modifier removal
       handleModifiers();
 
       // --> Post-forces
       for (auto m : modifiers) m->post_forces(); // -- This is where modifiers should do forces (if they need to)
+      // Update halo particles. This should be done after all force calculations, but before the next integration steps.
+      // For this reason, this occurs *after* modifiers do their post-force routine.
+      simData->updateHaloParticles();
+      // Continue with normal order of updates.
       integrator->post_forces();                 // -- This is where VV second half kick happens (if applicable)
       dataMaster->post_forces();
-      domain->post_forces();
+      handler->post_forces();
 
       // --> Post-step
       if (requested_time<=elapsed_time) running = false;
       for (auto m : modifiers) m->post_step();
       integrator->post_step();
       dataMaster->post_step();
-      domain->post_step();
+      handler->post_step();
       // Timer updates
       ++iter;
       RealType dt = integrator->getTimeStep();
@@ -283,7 +283,7 @@ namespace GFlowSimulation {
     requested_time = 0;
     simData->post_integrate();
     integrator->post_integrate();
-    domain->post_integrate();
+    handler->post_integrate();
     dataMaster->post_integrate();
     forceMaster->post_integrate();
     for (auto m : modifiers) m->post_integrate();
@@ -449,13 +449,6 @@ namespace GFlowSimulation {
     }
   }
 
-  void GFlow::setBounds(Bounds b) {
-    bounds = b;
-
-    topology->setSimulationBounds(b);
-    // Sectorization updates its bounds in pre_integrate()
-  }
-
   void GFlow::setAllBCs(BCFlag type) {
     for (int d=0; d<sim_dimensions; ++d) 
       boundaryConditions[d] = type;
@@ -463,6 +456,12 @@ namespace GFlowSimulation {
 
   void GFlow::setBC(const int d, const BCFlag type) {
     boundaryConditions[d] = type;
+  }
+
+  void GFlow::setBounds(const Bounds& bnds) {
+    bounds = bnds;
+    if (handler) handler->setBounds(bnds);
+    if (topology) topology->setSimulationBounds(bnds);
   }
 
   void GFlow::setRepulsion(RealType r) {
@@ -618,7 +617,7 @@ namespace GFlowSimulation {
   }
 
   void GFlow::removeOverlapping(RealType fraction) {
-    if (domain) domain->removeOverlapping(fraction);
+    if (handler) handler->removeOverlapping(fraction);
   }
 
   void GFlow::addDataObject(class DataObject* dob) {

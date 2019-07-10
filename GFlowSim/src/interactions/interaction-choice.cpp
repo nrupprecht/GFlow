@@ -8,30 +8,30 @@ namespace GFlowSimulation {
     if (token==NoneToken) return nullptr;
     else if (token==HardSphereToken) {
       if (sim_dimensions==2)
-        return new HardSphere_VerletPairs_2d(gflow);
+        return new HardSphere_2d(gflow);
       else if (sim_dimensions==3)
-        return new HardSphere_VerletPairs_3d(gflow);
+        return new HardSphere_3d(gflow);
       else throw InvalidInteraction(token + ", " + toStr(sim_dimensions));
     }
     else if (token==HardSphereDsToken) {
       if (sim_dimensions==2)
-        return new HardSphereDs_VerletPairs_2d(gflow);
+        return new HardSphereDs_2d(gflow);
       else if (sim_dimensions==3)
-        return new HardSphereDs_VerletPairs_3d(gflow);
+        return new HardSphereDs_3d(gflow);
       else throw InvalidInteraction(token + ", " + toStr(sim_dimensions));
     }
     else if (token==LennardJonesToken) {
       if (sim_dimensions==2)
-        return new LennardJones_VerletPairs_2d(gflow);
+        return new LennardJones_2d(gflow);
       else if (sim_dimensions==3)
-        return new LennardJones_VerletPairs_3d(gflow);
+        return new LennardJones_3d(gflow);
       else throw InvalidInteraction(token + ", " + toStr(sim_dimensions));
     }
     else if (token==BuckinghamToken) {
       if (sim_dimensions==2)
-        return new Buckingham_VerletPairs_2d(gflow);
+        return new Buckingham_2d(gflow);
       else if (sim_dimensions==3)
-        return new Buckingham_VerletPairs_3d(gflow);
+        return new Buckingham_3d(gflow);
       else throw InvalidInteraction(token + ", " + toStr(sim_dimensions));
     }
     else if (token==DetectorToken) {

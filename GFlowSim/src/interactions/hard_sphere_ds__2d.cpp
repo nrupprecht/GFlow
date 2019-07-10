@@ -1,13 +1,12 @@
-#include "hard_sphere_ds__verlet_pairs__2d.hpp"
+#include "hard_sphere_ds__2d.hpp"
 // Other files
-#include "../interactionhandlers/verletlist-pairs.hpp"
-#include "../utility/simd_generic.hpp" // For un_clamp
+#include "../utility/simd_generic.hpp"
 
 namespace GFlowSimulation {
 
-  HardSphereDs_VerletPairs_2d::HardSphereDs_VerletPairs_2d(GFlow *gflow) : HardSphereDs(gflow) {};
+  HardSphereDs_2d::HardSphereDs_2d(GFlow *gflow) : HardSphereDs(gflow) {};
 
-  bool HardSphereDs_VerletPairs_2d::checks() {
+  bool HardSphereDs_2d::checks() {
     RealType **x = Base::simData->X();
     RealType **v = Base::simData->V();
     RealType **f = Base::simData->F();
@@ -17,7 +16,7 @@ namespace GFlowSimulation {
     return (x!=nullptr && v!=nullptr && f!=nullptr && sg!=nullptr && type!=nullptr && sim_dimensions==2);
   }
 
-  void HardSphereDs_VerletPairs_2d::interact() const {
+  void HardSphereDs_2d::interact() const {
     // Common tasks
     HardSphereDs::interact();
     

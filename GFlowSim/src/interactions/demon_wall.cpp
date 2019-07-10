@@ -1,7 +1,6 @@
 #include "demon_wall.hpp"
 // Other files
-#include "../interactionhandlers/verletlist-pairs.hpp"
-#include "../base/domainbase.hpp"
+#include "../base/interactionhandler.hpp"
 
 namespace GFlowSimulation {
 
@@ -76,7 +75,7 @@ namespace GFlowSimulation {
               neighbors.clear();
               X[0] = bounds.min[0] + 0.025*bnd_x + drand48()*0.45*bnd_x; // Make sure we don't appear in a wall.
               X[1] = bounds.min[1] + drand48()*bnd_y;
-              domain->getAllWithin(X, neighbors);
+              handler->getAllWithin(X, neighbors);
             } while (!neighbors.empty());
             // Place particle.
             x[id1][0] = X[0];
@@ -90,7 +89,7 @@ namespace GFlowSimulation {
               neighbors.clear();
               X[0] = bounds.min[0] + 0.525*bnd_x + drand48()*0.45*bnd_x; // Make sure we don't appear in a wall.
               X[1] = bounds.min[1] + drand48()*bnd_y;
-              domain->getAllWithin(X, neighbors);
+              handler->getAllWithin(X, neighbors);
             } while (!neighbors.empty());
             // Place particle.
             x[id1][0] = X[0];
@@ -120,7 +119,7 @@ namespace GFlowSimulation {
     }
 
     if (turn_on && !moved.empty()) {
-      domain->construct();
+      handler->construct();
     }
     // Set the flag.
     turn_on = false;

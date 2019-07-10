@@ -1,14 +1,12 @@
-#include "lennard_jones__verlet_pairs__3d.hpp"
-// Other files
-#include "../interactionhandlers/verletlist-pairs.hpp"
+#include "hard_sphere__3d.hpp"
 
 namespace GFlowSimulation {
 
-  LennardJones_VerletPairs_3d::LennardJones_VerletPairs_3d(GFlow *gflow) : LennardJones(gflow) {};
+  HardSphere_3d::HardSphere_3d(GFlow *gflow) : HardSphere(gflow) {};
 
-  void LennardJones_VerletPairs_3d::interact() const {
+  void HardSphere_3d::interact() const {
     // Common tasks
-    LennardJones::interact();
+    HardSphere::interact();
 
     // Do dimensional check.
     // \todo Should probably have some sort of global error message system.
@@ -37,10 +35,11 @@ namespace GFlowSimulation {
     RealType inv_bnd_z = 1./bnd_z;
 
     // Needed constants
-    RealType sg1, sg2, dx, dy, dz, rsqr, r, invr, gamma, g3, g6, g12, magnitude;
+    RealType sg1, sg2, dx, dy, dz, rsqr, r, invr, Fn;
 
     // --- Go through all particles
     for (int i=0; i<verlet.size(); i+=2) {
+      // Get next pair of interacting particles.
       int id1 = verlet[i];
       int id2 = verlet[i+1];
       // Check if the types are good
@@ -62,42 +61,37 @@ namespace GFlowSimulation {
         RealType dZ = bnd_z - fabs(dz);
         if (dZ<fabs(dz)) dz = dz>0 ? -dZ : dZ;
       }   
-      // Calculate squared distance
+      // Calculate squared distance.
       rsqr = dx*dx + dy*dy + dz*dz;
       // Get radii
       sg1 = sg[id1];
       sg2 = sg[id2];
-      // If close, interact. 
-      if (rsqr < sqr((sg1 + sg2)*cutoff)) {
+      // If close, interact.
+      if (rsqr < sqr(sg1 + sg2)) {
         // Calculate distance, inverse distance.
         r = sqrt(rsqr);
         invr = 1./r;
-        // Create a normal vector
+        // Create a normal vector.
         dx *= invr;
         dy *= invr;
         dz *= invr;
-        // Calculate the magnitude of the force
-        gamma = (sg1+sg2)*invr;
-        g3  = gamma*gamma*gamma; 
-        g6  = g3*g3;
-        g12 = g6*g6;
-        // Calculate magnitude
-        magnitude = 24.*strength*(2.*g12 - g6)*invr;
+        // Calculate the magnitude of the force.
+        Fn = repulsion*(sg1 + sg2 - r);
         // Update forces
-        f[id1][0] += magnitude * dx;
-        f[id1][1] += magnitude * dy;
-        f[id1][2] += magnitude * dz;
-        f[id2][0] -= magnitude * dx;
-        f[id2][1] -= magnitude * dy;
-        f[id2][2] -= magnitude * dz;
-
+        f[id1][0] += Fn * dx;
+        f[id2][0] -= Fn * dx;
+        f[id1][1] += Fn * dy;
+        f[id2][1] -= Fn * dy;
+        f[id1][2] += Fn * dz;
+        f[id2][2] -= Fn * dz;
+        
         // Calculate potential
         if (do_potential) {
-          potential += 4.*strength*(g12 - g6) - potential_energy_shift;
+          potential += 0.5*repulsion*sqr(r - sg1 - sg2);
         }
         // Calculate virial
         if (do_virial) {
-          virial += magnitude*r;
+          virial += Fn*r;
         }
       }
     }

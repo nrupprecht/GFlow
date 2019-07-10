@@ -64,18 +64,20 @@ namespace GFlowSimulation {
     gflow->setAllBCs(bcFlag);
 
     // Set the bounds of the gflow object
+    Bounds bnds = gflow->getBounds();
     if (width<=0) width = 1.; // In case of bad argument
     if (height<=0) height = width;
     for (int d=0; d<sim_dimensions; ++d) {
       if (d!=1) {
-        gflow->bounds.min[d] = -0.5*width;
-        gflow->bounds.max[d] =  0.5*width;
+        bnds.min[d] = -0.5*width;
+        bnds.max[d] =  0.5*width;
       }
       else {
-        gflow->bounds.min[d] = -0.5*height;
-        gflow->bounds.max[d] = 0.5*height;
+        bnds.min[d] = -0.5*height;
+        bnds.max[d] = 0.5*height;
       }
     }
+    gflow->setBounds(bnds);
 
     // --- Set initial particle data
     // Find how many objects to use
@@ -100,15 +102,15 @@ namespace GFlowSimulation {
       for (int d=0; d<sim_dimensions; ++d) X[d] = (drand48()-0.5)*width;
       simData->addParticle(X, V, radius, im, 0);
     }
-    // --- Initialize domain
-    gflow->domain->initialize();
+    // --- Initialize handler
+    gflow->handler->initialize();
 
     // --- Handle forces
     gflow->forceMaster->setNTypes(1); // Only one type of particle
     Interaction *force;
     if(lj_flag) {
       LennardJones *LJ;
-      if (sim_dimensions==2) LJ = new LennardJones_VerletPairs_2d(gflow);
+      if (sim_dimensions==2) LJ = new LennardJones_2d(gflow);
       else throw false;
       // Set parameters
       LJ->setStrength(repulsion*DEFAULT_LENNARD_JONES_STRENGTH);
@@ -120,8 +122,8 @@ namespace GFlowSimulation {
     }
     else {
       HardSphere *HS;
-      if (sim_dimensions==2) HS = new HardSphere_VerletPairs_2d(gflow);
-      else if (sim_dimensions==3) HS = new HardSphere_VerletPairs_3d(gflow);
+      if (sim_dimensions==2) HS = new HardSphere_2d(gflow);
+      else if (sim_dimensions==3) HS = new HardSphere_3d(gflow);
       else throw false;
       // Set parameters
       HS->setRepulsion(repulsion*DEFAULT_HARD_SPHERE_REPULSION);
@@ -131,9 +133,8 @@ namespace GFlowSimulation {
     gflow->forceMaster->setInteraction(0, 0, force);
 
     // --- Set some parameters
-    if (skinDepth>0) gflow->domain->setSkinDepth(skinDepth);
-    if (cell_size>0) gflow->domain->setCellSize(cell_size);
-    if (sample>0)    gflow->domain->setSampleSize(sample);
+    if (skinDepth>0) gflow->handler->setSkinDepth(skinDepth);
+    if (sample>0)    gflow->handler->setSampleSize(sample);
 
     // Relax the setup in two steps
     hs_relax(gflow, 0.1); // Make sure particles don't stop on top of one another
