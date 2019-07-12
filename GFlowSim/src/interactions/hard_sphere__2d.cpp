@@ -69,7 +69,8 @@ namespace GFlowSimulation {
     }
 
     // --- Do verlet wrap part.
-
+    if (verlet_wrap.empty()) return;
+    
     // Get the bounds and boundary conditions
     BCFlag boundaryConditions[2];
     copyVec(Base::gflow->getBCs(), boundaryConditions, 2); // Keep a local copy of the bcs

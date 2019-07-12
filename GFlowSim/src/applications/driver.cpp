@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
   RealType videoLength = -1.;
   RealType dt = 0.001;
   RealType maxDT = -1;
-  long double time = 10.;
+  long double time = 10;
   bool print = false;
   bool noplots = false;
   string writeDirectory = "RunData";

@@ -1,26 +1,19 @@
-#include "domain_2d.hpp"
+#include "domain_2d_cells.hpp"
 // Other files
 #include "../base/simdata.hpp"
 #include "../base/forcemaster.hpp"
 
 namespace GFlowSimulation {
 
-  Domain2D::Domain2D(GFlow *gflow) : DomainBase(gflow) {
+  Domain2DCells::Domain2DCells(GFlow *gflow) : DomainBase(gflow) {
     // Initialize to 0.
     min_side_edge_cells[0] = 1;
     min_side_edge_cells[1] = 0;
     max_side_edge_cells[0] = 1;
     max_side_edge_cells[1] = 1;
-    // Initialize to false.
-    halo_cells[0] = halo_cells[1] = false;
   };
 
-  Domain2D::~Domain2D() {
-    if (cell_pointers) delete [] cell_pointers;
-    if (linked_cells) delete [] linked_cells;
-  }
-
-  void Domain2D::initialize() {
+  void Domain2DCells::initialize() {
     // Common initialization tasks
     DomainBase::initialize();
 
@@ -45,23 +38,23 @@ namespace GFlowSimulation {
     initialized = true;
   }
 
-  void Domain2D::getAllWithin(int id1, vector<int>& neighbors, RealType distance) {
+  void Domain2DCells::getAllWithin(int id1, vector<int>& neighbors, RealType distance) {
     // STUB
   }
 
-  void Domain2D::removeOverlapping(RealType) {
+  void Domain2DCells::removeOverlapping(RealType) {
     // STUB
   }
 
-  void Domain2D::setSkinDepth(RealType) {
+  void Domain2DCells::setSkinDepth(RealType) {
 
   }
 
-  void Domain2D::setCellSize(RealType) {
+  void Domain2DCells::setCellSize(RealType) {
 
   }
 
-  void Domain2D::construct() {
+  void Domain2DCells::construct() {
     DomainBase::construct();
 
     // Only bother constructing under some circumstances.
@@ -70,84 +63,42 @@ namespace GFlowSimulation {
     // Fill up cells.
     update_cells();
 
-    // Create stencil of offsets.
-    const int stencil_size = 4;
-    int stencil[stencil_size];
-    stencil[0] = -dims[0]-1; // Bottom left
-    stencil[1] = -1;         // Left
-    stencil[2] = dims[0]-1;  // Top left
-    stencil[3] = -dims[0];   // Bottom
-    
-    // Iterate through cells.
-    for (int c=0; c<cells_size; ++c) {
-      // Get the first position in the array.
-      int id1 = cell_pointers[c];
-      // Check if this is a real particle.
-      if (id1<0) continue;
-      // Go through all id1's in the first cell.
-      while (id1!=-1) {
-        // Is this particle "small"?
-        bool is_small = (simData->Sg(id1)<=max_small_sigma);
-        // Go through all the particles in the same cells.
-        int id2 = linked_cells[id1];
-        // Check this cell.
-        check_cell(id1, id2);
-        // Check surrounding cells.
-        if (is_small) {
-          // Go through particles in adjacent cells.
-          for (int s=0; s<stencil_size; ++s) {
-            // Get the number of the other cell.
-            int c2 = c + stencil[s];
-            // Make sure the cell is valid.
-            if (c2<0 || cells_size<=c2) continue;
-            // Go through all particles in the cell.
-            id2 = cell_pointers[c2];
-            // Check cells.
-            check_cell(id1, id2);
-          }
-        }
-        else { // "Large" particle.
-          // Find which cell this is.
-          int cx1 = c % dims[0];
-          int cy1 = c / dims[0];
-          RealType search_width = 2*simData->Sg(id1)*max_cutoffs[simData->Type(id1)]+skin_depth;
-          int sx = static_cast<int>(ceil(search_width/widths[0]));
-          int sy = static_cast<int>(ceil(search_width/widths[1]));
-          bool wrapX = gflow->getBC(0)==BCFlag::WRAP;
-          bool wrapY = gflow->getBC(1)==BCFlag::WRAP;
-          // Search around the particle.
-          for (int dy=-sy; dy<=sy; ++dy)
-            for (int dx=-sx; dx<=sx; ++dx) {
-              // Cell coords
-              int cx2 = cx1 + dx, cy2 = cy1 + dy;
-              // Potentially wrap cells
-              if (wrapX) {
-                if (cx2<min_side_edge_cells[0]) cx2 += dims[0] - min_side_edge_cells[0] - max_side_edge_cells[0];
-                else if (dims[0]+min_side_edge_cells[0]<cx2) cx2 -= dims[0] - min_side_edge_cells[0] - max_side_edge_cells[0];
-              }
-              if (wrapY) {
-                if (cy2<min_side_edge_cells[1]) cy2 += dims[1] - min_side_edge_cells[1] - max_side_edge_cells[1];
-                else if (dims[1]+min_side_edge_cells[0]<cy2) cy2 -= dims[1] - min_side_edge_cells[1] - max_side_edge_cells[1];
-              }
-              // If a good cell, search through it.
-              if ( min_side_edge_cells[0]<=cx2 && cx2<dims[0]+min_side_edge_cells[0] 
-                && min_side_edge_cells[1]<=cy2 && cy2<dims[1]+min_side_edge_cells[1]) {
-                int c2 = cy2*dims[0] + cx2;
-                id2 = cell_pointers[c2];
-                check_cell_large(id1, id2);
-              }
-            }
+    RealType **x = simData->X(), *sg = simData->Sg();
+    RealType dx[2], rsqr;
+    int *type = simData->Type();
+
+    for (const auto &c1 : cells)
+      for (auto p=c1.particle_ids.begin(); p!=c1.particle_ids.end(); ++p) {
+        // The id of the first particle.
+        int id1 = *p;
+        RealType radius1 = sg[id1]*max_cutoffs[type[id1]] + skin_depth;
+        // Search through the same cell
+        for (auto q = p+1; q!=c1.particle_ids.end(); ++q) {
+          // The id of the second particle.
+          int id2 = *q;
+          // Get distance between particles.
+          dx[0] = x[id1][0] - x[id2][0];
+          dx[1] = x[id1][1] - x[id2][1];
+          rsqr = sqr(dx[0]) + sqr(dx[1]);
+          // If close enough, check if they interact.
+          if (rsqr < sqr(radius1 + sg[id2]))
+            pair_interaction_nw(id1, id2);
         }
 
-        // "Increment" the cell id.
-        id1 = linked_cells[id1];
+        // Search through adjacent cells.
+        if (sg[id1] < max_small_sigma) {
+          for (auto c2 : c1.adjacent) check_cell(id1, c2);
+        }
+        else {
+          // Large particle.
+        }
       }
-    }
+
 
     forceMaster->close();
   }
 
-  void Domain2D::calculate_domain_cell_dimensions() {
+  void Domain2DCells::calculate_domain_cell_dimensions() {
     // sim_dimensions = 2
     for (int d=0; d<sim_dimensions; ++d) {
       dims[d] = static_cast<int>(domain_bounds.wd(d)/target_cell_size);
@@ -160,23 +111,15 @@ namespace GFlowSimulation {
       dims[d] += (min_side_edge_cells[d] + max_side_edge_cells[d]);
     }
 
-    // Compute number of cells. If we need to change it, allocate a new array.
-    if (cells_size!=dims[0]*dims[1]) {
-      if (cell_pointers) delete [] cell_pointers;
-      cells_size = dims[0]*dims[1];
-    }
-
-    // Create the cell pointers array.
-    if (cells_size>0) cell_pointers = new int[cells_size];
-    else cell_pointers = nullptr;
+    create_cells();
   }
 
 
-  void Domain2D::migrate_particles() {
+  void Domain2DCells::migrate_particles() {
 
   }
 
-  void Domain2D::construct_halo_particles() {
+  void Domain2DCells::construct_halo_particles() {
     // No particles.
     if (simData->size()==0) return;
     // Get wrapping information.
@@ -230,25 +173,45 @@ namespace GFlowSimulation {
     simData->setFirstGhost(simData->size());
   }
 
-  void Domain2D::construct_ghost_particles() {
+  void Domain2DCells::construct_ghost_particles() {
 
   }
 
-  inline void Domain2D::update_cells() {
+  inline void Domain2DCells::create_cells() {
+    // Compute number of cells.
+    const int size = dims[0]*dims[1];
+    if (size==cells.size()) return;
+    cells = vector<Cell>(size, Cell(sim_dimensions));
+
+    // Create stencil of offsets.
+    const int stencil_size = 4;
+    int stencil[stencil_size];
+    stencil[0] = -dims[0]-1; // Bottom left
+    stencil[1] = -1;         // Left
+    stencil[2] = dims[0]-1;  // Top left
+    stencil[3] = -dims[0];   // Bottom
+
+    for (int y=0; y<dims[1]; ++y) {
+      for (int x=0; x<dims[0]; ++x) {
+        // Linear index of this cell.
+        int c = y*dims[0] + x;
+        // Add adjacent cells.
+        if (0<=x-1) {
+          if (0<=y-1) cells[c].adjacent.push_back(&cells[c + stencil[0]]);
+          cells[c].adjacent.push_back(&cells[c + stencil[1]]);
+          if (y+1<dims[1]) cells[c].adjacent.push_back(&cells[c + stencil[2]]);
+        }
+        if (0<=y-1) cells[c].adjacent.push_back(&cells[c + stencil[3]]); 
+      }
+    }
+  }
+
+  inline void Domain2DCells::update_cells() {
     // Get the size.
     int size = simData->size();
 
-    // Check if we have to remake the linked cells array.
-    if (size>list_size) {
-      if (linked_cells) delete [] linked_cells;
-      if (size>0) linked_cells = new int[size];
-      else linked_cells = nullptr;
-      list_size = size;
-    }
-
     // First "clear" cells
-    for (int i=0; i<cells_size; ++i) cell_pointers[i] = -1;
-    for (int i=0; i<list_size; ++i)  linked_cells [i] = -1;
+    for (auto &cell : cells) cell.particle_ids.clear();
 
     // Get data arrays
     RealType **x = simData->X();
@@ -268,43 +231,38 @@ namespace GFlowSimulation {
 
       // Compute the linear cell index
       int index = cy*dims[0] + cx;
-      linked_cells[i] = cell_pointers[index];
-      cell_pointers[index] = i;
+      cells[index].particle_ids.push_back(i);
     }
   }
 
-  inline void Domain2D::check_cell(int id1, int id2) {
+  inline void Domain2DCells::check_cell(int id1, const Cell *cell) {
+    // Set up.
+    RealType dx[2], radius1 = simData->Sg(id1) + skin_depth, rsqr = 0;
+    RealType **x = simData->X();
+    RealType *sg = simData->Sg();
+
+    for (const auto id2 : cell->particle_ids) {
+      // If the other particle is a large particle, it will take care of this interaction
+      if (sg[id2]>max_small_sigma) continue;
+      // Get distance between particles.
+      dx[0] = x[id1][0] - x[id2][0];
+      dx[1] = x[id1][1] - x[id2][1];
+      rsqr = sqr(dx[0]) + sqr(dx[1]);
+      // If close enough, check if they interact.
+      if (rsqr < sqr(radius1 + sg[id2]) || rsqr > sqr(0.9*bounds.wd(0))) // *max_cutoffs[simData->Type(id2)]
+        pair_interaction_nw(id1, id2);
+    }
+  }
+
+  inline void Domain2DCells::check_cell_large(int id1, int id2) {
     if (id2<0) return;
 
     // Set up.
     RealType dx[2], radius1 = simData->Sg(id1)*max_cutoffs[simData->Type(id1)] + skin_depth, rsqr = 0;
     RealType **x = simData->X();
     RealType *sg = simData->Sg();
-    // Go through particles in second cell, starting with id2.
-    while (-1<id2) {
-      // If the other particle is large, continue.
-      if (simData->Sg(id2)<max_small_sigma) {
-        // Get distance between particles.
-        dx[0] = x[id1][0] - x[id2][0];
-        dx[1] = x[id1][1] - x[id2][1];
-        rsqr = sqr(dx[0]) + sqr(dx[1]);
-        // If close enough, check if they interact.
-        if (rsqr < sqr(radius1 + sg[id2])) // *max_cutoffs[simData->Type(id2)]
-          pair_interaction_nw(id1, id2);
-      }
 
-      // "Increment" id2
-      id2 = linked_cells[id2];
-    }
-  }
-
-  inline void Domain2D::check_cell_large(int id1, int id2) {
-    if (id2<0) return;
-
-    // Set up.
-    RealType dx[2], radius1 = simData->Sg(id1)*max_cutoffs[simData->Type(id1)] + skin_depth, rsqr = 0;
-    RealType **x = simData->X();
-    RealType *sg = simData->Sg();
+    /*
     // Go through particles in second cell, starting with id2.
     while (-1<id2) {
       // If the other particle is large, continue.
@@ -323,6 +281,7 @@ namespace GFlowSimulation {
       // "Increment" id2
       id2 = linked_cells[id2];
     }
+    */
   }
 
 }

@@ -25,6 +25,8 @@ namespace GFlowSimulation {
     bounds = gflow->getBounds();
     // Get the bounds from the gflow object - for now assumes this is the only domain, so bounds==domain_bounds
     domain_bounds = gflow->getBounds();
+    // Get the array of max cutoffs.
+    max_cutoffs = forceMaster->getMaxCutoff();
   }
 
   void InteractionHandler::pre_integrate() {
@@ -230,7 +232,7 @@ namespace GFlowSimulation {
     return 2.*sqrt(maxDSqr);
   }
 
-  void InteractionHandler::pair_interaction(int id1, int id2, bool no_ghosts) {
+  void InteractionHandler::pair_interaction(int id1, int id2) {
     /*
     // Check if this force exists and should be handled by this handler.
     Interaction *it = grid[id1][id2];
@@ -238,7 +240,7 @@ namespace GFlowSimulation {
     if (it) it->addPair(id1, id2);
     */
 
-    if (no_ghosts && !simData->isReal(id1) && !simData->isReal(id2)) return;
+    if (!simData->isReal(id1) && !simData->isReal(id2)) return;
 
     // Check with force master
     Interaction *it = forceMaster->getInteraction(simData->Type(id1), simData->Type(id2));
@@ -246,7 +248,7 @@ namespace GFlowSimulation {
     if (it) it->addPair(id1, id2);
   }
 
-  void InteractionHandler::pair_interaction_nw(int id1, int id2, bool no_ghosts) {
+  void InteractionHandler::pair_interaction_nw(int id1, int id2) {
     /*
     // Check if this force exists and should be handled by this handler.
     Interaction *it = grid[id1][id2];
@@ -254,7 +256,7 @@ namespace GFlowSimulation {
     if (it) it->addPairNW(id1, id2);
     */
 
-    if (no_ghosts && !simData->isReal(id1) && !simData->isReal(id2)) return;
+    if (!simData->isReal(id1) && !simData->isReal(id2)) return;
 
     // Check with force master
     Interaction *it = forceMaster->getInteraction(simData->Type(id1), simData->Type(id2));

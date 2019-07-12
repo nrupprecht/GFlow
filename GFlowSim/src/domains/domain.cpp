@@ -346,7 +346,7 @@ namespace GFlowSimulation {
             // Look for distance between particles
             RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
             if (r2 < sqr(sigma1 + sg[id2]*max_cutoffs[type[id2]] + skin_depth))
-              pair_interaction(id1, id2);
+              pair_interaction_nw(id1, id2);
           }
           // Seach through list of adjacent cells
           for (const auto &d : c.adjacent)
@@ -355,8 +355,9 @@ namespace GFlowSimulation {
               if (sg[id2]*max_cutoffs[type[id2]]>max_small_sigma) continue;
               // Look for distance between particles
               RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
-              if (r2 < sqr(sigma1 + sg[id2]*max_cutoffs[type[id2]] + skin_depth) || max_reasonable<r2)
-                pair_interaction(id1, id2);
+              if (r2 < sqr(sigma1 + sg[id2]*max_cutoffs[type[id2]] + skin_depth))
+                pair_interaction_nw(id1, id2);
+              else if (max_reasonable<r2) pair_interaction(id1, id2);
             }
         }
         
@@ -391,8 +392,9 @@ namespace GFlowSimulation {
                 // If the other particle is a larger particle, it will take care of this interaction
                 if (id1==id2 || sg[id2]>sg[id1]) continue;
                 RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
-                if (r2 < sqr(sigma1 + sg[id2]*max_cutoffs[type[id2]] + skin_depth) || max_reasonable<r2)
-                  pair_interaction(id1, id2);
+                if (r2 < sqr(sigma1 + sg[id2]*max_cutoffs[type[id2]] + skin_depth))
+                  pair_interaction_nw(id1, id2);
+                else if (max_reasonable<r2) pair_interaction(id1, id2);
               }
             }
           }

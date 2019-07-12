@@ -1,17 +1,15 @@
-#ifndef __DOMAIN_2D_HPP__GFLOW__
-#define __DOMAIN_2D_HPP__GFLOW__
+#ifndef __DOMAIN_2D_CELLS_HPP__GFLOW__
+#define __DOMAIN_2D_CELLS_HPP__GFLOW__
 
 #include "../base/domainbase.hpp"
+#include "cell.hpp"
 
 namespace GFlowSimulation {
 
-  class Domain2D : public DomainBase {
+  class Domain2DCells : public DomainBase {
   public:
     //! \brief Default constructor.
-    Domain2D(GFlow*);
-
-    //! \brief Destructor.
-    ~Domain2D();
+    Domain2DCells(GFlow*);
 
     //! \brief Set up the domain.
     virtual void initialize() override;
@@ -70,11 +68,14 @@ namespace GFlowSimulation {
     //! \brief Calculates the dimensions of the grid, and the cell widths and inverse widths.
     virtual void calculate_domain_cell_dimensions() override;
 
+    //! \brief Create the cells.
+    inline void create_cells();
+
     //! \brief Fill the cells with particle ids.
     inline void update_cells();
 
     //! \brief Go through a cell, starting with a certain particle, checking all the particles for interactions with a specified particle.
-    inline void check_cell(int, int);
+    inline void check_cell(int, const Cell*);
 
     //! \brief Do a cell check for a large particle.
     inline void check_cell_large(int, int);
@@ -85,21 +86,9 @@ namespace GFlowSimulation {
     //! \brief Adjustments for halo or ghost cells on the max side.
     int max_side_edge_cells[2];
 
-    //! \brief Whether there are is halo duplication in the 0, 1 directions
-    bool halo_cells[2];
-
-    //! \brief The i-th entry points to the first particle in the i-th cell, or to -1 if empty.
-    int *cell_pointers = nullptr;
-
-    //! \brief The number of cells
-    int cells_size = 0;
-
-    //! \brief The linked cells array - the i-th entry points to the next particle in the same cell, or to -1 if it is the last.
-    int *linked_cells = nullptr;
-
-    //! \brief The size of the linked cells array, i.e. the number of particles stored in the linked cells.
-    int list_size = 0;
+    //! \brief A vector holding all the cells in the domain.
+    vector<Cell> cells;
   };
 
 }
-#endif // __DOMAIN_2D_HPP__GFLOW__
+#endif // __DOMAIN_2D_CELLS_HPP__GFLOW__

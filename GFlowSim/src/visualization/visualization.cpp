@@ -178,7 +178,7 @@ namespace GFlowSimulation {
             return color*makePixel(floor(s)); 
           }
         };
-
+        
       // Draw the particle
       image.drawCircle(pos[0] - left, pos[1] - bott, radius_multiple*sigma, colorF, do_wrap);
     }

@@ -27,7 +27,7 @@ namespace GFlowSimulation {
     // Set up basic objects. The integrator will be created by the creator.
     simData      = new SimData(this);
     integrator   = nullptr;
-    if (sim_dimensions==2) handler = new Domain2D(this);
+    if (sim_dimensions==2) handler = new Domain(this);
     else handler = new Domain(this);
     dataMaster   = new DataMaster(this);
     forceMaster  = new ForceMaster(this);
