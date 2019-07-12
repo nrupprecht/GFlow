@@ -307,7 +307,7 @@ namespace GFlowSimulation {
     update_cells();
 
     // Set a "maximum reasonable distance"
-    RealType max_reasonable = sqr(0.9*bounds.wd(0));
+    RealType max_reasonable = sqr(0.5*bounds.wd(0));
 
     // If there are no interaction, we don't need to make any verlet lists
     if (gflow->getInteractions().empty()) return;
@@ -345,8 +345,9 @@ namespace GFlowSimulation {
             if (sg[id2]*max_cutoffs[type[id2]]>max_small_sigma) continue;
             // Look for distance between particles
             RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
-            if (r2 < sqr(sigma1 + sg[id2]*max_cutoffs[type[id2]] + skin_depth))
+            if (r2 < sqr(sigma1 + sg[id2]*max_cutoffs[type[id2]] + skin_depth)) {
               pair_interaction_nw(id1, id2);
+            }
           }
           // Seach through list of adjacent cells
           for (const auto &d : c.adjacent)
@@ -393,7 +394,7 @@ namespace GFlowSimulation {
                 if (id1==id2 || sg[id2]>sg[id1]) continue;
                 RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
                 if (r2 < sqr(sigma1 + sg[id2]*max_cutoffs[type[id2]] + skin_depth))
-                  pair_interaction_nw(id1, id2);
+                  pair_interaction(id1, id2);
                 else if (max_reasonable<r2) pair_interaction(id1, id2);
               }
             }
@@ -435,6 +436,7 @@ namespace GFlowSimulation {
   }
 
   inline void Domain::assign_border_types() {
+    /*
     const BCFlag *bcs = Base::gflow->getBCs(); // Get the boundary condition flags
     //! \todo Use topology object to determine border types.
     //! For now, just use halo cells whenever possible.
@@ -448,6 +450,7 @@ namespace GFlowSimulation {
         border_type_down[d] = 0;
       }
     }
+    */
   }
 
   void Domain::calculate_domain_cell_dimensions() {
@@ -498,6 +501,7 @@ namespace GFlowSimulation {
     int *little_dims = new int[sim_dimensions], *center = new int[sim_dimensions];
     for (int d=0; d<sim_dimensions; ++d) little_dims[d] = 2*sweep+1;
     for (int d=0; d<sim_dimensions; ++d) center[d]      = sweep;
+
     // Create stencil
     for (int i=0; i<floor(0.5*pow(2*sweep+1, sim_dimensions)); ++i) {
       getAddressCM(i, little_dims, tuple1, sim_dimensions);
@@ -516,13 +520,14 @@ namespace GFlowSimulation {
     // --- Assign cell types, adjacent cells, set cell bounds
     for (int c=0; c<size; ++c) {
       linear_to_tuple(c, tuple1);
+      //bool edge = false;
+      //for (int d=0; d<sim_dimensions; ++d) edge |= ((tuple1[d]==0 || tuple1[d]==dims[d]-1) && dim_shift_down[d]);
+      //if (edge) continue;
+
       // Set cell neighbors
       for (auto n : neighbor_indices) {
         addVec(tuple1, n, tuple2, sim_dimensions);
-
-        if ((tuple1[0]==0 || tuple1[0]==dims[0]-1) && dim_shift_down[0]) continue;
-        if ((tuple1[1]==0 || tuple1[1]==dims[1]-1) && dim_shift_down[1]) continue;
-
+        
         if (correct_index(tuple2, true)) {
           int linear;
           tuple_to_linear(linear, tuple2);
@@ -530,6 +535,7 @@ namespace GFlowSimulation {
         }
       }
     }
+
 
     // Clean up 
     delete [] tuple1;

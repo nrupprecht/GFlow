@@ -87,6 +87,9 @@ namespace GFlowSimulation {
       }
     }
 
+    // --- Do verlet wrap part.
+    if (verlet_wrap.empty()) return;
+
     // Get the bounds and boundary conditions
     Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
     bool wrapX = gflow->getBC(0)==BCFlag::WRAP;

@@ -22,16 +22,6 @@ namespace GFlowSimulation {
     // \todo Should probably have some sort of global error message system.
     if (x==nullptr || f==nullptr || sg==nullptr || type==nullptr) return;
 
-    // Get the bounds and boundary conditions
-    Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
-    BCFlag boundaryConditions[2];
-    copyVec(Base::gflow->getBCs(), boundaryConditions, 2); // Keep a local copy of the bcs
-    // Extract bounds related data
-    RealType bnd_x = bounds.wd(0);
-    RealType inv_bnd_x = 1./bnd_x;
-    RealType bnd_y = bounds.wd(1);
-    RealType inv_bnd_y = 1./bnd_y;
-
     // Needed constants
     RealType sg1, sg2, dx, dy, rsqr, r, invr, gamma, g3, g6, g12, magnitude;
 
@@ -39,6 +29,64 @@ namespace GFlowSimulation {
     for (int i=0; i<verlet.size(); i+=2) {
       int id1 = verlet[i];
       int id2 = verlet[i+1];
+
+      // Check if the types are good
+      if (type[id1]<0 || type[id2]<0) continue;
+
+      // Calculate displacement
+      dx = x[id1][0] - x[id2][0];
+      dy = x[id1][1] - x[id2][1];
+      // Calculate squared distance
+      rsqr = dx*dx + dy*dy;
+      // Get radii
+      sg1 = sg[id1];
+      sg2 = sg[id2];
+      // If close, interact.
+      if (rsqr < sqr((sg1 + sg2)*cutoff)) {
+        // Calculate distance, inverse distance.
+        r = sqrt(rsqr);
+        invr = 1./r;
+        // Create a normal vector
+        dx *= invr;
+        dy *= invr;
+        // Calculate the magnitude of the force
+        gamma = (sg1+sg2)*invr;
+        g3  = gamma*gamma*gamma; 
+        g6  = g3*g3;
+        g12 = g6*g6;
+        // Calculate magnitude
+        magnitude = 24.*strength*(2.*g12 - g6)*invr;
+        // Update forces
+        f[id1][0] += magnitude * dx;
+        f[id1][1] += magnitude * dy;
+        f[id2][0] -= magnitude * dx;
+        f[id2][1] -= magnitude * dy;
+
+        // Calculate potential
+        if (do_potential) {
+          potential += 4.*strength*(g12 - g6) - potential_energy_shift;
+        }
+        // Calculate virial
+        if (do_virial) {
+          virial += magnitude*r;
+        }
+      }
+    }
+
+    // --- Do verlet wrap part.
+    if (verlet_wrap.empty()) return;
+
+    // Get the bounds and boundary conditions
+    Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
+    BCFlag boundaryConditions[2];
+    copyVec(Base::gflow->getBCs(), boundaryConditions, 2); // Keep a local copy of the bcs
+    // Extract bounds related data
+    RealType bnd_x = bounds.wd(0);
+    RealType bnd_y = bounds.wd(1);
+
+    for (int i=0; i<verlet_wrap.size(); i+=2) {
+      int id1 = verlet_wrap[i];
+      int id2 = verlet_wrap[i+1];
 
       // Check if the types are good
       if (type[id1]<0 || type[id2]<0) continue;

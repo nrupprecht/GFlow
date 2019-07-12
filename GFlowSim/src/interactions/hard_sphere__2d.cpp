@@ -34,7 +34,6 @@ namespace GFlowSimulation {
       // Calculate displacement.
       dx = x[id1][0] - x[id2][0];
       dy = x[id1][1] - x[id2][1];
-
       // Calculate squared distance
       rsqr = dx*dx + dy*dy;
       // Get radii

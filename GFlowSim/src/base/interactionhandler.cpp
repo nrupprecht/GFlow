@@ -14,11 +14,15 @@ namespace GFlowSimulation {
   InteractionHandler::~InteractionHandler() {
     if (positions) dealloc_array_2d(positions);
     positions = nullptr;
+    if (cutoff_grid) dealloc_array_2d(cutoff_grid);
+    cutoff_grid = nullptr;
   }
 
   void InteractionHandler::initialize() {
     // Base initialization tasks.
     Base::initialize();
+    // Set up grids
+    set_up_grids();
     // Calculate the maxiumu "small sigma"
     calculate_max_small_sigma();
     // Get the simulation bounds from gflow
@@ -57,7 +61,6 @@ namespace GFlowSimulation {
     if (simData->getNeedsRemake()) construct();
     else if (update_decision_type==0 && current_time-last_update>update_delay) {
       if (gflow->getNumInteractions()>0 && check_needs_remake()) construct();
-      //else Base::gflow->wrapPositions();
     }
     else if (update_decision_type==1 && update_delay_steps<=steps_since_last_remake) construct();
   }
@@ -74,8 +77,7 @@ namespace GFlowSimulation {
     // Wrap the particles, so they are in their cannonical positions
     gflow->wrapPositions();
     // Reset the verlet lists of all the forces
-    forceMaster->clear();
-    
+    forceMaster->clear();    
     // Set timer
     last_update = gflow->getElapsedTime();
     // Reset
@@ -232,34 +234,37 @@ namespace GFlowSimulation {
     return 2.*sqrt(maxDSqr);
   }
 
+  inline void InteractionHandler::set_up_grids() {
+    // Get ntypes 
+    ntypes = forceMaster->getNTypes();
+    // Handle cutoff grid.
+    if (cutoff_grid) dealloc_array_2d(cutoff_grid);
+    cutoff_grid = ntypes>0 ? alloc_array_2d<RealType>(ntypes, ntypes) : nullptr; 
+    // Handle interaction grid.
+    if (interaction_grid) dealloc_array_2d(interaction_grid);
+    interaction_grid = ntypes>0 ? alloc_array_2d<Interaction*>(ntypes, ntypes) : nullptr;
+
+    for (int j=0; j<ntypes; ++j)
+      for (int i=0; i<ntypes; ++i) {
+        interaction_grid[i][j] = forceMaster->grid[i][j];
+        cutoff_grid[i][j] = (interaction_grid[i][j]) ? interaction_grid[i][j]->getCutoff() : 0.;
+      }
+  }
+
   void InteractionHandler::pair_interaction(int id1, int id2) {
-    /*
-    // Check if this force exists and should be handled by this handler.
-    Interaction *it = grid[id1][id2];
-    // A null force means no interaction
-    if (it) it->addPair(id1, id2);
-    */
-
+    // Make sure it is not the case that both particles are not real.
     if (!simData->isReal(id1) && !simData->isReal(id2)) return;
-
-    // Check with force master
-    Interaction *it = forceMaster->getInteraction(simData->Type(id1), simData->Type(id2));
+    // Get the interaction.
+    Interaction *it = interaction_grid[simData->Type(id1)][simData->Type(id2)];
     // A null force means no interaction
     if (it) it->addPair(id1, id2);
   }
 
   void InteractionHandler::pair_interaction_nw(int id1, int id2) {
-    /*
-    // Check if this force exists and should be handled by this handler.
-    Interaction *it = grid[id1][id2];
-    // A null force means no interaction
-    if (it) it->addPairNW(id1, id2);
-    */
-
+    // Make sure it is not the case that both particles are not real.
     if (!simData->isReal(id1) && !simData->isReal(id2)) return;
-
-    // Check with force master
-    Interaction *it = forceMaster->getInteraction(simData->Type(id1), simData->Type(id2));
+    // Get the interaction.
+    Interaction *it = interaction_grid[simData->Type(id1)][simData->Type(id2)];
     // A null force means no interaction
     if (it) it->addPairNW(id1, id2);
   }

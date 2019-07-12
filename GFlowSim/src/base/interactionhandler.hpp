@@ -110,6 +110,9 @@ namespace GFlowSimulation {
     //! \brief Find an upper bounds on the maximum distance two particles might have moved relative to one another.
     RealType find_max_motion();
 
+    //! \brief Set up interaction and cutoff grids.
+    inline void set_up_grids();
+
     //! \brief If the two particles interact, and the interaction is handled by this interaction handler, add to the relevant interaction.
     //!
     //! This version adds particles to the verlet_wrap list.
@@ -128,8 +131,14 @@ namespace GFlowSimulation {
     //! \brief The bounds of the entire simulation
     Bounds bounds;
 
+    //! \brief The number of particle types.
+    int ntypes = 0;
+
     //! \brief Interaction grid.
-    vector<vector<Interaction*> > grid;
+    Interaction*** interaction_grid;
+
+    //! \brief An array of cutoffs, ntypes x ntypes.
+    RealType **cutoff_grid = nullptr;
 
     //! \brief Cutoff factors for each particle type
     vector<RealType> max_cutoffs;

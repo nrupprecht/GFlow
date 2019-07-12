@@ -85,6 +85,9 @@ namespace GFlowSimulation {
     //! \brief Initialize the does interact array.
     void initialize_does_interact();
 
+    // Interaction handler is a friend class.
+    friend class InteractionHandler;
+
   private:
     //! \brief Interaction grid.
     vector<vector<Interaction*> > grid;
