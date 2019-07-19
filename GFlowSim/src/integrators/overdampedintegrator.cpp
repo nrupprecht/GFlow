@@ -62,13 +62,7 @@ namespace GFlowSimulation {
     #if SIMD_TYPE==SIMD_NONE
     for (int i=0; i<size*sim_dimensions; ++i) {
       int id = i/sim_dimensions;
-      x[i] += dampingConstant*im[id]*f[i]*dt;
-      // Debug mode asserts
-      #if DEBUG==1
-      assert(!isnan(f[i]));
-      assert(!isnan(x[i]));
-      assert(fabs(f[i])<MAX_REASONABLE_F);
-      #endif 
+      x[i] += dampingConstant*im[id]*f[i]*dt;      
     }
     #else
     // Get dampingConstant * dt

@@ -2,14 +2,17 @@
 Dimensions: 2
 
 Var: phi=0.5
+Var: width=4
 
 // Set the simulation bounds
 Bounds: {
-  : 0, 4 // X
-  : 0, 4 // Y
+  : 0, width // X
+  : 0, width // Y
 }
 
-Integrator: VelocityVerlet
+Integrator: LangevinIntegrator {
+  Temperature: 0.00001
+}
 
 Boundary: Wrap
 
@@ -17,7 +20,7 @@ Boundary: Wrap
 NTypes: 1
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
-Force-grid: HardSphere
+Force-grid: Coulomb
 
 // Fill an area with particles
 Fill: Area {
@@ -33,8 +36,6 @@ Fill: Area {
   Number: Phi=phi {
     TypeA : 1
   }
-
-  Velocity: Temperature=0.001
 }
 
 

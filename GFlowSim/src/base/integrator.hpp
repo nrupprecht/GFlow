@@ -44,6 +44,12 @@ namespace GFlowSimulation {
     //! \brief Set the minimum allowed time step.
     void setMinDT(RealType);
 
+    //! \brief Get the max_dt.
+    RealType getMaxDT() const;
+
+    //! \brief Get the min_dt.
+    RealType getMinDT() const;
+
     //! \brief Returns the maximum velocity.
     RealType get_max_velocity();
 

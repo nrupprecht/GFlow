@@ -135,7 +135,7 @@ namespace GFlowSimulation {
     int ntypes = 0;
 
     //! \brief Interaction grid.
-    Interaction*** interaction_grid;
+    Interaction*** interaction_grid = nullptr;
 
     //! \brief An array of cutoffs, ntypes x ntypes.
     RealType **cutoff_grid = nullptr;

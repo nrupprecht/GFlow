@@ -3,6 +3,9 @@
 #include "simdata.hpp"
 #include "../utility/simd_utility.hpp"
 
+#include "forcemaster.hpp"
+#include "interaction.hpp"
+
 namespace GFlowSimulation {
 
   Integrator::Integrator(GFlow *gflow) : Base(gflow), dt(0.0001), adjust_dt(true), min_dt(1e-6), max_dt(0.002), 
@@ -90,6 +93,14 @@ namespace GFlowSimulation {
     if (t>0) min_dt = t;
   }
 
+  RealType Integrator::getMaxDT() const {
+    return max_dt;
+  }
+
+  RealType Integrator::getMinDT() const {
+    return min_dt;
+  }
+
   RealType Integrator::get_max_velocity() {
     // Check the velocity components of all the particles
     RealType *v = simData->V_arr();
@@ -121,7 +132,6 @@ namespace GFlowSimulation {
     for (; i<total; ++i)
       if (maxV<fabs(v[i])) maxV = fabs(v[i]);
     #endif
-
     // Return the max velocity
     return maxV*sqrt(sim_dimensions);
   }

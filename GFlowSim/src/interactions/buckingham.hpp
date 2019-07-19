@@ -23,6 +23,11 @@ namespace GFlowSimulation {
     //! \brief Set the strength parameter.
     void setStrength(RealType s) { strength = s; }
 
+    //! \brief Suggests a safe timescale given the minimum mass of a particle that has this interaction.
+    RealType suggest_timescale(RealType mass) const override{
+      return -1; // \todo Calculate this.
+    }
+
   protected:
     //! \brief The ratio r0/r1 factor, where r0 is the sum of the particle radii.
     RealType ratio;

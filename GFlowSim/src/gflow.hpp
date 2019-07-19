@@ -6,6 +6,8 @@
 
 #include "utility/timer.hpp"
 
+// Note to self: Using debuggers in MPI parallel: https://www.open-mpi.org/faq/?category=debugging
+
 namespace GFlowSimulation {
 
   //! \brief What mode of running is going on.

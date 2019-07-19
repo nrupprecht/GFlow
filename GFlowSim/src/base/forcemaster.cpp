@@ -1,6 +1,7 @@
 #include "forcemaster.hpp"
 // Other files
 #include "interaction.hpp"
+#include "integrator.hpp"
 #include "simdata.hpp"
 
 namespace GFlowSimulation {
@@ -23,6 +24,12 @@ namespace GFlowSimulation {
 
   void ForceMaster::pre_integrate() {
     initialize_does_interact();
+    // Set Max DT if it is smaller than the preexisting max_dt.
+    if (integrator) {
+      compute_timescale();
+      RealType suggested_dt = time_scale*time_scale_factor;
+      if (0<suggested_dt && suggested_dt<integrator->getMaxDT()) integrator->setMaxDT(suggested_dt);
+    }
   }
 
   void ForceMaster::interact() {
@@ -157,6 +164,29 @@ namespace GFlowSimulation {
           any_interactions = true;
         }
       }
+  }
+
+  inline void ForceMaster::compute_timescale() {
+    // Need valid objects.
+    if (simData==nullptr) return;
+    // Find minimum mass particle.
+    RealType im = 0;
+    for (int i=0; i<simData->size(); ++i)
+      if (simData->Im(i)>im) im = simData->Im(i);
+    if (im==0) return;
+    // Set min mass.
+    RealType mass = 1./im;
+
+    // Reset time scale
+    time_scale = -1.;
+    RealType suggestion = 0;
+    // Check all interactions for suggestions.
+    for (auto it : interactions) {
+      if (it) {
+        suggestion = it->suggest_timescale(mass);
+        if (0<suggestion && (suggestion<time_scale || time_scale==-1)) time_scale = suggestion;
+      }
+    }
   }
 
 }

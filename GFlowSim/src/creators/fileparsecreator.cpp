@@ -396,35 +396,6 @@ namespace GFlowSimulation {
   }
 
   inline Integrator* FileParseCreator::choose_integrator(HeadNode *head) const {
-    string token = head->params[0]->partA;
-    Integrator *integrator = nullptr;
-    if      (token=="VelocityVerlet")       integrator = new VelocityVerlet(gflow);
-    else if (token=="OverdampedIntegrator") integrator = new OverdampedIntegrator(gflow);
-    else if (token=="OverdampedLangevin")   integrator = new OverdampedLangevinIntegrator(gflow);
-    else if (token=="LangevinIntegrator")   integrator = new LangevinIntegrator(gflow);
-    else if (token=="NoseHooverVelocityVerlet") integrator = new NoseHooverVelocityVerlet(gflow);
-    else throw UnexpectedOption("Integrator choice was ["+token+"].");
-    // Temperature and viscosity for LangevinType integrators
-    LangevinTypeIntegrator* lti = dynamic_cast<LangevinTypeIntegrator*>(integrator);
-    if (lti) {
-      if (!head->subHeads.empty()) {
-        // Gather options
-        std::map<string, HeadNode*> options;
-        for (auto h : head->subHeads) 
-          options.insert(std::pair<string, HeadNode*>(h->heading, h));
-        // Check for temperature
-        auto it = options.find("Temperature");
-        if (it!=options.end()) {
-          lti->setTemperature(convert<RealType>(it->second->params[0]->partA));
-        }
-        // Check for viscosity
-        it = options.find("Viscosity");
-        if (it!=options.end()) {
-          lti->setViscosity(convert<RealType>(it->second->params[0]->partA));
-        }
-      }
-    }
-
     // Create parser, with variables.
     TreeParser parser(head, variables);
     // Declare valid options.
@@ -434,13 +405,34 @@ namespace GFlowSimulation {
     parser.addHeadingOptional("Adjust");
     parser.addHeadingOptional("UseV");
     parser.addHeadingOptional("UseA");
-    // Check headings for validity.
-    parser.check();
 
     int ivalue = 0;
     RealType rvalue = 0.;
     bool bvalue = false;
 
+    string token = parser.argName();
+
+    Integrator *integrator = nullptr;
+    if      (token=="VelocityVerlet")       integrator = new VelocityVerlet(gflow);
+    else if (token=="OverdampedIntegrator") integrator = new OverdampedIntegrator(gflow);
+    else if (token=="OverdampedLangevin")   integrator = new OverdampedLangevinIntegrator(gflow);
+    else if (token=="LangevinIntegrator")   integrator = new LangevinIntegrator(gflow);
+    else if (token=="NoseHooverVelocityVerlet") integrator = new NoseHooverVelocityVerlet(gflow);
+    else throw UnexpectedOption("Integrator choice was ["+token+"].");
+    // Temperature and viscosity for LangevinType integrators
+    LangevinTypeIntegrator* lti = dynamic_cast<LangevinTypeIntegrator*>(integrator);
+    
+    if (lti) {
+      parser.addHeadingOptional("Temperature");
+      parser.addHeadingOptional("Viscosity");
+      parser.check();
+      // Look for temperature or viscosity
+      if (parser.firstArg("Temperature", rvalue)) lti->setTemperature(rvalue);
+      if (parser.firstArg("Viscosity", rvalue)) lti->setViscosity(rvalue);
+    }
+    else parser.check();
+
+    // Options for any integrator    
     if (parser.firstArg("Number", ivalue)) integrator->setStepDelay(ivalue);
     if (parser.firstArg("MaxDT", rvalue) && rvalue>0) integrator->setMaxDT(rvalue);
     if (parser.firstArg("MinDT", rvalue) && rvalue>0) integrator->setMinDT(rvalue);
@@ -544,24 +536,23 @@ namespace GFlowSimulation {
   }
 
   inline void FileParseCreator::makeRandomForces() {
-    // Assign random interactions, either LennardJones or HardSphere (for now), and with equal probability (for now)
-    Interaction *hs = InteractionChoice::choose(gflow, HardSphereToken, sim_dimensions); 
+    // Assign random interactions, either LennardJones or Coulomb (for now), and with equal probability (for now)
+    Interaction *hs = InteractionChoice::choose(gflow, HardSphereToken, sim_dimensions);
     Interaction *lj = InteractionChoice::choose(gflow, LennardJonesToken, sim_dimensions);
+    Interaction *cl = InteractionChoice::choose(gflow, CoulombToken, sim_dimensions);
     // Assign random (but symmetric) interactions
     for (int i=0; i<NTypes; ++i) {
       // Self interaction
-      if (drand48()>0.5) gflow->forceMaster->setInteraction(i, i, hs);
-      else gflow->forceMaster->setInteraction(i, i, lj);
-
+      float choice = drand48();
+      if (choice<0.333) gflow->forceMaster->setInteraction(i, i, hs);
+      else if (choice<0.666) gflow->forceMaster->setInteraction(i, i, lj);
+      else gflow->forceMaster->setInteraction(i, i, cl);
+      // Interactions with other objects.
       for (int j=i+1; j<NTypes; ++j) {
-        if (drand48()>0.5) {
-          gflow->forceMaster->setInteraction(i, j, hs);
-          gflow->forceMaster->setInteraction(j, i, hs);
-        }
-        else {
-          gflow->forceMaster->setInteraction(i, j, lj);
-          gflow->forceMaster->setInteraction(j, i, lj);
-        }
+        choice = drand48();
+        if (choice<0.333) gflow->forceMaster->setInteraction(i, j, hs);
+        else if (choice<0.666) gflow->forceMaster->setInteraction(i, j, lj);
+        else gflow->forceMaster->setInteraction(i, j, cl);
       }
     }
   }

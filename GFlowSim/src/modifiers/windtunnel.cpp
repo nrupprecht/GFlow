@@ -18,7 +18,7 @@ namespace GFlowSimulation {
     
     RealType *x = simData->X_arr(), **v = simData->V(), **f = simData->F(), *im = simData->Im();
     for (int i=0, j=0; i<size*sim_dimensions; i+=sim_dimensions, ++j) {
-      if (rightBound<x[i] || x[i]<leftBound) {
+      if ((rightBound<x[i] || x[i]<leftBound) && im[j]>0) {
         subtractVec(vel, v[j], dv, sim_dimensions);
         scalarMultVec(acceleration*1.f/im[j], dv, sim_dimensions);
         plusEqVec(f[j], dv, sim_dimensions);

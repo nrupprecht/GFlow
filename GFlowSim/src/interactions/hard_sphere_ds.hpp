@@ -20,6 +20,11 @@ namespace GFlowSimulation {
     //! \brief Set the dissipation constant.
     void setDissipation(RealType d) { dissipation = d>0 ? d : dissipation; }
 
+    //! \brief Suggests a safe timescale given the minimum mass of a particle that has this interaction.
+    RealType suggest_timescale(RealType mass) const override {
+      return 2*PI/sqrt(2*repulsion/mass);
+    }
+
   protected:
     //! \brief The repulsion constant for the spheres.
     RealType repulsion;

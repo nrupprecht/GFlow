@@ -31,6 +31,8 @@ namespace GFlowSimulation {
     domain_bounds = gflow->getBounds();
     // Get the array of max cutoffs.
     max_cutoffs = forceMaster->getMaxCutoff();
+    // Set up grids.
+    set_up_grids();
   }
 
   void InteractionHandler::pre_integrate() {
@@ -244,6 +246,7 @@ namespace GFlowSimulation {
     if (interaction_grid) dealloc_array_2d(interaction_grid);
     interaction_grid = ntypes>0 ? alloc_array_2d<Interaction*>(ntypes, ntypes) : nullptr;
 
+    // Set interaction and cutoff grid.
     for (int j=0; j<ntypes; ++j)
       for (int i=0; i<ntypes; ++i) {
         interaction_grid[i][j] = forceMaster->grid[i][j];

@@ -22,6 +22,10 @@ namespace GFlowSimulation {
     return potential;
   }
 
+  RealType Interaction::suggest_timescale(RealType) const {
+    return -1;
+  }
+
   void Interaction::setDoVirial(bool s) {
     do_virial = s;
   }

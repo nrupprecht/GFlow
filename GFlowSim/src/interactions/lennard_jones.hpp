@@ -27,6 +27,11 @@ namespace GFlowSimulation {
     //! \brief Set the interaction strength.
     void setStrength(RealType s) { strength = s; }
 
+    //! \brief Suggests a safe timescale given the minimum mass of a particle that has this interaction.
+    RealType suggest_timescale(RealType mass) const override {
+      return -1; // \todo Calculate this.
+    }
+
   protected:
 
     //! \brief Strength of the LJ force.

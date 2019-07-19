@@ -1,24 +1,26 @@
 // This is a 2d simulation
 Dimensions: 2
 
+// Variables
+Var: width=4
+Var: phi=0.25
+
 // Set the simulation bounds
 Bounds: {
-  : 0, 4 // X
-  : 0, 4 // Y
+  : 0, width // X
+  : 0, width // Y
 }
 
-Integrator: LangevinIntegrator {
-  Temperature: 0.25
-}
+Integrator: LangevinIntegrator
 
 // Set the number of particle types
-NTypes: 10
+NTypes: 50
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
 Force-grid: Random
 
 // Fill an area with particles
-Fill-area {
+Fill: Area {
   // Fill all the simulation with particles
   Bounds: Full
 
@@ -28,7 +30,7 @@ Fill-area {
     Type: Equiprobable
   }
 
-  Number: Phi=0.75 {
+  Number: Phi=phi {
     Particle : 1
   }
 }

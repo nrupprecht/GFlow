@@ -89,6 +89,15 @@ namespace GFlowSimulation {
     friend class InteractionHandler;
 
   private:
+    //! \brief Ask all the interactions what their timescales are.
+    inline void compute_timescale();
+
+    //! \brief A timescale for the forces. The max timestep should be some fraction of this number.
+    RealType time_scale = -1;
+
+    //! \brief The fraction of the min timescale that we should use as the max timestep.
+    RealType time_scale_factor = 0.02;
+
     //! \brief Interaction grid.
     vector<vector<Interaction*> > grid;
 

@@ -62,7 +62,7 @@ namespace GFlowSimulation {
     // Create a new gflow object
     GFlow *gflow = new GFlow(sim_dimensions);
     gflow->setAllBCs(bcFlag);
-
+    
     // Set the bounds of the gflow object
     Bounds bnds = gflow->getBounds();
     if (width<=0) width = 1.; // In case of bad argument
@@ -104,13 +104,14 @@ namespace GFlowSimulation {
     }
     // --- Initialize handler
     gflow->handler->initialize();
-
+    
     // --- Handle forces
     gflow->forceMaster->setNTypes(1); // Only one type of particle
     Interaction *force;
     if(lj_flag) {
       LennardJones *LJ;
       if (sim_dimensions==2) LJ = new LennardJones_2d(gflow);
+      else if (sim_dimensions==3) LJ = new LennardJones_3d(gflow);
       else throw false;
       // Set parameters
       LJ->setStrength(repulsion*DEFAULT_LENNARD_JONES_STRENGTH);

@@ -34,6 +34,12 @@ namespace GFlowSimulation {
     //! \brief Get the potential energy.
     RealType getPotential() const;
 
+    //! \brief Suggests a safe timescale given the minimum mass of a particle that has this interaction.
+    //!
+    //! Corresponds to e.g. the period of an interaction (for spring forces). 
+    //! Returns -1 if no guidance is given.
+    virtual RealType suggest_timescale(RealType) const;
+
     // --- Mutators
 
     //! \brief Set the do virial flag.

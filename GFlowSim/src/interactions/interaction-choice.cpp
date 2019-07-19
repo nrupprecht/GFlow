@@ -51,6 +51,11 @@ namespace GFlowSimulation {
         return new DemonWall(gflow);
       else throw InvalidInteraction(token + ", " + toStr(sim_dimensions));
     }
+    else if (token==CoulombToken) {
+      if (sim_dimensions==2)
+        return new Coulomb2D(gflow);
+      else throw InvalidInteraction(token + ", " + toStr(sim_dimensions));
+    }
     else throw InvalidInteraction(token + ", " + toStr(sim_dimensions));
     // This point is never reached
   }

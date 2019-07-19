@@ -25,6 +25,8 @@ namespace GFlowSimulation {
     // Needed constants
     RealType sg1, sg2, dx, dy, rsqr, r, invr, magnitude;
 
+    //cout << verlet.size() << ", " << verlet_wrap.size() << endl;
+
     // --- Go through all particles in verlet.
     for (int i=0; i<verlet.size(); i+=2) {
       int id1 = verlet[i];
@@ -49,13 +51,11 @@ namespace GFlowSimulation {
         dy *= invr;
         // Calculate the magnitude of the force
         magnitude = repulsion*(sg1 + sg2 - r);
-
         // Update forces
         f[id1][0] += magnitude * dx;
         f[id2][0] -= magnitude * dx;
         f[id1][1] += magnitude * dy;
         f[id2][1] -= magnitude * dy;
-
         // Calculate potential
         if (do_potential) {
           potential += 0.5*repulsion*sqr(r - sg1 - sg2);
@@ -76,7 +76,6 @@ namespace GFlowSimulation {
     // Extract bounds related data
     RealType bnd_x = gflow->getBounds().wd(0);
     RealType bnd_y = gflow->getBounds().wd(1);
-
     // --- Go through all particles in verlet_wrap.
     for (int i=0; i<verlet_wrap.size(); i+=2) {
       int id1 = verlet_wrap[i];
@@ -94,8 +93,7 @@ namespace GFlowSimulation {
       if (boundaryConditions[1]==BCFlag::WRAP) {
         RealType dY = bnd_y - fabs(dy);
         if (dY<fabs(dy)) dy = dy>0 ? -dY : dY;
-      } 
-
+      }
       // Calculate squared distance
       rsqr = dx*dx + dy*dy;
       // Get radii
@@ -111,13 +109,11 @@ namespace GFlowSimulation {
         dy *= invr;
         // Calculate the magnitude of the force
         magnitude = repulsion*(sg1 + sg2 - r);
-
         // Update forces
         f[id1][0] += magnitude * dx;
         f[id2][0] -= magnitude * dx;
         f[id1][1] += magnitude * dy;
         f[id2][1] -= magnitude * dy;
-
         // Calculate potential
         if (do_potential) {
           potential += 0.5*repulsion*sqr(r - sg1 - sg2);
@@ -130,25 +126,24 @@ namespace GFlowSimulation {
     }
   }
 
-  inline void HardSphere_2d::compute_force(int id1, int id2, RealType dx, RealType dy, RealType rsqr, RealType sg1, RealType sg2, RealType **f) {
-    // Calculate distance, inverse distance.
+  void HardSphere_2d::kernel(int id1, int id2, RealType R1, RealType R2, RealType rsqr, RealType *dr, RealType **f) const {
     RealType r = sqrt(rsqr);
     RealType invr = 1./r;
     // Create a normal vector
-    dx *= invr;
-    dy *= invr;
+    dr[0] *= invr;
+    dr[1] *= invr;
     // Calculate the magnitude of the force
-    RealType magnitude = repulsion*(sg1 + sg2 - r);
+    RealType magnitude = repulsion*(R1 + R2 - r);
 
     // Update forces
-    f[id1][0] += magnitude * dx;
-    f[id2][0] -= magnitude * dx;
-    f[id1][1] += magnitude * dy;
-    f[id2][1] -= magnitude * dy;
+    f[id1][0] += magnitude * dr[0];
+    f[id2][0] -= magnitude * dr[0];
+    f[id1][1] += magnitude * dr[1];
+    f[id2][1] -= magnitude * dr[1];
 
     // Calculate potential
     if (do_potential) {
-      potential += 0.5*repulsion*sqr(r - sg1 - sg2);
+      potential += 0.5*repulsion*sqr(r - R1 - R2);
     }
     // Calculate virial
     if (do_virial) {

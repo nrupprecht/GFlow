@@ -108,6 +108,7 @@ namespace GFlowSimulation {
       assert(!isnan(x[i]));
       #endif 
     }
+
     // Do with SIMD
     #else
     // Set dt

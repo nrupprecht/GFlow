@@ -16,6 +16,11 @@ namespace GFlowSimulation {
     //! \brief Set the repulsion parameter.
     void setRepulsion(RealType r) { repulsion = r; }
 
+    //! \brief Suggests a safe timescale given the minimum mass of a particle that has this interaction.
+    RealType suggest_timescale(RealType mass) const override {
+      return 2*PI/sqrt(2*repulsion/mass);
+    }
+
   protected:
     //! \brief The hard sphere repulsion parameter.
     RealType repulsion;

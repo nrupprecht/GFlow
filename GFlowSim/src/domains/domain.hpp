@@ -34,6 +34,9 @@ namespace GFlowSimulation {
     //! overlap too much with any other particle, even if the other particle will be removed.
     virtual void removeOverlapping(RealType) override;
 
+    //! \brief Scan through all particles that are close enough to be put in the same verlet list, and do an action on them.
+    //virtual void scan_domain(bool (*test)(RealType), void (*action) (int, int));
+
     //! \brief Construct neighbor lists.
     //!
     //! Resets cells, then creates all the neighbor lists from the cells.

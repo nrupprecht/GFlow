@@ -19,6 +19,8 @@
 #include "interactions/lennard_jones__2d.hpp"
 #include "interactions/lennard_jones__3d.hpp"
 
+#include "interactions/coulomb.hpp"
+
 #include "interactions/buckingham__2d.hpp"
 #include "interactions/buckingham__3d.hpp"
 

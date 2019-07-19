@@ -13,6 +13,7 @@ namespace GFlowSimulation {
   const string DetectorToken = "Detector";
   const string HardSphereReflectingToken = "HardSphereReflecting";
   const string DemonWallToken = "DemonWall";
+  const string CoulombToken = "Coulomb";
 
   /**
   *  \brief Error class for trying to pick an interaction that doesn't exist.
