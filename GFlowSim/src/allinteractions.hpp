@@ -4,6 +4,7 @@
 // Parent classes
 #include "interactions/hard_sphere.hpp"
 #include "interactions/hard_sphere_ds.hpp"
+#include "interactions/hard_sphere_cf.hpp"
 #include "interactions/lennard_jones.hpp"
 #include "interactions/buckingham.hpp"
 
@@ -13,6 +14,8 @@
 
 #include "interactions/hard_sphere_ds__2d.hpp"
 #include "interactions/hard_sphere_ds__3d.hpp"
+
+#include "interactions/hard_sphere_cf__2d.hpp"
 
 #include "interactions/hard_sphere__reflecting__2d.hpp"
 

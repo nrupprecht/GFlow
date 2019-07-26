@@ -75,7 +75,6 @@ namespace GFlowSimulation {
           throw false;
           break;
       }
-      //simd_float _im = simd_load_constant<2>(im, i);
 
       simd_float dV = _hdt*_im*_f;
       simd_float V_new = V + dV;

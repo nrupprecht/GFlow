@@ -133,6 +133,9 @@ namespace GFlowSimulation {
     //! \brief Get the integrator.
     class Integrator* getIntegrator();
 
+    //! \brief Get the number of integrators that gflow has.
+    int getNumIntegrators() const; 
+
     //! \brief Get the minimum image displacement between two positions.
     void getDisplacement(const RealType*, const RealType*, RealType*);
 
@@ -159,6 +162,9 @@ namespace GFlowSimulation {
 
     //! \brief Add a body.
     void addBody(class Body*);
+
+    //! \brief Add another integrator.
+    void addIntegrator(class Integrator*);
 
     //! \brief Set the command info
     void setCommand(int, char**);
@@ -279,6 +285,9 @@ namespace GFlowSimulation {
     class DataMaster  *dataMaster = nullptr;   // DataMaster object for unified data collection  
     class ForceMaster *forceMaster = nullptr;  // ForceMaster object for defining and storing interparticle forces  
     class Topology    *topology = nullptr;     // Processor topology
+
+    //! \brief Additional integrators. \todo Do this better.
+    vector<class Integrator*> additional_integrators;
 
     //! \brief A vector of objects that should modify the simulation at some point(s) during execution.
     std::list<class Modifier*> modifiers;

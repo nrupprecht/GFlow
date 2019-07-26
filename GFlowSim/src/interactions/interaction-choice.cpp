@@ -20,6 +20,11 @@ namespace GFlowSimulation {
         return new HardSphereDs_3d(gflow);
       else throw InvalidInteraction(token + ", " + toStr(sim_dimensions));
     }
+    else if (token==HardSphereCfToken) {
+      if (sim_dimensions==2)
+        return new HardSphereCf_2d(gflow);
+      else throw InvalidInteraction(token + ", " + toStr(sim_dimensions));
+    }
     else if (token==LennardJonesToken) {
       if (sim_dimensions==2)
         return new LennardJones_2d(gflow);

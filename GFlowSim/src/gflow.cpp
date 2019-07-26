@@ -174,6 +174,7 @@ namespace GFlowSimulation {
     for (auto b : bodies) b->pre_integrate();
     simData->pre_integrate();
     integrator->pre_integrate();
+    for (auto it : additional_integrators) it->pre_integrate();
     handler->pre_integrate();
     dataMaster->pre_integrate();
     forceMaster->pre_integrate();
@@ -186,18 +187,21 @@ namespace GFlowSimulation {
       // --> Pre-step
       for (auto m : modifiers) m->pre_step();
       integrator->pre_step();
+      for (auto it : additional_integrators) it->pre_step();
       dataMaster->pre_step();
       handler->pre_step();
 
       // --> Pre-exchange
       for (auto m : modifiers) m->pre_exchange();
       integrator->pre_exchange();
+      for (auto it : additional_integrators) it->pre_exchange();
       dataMaster->pre_exchange();
       handler->pre_exchange();
 
       // --> Pre-force
       for (auto m : modifiers) m->pre_forces();
       integrator->pre_forces(); // -- This is where VV first half kick happens (if applicable)
+      for (auto it : additional_integrators) it->pre_forces();
       dataMaster->pre_forces();
       domain_timer.start();
       if (useForces) handler->pre_forces();   // -- This is where resectorization / verlet list creation might happen
@@ -241,6 +245,7 @@ namespace GFlowSimulation {
       simData->updateHaloParticles();
       // Continue with normal order of updates.
       integrator->post_forces();                 // -- This is where VV second half kick happens (if applicable)
+      for (auto it : additional_integrators) it->post_forces();
       dataMaster->post_forces();
       handler->post_forces();
 
@@ -248,6 +253,7 @@ namespace GFlowSimulation {
       if (requested_time<=elapsed_time) running = false;
       for (auto m : modifiers) m->post_step();
       integrator->post_step();
+      for (auto it : additional_integrators) it->post_step();
       dataMaster->post_step();
       handler->post_step();
       // Timer updates
@@ -283,6 +289,7 @@ namespace GFlowSimulation {
     requested_time = 0;
     simData->post_integrate();
     integrator->post_integrate();
+    for (auto it : additional_integrators) it->post_integrate();
     handler->post_integrate();
     dataMaster->post_integrate();
     forceMaster->post_integrate();
@@ -388,6 +395,10 @@ namespace GFlowSimulation {
     return integrator;
   }
 
+  int GFlow::getNumIntegrators() const {
+    return (integrator!=nullptr ? 1 : 0) + additional_integrators.size();
+  }
+
   void GFlow::getDisplacement(const RealType *x, const RealType *y, RealType *dis) {
     for (int d=0; d<sim_dimensions; ++d) {
       dis[d] = x[d] - y[d];
@@ -444,6 +455,11 @@ namespace GFlowSimulation {
   void GFlow::addBody(class Body *bdy) {
     if (bdy!=nullptr && !contains(bodies, bdy))
       bodies.push_back(bdy);
+  }
+
+  void GFlow::addIntegrator(Integrator *it) {
+    if (it!=nullptr)
+      additional_integrators.push_back(it);
   }
 
   void GFlow::setCommand(int argc, char **argv) {

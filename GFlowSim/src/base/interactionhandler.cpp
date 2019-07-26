@@ -16,6 +16,7 @@ namespace GFlowSimulation {
     positions = nullptr;
     if (cutoff_grid) dealloc_array_2d(cutoff_grid);
     cutoff_grid = nullptr;
+    if (interaction_grid) dealloc_array_2d(interaction_grid);
   }
 
   void InteractionHandler::initialize() {

@@ -8,6 +8,7 @@ namespace GFlowSimulation {
   const string NoneToken = "None";
   const string HardSphereToken = "HardSphere";
   const string HardSphereDsToken = "HardSphereDs";
+  const string HardSphereCfToken = "HardSphereCf";
   const string LennardJonesToken = "LennardJones";
   const string BuckinghamToken = "Buckingham";
   const string DetectorToken = "Detector";

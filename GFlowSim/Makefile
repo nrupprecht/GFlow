@@ -73,32 +73,32 @@ all: $(BIN)/$(APP) $(BIN)/vistools
 $(BIN)/$(APP): obj/driver.o $(OBJS)
 	@mkdir -p `dirname $@`
 	@echo "Linking $@..."
-	@$(CC) -o $@ obj/driver.o $(OBJS) $(LDFLAGS)
+	@$(CC) -o $@ obj/driver.o $(OBJS)
 
 $(BIN)/vistools: obj/vistools.o $(OBJS)
 	@mkdir -p `dirname $@`
 	@echo "Linking $@..."
-	@$(CC) -o $@ obj/vistools.o $(OBJS) $(LDFLAGS)
+	@$(CC) -o $@ obj/vistools.o $(OBJS)
 
 #$(BIN)/lineattraction: obj/lineattraction.o $(OBJS)
 #	@mkdir -p `dirname $@`
 #	@echo "Linking $@..."
-#	@$(CC) -o $@ obj/lineattraction.o $(OBJS) $(LDFLAGS)
+#	@$(CC) -o $@ obj/lineattraction.o $(OBJS)
 
 #$(BIN)/wallattraction: obj/wallattraction.o $(OBJS)
 #	@mkdir -p `dirname $@`
 #	@echo "Linking $@..."
-#	@$(CC) -o $@ obj/wallattraction.o $(OBJS) $(LDFLAGS)
+#	@$(CC) -o $@ obj/wallattraction.o $(OBJS)
 
 #$(BIN)/polymerattraction: obj/polymerattraction.o $(OBJS)
 #	@mkdir -p `dirname $@`
 #	@echo "Linking $@..."
-#	@$(CC) -o $@ obj/polymerattraction.o $(OBJS) $(LDFLAGS)
+#	@$(CC) -o $@ obj/polymerattraction.o $(OBJS)
 
 #$(BIN)/demonrates: obj/demonrates.o $(OBJS)
 #	@mkdir -p `dirname $@`
 #	@echo "Linking $@..."
-#	@$(CC) -o $@ obj/demonrates.o $(OBJS) $(LDFLAGS)
+#	@$(CC) -o $@ obj/demonrates.o $(OBJS)
 
 # General object files
 

@@ -25,8 +25,6 @@ namespace GFlowSimulation {
     // Needed constants
     RealType sg1, sg2, dx, dy, rsqr, r, invr, magnitude;
 
-    //cout << verlet.size() << ", " << verlet_wrap.size() << endl;
-
     // --- Go through all particles in verlet.
     for (int i=0; i<verlet.size(); i+=2) {
       int id1 = verlet[i];
