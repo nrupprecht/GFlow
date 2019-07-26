@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
   // Type of simulation
   bool bipartite_flag = false;
   bool debug_flag = false;
-  string load = "configurations/box.txt";
+  string load = "";
 
   // Data to gather
   bool animate = false; // Record positions
