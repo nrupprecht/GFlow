@@ -669,6 +669,8 @@ namespace GFlowSimulation {
 
   inline void GFlow::clearForces() {
     simData->clearF();
+    // Clear torque buffer, if it exists.
+    simData->clearScalar("Tq"); 
   }
 
   inline void GFlow::handleModifiers() {

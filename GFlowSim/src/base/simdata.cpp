@@ -531,6 +531,14 @@ namespace GFlowSimulation {
     for (int i=0; i<_size*sim_dimensions; ++i) f[i] = 0;
   }
 
+  void SimData::clearScalar(const string id) {
+    int address = getScalarData(id);
+    if (address>=0) {
+      RealType *entry = ScalarData(address);
+      for (int i=0; i<_size; ++i) entry[i] = 0;
+    }
+  }
+
   int SimData::getLocalID(int global) const {
     auto it = id_map.find(global);
     // Return the global iterator. We use -1 to mean "no such particle."

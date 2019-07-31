@@ -32,6 +32,19 @@ namespace GFlowSimulation {
     // Add potential energy from bonded interactions
     auto bonded_interactions = gflow->getBondedInteractions();
     for (auto it : bonded_interactions) energy += it->getPotential();
+    // Look for rotational energy
+    int om_add = simData->getScalarData("Om");
+    if (om_add>=0) {
+      RealType *om = simData->ScalarData(om_add), en = 0;
+      RealType *sg = simData->Sg();
+      for (int n=0; n<size; ++n) {
+        if (im[n]>0 && -1<type[n] && simData->isReal(n)) {
+          RealType II = 0.5*sqr(sg[n])/im[n];
+          energy += II*sqr(om[n]);
+        }
+      }
+      energy += 0.5*en;
+    }
     // If we want the average
     if (useAve && count>0) energy /= static_cast<RealType>(count);
     // Store data

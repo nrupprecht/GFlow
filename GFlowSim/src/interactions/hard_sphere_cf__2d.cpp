@@ -10,6 +10,8 @@ namespace GFlowSimulation {
     simData->requestScalarData("Tq");
     // Add an angular integrator.
     gflow->addIntegrator(new AngularVelocityVerlet2d(gflow));
+
+    setDissipation(0.);
   };
 
 
@@ -67,26 +69,27 @@ namespace GFlowSimulation {
         // Calculate relative velocity.
         dvx = v[id2][0] - v[id1][0];
         dvy = v[id2][1] - v[id1][1];
-        // Caluclate normal velocity.
+        // Calculate normal velocity.
         vn = dvx*dx + dvy*dy;
         // Dissipation only occurs on loading the spring.
         Fn += dissipation * un_clamp(vn);
         // Calculate the positive tangential direction.
-        RealType dtx = dy, dty = -dx;
-        // Calculate angular velocities
-        RealType dvs = om[id1]*sg[id1] + om[id2]*sg[id2]; // Relative surface velocity due to angular velocity.
-        RealType vt = dvx*dtx + dvy*dty;
-        RealType Ft = mu*Fn*sign(dvs + vt);
+        RealType tx = -dy, ty = dx;
+        // Calculate tangential velocity
+        RealType vt = dvx*tx + dvy*ty;
+        // Calculate difference in velocities at the point of intersection.
+        RealType VT = vt - om[id1]*sg[id1] - om[id2]*sg[id2]; // Relative surface velocity due to angular velocity.
+        RealType Ft = mu*Fn*sign(VT);
         // Update forces.
-        RealType Fx = Fn * dx + Ft * dtx;
-        RealType Fy = Fn * dy + Ft * dty;
+        RealType Fx = Fn * dx + Ft * tx;
+        RealType Fy = Fn * dy + Ft * ty;
         f[id1][0] += Fx;
         f[id2][0] -= Fx;
         f[id1][1] += Fy;
         f[id2][1] -= Fy;
         // Update torques
-        tq[id1] -= Ft*sg[id1];
-        tq[id2] -= Ft*sg[id2];
+        tq[id1] += Ft*sg[id1];
+        tq[id2] += Ft*sg[id2];
 
         // Calculate potential
         if (do_potential) {
@@ -149,21 +152,22 @@ namespace GFlowSimulation {
         // Dissipation only occurs on loading the spring.
         Fn += dissipation * un_clamp(vn);
         // Calculate the positive tangential direction.
-        RealType dtx = dy, dty = -dx;
-        // Calculate angular velocities
-        RealType dvs = om[id1]*sg[id1] + om[id2]*sg[id2]; // Relative surface velocity due to angular velocity.
-        RealType vt = dvx*dtx + dvy*dty;
-        RealType Ft = mu*Fn*sign(dvs + vt);
+        RealType tx = -dy, ty = dx;
+        // Calculate tangential velocity
+        RealType vt = dvx*tx + dvy*ty;
+        // Calculate difference in velocities at the point of intersection.
+        RealType VT = vt - om[id1]*sg[id1] - om[id2]*sg[id2]; // Relative surface velocity due to angular velocity.
+        RealType Ft = mu*Fn*sign(VT);
         // Update forces.
-        RealType Fx = Fn * dx + Ft * dtx;
-        RealType Fy = Fn * dy + Ft * dty;
+        RealType Fx = Fn * dx + Ft * tx;
+        RealType Fy = Fn * dy + Ft * ty;
         f[id1][0] += Fx;
         f[id2][0] -= Fx;
         f[id1][1] += Fy;
         f[id2][1] -= Fy;
         // Update torques
-        tq[id1] -= Ft*sg[id1];
-        tq[id2] -= Ft*sg[id2];
+        tq[id1] += Ft*sg[id1];
+        tq[id2] += Ft*sg[id2];
 
         // Calculate potential
         if (do_potential) {

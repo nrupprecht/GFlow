@@ -170,7 +170,7 @@ namespace GFlowSimulation {
 
   //! Takes two high_resolution_clock::time_point, returns the number of seconds
   template<typename T> inline RealType time_span(T end, T start) {
-    duration<RealType> span = duration_cast<duration<double> >(end-start);
+    duration<double> span = duration_cast<duration<double> >(end-start);
     return span.count();
   }
 

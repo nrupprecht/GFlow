@@ -52,6 +52,7 @@ int main(int argc, char **argv) {
   bool snapshot = false;
   bool sectorData = false; // Record sector information
   bool ke = false; // Record kinetic energy
+  bool rotE = false; // Record rotational kinetic energy
   RealType kebin = 0;
   bool energy = false; // Record total energy
   bool bondenergy = false;
@@ -106,6 +107,7 @@ int main(int argc, char **argv) {
   parser.get("snapshot", snapshot);
   parser.get("sectorData", sectorData);
   parser.get("KE", ke);
+  parser.get("RKE", rotE);
   parser.get("KEBin", kebin);
   parser.get("energy", energy);
   parser.get("bondenergy", bondenergy);
@@ -222,6 +224,7 @@ int main(int argc, char **argv) {
   gflow->setStartRecTime(startRecTime);
   if (snapshot) gflow->addDataObject(new EndingSnapshot(gflow));
   if (totalKE || ke) gflow->addDataObject(new KineticEnergyData(gflow, ke));
+  if (rotE)          gflow->addDataObject(new RotationalEnergyData(gflow));
   if (kebin>0)       gflow->addDataObject(new KineticEnergyBin(gflow, kebin));
   if (energy)      gflow->addDataObject(new TotalEnergyData(gflow));
   if (bondenergy)  gflow->addDataObject(new BondedEnergyData(gflow));

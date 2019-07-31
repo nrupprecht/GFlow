@@ -173,6 +173,9 @@ namespace GFlowSimulation {
     //! \brief Set all forces to zero.
     void clearF();
 
+    //! \brief Set all entries in a scalar data list to zero, if the entry exists.
+    void clearScalar(const string);
+
     // --- Other accessors
 
     //! \brief Get the local id of a particle given the global id.
