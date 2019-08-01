@@ -31,7 +31,7 @@ namespace GFlowSimulation {
     else handler = new Domain(this);
     dataMaster   = new DataMaster(this);
     forceMaster  = new ForceMaster(this);
-    topology     = new GridTopology(sim_dimensions);
+    topology     = new KDTreeTopology(sim_dimensions);
     // Set up boundary conditions
     boundaryConditions = new BCFlag[sim_dimensions];
     // Set up bounds to have the propper dimensions

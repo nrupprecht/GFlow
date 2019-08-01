@@ -80,7 +80,7 @@ namespace GFlowSimulation {
     return out;
   }
 
-  bool Bounds::contains(RealType *x) const {
+  bool Bounds::contains(const RealType *x) const {
     for (int d=0; d<dimensions; ++d)
       if (x[d]<min[d] || max[d]<x[d]) return false;
     // All clear.

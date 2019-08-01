@@ -13,12 +13,14 @@ namespace GFlowSimulation {
     //! @brief Destructor.
     virtual ~GridTopology();
 
+    virtual void initialize(class GFlow*) override;
+
     //! @brief Compute how the simulation space should be divided up.
     virtual void computeTopology() override;
 
     //! @brief Given a position and cutoff value, this function returns the 
     //! ids of the processors which this particle overlaps.
-    virtual vector<int> domain_overlaps(const RealType*, const RealType) override;
+    virtual void domain_overlaps(const RealType*, const RealType, vector<int>&) override;
 
     //! @brief Determines which processor a position falls into.
     virtual int domain_ownership(const RealType*) override;

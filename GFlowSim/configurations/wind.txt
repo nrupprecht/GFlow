@@ -6,8 +6,8 @@ Dimensions: 2
 
 // Set the simulation bounds
 Bounds: {
-  : -Front, Length // X
-  : -Height, Height      // Y
+  : -Front, Length  // X
+  : -Height, Height // Y
 }
 
 // VARIABLES

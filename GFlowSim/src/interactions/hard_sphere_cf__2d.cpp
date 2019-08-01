@@ -10,8 +10,6 @@ namespace GFlowSimulation {
     simData->requestScalarData("Tq");
     // Add an angular integrator.
     gflow->addIntegrator(new AngularVelocityVerlet2d(gflow));
-
-    setDissipation(0.);
   };
 
 

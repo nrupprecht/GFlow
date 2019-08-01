@@ -1,4 +1,6 @@
 #include "gridtopology.hpp"
+// Other files
+#include "../gflow.hpp"
 
 namespace GFlowSimulation {
 
@@ -14,8 +16,20 @@ namespace GFlowSimulation {
     products = nullptr;
   }
 
+  void GridTopology::initialize(GFlow *gflow) {
+    // Get the simulation dimensions.
+    sim_dimensions = gflow->getSimDimensions();
+    // Compute the topology.
+    computeTopology();
+
+    setSimulationBounds(gflow->getBounds());
+  }
+
   //! @brief Compute how the simulation space should be divided up.
   void GridTopology::computeTopology() {
+    // Check for valid bounds.
+    if (simulation_bounds.vol()<=0) return;
+
     // Hard code this in for now
     if (numProc==4) {
       dims[0] = 2;
@@ -28,9 +42,8 @@ namespace GFlowSimulation {
 
   //! @brief Given a position and cutoff value, this function returns the
   //! ids of the processors which this particle overlaps.
-  vector<int> GridTopology::domain_overlaps(const RealType *x, const RealType sg) {
+  void GridTopology::domain_overlaps(const RealType *x, const RealType sg, vector<int>& container) {
     // STUB
-    return vector<int>();
   }
 
   //! @brief Determines which processor a position falls into.

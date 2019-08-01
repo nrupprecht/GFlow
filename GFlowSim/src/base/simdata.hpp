@@ -64,6 +64,9 @@ namespace GFlowSimulation {
     //! \brief Update the primary particle that halo particles correspond to.
     void updateHaloParticles();
 
+    //! \brief Update particles on other processors.
+    void updateGhostParticles();
+
     // --- Accessors
 
     // --- Get vector data
@@ -123,6 +126,8 @@ namespace GFlowSimulation {
     const int* Id() const;
     const int& Id(int) const;
 
+    bool Valid(int) const;
+
     // --- Data creation and request
 
     // The request versions get the data entry's place if it exists, and creates it if it doesn't.
@@ -150,6 +155,9 @@ namespace GFlowSimulation {
     //!
     //! This simply calls remove_halo_particles and remove_ghost_particles.
     void removeHaloAndGhostParticles();
+
+    //! \brief Migrate particles to other processors, handle assignment of ghost particles.
+    void parallel_update();
 
     // --- Particle size information
 
@@ -258,6 +266,15 @@ namespace GFlowSimulation {
     //! \brief Recursively sorts by dimension.
     void recursion_help(int, int, int);
 
+    //! \brief An MPI helper function - 
+    void send_evens();
+    //! \brief An MPI helper function - 
+    void send_odds();
+    //! \brief An MPI helper function - 
+    void recv_evens();
+    //! \brief An MPI helper function - 
+    void recv_odds();
+
     // --- Data
 
     //! \brief A flag that can be set to true whenever something happens that might invalidate the current data.
@@ -334,6 +351,52 @@ namespace GFlowSimulation {
 
     //! \brief Copy this data from force master.
     int _ntypes = 0;
+
+
+    // -*-*-*- MPI/Parallel related -*-*-*-
+    #if USE_MPI == 1
+
+    //! \brief Width of data to send.
+    int data_width = 0;
+
+    //! \brief All the processors that are neighbors.
+    vector<int> neighbor_ranks;
+
+    //! \brief Maps rank to position in neighbor_ranks.
+    std::map<int, int> neighbor_map;
+
+    //! \brief A map between global id of ghost particles and local IDs.
+    std::map<int, int> ghost_map_recv;
+
+    /// Sending data
+
+    //! \brief The i-th vector in the array contains ids of the particles that should be sent from this processor
+    //! to the i-th neighboring processor.
+    vector<int> *send_ids = nullptr;
+
+    /// Recieving data.
+    
+    //! \brief The i-th entry in the vector contains the number of particles (NOT data size) that the i-th neighboring 
+    //! processor will send to this processor.
+    vector<int> recv_size;
+
+    //! \brief The place (local id) where ghost particles start in the data arrays.
+    int init_ghost_id = -1;
+
+    //! \brief The number of ghost particles in this structure.
+    int n_ghosts = 0;
+
+    /// Sending and receiving data.
+
+    //! \brief A buffer for sending data.
+    vector<vector<RealType>> buffer_list;
+
+    //! \brief A buffer for receiving data.
+    vector<RealType> recv_buffer;
+
+    MPI_Request *request_list = nullptr;
+
+    #endif
   };
 
 }

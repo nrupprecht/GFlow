@@ -37,7 +37,7 @@ namespace GFlowSimulation {
     friend std::ostream& operator<<(std::ostream &out, Bounds bnds);
 
     //! \brief Check whether the bounds contains a point.
-    bool contains(RealType*) const;
+    bool contains(const RealType*) const;
 
     //! \brief Get the widths in various dimensions of the bounds.
     RealType wd(int) const;
