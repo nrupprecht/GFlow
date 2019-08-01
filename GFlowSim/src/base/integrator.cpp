@@ -2,6 +2,7 @@
 // Other files
 #include "simdata.hpp"
 #include "../utility/simd_utility.hpp"
+#include "../parallel/topology.hpp"
 
 #include "forcemaster.hpp"
 #include "interaction.hpp"
@@ -55,6 +56,11 @@ namespace GFlowSimulation {
     
     if (dt>max_dt) dt = max_dt;
     else if (dt<min_dt) dt = min_dt;
+
+    #if USE_MPI == 1
+      // Sync timesteps
+      if (topology->getNumProc()>1) topology->getMPIObject().sync_value_min(dt);
+    #endif
   }
 
   RealType Integrator::getTimeStep() {

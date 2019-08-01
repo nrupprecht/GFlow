@@ -93,6 +93,7 @@ int main(int argc, char **argv) {
   bool noplots = false;
   string writeDirectory = "RunData";
   int boundary = 1;
+  bool forces = true;
   string monitor = ""; // Monitor file
 
   // Modifiers
@@ -147,6 +148,7 @@ int main(int argc, char **argv) {
   parser.get("writeDirectory", writeDirectory);
   parser.get("temperature", temperature);
   parser.get("boundary", boundary);
+  parser.get("forces", forces);
 
   if (!quiet && rank==0) {
     #if DEBUG==1
@@ -261,6 +263,9 @@ int main(int argc, char **argv) {
   if (step_delay>0) gflow->getIntegrator()->setStepDelay(step_delay);
   if (gravity!=0) gflow->addModifier(new ConstantAcceleration(gflow, gravity));
   if (damping) gflow->addModifier(new LinearVelocityDamping(gflow));
+
+  // Turns off forces.
+  if (!forces) gflow->setUseForces(false);
 
   // Set time step and request time
   if (!gflow->hasIntegrator()) {

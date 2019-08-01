@@ -9,7 +9,12 @@
 namespace GFlowSimulation {
 
   InteractionHandler::InteractionHandler(GFlow *gflow) : Base(gflow), velocity(gflow->getSimDimensions()), 
-    domain_bounds(sim_dimensions), bounds(sim_dimensions) {};
+    domain_bounds(sim_dimensions), bounds(sim_dimensions) {
+    #if USE_MPI==1
+    //*** Just use this condition, for now. \todo Sync when remakes and updates happen.
+    update_decision_type = 1;
+    #endif
+  };
 
   InteractionHandler::~InteractionHandler() {
     if (positions) dealloc_array_2d(positions);
@@ -60,6 +65,7 @@ namespace GFlowSimulation {
     if (simData->number()<1) return;
     // Get the current simulation time
     RealType current_time = gflow->getElapsedTime();
+
     // If simdata needs a remake, we give it a remake
     if (simData->getNeedsRemake()) construct();
     else if (update_decision_type==0 && current_time-last_update>update_delay) {
@@ -72,28 +78,40 @@ namespace GFlowSimulation {
 
     // \todo Some of these things should not be called if there are multiple different interaction handlers, namely the first four function calls.
     
-    // Remove all halo and ghost particles.
-    simData->removeHaloAndGhostParticles();
-    // Do necessary removals - this will compress the arrays so that there are no invalid (type -1) particles
-    // and _number == _size
-    simData->doParticleRemoval();
-    // Wrap the particles, so they are in their cannonical positions
-    gflow->wrapPositions();
-    // Reset the verlet lists of all the forces
-    forceMaster->clear();    
+    // // Remove all halo and ghost particles.
+    // simData->removeHaloAndGhostParticles();
+    // // Do necessary removals - this will compress the arrays so that there are no invalid (type -1) particles
+    // // and _number == _size
+    // simData->doParticleRemoval();
+    // // Wrap the particles, so they are in their cannonical positions
+    // gflow->wrapPositions();
+    // // Reset the verlet lists of all the forces
+    // forceMaster->clear();    
+    // // Set timer
+    // last_update = gflow->getElapsedTime();
+    // // Reset
+    // steps_since_last_remake = 0;
+    // // Increment counter
+    // ++number_of_remakes;
+    
+    // // Record where the particles were
+    // if (update_decision_type==0 && auto_record_positions) record_positions();
+
+    // Remove all halo and ghost particles, wrap particles, if parallel then pass particles and figure out ghost particles, 
+    // and do particle removal.
+    Base::simData->parallel_update();
+    
     // Set timer
-    last_update = gflow->getElapsedTime();
+    last_update = Base::gflow->getElapsedTime();
     // Reset
     steps_since_last_remake = 0;
     // Increment counter
     ++number_of_remakes;
-    
+    // Reset the verlet lists of all the forces
+    Base::forceMaster->clear();
+
     // Record where the particles were
     if (update_decision_type==0 && auto_record_positions) record_positions();
-
-    migrate_particles();
-    construct_halo_particles();
-    construct_ghost_particles();
   }
 
   int InteractionHandler::getNumberOfRemakes() const {
@@ -240,18 +258,21 @@ namespace GFlowSimulation {
   inline void InteractionHandler::set_up_grids() {
     // Get ntypes 
     ntypes = forceMaster->getNTypes();
-    // Handle cutoff grid.
-    if (cutoff_grid) dealloc_array_2d(cutoff_grid);
-    cutoff_grid = ntypes>0 ? alloc_array_2d<RealType>(ntypes, ntypes) : nullptr; 
-    // Handle interaction grid.
-    if (interaction_grid) dealloc_array_2d(interaction_grid);
-    interaction_grid = ntypes>0 ? alloc_array_2d<Interaction*>(ntypes, ntypes) : nullptr;
 
-    // Set interaction and cutoff grid.
-    for (int j=0; j<ntypes; ++j)
-      for (int i=0; i<ntypes; ++i) {
-        interaction_grid[i][j] = forceMaster->grid[i][j];
-        cutoff_grid[i][j] = (interaction_grid[i][j]) ? interaction_grid[i][j]->getCutoff() : 0.;
+    if (gflow->getUseForces()) {
+      // Handle cutoff grid.
+      if (cutoff_grid) dealloc_array_2d(cutoff_grid);
+      cutoff_grid = ntypes>0 ? alloc_array_2d<RealType>(ntypes, ntypes) : nullptr; 
+      // Handle interaction grid.
+      if (interaction_grid) dealloc_array_2d(interaction_grid);
+      interaction_grid = ntypes>0 ? alloc_array_2d<Interaction*>(ntypes, ntypes) : nullptr;
+
+      // Set interaction and cutoff grid.
+      for (int j=0; j<ntypes; ++j)
+        for (int i=0; i<ntypes; ++i) {
+          interaction_grid[i][j] = forceMaster->grid[i][j];
+          cutoff_grid[i][j] = (interaction_grid[i][j]) ? interaction_grid[i][j]->getCutoff() : 0.;
+        }
       }
   }
 

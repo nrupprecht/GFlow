@@ -67,10 +67,6 @@ namespace GFlowSimulation {
 
     //! \brief Pointer to the topology of the simulation
     class Topology *topology;
-    //! \brief Rank of this processor.
-    int rank = 0;
-    //! \brief Total number of processes being used
-    int numProc = 1;
   };
 
 }

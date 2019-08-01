@@ -15,15 +15,6 @@ namespace GFlowSimulation {
     iter(0), argc(0), argv(nullptr), repulsion(DEFAULT_HARD_SPHERE_REPULSION), dissipation(0), center_attraction(0), sim_dimensions(dims),
     bounds(Bounds(2))
   {
-    #if USE_MPI == 1
-    #if _CLANG_ == 1
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &numProc);
-    #else
-    rank    = MPI::COMM_WORLD.Get_rank();
-    numProc = MPI::COMM_WORLD.Get_size();
-    #endif
-    #endif
     // Set up basic objects. The integrator will be created by the creator.
     simData      = new SimData(this);
     integrator   = nullptr;
@@ -125,9 +116,6 @@ namespace GFlowSimulation {
     // Set vectors
     base->modifiersPtr = &modifiers;
     base->interactionsPtr = &interactions;
-    // Set MPI
-    base->rank = rank;
-    base->numProc = numProc;
   }
 
   void GFlow::run(long double rt) {
@@ -181,6 +169,9 @@ namespace GFlowSimulation {
 
     Timer timer;
     timer.start();
+
+    // Create an mpi object for syncing.
+    MPIObject &mpi = topology->getMPIObject();
 
     // Do integration for the requested amount of time
     while (running && requested_time>0) {
@@ -278,7 +269,13 @@ namespace GFlowSimulation {
       }      
       // Reset simdata needs remake flag
       simData->setNeedsRemake(false);
+
+      // Coordinate whether to stop running.
+      mpi.sync_value_bool(running);
     }
+
+    // End of run barrier.
+    mpi.barrier();
 
     // Possibly print a closing update
     if (print_updates && runMode==RunMode::SIM) {
@@ -365,6 +362,10 @@ namespace GFlowSimulation {
 
   int GFlow::getSimDimensions() const {
     return sim_dimensions;
+  }
+
+   bool GFlow::getUseForces() const {
+    return useForces;
   }
 
   pair<int, char**> GFlow::getCommand() const {
@@ -476,6 +477,10 @@ namespace GFlowSimulation {
 
   void GFlow::setBC(const int d, const BCFlag type) {
     boundaryConditions[d] = type;
+  }
+
+  void GFlow::setUseForces(bool f) {
+    useForces = f;
   }
 
   void GFlow::setBounds(const Bounds& bnds) {

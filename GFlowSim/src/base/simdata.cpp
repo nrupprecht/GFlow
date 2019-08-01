@@ -42,6 +42,39 @@ namespace GFlowSimulation {
     // Get ntypes from force master
     _ntypes = forceMaster->getNTypes();
 
+    // Get data from topology
+    #if USE_MPI == 1
+    neighbor_ranks = topology->get_neighbor_ranks();
+    int n_size = neighbor_ranks.size();
+    if (n_size>0) {
+      if (send_ids) delete [] send_ids;
+      send_ids = new vector<int>[n_size];
+      if (request_list) delete [] request_list;
+      request_list = new MPI_Request[n_size];
+      // Set up neighbor map
+      for (int i=0; i<n_size; ++i) neighbor_map.insert(pair<int, int>(neighbor_ranks[i], i));
+      // Set up buffer list
+      buffer_list = vector<vector<RealType> >(n_size);
+    }
+    // Set data width - position (sim_dimensions), velocity (sim_dimensions), radius (1), inverse mass (1), and type (1).
+    data_width = 2*sim_dimensions + 3;
+    #endif
+
+    //*****
+    #if USE_MPI == 1
+      if (topology->getNumProc()>1) {
+        // Temporary fix - get rid of all particles not hosted on this processor.
+        if (_size>0 && topology->is_initialized() ) {
+          int rank = topology->getRank();
+          int numProc = topology->getNumProc();
+          for (int i=0; i<_size; ++i) {
+            if (Type(i)>-1 && !topology->owned_particle(X(i))) markForRemoval(i);
+          }
+        }
+      }
+    #endif
+    //*****
+
     // Sort the particles by position
     sortParticles();
   }
@@ -229,6 +262,7 @@ namespace GFlowSimulation {
   }
 
   void SimData::updateGhostParticles() {
+  #if USE_MPI == 1
     // Get rank and number of processors.
     int rank = topology->getRank();
     int numProc = topology->getNumProc();
@@ -282,6 +316,7 @@ namespace GFlowSimulation {
     #endif 
     #endif
     */
+  #endif // USE_MPI == 1
   }
 
   RealType** SimData::X() {

@@ -7,6 +7,7 @@
 #include "utility/timer.hpp"
 
 // Note to self: Using debuggers in MPI parallel: https://www.open-mpi.org/faq/?category=debugging
+// mpirun -np 2 xterm -e lldb ./bin/driver
 
 namespace GFlowSimulation {
 
@@ -112,6 +113,9 @@ namespace GFlowSimulation {
     //! \brief Get the dimensionality of the simulation.
     int getSimDimensions() const;
 
+    //! \brief Get the use forces flag.
+    bool getUseForces() const;
+
     //! \brief Get the command line arguments.
     pair<int, char**> getCommand() const;
 
@@ -174,6 +178,9 @@ namespace GFlowSimulation {
 
     //! \brief Set a single boundary condition.
     void setBC(const int, const BCFlag);
+
+    //! \brief Set the use forces flag.
+    void setUseForces(bool);
 
     //! \brief Set the simulation bounds.
     void setBounds(const Bounds&);
@@ -306,7 +313,7 @@ namespace GFlowSimulation {
     bool running;
 
     //! \brief If true, do tasks related to force computation.
-    bool useForces;
+    bool useForces = true;
 
     //! \brief How much time we have been requested to run for.
     long double requested_time;
@@ -371,10 +378,6 @@ namespace GFlowSimulation {
 
     //! \brief The run mode of the simulation.
     RunMode runMode = RunMode::IDLE;
-
-    // MPI
-    int rank = 0;
-    int numProc = 1;
 
     // --- Physical constants. These are static, since they should be the same for all objects
 
