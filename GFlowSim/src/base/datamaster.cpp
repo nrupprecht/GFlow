@@ -277,6 +277,9 @@ namespace GFlowSimulation {
     auto toStrRT = [&] (RealType x, int precision=3) -> string {
       return (run_time>0 ? toStr(x) : "--");
     };
+    // Number of interactions:
+    int inters = 0;
+    for (auto &it : gflow->interactions) inters += it->size();
     // Print data
     fout << "Timing and performance:\n";
     if (initialization_time>0) fout << "  - Initialization time:      " << initialization_time << "\n"; 
@@ -287,6 +290,7 @@ namespace GFlowSimulation {
     fout << "\n";
     fout << "  - Ratio x Particles:        " << toStrRT(ratio*particles) << "\n";
     fout << "  - Iter x Particles / s:     " << toStrRT(iterations*(particles/run_time)) << "\n";
+    fout << "  - Interaction pairs / s:    " << toStrRT((iterations/run_time)*inters) << "\n";
     fout << "  - Ratio:                    " << toStrRT(ratio) << "\n";
     fout << "  - Inverse Ratio:            " << toStrRT(1./ratio) << "\n";
     fout << "\n";
@@ -407,11 +411,10 @@ namespace GFlowSimulation {
 
     // --- Interactions
     fout << "Interactions:\n";
-    int c=0, inters=0;
+    int c = 0;
     for (auto &it : gflow->interactions) {
       fout << "     Interaction " << c << ":           length " << it->size() << "\n";
       ++c;
-      inters += it->size();
     }
     fout << "  - Inter.s per particle:     " << static_cast<double>(inters) / particles << "\n";
     fout << "\n";

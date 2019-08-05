@@ -173,6 +173,11 @@ namespace GFlowSimulation {
     // Create an mpi object for syncing.
     MPIObject &mpi = topology->getMPIObject();
 
+    #if USE_MPI == 1
+    // For now, set this to a value that I know is good. Otherwise, the default value is 8, which really slows things down.
+    handler->setUpdateDelaySteps(15);
+    #endif // USE_MPI == 1
+
     // Do integration for the requested amount of time
     while (running && requested_time>0) {
       // --> Pre-step
@@ -234,6 +239,8 @@ namespace GFlowSimulation {
       // Update halo particles. This should be done after all force calculations, but before the next integration steps.
       // For this reason, this occurs *after* modifiers do their post-force routine.
       simData->updateHaloParticles();
+      // Update ghost particles.
+      simData->updateGhostParticles();
       // Continue with normal order of updates.
       integrator->post_forces();                 // -- This is where VV second half kick happens (if applicable)
       for (auto it : additional_integrators) it->post_forces();

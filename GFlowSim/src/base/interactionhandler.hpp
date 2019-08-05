@@ -80,6 +80,9 @@ namespace GFlowSimulation {
     //! \brief Set the maximum update delay.
     void setMaxUpdateDelay(RealType);
 
+    //! \brief Set the update_delay_steps.
+    void setUpdateDelaySteps(int);
+
     // So GFlow can set the bounds.
     friend class GFlow;
 

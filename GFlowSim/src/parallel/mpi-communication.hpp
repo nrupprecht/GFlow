@@ -18,6 +18,7 @@ namespace GFlowSimulation {
     //! \brief Perform an MPI AllReduce, using Min.
     void sync_value_min(RealType&) const;
 
+    //! \brief Sync the value of a boolean, performing an AND
     void sync_value_bool(bool&) const;
 
   private:

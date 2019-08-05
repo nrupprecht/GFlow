@@ -42,26 +42,7 @@ namespace GFlowSimulation {
       int numProc = topology->getNumProc();
       if (numProc>1) {
         #if _CLANG_ == 1
-
-          /*** THIS IS SLOWER
-          // Gather sizes - all_sizes and total are only used by rank 0.
-          int size = data.size(), *all_sizes = nullptr, total = 0;
-          if (rank==0) all_sizes = new int[numProc];
-          MPI_Gather(&size, 1, MPI_INT, all_sizes, 1, MPI_INT, 0, MPI_COMM_WORLD);
-          vector<int> displacements(numProc, 0);
-          if (rank==0) {
-            // Calculate total size needed and allocate.
-            for (int i=0; i<numProc; ++i) total += all_sizes[i];
-            data.resize(total, 0.);
-            // Calculate displacements
-            for (int i=0, c=0; i<numProc; ++i, c+=all_sizes[i]) displacements[i] = c;
-          }
-          // Gather data
-          MPI_Gatherv(&data[0], size, MPI_FLOAT, &data[0], all_sizes, &displacements[0], MPI_FLOAT, 0, MPI_COMM_WORLD);
-          if (rank==0) delete all_sizes;
-          ****/
-           
-          // Recieve all data.
+          // Receive all data.
           if (rank==0) {
             vector<int> recv_size(numProc, 0);
             int total = 0;

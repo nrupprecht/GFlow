@@ -33,7 +33,19 @@ namespace GFlowSimulation {
   //! @brief Given a position and cutoff value, this function returns the
   //! ids of the processors which this particle overlaps.
   void KDTreeTopology::domain_overlaps(const RealType *x, const RealType sg, vector<int>& container) {
-    // STUB
+    // Make sure the container is empty().
+    container.clear();
+    // Go through each dimension.
+    for (int d=0; d<sim_dimensions; ++d) {
+      if (process_bounds.min[d] + sg < x[d] && process_bounds.max[d] - sg); // The particle in entirely contained within this processor.
+      else {
+        // \todo Write this function for real. Right now, I'm just adding particle that aren't entirely within their processor to 
+        // be ghosts for all other processors.
+        for (int i=0; i<neighbor_ranks.size(); ++i) container.push_back(i);
+        // Since we already added the particle to be a ghost for all other processors, we can return.
+        return;
+      }
+    }
   }
 
   vector<int> KDTreeTopology::get_neighbor_ranks() const {

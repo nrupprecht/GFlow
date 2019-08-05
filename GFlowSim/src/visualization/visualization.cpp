@@ -458,9 +458,8 @@ namespace GFlowSimulation {
           break;
         }
         case 5: { // Color by xstripe
-          RealType width = bounds.wd(1);
-          const int nstripes = 50;
-          int s = (stripex - bounds.min[1])/bounds.wd(1) * nstripes;
+          RealType stripe_width = 0.2;
+          int s = (stripex - bounds.min[1])/stripe_width;
           int c = s%4;
           switch (c) {
             case 0:

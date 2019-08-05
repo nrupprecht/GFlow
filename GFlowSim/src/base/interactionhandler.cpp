@@ -150,6 +150,10 @@ namespace GFlowSimulation {
     max_update_delay = delay;
   }
 
+  void InteractionHandler::setUpdateDelaySteps(int s) {
+    if (0<=s) update_delay_steps = s;
+  }
+
   void InteractionHandler::setBounds(const Bounds& bnds) {
     bounds = bnds;
     domain_bounds = bnds;

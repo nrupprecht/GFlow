@@ -52,9 +52,6 @@ namespace GFlowSimulation {
     //! \brief Remove all the particles that need to be removed, consolidate data.
     void doParticleRemoval();
 
-    //! \brief Exchange particles with neighboring domains.
-    void exchangeParticles();
-
     //! \brief Do a quick sort based on the particle's positions.
     void sortParticles();
 
@@ -215,6 +212,8 @@ namespace GFlowSimulation {
     int getFirstGhost();
 
     //! \brief Is this the local id of an owned particle.
+    //!
+    //! If isReal is true, isHalo and isGhost will be false.
     bool isReal(int);
 
     //! \brief Is this the local id of a halo particle.
@@ -265,15 +264,6 @@ namespace GFlowSimulation {
 
     //! \brief Recursively sorts by dimension.
     void recursion_help(int, int, int);
-
-    //! \brief An MPI helper function - 
-    void send_evens();
-    //! \brief An MPI helper function - 
-    void send_odds();
-    //! \brief An MPI helper function - 
-    void recv_evens();
-    //! \brief An MPI helper function - 
-    void recv_odds();
 
     // --- Data
 
@@ -356,8 +346,30 @@ namespace GFlowSimulation {
     // -*-*-*- MPI/Parallel related -*-*-*-
     #if USE_MPI == 1
 
-    //! \brief Width of data to send.
+    //! \brief Exchange particles that belong to other processors.
+    //!
+    //! Move particles that belong to other domains to those domains, and delete them from here. Then recieve
+    //! particles from other domains that belong to this domain.
+    inline void exchange_particles();
+
+    //! \brief Figure out which particles should be ghost particles, and send copies of them to neighboring processors.
+    inline void create_ghost_particles();
+
+    //! \brief Exchange ghost particle information with neighboring domains.
+    inline void update_ghost_particles();
+
+    //! \brief Pack up the particle data for the specified ids and send it to another processor, optionally deleting the original particles
+    //! from this processor.
+    inline void send_particle_data(const vector<int>&, int, vector<RealType>&, MPI_Request*, MPI_Request*, bool=false);
+
+    //! \brief Recieve particle information, and use it to create new particles. Return the number of particles recieved.
+    inline int recv_new_particle_data(int);
+
+    //! \brief Width of data to send when migrating particles.
     int data_width = 0;
+
+    //! \brief Width of data to send when sending ghost particle information.
+    int ghost_data_width = 0;
 
     //! \brief All the processors that are neighbors.
     vector<int> neighbor_ranks;
@@ -385,6 +397,14 @@ namespace GFlowSimulation {
 
     //! \brief The number of ghost particles in this structure.
     int n_ghosts = 0;
+
+    //! \brief List of particles to send as ghosts to neighboring processors. The i-th entry is for the i-th neighbor. The processor id
+    //! can be found by asking the topology (for now this only applies to KD tree, but it probably should be changed to apply to all types
+    //! of topologies).
+    vector<int> *send_ghost_list;
+
+    //! \brief How many ghost particles we will recieve from each neighbor processor.
+    vector<int> recv_ghost_sizes;
 
     /// Sending and receiving data.
 
