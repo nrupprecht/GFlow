@@ -66,10 +66,10 @@ namespace GFlowSimulation {
 
     inline bool do_checks(const vector<float>&);
 
-    inline void get_values(const float*, const float* &, const float* &, float&, int&, float&, float&);
+    inline void get_values(const float*, const float* &, const float* &, float&, int&, float&, float&, int&);
 
     //! \brief Determine what color a particle should be.
-    inline void determine_color(RGBApixel&, int, const float*, const float*, int, float, float);
+    inline void determine_color(RGBApixel&, int, const float*, const float*, int, float, float, int);
 
     //! \brief Set up the camera to be in the standard position.
     inline void standard_camera_setup();
@@ -97,6 +97,9 @@ namespace GFlowSimulation {
 
     //! \brief Where in the data the stripe data is.
     int stripex_place = -1;
+
+    //! \brief Where in the data the processor information is.
+    int proc_place = -1;
 
     //! \brief The width of the data.
     int dataWidth = 0;

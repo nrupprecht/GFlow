@@ -28,6 +28,21 @@ namespace GFlowSimulation {
     KDTreeTopNode *left = nullptr, *right = nullptr;
   };
 
+
+  /* Check if the domains are either the split along dimensions d, or within cutoff distance.
+    Spit.
+       B|
+    ----|----
+        |A
+
+    Within cutoff (as long as the distance from A to B is within the cutoff).
+
+       B|
+    ----|
+        |-----
+        |A
+  */
+
   class KDTreeTopology : public Topology {
   public:
     //! \brief Default constructor, takes the number of dimensions.
@@ -65,15 +80,30 @@ namespace GFlowSimulation {
 
   private:
 
+    //! \brief Compute the KD tree decomposition of the simulation bounds.
     void compute_decomp(int, int, KDTreeTopNode*, int);
+
+    //! \brief Find the neighbors of this processor.
+    //!
+    //! This should be called after compute_decomp.
+    void find_neighbors();
+
+    //! \brief Determine which neighbors we might have to send ghosts particles to.
+    void determine_sendable_neighbor_ranks();
 
     //! \brief The root of the kd tree.
     KDTreeTopNode *root = nullptr;
     //! \brief The node in the tree corresponding to the bounds for this processor.
     KDTreeTopNode *leaf = nullptr;
 
+    //! \brief A vector of all the (other) processor nodes (leaves of the tree).
+    vector<KDTreeTopNode*> all_processor_nodes;
+
     //! \brief The ranks of processors that are potential neighbors of this processor.
     vector<int> neighbor_ranks;
+
+    //! \brief The nodes of the i-th neighbors for this node. Useful for checking what neighbor's bounds are.
+    vector<KDTreeTopNode*> neighbor_nodes;
   };
 
 }

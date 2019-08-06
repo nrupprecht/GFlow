@@ -239,13 +239,15 @@ namespace GFlowSimulation {
       // Update halo particles. This should be done after all force calculations, but before the next integration steps.
       // For this reason, this occurs *after* modifiers do their post-force routine.
       simData->updateHaloParticles();
-      // Update ghost particles.
-      simData->updateGhostParticles();
       // Continue with normal order of updates.
       integrator->post_forces();                 // -- This is where VV second half kick happens (if applicable)
       for (auto it : additional_integrators) it->post_forces();
       dataMaster->post_forces();
       handler->post_forces();
+
+      // Update ghost particles. This the positions of particles on this processor that are ghosts on other processors back to 
+      // the other processors. This should be done after VV second half kick happens.
+      simData->updateGhostParticles();
 
       // --> Post-step
       if (requested_time<=elapsed_time) running = false;
@@ -677,6 +679,22 @@ namespace GFlowSimulation {
 
   void GFlow::giveFileToDataMaster(string filename, string file_contents) {
     if (dataMaster) dataMaster->giveFile(filename, file_contents);
+  }
+
+  void GFlow::startMPIExchangeTimer() {
+    mpi_exchange_timer.start();
+  }
+
+  void GFlow::stopMPIExchangeTimer() {
+    mpi_exchange_timer.stop();
+  }
+
+  void GFlow::startMPIGhostTimer() {
+    mpi_ghost_timer.start();
+  }
+
+  void GFlow::stopMPIGhostTimer() {
+    mpi_ghost_timer.stop();
   }
 
   inline void GFlow::clearForces() {

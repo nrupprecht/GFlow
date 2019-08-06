@@ -48,6 +48,7 @@ namespace GFlowSimulation {
     class InteractionHandler* getHandler();
     class DataMaster* getDataMaster();
     class ForceMaster* getForceMaster();
+    class Topology* getTopology();
 
     int getSimDimensions() const;
 

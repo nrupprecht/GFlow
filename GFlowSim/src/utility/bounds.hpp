@@ -45,6 +45,9 @@ namespace GFlowSimulation {
     //! \brief Get the volume of the bounds.
     RealType vol() const;
 
+    //! \brief Find the minimum distance between a point and the bounds.
+    RealType distance(const RealType*) const;
+
     //! \brief Get the dimensionality of the bounds.
     int dims() const;
 

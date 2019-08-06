@@ -48,6 +48,9 @@ namespace GFlowSimulation {
     vector<string> integer_data_entries;
     vector<int> integer_data_positions;
 
+    //! \brief Whether to write processor ownership related info. This would be the last entry.
+    bool write_processor_info;
+
     //! \brief The bounds data.
     Bounds bounds;
     //! \brief The data width.

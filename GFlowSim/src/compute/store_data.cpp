@@ -1,10 +1,11 @@
 #include "store_data.hpp"
 // Other files
 #include "../base/simdata.hpp"
+#include "../parallel/topology.hpp"
 
 namespace GFlowSimulation {
 
-  StoreData::StoreData() : simData(nullptr), bounds(2), dataWidth(0), sim_dimensions(0), nTypes(0) {}
+  StoreData::StoreData() : simData(nullptr), bounds(2), dataWidth(0), sim_dimensions(0), nTypes(0), write_processor_info(true) {}
 
   void StoreData::initialize(SimData *sd) {
     // Make sure simData is non-null
@@ -49,7 +50,9 @@ namespace GFlowSimulation {
       }
     }
     integer_data_entries = temp;
-    
+
+    // Processor data is takes up one integer slot.
+    if (write_processor_info) ++dataWidth;
   }
 
   void StoreData::set_vector_data(const vector<string>& v) {
@@ -79,9 +82,9 @@ namespace GFlowSimulation {
   void StoreData::store(vector<float>& data) {
     data.clear();
     // If there are no particles/no data, return
-    if (dataWidth==0 || simData->number()==0) return;
+    if (dataWidth==0 || simData->number_owned()==0) return;
     // Set up data
-    data = vector<float>(dataWidth*simData->number(), 0);
+    data = vector<float>(dataWidth*simData->number_owned(), 0);
     // Fill the array
     int data_pointer = 0;
     for (int n=0; n<simData->size(); ++n) {
@@ -101,6 +104,11 @@ namespace GFlowSimulation {
       for (auto i : integer_data_positions) {
         int *id = simData->IntegerData(i);
         if (id!=nullptr) data[data_pointer] = id[n]; 
+        ++data_pointer;
+      }
+      if (write_processor_info) {
+        if (simData->isReal(n)) data[data_pointer] = 2*simData->getTopology()->getRank();
+        else data[data_pointer] = 2*simData->getTopology()->getRank() + 1;
         ++data_pointer;
       }
     }
@@ -184,12 +192,20 @@ namespace GFlowSimulation {
     fout << "\n";
     
     // Integer data types
-    fout << integer_data_entries.size() << ",";
+    int integer_data_size = integer_data_entries.size(); 
+    if (write_processor_info) ++integer_data_size;
+    fout << integer_data_size << ",";
     for (int i=0; i<integer_data_entries.size(); ++i) {
       fout << integer_data_entries[i];
       if (i!=integer_data_entries.size()-1) fout << ",";
     }
+    // Processor info.
+    if (write_processor_info) {
+      if (integer_data_size>1) fout << ",Proc";
+      else fout << "Proc";
+    }
     fout << "\n";
+    
   }
 
 }

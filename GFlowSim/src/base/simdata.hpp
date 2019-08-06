@@ -387,13 +387,14 @@ namespace GFlowSimulation {
     vector<int> *send_ids = nullptr;
 
     /// Recieving data.
+
+    //! \brief The i-th entry in the vector contains the number of particles (NOT data size) that we need to send to 
+    //! the i-th neighboring processor.
+    vector<int> send_size;
     
     //! \brief The i-th entry in the vector contains the number of particles (NOT data size) that the i-th neighboring 
     //! processor will send to this processor.
     vector<int> recv_size;
-
-    //! \brief The place (local id) where ghost particles start in the data arrays.
-    int init_ghost_id = -1;
 
     //! \brief The number of ghost particles in this structure.
     int n_ghosts = 0;
@@ -401,7 +402,7 @@ namespace GFlowSimulation {
     //! \brief List of particles to send as ghosts to neighboring processors. The i-th entry is for the i-th neighbor. The processor id
     //! can be found by asking the topology (for now this only applies to KD tree, but it probably should be changed to apply to all types
     //! of topologies).
-    vector<int> *send_ghost_list;
+    vector<int> *send_ghost_list = nullptr;
 
     //! \brief How many ghost particles we will recieve from each neighbor processor.
     vector<int> recv_ghost_sizes;
@@ -415,6 +416,7 @@ namespace GFlowSimulation {
     vector<RealType> recv_buffer;
 
     MPI_Request *request_list = nullptr;
+    MPI_Request request;
 
     #endif
   };

@@ -36,6 +36,7 @@ namespace GFlowSimulation {
 
     // If we are coloring by type, we need a large enough color bank
     if (color_option==0 && colorBank.size()<ntypes) setColorBankSize(ntypes);
+    if (color_option==6) setColorBankSize(12); // I just picked a random large enough number.
 
     // Create a video from the data
     if (dimensions==2) createVideo2d(saveName, data);
@@ -153,8 +154,9 @@ namespace GFlowSimulation {
     // Draw all particles
     for (int i=0; i<data.size(); i+=dataWidth) {
       // Get valudes
-      const float *pos, *vel; float sigma, distance, stripex; int type;
-      get_values(&data[i], pos, vel, sigma, type, distance, stripex);
+      const float *pos, *vel; float sigma, distance, stripex; 
+      int type, proc;
+      get_values(&data[i], pos, vel, sigma, type, distance, stripex, proc);
       // If type<0, continue
       if (type<0) continue;
       // Find the center of the particle
@@ -163,7 +165,7 @@ namespace GFlowSimulation {
       float rf = sigma/wx;
       // --- Determine the color
       RGBApixel color = RGB_Green;
-      determine_color(color, i, pos, vel, type, distance, stripex);
+      determine_color(color, i, pos, vel, type, distance, stripex, proc);
       // --- Create the color function.
       // xf, yf \in [-1, 1] (roughly - could be a bit larger)
       std::function<RGBApixel(float, float, bool&)> colorF = 
@@ -209,8 +211,9 @@ namespace GFlowSimulation {
     // Draw all particles
     for (int i=0; i<data.size(); i+=dataWidth) {
       // Get valudes
-      const float *pos, *vel; float sigma, distance, stripex; int type;
-      get_values(&data[i], pos, vel, sigma, type, distance, stripex);
+      const float *pos, *vel; float sigma, distance, stripex; 
+      int type, proc;
+      get_values(&data[i], pos, vel, sigma, type, distance, stripex, proc);
       // If type<0, continue
       if (type<0) continue;
       // Find the center of the particle
@@ -224,7 +227,7 @@ namespace GFlowSimulation {
 
       // --- Determine the color
       RGBApixel color = RGB_Green;
-      determine_color(color, i, pos, vel, type, distance, stripex);
+      determine_color(color, i, pos, vel, type, distance, stripex, proc);
       // --- Create the color function.
       // xf, yf \in [-1, 1] (roughly - could be a bit larger)
       std::function<RGBApixel(float, float, bool&)> colorF = 
@@ -261,12 +264,12 @@ namespace GFlowSimulation {
     if (!do_checks(data)) return;
     // Add all particles to the ray tracer
     const float *pos, *vel; float sigma, distance, stripex; 
-    int type;
+    int type, proc;
     for (int i=0; i<data.size(); i+=dataWidth) {
       // Get values
-      get_values(&data[i], pos, vel, sigma, type, distance, stripex);
+      get_values(&data[i], pos, vel, sigma, type, distance, stripex, proc);
       // Determine the color
-      determine_color(color, i, pos, vel, type, distance, stripex);
+      determine_color(color, i, pos, vel, type, distance, stripex, proc);
       // Add the sphere to the ray tracer.
       tracer.addSphere(pos, sigma, color);
     }
@@ -374,6 +377,7 @@ namespace GFlowSimulation {
     // Integer data
     shift += scalar_data.size();
     type_place = find("Type", integer_data) + shift;
+    proc_place = find("Proc", integer_data) + shift;
   }
 
   inline bool Visualization::do_checks(const vector<float>& data) {
@@ -416,7 +420,7 @@ namespace GFlowSimulation {
     return true;
   }
 
-  inline void Visualization::get_values(const float * pdata, const float * &pos, const float * &vel, float& sigma, int& type, float& distance, float& stripex) {
+  inline void Visualization::get_values(const float * pdata, const float * &pos, const float * &vel, float& sigma, int& type, float& distance, float& stripex, int& proc) {
     // Get individual entries
     pos = pos_place<0 ? nullptr : &pdata[pos_place];
     vel = vel_place<0 ? nullptr : &pdata[vel_place]; // Point to start of velocity data
@@ -424,9 +428,10 @@ namespace GFlowSimulation {
     type = type_place<0 ? 0 : static_cast<int>(pdata[type_place]); // Get type
     distance = distance_place<0 ? 0 : pdata[distance_place]; // Get distance traveled
     stripex  = stripex_place<0  ? 0 : pdata[stripex_place];
+    proc = proc_place<0 ? 0 : pdata[proc_place];
   }
 
-  inline void Visualization::determine_color(RGBApixel& color, int i, const float *pos, const float *vel, int type, float distance, float stripex) {
+  inline void Visualization::determine_color(RGBApixel& color, int i, const float *pos, const float *vel, int type, float distance, float stripex, int proc) {
     if (!colorBank.empty()) {
       switch (color_option) {
         default:
@@ -475,6 +480,10 @@ namespace GFlowSimulation {
               color = RGB_Red;
               break;
           }
+        }
+        case 6: { // Color by processor data
+          color = getColor(proc);
+          break;
         }
       }
     }

@@ -37,6 +37,10 @@ namespace GFlowSimulation {
     return forceMaster;
   }
 
+  class Topology* Base::getTopology() {
+    return topology;
+  }
+
   int Base::getSimDimensions() const {
     return sim_dimensions;
   }

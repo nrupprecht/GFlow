@@ -40,6 +40,7 @@ namespace GFlowSimulation {
     #if USE_MPI == 1
       int rank = topology->getRank();
       int numProc = topology->getNumProc();
+      
       if (numProc>1) {
         #if _CLANG_ == 1
           // Receive all data.
@@ -54,7 +55,6 @@ namespace GFlowSimulation {
             int place = data.size();
             // Resize data
             data.resize(data.size()+total, 0.);
-
             // Collect all the data from the processors.
             for (int i=1; i<numProc; ++i) {
               if (recv_size[i]>0) MPI_Recv(&data[place], recv_size[i], MPI_FLOAT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -74,6 +74,7 @@ namespace GFlowSimulation {
           throw false;
         #endif 
       }
+      
       // Store this timestep's data
       if (rank==0) positions.push_back(data);
     #else

@@ -453,7 +453,7 @@ namespace GFlowSimulation {
   }
 
   inline void Domain::assign_border_types() {
-    /*
+    
     const BCFlag *bcs = Base::gflow->getBCs(); // Get the boundary condition flags
     //! \todo Use topology object to determine border types.
     //! For now, just use halo cells whenever possible.
@@ -467,7 +467,7 @@ namespace GFlowSimulation {
         border_type_down[d] = 0;
       }
     }
-    */
+    
   }
 
   void Domain::calculate_domain_cell_dimensions() {

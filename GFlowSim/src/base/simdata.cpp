@@ -65,6 +65,8 @@ namespace GFlowSimulation {
       request_list = new MPI_Request[n_size];
       // Recieve ghost sizes vector
       recv_ghost_sizes = vector<int>(n_size, 0);
+      // Send size.
+      send_size = vector<int>(n_size, 0);
       // Set up neighbor map
       for (int i=0; i<n_size; ++i) neighbor_map.insert(pair<int, int>(neighbor_ranks[i], i));
       // Set up buffer list
@@ -137,6 +139,10 @@ namespace GFlowSimulation {
     Id(_size) = next_global_id++;
     ++_number;
     ++_size;
+
+    // Assumes that there are no halo or ghost particles.
+    ++_first_halo;
+    ++_first_ghost;
   }
 
   //! \param num The number of particle slots to add.
@@ -155,6 +161,10 @@ namespace GFlowSimulation {
       Id(_size) = next_global_id++;
       ++_number;
       ++_size;
+
+      // Assumes that there are no halo or ghost particles.
+      ++_first_halo;
+      ++_first_ghost;
     }
   }
 
@@ -278,8 +288,14 @@ namespace GFlowSimulation {
     // Return if the arrays are not allocated, or this there is only one processor.
     if (send_ids==nullptr || topology->getNumProc()==1) return;
 
+    // Start mpi timer.
+    gflow->startMPIGhostTimer();
+
     // Update ghost particles.
     update_ghost_particles();
+
+    // Stop mpi timer.
+    gflow->stopMPIGhostTimer();
   #endif // USE_MPI == 1
   }
 
@@ -553,9 +569,9 @@ namespace GFlowSimulation {
   void SimData::removeGhostParticles() {
   #if USE_MPI == 1
     // Check if this is necessary.
-    if (n_ghosts<=0 || init_ghost_id<0) return;
+    if (n_ghosts<=0) return;
     // Remove ghost particles.
-    for (int i=0; i<n_ghosts; ++i) markForRemoval(init_ghost_id+i);
+    for (int i=0; i<n_ghosts; ++i) markForRemoval(_first_ghost+i);
   #endif
   }
 
@@ -571,17 +587,18 @@ namespace GFlowSimulation {
     // Wrap the particles, so they are in their cannonical positions
     Base::gflow->wrapPositions();
 
-    int rank = topology->getRank();
-    int numProc = topology->getNumProc();
-
     #if USE_MPI == 1
       // Get the bounds this processor manages.
-      Bounds bounds = topology->getProcessBounds();
       MPIObject &mpi = topology->getMPIObject();
+      // Get rank and number of processors.
+      int rank = topology->getRank();
+      int numProc = topology->getNumProc();
 
       #if _CLANG_ == 1
         // If there are multiple processors.
         if (numProc>1 && !neighbor_ranks.empty()) {
+          // Start mpi timer.
+          gflow->startMPIExchangeTimer();
           
           // --- Move particles that belong to other domains to those domains, and delete them from here. Then receive
           //     particles from other domains that belong to this domain.
@@ -591,19 +608,26 @@ namespace GFlowSimulation {
           mpi.barrier();
 
           // Start adding ghost particles here.
-          init_ghost_id = _size;
+          int save_first_ghost = _size;
 
           // --- Look for particles that need to be ghosts on other processors.
           create_ghost_particles();
 
+          // Adding new particles increments _first_halo and _first_ghost, so we have to correct them.
+          _first_ghost = save_first_ghost;
+          _first_halo  = save_first_ghost;
+
           /// Wait for the last request to process.
           mpi.barrier();
 
-          /// Update ghost particles, so their data is on this processor
+          // --- Update ghost particles, so their data is on this processor
           update_ghost_particles();
 
           /// Wait for the last request to process.
           mpi.barrier();
+
+          // Stop mpi timer.
+          gflow->stopMPIExchangeTimer();
         }
         // If there is only one processor, even though this is an MPI run.
         else doParticleRemoval();
@@ -866,29 +890,19 @@ namespace GFlowSimulation {
     // Barrier.
     mpi.barrier();
 
-    // An MPI request.
-    MPI_Request request;
-    // Send particles to other processors, and delete them from this processor. Walk through every neighboring domain, 
-    // tell it how many particles we are going to send, and then send the actual particles.
-    for (int i=0; i<neighbor_ranks.size(); ++i) {
-      // Send particle information, deleting the particles that we send.
+    // Send particle information, deleting the particles that we send.
+    for (int i=0; i<neighbor_ranks.size(); ++i)
       send_particle_data(send_ids[i], neighbor_ranks[i], buffer_list[i], &request_list[i], &request, true);
-    }
 
     // Do particle removal. We do this here so we get rid of all the particles that have migrated to other processors. There will be no "holes"
     // in the array after the particle removal.
     doParticleRemoval(); 
     
     // --- Receive particles from other processors.
-    Vec X(sim_dimensions), V(sim_dimensions);
-    // Walk through every neighboring domain, receive how much data to expect, make sure our receive buffer is big enough, then
-    // receive the data and copy it into storage.
-    for (int i=0; i<neighbor_ranks.size(); ++i) {
-      // Get the rank.
-      int n_rank = neighbor_ranks[i]; 
-      // Recieve particle information, and use it to create new particles.
+
+    // Recieve particle information, and use it to create new particles.
+    for (int n_rank : neighbor_ranks)
       recv_new_particle_data(n_rank);
-    }
   }
 
   inline void SimData::create_ghost_particles() {
@@ -901,7 +915,7 @@ namespace GFlowSimulation {
       // The particle cutoff that should be used to test whether the particle is close enough to another domain.
       RealType cutoff = Sg(id) * forceMaster->getMaxCutoff(Type(id)) + skin_depth;
       // Check if the particle overlaps with another domain.
-      topology->domain_overlaps(X(id), cutoff, overlaps); // ---> \todo Should be max cutoff, not SG
+      topology->domain_overlaps(X(id), cutoff, overlaps);
 
       // Store the particle id in the send_ghost_list entry for every processor we need to send this particle to as a ghost.
       for (auto proc_n : overlaps) send_ghost_list[proc_n].push_back(id);            
@@ -917,10 +931,6 @@ namespace GFlowSimulation {
     }
 
     // --- Tell neighboring processors how many particles to expect.
-
-    // An MPI request.
-    MPI_Request request;
-
     for (int i=0; i<neighbor_ranks.size(); ++i) {
       // Send particle information, but do not delete the original particles, since they will be ghosts on the other processors.
       send_particle_data(send_ghost_list[i], neighbor_ranks[i], buffer_list[i], &request_list[i], &request, false);
@@ -939,92 +949,39 @@ namespace GFlowSimulation {
   }
 
   inline void SimData::update_ghost_particles() {
-    // Since buffer_list has already been used to send the ghost information at least once, there is no need to make sure it is big enough - it is.
-
-    return;
-
-    // An MPI request.
-    MPI_Request request;
 
     // Get an MPI object.
     MPIObject &mpi = topology->getMPIObject();
 
-    // Send force information about YOUR GHOST PARTICLES back to the processor the particle belongs to.
-    int id_counter = init_ghost_id;
+    // Update the positions information of ghost particles on other processors.
+    int id_counter = _first_ghost;
     for (int i=0; i<neighbor_ranks.size(); ++i) {
       // How many ghost particles are hosted on the i-th processor, and should have their information returned to there.
-      int size = recv_ghost_sizes[i];
+      int size = send_ghost_list[i].size();
       // Only send data if there is data to send.
       if (size>0) {
+        // Make sure buffer is large enough.
+        if (buffer_list[i].size()<size*ghost_data_width) buffer_list[i].resize(size*ghost_data_width);
         // Pack the data into buffer_list
-        for (int j=0; j<size; ++j, ++id_counter) {
-          copyVec(F(id_counter), &buffer_list[i][ghost_data_width*j], sim_dimensions);
+        int j = 0;
+        for (int id : send_ghost_list[i]) {
+          copyVec(X(id), &buffer_list[i][ghost_data_width*j], sim_dimensions);
+          ++j;
         }
         // Send the data (non-blocking) back to the processor.
         MPI_Isend(buffer_list[i].data(), size*ghost_data_width, MPI_FLOAT, neighbor_ranks[i], 0, MPI_COMM_WORLD, &request);
       }
     }
 
-    // Wait for requests to be processed.
-    mpi.barrier();
-
-    // Recieve force information about YOUR OWNED PARTICLES that are ghost particles on other processors. Update the force buffer.
-    for (int i=0; i<neighbor_ranks.size(); ++i) {
-      // Make a reference to the vector of particles that we expect to receive from the other domain (for notational convenience).
-      vector<int> &ghost_list = send_ghost_list[i];
-      // The total number of particles we expect to receive.
-      int size = ghost_list.size();
-      // We only receive data if there is any data to receive... fancy that.
-      if (size>0) {
-        // Recieve data into recv_buffer.
-        MPI_Recv(recv_buffer.data(), size*ghost_data_width, MPI_FLOAT, neighbor_ranks[i], 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-        // Update particle force data.
-        for (int i=0; i<size; ++i) {
-          int id = ghost_list[i]; // What particle should this be.
-          plusEqVec(F(id), &recv_buffer[i*ghost_data_width], sim_dimensions); // Update force buffer.
-        }
-      }
-    }
-
-    // Wait for requests to be processed.
-    mpi.barrier();
-
-    // Send force information about YOUR OWNED PARTICLES that are ghost particles on other processors.
-    // At this point, the force buffers for particles that we own have the correct total force on the particle. Send this force back to 
-    // update all the ghost particles on other processors, so that the integrators can correctly integrate their motion.
-    // This function is exactly the same as the first send, since we are sending the exact same information (address wise, not value-wise).
-    for (int i=0; i<neighbor_ranks.size(); ++i) {
-      vector<int> &ghost_list = send_ghost_list[i];
-      // The total number of particles we expect to receive.
-      int size = ghost_list.size();
-
-      if (size>0) {
-        // Pack up force data.
-        for (int j=0; j<size; ++j) {
-          int id = send_ghost_list[i][j];
-          // Copy particle information to the buffer. \todo Automate a way to specify arbitrary subsets of the particle data to send.
-          copyVec(F(id), &buffer_list[i][ghost_data_width*j], sim_dimensions); // Force
-        }
-        // Send the data (non-blocking).
-        MPI_Isend(buffer_list[i].data(), size*ghost_data_width, MPI_FLOAT, neighbor_ranks[i], 0, MPI_COMM_WORLD, &request);
-      }
-    }
-
-    // Wait for requests to be processed.
-    mpi.barrier();
-
-    // Recieve data about YOUR GHOST PARTICLES total forces, and updata their force buffers.
-    id_counter = init_ghost_id;
-    for (int i=0; i<neighbor_ranks.size(); ++i) {
-      // The number of ghost particles we will receive information for.
+    // Receive position data about ghosts on your processor.
+    for (int i=0, p_id=_first_ghost; i<neighbor_ranks.size(); ++i) {
       int size = recv_ghost_sizes[i];
-      // Recieve data if there is any to receive.
       if (size>0) {
+        // Receive the data.
         MPI_Recv(recv_buffer.data(), size*ghost_data_width, MPI_FLOAT, neighbor_ranks[i], 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        // Unpack data
-        for (int j=0; j<size; ++j, ++id_counter) {
-          copyVec(&recv_buffer[i*ghost_data_width], F(id_counter), sim_dimensions);
+        // Unpack the position data into the ghost particles.
+        for (int j=0; j<size; ++j, ++p_id) {
+          copyVec(&recv_buffer[j*ghost_data_width], X(p_id), sim_dimensions);
         }
       }
     }

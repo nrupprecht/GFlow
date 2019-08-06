@@ -254,10 +254,25 @@ namespace GFlowSimulation {
     //! \brief Set data master command line data.
     void setDMCmd(int, char**);
 
+    //! \brief Give a file to datamaster. The datamaster can then write this file out as part of a run summary.
+    //!
+    //! This is used to record what the setup file was.
     void giveFileToDataMaster(string, string);
 
     //! \brief Get the boltzmann constant.
     RealType getKB();
+
+    //! \brief Start the mpi timer.
+    void startMPIExchangeTimer();
+
+    //! \brief Stop the mpi timer.
+    void stopMPIExchangeTimer();
+
+    //! \brief Start the mpi timer.
+    void startMPIGhostTimer();
+
+    //! \brief Stop the mpi timer.
+    void stopMPIGhostTimer();
 
     // Creators are a friend classes --- all must be since friendship is not inherited
     friend class Creator;
@@ -361,11 +376,19 @@ namespace GFlowSimulation {
     // Timing
     Timer domain_timer;
 
-    //! \brief Timer to time how long the bonded interactions take.
+    //! \brief Timer used to time how long the bonded interactions take.
     Timer bonded_timer;
 
-    //! \brief Timer to time how long the body execution takes.
+    //! \brief Timer used to time how long the body execution takes.
     Timer body_timer;
+
+    //! \brief Timer used to time how much time mpi particle exchange operations take up. This timer should be started and stopped 
+    //! by classes invoking MPI.
+    Timer mpi_exchange_timer;
+
+    //! \brief Timer used to time how much time mpi ghost syncronization operations take up. This timer should be started and stopped 
+    //! by classes invoking MPI.
+    Timer mpi_ghost_timer;
 
     //! \brief Whether to print updates to a screen.
     bool print_updates = false;

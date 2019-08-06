@@ -1,4 +1,6 @@
 #include "bounds.hpp"
+// Other files
+#include "vectormath.hpp"
 
 namespace GFlowSimulation {
 
@@ -96,6 +98,17 @@ namespace GFlowSimulation {
     for (int d=0; d<dimensions; ++d)
       v *= (max[d] - min[d]);
     return v;
+  }
+
+  RealType Bounds::distance(const RealType *x) const {
+    // Tally up distances in each dimension.
+    RealType dsqr = 0;
+    for (int d=0; d<dimensions; ++d) {
+      if (x[d]<min[d]) dsqr += sqr(min[d]-x[d]);
+      else if (max[d]<x[d]) dsqr += sqr(x[d]-max[d]);
+    }
+    // Return the distance.
+    return sqrt(dsqr);
   }
 
   int Bounds::dims() const { 

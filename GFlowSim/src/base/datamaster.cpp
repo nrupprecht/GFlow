@@ -297,17 +297,29 @@ namespace GFlowSimulation {
 
     if (Base::gflow->getTotalTime()>0) {
       fout << "Timing breakdown:\n";
-      const int entries = 6;
+      const int entries = 8;
       double timing[entries], total = 0;
-      string separator = "%\t\t";
-      fout << "  -- Integration:             " << toStrPP(timing[0] = integrator->get_time()/run_time*100) <<separator << integrator->get_time() << "\n";
-      fout << "  -- Pre-forces, domain:      " << toStrPP(timing[1] = gflow->domain_timer.time()/run_time*100) << separator << gflow->domain_timer.time() << "\n";
-      fout << "  -- Non-bonded:              " << toStrPP(timing[2] = forceMaster->get_time()/run_time*100) << separator << forceMaster->get_time() << "\n";
-      fout << "  -- Bonded:                  " << toStrPP(timing[3] = gflow->bonded_timer.time()/run_time*100) << separator << gflow->bonded_timer.time() << "\n";
-      fout << "  -- Body:                    " << toStrPP(timing[4] = gflow->body_timer.time()/run_time*100) << separator << gflow->body_timer.time() << "\n";
-      fout << "  -- Data objects:            " << toStrPP(timing[5] = data_timer.time()/run_time*100) << separator << data_timer.time() << "\n";
+      // Set timing entries.
+      timing[0] = integrator->get_time();
+      timing[1] = gflow->domain_timer.time();
+      timing[2] = forceMaster->get_time();
+      timing[3] = gflow->bonded_timer.time();
+      timing[4] = gflow->body_timer.time();
+      timing[5] = data_timer.time();
+      timing[6] = gflow->mpi_exchange_timer.time();
+      timing[7] = gflow->mpi_ghost_timer.time();
+      // Print timing data.
+      string sep = "%\t\t";
+      fout << "  -- Integration:             " << toStrPP(timing[0]/run_time*100) << sep << timing[0] << "\n";
+      fout << "  -- Pre-forces, domain:      " << toStrPP(timing[1]/run_time*100) << sep << timing[1] << "\n";
+      fout << "  -- Non-bonded:              " << toStrPP(timing[2]/run_time*100) << sep << timing[2] << "\n";
+      fout << "  -- Bonded:                  " << toStrPP(timing[3]/run_time*100) << sep << timing[3] << "\n";
+      fout << "  -- Body:                    " << toStrPP(timing[4]/run_time*100) << sep << timing[4] << "\n";
+      fout << "  -- Data objects:            " << toStrPP(timing[5]/run_time*100) << sep << timing[5] << "\n";
+      fout << "  -- MPI particle exchange:   " << toStrPP(timing[6]/run_time*100) << sep << timing[6] << "\n";
+      fout << "  -- MPI ghost sync.:         " << toStrPP(timing[7]/run_time*100) << sep << timing[7] << "\n";
       for (int i=0; i<entries; ++i) total += timing[i];
-      fout << "  - Uncounted:                " << std::setprecision(3) << toStrPP((100. - total)) << separator << run_time*(100. - total)*0.01 << "\n";
+      fout << "  - Uncounted:                " << std::setprecision(3) << toStrPP((1. - total/run_time)) << sep << run_time - total << "\n";
       fout << "\n";
     }
 

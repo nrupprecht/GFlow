@@ -21,6 +21,14 @@ namespace GFlowSimulation {
     num_barriers = 0;
   }
 
+  void MPIObject::sync_value_sum(int& term) const {
+    #if USE_MPI == 1
+    RealType sum;
+    MPI_Allreduce(&term, &sum, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    term = sum;
+    #endif
+  }
+
   void MPIObject::sync_value_min(RealType& val) const {
     #if USE_MPI == 1
     RealType min_val;
@@ -35,6 +43,15 @@ namespace GFlowSimulation {
     MPI_Allreduce(&v, &gv, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
     val = (gv==1);
     #endif
+  }
+
+  void MPIObject::send_single(int& val, int rank) {
+    MPI_Request request;
+    MPI_Isend(&val, 1, MPI_INT, rank, 0, MPI_COMM_WORLD, &request);  
+  }
+
+  void MPIObject::recv_single(int& val, int rank) {
+    MPI_Recv(&val, 1, MPI_INT, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE); 
   }
 
 }
