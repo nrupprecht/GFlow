@@ -161,6 +161,9 @@ namespace GFlowSimulation {
     //! \brief The size of the part of the arrays that may contain valid particles.
     int size() const;
 
+    //! \brief The size of the part of the arrays that may contained valid owned (non-ghost) particles.
+    int size_owned() const;
+
     //! \brief Return the number of particles on the processor.
     int number() const;
 

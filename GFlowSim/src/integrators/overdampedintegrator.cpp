@@ -50,7 +50,7 @@ namespace GFlowSimulation {
     Integrator::post_forces();
 
     // Number of (real - non ghost) particles
-    int size = simData->size();
+    int size = simData->size_owned();
     if (size==0) return;
 
     // Time step

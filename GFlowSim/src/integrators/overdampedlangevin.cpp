@@ -16,7 +16,7 @@ namespace GFlowSimulation {
     Integrator::post_forces();
     
     // Number of (real - non ghost) particles
-    int size = simData->size();
+    int size = simData->size_owned();
     if (size==0) return;
     // Get arrays
     RealType *x = simData->X_arr(), *v = simData->V_arr(), *f = simData->F_arr(), *im = simData->Im(), *sg = simData->Sg();

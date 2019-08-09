@@ -11,8 +11,12 @@ namespace GFlowSimulation {
     // Get data.
     RealType time = Base::gflow->getElapsedTime();
     RealType ke = calculate_kinetic(simData, useAve);
+
+    #if USE_MPI == 1
+    MPIObject::mpi_sum(ke);
+    #endif 
     // Store data.
-    data.push_back(RPair(time, ke));
+    if (topology->getRank()==0) data.push_back(RPair(time, ke));
 
     // A useful check
     if(isnan(ke)) throw NanValue("KE");

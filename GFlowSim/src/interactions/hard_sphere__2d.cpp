@@ -2,7 +2,11 @@
 
 namespace GFlowSimulation {
 
-  HardSphere_2d::HardSphere_2d(GFlow *gflow) : HardSphere(gflow) {};
+  HardSphere_2d::HardSphere_2d(GFlow *gflow) : HardSphere(gflow) {
+
+    setRepulsion(5*DEFAULT_HARD_SPHERE_REPULSION);
+
+  };
 
   void HardSphere_2d::interact() const {
     // Common tasks

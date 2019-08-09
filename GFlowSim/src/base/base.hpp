@@ -2,6 +2,8 @@
 #define __BASE_HPP__GFLOW__
 
 #include "../utility/utility.hpp"
+#include "../parallel/mpi-communication.hpp"
+#include "../parallel/topology.hpp"
 
 namespace GFlowSimulation {
 

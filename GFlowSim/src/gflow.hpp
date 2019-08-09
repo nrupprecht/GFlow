@@ -137,6 +137,9 @@ namespace GFlowSimulation {
     //! \brief Get the integrator.
     class Integrator* getIntegrator();
 
+    //! \brief Get the topology.
+    class Topology* getTopology();
+
     //! \brief Get the number of integrators that gflow has.
     int getNumIntegrators() const; 
 

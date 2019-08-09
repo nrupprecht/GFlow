@@ -59,7 +59,7 @@ namespace GFlowSimulation {
 
     #if USE_MPI == 1
       // Sync timesteps
-      if (topology->getNumProc()>1) topology->getMPIObject().sync_value_min(dt);
+      if (topology->getNumProc()>1) topology->getMPIObject().mpi_min(dt);
     #endif
   }
 

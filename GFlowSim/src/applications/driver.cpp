@@ -10,6 +10,9 @@
 // All the modifiers
 #include "../allmodifiers.hpp"
 
+// MPI communicator.
+#include "../parallel/mpi-communication.hpp"
+
 /*
 *  --- NOTES:
 *  Running functions dynamically:
@@ -278,9 +281,13 @@ int main(int argc, char **argv) {
   gflow->requestTime(time);
 
   // Run the simulation
+  int num_particles = gflow->getNumParticles();
+  #if USE_MPI == 1
+    MPIObject::mpi_sum0(num_particles);
+  #endif
   if (!quiet && rank==0) {
     cout << "Initialized, ready to run:\t" << time_span(current_time(), start_time) << "\n";
-    cout << "Running with " << gflow->getNumParticles() << " particles.\n";
+    cout << "Running with " << num_particles << " particles.\n";
   }
   //try {
   gflow->run();
@@ -305,8 +312,9 @@ int main(int argc, char **argv) {
   if (!quiet && rank==0) cout << "Run is over:\t\t\t" << time_span(current_time(), start_time) << "\n";
   if (!quiet && rank==0) cout << "Ratio was:  \t\t\t" << gflow->getDataMaster()->getRatio() << "\n";
 
-  // Write accumulated data to files
-  if (rank==0) gflow->writeData(writeDirectory);
+  // Write accumulated data to files.
+  // Only rank 0 will actually write anything, but information will need to sync, so all processes must call this function.
+  gflow->writeData(writeDirectory); 
   if (!quiet && rank==0) cout << "Data write is over:\t\t" << time_span(current_time(), start_time) << "\n";
 
   // Delete creator, gflow

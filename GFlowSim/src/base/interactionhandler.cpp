@@ -1,10 +1,11 @@
 #include "interactionhandler.hpp"
 // Other files
-#include "../utility/vectormath.hpp"
 #include "simdata.hpp"
 #include "forcemaster.hpp"
 #include "interaction.hpp"
 #include "../utility/memory.hpp"
+#include "../parallel/topology.hpp"
+#include "../utility/vectormath.hpp"
 
 namespace GFlowSimulation {
 
@@ -33,8 +34,8 @@ namespace GFlowSimulation {
     calculate_max_small_sigma();
     // Get the simulation bounds from gflow
     bounds = gflow->getBounds();
-    // Get the bounds from the gflow object - for now assumes this is the only domain, so bounds==domain_bounds
-    domain_bounds = gflow->getBounds();
+    // Get the processor bounds from the topology object.
+    domain_bounds = topology->getProcessBounds();
     // Get the array of max cutoffs.
     max_cutoffs = forceMaster->getMaxCutoff();
     // Set up grids.
@@ -71,7 +72,10 @@ namespace GFlowSimulation {
     else if (update_decision_type==0 && current_time-last_update>update_delay) {
       if (gflow->getNumInteractions()>0 && check_needs_remake()) construct();
     }
-    else if (update_decision_type==1 && update_delay_steps<=steps_since_last_remake) construct();
+    else if (update_decision_type==1 && update_delay_steps<=steps_since_last_remake) {
+      if (gflow->useForces()) construct();
+      else simData->parallel_update();
+    }
   }
 
   void InteractionHandler::construct() {

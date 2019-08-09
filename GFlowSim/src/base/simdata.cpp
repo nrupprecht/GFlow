@@ -74,8 +74,8 @@ namespace GFlowSimulation {
     }
     // Set data width - position (sim_dimensions), velocity (sim_dimensions), radius (1), inverse mass (1), and type (1).
     data_width = 2*sim_dimensions + 3;
-    // Set ghost data width - position (sim_dimensions), radius (1), and type (1).
-    ghost_data_width = sim_dimensions + 2;
+    // Set ghost data width - position (sim_dimensions).
+    ghost_data_width = sim_dimensions;
     #endif
 
     //*****
@@ -588,8 +588,6 @@ namespace GFlowSimulation {
     Base::gflow->wrapPositions();
 
     #if USE_MPI == 1
-      // Get the bounds this processor manages.
-      MPIObject &mpi = topology->getMPIObject();
       // Get rank and number of processors.
       int rank = topology->getRank();
       int numProc = topology->getNumProc();
@@ -605,7 +603,7 @@ namespace GFlowSimulation {
           exchange_particles();
 
           // Make sure all requests are processed.
-          mpi.barrier();
+          MPIObject::barrier();
 
           // Start adding ghost particles here.
           int save_first_ghost = _size;
@@ -618,13 +616,13 @@ namespace GFlowSimulation {
           _first_halo  = save_first_ghost;
 
           /// Wait for the last request to process.
-          mpi.barrier();
+          MPIObject::barrier();
 
           // --- Update ghost particles, so their data is on this processor
           update_ghost_particles();
 
           /// Wait for the last request to process.
-          mpi.barrier();
+          MPIObject::barrier();
 
           // Stop mpi timer.
           gflow->stopMPIExchangeTimer();
@@ -642,6 +640,10 @@ namespace GFlowSimulation {
 
   int SimData::size() const {
     return _size;
+  }
+
+  int SimData::size_owned() const {
+    return _first_ghost;
   }
 
   int SimData::number() const {
@@ -869,8 +871,6 @@ namespace GFlowSimulation {
   inline void SimData::exchange_particles() {
     // Get the bounds this processor manages.
     Bounds bounds = topology->getProcessBounds();
-    // Get an MPI object.
-    MPIObject &mpi = topology->getMPIObject();
 
     // Clear send_ids buffer
     for (int i=0; i<neighbor_ranks.size(); ++i) send_ids[i].clear();
@@ -884,11 +884,9 @@ namespace GFlowSimulation {
         // Find which entry the id should be put into to go to the correct neighbor.
         auto it = neighbor_map.find(n_rank);
         if (it!=neighbor_map.end()) send_ids[it->second].push_back(id);
+        else cout << "Error!\n";
       }
     }
-
-    // Barrier.
-    mpi.barrier();
 
     // Send particle information, deleting the particles that we send.
     for (int i=0; i<neighbor_ranks.size(); ++i)
@@ -906,6 +904,9 @@ namespace GFlowSimulation {
   }
 
   inline void SimData::create_ghost_particles() {
+
+    return;
+
     // First, clear all the send_ghost_lists entries.
     for (int i=0; i<neighbor_ranks.size(); ++i) send_ghost_list[i].clear();
 
@@ -950,8 +951,7 @@ namespace GFlowSimulation {
 
   inline void SimData::update_ghost_particles() {
 
-    // Get an MPI object.
-    MPIObject &mpi = topology->getMPIObject();
+    return;
 
     // Update the positions information of ghost particles on other processors.
     int id_counter = _first_ghost;
@@ -987,7 +987,7 @@ namespace GFlowSimulation {
     }
 
     // Wait for requests to be processed.
-    mpi.barrier();
+    MPIObject::barrier();
   }
 
   inline void SimData::send_particle_data(const vector<int>& send_ids, int n_rank, vector<RealType>& buffer, MPI_Request* size_request, MPI_Request* send_request, bool remove) {
@@ -996,14 +996,14 @@ namespace GFlowSimulation {
     MPI_Isend(&size, 1, MPI_INT, n_rank, 0, MPI_COMM_WORLD, size_request);    
     // Send the actual particles, if there are any.
     if (size>0) {
-      // Make sure buffer is big enough to sned data.
+      // Make sure buffer is big enough to send data.
       if (buffer.size()<size*data_width) buffer.resize(size*data_width);
       // Send the actual data. Copy data into buffer
       for (int j=0; j<size; ++j) {
         int id = send_ids[j];
         // Copy particle information to the buffer. \todo Automate a way to specify arbitrary subsets of the particle data to send.
         copyVec(X(id), &buffer[data_width*j], sim_dimensions); // Position
-        copyVec(V(id), &buffer[data_width*j + sim_dimensions], sim_dimensions); // Position
+        copyVec(V(id), &buffer[data_width*j + sim_dimensions], sim_dimensions); // Velocity
         buffer[data_width*j + 2*sim_dimensions + 0] = Sg(id); // Radius
         buffer[data_width*j + 2*sim_dimensions + 1] = Im(id); // Inverse mass
         buffer[data_width*j + 2*sim_dimensions + 2] = Type(id); // Type

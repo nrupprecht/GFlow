@@ -17,7 +17,7 @@ namespace GFlowSimulation {
     // --- First half kick
 
     // Number of (real - non ghost) particles
-    const int size = simData->getFirstGhost();
+    const int size = simData->size_owned();
     const int total = size*sim_dimensions;
     if (total==0) return;
     // Half a timestep
@@ -148,7 +148,7 @@ namespace GFlowSimulation {
     // --- Second half kick
 
     // Number of (real - non ghost) particles
-    const int size = simData->size();
+    const int size = simData->size_owned();
     const int total = sim_dimensions*size;
     if (total==0) return;
     // Half a timestep

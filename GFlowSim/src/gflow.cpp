@@ -8,6 +8,7 @@
 #include "alltopologies.hpp"
 #include "allbonded.hpp"
 #include "base/dataobject.hpp"
+#include "parallel/topology.hpp"
 
 namespace GFlowSimulation {
 
@@ -138,6 +139,8 @@ namespace GFlowSimulation {
     forceMaster->clear_timer();
     bonded_timer.clear();
     body_timer.clear();
+    mpi_exchange_timer.clear();
+    mpi_ghost_timer.clear();
 
     // Make sure we have initialized everything
     if (!initialize()) {
@@ -167,11 +170,9 @@ namespace GFlowSimulation {
     dataMaster->pre_integrate();
     forceMaster->pre_integrate();
 
+    // Run Timer
     Timer timer;
     timer.start();
-
-    // Create an mpi object for syncing.
-    MPIObject &mpi = topology->getMPIObject();
 
     #if USE_MPI == 1
     // For now, set this to a value that I know is good. Otherwise, the default value is 8, which really slows things down.
@@ -200,7 +201,7 @@ namespace GFlowSimulation {
       for (auto it : additional_integrators) it->pre_forces();
       dataMaster->pre_forces();
       domain_timer.start();
-      if (useForces) handler->pre_forces();   // -- This is where resectorization / verlet list creation might happen
+      /*if (useForces)*/ handler->pre_forces();   // -- This is where resectorization / verlet list creation might happen
       domain_timer.stop();
       
       // --- Do interactions
@@ -210,6 +211,10 @@ namespace GFlowSimulation {
       reflectPositions(); // This only involves velocities, so it could be done before or after clear forces.
       repulsePositions(); // But this needs to be done after clear forces.
       attractPositions(); // This does too.
+
+      // Update ghost particles. This the positions of particles on this processor that are ghosts on other processors back to 
+      // the other processors. This should be done after VV second half kick happens.
+      simData->updateGhostParticles();
 
       // Calculate interactions and forces.
       if (useForces) {
@@ -247,7 +252,7 @@ namespace GFlowSimulation {
 
       // Update ghost particles. This the positions of particles on this processor that are ghosts on other processors back to 
       // the other processors. This should be done after VV second half kick happens.
-      simData->updateGhostParticles();
+      // simData->updateGhostParticles(); //**
 
       // --> Post-step
       if (requested_time<=elapsed_time) running = false;
@@ -280,11 +285,11 @@ namespace GFlowSimulation {
       simData->setNeedsRemake(false);
 
       // Coordinate whether to stop running.
-      mpi.sync_value_bool(running);
+      MPIObject::mpi_and(running);
     }
 
     // End of run barrier.
-    mpi.barrier();
+    MPIObject::barrier();
 
     // Possibly print a closing update
     if (print_updates && runMode==RunMode::SIM) {
@@ -403,6 +408,10 @@ namespace GFlowSimulation {
 
   Integrator* GFlow::getIntegrator() {
     return integrator;
+  }
+
+  Topology* GFlow::getTopology() {
+    return topology;
   }
 
   int GFlow::getNumIntegrators() const {

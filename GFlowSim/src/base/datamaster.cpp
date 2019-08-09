@@ -5,8 +5,8 @@
 #include "domainbase.hpp"
 #include "forcemaster.hpp"
 #include "interaction.hpp"
-
 #include "../alldataobjects.hpp"
+#include "../parallel/topology.hpp"
 
 namespace GFlowSimulation {
 
@@ -108,17 +108,24 @@ namespace GFlowSimulation {
   }
 
   bool DataMaster::writeToDirectory(string writeDirectory) {
+    // Get the rank of this processor
+    int rank = topology->getRank();
+
     // --- Do file related things
     bool success = true;
 
-    // Remove previously existing files if they exist
-    system(("rm -rf "+writeDirectory).c_str());
-
-    // Create the directory
-    mkdir(writeDirectory.c_str(), 0777);
+    if (rank==0) {
+      // Remove previously existing files if they exist
+      system(("rm -rf "+writeDirectory).c_str());
+      // Create the directory
+      mkdir(writeDirectory.c_str(), 0777);
+    }
 
     // --- Write a summary
     writeSummary(writeDirectory);
+
+    // Only rank 0 needs to do things after this point.
+    if (rank!=0) return success;
 
     // Check what type of data objects exist.
     bool has_graph_objects = false;
@@ -244,32 +251,45 @@ namespace GFlowSimulation {
   }
 
   inline bool DataMaster::writeSummary(string writeDirectory) {
-    std::ofstream fout(writeDirectory+"/run_summary.txt");
-    if (fout.fail()) {
-      // Write error message
-      std::cerr << "Failed to open file [" << writeDirectory << "/run_summary.txt]." << endl;
-      return false;
+    // Get the rank of this process. Rank 0 will do all the writing.
+    int rank = topology->getRank();
+
+    std::ofstream fout;
+
+    if (rank==0) {
+      fout.open(writeDirectory+"/run_summary.txt");
+      if (fout.fail()) {
+        // Write error message
+        std::cerr << "Failed to open file [" << writeDirectory << "/run_summary.txt]." << endl;
+        return false;
+      }
     }
+
     // End timer - in case the run failed, and therefore didn't end the timer
     endTimer();
-    // Print Header
-    fout << "**********          SUMMARY          **********\n";
-    fout << "*******  GFlow Granular Simulator v 4.0 *******\n";
-    fout << "********** 2018, Nathaniel Rupprecht **********\n";
-    fout << "***********************************************\n\n";
-    // Print command
-    if (argc>0) {
-      for (int c=0; c<argc; ++c) fout << argv[c] << " ";
+    if (rank==0) {
+      // Print Header
+      fout << "**********          SUMMARY          **********\n";
+      fout << "*******  GFlow Granular Simulator v 4.0 *******\n";
+      fout << "********** 2018, Nathaniel Rupprecht **********\n";
+      fout << "***********************************************\n\n";
+      // Print command
+      if (argc>0) {
+        for (int c=0; c<argc; ++c) fout << argv[c] << " ";
+      }
+      else { // Try to get command from gflow
+        pair<int, char**> command = gflow->getCommand();
+        if (command.second) for (int c=0; c<command.first; ++c) fout << command.second[c] << " ";
+      }
+      fout << "\n\n";
     }
-    else { // Try to get command from gflow
-      pair<int, char**> command = gflow->getCommand();
-      if (command.second) for (int c=0; c<command.first; ++c) fout << command.second[c] << " ";
-    }
-    fout << "\n\n";
+    
     // --- Print timing summary
     RealType requestedTime = Base::gflow ? Base::gflow->getTotalRequestedTime() : 0;
     RealType ratio = Base::gflow->getTotalTime()/run_time;
     int iterations = Base::gflow->getIter(), particles = Base::simData->number();
+    MPIObject::mpi_sum0(particles);
+
     // Helper lambda - checks whether run_time was non-zero
     auto toStrPP = [&] (RealType x, int precision=3) -> string {
       return (run_time>0 ? pprint(x, 3, 3) : "--");
@@ -277,169 +297,194 @@ namespace GFlowSimulation {
     auto toStrRT = [&] (RealType x, int precision=3) -> string {
       return (run_time>0 ? toStr(x) : "--");
     };
-    // Number of interactions:
-    int inters = 0;
-    for (auto &it : gflow->interactions) inters += it->size();
-    // Print data
-    fout << "Timing and performance:\n";
-    if (initialization_time>0) fout << "  - Initialization time:      " << initialization_time << "\n"; 
-    fout << "  - Time simulated:           " << Base::gflow->getTotalTime() << "\n";
-    fout << "  - Requested Time:           " << requestedTime << "\n";
-    fout << "  - Run Time:                 " << run_time;
-    if (run_time>60) fout << " ( h:m:s - "   << printAsTime(run_time) << " )";
-    fout << "\n";
-    fout << "  - Ratio x Particles:        " << toStrRT(ratio*particles) << "\n";
-    fout << "  - Iter x Particles / s:     " << toStrRT(iterations*(particles/run_time)) << "\n";
-    fout << "  - Interaction pairs / s:    " << toStrRT((iterations/run_time)*inters) << "\n";
-    fout << "  - Ratio:                    " << toStrRT(ratio) << "\n";
-    fout << "  - Inverse Ratio:            " << toStrRT(1./ratio) << "\n";
-    fout << "\n";
 
-    if (Base::gflow->getTotalTime()>0) {
-      fout << "Timing breakdown:\n";
-      const int entries = 8;
-      double timing[entries], total = 0;
-      // Set timing entries.
-      timing[0] = integrator->get_time();
-      timing[1] = gflow->domain_timer.time();
-      timing[2] = forceMaster->get_time();
-      timing[3] = gflow->bonded_timer.time();
-      timing[4] = gflow->body_timer.time();
-      timing[5] = data_timer.time();
-      timing[6] = gflow->mpi_exchange_timer.time();
-      timing[7] = gflow->mpi_ghost_timer.time();
-      // Print timing data.
-      string sep = "%\t\t";
-      fout << "  -- Integration:             " << toStrPP(timing[0]/run_time*100) << sep << timing[0] << "\n";
-      fout << "  -- Pre-forces, domain:      " << toStrPP(timing[1]/run_time*100) << sep << timing[1] << "\n";
-      fout << "  -- Non-bonded:              " << toStrPP(timing[2]/run_time*100) << sep << timing[2] << "\n";
-      fout << "  -- Bonded:                  " << toStrPP(timing[3]/run_time*100) << sep << timing[3] << "\n";
-      fout << "  -- Body:                    " << toStrPP(timing[4]/run_time*100) << sep << timing[4] << "\n";
-      fout << "  -- Data objects:            " << toStrPP(timing[5]/run_time*100) << sep << timing[5] << "\n";
-      fout << "  -- MPI particle exchange:   " << toStrPP(timing[6]/run_time*100) << sep << timing[6] << "\n";
-      fout << "  -- MPI ghost sync.:         " << toStrPP(timing[7]/run_time*100) << sep << timing[7] << "\n";
-      for (int i=0; i<entries; ++i) total += timing[i];
-      fout << "  - Uncounted:                " << std::setprecision(3) << toStrPP((1. - total/run_time)) << sep << run_time - total << "\n";
+    // Number of interactions:
+    vector<int> interaction_length;
+    int inters = 0;
+    for (auto &it : gflow->interactions) {
+      int it_size = it->size();
+      MPIObject::mpi_sum0(it_size);
+      inters += it_size;
+      interaction_length.push_back(it_size);
+    }
+
+    // Print timing and performance data
+    if (rank==0) {
+      fout << "Timing and performance:\n";
+      if (initialization_time>0) fout << "  - Initialization time:      " << initialization_time << "\n"; 
+      fout << "  - Time simulated:           " << Base::gflow->getTotalTime() << "\n";
+      fout << "  - Requested Time:           " << requestedTime << "\n";
+      fout << "  - Run Time:                 " << run_time;
+      if (run_time>60) fout << " ( h:m:s - "   << printAsTime(run_time) << " )";
       fout << "\n";
+      fout << "  - Ratio x Particles:        " << toStrRT(ratio*particles) << "\n";
+      fout << "  - Iter x Particles / s:     " << toStrRT(iterations*(particles/run_time)) << "\n";
+      fout << "  - Interaction pairs / s:    " << toStrRT((iterations/run_time)*inters) << "\n";
+      fout << "  - Ratio:                    " << toStrRT(ratio) << "\n";
+      fout << "  - Inverse Ratio:            " << toStrRT(1./ratio) << "\n";
+      fout << "\n";
+
+      if (Base::gflow->getTotalTime()>0) {
+        fout << "Timing breakdown:\n";
+        const int entries = 8;
+        double timing[entries], total = 0;
+        // Set timing entries.
+        timing[0] = integrator->get_time();
+        timing[1] = gflow->domain_timer.time();
+        timing[2] = forceMaster->get_time();
+        timing[3] = gflow->bonded_timer.time();
+        timing[4] = gflow->body_timer.time();
+        timing[5] = data_timer.time();
+        timing[6] = gflow->mpi_exchange_timer.time();
+        timing[7] = gflow->mpi_ghost_timer.time();
+        double mpi_time = timing[6] + timing[7];
+        // Print timing data.
+        string sep = "%\t\t";
+        fout << "  -- Integration:             " << toStrPP(timing[0]/run_time*100) << sep << timing[0] << "\n";
+        fout << "  -- Pre-forces, domain:      " << toStrPP(timing[1]/run_time*100) << sep << timing[1] << "\n";
+        fout << "  -- Non-bonded:              " << toStrPP(timing[2]/run_time*100) << sep << timing[2] << "\n";
+        fout << "  -- Bonded:                  " << toStrPP(timing[3]/run_time*100) << sep << timing[3] << "\n";
+        fout << "  -- Body:                    " << toStrPP(timing[4]/run_time*100) << sep << timing[4] << "\n";
+        fout << "  -- Data objects:            " << toStrPP(timing[5]/run_time*100) << sep << timing[5] << "\n";
+        fout << "  -- MPI related:             " << toStrPP(mpi_time/run_time*100) << sep << mpi_time << "\n";
+        if (mpi_time>0) {
+          fout << "    - Particle exchange:      " << toStrPP(timing[6]/run_time*100) << sep << timing[6] << "\n";
+          fout << "    - Ghost sync.:            " << toStrPP(timing[7]/run_time*100) << sep << timing[7] << "\n";
+        }
+        for (int i=0; i<entries; ++i) total += timing[i];
+        fout << "  -- Uncounted:               " << std::setprecision(3) << toStrPP((1. - total/run_time)) << sep << run_time - total << "\n";
+        fout << "\n";
+      }
     }
 
     // --- Print simulation summary
-    fout << "Simulation and space:\n";
-    fout << "  - Dimensions:               " << sim_dimensions << "\n";
-    fout << "  - Bounds:                   ";
-    for (int d=0; d<sim_dimensions; ++d) {
-      fout << "{" << Base::gflow->bounds.min[d] << "," << Base::gflow->bounds.max[d] << "} ";
-    }
-    fout << "\n";
-    fout << "  - Boundaries:               ";
-    for (int d=0; d<sim_dimensions; ++d) {
-      switch (Base::gflow->getBC(d)) {
-        case BCFlag::OPEN: {
-          fout << "Open";
-          break;
-        }
-        case BCFlag::WRAP: {
-          fout << "Wrap";
-          break;
-        }
-        case BCFlag::REFL: {
-          fout << "Reflect";
-          break;
-        }
-        case BCFlag::REPL: {
-          fout << "Repulse";
-          break;
-        }
-        default: {
-          fout << "Other";
-          break;
-        }
+    if (rank==0) {
+      fout << "Simulation and space:\n";
+      fout << "  - Dimensions:               " << sim_dimensions << "\n";
+      fout << "  - Bounds:                   ";
+      for (int d=0; d<sim_dimensions; ++d) {
+        fout << "{" << Base::gflow->bounds.min[d] << "," << Base::gflow->bounds.max[d] << "} ";
       }
-      if (d!=sim_dimensions-1) fout << ", ";
+      fout << "\n";
+      fout << "  - Boundaries:               ";
+      for (int d=0; d<sim_dimensions; ++d) {
+        switch (Base::gflow->getBC(d)) {
+          case BCFlag::OPEN: {
+            fout << "Open";
+            break;
+          }
+          case BCFlag::WRAP: {
+            fout << "Wrap";
+            break;
+          }
+          case BCFlag::REFL: {
+            fout << "Reflect";
+            break;
+          }
+          case BCFlag::REPL: {
+            fout << "Repulse";
+            break;
+          }
+          default: {
+            fout << "Other";
+            break;
+          }
+        }
+        if (d!=sim_dimensions-1) fout << ", ";
+      }
+      fout << "\n";
+      fout << "  - Number of particles:      " << particles << "\n";
+      int types = Base::simData->ntypes();
+      if (types>1) {
+        int *count = new int[types];
+        for (int ty=0; ty<types; ++ty) count[ty] = 0;
+        for (int n=0; n<Base::simData->number(); ++n) ++count[Base::simData->Type(n)];
+        for (int ty=0; ty<types; ++ty)
+          fout << "     Type " << toStr(ty) << ":                  " << count[ty] << " (" << 
+            100 * count[ty] / static_cast<RealType>(Base::simData->number()) << "%)\n";
+        delete [] count;
+      }
+      RealType vol = 0;
+      for (int n=0; n<Base::simData->number(); ++n) vol += pow(simData->Sg(n), sim_dimensions);
+      vol *= pow(PI, sim_dimensions/2.) / tgamma(sim_dimensions/2. + 1.);
+      RealType phi = vol/Base::gflow->getBounds().vol();
+      fout << "  - Packing fraction:         " << phi << "\n";
+      fout << "  - Temperature:              " << KineticEnergyData::calculate_temperature(simData) <<"\n";
+      fout << "\n";
     }
-    fout << "\n";
-    fout << "  - Number of particles:      " << Base::simData->number() << "\n";
-    int types = Base::simData->ntypes();
-    if (types>1) {
-      int *count = new int[types];
-      for (int ty=0; ty<types; ++ty) count[ty] = 0;
-      for (int n=0; n<Base::simData->number(); ++n) ++count[Base::simData->Type(n)];
-      for (int ty=0; ty<types; ++ty)
-        fout << "     Type " << toStr(ty) << ":                  " << count[ty] << " (" << 
-          100 * count[ty] / static_cast<RealType>(Base::simData->number()) << "%)\n";
-      delete [] count;
-    }
-    RealType vol = 0;
-    for (int n=0; n<Base::simData->number(); ++n) vol += pow(simData->Sg(n), sim_dimensions);
-    vol *= pow(PI, sim_dimensions/2.) / tgamma(sim_dimensions/2. + 1.);
-    RealType phi = vol/Base::gflow->getBounds().vol();
-    fout << "  - Packing fraction:         " << phi << "\n";
-    fout << "  - Temperature:              " << KineticEnergyData::calculate_temperature(simData) <<"\n";
-    fout << "\n";
 
     // --- Print integration summary
-    if (Base::gflow->getTotalTime()>0) {
-      fout << "Integration:\n";
-      fout << "  - Iterations:               " << iterations << "\n";
-      fout << "  - Time per iteration:       " << toStrRT(run_time / static_cast<RealType>(iterations)) << "\n";
-      if (integrator) fout << "  - Time step (at end):       " << integrator->getTimeStep() << "\n";
-      fout << "  - Average dt:               " << Base::gflow->getTotalTime()/iterations << "\n";
-      fout << "\n";
+    if (rank==0) {
+      if (Base::gflow->getTotalTime()>0) {
+        fout << "Integration:\n";
+        fout << "  - Iterations:               " << iterations << "\n";
+        fout << "  - Time per iteration:       " << toStrRT(run_time / static_cast<RealType>(iterations)) << "\n";
+        if (integrator) fout << "  - Time step (at end):       " << integrator->getTimeStep() << "\n";
+        fout << "  - Average dt:               " << Base::gflow->getTotalTime()/iterations << "\n";
+        fout << "\n";
+      }
     }
     
     // --- Print the domain summary
-    fout << "Domain summary (as of end of simulation):\n";
-    DomainBase *domain = dynamic_cast<DomainBase*>(handler);
-    if (domain) {
-      fout << "  - Grid dimensions:          ";
-      for (int d=0; d<sim_dimensions; ++d) {
-        fout << domain->getDims()[d];
-        if (d!=sim_dimensions-1) fout << ", ";
+    if (rank==0) {
+      fout << "Domain summary (as of end of simulation):\n";
+      DomainBase *domain = dynamic_cast<DomainBase*>(handler);
+      if (domain) {
+        fout << "  - Grid dimensions:          ";
+        for (int d=0; d<sim_dimensions; ++d) {
+          fout << domain->getDims()[d];
+          if (d!=sim_dimensions-1) fout << ", ";
+        }
+        fout << "\n";
+        fout << "  - Total sectors:            " << domain->getNumCells() << "\n";
+        fout << "  - Grid lengths:             ";
+        for (int d=0; d<sim_dimensions; ++d) {
+          fout << domain->getWidths()[d];
+          if (d!=sim_dimensions-1) fout << ", ";
+        }
+        fout << "\n";
+        fout << "  - Cutoff:                   " << domain->getCutoff() << "\n";
+      }
+      if (handler) {
+        fout << "  - Skin depth:               " << handler->getSkinDepth() << "\n";
+        fout << "  - Move ratio tolerance:     " << handler->getMvRatioTolerance() << "\n";
+        fout << "  - Delay missed target:      " << handler->getMissedTarget() << "\n";
+        fout << "  - Average miss:             " << handler->getAverageMiss() << "\n";
+        if (run_time>0) {
+          fout << "  - Sector remakes:           " << handler->getNumberOfRemakes() << "\n";
+          RealType re_ps = handler->getNumberOfRemakes() / gflow->getTotalTime();
+          fout << "  - Remakes per second:       " << re_ps << "\n";
+          fout << "  - Average remake delay:     " << 1./re_ps << "\n";
+          fout << "  - Average iters per delay:  " << static_cast<RealType>(iterations) / handler->getNumberOfRemakes() <<"\n";
+        }
       }
       fout << "\n";
-      fout << "  - Total sectors:            " << domain->getNumCells() << "\n";
-      fout << "  - Grid lengths:             ";
-      for (int d=0; d<sim_dimensions; ++d) {
-        fout << domain->getWidths()[d];
-        if (d!=sim_dimensions-1) fout << ", ";
-      }
-      fout << "\n";
-      fout << "  - Cutoff:                   " << domain->getCutoff() << "\n";
     }
-    if (handler) {
-      fout << "  - Skin depth:               " << handler->getSkinDepth() << "\n";
-      fout << "  - Move ratio tolerance:     " << handler->getMvRatioTolerance() << "\n";
-      fout << "  - Delay missed target:      " << handler->getMissedTarget() << "\n";
-      fout << "  - Average miss:             " << handler->getAverageMiss() << "\n";
-      if (run_time>0) {
-        fout << "  - Sector remakes:           " << handler->getNumberOfRemakes() << "\n";
-        RealType re_ps = handler->getNumberOfRemakes() / gflow->getTotalTime();
-        fout << "  - Remakes per second:       " << re_ps << "\n";
-        fout << "  - Average remake delay:     " << 1./re_ps << "\n";
-        fout << "  - Average iters per delay:  " << static_cast<RealType>(iterations) / handler->getNumberOfRemakes() <<"\n";
-      }
-    }
-    fout << "\n";
 
     // --- Interactions
-    fout << "Interactions:\n";
-    int c = 0;
-    for (auto &it : gflow->interactions) {
-      fout << "     Interaction " << c << ":           length " << it->size() << "\n";
-      ++c;
+    if (rank==0) {
+      fout << "Interactions:\n";
+      int c = 0;
+      for (int it_size : interaction_length) {
+        fout << "     Interaction " << c << ":           length " << it_size << "\n";
+        ++c;
+      }
+      fout << "  - Inter.s per particle:     " << static_cast<double>(inters) / particles << "\n";
+      fout << "\n";
     }
-    fout << "  - Inter.s per particle:     " << static_cast<double>(inters) / particles << "\n";
-    fout << "\n";
 
     // --- Print particle summary
-    writeParticleData(fout);
-    fout << "\n";
+    if (rank==0) {
+      writeParticleData(fout);
+      fout << "\n";
+    }
     
-    // Close the stream
-    fout.close();
-
-    // Write the log file
-    writeLogFile(writeDirectory);
+    // Close the stream, write log files.
+    if (rank==0) {
+      fout.close();
+      // Write the log file
+      writeLogFile(writeDirectory);
+    }
 
     // Return success
     return true;

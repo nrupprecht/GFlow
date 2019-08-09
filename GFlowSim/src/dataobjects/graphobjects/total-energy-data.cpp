@@ -45,11 +45,19 @@ namespace GFlowSimulation {
       }
       energy += 0.5*en;
     }
+    
+    // If this is a parallel job, sum energy from all processors.
+    #if USE_MPI == 1
+    MPIObject::mpi_sum(energy);
+    if (useAve) MPIObject::mpi_sum(count);
+    #endif
+
     // If we want the average
     if (useAve && count>0) energy /= static_cast<RealType>(count);
+
     // Store data
     RealType time = gflow->getElapsedTime();
-    data.push_back(RPair(time, energy));
+    if (topology->getRank()==0) data.push_back(RPair(time, energy));
     // A useful check
     if(isnan(energy)) throw NanValue("Energy");
     // Set initial energy
