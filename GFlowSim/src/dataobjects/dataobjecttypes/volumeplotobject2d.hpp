@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
 
-  /***
+  /*
   *  \brief Data object that makes density plots.
   *
   *  

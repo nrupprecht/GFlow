@@ -6,10 +6,10 @@
 
 namespace GFlowSimulation {
 
-  class Coulomb2D : public Interaction2D {
+  class Coulomb2d : public Interaction2d {
   public:
     //! \brief Default constructor.
-    Coulomb2D(GFlow*);
+    Coulomb2d(GFlow*);
 
     //! \brief Set the cutoff, and change the potential energy shift.
     void setCutoff(RealType);

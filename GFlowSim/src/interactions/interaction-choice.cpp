@@ -58,7 +58,7 @@ namespace GFlowSimulation {
     }
     else if (token==CoulombToken) {
       if (sim_dimensions==2)
-        return new Coulomb2D(gflow);
+        return new Coulomb2d(gflow);
       else throw InvalidInteraction(token + ", " + toStr(sim_dimensions));
     }
     else throw InvalidInteraction(token + ", " + toStr(sim_dimensions));

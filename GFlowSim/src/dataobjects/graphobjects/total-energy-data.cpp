@@ -16,7 +16,7 @@ namespace GFlowSimulation {
     RealType **v = simData->V();
     RealType *im = simData->Im();
     int    *type = simData->Type();
-    int size = Base::simData->size();
+    int size = Base::simData->size_owned();
     int count = 0;
     for (int n=0; n<size; ++n) {
       if (im[n]>0 && -1<type[n] && simData->isReal(n)) {
@@ -25,7 +25,7 @@ namespace GFlowSimulation {
       }
     }
     energy *= 0.5;
-    // Add potential energy.
+    // Add potential energy. \todo This may not be accurate for multicore runs, some potential may be double counted.
     energy += forceMaster->getTotalPotentialEnergy();
     // Get boundary energy from gflow.
     energy += gflow->getBoundaryEnergy();

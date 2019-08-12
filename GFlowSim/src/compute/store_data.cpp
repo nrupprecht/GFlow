@@ -1,7 +1,7 @@
 #include "store_data.hpp"
 // Other files
 #include "../base/simdata.hpp"
-#include "../parallel/topology.hpp"
+#include "../base/topology.hpp"
 
 namespace GFlowSimulation {
 

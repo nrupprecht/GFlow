@@ -1,14 +1,14 @@
-#ifndef __INTERACTION_2D_HPP__GFLOW__
-#define __INTERACTION_2D_HPP__GFLOW__
+#ifndef __INTERACTION_3D_HPP__GFLOW__
+#define __INTERACTION_3D_HPP__GFLOW__
 
 #include "../base/interaction.hpp"
 
 namespace GFlowSimulation {
 
-  class Interaction2d : public Interaction {
+  class Interaction3d : public Interaction {
   public:
     //! \brief Default constructor.
-    Interaction2d(GFlow*);
+    Interaction3d(GFlow*);
 
     //! \brief Calculate the interactions between particles.
     virtual void interact() const override;
@@ -19,4 +19,4 @@ namespace GFlowSimulation {
   };
 
 }
-#endif // __INTERACTION_2D_HPP__GFLOW__
+#endif // __INTERACTION_3D_HPP__GFLOW__

@@ -2,7 +2,6 @@
 // Other files
 #include "../utility/printingutility.hpp"
 #include "../base/simdata.hpp"
-#include "../parallel/topology.hpp"
 //#include "../visualization/visualization.hpp"
 
 namespace GFlowSimulation {

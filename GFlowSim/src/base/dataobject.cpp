@@ -1,7 +1,5 @@
 #include "dataobject.hpp"
 
-#include "../parallel/topology.hpp"
-
 namespace GFlowSimulation {
 
   DataObject::DataObject(GFlow *gflow, const string& name) 

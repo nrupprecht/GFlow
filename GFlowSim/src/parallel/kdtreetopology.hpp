@@ -1,18 +1,30 @@
 #ifndef __KD_TREE_TOPOLOGY_HPP__GFLOW__
 #define __KD_TREE_TOPOLOGY_HPP__GFLOW__
 
-#include "topology.hpp"
+#include "../base/topology.hpp"
 
 namespace GFlowSimulation {
 
   struct KDTreeTopNode {
-    //! \brief Constructor.
+    //! \brief Default constructor, sets bounds.
+    KDTreeTopNode(Bounds &b) : bounds(b), split_val(0) {};
+
+    //! \brief Constructor that sets bounds and splitting dimension.
     KDTreeTopNode(Bounds &b, int sd) : bounds(b), split_dim(sd) {};
 
     //! \brief Destructor.
     ~KDTreeTopNode() {
       if (left) delete left;
       if (right) delete right;
+    }
+
+    void print(std::ostream& out, int indent=0) {
+      if (rank!=-1) out << string(indent, ' ') << rank << ": " << bounds << "\n";
+      else {
+        out << string(indent, ' ') << "Node: " << split_dim << ", " << split_val << " :: " << bounds << endl;
+        if (left)   left->print(out, indent+1);
+        if (right) right->print(out, indent+1);
+      }
     }
 
     //! \brief What axis we are splitting along.
@@ -46,7 +58,7 @@ namespace GFlowSimulation {
   class KDTreeTopology : public Topology {
   public:
     //! \brief Default constructor, takes the number of dimensions.
-    KDTreeTopology(int);
+    KDTreeTopology(GFlow*);
 
     //! \brief Destructor.
     virtual ~KDTreeTopology();
@@ -66,17 +78,6 @@ namespace GFlowSimulation {
 
     //! \brief Whether this particle should be owned by this processor.
     virtual bool owned_particle(const RealType*) override;
-
-    //! \brief Takes in a processor id and dimension, returns whether there is a domain
-    //! "above" it in that dimension.
-    virtual bool existsDomainUp(int, int) override;
-
-    //! \brief Takes in a processor id and dimension, returns whether there is a domain
-    //! "below" it in that dimension.
-    virtual bool existsDomainDown(int, int) override;
-
-    //! \brief Get the bounds managed by a processor.
-    Bounds getBounds(int) override;
 
   private:
 

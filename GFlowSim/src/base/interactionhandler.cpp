@@ -3,8 +3,8 @@
 #include "simdata.hpp"
 #include "forcemaster.hpp"
 #include "interaction.hpp"
+#include "topology.hpp"
 #include "../utility/memory.hpp"
-#include "../parallel/topology.hpp"
 #include "../utility/vectormath.hpp"
 
 namespace GFlowSimulation {
@@ -73,7 +73,7 @@ namespace GFlowSimulation {
       if (gflow->getNumInteractions()>0 && check_needs_remake()) construct();
     }
     else if (update_decision_type==1 && update_delay_steps<=steps_since_last_remake) {
-      if (gflow->useForces()) construct();
+      if (gflow->getUseForces()) construct();
       else simData->parallel_update();
     }
   }

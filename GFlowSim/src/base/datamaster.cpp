@@ -5,8 +5,8 @@
 #include "domainbase.hpp"
 #include "forcemaster.hpp"
 #include "interaction.hpp"
+#include "topology.hpp"
 #include "../alldataobjects.hpp"
-#include "../parallel/topology.hpp"
 
 namespace GFlowSimulation {
 
@@ -308,6 +308,10 @@ namespace GFlowSimulation {
       interaction_length.push_back(it_size);
     }
 
+    // Number of particle interactions per second.
+    int operations = run_time>0 ? static_cast<int>((iterations/run_time)*inters) : 0;
+    MPIObject::mpi_sum0(operations);
+
     // Print timing and performance data
     if (rank==0) {
       fout << "Timing and performance:\n";
@@ -319,7 +323,7 @@ namespace GFlowSimulation {
       fout << "\n";
       fout << "  - Ratio x Particles:        " << toStrRT(ratio*particles) << "\n";
       fout << "  - Iter x Particles / s:     " << toStrRT(iterations*(particles/run_time)) << "\n";
-      fout << "  - Interaction pairs / s:    " << toStrRT((iterations/run_time)*inters) << "\n";
+      fout << "  - Interaction pairs / s:    " << toStrRT(operations) << "\n";
       fout << "  - Ratio:                    " << toStrRT(ratio) << "\n";
       fout << "  - Inverse Ratio:            " << toStrRT(1./ratio) << "\n";
       fout << "\n";
@@ -356,6 +360,13 @@ namespace GFlowSimulation {
         fout << "\n";
       }
     }
+
+    // Calculate volume that the particles on each processor take up.
+    RealType vol = 0;
+    for (int n=0; n<Base::simData->number(); ++n) vol += pow(simData->Sg(n), sim_dimensions);
+    vol *= pow(PI, sim_dimensions/2.) / tgamma(sim_dimensions/2. + 1.);
+    // Get the total volume all of the particles on all processors take up.
+    MPIObject::mpi_sum0(vol);
 
     // --- Print simulation summary
     if (rank==0) {
@@ -404,9 +415,8 @@ namespace GFlowSimulation {
             100 * count[ty] / static_cast<RealType>(Base::simData->number()) << "%)\n";
         delete [] count;
       }
-      RealType vol = 0;
-      for (int n=0; n<Base::simData->number(); ++n) vol += pow(simData->Sg(n), sim_dimensions);
-      vol *= pow(PI, sim_dimensions/2.) / tgamma(sim_dimensions/2. + 1.);
+      
+      // Calculate packing fraction.
       RealType phi = vol/Base::gflow->getBounds().vol();
       fout << "  - Packing fraction:         " << phi << "\n";
       fout << "  - Temperature:              " << KineticEnergyData::calculate_temperature(simData) <<"\n";

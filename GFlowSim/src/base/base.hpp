@@ -3,7 +3,6 @@
 
 #include "../utility/utility.hpp"
 #include "../parallel/mpi-communication.hpp"
-#include "../parallel/topology.hpp"
 
 namespace GFlowSimulation {
 

@@ -4,8 +4,8 @@
 #include "forcemaster.hpp"
 #include "datamaster.hpp"
 #include "interactionhandler.hpp"
+#include "topology.hpp"
 #include "../utility/memory.hpp"
-#include "../parallel/topology.hpp"
 
 namespace GFlowSimulation {
 
@@ -883,8 +883,10 @@ namespace GFlowSimulation {
         int n_rank = topology->domain_ownership(X(id));
         // Find which entry the id should be put into to go to the correct neighbor.
         auto it = neighbor_map.find(n_rank);
+        // If there are repulsive boundaries, extend the simulation bounds for the node in those directions, so particles don't go "out of bounds"
+        // when they pass over the boundary a little to get repulsed back in. In this case, X can evaluate to not being within the bounds, even
+        // though it should stay within these bounds.
         if (it!=neighbor_map.end()) send_ids[it->second].push_back(id);
-        else cout << "Error!\n";
       }
     }
 
@@ -904,9 +906,6 @@ namespace GFlowSimulation {
   }
 
   inline void SimData::create_ghost_particles() {
-
-    return;
-
     // First, clear all the send_ghost_lists entries.
     for (int i=0; i<neighbor_ranks.size(); ++i) send_ghost_list[i].clear();
 
@@ -914,7 +913,8 @@ namespace GFlowSimulation {
     RealType skin_depth = handler->getSkinDepth();
     for (int id=0; id < _size; ++id) {
       // The particle cutoff that should be used to test whether the particle is close enough to another domain.
-      RealType cutoff = Sg(id) * forceMaster->getMaxCutoff(Type(id)) + skin_depth;
+      // \todo There may be a better/more correct way to do this.
+      RealType cutoff = 2 * Sg(id) * forceMaster->getMaxCutoff(Type(id)) + skin_depth;
       // Check if the particle overlaps with another domain.
       topology->domain_overlaps(X(id), cutoff, overlaps);
 
@@ -950,9 +950,6 @@ namespace GFlowSimulation {
   }
 
   inline void SimData::update_ghost_particles() {
-
-    return;
-
     // Update the positions information of ghost particles on other processors.
     int id_counter = _first_ghost;
     for (int i=0; i<neighbor_ranks.size(); ++i) {

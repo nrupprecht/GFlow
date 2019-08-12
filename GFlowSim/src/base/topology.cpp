@@ -4,7 +4,7 @@
 
 namespace GFlowSimulation {
 
-  Topology::Topology(int dims) : sim_dimensions(dims), simulation_bounds(dims), process_bounds(dims) {
+  Topology::Topology(GFlow *gflow) : Base(gflow), simulation_bounds(gflow->getSimDimensions()), process_bounds(gflow->getSimDimensions()) {
     #if USE_MPI == 1
     #if _CLANG_ == 1
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -19,9 +19,9 @@ namespace GFlowSimulation {
     #endif
   }
 
-  void Topology::initialize(GFlow *gflow) {
-    // Get the simulation dimensions.
-    sim_dimensions = gflow->getSimDimensions();
+  void Topology::initialize() {
+    // Base initialization.
+    Base::initialize();
     // Compute the topology.
     setSimulationBounds(gflow->getBounds());
   }
@@ -32,23 +32,6 @@ namespace GFlowSimulation {
 
   Bounds Topology::getProcessBounds() const {
     return process_bounds;
-  }
-
-  void Topology::setSimulationBounds(const Bounds &b) {
-    // Check for valid bounds
-    if (b.vol()<=0) return;
-
-    #if USE_MPI == 1
-    // Set bounds
-    if (b==simulation_bounds);
-    else {
-      simulation_bounds = b;
-      // Recompute topology
-      computeTopology();
-    }
-    #else 
-    process_bounds = b;
-    #endif
   }
 
   int Topology::getRank() const {
@@ -65,6 +48,26 @@ namespace GFlowSimulation {
 
   bool Topology::is_initialized() const {
     return sim_dimensions>0 && process_bounds.vol()>0;
+  }
+
+  bool Topology::setSimulationBounds(const Bounds &b) {
+    // Check for valid bounds
+    if (b.vol()<=0) return false;
+
+    #if USE_MPI == 1
+    // Set bounds
+    if (b==simulation_bounds) return false;
+    else {
+      simulation_bounds = b;
+      // Recompute topology
+      computeTopology();
+      // We recomputed the bounds.
+      return true;
+    }
+    #else 
+    process_bounds = b;
+    return true;
+    #endif
   }
 
 }

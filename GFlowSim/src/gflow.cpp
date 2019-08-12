@@ -7,8 +7,6 @@
 #include "allmodifiers.hpp"
 #include "alltopologies.hpp"
 #include "allbonded.hpp"
-#include "base/dataobject.hpp"
-#include "parallel/topology.hpp"
 
 namespace GFlowSimulation {
 
@@ -23,7 +21,7 @@ namespace GFlowSimulation {
     else handler = new Domain(this);
     dataMaster   = new DataMaster(this);
     forceMaster  = new ForceMaster(this);
-    topology     = new KDTreeTopology(sim_dimensions);
+    topology     = new KDTreeTopology(this);
     // Set up boundary conditions
     boundaryConditions = new BCFlag[sim_dimensions];
     // Set up bounds to have the propper dimensions
@@ -85,7 +83,8 @@ namespace GFlowSimulation {
     if (dataMaster) dataMaster->initialize();
     else non_null = false;
 
-    // Topology does not currently have an initialization function, as it does not inherit from Base
+    if (topology) topology->initialize();
+    else non_null = false;
 
     for (auto &md : modifiers) {
       if (md) md->initialize();

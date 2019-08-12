@@ -2,18 +2,18 @@
 
 namespace GFlowSimulation {
 
-  Coulomb2D::Coulomb2D(GFlow *gflow) : Interaction2D(gflow), repulsion(0.0025) {
+  Coulomb2d::Coulomb2d(GFlow *gflow) : Interaction2d(gflow), repulsion(0.0025) {
     cutoff = 5;
   };
 
-  void Coulomb2D::setCutoff(RealType cut) {
+  void Coulomb2d::setCutoff(RealType cut) {
     // Change cutoff.
     cutoff = cut>0 ? cut : cutoff;
     // Calculate PE shift.
     potential_energy_shift = repulsion/cutoff;
   }
 
-  void Coulomb2D::kernel(int id1, int id2, RealType R1, RealType R2, RealType rsqr, RealType *dr, RealType **f) const {
+  void Coulomb2d::kernel(int id1, int id2, RealType R1, RealType R2, RealType rsqr, RealType *dr, RealType **f) const {
     // Square root and inverse
     RealType r = sqrt(rsqr);
     RealType invr = 1./r;

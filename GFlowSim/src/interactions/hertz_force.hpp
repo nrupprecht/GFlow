@@ -1,6 +1,8 @@
 #ifndef __HERTZ_FORCE_HPP__GFLOW__
 #define __HERTZ_FORCE_HPP__GFLOW__
 
+#include "../base/interaction.hpp"
+
 namespace GFlowSimulation {
 
   //! \brief Hertzian particle interaction.

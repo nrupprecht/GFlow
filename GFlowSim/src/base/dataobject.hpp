@@ -5,6 +5,7 @@
 #include "../utility/printingutility.hpp"
 #include "../utility/vectormath.hpp"
 #include "simdata.hpp"
+#include "topology.hpp"
 
 namespace GFlowSimulation {
 

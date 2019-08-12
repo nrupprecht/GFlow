@@ -1,22 +1,22 @@
 #ifndef __TOPOLOGY_HPP__GFLOW__
 #define __TOPOLOGY_HPP__GFLOW__
 
-#include "../utility/utility.hpp"
-#include "mpi-communication.hpp"
+#include "../gflow.hpp"
+#include "../parallel/mpi-communication.hpp"
 
 namespace GFlowSimulation {
 
   //! @brief Base class for defining processor topologies.
-  class Topology {
+  class Topology : public Base {
   public:
     //! \brief Default constructor, takes the number of dimensions. Sets numProc and rank.
-    Topology(int);
+    Topology(GFlow*);
 
     //! \brief Destructor.
     virtual ~Topology() {};
 
     //! \brief Initialize the topology.
-    virtual void initialize(class GFlow*);
+    virtual void initialize() override;
 
     //! \brief Compute how the simulation space should be divided up.
     virtual void computeTopology() = 0;
@@ -34,25 +34,11 @@ namespace GFlowSimulation {
     //! \brief Whether this particle should be owned by this processor.
     virtual bool owned_particle(const RealType*) = 0;
 
-    //! \brief Takes in a processor id and dimension, returns whether there is a domain
-    //! "above" it in that dimension.
-    virtual bool existsDomainUp(int, int) = 0;
-
-    //! \brief Takes in a processor id and dimension, returns whether there is a domain
-    //! "below" it in that dimension.
-    virtual bool existsDomainDown(int, int) = 0;
-
-    //! \brief Get the bounds managed by a processor.
-    virtual Bounds getBounds(int) = 0;
-
     //! \brief Get the bounds for the whole simulation.
     Bounds getSimulationBounds() const;
 
     //! \brief Get the bounds for this processor.
     Bounds getProcessBounds() const;
-
-    //! \brief Set the simulation bounds. If the bounds are different, the topology is recomputed.
-    void setSimulationBounds(const Bounds&);
 
     //! \brief Get the rank of this processor.
     int getRank() const;
@@ -65,6 +51,11 @@ namespace GFlowSimulation {
 
     //! \brief Return true if the topology is set up.
     bool is_initialized() const;
+
+    //! \brief Set the simulation bounds. If the bounds are different, the topology is recomputed.
+    //!
+    //! Returns true if the bounds were changed.
+    bool setSimulationBounds(const Bounds&);
 
   protected:
 
@@ -79,9 +70,6 @@ namespace GFlowSimulation {
 
     //! \brief The rank of this processor.
     int rank;
-
-    //! \brief The number of dimensions in the simulation.
-    int sim_dimensions = 0;
 
     MPIObject mpi;
   };

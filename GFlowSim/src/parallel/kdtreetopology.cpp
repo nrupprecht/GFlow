@@ -1,10 +1,8 @@
 #include "kdtreetopology.hpp"
-// Other files
-#include "../gflow.hpp"
 
 namespace GFlowSimulation {
 
-  KDTreeTopology::KDTreeTopology(int d) : Topology(d) {}
+  KDTreeTopology::KDTreeTopology(GFlow *gflow) : Topology(gflow) {}
 
   KDTreeTopology::~KDTreeTopology() {
     if (root) delete root;
@@ -16,12 +14,8 @@ namespace GFlowSimulation {
     if (simulation_bounds.vol()<=0) return;
 
     // Initialize.
-    int startP = 0, endP = numProc;
-    Bounds top_bounds = simulation_bounds;
-    int dim = 0;
-
     root = new KDTreeTopNode(simulation_bounds, 0);
-    compute_decomp(startP, endP, root, 0);
+    compute_decomp(0, numProc, root, 0);
 
     // Compute neighbors for this processor. 
     find_neighbors();
@@ -30,33 +24,13 @@ namespace GFlowSimulation {
   //! @brief Given a position and cutoff value, this function returns the
   //! ids of the processors which this particle overlaps.
   void KDTreeTopology::domain_overlaps(const RealType *x, const RealType cutoff, vector<int>& container) {
-    // Make sure the container is empty().
-    container.clear();
-
-    // Make sure the container is empty().
+    // Make sure the container is empty.
     container.clear();
 
     for (int i=0; i<neighbor_ranks.size(); ++i) {
       if (neighbor_nodes[i]->bounds.distance(x) < cutoff)
         container.push_back(i);
     }
-
-    /*
-    // Go through each dimension.
-    for (int d=0; d<sim_dimensions; ++d) {
-      if (process_bounds.min[d] + cutoff < x[d] && x[d] < process_bounds.max[d] - cutoff); // The particle in entirely contained within this processor.
-      else {
-        // \todo Write this function for real. Right now, I'm just adding particle that aren't entirely within their processor to 
-        // be ghosts for all other processors.
-        for (int i=0; i<neighbor_ranks.size(); ++i) {
-          if (neighbor_nodes[i]->bounds.distance(x) < cutoff)
-            container.push_back(i);
-        }
-        // Since we already added the particle to be a ghost for all other processors, we can return.
-        return;
-      }
-    }
-    */
   }
 
   vector<int> KDTreeTopology::get_neighbor_ranks() const {
@@ -65,26 +39,10 @@ namespace GFlowSimulation {
 
   //! @brief Determines which processor a position falls into.
   int KDTreeTopology::domain_ownership(const RealType *x) {
-
-    /*
-    KDTreeTopNode *node = root;
-    auto print = [] (KDTreeTopNode *node) {
-      if (node->rank!=-1) cout << "Terminal: " << node->rank;
-      else cout << "(" << node->split_dim << ", " << node->split_val << ")";
-    };
-
-    if (rank==0) {
-      print(node); cout << endl;
-      auto left = node->left, right = node->right;
-      print(left); cout << ", "; print(right); cout << endl;
-      print(right->left); cout << ", "; print(right->right); cout << endl;
-      exit(0);
-    }
-    */
-
     // First, check if a particle belongs to this domain. As this function is often used to check if particles have left a
     // particular domain, and most will not have, this saves time.
     if (process_bounds.contains(x)) return rank;
+
     // Otherwise, step through the tree.
     KDTreeTopNode *node = root;
     while (true) {
@@ -101,32 +59,23 @@ namespace GFlowSimulation {
     return process_bounds.contains(x);
   }
 
-  //! @brief Takes in a processor id and dimension, returns whether there is a domain
-  //! "above" it in that dimension.
-  bool KDTreeTopology::existsDomainUp(int id, int dim) {
-    // STUB
-    return false;
-  }
-
-  //! @brief Takes in a processor id and dimension, returns whether there is a domain
-  //! "below" it in that dimension.
-  bool KDTreeTopology::existsDomainDown(int id, int dim) {
-    // STUB
-    return false;
-  }
-
-  //! @brief Get the bounds managed by a processor.
-  Bounds KDTreeTopology::getBounds(int rnk) {
-    // STUB
-    return process_bounds;
-  }
-
   void KDTreeTopology::compute_decomp(int startP, int endP, KDTreeTopNode *node, int dim) {
     // Make sure node is good.
     if (node==nullptr) return;
+    // Make sure node has no children.
+    if (node->left) {
+      delete node->left;
+      node->left = nullptr;
+    }
+    if (node->right) {
+      delete node->right;
+      node->right = nullptr;
+    }
 
     // Correct dimension
     dim %= sim_dimensions;
+    // Assign splitting dimension.
+    node->split_dim = dim;
 
     // Set up
     int nl = static_cast<int>((endP-startP)/2);
@@ -136,10 +85,11 @@ namespace GFlowSimulation {
     // Divide bounds
     RealType fraction = nl/static_cast<RealType>(endP-startP);
     RealType width = fraction*top_bounds.wd(dim);
+    // Set node's splitting value.
     node->split_val = node->bounds.min[dim] + width;
 
     // Handle left node.
-    node->left = new KDTreeTopNode(top_bounds, dim+1);
+    node->left = new KDTreeTopNode(top_bounds, dim+1 % sim_dimensions);
     node->left->bounds.max[dim] = top_bounds.min[dim] + width; // Adjust bounds
     if (1<nl) compute_decomp(startP, endP-nr, node->left, dim+1);
     else {
@@ -147,7 +97,7 @@ namespace GFlowSimulation {
       if (startP!=rank) all_processor_nodes.push_back(node->left);
     }
     // Handle right node.
-    node->right = new KDTreeTopNode(top_bounds, dim+1);
+    node->right = new KDTreeTopNode(top_bounds, dim+1 % sim_dimensions);
     node->right->bounds.min[dim] += width;
     if (1<nr) compute_decomp(endP-nr, endP, node->right, dim+1);
     else {

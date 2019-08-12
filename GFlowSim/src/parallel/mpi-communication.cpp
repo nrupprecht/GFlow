@@ -36,7 +36,7 @@ namespace GFlowSimulation {
   void MPIObject::mpi_sum0(RealType& term) {
     #if USE_MPI == 1
     RealType sum = 0;
-    MPI_Reduce(&term, &sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&term, &sum, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
     term = sum;
     #endif
   }

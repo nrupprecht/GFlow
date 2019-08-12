@@ -1,11 +1,10 @@
 #include "integrator.hpp"
 // Other files
 #include "simdata.hpp"
-#include "../utility/simd_utility.hpp"
-#include "../parallel/topology.hpp"
-
+#include "topology.hpp"
 #include "forcemaster.hpp"
 #include "interaction.hpp"
+#include "../utility/simd_utility.hpp"
 
 namespace GFlowSimulation {
 
