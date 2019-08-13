@@ -253,6 +253,7 @@ namespace GFlowSimulation {
   inline bool DataMaster::writeSummary(string writeDirectory) {
     // Get the rank of this process. Rank 0 will do all the writing.
     int rank = topology->getRank();
+    int numProc = topology->getNumProc();
 
     std::ofstream fout;
 
@@ -423,9 +424,19 @@ namespace GFlowSimulation {
       fout << "\n";
     }
 
+    // --- Print MPI summary if using MPI.
+    if (rank==0 && numProc>1 && gflow->getTotalTime()>0) {
+      fout << "MPI and parallelization:\n";
+      fout << "  - Ghost time per step:      " << gflow->mpi_ghost_timer.time()/iterations << "\n";
+      fout << "  - Ghost fraction:           " << toStrRT(gflow->mpi_ghost_timer.time() / run_time) << "\n";
+      fout << "  - Time per exchange:        " << gflow->mpi_exchange_timer.time()/handler->getNumberOfRemakes() << "\n";
+      fout << "  - Exchange fraction:        " << toStrRT((iterations*gflow->mpi_exchange_timer.time())/(run_time*handler->getNumberOfRemakes())) << "\n";
+      fout << "\n";
+    }
+
     // --- Print integration summary
     if (rank==0) {
-      if (Base::gflow->getTotalTime()>0) {
+      if (gflow->getTotalTime()>0) {
         fout << "Integration:\n";
         fout << "  - Iterations:               " << iterations << "\n";
         fout << "  - Time per iteration:       " << toStrRT(run_time / static_cast<RealType>(iterations)) << "\n";

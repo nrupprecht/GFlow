@@ -247,7 +247,7 @@ namespace GFlowSimulation {
     doParticleRemoval(); // This only sets the needs remake flag if it removes particles.
 
     // Quick sort
-    quick_sort_help(0, _number-1, 0);
+    quick_sort(0, _number-1, 0);
     recursion_help (0, _number-1, 1);
     // Set needs remake flag
     setNeedsRemake(true);
@@ -258,7 +258,7 @@ namespace GFlowSimulation {
     doParticleRemoval(); // This only sets the needs remake flag if it removes particles.
 
     // FOR NOW: JUST SORT ALONG X AXIS
-    quick_sort_help(0, _number-1, 0);
+    quick_sort(0, _number-1, 0);
 
     // Set needs remake flag
     setNeedsRemake(true);
@@ -584,6 +584,8 @@ namespace GFlowSimulation {
     /// Remove old halo and ghost particles
     removeHaloAndGhostParticles();
 
+    //quick_sort(0, _size, 0);
+
     // Wrap the particles, so they are in their cannonical positions
     Base::gflow->wrapPositions();
 
@@ -622,7 +624,7 @@ namespace GFlowSimulation {
           update_ghost_particles();
 
           /// Wait for the last request to process.
-          MPIObject::barrier();
+          //MPIObject::barrier();
 
           // Stop mpi timer.
           gflow->stopMPIExchangeTimer();
@@ -823,11 +825,11 @@ namespace GFlowSimulation {
     setNeedsRemake(true);
   }
 
-  void SimData::quick_sort_help(int start, int end, int dim) {
+  void SimData::quick_sort(int start, int end, int dim) {
     if (start<end && dim<sim_dimensions) {
       int partition = quick_sort_partition(start, end, dim);
-      quick_sort_help(start, partition, dim);
-      quick_sort_help(partition+1, end, dim);
+      quick_sort(start, partition, dim);
+      quick_sort(partition+1, end, dim);
     }
   }
 
@@ -856,11 +858,11 @@ namespace GFlowSimulation {
 
     if (ds>min_particles) {
       for (int i=0; i<sort_bins; ++i) {
-        quick_sort_help(i*ds, (i+1)*ds, dim);
+        quick_sort(i*ds, (i+1)*ds, dim);
         recursion_help (i*ds, (i+1)*ds, dim+1);
       }
       // Potentially, there is some left over
-      quick_sort_help(sort_bins*ds, _number-1, dim);
+      quick_sort(sort_bins*ds, _number-1, dim);
       recursion_help (sort_bins*ds, _number-1, dim+1);
     }
   }

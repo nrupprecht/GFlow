@@ -102,6 +102,11 @@ int main(int argc, char **argv) {
   // Modifiers
   RealType temperature = 0;
 
+  #if USE_MPI == 1
+  // Default to repulsive boundaries for now, since wrapping doesn't work with MPI exchange.
+  boundary = 3;
+  #endif
+
   // --- For getting command line arguments
   ArgParse parser(argc, argv);
   parser.get("bipartite", bipartite_flag);

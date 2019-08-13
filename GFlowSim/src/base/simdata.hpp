@@ -260,7 +260,7 @@ namespace GFlowSimulation {
     void swap_particle(int, int);
 
     //! \brief Partitions the sublist, then calls sort on each sublist.
-    void quick_sort_help(int, int, int);
+    void quick_sort(int, int, int);
 
     //! \brief The partition step for quicksort
     int quick_sort_partition(int, int, int);
