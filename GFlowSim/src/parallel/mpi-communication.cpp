@@ -52,8 +52,18 @@ namespace GFlowSimulation {
   void MPIObject::mpi_and(bool& val) {
     #if USE_MPI == 1
     int v = val ? 1 : 0, gv = 1;
-    MPI_Allreduce(&v, &gv, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
-    val = (gv==1);
+    MPI_Allreduce(&v, &gv, 1, MPI_INT, /*MPI_MIN*/ MPI_LAND, MPI_COMM_WORLD);
+    //val = (gv==1);
+    val = gv;
+    #endif
+  }
+
+  void MPIObject::mpi_or(bool& val) {
+    #if USE_MPI == 1
+    int v = val ? 1 : 0, gv = 1;
+    MPI_Allreduce(&v, &gv, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+    //val = (gv==1);
+    val = gv;
     #endif
   }
 

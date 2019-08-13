@@ -28,19 +28,20 @@ using namespace GFlowSimulation;
 #include "../other/evaluation.hpp"
 
 int main(int argc, char **argv) {
-  int rank(0);
+  int rank(0), numProc(1);
   #if USE_MPI == 1
-  int numProc(1);
-  #if _CLANG_ == 1
-  MPI_Init(&argc, &argv);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &numProc);
-  #else
-  MPI::Init(argc, argv);
-  rank = MPI::COMM_WORLD.Get_rank();
-  numProc = MPI::COMM_WORLD.Get_size();
-  #endif
+    #if _CLANG_ == 1
+      MPI_Init(&argc, &argv);
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+      MPI_Comm_size(MPI_COMM_WORLD, &numProc);
+    #else
+      MPI::Init(argc, argv);
+      rank = MPI::COMM_WORLD.Get_rank();
+      numProc = MPI::COMM_WORLD.Get_size();
+    #endif
   cout << "Initialized MPI. Rank " << rank << "\n";
+  // Wait here.
+  MPIObject::barrier();
   #endif
 
   // --- Options

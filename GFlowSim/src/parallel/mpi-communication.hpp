@@ -25,8 +25,11 @@ namespace GFlowSimulation {
     //! \brief Perform an MPI AllReduce, using Min.
     static void mpi_min(RealType&);
 
-    //! \brief Sync the value of a boolean, performing an AND.
+    //! \brief Sync the value of a boolean, performing a logical AND.
     static void mpi_and(bool&);
+
+    //! \brief Sync the value of a boolean, performing a logical OR.
+    static void mpi_or(bool&);
 
     //! \brief Send a single int value to another processor.
     static void send_single(int&, int);

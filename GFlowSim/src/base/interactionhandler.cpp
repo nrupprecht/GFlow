@@ -218,7 +218,14 @@ namespace GFlowSimulation {
       ++missed_target;
       ave_miss += motion_ratio;
     }
-    return motion_ratio > mv_ratio_tolerance * motion_factor;
+
+    bool needs_remake = (motion_ratio > mv_ratio_tolerance * motion_factor);
+
+    #if USE_MPI == 1
+    MPIObject::mpi_or(needs_remake);
+    #endif
+
+    return needs_remake;
   }
 
   void InteractionHandler::record_positions() {

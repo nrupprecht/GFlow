@@ -429,8 +429,12 @@ namespace GFlowSimulation {
       fout << "MPI and parallelization:\n";
       fout << "  - Ghost time per step:      " << gflow->mpi_ghost_timer.time()/iterations << "\n";
       fout << "  - Ghost fraction:           " << toStrRT(gflow->mpi_ghost_timer.time() / run_time) << "\n";
+      fout << "  - Last # ghosts sent:       " << simData->getLastNGhostsSent() << "\n";
+      fout << "  - Last # ghosts received:   " << simData->getLastNGhostsRecv() << "\n";
       fout << "  - Time per exchange:        " << gflow->mpi_exchange_timer.time()/handler->getNumberOfRemakes() << "\n";
       fout << "  - Exchange fraction:        " << toStrRT((iterations*gflow->mpi_exchange_timer.time())/(run_time*handler->getNumberOfRemakes())) << "\n";
+      fout << "  - Last # exchange sent:     " << simData->getLastNExchangeSent() << "\n";
+      fout << "  - Last # exchange received: " << simData->getLastNExchangeRecv() << "\n";
       fout << "\n";
     }
 
@@ -439,9 +443,10 @@ namespace GFlowSimulation {
       if (gflow->getTotalTime()>0) {
         fout << "Integration:\n";
         fout << "  - Iterations:               " << iterations << "\n";
+        fout << "  - Iterations per second:    " << toStrRT(static_cast<RealType>(iterations) / run_time) << "\n";
         fout << "  - Time per iteration:       " << toStrRT(run_time / static_cast<RealType>(iterations)) << "\n";
         if (integrator) fout << "  - Time step (at end):       " << integrator->getTimeStep() << "\n";
-        fout << "  - Average dt:               " << Base::gflow->getTotalTime()/iterations << "\n";
+        fout << "  - Average dt:               " << gflow->getTotalTime()/iterations << "\n";
         fout << "\n";
       }
     }

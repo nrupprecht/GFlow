@@ -104,6 +104,15 @@ namespace GFlowSimulation {
     doParticleRemoval();
     // Set markers.
     _first_halo = _first_ghost = _size;
+
+    if (gflow->getRunMode()==RunMode::SIM && topology->getNumProc()>1) {
+      MPIObject::barrier();
+      cout << "\n";
+      cout << "Rank " << topology->getRank() << ", send, recv, wait: " << " " << send_timer.time() << " " << recv_timer.time() << " " << wait_timer.time() << "\n";
+      cout << "Rank " << topology->getRank() << ", Ghost send, recv: "  << " " << ghost_send_timer.time() << " " << ghost_recv_timer.time() << "\n\n";
+      MPIObject::barrier();
+    }
+    send_timer.clear(); recv_timer.clear(); wait_timer.clear(); ghost_send_timer.clear(); ghost_recv_timer.clear();
   }
 
   //! @brief Reserve space for particles, extending the lengths of all arrays to the requested size.
@@ -708,6 +717,22 @@ namespace GFlowSimulation {
     return _first_ghost;
   }
 
+  int SimData::getLastNGhostsSent() {
+    return _last_n_ghosts_sent;
+  }
+
+  int SimData::getLastNGhostsRecv() {
+    return _last_n_ghosts_recv;
+  }
+
+  int SimData::getLastNExchangeSent() {
+    return _last_n_exchange_sent;
+  }
+
+  int SimData::getLastNExchangeRecv() {
+    return _last_n_exchange_recv;
+  }
+
   bool SimData::isReal(int id) {
     return -1<id && id<_first_halo;
   }
@@ -871,6 +896,9 @@ namespace GFlowSimulation {
 #if USE_MPI == 1
 
   inline void SimData::exchange_particles() {
+    // Reset counters
+    _last_n_exchange_sent = _last_n_exchange_recv = 0;
+
     // Get the bounds this processor manages.
     Bounds bounds = topology->getProcessBounds();
 
@@ -888,13 +916,18 @@ namespace GFlowSimulation {
         // If there are repulsive boundaries, extend the simulation bounds for the node in those directions, so particles don't go "out of bounds"
         // when they pass over the boundary a little to get repulsed back in. In this case, X can evaluate to not being within the bounds, even
         // though it should stay within these bounds.
-        if (it!=neighbor_map.end()) send_ids[it->second].push_back(id);
+        if (it!=neighbor_map.end()) {
+          send_ids[it->second].push_back(id);
+          ++_last_n_exchange_sent;
+        }
       }
     }
 
     // Send particle information, deleting the particles that we send.
+    send_timer.start();
     for (int i=0; i<neighbor_ranks.size(); ++i)
       send_particle_data(send_ids[i], neighbor_ranks[i], buffer_list[i], &request_list[i], &request, true);
+    send_timer.stop();
 
     // Do particle removal. We do this here so we get rid of all the particles that have migrated to other processors. There will be no "holes"
     // in the array after the particle removal.
@@ -903,8 +936,10 @@ namespace GFlowSimulation {
     // --- Receive particles from other processors.
 
     // Recieve particle information, and use it to create new particles.
+    recv_timer.start();
     for (int n_rank : neighbor_ranks)
-      recv_new_particle_data(n_rank);
+      _last_n_exchange_recv += recv_new_particle_data(n_rank);
+    recv_timer.stop();
   }
 
   inline void SimData::create_ghost_particles() {
@@ -946,12 +981,16 @@ namespace GFlowSimulation {
       // Rank of the i-th neighbor.
       int n_rank = neighbor_ranks[i];
       // Recieve ghost particles, create new particles for them.
+      ghost_recv_timer.start();
       recv_ghost_sizes[i] = recv_new_particle_data(n_rank);
+      ghost_recv_timer.stop();
       n_ghosts += recv_ghost_sizes[i];
     }
   }
 
   inline void SimData::update_ghost_particles() {
+    // Reset counters.
+    _last_n_ghosts_sent = _last_n_ghosts_recv = 0;
     // Update the positions information of ghost particles on other processors.
     int id_counter = _first_ghost;
     for (int i=0; i<neighbor_ranks.size(); ++i) {
@@ -959,6 +998,8 @@ namespace GFlowSimulation {
       int size = send_ghost_list[i].size();
       // Only send data if there is data to send.
       if (size>0) {
+        // Update counter.
+        _last_n_ghosts_sent += size;
         // Make sure buffer is large enough.
         if (buffer_list[i].size()<size*ghost_data_width) buffer_list[i].resize(size*ghost_data_width);
         // Pack the data into buffer_list
@@ -967,8 +1008,10 @@ namespace GFlowSimulation {
           copyVec(X(id), &buffer_list[i][ghost_data_width*j], sim_dimensions);
           ++j;
         }
+        ghost_send_timer.start(); //**
         // Send the data (non-blocking) back to the processor.
         MPI_Isend(buffer_list[i].data(), size*ghost_data_width, MPI_FLOAT, neighbor_ranks[i], 0, MPI_COMM_WORLD, &request);
+        ghost_send_timer.stop(); //**
       }
     }
 
@@ -976,8 +1019,12 @@ namespace GFlowSimulation {
     for (int i=0, p_id=_first_ghost; i<neighbor_ranks.size(); ++i) {
       int size = recv_ghost_sizes[i];
       if (size>0) {
+        // Update counter.
+        _last_n_ghosts_recv += size;
         // Receive the data.
+        ghost_recv_timer.start(); //**
         MPI_Recv(recv_buffer.data(), size*ghost_data_width, MPI_FLOAT, neighbor_ranks[i], 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        ghost_recv_timer.stop(); //**
         // Unpack the position data into the ghost particles.
         for (int j=0; j<size; ++j, ++p_id) {
           copyVec(&recv_buffer[j*ghost_data_width], X(p_id), sim_dimensions);
@@ -986,7 +1033,9 @@ namespace GFlowSimulation {
     }
 
     // Wait for requests to be processed.
+    wait_timer.start();
     MPIObject::barrier();
+    wait_timer.stop();
   }
 
   inline void SimData::send_particle_data(const vector<int>& send_ids, int n_rank, vector<RealType>& buffer, MPI_Request* size_request, MPI_Request* send_request, bool remove) {

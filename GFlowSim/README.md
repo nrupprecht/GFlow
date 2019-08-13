@@ -28,22 +28,22 @@ This version also includes Doxygen style commenting which can be used to generat
 
 * Sphere box testing: [paper](https://pdfs.semanticscholar.org/ede0/ef718fc599b9af6ca909db3696c9e87f7192.pdf)
 
+* How lammps implements granular physics: [presentation](https://lammps.sandia.gov/workshops/Feb10/Christoph_Kloss/granular.pdf)
+
 Run with
 ```
 ./bin/driver
 ```
 
-## TODO:
+## TODO (infrequently updated):
 
 - [x] Bodies, rigid and otherwise.
 
 - [x] Walls.
 
-- [ ] Angles / torque.
+- [x] Angles / torque.
 
 - [x] Sectorization that is optimized for multiple scales of particles.
-
-- [ ] Hard triangles.
 
 - [x] Bond/angle modifier.
 
@@ -53,9 +53,11 @@ Run with
 
 - [x] Adding/removing particles while the simulation is running.
 
+- [ ] Parallelization.
+
 - [ ] More efficient force calculation.
 
-- [ ] Parallelization.
+- [ ] Hard triangles.
 
 ## Authors
 * **Nathaniel Rupprecht** - *Author*

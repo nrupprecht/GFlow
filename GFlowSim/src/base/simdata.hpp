@@ -214,6 +214,18 @@ namespace GFlowSimulation {
     //! \brief Get the position of the first ghost particle in the array.
     int getFirstGhost();
 
+    //! \brief Get the last number of ghosts that we sent to other processors.
+    int getLastNGhostsSent();
+
+    //! \brief Get the last number of ghosts that we received from other processors.
+    int getLastNGhostsRecv();
+
+    //! \brief Get the last number of exchange particles that we sent to other processors.
+    int getLastNExchangeSent();
+
+    //! \brief Get the last number of exchange particles that we received from other processors.
+    int getLastNExchangeRecv();
+
     //! \brief Is this the local id of an owned particle.
     //!
     //! If isReal is true, isHalo and isGhost will be false.
@@ -246,6 +258,13 @@ namespace GFlowSimulation {
     void addIntegerData(string);
 
     friend class ForceMaster;
+
+
+    Timer wait_timer;
+    Timer send_timer;
+    Timer recv_timer;
+    Timer ghost_send_timer;
+    Timer ghost_recv_timer;
 
   private:
     // --- Helper functions
@@ -308,9 +327,6 @@ namespace GFlowSimulation {
     //! \brief A map between local halo particle ids and primary (local) IDs.
     std::vector<int> halo_map;
 
-    //! \brief A map between global id of ghost particles and local IDs.
-    std::vector<int> ghost_map;
-
     //! \brief Record where "holes" are in the particle array
     std::set<int> remove_list;
 
@@ -344,7 +360,6 @@ namespace GFlowSimulation {
 
     //! \brief Copy this data from force master.
     int _ntypes = 0;
-
 
     // -*-*-*- MPI/Parallel related -*-*-*-
     #if USE_MPI == 1
@@ -401,6 +416,15 @@ namespace GFlowSimulation {
 
     //! \brief The number of ghost particles in this structure.
     int n_ghosts = 0;
+
+    //! \brief Record the last number of ghost particles we had to send (so we can keep track).
+    int _last_n_ghosts_sent = 0;
+    //! \brief Record the last number of ghost particles we had to receive (so we can keep track).
+    int _last_n_ghosts_recv = 0;
+    //! \brief Record the last number of particles exchanged to other processors.
+    int _last_n_exchange_sent = 0;
+    //! \brief Record the last number of particles exchanged from other processors.
+    int _last_n_exchange_recv = 0;
 
     //! \brief List of particles to send as ghosts to neighboring processors. The i-th entry is for the i-th neighbor. The processor id
     //! can be found by asking the topology (for now this only applies to KD tree, but it probably should be changed to apply to all types
