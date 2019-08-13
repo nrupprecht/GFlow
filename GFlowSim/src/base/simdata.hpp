@@ -260,11 +260,12 @@ namespace GFlowSimulation {
     friend class ForceMaster;
 
 
-    Timer wait_timer;
+    Timer barrier_timer;
     Timer send_timer;
     Timer recv_timer;
     Timer ghost_send_timer;
     Timer ghost_recv_timer;
+    Timer ghost_wait_timer;
 
   private:
     // --- Helper functions
@@ -381,7 +382,7 @@ namespace GFlowSimulation {
     inline void send_particle_data(const vector<int>&, int, vector<RealType>&, MPI_Request*, MPI_Request*, bool=false);
 
     //! \brief Recieve particle information, and use it to create new particles. Return the number of particles recieved.
-    inline int recv_new_particle_data(int);
+    inline int recv_new_particle_data(int, vector<RealType>&);
 
     //! \brief Width of data to send when migrating particles.
     int data_width = 0;
@@ -402,7 +403,7 @@ namespace GFlowSimulation {
 
     //! \brief The i-th vector in the array contains ids of the particles that should be sent from this processor
     //! to the i-th neighboring processor.
-    vector<int> *send_ids = nullptr;
+    vector<vector<int> > send_ids;
 
     /// Recieving data.
 
@@ -429,7 +430,7 @@ namespace GFlowSimulation {
     //! \brief List of particles to send as ghosts to neighboring processors. The i-th entry is for the i-th neighbor. The processor id
     //! can be found by asking the topology (for now this only applies to KD tree, but it probably should be changed to apply to all types
     //! of topologies).
-    vector<int> *send_ghost_list = nullptr;
+    vector<vector<int> > send_ghost_list;
 
     //! \brief How many ghost particles we will recieve from each neighbor processor.
     vector<int> recv_ghost_sizes;
@@ -440,9 +441,9 @@ namespace GFlowSimulation {
     vector<vector<RealType>> buffer_list;
 
     //! \brief A buffer for receiving data.
-    vector<RealType> recv_buffer;
+    vector<vector<RealType> > recv_buffer;
 
-    MPI_Request *request_list = nullptr;
+    vector<MPI_Request> request_list;
     MPI_Request request;
 
     #endif

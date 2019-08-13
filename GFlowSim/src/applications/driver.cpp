@@ -289,6 +289,7 @@ int main(int argc, char **argv) {
   // Run the simulation
   int num_particles = gflow->getNumParticles();
   #if USE_MPI == 1
+    // Sum all the particles on all the processors.
     MPIObject::mpi_sum0(num_particles);
   #endif
   if (!quiet && rank==0) {
@@ -315,12 +316,19 @@ int main(int argc, char **argv) {
   // More detailed exception handling
   // @todo Exception handling.
 
+  #if USE_MPI == 1
+  // Sync here.
+  MPIObject::barrier();
+  #endif // USE_MPI == 1
+
   if (!quiet && rank==0) cout << "Run is over:\t\t\t" << time_span(current_time(), start_time) << "\n";
   if (!quiet && rank==0) cout << "Ratio was:  \t\t\t" << gflow->getDataMaster()->getRatio() << "\n";
 
   // Write accumulated data to files.
   // Only rank 0 will actually write anything, but information will need to sync, so all processes must call this function.
   gflow->writeData(writeDirectory); 
+
+  // Print message that data write is over.
   if (!quiet && rank==0) cout << "Data write is over:\t\t" << time_span(current_time(), start_time) << "\n";
 
   // Delete creator, gflow

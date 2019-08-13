@@ -67,14 +67,6 @@ namespace GFlowSimulation {
       if (dob) dob->pre_step();
     data_timer.stop();
   }
-  
-  void DataMaster::pre_exchange() {
-    data_timer.start();
-    if (Base::gflow->getElapsedTime()<startRecTime) return;
-    for (auto& dob : dataObjects)
-      if (dob) dob->pre_exchange();
-    data_timer.stop();
-  }
 
   void DataMaster::pre_forces() {
     data_timer.start();
@@ -335,7 +327,7 @@ namespace GFlowSimulation {
         double timing[entries], total = 0;
         // Set timing entries.
         timing[0] = integrator->get_time();
-        timing[1] = gflow->domain_timer.time();
+        timing[1] = handler->get_time(); //gflow->domain_timer.time();
         timing[2] = forceMaster->get_time();
         timing[3] = gflow->bonded_timer.time();
         timing[4] = gflow->body_timer.time();

@@ -187,21 +187,12 @@ namespace GFlowSimulation {
       dataMaster->pre_step();
       handler->pre_step();
 
-      // --> Pre-exchange
-      for (auto m : modifiers) m->pre_exchange();
-      integrator->pre_exchange();
-      for (auto it : additional_integrators) it->pre_exchange();
-      dataMaster->pre_exchange();
-      handler->pre_exchange();
-
       // --> Pre-force
       for (auto m : modifiers) m->pre_forces();
       integrator->pre_forces(); // -- This is where VV first half kick happens (if applicable)
       for (auto it : additional_integrators) it->pre_forces();
       dataMaster->pre_forces();
-      domain_timer.start();
-      /*if (useForces)*/ handler->pre_forces();   // -- This is where resectorization / verlet list creation might happen
-      domain_timer.stop();
+      handler->pre_forces();   // -- This is where resectorization / verlet list creation might happen
       
       // --- Do interactions
       clearForces(); // Clear force buffers
@@ -249,10 +240,6 @@ namespace GFlowSimulation {
       dataMaster->post_forces();
       handler->post_forces();
 
-      // Update ghost particles. This the positions of particles on this processor that are ghosts on other processors back to 
-      // the other processors. This should be done after VV second half kick happens.
-      // simData->updateGhostParticles(); //**
-
       // --> Post-step
       if (requested_time<=elapsed_time) running = false;
       for (auto m : modifiers) m->post_step();
@@ -260,6 +247,7 @@ namespace GFlowSimulation {
       for (auto it : additional_integrators) it->post_step();
       dataMaster->post_step();
       handler->post_step();
+
       // Timer updates
       ++iter;
       RealType dt = integrator->getTimeStep();
@@ -279,7 +267,8 @@ namespace GFlowSimulation {
         (*monitor) << "Ratio: " << elapsed_time / timer.current() << "\t";
         (*monitor) << "Est. time: " << (requested_time - elapsed_time)/live_ratio << "\t";
 	      (*monitor) << endl;
-      }      
+      }
+      
       // Reset simdata needs remake flag
       simData->setNeedsRemake(false);
 

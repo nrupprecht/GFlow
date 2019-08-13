@@ -3,6 +3,7 @@
 
 #include "../gflow.hpp"
 #include "../utility/vectormath.hpp"
+#include "../other/timedobject.hpp"
 #include "simdata.hpp"
 
 namespace GFlowSimulation {
@@ -12,7 +13,7 @@ namespace GFlowSimulation {
   *
   *  Can, for example, create linked cells or verlet lists for helping interactions.
   */
-  class InteractionHandler : public Base {
+  class InteractionHandler : public Base, public TimedObject {
   public:
     //! Constructor.
     InteractionHandler(GFlow*);

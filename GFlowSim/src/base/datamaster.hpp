@@ -16,14 +16,15 @@ namespace GFlowSimulation {
   class DataMaster : public Base {
   public:
     //! \brief Constructor.
-    DataMaster(GFlow *);
+    DataMaster(GFlow*);
 
     //! \brief Destructor.
     ~DataMaster();
 
+    //! \brief Initialize all the data objects the data master controls.
     virtual void initialize() override;
     
-    //! \brief Add a data object - we are subsequently in charge of the data object
+    //! \brief Add a data object - we are subsequently in charge of the data object.
     void addDataObject(DataObject*);
 
     //! \brief Get a reference to the data objects vector.
@@ -32,39 +33,40 @@ namespace GFlowSimulation {
     //! \brief Set the command data
     void setCommand(int, char**);
 
+    //! \brief Set the initialization time record.
     void setInitializationTime(RealType);
 
-    //! \brief Start a timer
+    //! \brief Start a timer.
     void startTimer();
 
-    //! \brief End the timer and add the new time to the record
+    //! \brief End the timer and add the new time to the record.
     void endTimer();
 
     // Call the corresponding routeens of the managed data objects - data
-    // objects will collect data during one or more of these routines
+    // objects will collect data during one or more of these routines.
     virtual void pre_integrate() override;
     virtual void pre_step() override;
-    virtual void pre_exchange() override;
     virtual void pre_forces() override;
     virtual void post_forces() override;
     virtual void post_step() override;
     virtual void post_integrate() override;
 
-    //! \brief Do a coordinated write to a directory. Returns true if all writes were successful
+    //! \brief Do a coordinated write to a directory. Returns true if all writes were successful.
     bool writeToDirectory(string);
 
-    //! \brief Reset the time - use e.g. after relaxation step
+    //! \brief Reset the time - use e.g. after relaxation step.
     void resetTimer();
 
-    //! \brief Set start recording time
+    //! \brief Set start recording time.
     void setStartRecTime(RealType);
 
-    //! \brief Set the fps of all the data objects
+    //! \brief Set the fps of all the data objects.
     void setFPS(RealType);
 
-    //! \brief Set the fps of particular data objects
+    //! \brief Set the fps of particular data objects.
     void setFPS(int, RealType);
 
+    //! \brief Give a file to the datamaster, so it can print it out with the run summary.
     void giveFile(string, string);
 
     RealType getRatio() const;
@@ -87,7 +89,7 @@ namespace GFlowSimulation {
     //! \brief Write a summary of the run to a text file.
     inline bool writeSummary(string);
 
-    //! \brief Write particle data to a stream.
+    //! \brief Write particle data to a stream..
     inline void writeParticleData(std::ostream&);
 
     //! \brief Compute and write data concerning the domain to a stream.

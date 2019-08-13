@@ -55,10 +55,14 @@ namespace GFlowSimulation {
   }
 
   void Domain2DCells::construct() {
+    // Base object construct.
     DomainBase::construct();
 
     // Only bother constructing under some circumstances.
     if (forceMaster==nullptr || !forceMaster->interactingTypes()) return;
+
+    // Start timer.
+    timer.start();
 
     // Fill up cells.
     update_cells();

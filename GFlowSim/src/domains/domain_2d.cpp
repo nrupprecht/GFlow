@@ -67,6 +67,9 @@ namespace GFlowSimulation {
     // Only bother constructing under some circumstances.
     if (forceMaster==nullptr || !forceMaster->interactingTypes()) return;
 
+    // Start timer.
+    timer.start();
+
     // Fill up cells.
     update_cells();
 
@@ -145,6 +148,9 @@ namespace GFlowSimulation {
     }
 
     forceMaster->close();
+
+    // Start timer.
+    timer.stop();
   }
 
   void Domain2D::calculate_domain_cell_dimensions() {

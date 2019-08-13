@@ -2,6 +2,7 @@
 #define __MPI_COMMUNICATION_HPP__GFLOW__
 
 #include "../utility/utility.hpp"
+#include "../utility/timer.hpp"
 
 namespace GFlowSimulation {
  
@@ -9,6 +10,13 @@ namespace GFlowSimulation {
   public:
     //! \brief Call an mpi barrier.
     static void barrier();
+    //! \brief Call an mpi barrier, use the timer to time how long the barrier lasted.
+    static void barrier(Timer&);
+
+    //! \brief Call for an mpi wait.
+    static void wait(MPI_Request&);
+    //! \brief Call for an mpi wait, use the timer to time how long the wait lasted.
+    static void wait(MPI_Request&, Timer&);
 
     //! \brief Perform MPI AllReduce, using sum. Integer version.
     static void mpi_sum(int&);
