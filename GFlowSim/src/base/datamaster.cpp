@@ -247,8 +247,9 @@ namespace GFlowSimulation {
     int rank = topology->getRank();
     int numProc = topology->getNumProc();
 
+    // File stream.
     std::ofstream fout;
-
+    // Only rank 0 needs a file stream.
     if (rank==0) {
       fout.open(writeDirectory+"/run_summary.txt");
       if (fout.fail()) {
@@ -260,6 +261,7 @@ namespace GFlowSimulation {
 
     // End timer - in case the run failed, and therefore didn't end the timer
     endTimer();
+    // Print pretty header.
     if (rank==0) {
       // Print Header
       fout << "**********          SUMMARY          **********\n";
@@ -271,8 +273,9 @@ namespace GFlowSimulation {
         for (int c=0; c<argc; ++c) fout << argv[c] << " ";
       }
       else { // Try to get command from gflow
-        pair<int, char**> command = gflow->getCommand();
-        if (command.second) for (int c=0; c<command.first; ++c) fout << command.second[c] << " ";
+        auto command = gflow->getCommand();
+        if (command.second) 
+          for (int c=0; c<command.first; ++c) fout << command.second[c] << " ";
       }
       fout << "\n\n";
     }
@@ -283,15 +286,41 @@ namespace GFlowSimulation {
     int iterations = Base::gflow->getIter(), particles = Base::simData->number();
     MPIObject::mpi_sum0(particles);
 
-    // Helper lambda - checks whether run_time was non-zero
+    // --- Print helping lambda functions.
+
+    // Helper lambda - checks whether run_time was non-zero. Pretty prints.
     auto toStrPP = [&] (RealType x, int precision=3) -> string {
       return (run_time>0 ? pprint(x, 3, 3) : "--");
     };
+    // Helper lambda - checks whether run_time was non-zero. Normal version.
     auto toStrRT = [&] (RealType x, int precision=3) -> string {
       return (run_time>0 ? toStr(x) : "--");
     };
+    // Helper lambda for printing (time, % runtime).
+    string sep = "%\t\t";
+    auto report = [&] (double time) {
+      return toStrPP(time/run_time*100) + sep + toStr(time) + "\n";
+    };
+    // Alignment margin.
+    const int margin = 30, leading = 2;
+    // Helper lambdas for aligning text - string version.
+    auto formats = [&] (const string& header, const string& rhs) {
+      int remainder = max(static_cast<int>(margin - leading - header.size()), 1);
+      for (int i=0; i<leading; ++i) fout << ' ';
+      fout << header;
+      for (int i=0; i<remainder; ++i) fout << ' ';
+      fout << rhs << "\n";
+    };
+    // Helper lambdas for aligning text - double version.
+    auto formatd = [&] (const string& header, const double rhs) {
+      int remainder = max(static_cast<int>(margin - leading - header.size()), 1);
+      for (int i=0; i<leading; ++i) fout << ' ';
+      fout << header;
+      for (int i=0; i<remainder; ++i) fout << ' ';
+      fout << rhs << "\n";
+    };
 
-    // Number of interactions:
+    // Gather interactions data.
     vector<int> interaction_length;
     int inters = 0;
     for (auto &it : gflow->interactions) {
@@ -308,48 +337,57 @@ namespace GFlowSimulation {
     // Print timing and performance data
     if (rank==0) {
       fout << "Timing and performance:\n";
-      if (initialization_time>0) fout << "  - Initialization time:      " << initialization_time << "\n"; 
-      fout << "  - Time simulated:           " << Base::gflow->getTotalTime() << "\n";
-      fout << "  - Requested Time:           " << requestedTime << "\n";
+      if (initialization_time>0) formatd("- Initialization time:", initialization_time);
+      formatd("- Time simulated:", gflow->getTotalTime());
+      formatd("- Requested Time:", requestedTime);
       fout << "  - Run Time:                 " << run_time;
       if (run_time>60) fout << " ( h:m:s - "   << printAsTime(run_time) << " )";
       fout << "\n";
-      fout << "  - Ratio x Particles:        " << toStrRT(ratio*particles) << "\n";
-      fout << "  - Iter x Particles / s:     " << toStrRT(iterations*(particles/run_time)) << "\n";
-      fout << "  - Interaction pairs / s:    " << toStrRT(operations) << "\n";
-      fout << "  - Ratio:                    " << toStrRT(ratio) << "\n";
-      fout << "  - Inverse Ratio:            " << toStrRT(1./ratio) << "\n";
+      formats("- Ratio x Particles:", toStrRT(ratio*particles));
+      formats("- Iter x Particles / s:", toStrRT(iterations*(particles/run_time)));
+      formats("- Interaction pairs / s:", toStrRT(operations));
+      formats("- Ratio:", toStrRT(ratio));
+      formats("- Inverse Ratio:", toStrRT(1./ratio));
       fout << "\n";
 
       if (Base::gflow->getTotalTime()>0) {
         fout << "Timing breakdown:\n";
-        const int entries = 8;
+        const int entries = 9;
         double timing[entries], total = 0;
         // Set timing entries.
         timing[0] = integrator->get_time();
-        timing[1] = handler->get_time(); //gflow->domain_timer.time();
+        timing[1] = handler->get_time();
         timing[2] = forceMaster->get_time();
         timing[3] = gflow->bonded_timer.time();
         timing[4] = gflow->body_timer.time();
         timing[5] = data_timer.time();
-        timing[6] = gflow->mpi_exchange_timer.time();
-        timing[7] = gflow->mpi_ghost_timer.time();
-        double mpi_time = timing[6] + timing[7];
+        timing[6] = simData->get_time();
+        timing[7] = gflow->mpi_exchange_timer.time();
+        timing[8] = gflow->mpi_ghost_timer.time();
+        double forces_time = timing[2] + timing[3] + timing[4];
+        double mpi_time = timing[7] + timing[8];
         // Print timing data.
-        string sep = "%\t\t";
+        
         fout << "  -- Integration:             " << toStrPP(timing[0]/run_time*100) << sep << timing[0] << "\n";
         fout << "  -- Pre-forces, domain:      " << toStrPP(timing[1]/run_time*100) << sep << timing[1] << "\n";
-        fout << "  -- Non-bonded:              " << toStrPP(timing[2]/run_time*100) << sep << timing[2] << "\n";
-        fout << "  -- Bonded:                  " << toStrPP(timing[3]/run_time*100) << sep << timing[3] << "\n";
-        fout << "  -- Body:                    " << toStrPP(timing[4]/run_time*100) << sep << timing[4] << "\n";
+        fout << "  -- Forces:                  " << toStrPP(forces_time/run_time*100) << sep << forces_time << "\n";
         fout << "  -- Data objects:            " << toStrPP(timing[5]/run_time*100) << sep << timing[5] << "\n";
-        fout << "  -- MPI related:             " << toStrPP(mpi_time/run_time*100) << sep << mpi_time << "\n";
-        if (mpi_time>0) {
-          fout << "    - Particle exchange:      " << toStrPP(timing[6]/run_time*100) << sep << timing[6] << "\n";
-          fout << "    - Ghost sync.:            " << toStrPP(timing[7]/run_time*100) << sep << timing[7] << "\n";
-        }
+        fout << "  -- Simdata updates:         " << toStrPP(timing[6]/run_time*100) << sep << timing[6] << "\n";
+        if (mpi_time>0) fout << "  -- MPI related:             " << toStrPP(mpi_time/run_time*100) << sep << mpi_time << "\n";
         for (int i=0; i<entries; ++i) total += timing[i];
-        fout << "  -- Uncounted:               " << std::setprecision(3) << toStrPP((1. - total/run_time)*100) << sep << run_time - total << "\n";
+        fout << "  -- Other:                   " << std::setprecision(3) << toStrPP((1. - total/run_time)*100) << sep << run_time - total << "\n";
+        fout << "\n";
+        // Timing breakdown for forces.
+        fout << "Timing - forces:\n";
+        if (timing[2]>0) fout << "    - Non-bonded:             " << toStrPP(timing[2]/run_time*100) << sep << timing[2] << "\n";
+        if (timing[3]>0) fout << "    - Bonded:                 " << toStrPP(timing[3]/run_time*100) << sep << timing[3] << "\n";
+        if (timing[4]>0) fout << "    - Body:                   " << toStrPP(timing[4]/run_time*100) << sep << timing[4] << "\n";
+        // Timing breakdown for MPI.
+        if (mpi_time>0) {
+          fout << "Timing - MPI:\n";
+          fout << "    - Particle exchange:      " << toStrPP(timing[7]/run_time*100) << sep << timing[7] << "\n";
+          fout << "    - Ghost sync.:            " << toStrPP(timing[8]/run_time*100) << sep << timing[8] << "\n";
+        }
         fout << "\n";
       }
     }
@@ -417,18 +455,56 @@ namespace GFlowSimulation {
     }
 
     // --- Print MPI summary if using MPI.
-    if (rank==0 && numProc>1 && gflow->getTotalTime()>0) {
-      fout << "MPI and parallelization:\n";
-      fout << "  - Ghost time per step:      " << gflow->mpi_ghost_timer.time()/iterations << "\n";
-      fout << "  - Ghost fraction:           " << toStrRT(gflow->mpi_ghost_timer.time() / run_time) << "\n";
-      fout << "  - Last # ghosts sent:       " << simData->getLastNGhostsSent() << "\n";
-      fout << "  - Last # ghosts received:   " << simData->getLastNGhostsRecv() << "\n";
-      fout << "  - Time per exchange:        " << gflow->mpi_exchange_timer.time()/handler->getNumberOfRemakes() << "\n";
-      fout << "  - Exchange fraction:        " << toStrRT((iterations*gflow->mpi_exchange_timer.time())/(run_time*handler->getNumberOfRemakes())) << "\n";
-      fout << "  - Last # exchange sent:     " << simData->getLastNExchangeSent() << "\n";
-      fout << "  - Last # exchange received: " << simData->getLastNExchangeRecv() << "\n";
-      fout << "\n";
+    #if USE_MPI == 1
+    if (numProc>1 && gflow->getTotalTime()>0) {
+      if (rank==0) {
+        fout << "MPI and parallelization:\n";
+        formats("- MPI ranks:", toStr(numProc));
+        fout << "  - Ghost time per step:      " << gflow->mpi_ghost_timer.time()/iterations << "\n";
+        fout << "  - Ghost fraction:           " << toStrRT(gflow->mpi_ghost_timer.time() / run_time) << "\n";
+        fout << "  - Last # ghosts sent:       " << simData->getLastNGhostsSent() << "\n";
+        fout << "  - Last # ghosts received:   " << simData->getLastNGhostsRecv() << "\n";
+        fout << "  - Time per exchange:        " << gflow->mpi_exchange_timer.time()/handler->getNumberOfRemakes() << "\n";
+        fout << "  - Exchange fraction:        " << toStrRT((iterations*gflow->mpi_exchange_timer.time())/(run_time*handler->getNumberOfRemakes())) << "\n";
+        fout << "  - Last # exchange sent:     " << simData->getLastNExchangeSent() << "\n";
+        fout << "  - Last # exchange received: " << simData->getLastNExchangeRecv() << "\n";
+        fout << "\n";
+      }
+
+      // Gather data from processors.
+      const int n_timers = 8;
+      double timing[n_timers];
+      timing[0] = simData->send_timer.time();
+      timing[1] = simData->recv_timer.time();
+      timing[2] = simData->barrier_timer.time();
+      timing[3] = simData->exchange_search_timer.time();
+      timing[4] = simData->ghost_send_timer.time();
+      timing[5] = simData->ghost_recv_timer.time();
+      timing[6] = simData->ghost_wait_timer.time();
+      timing[7] = simData->ghost_search_timer.time();
+
+      double *gather_timing = nullptr;
+      if (rank==0) gather_timing = new double[n_timers*numProc];
+      // Gather data from all processors.
+      MPI_Gather(&timing, n_timers, MPI_DOUBLE, gather_timing, n_timers, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+      if (rank==0) {
+        for (int i=0; i<numProc; ++i) {
+          fout << "MPI - Process " << i << ":\n";
+          fout << "  - Exchange send time:       " << report(gather_timing[i*n_timers + 0]);
+          fout << "  - Exchange receive time:    " << report(gather_timing[i*n_timers + 1]);
+          fout << "  - Exchange barrier time:    " << report(gather_timing[i*n_timers + 2]);
+          fout << "  - Exchange search time:     " << report(gather_timing[i*n_timers + 3]);
+          fout << "  - Ghost send time:          " << report(gather_timing[i*n_timers + 4]);
+          fout << "  - Ghost receive time:       " << report(gather_timing[i*n_timers + 5]);
+          fout << "  - Ghost wait time:          " << report(gather_timing[i*n_timers + 6]);
+          fout << "  - Ghost search time:        " << report(gather_timing[i*n_timers + 7]);
+          fout << "\n";
+        }
+        fout << "\n";
+      }
     }
+    #endif // USE_MPI == 1
 
     // --- Print integration summary
     if (rank==0) {

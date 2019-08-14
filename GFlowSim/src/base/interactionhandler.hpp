@@ -84,6 +84,10 @@ namespace GFlowSimulation {
     //! \brief Set the update_delay_steps.
     void setUpdateDelaySteps(int);
 
+    //! \brief Checks whether the bounds need to be updated. If the process bounds need to 
+    //! be updated, we must reinitialize.
+    void checkBounds();
+
     // So GFlow can set the bounds.
     friend class GFlow;
 
@@ -97,7 +101,7 @@ namespace GFlowSimulation {
     virtual void construct_ghost_particles()=0;
 
     //! \brief Set the simulation bounds.
-    virtual void setBounds(const Bounds&);
+    //virtual void setBounds(const Bounds&);
 
     //! \brief Calculates the maximum "small sigma."
     //!
@@ -130,10 +134,10 @@ namespace GFlowSimulation {
     // --- Data ---
 
     //! \brief The bounds of the domain
-    Bounds domain_bounds;
+    Bounds process_bounds;
     
     //! \brief The bounds of the entire simulation
-    Bounds bounds;
+    Bounds simulation_bounds;
 
     //! \brief The number of particle types.
     int ntypes = 0;

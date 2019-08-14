@@ -3,6 +3,7 @@
 
 #include "../gflow.hpp"
 #include "../utility/vectormath.hpp"
+#include "../other/timedobject.hpp"
 
 #include <set> // For storing sets of holes in the arrays
 #include <unordered_map> // For mapping owned particles to halo particles
@@ -11,12 +12,15 @@ namespace GFlowSimulation {
 
   //! \brief Class that holds all the atom data for a domain.
   //!
+  //! SimDataTimer: The timer should be used to record the time taken by non-mpi related data update tasks, such as particle
+  //! coordinate wrapping, removing particles, updating halo particles, etc. 
+  //!
   //! Summary of numbers:
   //!
   //! The following inequalities hold:  _number <= _size <= _capacity. 
   //! The reason why _number <= _size is that there may be some invalid (type=-1) particles in the middle of the number array. 
   //! The reason why _size <= _capacity is that we may have allocated more space than necessary for particles.
-  class SimData : public Base {
+  class SimData : public Base, public TimedObject {
   public:
     //! \brief Default constructor.
     SimData(GFlow*);
@@ -26,6 +30,9 @@ namespace GFlowSimulation {
 
     //! \brief Initialize the atom container.
     virtual void initialize() override;
+
+    //! \brief Resets timers.
+    virtual void pre_integrate() override;
 
     //! \brief Remove all halo and ghost particles.
     virtual void post_integrate() override;
@@ -259,6 +266,7 @@ namespace GFlowSimulation {
 
     friend class ForceMaster;
 
+    // --- MPI related timers.
 
     Timer barrier_timer;
     Timer send_timer;
@@ -266,12 +274,11 @@ namespace GFlowSimulation {
     Timer ghost_send_timer;
     Timer ghost_recv_timer;
     Timer ghost_wait_timer;
-
     Timer exchange_search_timer;
     Timer ghost_search_timer;
 
   private:
-    // --- Helper functions
+    // --- Helper functions.
 
     //! \brief Allocate more space to hold owned particles.
     void resize_owned(int);

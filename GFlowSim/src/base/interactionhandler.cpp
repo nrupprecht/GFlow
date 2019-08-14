@@ -10,7 +10,8 @@
 namespace GFlowSimulation {
 
   InteractionHandler::InteractionHandler(GFlow *gflow) : Base(gflow), velocity(gflow->getSimDimensions()), 
-    domain_bounds(sim_dimensions), bounds(sim_dimensions) {
+    process_bounds(sim_dimensions), simulation_bounds(sim_dimensions) {
+    
     #if USE_MPI==1
     //*** Just use this condition, for now. \todo Sync when remakes and updates happen.
     update_decision_type = 1;
@@ -33,13 +34,13 @@ namespace GFlowSimulation {
     // Calculate the maxiumu "small sigma"
     calculate_max_small_sigma();
     // Get the simulation bounds from gflow
-    bounds = gflow->getBounds();
+    simulation_bounds = topology->getSimulationBounds();
     // Get the processor bounds from the topology object.
-    domain_bounds = topology->getProcessBounds();
+    process_bounds = topology->getProcessBounds();
     // Get the array of max cutoffs.
     max_cutoffs = forceMaster->getMaxCutoff();
     // Set up grids.
-    set_up_grids();
+    //set_up_grids();
   }
 
   void InteractionHandler::pre_integrate() {
@@ -79,6 +80,8 @@ namespace GFlowSimulation {
   }
 
   void InteractionHandler::construct() {
+
+    timer.start();
 
     // \todo Some of these things should not be called if there are multiple different interaction handlers, namely the first four function calls.
     
@@ -121,6 +124,8 @@ namespace GFlowSimulation {
 
     // Record where the particles were
     if (update_decision_type==0 && auto_record_positions) record_positions();
+
+    timer.stop();
   }
 
   int InteractionHandler::getNumberOfRemakes() const {
@@ -163,10 +168,21 @@ namespace GFlowSimulation {
     if (0<=s) update_delay_steps = s;
   }
 
+  void InteractionHandler::checkBounds() {
+    if (topology) {
+      // Set the simulation bounds. We don't have to do anything if they change.
+      simulation_bounds = topology->getSimulationBounds();
+      // Check if the process bounds have changed. If so, reinitialize. This will correctly set process_bounds.
+      if (process_bounds != topology->getProcessBounds()) initialize();
+    }
+  }
+
+  /*
   void InteractionHandler::setBounds(const Bounds& bnds) {
     bounds = bnds;
     domain_bounds = bnds;
   }
+  */
 
   void InteractionHandler::calculate_max_small_sigma() {
     // Make sure we have what we need.

@@ -18,10 +18,10 @@ namespace GFlowSimulation {
     DomainBase::initialize();
 
     // If bounds are unset, then don't make sectors. We cannot initialize if simdata is null
-    if (domain_bounds.vol()<=0 || simData==nullptr || simData->size()==0) return; 
+    if (process_bounds.vol()<=0 || simData==nullptr || simData->size()==0) return; 
 
     // Calculate skin depth
-    RealType rho = simData->size() / domain_bounds.vol();
+    RealType rho = simData->size() / process_bounds.vol();
     RealType candidate = inv_sphere_volume((target_list_size)/rho + 0.5*sphere_volume(max_small_sigma, sim_dimensions), sim_dimensions) - 2*max_small_sigma;
     skin_depth = max(static_cast<RealType>(0.5 * max_small_sigma), candidate);
 
@@ -105,10 +105,10 @@ namespace GFlowSimulation {
   void Domain2DCells::calculate_domain_cell_dimensions() {
     // sim_dimensions = 2
     for (int d=0; d<sim_dimensions; ++d) {
-      dims[d] = static_cast<int>(domain_bounds.wd(d)/target_cell_size);
+      dims[d] = static_cast<int>(process_bounds.wd(d)/target_cell_size);
       // Check that the bounds are good.
       if (dims[d]<=0) throw BadBounds();
-      widths[d] = domain_bounds.wd(d)/dims[d];
+      widths[d] = process_bounds.wd(d)/dims[d];
       inverseW[d] = 1./widths[d];
 
       // Add halo or ghost cells.
@@ -136,12 +136,12 @@ namespace GFlowSimulation {
     RealType *x = nullptr; 
     RealType marginX = widths[0];
     RealType marginY = widths[1];
-    RealType left   = bounds.min[0] + marginX;
-    RealType right  = bounds.max[0] - marginX; 
-    RealType bottom = bounds.min[1] + marginY;
-    RealType top    = bounds.max[1] - marginX;
-    Vec dx(2); dx[0] = bounds.wd(0);
-    Vec dy(2); dy[1] = bounds.wd(1);
+    RealType left   = simulation_bounds.min[0] + marginX;
+    RealType right  = simulation_bounds.max[0] - marginX; 
+    RealType bottom = simulation_bounds.min[1] + marginY;
+    RealType top    = simulation_bounds.max[1] - marginX;
+    Vec dx(2); dx[0] = simulation_bounds.wd(0);
+    Vec dy(2); dy[1] = simulation_bounds.wd(1);
     Vec dz(2); dz[0] = dx[0]; dz[1] = dy[1];
     // We actually need to put this here, not in the for loop, because the loop changes simData->_size by adding halo particles.
     int size = simData->size();
@@ -221,7 +221,7 @@ namespace GFlowSimulation {
     RealType **x = simData->X();
 
     // Add particles to cells
-    RealType shiftX = domain_bounds.min[0]*inverseW[0], shiftY = domain_bounds.min[1]*inverseW[1];
+    RealType shiftX = process_bounds.min[0]*inverseW[0], shiftY = process_bounds.min[1]*inverseW[1];
     for (int i=0; i<size; ++i) {
       // Compute the cell index of the particle
       int cx = static_cast<int>(x[i][0]*inverseW[0] - shiftX) + min_side_edge_cells[0];
@@ -253,7 +253,7 @@ namespace GFlowSimulation {
       dx[1] = x[id1][1] - x[id2][1];
       rsqr = sqr(dx[0]) + sqr(dx[1]);
       // If close enough, check if they interact.
-      if (rsqr < sqr(radius1 + sg[id2]) || rsqr > sqr(0.9*bounds.wd(0))) // *max_cutoffs[simData->Type(id2)]
+      if (rsqr < sqr(radius1 + sg[id2]) || rsqr > sqr(0.9*simulation_bounds.wd(0))) // *max_cutoffs[simData->Type(id2)]
         pair_interaction_nw(id1, id2);
     }
   }
@@ -279,7 +279,7 @@ namespace GFlowSimulation {
       dx[1] = x[id1][1] - x[id2][1];
       rsqr = sqr(dx[0]) + sqr(dx[1]);
       // If close enough, check if they interact.
-      if (rsqr < sqr(radius1 + sg[id2]) || rsqr > sqr(0.9*bounds.wd(0))) // *max_cutoffs[simData->Type(id2)]
+      if (rsqr < sqr(radius1 + sg[id2]) || rsqr > sqr(0.9*simulation_bounds.wd(0))) // *max_cutoffs[simData->Type(id2)]
         pair_interaction(id1, id2);
 
       // "Increment" id2

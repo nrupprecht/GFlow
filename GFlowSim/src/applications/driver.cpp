@@ -39,7 +39,6 @@ int main(int argc, char **argv) {
       rank = MPI::COMM_WORLD.Get_rank();
       numProc = MPI::COMM_WORLD.Get_size();
     #endif
-  cout << "Initialized MPI. Rank " << rank << "\n";
   // Wait here.
   MPIObject::barrier();
   #endif

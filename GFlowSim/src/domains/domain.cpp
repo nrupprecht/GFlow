@@ -7,6 +7,8 @@
 
 #include "../base/interaction.hpp"
 
+#include "../base/topology.hpp"
+
 namespace GFlowSimulation {
 
   Domain::Domain(GFlow *gflow) : DomainBase(gflow) {
@@ -47,13 +49,13 @@ namespace GFlowSimulation {
     DomainBase::initialize();
 
     // If bounds are unset, then don't make sectors. We cannot initialize if simdata is null
-    if (domain_bounds.vol()<=0 || isnan(domain_bounds.vol()) || simData==nullptr || simData->size()==0) return;
+    if (process_bounds.vol()<=0 || isnan(process_bounds.vol()) || simData==nullptr || simData->size()==0) return;
 
     // Assign border types - do this before creating cells.
     assign_border_types();
 
     // Calculate skin depth
-    RealType rho = simData->size() / domain_bounds.vol();
+    RealType rho = simData->size() / process_bounds.vol();
     RealType candidate = inv_sphere_volume((target_list_size)/rho + 0.5*sphere_volume(max_small_sigma, sim_dimensions), sim_dimensions) - 2*max_small_sigma;
     skin_depth = max(static_cast<RealType>(0.5 * max_small_sigma), candidate);
 
@@ -197,7 +199,7 @@ namespace GFlowSimulation {
     // Update particles in the cells
     update_cells();
 
-    RealType max_reasonable = sqr(0.9*bounds.wd(0));
+    RealType max_reasonable = sqr(0.9*simulation_bounds.wd(0));
 
     // Tuples
     int *tuple1 = new int[sim_dimensions], *tuple2 = new int[sim_dimensions];
@@ -314,7 +316,7 @@ namespace GFlowSimulation {
   void Domain::construct() {
     // Domain base common tasks
     DomainBase::construct();
-
+    
     // Start timer.
     timer.start();
 
@@ -322,7 +324,7 @@ namespace GFlowSimulation {
     update_cells();
 
     // Set a "maximum reasonable distance"
-    RealType max_reasonable = sqr(0.5*bounds.wd(0));
+    RealType max_reasonable = sqr(0.5*simulation_bounds.wd(0));
 
     // If there are no interaction, we don't need to make any verlet lists
     if (gflow->getInteractions().empty()) return;
@@ -478,13 +480,13 @@ namespace GFlowSimulation {
 
   void Domain::calculate_domain_cell_dimensions() {
     for (int d=0; d<sim_dimensions; ++d) {
-      dims[d] = static_cast<int>(domain_bounds.wd(d)/target_cell_size);
+      dims[d] = static_cast<int>(process_bounds.wd(d)/target_cell_size);
       // Check that the bounds are good
       if (dims[d]<=0) throw BadBounds();
       // Min dims
       if (dims[d]<4) dims[d] = 4;
       // Set widths 
-      widths[d] = domain_bounds.wd(d)/dims[d];
+      widths[d] = process_bounds.wd(d)/dims[d];
       inverseW[d] = 1./widths[d];
       // Do border related work
       if (border_type_down[d]) {
@@ -628,13 +630,13 @@ namespace GFlowSimulation {
 
   inline void Domain::get_cell_index_tuple(const RealType *x, int *index) {
     for (int d=0; d<sim_dimensions; ++d)
-      index[d] = static_cast<int>((x[d] - bounds.min[d])*inverseW[d]) + dim_shift_down[d];
+      index[d] = static_cast<int>((x[d] - process_bounds.min[d])*inverseW[d]) + dim_shift_down[d];
   }
 
   int Domain::get_cell_index(const RealType *x) {
     int linear = 0;
     for (int d=0; d<sim_dimensions; ++d) {
-      RealType index = static_cast<int>((x[d] - bounds.min[d])*inverseW[d]) + dim_shift_down[d];
+      RealType index = static_cast<int>((x[d] - process_bounds.min[d])*inverseW[d]) + dim_shift_down[d];
       if (index>=dims[d]) index = dims[d]-1;
       else if (index<0)   index = 0;
       linear += index*products[d+1];

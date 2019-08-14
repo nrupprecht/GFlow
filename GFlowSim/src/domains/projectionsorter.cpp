@@ -21,9 +21,8 @@ namespace GFlowSimulation {
     int *type = simData->Type();
     int size = simData->size();
     RealType cutoff = 2*max_small_sigma + skin_depth;
-
+    RealType width = simulation_bounds.wd(0);
     bool wrap = true;
-    RealType width = bounds.wd(0);
     RealType dX[2];
     
     for (int id1=0; id1<size; ++id1) {

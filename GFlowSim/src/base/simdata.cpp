@@ -89,25 +89,26 @@ namespace GFlowSimulation {
     sortParticles();
   }
 
+  void SimData::pre_integrate() {
+    send_timer.clear(); 
+    recv_timer.clear(); 
+    barrier_timer.clear(); 
+    ghost_send_timer.clear(); 
+    ghost_recv_timer.clear(); 
+    ghost_wait_timer.clear();
+    exchange_search_timer.clear(); 
+    ghost_search_timer.clear();
+  }
+
   void SimData::post_integrate() {
     // Mark extraneous particles for removal
     removeHaloAndGhostParticles();
+
     // Do actual particle removal.
     doParticleRemoval();
-    // Set markers.
-    _first_halo = _first_ghost = _size;
 
-    if (gflow->getRunMode()==RunMode::SIM && topology->getNumProc()>1) {
-      MPIObject::barrier();
-      cout << std::fixed << std::setprecision(5) << "\nRank " << topology->getRank() << ", send, recv, barrier, search:    " << send_timer.time() 
-        << ", " << recv_timer.time() << ", " << barrier_timer.time() << ", " << exchange_search_timer.time() << "\n" << "Rank " << topology->getRank() 
-        << ", Ghost send, recv, wait, search: " << ghost_send_timer.time() << ", " << ghost_recv_timer.time() 
-        << ", " << ghost_wait_timer.time() << ", " << ghost_search_timer.time() << "\n\n";
-      MPIObject::barrier();
-    }
-    send_timer.clear(); recv_timer.clear(); barrier_timer.clear(); 
-    ghost_send_timer.clear(); ghost_recv_timer.clear(); ghost_wait_timer.clear();
-    exchange_search_timer.clear(); ghost_search_timer.clear();
+    // Set markers.
+    _first_halo = _first_ghost = _size;    
   }
 
   //! @brief Reserve space for particles, extending the lengths of all arrays to the requested size.
@@ -217,6 +218,10 @@ namespace GFlowSimulation {
   void SimData::doParticleRemoval() {
     // If there is nothing to remove, we're done
     if (remove_list.empty() || _number==0) return;
+
+    // Start simdata timer.
+    timer.start();
+
     // Fill in all holes
     int count_back = _size, removed = 0;
     for(auto id : remove_list) {
@@ -242,11 +247,15 @@ namespace GFlowSimulation {
     // Arguably, you still might want to remake. There could be extra entries in the verlet list that 
     // it would be better to get rid of.
     if (removed>0) setNeedsRemake();
+
+    // Start simdata timer.
+    timer.stop();
   }
 
   void SimData::sortParticles() {
     // We must first remove halo and ghost particles.
     removeHaloAndGhostParticles();
+
     // Make sure all particles are valid, and compressed
     doParticleRemoval(); // This only sets the needs remake flag if it removes particles.
 
@@ -269,6 +278,9 @@ namespace GFlowSimulation {
   }
 
   void SimData::updateHaloParticles() {
+    // Start simdata timer.
+    timer.start();
+
     // First pass: update the primary (actual) particle from the force data of the halo particles.
     // Doing this in two passes takes care of the fact that some particles may generate multiple halos.
     // We only have to update the forces, and then let the integrator take care of the rest.
@@ -285,6 +297,9 @@ namespace GFlowSimulation {
       // Update force
       copyVec(vdata[2][pid], vdata[2][hid], sim_dimensions);
     }
+
+    // Start simdata timer.
+    timer.stop();
   }
 
   void SimData::updateGhostParticles() {
@@ -554,6 +569,9 @@ namespace GFlowSimulation {
   }
 
   void SimData::removeHaloParticles() {
+    // Start timer.
+    timer.start();
+
     // Mark halo particles for removal
     for (int i=0; i<halo_map.size(); i+=2) 
       markForRemoval(halo_map[i]);
@@ -561,14 +579,23 @@ namespace GFlowSimulation {
     halo_map.clear();
     // Clear the halo particle counter.
     _number_halo = 0;
+
+    // Stop timer.
+    timer.stop();
   }
 
   void SimData::removeGhostParticles() {
   #if USE_MPI == 1
+    // Start timer.
+    timer.start();
+
     // Check if this is necessary.
     if (n_ghosts<=0) return;
     // Remove ghost particles.
     for (int i=0; i<n_ghosts; ++i) markForRemoval(_first_ghost+i);
+
+    // Stop timer.
+    timer.start();
   #endif
   }
 
@@ -872,7 +899,6 @@ namespace GFlowSimulation {
     }
   }
 
-
 #if USE_MPI == 1
 
   inline void SimData::exchange_particles() {
@@ -914,9 +940,15 @@ namespace GFlowSimulation {
       send_particle_data(send_ids[i], neighbor_ranks[i], buffer_list[i], &request_list[i], &request, true);
     send_timer.stop();
 
+    // Stop mpi timer. Particle removal counts as a simdata update task.
+    gflow->stopMPIExchangeTimer();
+
     // Do particle removal. We do this here so we get rid of all the particles that have migrated to other processors. There will be no "holes"
     // in the array after the particle removal.
     doParticleRemoval(); 
+
+    // Stop mpi timer.
+    gflow->startMPIExchangeTimer();
     
     // --- Receive particles from other processors.
 
@@ -929,7 +961,7 @@ namespace GFlowSimulation {
     recv_timer.stop();
 
     // Stop mpi timer.
-    gflow->startMPIExchangeTimer();
+    gflow->stopMPIExchangeTimer();
   }
 
   inline void SimData::create_ghost_particles() {
@@ -964,10 +996,12 @@ namespace GFlowSimulation {
     }
 
     // --- Tell neighboring processors how many particles to expect.
+    ghost_send_timer.start();
+    // Send particle information, but do not delete the original particles, since they will be ghosts on the other processors.
     for (int i=0; i<neighbor_ranks.size(); ++i) {
-      // Send particle information, but do not delete the original particles, since they will be ghosts on the other processors.
       send_particle_data(send_ghost_list[i], neighbor_ranks[i], buffer_list[i], &request_list[i], &request, false);
     }
+    ghost_send_timer.stop();
 
     // Reset n_ghosts.
     n_ghosts = 0;
@@ -975,6 +1009,7 @@ namespace GFlowSimulation {
     for (int i=0; i<neighbor_ranks.size(); ++i) {
       // Rank of the i-th neighbor.
       int n_rank = neighbor_ranks[i];
+
       // Recieve ghost particles, create new particles for them.
       ghost_recv_timer.start();
       recv_ghost_sizes[i] = recv_new_particle_data(n_rank, recv_buffer[i]);
@@ -1108,6 +1143,11 @@ namespace GFlowSimulation {
         RealType r    = buffer[data_width*j + 2*sim_dimensions + 0];
         RealType im   = buffer[data_width*j + 2*sim_dimensions + 1];
         RealType type = buffer[data_width*j + 2*sim_dimensions + 2];
+
+        // CHECK
+        int t = static_cast<int>(type);
+        if (t>0) throw false;
+
         // Add particle to simdata.
         addParticle(X.data, V.data, r, im, static_cast<int>(type));
       } 

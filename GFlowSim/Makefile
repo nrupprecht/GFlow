@@ -51,7 +51,7 @@ SRCS    := $(filter-out $(EXCLUDE), $(SRCS1))
 SRCDIRS := $(shell find . -name '*.cpp' -exec dirname {} \; | uniq)
 OBJS    := $(patsubst %.cpp,$(OBJ)/%.o,$(SRCS))
 
-CSTD     = -std=c++11
+CSTD     = -std=c++14
 DEBUG    = -g
 ifeq ($(COMPILER), 0) 
 ifeq ($(DO_OPTIMIZE), 1)

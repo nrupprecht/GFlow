@@ -134,7 +134,6 @@ namespace GFlowSimulation {
 
     // Clear timers
     integrator->clear_timer();
-    domain_timer.clear();
     forceMaster->clear_timer();
     bonded_timer.clear();
     body_timer.clear();
@@ -272,7 +271,6 @@ namespace GFlowSimulation {
       simData->setNeedsRemake(false);
       _simdata_remade = false;
       _handler_remade = false;
-
 
       // Coordinate whether to stop running.
       MPIObject::mpi_and(_running);
@@ -493,8 +491,10 @@ namespace GFlowSimulation {
 
   void GFlow::setBounds(const Bounds& bnds) {
     bounds = bnds;
-    if (handler) handler->setBounds(bnds);
+    // Set topology's bounds first.
     if (topology) topology->setSimulationBounds(bnds);
+    // Tell handler to check its bounds.
+    if (handler) handler->checkBounds();
   }
 
   void GFlow::setRepulsion(RealType r) {
@@ -537,6 +537,9 @@ namespace GFlowSimulation {
   }
 
   void GFlow::wrapPositions() {
+    // Start simdata timer.
+    simData->start_timer();
+
     int size = simData->size();
     for (int n=0; n<size; ++n) 
       for (int d=0; d<sim_dimensions; ++d) {
@@ -550,6 +553,9 @@ namespace GFlowSimulation {
           simData->X(n, d) = xlocal;
         }
       }
+
+    // Start simdata timer.
+    simData->stop_timer();
   }
 
   void GFlow::reflectPositions() {

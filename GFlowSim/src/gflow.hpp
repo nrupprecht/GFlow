@@ -286,7 +286,7 @@ namespace GFlowSimulation {
     bool& handler_remade()       { return _handler_remade; }
 
     //! \brief Return the use ghosts flag. Only getting.
-    bool use_ghosts() { return _use_ghosts; }
+    bool use_ghosts()            { return _use_ghosts; }
 
     // Creators are a friend classes --- all must be since friendship is not inherited
     friend class Creator;
@@ -382,7 +382,6 @@ namespace GFlowSimulation {
     char **argv = nullptr;
 
     // Timing
-    Timer domain_timer;
 
     //! \brief Timer used to time how long the bonded interactions take.
     Timer bonded_timer;
