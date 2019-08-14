@@ -277,6 +277,17 @@ namespace GFlowSimulation {
     //! \brief Stop the mpi timer.
     void stopMPIGhostTimer();
 
+    /// --- Flags
+
+    bool& simulation_running()   { return _running; }
+    bool& simdata_needs_remake() { return _simdata_needs_remake; }
+    bool& simdata_remade()       { return _simdata_remade; }
+    bool& handler_needs_remake() { return _handler_needs_remake; }
+    bool& handler_remade()       { return _handler_remade; }
+
+    //! \brief Return the use ghosts flag. Only getting.
+    bool use_ghosts() { return _use_ghosts; }
+
     // Creators are a friend classes --- all must be since friendship is not inherited
     friend class Creator;
     friend class BoxCreator;
@@ -327,12 +338,6 @@ namespace GFlowSimulation {
     //! \brief All the bodies in the simulation.
     vector<class Body*> bodies;
 
-    //! \brief If true, the simulation should continue to run.
-    bool running;
-
-    //! \brief If true, do tasks related to force computation.
-    bool useForces = true;
-
     //! \brief How much time we have been requested to run for.
     long double requested_time;
 
@@ -373,8 +378,8 @@ namespace GFlowSimulation {
     RealType boundaryEnergy = 0;
 
     // The command info (optional)
-    int argc;
-    char **argv;
+    int argc    = 0;
+    char **argv = nullptr;
 
     // Timing
     Timer domain_timer;
@@ -404,6 +409,20 @@ namespace GFlowSimulation {
 
     //! \brief The run mode of the simulation.
     RunMode runMode = RunMode::IDLE;
+
+    // --- Flags
+
+    //! \brief If true, the simulation should continue to run.
+    bool _running = false;
+    //! \brief If true, do tasks related to force computation.
+    bool _use_forces = true;
+    //! \brief If true, and using mpi, create ghost particles.
+    bool _use_ghosts = true;
+
+    bool _simdata_needs_remake = false;
+    bool _simdata_remade       = false;
+    bool _handler_needs_remake = false;
+    bool _handler_remade       = false;
 
     // --- Physical constants. These are static, since they should be the same for all objects
 

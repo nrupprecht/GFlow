@@ -349,7 +349,7 @@ namespace GFlowSimulation {
           fout << "    - Ghost sync.:            " << toStrPP(timing[7]/run_time*100) << sep << timing[7] << "\n";
         }
         for (int i=0; i<entries; ++i) total += timing[i];
-        fout << "  -- Uncounted:               " << std::setprecision(3) << toStrPP((1. - total/run_time)) << sep << run_time - total << "\n";
+        fout << "  -- Uncounted:               " << std::setprecision(3) << toStrPP((1. - total/run_time)*100) << sep << run_time - total << "\n";
         fout << "\n";
       }
     }

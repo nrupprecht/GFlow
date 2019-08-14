@@ -18,19 +18,25 @@ namespace GFlowSimulation {
     #endif
   }
 
+  #if USE_MPI == 1
+
   void MPIObject::wait(MPI_Request& request) {
-    #if USE_MPI == 1
     MPI_Wait(&request, MPI_STATUS_IGNORE);
-    #endif
   }
   
   void MPIObject::wait(MPI_Request& request, Timer& timer) {
-    #if USE_MPI == 1
     timer.start();
     MPI_Wait(&request, MPI_STATUS_IGNORE);
     timer.stop();
-    #endif
   }
+
+  bool MPIObject::test(MPI_Request& request) {
+    int valid = 0;
+    MPI_Test(&request, &valid, MPI_STATUS_IGNORE);
+    return (valid!=0);
+  }
+
+  #endif // USE_MPI == 1
 
   void MPIObject::mpi_sum(int& term) {
     #if USE_MPI == 1

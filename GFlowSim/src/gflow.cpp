@@ -10,8 +10,8 @@
 
 namespace GFlowSimulation {
 
-  GFlow::GFlow(int dims) : running(false), useForces(true), requested_time(0), total_requested_time(0), elapsed_time(0), total_time(0), 
-    iter(0), argc(0), argv(nullptr), repulsion(DEFAULT_HARD_SPHERE_REPULSION), dissipation(0), center_attraction(0), sim_dimensions(dims),
+  GFlow::GFlow(int dims) : requested_time(0), total_requested_time(0), elapsed_time(0), total_time(0), 
+    iter(0), repulsion(DEFAULT_HARD_SPHERE_REPULSION), dissipation(0), center_attraction(0), sim_dimensions(dims),
     bounds(Bounds(2))
   {
     // Set up basic objects. The integrator will be created by the creator.
@@ -147,8 +147,7 @@ namespace GFlowSimulation {
       throw UnexpectedNullPointer("Error: Some object was null at GFlow initialization.");
     }
     // Check that simdata has good arrays. 
-    if (simData->X()==nullptr || simData->V()==nullptr || simData->F()==nullptr) 
-    {
+    if (simData->X()==nullptr || simData->V()==nullptr || simData->F()==nullptr) {
       throw UnexpectedNullPointer("Some array in simdata was null that shouldn't be.");
     }
 
@@ -156,7 +155,7 @@ namespace GFlowSimulation {
     if (runMode==RunMode::IDLE) setRunMode(RunMode::SIM);
 
     // --> Pre-integrate
-    running = true;
+    _running = true;
     elapsed_time = 0;
     iter = 0;
     // Set up all objects
@@ -179,7 +178,7 @@ namespace GFlowSimulation {
     #endif // USE_MPI == 1
 
     // Do integration for the requested amount of time
-    while (running && requested_time>0) {
+    while (_running && requested_time>0) {
       // --> Pre-step
       for (auto m : modifiers) m->pre_step();
       integrator->pre_step();
@@ -204,10 +203,10 @@ namespace GFlowSimulation {
 
       // Update ghost particles. This the positions of particles on this processor that are ghosts on other processors back to 
       // the other processors. This should be done after VV second half kick happens.
-      simData->updateGhostParticles();
+      if (!_handler_remade && _use_ghosts) simData->updateGhostParticles();
 
       // Calculate interactions and forces.
-      if (useForces) {
+      if (_use_forces) {
         // Calculate interactions.
         forceMaster->interact();
 
@@ -241,7 +240,7 @@ namespace GFlowSimulation {
       handler->post_forces();
 
       // --> Post-step
-      if (requested_time<=elapsed_time) running = false;
+      if (requested_time<=elapsed_time) _running = false;
       for (auto m : modifiers) m->post_step();
       integrator->post_step();
       for (auto it : additional_integrators) it->post_step();
@@ -256,7 +255,7 @@ namespace GFlowSimulation {
       // Check for bad numerical precision
       if (total_time - dt == total_time) {
         cout << "Loss of precision. Stopping simulation.\n";
-	      running = false;
+	      _running = false;
       }
       // Possibly print updates to the screen or to a file.
       if (print_updates && runMode==RunMode::SIM && 
@@ -268,12 +267,15 @@ namespace GFlowSimulation {
         (*monitor) << "Est. time: " << (requested_time - elapsed_time)/live_ratio << "\t";
 	      (*monitor) << endl;
       }
-      
-      // Reset simdata needs remake flag
+
+      // Reset flags.
       simData->setNeedsRemake(false);
+      _simdata_remade = false;
+      _handler_remade = false;
+
 
       // Coordinate whether to stop running.
-      MPIObject::mpi_and(running);
+      MPIObject::mpi_and(_running);
     }
 
     // End of run barrier.
@@ -367,7 +369,7 @@ namespace GFlowSimulation {
   }
 
    bool GFlow::getUseForces() const {
-    return useForces;
+    return _use_forces;
   }
 
   pair<int, char**> GFlow::getCommand() const {
@@ -486,7 +488,7 @@ namespace GFlowSimulation {
   }
 
   void GFlow::setUseForces(bool f) {
-    useForces = f;
+    _use_forces = f;
   }
 
   void GFlow::setBounds(const Bounds& bnds) {
@@ -510,7 +512,7 @@ namespace GFlowSimulation {
   }
 
   void GFlow::setRunning(bool r) {
-    running = r;
+    _running = r;
   }
 
   void GFlow::setPrintUpdates(bool p) {

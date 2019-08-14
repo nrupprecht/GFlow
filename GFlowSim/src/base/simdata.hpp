@@ -153,8 +153,8 @@ namespace GFlowSimulation {
     //! This simply calls remove_halo_particles and remove_ghost_particles.
     void removeHaloAndGhostParticles();
 
-    //! \brief Migrate particles to other processors, handle assignment of ghost particles.
-    void parallel_update();
+    //! \brief Update simdata, migrate particles to other processors, handle assignment and initialization of ghost particles.
+    void update();
 
     // --- Particle size information
 
@@ -266,6 +266,9 @@ namespace GFlowSimulation {
     Timer ghost_send_timer;
     Timer ghost_recv_timer;
     Timer ghost_wait_timer;
+
+    Timer exchange_search_timer;
+    Timer ghost_search_timer;
 
   private:
     // --- Helper functions

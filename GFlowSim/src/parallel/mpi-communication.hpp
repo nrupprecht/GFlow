@@ -13,10 +13,15 @@ namespace GFlowSimulation {
     //! \brief Call an mpi barrier, use the timer to time how long the barrier lasted.
     static void barrier(Timer&);
 
+    #if USE_MPI == 1 // MPI_Request needs mpi to compile
     //! \brief Call for an mpi wait.
     static void wait(MPI_Request&);
     //! \brief Call for an mpi wait, use the timer to time how long the wait lasted.
     static void wait(MPI_Request&, Timer&);
+
+    //! \brief Test whether a request has been fulfilled. Non-blocking.
+    static bool test(MPI_Request&);
+    #endif
 
     //! \brief Perform MPI AllReduce, using sum. Integer version.
     static void mpi_sum(int&);

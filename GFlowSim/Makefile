@@ -1,7 +1,7 @@
 # Makefile snatched from <https://ubuntuforums.org/showthread.php?t=1204739>
 
 COMPILER ?= 1
-USE_MPI  ?= 0
+USE_MPI  ?= 1
 DEBUG    ?= 0
 NO_SIMD  ?= 0
 DO_OPTIMIZE ?= 1

@@ -4,11 +4,16 @@ namespace GFlowSimulation {
 
   void Timer::start() {
     _s = current_time();
+    _running = true;
   }
   
   void Timer::stop() {
-    auto _e = current_time();
-    _t += time_span(_e, _s);
+    if (_running) {
+      auto _e = current_time();
+      _last_t = time_span(_e, _s);
+      _t += _last_t;
+      _running = false;
+    }
   }
 
   void Timer::clear() {
@@ -19,10 +24,16 @@ namespace GFlowSimulation {
     return _t;
   }
 
-  double Timer::current() {
-    auto _e = current_time();
-    return _t + time_span(_e, _s);
+  double Timer::last() {
+    return _last_t;
   }
 
+  double Timer::current() {
+    if (_running) {
+      auto _e = current_time();
+      return _t + time_span(_e, _s);
+    }
+    else return _t;
+  }
 
 }

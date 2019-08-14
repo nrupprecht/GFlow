@@ -74,7 +74,7 @@ namespace GFlowSimulation {
     }
     else if (update_decision_type==1 && update_delay_steps<=steps_since_last_remake) {
       if (gflow->getUseForces()) construct();
-      else simData->parallel_update();
+      else simData->update();
     }
   }
 
@@ -101,9 +101,13 @@ namespace GFlowSimulation {
     // // Record where the particles were
     // if (update_decision_type==0 && auto_record_positions) record_positions();
 
+
+    // Reset the verlet lists of all the forces
+    Base::forceMaster->clear();
+
     // Remove all halo and ghost particles, wrap particles, if parallel then pass particles and figure out ghost particles, 
     // and do particle removal.
-    Base::simData->parallel_update();
+    Base::simData->update();
     
     // Set timer
     last_update = Base::gflow->getElapsedTime();
@@ -111,8 +115,9 @@ namespace GFlowSimulation {
     steps_since_last_remake = 0;
     // Increment counter
     ++number_of_remakes;
-    // Reset the verlet lists of all the forces
-    Base::forceMaster->clear();
+    // Set gflow flags.
+    gflow->handler_needs_remake() = false;
+    gflow->handler_remade() = true;
 
     // Record where the particles were
     if (update_decision_type==0 && auto_record_positions) record_positions();
@@ -218,13 +223,15 @@ namespace GFlowSimulation {
       ++missed_target;
       ave_miss += motion_ratio;
     }
-
+    // The remake condition.
     bool needs_remake = (motion_ratio > mv_ratio_tolerance * motion_factor);
-
-    #if USE_MPI == 1
-    MPIObject::mpi_or(needs_remake);
-    #endif
-
+    //  
+    // #if USE_MPI == 1
+    // MPIObject::mpi_or(needs_remake);
+    // #endif
+    // Set the flag in gflow.
+    gflow->handler_needs_remake() = needs_remake;
+    // Return needs_remake.
     return needs_remake;
   }
 

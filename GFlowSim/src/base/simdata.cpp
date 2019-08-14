@@ -99,14 +99,15 @@ namespace GFlowSimulation {
 
     if (gflow->getRunMode()==RunMode::SIM && topology->getNumProc()>1) {
       MPIObject::barrier();
-      cout << std::fixed << std::setprecision(5) << "\nRank " << topology->getRank() << ", send, recv, barrier:             " << send_timer.time() 
-        << ", " << recv_timer.time() << ", " << barrier_timer.time() << "\n" << "Rank " << topology->getRank() 
-        << ", Ghost send, recv, barrier, wait: " << ghost_send_timer.time() << ", " << ghost_recv_timer.time() 
-        << ", " << ghost_wait_timer.time() << "\n\n";
+      cout << std::fixed << std::setprecision(5) << "\nRank " << topology->getRank() << ", send, recv, barrier, search:    " << send_timer.time() 
+        << ", " << recv_timer.time() << ", " << barrier_timer.time() << ", " << exchange_search_timer.time() << "\n" << "Rank " << topology->getRank() 
+        << ", Ghost send, recv, wait, search: " << ghost_send_timer.time() << ", " << ghost_recv_timer.time() 
+        << ", " << ghost_wait_timer.time() << ", " << ghost_search_timer.time() << "\n\n";
       MPIObject::barrier();
     }
     send_timer.clear(); recv_timer.clear(); barrier_timer.clear(); 
     ghost_send_timer.clear(); ghost_recv_timer.clear(); ghost_wait_timer.clear();
+    exchange_search_timer.clear(); ghost_search_timer.clear();
   }
 
   //! @brief Reserve space for particles, extending the lengths of all arrays to the requested size.
@@ -290,15 +291,8 @@ namespace GFlowSimulation {
   #if USE_MPI == 1
     // Return if the arrays are not allocated, or this there is only one processor.
     if (send_ids.empty() || topology->getNumProc()==1) return;
-
-    // Start mpi timer.
-    gflow->startMPIGhostTimer();
-
     // Update ghost particles.
     update_ghost_particles();
-
-    // Stop mpi timer.
-    gflow->stopMPIGhostTimer();
   #endif // USE_MPI == 1
   }
 
@@ -583,11 +577,9 @@ namespace GFlowSimulation {
     removeHaloParticles();
   }
 
-  void SimData::parallel_update() {
+  void SimData::update() {
     /// Remove old halo and ghost particles
     removeHaloAndGhostParticles();
-
-    //quick_sort(0, _size, 0);
 
     // Wrap the particles, so they are in their cannonical positions
     Base::gflow->wrapPositions();
@@ -600,34 +592,27 @@ namespace GFlowSimulation {
       #if _CLANG_ == 1
         // If there are multiple processors.
         if (numProc>1 && !neighbor_ranks.empty()) {
-          // Start mpi timer.
-          gflow->startMPIExchangeTimer();
           
           // --- Move particles that belong to other domains to those domains, and delete them from here. Then receive
           //     particles from other domains that belong to this domain.
           exchange_particles();
 
+          // Start mpi timer.
+          gflow->startMPIExchangeTimer();
           // Make sure all requests are processed.
           MPIObject::barrier(barrier_timer);
+          // Stop mpi timer.
+          gflow->stopMPIExchangeTimer();
 
           // Start adding ghost particles here.
           int save_first_ghost = _size;
 
           // --- Look for particles that need to be ghosts on other processors.
-          create_ghost_particles();
+          if (gflow->use_ghosts()) create_ghost_particles();
 
           // Adding new particles increments _first_halo and _first_ghost, so we have to correct them.
           _first_ghost = save_first_ghost;
           _first_halo  = save_first_ghost;
-
-          /// Wait for the last request to process.
-          //MPIObject::barrier(barrier_timer);
-
-          // --- Update ghost particles, so their data is on this processor
-          // update_ghost_particles();
-
-          // Stop mpi timer.
-          gflow->stopMPIExchangeTimer();
         }
         // If there is only one processor, even though this is an MPI run.
         else doParticleRemoval();
@@ -745,7 +730,11 @@ namespace GFlowSimulation {
   }
 
   void SimData::setNeedsRemake(bool r) {
+    // Set the local flag. \todo Only use flags in gflow?
     needs_remake = r;
+    // Set the flag in simdata.
+    gflow->simdata_needs_remake() = r;
+    // If set to true, tell datamaster that local ids may have changed.
     if (r) dataMaster->setLocalsChanged(r);
   }
 
@@ -887,6 +876,9 @@ namespace GFlowSimulation {
 #if USE_MPI == 1
 
   inline void SimData::exchange_particles() {
+    // Start mpi timer.
+    gflow->startMPIExchangeTimer();
+
     // Reset counters
     _last_n_exchange_sent = _last_n_exchange_recv = 0;
 
@@ -897,6 +889,7 @@ namespace GFlowSimulation {
     for (int i=0; i<neighbor_ranks.size(); ++i) send_ids[i].clear();
     
     /// --- Go through all particles, deciding which ones should migrate to other processors.
+    exchange_search_timer.start();
     for (int id=0; id < _size; ++id) {
       if (Valid(id) && !bounds.contains(X(id))) {
         // Check which processor the particle actually belongs on. We can use the send_ids buffer since we are going to 
@@ -913,6 +906,7 @@ namespace GFlowSimulation {
         }
       }
     }
+    exchange_search_timer.stop();
 
     // Send particle information, deleting the particles that we send.
     send_timer.start();
@@ -933,12 +927,19 @@ namespace GFlowSimulation {
       _last_n_exchange_recv += recv_new_particle_data(n_rank, recv_buffer[i]);
     }
     recv_timer.stop();
+
+    // Stop mpi timer.
+    gflow->startMPIExchangeTimer();
   }
 
   inline void SimData::create_ghost_particles() {
+    // Start mpi timer.
+    gflow->startMPIGhostTimer();
+
     // First, clear all the send_ghost_lists entries.
     for (int i=0; i<neighbor_ranks.size(); ++i) send_ghost_list[i].clear();
 
+    ghost_search_timer.start();
     vector<int> overlaps; // Helping vector
     RealType skin_depth = handler->getSkinDepth();
     for (int id=0; id < _size; ++id) {
@@ -951,6 +952,7 @@ namespace GFlowSimulation {
       // Store the particle id in the send_ghost_list entry for every processor we need to send this particle to as a ghost.
       for (auto proc_n : overlaps) send_ghost_list[proc_n].push_back(id);            
     }
+    ghost_search_timer.stop();
 
     // --- Make sure the entries of buffer list are large enough.
     for (int i=0; i<neighbor_ranks.size(); ++i) {
@@ -974,20 +976,26 @@ namespace GFlowSimulation {
       // Rank of the i-th neighbor.
       int n_rank = neighbor_ranks[i];
       // Recieve ghost particles, create new particles for them.
-      //ghost_recv_timer.start();
+      ghost_recv_timer.start();
       recv_ghost_sizes[i] = recv_new_particle_data(n_rank, recv_buffer[i]);
-      //ghost_recv_timer.stop();
+      ghost_recv_timer.stop();
       
       // Update number of ghosts.
       n_ghosts += recv_ghost_sizes[i];
     }
+
+    // Stop mpi timer.
+    gflow->stopMPIGhostTimer();
   }
 
   inline void SimData::update_ghost_particles() {
+    // Start mpi timer.
+    gflow->startMPIGhostTimer();
+
     // Reset counters.
     _last_n_ghosts_sent = _last_n_ghosts_recv = 0;
+
     // Update the positions information of ghost particles on other processors.
-    int id_counter = _first_ghost;
     for (int i=0; i<neighbor_ranks.size(); ++i) {
       // How many ghost particles are hosted on the i-th processor, and should have their information returned to there.
       int size = send_ghost_list[i].size();
@@ -1019,7 +1027,6 @@ namespace GFlowSimulation {
         _last_n_ghosts_recv += size;
         // Make sure buffer size is good.
         if (recv_buffer[i].size() < size*ghost_data_width) recv_buffer[i].resize(size*ghost_data_width);
-
         // Start the non-blocking receieve.
         ghost_recv_timer.start();
         MPI_Irecv(recv_buffer[i].data(), size*ghost_data_width, MPI_FLOAT, neighbor_ranks[i], 0, MPI_COMM_WORLD, &request_list[i]);
@@ -1031,13 +1038,27 @@ namespace GFlowSimulation {
     for (int i=0, p_id=_first_ghost; i<neighbor_ranks.size(); ++i) {
       int size = recv_ghost_sizes[i];
       if (size>0) {
+
+
+
+        // Wait for request to be filled.
         MPIObject::wait(request_list[i], ghost_wait_timer);
+
+        // ghost_wait_timer.start();
+        // int count = 0;
+        // while (!MPIObject::test(request_list[i])) ++count;
+        // ghost_wait_timer.stop();
+        // cout << "Rank: " << topology->getRank() << ", Iter: " << gflow->getIter() << ", Flag: " << gflow->handler_remade() << ", " << count << "\n";
+
         // Unpack the position data into the ghost particles.
         for (int j=0; j<size; ++j, ++p_id) {
           copyVec(&recv_buffer[i][ghost_data_width*j], X(p_id), sim_dimensions);
         }
       }
     }
+
+    // Stop mpi timer.
+    gflow->stopMPIGhostTimer();
   }
 
   inline void SimData::send_particle_data(const vector<int>& send_ids, int n_rank, vector<RealType>& buffer, MPI_Request* size_request, MPI_Request* send_request, bool remove) {
