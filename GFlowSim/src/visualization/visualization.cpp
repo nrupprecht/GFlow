@@ -36,7 +36,8 @@ namespace GFlowSimulation {
 
     // If we are coloring by type, we need a large enough color bank
     if (color_option==0 && colorBank.size()<ntypes) setColorBankSize(ntypes);
-    if (color_option==6) setColorBankSize(12); // I just picked a random large enough number.
+    // I just picked a random large enough number. There isn't really any overhead to having lots of colors.
+    if (color_option==6) setColorBankSize(64); 
 
     // Create a video from the data
     if (dimensions==2) createVideo2d(saveName, data);

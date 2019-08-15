@@ -616,10 +616,12 @@ namespace GFlowSimulation {
       int rank = topology->getRank();
       int numProc = topology->getNumProc();
 
+      // Sync the terminate flag.
+      gflow->syncRunning();
+
       #if _CLANG_ == 1
         // If there are multiple processors.
-        if (numProc>1 && !neighbor_ranks.empty()) {
-          
+        if (numProc>1 && !neighbor_ranks.empty()) {          
           // --- Move particles that belong to other domains to those domains, and delete them from here. Then receive
           //     particles from other domains that belong to this domain.
           exchange_particles();
@@ -968,6 +970,8 @@ namespace GFlowSimulation {
     // Start mpi timer.
     gflow->startMPIGhostTimer();
 
+    //cout << "Processor " << topology->getRank() << " starting ghost creation on iter " << gflow->getIter() << "\n";
+
     // First, clear all the send_ghost_lists entries.
     for (int i=0; i<neighbor_ranks.size(); ++i) send_ghost_list[i].clear();
 
@@ -1019,6 +1023,8 @@ namespace GFlowSimulation {
       n_ghosts += recv_ghost_sizes[i];
     }
 
+    //cout << "Processor " << topology->getRank() << " done with ghost creation on iter " << gflow->getIter() << "\n";
+
     // Stop mpi timer.
     gflow->stopMPIGhostTimer();
   }
@@ -1026,6 +1032,17 @@ namespace GFlowSimulation {
   inline void SimData::update_ghost_particles() {
     // Start mpi timer.
     gflow->startMPIGhostTimer();
+
+    if (sim_dimensions>2) MPIObject::barrier(ghost_wait_timer);
+
+    //cout << " -> Processor " << topology->getRank() << " starting ghost update for iter " << gflow->getIter() << "\n";
+
+    // Make sure the last send requests have been received.
+    //ghost_wait_timer.start();
+    //MPI_Waitall(request_list.size(), request_list.data(), MPI_STATUSES_IGNORE);
+    //ghost_wait_timer.stop();
+
+    //cout << " --> Processor " << topology->getRank() << " got past the wait all. Iter " << gflow->getIter() << "\n";
 
     // Reset counters.
     _last_n_ghosts_sent = _last_n_ghosts_recv = 0;
@@ -1073,9 +1090,6 @@ namespace GFlowSimulation {
     for (int i=0, p_id=_first_ghost; i<neighbor_ranks.size(); ++i) {
       int size = recv_ghost_sizes[i];
       if (size>0) {
-
-
-
         // Wait for request to be filled.
         MPIObject::wait(request_list[i], ghost_wait_timer);
 
@@ -1091,6 +1105,8 @@ namespace GFlowSimulation {
         }
       }
     }
+
+    //cout << " -> Processor " << topology->getRank() << " done with ghost update for iter " << gflow->getIter() << "\n";
 
     // Stop mpi timer.
     gflow->stopMPIGhostTimer();
@@ -1146,7 +1162,10 @@ namespace GFlowSimulation {
 
         // CHECK
         int t = static_cast<int>(type);
-        if (t>0) throw false;
+        if (t>0) {
+          cout << "Rank " << topology->getRank() << " got bad data. Throwing.\n";
+          throw false;
+        }
 
         // Add particle to simdata.
         addParticle(X.data, V.data, r, im, static_cast<int>(type));

@@ -197,9 +197,6 @@ namespace GFlowSimulation {
     //! \brief Set the attraction acceleration.
     void setAttraction(RealType);
 
-    //! \brief Set the running flag.
-    void setRunning(bool);
-
     //! \brief Set the print updates flag.
     void setPrintUpdates(bool);
 
@@ -263,7 +260,7 @@ namespace GFlowSimulation {
     void giveFileToDataMaster(string, string);
 
     //! \brief Get the boltzmann constant.
-    RealType getKB();
+    RealType getKB() { return KB; }
 
     //! \brief Start the mpi timer.
     void startMPIExchangeTimer();
@@ -277,6 +274,9 @@ namespace GFlowSimulation {
     //! \brief Stop the mpi timer.
     void stopMPIGhostTimer();
 
+    //! \brief Sync running flag among all processors.
+    void syncRunning();
+
     /// --- Flags
 
     bool& simulation_running()   { return _running; }
@@ -286,7 +286,10 @@ namespace GFlowSimulation {
     bool& handler_remade()       { return _handler_remade; }
 
     //! \brief Return the use ghosts flag. Only getting.
-    bool use_ghosts()            { return _use_ghosts; }
+    bool use_ghosts() const      { return _use_ghosts; }
+
+    //! \brief Set the terminate flag to true.
+    void terminate();
 
     // Creators are a friend classes --- all must be since friendship is not inherited
     friend class Creator;
@@ -411,6 +414,8 @@ namespace GFlowSimulation {
 
     // --- Flags
 
+    //! \brief If true, this processor has called for the simulation to terminate.
+    bool _terminate = false;
     //! \brief If true, the simulation should continue to run.
     bool _running = false;
     //! \brief If true, do tasks related to force computation.
@@ -422,6 +427,9 @@ namespace GFlowSimulation {
     bool _simdata_remade       = false;
     bool _handler_needs_remake = false;
     bool _handler_remade       = false;
+
+    //! \brief The time at which terminate() was called.
+    long double termination_time = -1;
 
     // --- Physical constants. These are static, since they should be the same for all objects
 

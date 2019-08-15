@@ -65,6 +65,7 @@ namespace GFlowSimulation {
     if (dimensions!=b.dimensions) return false;
     for (int d=0; d<dimensions; ++d)
       if (min[d]!=b.min[d] || max[d]!=b.max[d]) return false;
+    // The bounds passed all checks.
     return true;
   }
 
@@ -83,8 +84,10 @@ namespace GFlowSimulation {
   }
 
   bool Bounds::contains(const RealType *x) const {
+    // For the unlikely case where x[d] is exactly on a boundary,
+    // we use half open [ ) boundaries.
     for (int d=0; d<dimensions; ++d)
-      if (x[d]<min[d] || max[d]<x[d]) return false;
+      if (x[d]<min[d] || max[d]<=x[d]) return false;
     // All clear.
     return true;
   }
@@ -98,6 +101,16 @@ namespace GFlowSimulation {
     for (int d=0; d<dimensions; ++d)
       v *= (max[d] - min[d]);
     return v;
+  }
+
+  RealType Bounds::boundary() const {
+    RealType v = vol(), bd = 0;
+    for (int d=0; d<dimensions; ++d) {
+      // Calculate the (perimeter, area, volume, etc) of each "face."
+      // Two "faces," one on each side.
+      bd += 2*v/(max[d] - min[d]);
+    }
+    return bd;
   }
 
   RealType Bounds::distance(const RealType *x) const {
@@ -122,6 +135,8 @@ namespace GFlowSimulation {
   }
 
   void Bounds::randomPoint(RealType *x) const {
+    // We use drand because its fast and simple
+    //! \todo Replace with a different RNG?
     for (int d=0; d<dimensions; ++d)
       x[d] = drand48()*wd(d) + min[d];
   }

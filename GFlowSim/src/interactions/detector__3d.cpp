@@ -50,7 +50,7 @@ namespace GFlowSimulation {
         RealType ke = 0.5*sqr(v[id2], 3)/im[id2];
         // If too large 
         if (ke_threshold<ke) {
-          gflow->setRunning(false);
+          gflow->terminate();
           return;
         }
       }
@@ -103,7 +103,7 @@ namespace GFlowSimulation {
         RealType ke = 0.5*sqr(v[id2], 3)/im[id2];
         // If too large 
         if (ke_threshold<ke) {
-          gflow->setRunning(false);
+          gflow->terminate();
           return;
         }
       }

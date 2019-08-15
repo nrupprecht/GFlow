@@ -155,6 +155,7 @@ namespace GFlowSimulation {
 
     // --> Pre-integrate
     _running = true;
+    _terminate = false;
     elapsed_time = 0;
     iter = 0;
     // Set up all objects
@@ -173,11 +174,13 @@ namespace GFlowSimulation {
 
     #if USE_MPI == 1
     // For now, set this to a value that I know is good. Otherwise, the default value is 8, which really slows things down.
-    handler->setUpdateDelaySteps(15);
+    if      (sim_dimensions==2) handler->setUpdateDelaySteps(15);
+    else if (sim_dimensions==3) handler->setUpdateDelaySteps(46);
     #endif // USE_MPI == 1
 
     // Do integration for the requested amount of time
     while (_running && requested_time>0) {
+
       // --> Pre-step
       for (auto m : modifiers) m->pre_step();
       integrator->pre_step();
@@ -233,13 +236,14 @@ namespace GFlowSimulation {
       // For this reason, this occurs *after* modifiers do their post-force routine.
       simData->updateHaloParticles();
       // Continue with normal order of updates.
+      simData->post_forces();
       integrator->post_forces();                 // -- This is where VV second half kick happens (if applicable)
       for (auto it : additional_integrators) it->post_forces();
       dataMaster->post_forces();
       handler->post_forces();
 
       // --> Post-step
-      if (requested_time<=elapsed_time) _running = false;
+      if (requested_time<=elapsed_time) terminate();
       for (auto m : modifiers) m->post_step();
       integrator->post_step();
       for (auto it : additional_integrators) it->post_step();
@@ -254,7 +258,7 @@ namespace GFlowSimulation {
       // Check for bad numerical precision
       if (total_time - dt == total_time) {
         cout << "Loss of precision. Stopping simulation.\n";
-	      _running = false;
+	      terminate();
       }
       // Possibly print updates to the screen or to a file.
       if (print_updates && runMode==RunMode::SIM && 
@@ -273,7 +277,7 @@ namespace GFlowSimulation {
       _handler_remade = false;
 
       // Coordinate whether to stop running.
-      MPIObject::mpi_and(_running);
+      //MPIObject::mpi_and(_running);
     }
 
     // End of run barrier.
@@ -511,10 +515,6 @@ namespace GFlowSimulation {
     center_attraction = g;
   }
 
-  void GFlow::setRunning(bool r) {
-    _running = r;
-  }
-
   void GFlow::setPrintUpdates(bool p) {
     print_updates = p;
   }
@@ -559,6 +559,9 @@ namespace GFlowSimulation {
   }
 
   void GFlow::reflectPositions() {
+    // Start simdata timer.
+    simData->start_timer();
+
     // Get a pointer to position data and the number of particles in simData
     RealType **x = simData->X(), **v = simData->V();
     int size = simData->size();
@@ -580,9 +583,15 @@ namespace GFlowSimulation {
           x[n][d] = xlocal;
         }
       }
+
+    // Start simdata timer.
+    simData->stop_timer();
   }
 
   void GFlow::repulsePositions() {
+    // Start simdata timer.
+    simData->start_timer();
+
     // Get a pointer to position data and the number of particles in simData
     RealType **x = simData->X(), **v = simData->V(), **f = simData->F();
     int size = simData->size();
@@ -610,9 +619,15 @@ namespace GFlowSimulation {
           }
         }
       }
+
+    // Start simdata timer.
+    simData->stop_timer();
   }
 
   void GFlow::attractPositions() {
+    // Start simdata timer.
+    simData->start_timer();
+
     // Only do this if center_attraction is nonzero
     if (center_attraction==0) return;
     // Get a pointer to position data and the number of particles in simData
@@ -636,6 +651,9 @@ namespace GFlowSimulation {
     // Clean up
     delete [] center;
     delete [] X;
+
+    // Start simdata timer.
+    simData->stop_timer();
   }
 
   void GFlow::removeOverlapping(RealType fraction) {
@@ -702,6 +720,22 @@ namespace GFlowSimulation {
     mpi_ghost_timer.stop();
   }
 
+  void GFlow::syncRunning() {
+    // Sync amongst processors.
+    MPIObject::mpi_or(_terminate);
+    // Check if any processors called for program termination.
+    if (_terminate) _running = false;
+  }
+
+  void GFlow::terminate() {
+    // If this is the only processor, we don't have to wait for anyone.
+    if (topology->getNumProc()==1) _running = false;
+    // Set terminate flag to true.
+    _terminate = true;
+    // Set the terminate time
+    termination_time = elapsed_time;
+  }
+
   inline void GFlow::clearForces() {
     simData->clearF();
     // Clear torque buffer, if it exists.
@@ -719,10 +753,6 @@ namespace GFlowSimulation {
     }
     // Remove modifiers 
     for (auto &m : remove) modifiers.erase(m);
-  }
-
-  RealType GFlow::getKB() {
-    return KB;
   }
 
 }

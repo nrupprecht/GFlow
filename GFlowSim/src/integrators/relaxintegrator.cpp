@@ -23,7 +23,7 @@ namespace GFlowSimulation {
     OverdampedIntegrator::pre_step();
     
     // If accelerations are slow enough, end the simulation.
-    if (maximum_acceleration<allowable_acceleration && min_iterations<gflow->getIter()) gflow->setRunning(false);
+    if (maximum_acceleration<allowable_acceleration && min_iterations<gflow->getIter()) gflow->terminate();
   }
 
 }

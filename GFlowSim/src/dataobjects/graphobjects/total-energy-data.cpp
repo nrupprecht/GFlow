@@ -66,7 +66,7 @@ namespace GFlowSimulation {
       initial_set = true;
     }
     // Restrict energy
-    if (restrict_energy && initial_energy>0 && energy/initial_energy>fraction) gflow->setRunning(false);
+    if (restrict_energy && initial_energy>0 && energy/initial_energy>fraction) gflow->terminate();
   }
 
 }
