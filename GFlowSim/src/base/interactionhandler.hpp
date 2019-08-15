@@ -100,9 +100,6 @@ namespace GFlowSimulation {
     //! \brief Communicate with other processors to create ghost particles.
     virtual void construct_ghost_particles()=0;
 
-    //! \brief Set the simulation bounds.
-    //virtual void setBounds(const Bounds&);
-
     //! \brief Calculates the maximum "small sigma."
     //!
     //! Particles that are larger than max_small_sigma are "large particles," and must search more than

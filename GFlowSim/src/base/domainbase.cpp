@@ -51,12 +51,4 @@ namespace GFlowSimulation {
     min_small_cutoff = 2*max_small_sigma + skin_depth;
   }
 
-  /*
-  void DomainBase::setBounds(const Bounds& bnds) {
-    InteractionHandler::setBounds(bnds);
-    // Recalculate dimensions. The domain must be initialized to be able to do this.
-    if (initialized) calculate_domain_cell_dimensions();
-  }
-  */
-
 }

@@ -318,7 +318,7 @@ namespace GFlowSimulation {
     DomainBase::construct();
     
     // Start timer.
-    timer.start();
+    start_timer();
 
     // Update particles in the cells
     update_cells();
@@ -435,7 +435,7 @@ namespace GFlowSimulation {
     delete [] search_dims;
 
     // Start timer.
-    timer.stop();
+    stop_timer();
   }
 
   void Domain::setCellSize(RealType) {

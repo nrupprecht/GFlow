@@ -132,14 +132,6 @@ namespace GFlowSimulation {
       return;
     }
 
-    // Clear timers
-    integrator->clear_timer();
-    forceMaster->clear_timer();
-    bonded_timer.clear();
-    body_timer.clear();
-    mpi_exchange_timer.clear();
-    mpi_ghost_timer.clear();
-
     // Make sure we have initialized everything
     if (!initialize()) {
       // Some object was null
@@ -152,6 +144,12 @@ namespace GFlowSimulation {
 
     // Set run mode, if it is currently "idle"
     if (runMode==RunMode::IDLE) setRunMode(RunMode::SIM);
+
+    // GFlow local timers. Timed objects' timers are cleared by call to pre_integrate.
+    bonded_timer.clear();
+    body_timer.clear();
+    mpi_exchange_timer.clear();
+    mpi_ghost_timer.clear();
 
     // --> Pre-integrate
     _running = true;
@@ -168,7 +166,7 @@ namespace GFlowSimulation {
     dataMaster->pre_integrate();
     forceMaster->pre_integrate();
 
-    // Run Timer
+    // Run Timer - for printing updates.
     Timer timer;
     timer.start();
 
@@ -275,14 +273,8 @@ namespace GFlowSimulation {
       simData->setNeedsRemake(false);
       _simdata_remade = false;
       _handler_remade = false;
-
-      // Coordinate whether to stop running.
-      //MPIObject::mpi_and(_running);
     }
-
-    // End of run barrier.
-    MPIObject::barrier();
-
+    
     // Possibly print a closing update
     if (print_updates && runMode==RunMode::SIM) {
       (*monitor) << " ---- End of run ----\n\n";
@@ -300,6 +292,9 @@ namespace GFlowSimulation {
 
     // Back to idle mode
     setRunMode(RunMode::IDLE);
+
+    // End of run barrier.
+    MPIObject::barrier();
   }
 
   void GFlow::writeData(string dirName) {

@@ -12,6 +12,9 @@ namespace GFlowSimulation {
    target_steps(20), step_delay(10), step_count(0), use_v(true), use_a(false), characteristic_length(0.05) {};
 
   void Integrator::pre_integrate() {
+    // Clear timer.
+    clear_timer();
+    
     // Set step count so a check is triggered on the first step
     step_count = step_delay;
     // Compute average radius

@@ -50,9 +50,6 @@ namespace GFlowSimulation {
 
   protected:
 
-    //! \brief Overload the set bounds function to recalculate cell sizes, product arrays, etc.
-    //virtual void setBounds(const Bounds&) override;
-
     //! \brief Calculates the domain cell dimensions, widths, and inverse widths given 
     //! that the cutoff has been calculated.
     virtual void calculate_domain_cell_dimensions()=0;

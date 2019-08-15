@@ -90,6 +90,9 @@ namespace GFlowSimulation {
   }
 
   void SimData::pre_integrate() {
+    // Clear the timed object timer.
+    clear_timer();
+    // Clear other timers.
     send_timer.clear(); 
     recv_timer.clear(); 
     barrier_timer.clear(); 
@@ -1035,12 +1038,14 @@ namespace GFlowSimulation {
 
     if (sim_dimensions>2) MPIObject::barrier(ghost_wait_timer);
 
+    const int ghost_update_tag = 1;
+
     //cout << " -> Processor " << topology->getRank() << " starting ghost update for iter " << gflow->getIter() << "\n";
 
     // Make sure the last send requests have been received.
-    //ghost_wait_timer.start();
-    //MPI_Waitall(request_list.size(), request_list.data(), MPI_STATUSES_IGNORE);
-    //ghost_wait_timer.stop();
+    // ghost_wait_timer.start();
+    // MPI_Waitall(request_list.size(), request_list.data(), MPI_STATUSES_IGNORE);
+    // ghost_wait_timer.stop();
 
     //cout << " --> Processor " << topology->getRank() << " got past the wait all. Iter " << gflow->getIter() << "\n";
 
@@ -1066,7 +1071,7 @@ namespace GFlowSimulation {
         
         // Send the data (non-blocking) back to the processor.
         ghost_send_timer.start();
-        MPI_Isend(buffer_list[i].data(), size*ghost_data_width, MPI_FLOAT, neighbor_ranks[i], 0, MPI_COMM_WORLD, &request);
+        MPI_Isend(buffer_list[i].data(), size*ghost_data_width, MPI_FLOAT, neighbor_ranks[i], ghost_update_tag, MPI_COMM_WORLD, &request);
         ghost_send_timer.stop();
       }
     }
@@ -1081,7 +1086,7 @@ namespace GFlowSimulation {
         if (recv_buffer[i].size() < size*ghost_data_width) recv_buffer[i].resize(size*ghost_data_width);
         // Start the non-blocking receieve.
         ghost_recv_timer.start();
-        MPI_Irecv(recv_buffer[i].data(), size*ghost_data_width, MPI_FLOAT, neighbor_ranks[i], 0, MPI_COMM_WORLD, &request_list[i]);
+        MPI_Irecv(recv_buffer[i].data(), size*ghost_data_width, MPI_FLOAT, neighbor_ranks[i], ghost_update_tag, MPI_COMM_WORLD, &request_list[i]);
         ghost_recv_timer.stop();
       }
     }

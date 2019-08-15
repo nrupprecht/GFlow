@@ -47,6 +47,9 @@ namespace GFlowSimulation {
     // Base pre-integrate.
     Base::pre_integrate();
 
+    // Clear timed object timer.
+    clear_timer();
+
     // Reset time points
     last_check  = 0;
     last_update = 0;
@@ -80,52 +83,35 @@ namespace GFlowSimulation {
   }
 
   void InteractionHandler::construct() {
+    // \todo Some of these things should not be called if there are multiple different interaction handlers.
 
-    timer.start();
-
-    // \todo Some of these things should not be called if there are multiple different interaction handlers, namely the first four function calls.
     
-    // // Remove all halo and ghost particles.
-    // simData->removeHaloAndGhostParticles();
-    // // Do necessary removals - this will compress the arrays so that there are no invalid (type -1) particles
-    // // and _number == _size
-    // simData->doParticleRemoval();
-    // // Wrap the particles, so they are in their cannonical positions
-    // gflow->wrapPositions();
-    // // Reset the verlet lists of all the forces
-    // forceMaster->clear();    
-    // // Set timer
-    // last_update = gflow->getElapsedTime();
-    // // Reset
-    // steps_since_last_remake = 0;
-    // // Increment counter
-    // ++number_of_remakes;
-    
-    // // Record where the particles were
-    // if (update_decision_type==0 && auto_record_positions) record_positions();
+    // Remove all halo and ghost particles, wrap particles, if parallel then pass particles and figure out ghost particles, 
+    // and do particle removal. Don't time this part with the interactionhandler timer, it counts as MPI and simdata related
+    // times.
+    simData->update();
 
+    // Start timed object timer.
+    start_timer();
 
     // Reset the verlet lists of all the forces
-    Base::forceMaster->clear();
-
-    // Remove all halo and ghost particles, wrap particles, if parallel then pass particles and figure out ghost particles, 
-    // and do particle removal.
-    Base::simData->update();
+    forceMaster->clear();
     
     // Set timer
-    last_update = Base::gflow->getElapsedTime();
+    last_update = gflow->getElapsedTime();
     // Reset
     steps_since_last_remake = 0;
     // Increment counter
     ++number_of_remakes;
     // Set gflow flags.
     gflow->handler_needs_remake() = false;
-    gflow->handler_remade() = true;
+    gflow->handler_remade()       = true;
 
     // Record where the particles were
     if (update_decision_type==0 && auto_record_positions) record_positions();
 
-    timer.stop();
+    // Stop timed object timer.
+    stop_timer();
   }
 
   int InteractionHandler::getNumberOfRemakes() const {
@@ -176,13 +162,6 @@ namespace GFlowSimulation {
       if (process_bounds != topology->getProcessBounds()) initialize();
     }
   }
-
-  /*
-  void InteractionHandler::setBounds(const Bounds& bnds) {
-    bounds = bnds;
-    domain_bounds = bnds;
-  }
-  */
 
   void InteractionHandler::calculate_max_small_sigma() {
     // Make sure we have what we need.
