@@ -14,31 +14,31 @@ namespace GFlowSimulation {
     else throw UnexpectedNullPointer("GFlow should not be null.");
   }
 
-  class GFlow* Base::getGFlow() {
+  class GFlow* Base::getGFlow() const {
     return gflow;
   }
 
-  class SimData* Base::getSimData() {
+  class SimData* Base::getSimData() const {
     return simData;
   }
 
-  class Integrator* Base::getIntegrator() {
+  class Integrator* Base::getIntegrator() const {
     return integrator;
   }
 
-  class InteractionHandler* Base::getHandler() {
+  class InteractionHandler* Base::getHandler() const {
     return handler;
   }
 
-  class DataMaster* Base::getDataMaster() {
+  class DataMaster* Base::getDataMaster() const {
     return dataMaster;
   }
 
-  class ForceMaster* Base::getForceMaster() {
+  class ForceMaster* Base::getForceMaster() const {
     return forceMaster;
   }
 
-  class Topology* Base::getTopology() {
+  class Topology* Base::getTopology() const {
     return topology;
   }
 

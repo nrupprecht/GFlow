@@ -11,7 +11,6 @@ namespace GFlowSimulation {
   const string HardSphereCfToken = "HardSphereCf";
   const string LennardJonesToken = "LennardJones";
   const string BuckinghamToken = "Buckingham";
-  const string DetectorToken = "Detector";
   const string HardSphereReflectingToken = "HardSphereReflecting";
   const string DemonWallToken = "DemonWall";
   const string CoulombToken = "Coulomb";

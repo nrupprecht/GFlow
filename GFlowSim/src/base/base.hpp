@@ -42,13 +42,13 @@ namespace GFlowSimulation {
     // GFlow is a friend class
     friend class GFlow;
 
-    class GFlow* getGFlow();
-    class SimData* getSimData();
-    class Integrator* getIntegrator();
-    class InteractionHandler* getHandler();
-    class DataMaster* getDataMaster();
-    class ForceMaster* getForceMaster();
-    class Topology* getTopology();
+    class GFlow* getGFlow() const;
+    class SimData* getSimData() const;
+    class Integrator* getIntegrator() const;
+    class InteractionHandler* getHandler() const;
+    class DataMaster* getDataMaster() const;
+    class ForceMaster* getForceMaster() const;
+    class Topology* getTopology() const;
 
     int getSimDimensions() const;
 

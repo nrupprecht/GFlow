@@ -5,45 +5,52 @@
 namespace GFlowSimulation {
 
   Interaction* InteractionChoice::choose(GFlow *gflow, const string &token, int sim_dimensions) {
+    string err = "Nothing per-say invalid about requesting this force in this dimension, it just isn't coded in";
     if (token==NoneToken) return nullptr;
     else if (token==HardSphereToken) {
-      if (sim_dimensions==2)
-        return new HardSphere_2d(gflow);
-      else if (sim_dimensions==3)
-        return new HardSphere_3d(gflow);
-      else throw InvalidInteraction(token + ", " + toStr(sim_dimensions));
+      if      (sim_dimensions==1) return new HardSphereVLP<1>(gflow);
+      else if (sim_dimensions==2) return new HardSphereVLP<2>(gflow); // HardSphere<2>(gflow); // 
+      else if (sim_dimensions==3) return new HardSphereVLP<3>(gflow);
+      else if (sim_dimensions==4) return new HardSphereVLP<4>(gflow);
+      // Nothing per-say invalid about requesting this force in this dimension, it just isn't coded in.
+      else throw InvalidInteraction(token + ", " + toStr(sim_dimensions) + "." + err);
     }
     else if (token==HardSphereDsToken) {
-      if (sim_dimensions==2)
-        return new HardSphereDs_2d(gflow);
-      else if (sim_dimensions==3)
-        return new HardSphereDs_3d(gflow);
-      else throw InvalidInteraction(token + ", " + toStr(sim_dimensions));
-    }
-    else if (token==HardSphereCfToken) {
-      if (sim_dimensions==2)
-        return new HardSphereCf_2d(gflow);
-      else throw InvalidInteraction(token + ", " + toStr(sim_dimensions));
+      if      (sim_dimensions==1) return new HardSphereDsVLP<1>(gflow);
+      else if (sim_dimensions==2) return new HardSphereDsVLP<2>(gflow);
+      else if (sim_dimensions==3) return new HardSphereDsVLP<3>(gflow);
+      else if (sim_dimensions==4) return new HardSphereDsVLP<4>(gflow);
+      // Nothing per-say invalid about requesting this force in this dimension, it just isn't coded in.
+      else throw InvalidInteraction(token + ", " + toStr(sim_dimensions) + "." + err);
     }
     else if (token==LennardJonesToken) {
-      if (sim_dimensions==2)
-        return new LennardJones_2d(gflow);
-      else if (sim_dimensions==3)
-        return new LennardJones_3d(gflow);
-      else throw InvalidInteraction(token + ", " + toStr(sim_dimensions));
+      if      (sim_dimensions==1) return new LennardJonesVLP<1>(gflow);
+      else if (sim_dimensions==2) return new LennardJonesVLP<2>(gflow);
+      else if (sim_dimensions==3) return new LennardJonesVLP<3>(gflow);
+      else if (sim_dimensions==4) return new LennardJonesVLP<4>(gflow);
+      // Nothing per-say invalid about requesting this force in this dimension, it just isn't coded in.
+      else throw InvalidInteraction(token + ", " + toStr(sim_dimensions) + "." + err);
+    }
+    else if (token==CoulombToken) {
+      if      (sim_dimensions==1) return new CoulombVLP<1>(gflow);
+      else if (sim_dimensions==2) return new CoulombVLP<2>(gflow); 
+      else if (sim_dimensions==3) return new CoulombVLP<3>(gflow);
+      else if (sim_dimensions==4) return new CoulombVLP<4>(gflow);
+      // Nothing per-say invalid about requesting this force in this dimension, it just isn't coded in.
+      else throw InvalidInteraction(token + ", " + toStr(sim_dimensions) + "." + err);
     }
     else if (token==BuckinghamToken) {
-      if (sim_dimensions==2)
-        return new Buckingham_2d(gflow);
-      else if (sim_dimensions==3)
-        return new Buckingham_3d(gflow);
-      else throw InvalidInteraction(token + ", " + toStr(sim_dimensions));
+      if      (sim_dimensions==1) return new BuckinghamVLP<1>(gflow);
+      else if (sim_dimensions==2) return new BuckinghamVLP<2>(gflow);
+      else if (sim_dimensions==3) return new BuckinghamVLP<3>(gflow);
+      else if (sim_dimensions==4) return new BuckinghamVLP<4>(gflow);
+      // Nothing per-say invalid about requesting this force in this dimension, it just isn't coded in.
+      else throw InvalidInteraction(token + ", " + toStr(sim_dimensions) + "." + err);
     }
-    else if (token==DetectorToken) {
+    // Non-generic types.
+    else if (token==HardSphereCfToken) {
       if (sim_dimensions==2)
-        return new Detector_2d(gflow);
-      if (sim_dimensions==3)
-        return new Detector_3d(gflow);
+        return new HardSphereCf<2>(gflow);
       else throw InvalidInteraction(token + ", " + toStr(sim_dimensions));
     }
     else if (token==HardSphereReflectingToken) {
@@ -54,11 +61,6 @@ namespace GFlowSimulation {
     else if (token==DemonWallToken) {
       if (sim_dimensions==2)
         return new DemonWall(gflow);
-      else throw InvalidInteraction(token + ", " + toStr(sim_dimensions));
-    }
-    else if (token==CoulombToken) {
-      if (sim_dimensions==2)
-        return new Coulomb2d(gflow);
       else throw InvalidInteraction(token + ", " + toStr(sim_dimensions));
     }
     else throw InvalidInteraction(token + ", " + toStr(sim_dimensions));

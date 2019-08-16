@@ -46,7 +46,6 @@ int main(int argc, char **argv) {
   // --- Options
 
   // Type of simulation
-  bool bipartite_flag = false;
   bool debug_flag = false;
   string load = "";
 
@@ -109,7 +108,6 @@ int main(int argc, char **argv) {
 
   // --- For getting command line arguments
   ArgParse parser(argc, argv);
-  parser.get("bipartite", bipartite_flag);
   parser.get("debug", debug_flag); 
   parser.get("load", load);
   parser.get("animate", animate);
@@ -183,8 +181,7 @@ int main(int argc, char **argv) {
   // --- This creator creates gflow simulations
   Creator *creator = nullptr;
   // Assign a specific type of creator
-  if (bipartite_flag)  creator = new BipartiteBoxCreator(&parser);
-  else if (debug_flag) creator = new DebugCreator(&parser);
+  if (debug_flag) creator = new DebugCreator(&parser);
   else if (load!="") {
     creator = new FileParseCreator(&parser, load);
   }

@@ -109,27 +109,23 @@ namespace GFlowSimulation {
     gflow->forceMaster->setNTypes(1); // Only one type of particle
     Interaction *force;
     if(lj_flag) {
-      LennardJones *LJ;
-      if (sim_dimensions==2) LJ = new LennardJones_2d(gflow);
-      else if (sim_dimensions==3) LJ = new LennardJones_3d(gflow);
-      else throw false;
-      // Set parameters
-      LJ->setStrength(repulsion*DEFAULT_LENNARD_JONES_STRENGTH);
-      // Set pointer
-      force = LJ;
+      RealType strength = repulsion*DEFAULT_LENNARD_JONES_STRENGTH;
+      if      (sim_dimensions==1) force = new LennardJonesVLP<1> (gflow, strength);
+      else if (sim_dimensions==2) force = new LennardJonesVLP<2> (gflow, strength);
+      else if (sim_dimensions==3) force = new LennardJonesVLP<3> (gflow, strength);
+      else if (sim_dimensions==4) force = new LennardJonesVLP<4> (gflow, strength);
+      else throw BadDimension("Simulation dimensions requested: " + toStr(sim_dimensions) + ".");
     }
     else if (!interact_flag) {
       force = nullptr;
     }
     else {
-      HardSphere *HS;
-      if (sim_dimensions==2) HS = new HardSphere_2d(gflow);
-      else if (sim_dimensions==3) HS = new HardSphere_3d(gflow);
-      else throw false;
-      // Set parameters
-      HS->setRepulsion(repulsion*DEFAULT_HARD_SPHERE_REPULSION);
-      // Set pointer
-      force = HS;
+      RealType strength = repulsion*DEFAULT_HARD_SPHERE_REPULSION;
+      if      (sim_dimensions==1) force = new HardSphereVLP<1> (gflow, strength);
+      else if (sim_dimensions==2) force = new HardSphereVLP<2> (gflow, strength);
+      else if (sim_dimensions==3) force = new HardSphereVLP<3> (gflow, strength);
+      else if (sim_dimensions==4) force = new HardSphereVLP<4> (gflow, strength);
+      else throw BadDimension("Simulation dimensions requested: " + toStr(sim_dimensions) + ".");
     }
     gflow->forceMaster->setInteraction(0, 0, force);
 
@@ -139,10 +135,11 @@ namespace GFlowSimulation {
 
     // Relax the setup in two steps
     hs_relax(gflow, 0.1); // Make sure particles don't stop on top of one another
+    
     // Set the integrator
-    if (over_damped_flag) gflow->integrator = new OverdampedIntegrator(gflow);
+    if      (over_damped_flag) gflow->integrator = new OverdampedIntegrator(gflow);
     else if (langevin_temp>=0) gflow->integrator = new LangevinIntegrator(gflow, langevin_temp);
-    else gflow->integrator = new VelocityVerlet(gflow);
+    else                       gflow->integrator = new VelocityVerlet(gflow);
     // Set integrator initial time step
     gflow->integrator->setDT(dt);
 

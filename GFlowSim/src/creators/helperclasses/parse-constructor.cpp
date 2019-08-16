@@ -231,8 +231,14 @@ namespace GFlowSimulation {
     // Repulsion - for hard spheres.
     RealType rp = 0;
     if (parser.firstArg("Repulsion", rp)) {
-      HardSphere *hs = dynamic_cast<HardSphere*>(interaction);
-      if (hs) hs->setRepulsion(rp);
+      if (gflow->getSimDimensions()==2) {
+        HardSphere<2> *hs = dynamic_cast<HardSphere<2>*>(interaction);
+        if (hs) hs->setRepulsion(rp);
+      }
+      if (gflow->getSimDimensions()==3) {
+        HardSphere<3> *hs = dynamic_cast<HardSphere<3>*>(interaction);
+        if (hs) hs->setRepulsion(rp);
+      }
     }
 
     // Return
