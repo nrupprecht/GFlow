@@ -5,9 +5,13 @@
 
 namespace GFlowSimulation {
 
+  inline bool isWrap(const BCFlag bc) {
+    return bc == BCFlag::WRAP;
+  }
+
   //! \brief Template function applying harmonic corrections to a distance vector.
   template<int d> inline void harmonic_correction(const BCFlag *bcs, RealType *r, const RealType *widths) {
-    if (bcs[d-1]==BCFlag::WRAP) {
+    if (isWrap(bcs[d-1])) {
       RealType dX = widths[d-1] - fabs(r[d-1]);
       if (dX<fabs(r[d-1])) r[d-1] = r[d-1]>0 ? -dX : dX;
     } 

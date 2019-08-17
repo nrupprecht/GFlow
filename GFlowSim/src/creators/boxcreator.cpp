@@ -3,7 +3,7 @@
 #include "../gflow.hpp"
 
 namespace GFlowSimulation {
-
+  
   BoxCreator::BoxCreator(int argc, char **argv) : Creator(argc, argv), phi(0.5), radius(0.05) {
     seed = std::chrono::system_clock::now().time_since_epoch().count();
     seedGenerator(seed);
