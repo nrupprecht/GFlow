@@ -171,9 +171,11 @@ namespace GFlowSimulation {
     timer.start();
 
     #if USE_MPI == 1
-    // For now, set this to a value that I know is good. Otherwise, the default value is 8, which really slows things down.
-    if      (sim_dimensions==2) handler->setUpdateDelaySteps(15);
-    else if (sim_dimensions==3) handler->setUpdateDelaySteps(46);
+    if (topology->getNumProc()>1) {
+      // For now, set this to a value that I know is good. Otherwise, the default value is 8, which really slows things down.
+      if      (sim_dimensions==2) handler->setUpdateDelaySteps(15);
+      else if (sim_dimensions==3) handler->setUpdateDelaySteps(46);
+    }
     #endif // USE_MPI == 1
 
     // Do integration for the requested amount of time
@@ -189,12 +191,14 @@ namespace GFlowSimulation {
       // --> Pre-force
       for (auto m : modifiers) m->pre_forces();
       integrator->pre_forces(); // -- This is where VV first half kick happens (if applicable)
-      for (auto it : additional_integrators) it->pre_forces();
+      for (auto it : additional_integrators) it->pre_forces(); // -- First half kick could also happen here.
       dataMaster->pre_forces();
-      handler->pre_forces();   // -- This is where resectorization / verlet list creation might happen
+      handler->pre_forces();   // -- This is where resectorization / verlet list creation might happen. Particle exchange can also happen here.
       
       // --- Do interactions
-      clearForces(); // Clear force buffers
+
+      // Clear force buffers
+      clearForces(); 
 
       // Reflect or repulse particles. We only need to wrap before sectorizing particles, but we need to apply forces at every timestep.
       reflectPositions(); // This only involves velocities, so it could be done before or after clear forces.

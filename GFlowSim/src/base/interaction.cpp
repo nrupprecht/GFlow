@@ -50,7 +50,7 @@ namespace GFlowSimulation {
   }
 
   int Interaction::size() const {
-    return verlet.size() + verlet_wrap.size();
+    return (verlet.size() + verlet_wrap.size())/2;
   }
 
 }

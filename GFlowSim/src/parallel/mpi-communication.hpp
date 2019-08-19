@@ -45,10 +45,10 @@ namespace GFlowSimulation {
     static void mpi_or(bool&);
 
     //! \brief Send a single int value to another processor.
-    static void send_single(int&, int);
+    static void send_single(int&, int, int=0);
 
     //! \brief Receive a single int value from another processor.
-    static void recv_single(int&, int);
+    static void recv_single(int&, int, int=0);
   };
 
 }

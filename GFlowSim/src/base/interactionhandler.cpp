@@ -10,13 +10,7 @@
 namespace GFlowSimulation {
 
   InteractionHandler::InteractionHandler(GFlow *gflow) : Base(gflow), velocity(gflow->getSimDimensions()), 
-    process_bounds(sim_dimensions), simulation_bounds(sim_dimensions) {
-    
-    #if USE_MPI==1
-    //*** Just use this condition, for now. \todo Sync when remakes and updates happen.
-    update_decision_type = 1;
-    #endif
-  };
+    process_bounds(sim_dimensions), simulation_bounds(sim_dimensions) {};
 
   InteractionHandler::~InteractionHandler() {
     if (positions) dealloc_array_2d(positions);
@@ -39,8 +33,13 @@ namespace GFlowSimulation {
     process_bounds = topology->getProcessBounds();
     // Get the array of max cutoffs.
     max_cutoffs = forceMaster->getMaxCutoff();
-    // Set up grids.
-    //set_up_grids();
+
+    #if USE_MPI==1
+    if (topology!=nullptr && topology->getNumProc()>1) {
+      //*** Just use this condition, for now. \todo Sync when remakes and updates happen.
+      update_decision_type = 1;
+    }
+    #endif
   }
 
   void InteractionHandler::pre_integrate() {
@@ -222,7 +221,7 @@ namespace GFlowSimulation {
     bool needs_remake = (motion_ratio > mv_ratio_tolerance * motion_factor);
     //  
     // #if USE_MPI == 1
-    // MPIObject::mpi_or(needs_remake);
+    MPIObject::mpi_or(needs_remake);
     // #endif
     // Set the flag in gflow.
     gflow->handler_needs_remake() = needs_remake;

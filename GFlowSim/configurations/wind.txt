@@ -1,5 +1,5 @@
 // Granular "wind tunnel" simulation
-// Min radius tries was 0.0125-0.015. Needed a max dt of 0.0002.
+// For small radii, e.g. 0.0125-0.015, needed a max dt of 0.0002.
 
 // This is a 2d simulation
 Dimensions: 2
@@ -29,9 +29,7 @@ Boundary: {
 NTypes: 1
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
-Force-grid: {
-  : 0, 0, HardSphereDs
-}
+Force-grid: Hertz
 
 // Fill an area with particles
 Fill: Area {
@@ -61,6 +59,6 @@ Particle {
   Mass: inf
 }
 
-Reconcile: Remove=0.5
+Reconcile: Remove=1.
 
 Modifier: WindTunnel=Velocity

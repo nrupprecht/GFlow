@@ -60,5 +60,16 @@ namespace GFlowSimulation {
     x[0] += v*y[0];
   }
 
+
+  //! \brief Template function for copying (equating) a vector.
+  template<int d> inline void copy_vec(const RealType *src, RealType *dst) {
+    dst[d-1] = src[d-1];
+    copy_vec<d-1>(src, dst);
+  }
+  template<> inline void copy_vec<1>(const RealType *src, RealType *dst) {
+    dst[0] = src[0];
+  }
+
+
 }
 #endif // __GENERIC_DIMENSION_HPP__GFLOW__

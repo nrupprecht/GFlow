@@ -14,6 +14,7 @@ namespace GFlowSimulation {
   const string HardSphereReflectingToken = "HardSphereReflecting";
   const string DemonWallToken = "DemonWall";
   const string CoulombToken = "Coulomb";
+  const string HertzToken = "Hertz";
 
   /**
   *  \brief Error class for trying to pick an interaction that doesn't exist.

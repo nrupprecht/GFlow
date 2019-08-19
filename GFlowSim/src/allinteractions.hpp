@@ -6,7 +6,6 @@
 
 // Parent classes.
 #include "interactions/hard_sphere.hpp"
-#include "interactions/hard_sphere_cf.hpp"
 #include "interactions/hard_sphere__reflecting__2d.hpp"
 #include "interactions/demon_wall.hpp"
 

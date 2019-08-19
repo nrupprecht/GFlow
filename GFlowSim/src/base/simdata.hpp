@@ -375,6 +375,12 @@ namespace GFlowSimulation {
     // -*-*-*- MPI/Parallel related -*-*-*-
     #if USE_MPI == 1
 
+    // Tags
+    const int send_size_tag = 0;
+    const int send_particle_tag = 1;
+    const int send_ghost_tag = 2;
+    const int update_ghost_tag = 3;
+
     //! \brief Exchange particles that belong to other processors.
     //!
     //! Move particles that belong to other domains to those domains, and delete them from here. Then recieve
@@ -389,10 +395,13 @@ namespace GFlowSimulation {
 
     //! \brief Pack up the particle data for the specified ids and send it to another processor, optionally deleting the original particles
     //! from this processor.
-    inline void send_particle_data(const vector<int>&, int, vector<RealType>&, MPI_Request*, MPI_Request*, bool=false);
+    inline void send_particle_data(const vector<int>&, int, vector<RealType>&, MPI_Request*, MPI_Request*, int, bool=false);
 
     //! \brief Recieve particle information, and use it to create new particles. Return the number of particles recieved.
-    inline int recv_new_particle_data(int, vector<RealType>&);
+    inline int recv_new_particle_data(int, vector<RealType>&, int);
+
+    //! \brief ...
+    inline int recv_particle_data(int, vector<RealType>&);
 
     //! \brief Width of data to send when migrating particles.
     int data_width = 0;

@@ -11,8 +11,7 @@ namespace GFlowSimulation {
   /*
   *  \brief The base class for all interparticle forces and other interactions.
   *
-  *  A pair force between particles. This is the base class for forces. Forces have an interaction handler that
-  *  is responsible for storing the particles that the interaction should act on.
+  *  A pair force between particles. This is the base class for forces.
   *
   */
   class Interaction : public Base {
@@ -64,7 +63,7 @@ namespace GFlowSimulation {
     //! \brief Clears the verlet list.
     virtual void clear();
 
-    //! \brief Returns the size of the verlet list.
+    //! \brief Returns the number of interaction pairs in the interaction.
     virtual int size() const;
 
     // GFlow is a friend class

@@ -165,11 +165,11 @@ namespace GFlowSimulation {
     //! \brief What criteria the domain should.
     //!
     //! 0 - Use an update delay.
-    //! 1 - update every fixed number of steps.
+    //! 1 - Update every fixed number of steps.
     int update_decision_type = 0;
 
     //! \brief How many steps the domain should wait between domain redos.
-    int update_delay_steps = 8;
+    int update_delay_steps = 15;
 
     //! \brief How many steps since the last time the domain was remade.
     int steps_since_last_remake = 0;

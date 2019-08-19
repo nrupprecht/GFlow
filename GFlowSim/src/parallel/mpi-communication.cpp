@@ -96,16 +96,16 @@ namespace GFlowSimulation {
     #endif
   }
 
-  void MPIObject::send_single(int& val, int rank) {
+  void MPIObject::send_single(int& val, int rank, int tag) {
     #if USE_MPI == 1
     MPI_Request request;
-    MPI_Isend(&val, 1, MPI_INT, rank, 0, MPI_COMM_WORLD, &request);  
+    MPI_Isend(&val, 1, MPI_INT, rank, tag, MPI_COMM_WORLD, &request);  
     #endif
   }
 
-  void MPIObject::recv_single(int& val, int rank) {
+  void MPIObject::recv_single(int& val, int rank, int tag) {
     #if USE_MPI == 1
-    MPI_Recv(&val, 1, MPI_INT, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE); 
+    MPI_Recv(&val, 1, MPI_INT, rank, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE); 
     #endif
   }
 
