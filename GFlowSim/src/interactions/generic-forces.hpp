@@ -380,7 +380,6 @@ namespace GFlowSimulation {
     }
 
     void force(const int id1, const int id2, const RealType R1, const RealType R2, const RealType rsqr, RealType *X, RealType **f) const {
-
       // Calculate distance, inverse distance.
       RealType r = sqrt(rsqr);
       RealType invr = 1./r;
@@ -414,16 +413,15 @@ namespace GFlowSimulation {
 
       // Calculate tangential force.
       RealType Vn[dims], Vt[dims];
+      // Create the Vn (normal velocity component) vector.
       copy_vec<dims>(X, Vn);
       scalar_mult_eq_vec<dims>(Vn, vn);
       // Subtract, setting Vt = V - Vn.
       subtract_vec<dims>(V, Vn, Vt);
 
-     
       // Angular velocities.
       if (dims==2 && om!=nullptr && tq!=nullptr) {
-
-        // Tangential normal direction.
+        // Tangential normal direction for 2d.
         RealType Nt[dims];
         Nt[0] = -X[1];
         Nt[1] =  X[0];
@@ -435,15 +433,17 @@ namespace GFlowSimulation {
 
         // Instead of K_t * 0, it should really be based on an "angular spring" stretching, 
         // see e.g. Luding, Gran. Matter 2008, v 10, p. 235. But I'd have to keep track of the
-        // History of particles, even between neighbor list updates, which is too much of a pain 
-        // for now. So this is more like Ff = mu * Fn.
+        // history of particles, even between neighbor list updates, which is too much of a pain 
+        // for now.
         RealType Ft = - c1 * (K_t*0 + M_eff*vt);
 
         RealType maxF = fabs(mu*Fn);
         if (Ft>maxF) Ft = mu*Fn;
         else if (Ft<-maxF) Ft = -maxF;
 
+        // Update tangential forces.
         sum_eq_vec_scaled<dims>(f[id1], Nt, Ft);
+        sum_eq_vec_scaled<dims>(f[id2], Nt, -Ft);
 
         // Update torques.
         tq[id1] += Ft*R1;
@@ -466,6 +466,8 @@ namespace GFlowSimulation {
     void setGammaN(const RealType gn) { gamma_n = 0<=gn ? gn : gamma_n; }
     void setGammaT(const RealType gt) { gamma_t = 0<=gt ? gt : gamma_t; }
 
+    void setMu(const RealType m) { mu = 0<=m ? m : mu; }
+
   private:
     //! \brief Normal elastic constant.
     RealType K_n = 5'000.;
@@ -480,7 +482,9 @@ namespace GFlowSimulation {
     //! \brief The largest possible (absolute value) friction force is mu*Fn.
     RealType mu = 0.5;
 
+    //! \brief The array address for angular velocity.
     int om_add = -1;
+    //! \brief The array address for torque.
     int tq_add = -1;
 
     //! \brief Pointers to necessary data.
@@ -527,7 +531,6 @@ namespace GFlowSimulation {
     }
 
     void force(const int id1, const int id2, const RealType R1, const RealType R2, const RealType rsqr, RealType *X, RealType **f) const {
-
       // Calculate distance, inverse distance.
       RealType r = sqrt(rsqr);
       RealType invr = 1./r;
@@ -558,16 +561,15 @@ namespace GFlowSimulation {
 
       // Calculate tangential force.
       RealType Vn[dims], Vt[dims];
+      // Create the Vn (normal velocity component) vector.
       copy_vec<dims>(X, Vn);
       scalar_mult_eq_vec<dims>(Vn, vn);
       // Subtract, setting Vt = V - Vn.
       subtract_vec<dims>(V, Vn, Vt);
 
-     
       // Angular velocities.
       if (dims==2 && om!=nullptr && tq!=nullptr) {
-
-        // Tangential normal direction.
+        // Tangential normal direction for 2d.
         RealType Nt[dims];
         Nt[0] = -X[1];
         Nt[1] =  X[0];
@@ -579,15 +581,17 @@ namespace GFlowSimulation {
 
         // Instead of K_t * 0, it should really be based on an "angular spring" stretching, 
         // see e.g. Luding, Gran. Matter 2008, v 10, p. 235. But I'd have to keep track of the
-        // History of particles, even between neighbor list updates, which is too much of a pain 
-        // for now. So this is more like Ff = mu * Fn.
+        // history of particles, even between neighbor list updates, which is too much of a pain 
+        // for now.
         RealType Ft = - (K_t*0 + M_eff*vt);
 
         RealType maxF = fabs(mu*Fn);
         if (Ft>maxF) Ft = mu*Fn;
         else if (Ft<-maxF) Ft = -maxF;
 
+        // Update tangential forces.
         sum_eq_vec_scaled<dims>(f[id1], Nt, Ft);
+        sum_eq_vec_scaled<dims>(f[id2], Nt, -Ft);
 
         // Update torques.
         tq[id1] += Ft*R1;
@@ -610,6 +614,8 @@ namespace GFlowSimulation {
     void setGammaN(const RealType gn) { gamma_n = 0<=gn ? gn : gamma_n; }
     void setGammaT(const RealType gt) { gamma_t = 0<=gt ? gt : gamma_t; }
 
+    void setMu(const RealType m) { mu = 0<=m ? m : mu; }
+
   private:
     //! \brief Normal elastic constant.
     RealType K_n = 5'000.;
@@ -624,7 +630,9 @@ namespace GFlowSimulation {
     //! \brief The largest possible (absolute value) friction force is mu*Fn.
     RealType mu = 0.5;
 
+    //! \brief The array address for angular velocity.
     int om_add = -1;
+    //! \brief The array address for torque.
     int tq_add = -1;
 
     //! \brief Pointers to necessary data.

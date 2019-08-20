@@ -33,6 +33,29 @@ namespace GFlowSimulation {
     std::uniform_real_distribution<RealType> uniform_dist;
   };
 
+  class ProportionalRandomEngine : public RandomEngine {
+  public:
+    ProportionalRandomEngine(RealType l, RealType u, int dims) : lower(l), upper(u), dimensions(dims) {
+      uniform_dist = std::uniform_real_distribution<RealType>(0., 1.);
+    };
+    //! \brief Generate a number.
+    virtual RealType generate() override {
+      RealType x = uniform_dist(global_generator);
+
+      // \todo This is only correct for 2 dimensions.
+      
+      return 1./(1./lower + (1./upper - 1./lower)*(1.-x));
+    }
+
+    virtual RandomEngine* copy() override {
+      return new ProportionalRandomEngine(lower, upper, dimensions);
+    }
+  private:
+    RealType lower, upper;
+    int dimensions;
+    std::uniform_real_distribution<RealType> uniform_dist;
+  };
+
   class NormalRandomEngine : public RandomEngine {
   public:
     NormalRandomEngine(RealType a, RealType v) : ave(a), var(v) {

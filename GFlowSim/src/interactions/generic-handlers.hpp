@@ -169,6 +169,7 @@ namespace GFlowSimulation {
   };
 
 
+  
   template<int dims, class ForceType> class VerletListVecPairs : public Interaction {
   public:
     //! \brief Constructor.
@@ -249,6 +250,7 @@ namespace GFlowSimulation {
   };
 
 
+
   template<int dims, class ForceType> class VerletListPairs : public Interaction {
   public:
     //! \brief Constructor.
@@ -320,7 +322,7 @@ namespace GFlowSimulation {
       }
 
       // --- Go through all particles in verlet wrap.
-      if (verlet_wrap.empty()) return;
+      if (verlet_list_wrap.empty()) return;
 
       // Get the bounds and boundary conditions
       vector<BCFlag> bcs;
@@ -353,8 +355,11 @@ namespace GFlowSimulation {
     }
 
   private:
+    //! \brief The no-wrap verlet list. A list of pairs of interacting particles.
+    vector<pair<int, int> > verlet_list;
 
-    vector<pair<int, int> > verlet_list, verlet_list_wrap;
+    //! \brief The wrap verlet list. A list of pairs of interacting particles.
+    vector<pair<int, int> > verlet_list_wrap;
   };
 
 }

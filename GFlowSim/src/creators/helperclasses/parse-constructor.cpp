@@ -205,6 +205,21 @@ namespace GFlowSimulation {
       // Otherwise, throw exception.
       else throw BadStructure("Needed Min, Max, couldn't find one or both of those.");
     }
+    // Designed for producing equal volumes of particles of any fixed radius.
+    else if (param=="Proportional") {
+      if (parser.body_size()!=2) 
+        throw BadStructure("Proportional distribution needs a min and a max. Found "+toStr(parser.body_size())+" parameters.");
+
+      RealType mn = 0, mx = 0;
+      // Set the uniform random engine if we have the data we need.
+      if (parser.firstArg("Min", mn) && parser.firstArg("Max", mx)) {
+        int sim_dimensions = gflow->getSimDimensions();
+        if (sim_dimensions==1) return new UniformRandomEngine(mn, mx);
+        else return new ProportionalRandomEngine(mn, mx, sim_dimensions);
+      }
+      // Otherwise, throw exception.
+      else throw BadStructure("Needed Min, Max, couldn't find one or both of those.");
+    }
     else if (param=="Normal") {
       if (parser.body_size()!=2) 
         throw BadStructure("Normal distribution needs 2 parameters. Found "+toStr(parser.body_size())+" parameters.");

@@ -37,7 +37,7 @@ Fill: Area {
   Bounds: Full
 
   Template: TypeA {
-    Radius: Uniform {
+    Radius: Proportional {
       Min: MinR
       Max: MaxR
     }
@@ -59,6 +59,8 @@ Particle {
   Mass: inf
 }
 
-Reconcile: Remove=1.
+Reconcile: Remove=0.9
+
+Relax: 1
 
 Modifier: WindTunnel=Velocity

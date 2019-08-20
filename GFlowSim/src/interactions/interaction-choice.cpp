@@ -49,16 +49,17 @@ namespace GFlowSimulation {
     }
     else if (token==HertzToken) {
       if      (sim_dimensions==1) return new HertzVLP<1>(gflow);
-      else if (sim_dimensions==2) {
-
-        // auto force = new HertzVLP<2>(gflow);
-        // force->setKn(100 *DEFAULT_HARD_SPHERE_REPULSION); 
-        // force->setGammaN(0);
-        // return force;
-        return new HertzVLP<2>(gflow);
-      }
+      else if (sim_dimensions==2) return new HertzVLP<2>(gflow);
       else if (sim_dimensions==3) return new HertzVLP<3>(gflow);
       else if (sim_dimensions==4) return new HertzVLP<4>(gflow);
+      // Nothing per-say invalid about requesting this force in this dimension, it just isn't coded in.
+      else throw InvalidInteraction(token + ", " + toStr(sim_dimensions) + "." + err);
+    }
+    else if (token==HookeToken) {
+      if      (sim_dimensions==1) return new HookeVLP<1>(gflow);
+      else if (sim_dimensions==2) return new HookeVLP<2>(gflow);
+      else if (sim_dimensions==3) return new HookeVLP<3>(gflow);
+      else if (sim_dimensions==4) return new HookeVLP<4>(gflow);
       // Nothing per-say invalid about requesting this force in this dimension, it just isn't coded in.
       else throw InvalidInteraction(token + ", " + toStr(sim_dimensions) + "." + err);
     }

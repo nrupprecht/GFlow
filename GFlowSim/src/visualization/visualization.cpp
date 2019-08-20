@@ -159,7 +159,7 @@ namespace GFlowSimulation {
       int type, proc;
       get_values(&data[i], pos, vel, sigma, type, distance, stripex, proc);
       // If type<0, continue
-      if (type<0) continue;
+      if (type<0) continue;      
       // Find the center of the particle
       float xf = (pos[0] - left)/wx;
       float yf = (pos[1] - bott)/wy;
@@ -270,7 +270,7 @@ namespace GFlowSimulation {
       // Get values
       get_values(&data[i], pos, vel, sigma, type, distance, stripex, proc);
       // Determine the color
-      determine_color(color, i, pos, vel, type, distance, stripex, proc);
+      determine_color(color, i, pos, vel, type, distance, stripex, proc);      
       // Add the sphere to the ray tracer.
       tracer.addSphere(pos, sigma, color);
     }
@@ -464,9 +464,9 @@ namespace GFlowSimulation {
           break;
         }
         case 5: { // Color by xstripe
-          RealType stripe_width = 0.2;
+          RealType stripe_width = 0.5;
           int s = (stripex - bounds.min[1])/stripe_width;
-          int c = s%4;
+          int c = s%4;	  
           switch (c) {
             case 0:
               color = RGB_Green;
@@ -481,6 +481,7 @@ namespace GFlowSimulation {
               color = RGB_Red;
               break;
           }
+          break;
         }
         case 6: { // Color by processor data
           color = getColor(proc);

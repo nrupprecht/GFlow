@@ -1042,7 +1042,7 @@ namespace GFlowSimulation {
 
     // Reset counters.
     _last_n_ghosts_sent = _last_n_ghosts_recv = 0;
-
+    
     // Update the positions information of ghost particles on other processors.
     ghost_send_timer.start();
     for (int i=0; i<neighbor_ranks.size(); ++i) {
