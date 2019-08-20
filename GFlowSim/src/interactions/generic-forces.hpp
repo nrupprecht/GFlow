@@ -388,6 +388,9 @@ namespace GFlowSimulation {
 
       // Necessary quantities.
       RealType delta = R1 + R2 - r;
+      // This can happen on the CRC if r \approx R1 + R2.
+      if (delta<0) return;
+      // Other quantities.
       RealType R_eff = R1*R2/(R1+R2);
       RealType m1 = 1./Base::simData->Im(id1);
       RealType m2 = 1./Base::simData->Im(id2);
@@ -425,7 +428,6 @@ namespace GFlowSimulation {
         RealType Nt[dims];
         Nt[0] = -X[1];
         Nt[1] =  X[0];
-
         RealType vt = dot_vec<dims>(Vt, Nt); //sqrt(dot_vec<dims>(Vt, Vt));        
 
         // Calculate difference in velocities at the point of intersection.
@@ -436,7 +438,7 @@ namespace GFlowSimulation {
         // history of particles, even between neighbor list updates, which is too much of a pain 
         // for now.
         RealType Ft = - c1 * (K_t*0 + M_eff*vt);
-
+	// Limit the maximum force.
         RealType maxF = fabs(mu*Fn);
         if (Ft>maxF) Ft = mu*Fn;
         else if (Ft<-maxF) Ft = -maxF;
@@ -470,9 +472,9 @@ namespace GFlowSimulation {
 
   private:
     //! \brief Normal elastic constant.
-    RealType K_n = 5'000.;
+    RealType K_n = 5000.;
     //! \brief Tangential elastic constant.
-    RealType K_t = 5'000. * 2./7.;
+    RealType K_t = 5000. * 2./7.;
 
     //! \brief Normal viscoelastic constant.
     RealType gamma_n = 1000.;

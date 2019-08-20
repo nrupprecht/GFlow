@@ -1,9 +1,9 @@
 #include "interaction-choice.hpp"
 
 #include "demon_wall.hpp"
-
+    
 namespace GFlowSimulation {
-
+  
   Interaction* InteractionChoice::choose(GFlow *gflow, const string &token, int sim_dimensions) {
     string err = "Nothing per-say invalid about requesting this force in this dimension, it just isn't coded in";
     if (token==NoneToken) return nullptr;
@@ -56,7 +56,7 @@ namespace GFlowSimulation {
       else throw InvalidInteraction(token + ", " + toStr(sim_dimensions) + "." + err);
     }
     else if (token==HookeToken) {
-      if      (sim_dimensions==1) return new HookeVLP<1>(gflow);
+      if      (sim_dimensions==1) return new HookeVLP<1>(gflow);  
       else if (sim_dimensions==2) return new HookeVLP<2>(gflow);
       else if (sim_dimensions==3) return new HookeVLP<3>(gflow);
       else if (sim_dimensions==4) return new HookeVLP<4>(gflow);
