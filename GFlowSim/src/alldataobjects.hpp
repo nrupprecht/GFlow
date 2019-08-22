@@ -42,5 +42,6 @@
 
 // Volume plot objects
 #include "dataobjects/volumeplotobjects/velocity-volumeplot.hpp"
+#include "dataobjects/volumeplotobjects/radius-volumeplot.hpp"
 
 #endif // __ALL_DATA_OBJECTS_HPP__GFLOW__

@@ -13,8 +13,11 @@ namespace GFlowSimulation {
     Vec V(2);
     for (int i=0; i<simData->size(); ++i) {
       if (focus_bounds.contains(x[i])) {
+        // Have the pointer of V point to v.
         V.wrap(v[i], 2);
+        // Add to bin by position.
         addToBin(x[i][0], x[i][1], V);
+        // Stop the pointer of V from pointing to v.
         V.unwrap();
       }
     }

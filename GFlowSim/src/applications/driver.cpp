@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
   // Wait here.
   MPIObject::barrier();
   #endif
-
+  
   // --- Options
 
   // Type of simulation
@@ -75,6 +75,7 @@ int main(int argc, char **argv) {
   bool stripex = false;
   bool centercorr = false;
   bool velocityvp = false;
+  bool radiusvp = false;
   
   // Other options
   int dimensions = 2;
@@ -135,6 +136,7 @@ int main(int argc, char **argv) {
   parser.get("stripex", stripex);
   parser.get("centercorr", centercorr);
   parser.get("velocityvp", velocityvp);
+  parser.get("radiusvp", radiusvp);
   parser.get("dimensions", dimensions);
   parser.get("skin", skin);
   parser.get("quiet", quiet);
@@ -250,6 +252,7 @@ int main(int argc, char **argv) {
   if (stripex)     gflow->addModifier(new StripeX(gflow));
   if (centercorr)  gflow->addDataObject(new CenterCorrelation(gflow));
   if (velocityvp)  gflow->addDataObject(new VelocityVolumePlot(gflow));
+  if (radiusvp)    gflow->addDataObject(new RadiusVolumePlot(gflow));
   // Add this last, as it takes the most time.
   if (animate /*|| stripex*/) {
     auto pd = new PositionData(gflow);

@@ -137,6 +137,10 @@ namespace GFlowSimulation {
     }
   }
 
+  void VolumePlotObject2D::addToBin(RealType px, RealType py, RealType v) {
+    addToBin(px, py, 0, v, true);
+  }
+
   void VolumePlotObject2D::incrementBin(int x, int y) {
     ++counts[x][y];
   }

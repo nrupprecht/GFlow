@@ -71,5 +71,73 @@ namespace GFlowSimulation {
   }
 
 
+
+  // --- Simd related
+
+  /*
+
+  //! \brief Scatter a single vector across a buffer.
+  template<int i> inline void scatter_single0(int *ids, RealType **v, RealType **buffer) {
+    buffer[0][i] = v[ids[i]][0];
+  }
+
+  template<int d, int i> inline void scatter_single(int *ids, RealType **v, RealType **buffer) {
+    // Move the (d-1)-th component.
+    buffer[d-1][i] = v[ids[i]][d-1];
+    // Recursion.
+    if (d==1) scatter_single0<i>(ids, v, buffer);
+    else scatter_single<d-1, i>(ids, v, buffer);
+  }
+  
+
+
+  template<int d> inline void load_simd_float(RealType **buffer, simd_float *dst) {
+    // Load the (d-1)-th entry in the buffer.
+    dst[d-1] = simd_load(buffer[d-1]);
+    // Recursion.
+    load_simd_float<d-1>(buffer, dst);
+  }
+  template<> inline void load_simd_float<1>(RealType **buffer, simd_float *dst) {
+    dst[0] = simd_load(buffer[0]);
+  }
+
+
+  //! \brief Scatter array of structures (individual vectors) contained in the vector pointer v into an structure of arrays
+  //!  (arrays of vector components) contained in buffer.
+  template<int d> inline void scatter0(int *ids, RealType **v, RealType **buffer) {
+    scatter_single<d, 0>(ids, buffer, v);
+  }
+  template<int d, int w> inline void scatter(int *ids, RealType **v, RealType **buffer) {
+    // Scatter the w-th particle.
+    scatter_single<d, w-1>(ids, buffer, v);
+    // Recursion.
+    if (d==1) scatter0<d>(ids, buffer, v);
+    else scatter<d, w-1>(ids, buffer, v);
+  }
+
+
+  template<int d, int w> inline void stride_buffer(RealType *buffer, RealType *stride[d]) {
+    stride[d-1] = &buffer[(d-1)*w];
+    // Recursion.
+    if (w==1) stride[0] = &buffer[0];
+    else stride_buffer<d-1, w>(buffer, stride);
+  }
+
+  //! \brief Load vectors at different positions (indicated by the ids array) in v into a simd_float vector, dst.
+  template<int d> inline void load_vector(int *ids, RealType **v, simd_float *dst) {
+    // Create a buffer for AOS to SOA conversion.
+    RealType buffer[d*simd_data_size];
+    RealType *buff[d];
+
+    stride_buffer(buffer, buff);
+
+    // Pack the v-data into the buffer.
+    scatter<simd_data_size>(ids, buff, d);
+    // Load the buffer's entries into a simd_float.
+    load_simd_float<d>(buff, dst);
+  }
+  */
+
+
 }
 #endif // __GENERIC_DIMENSION_HPP__GFLOW__

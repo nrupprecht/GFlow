@@ -38,6 +38,9 @@ namespace GFlowSimulation {
     //! \brief Add a vector to the binning by position.
     void addToBin(RealType, RealType, Vec&);
 
+    //! \brief Add to the first entry in the data vec. This is good if the data_width is only one.
+    void addToBin(RealType, RealType, RealType);
+
     //! \brief Increment the count of a bin.
     void incrementBin(int, int);
 
@@ -51,7 +54,8 @@ namespace GFlowSimulation {
     //! \brief The size of the bin tuples.
     int data_width = 1;
 
-    //! \brief Binning of the data.
+    //! \brief Binning of the data. NOTE: The Vec does not (necessarily) have the dimensionality of the simulation,
+    //! it has the dimensionality data_width.
     vector<vector<Vec> > binning;
     //! \brief Binning for recording counts.
     vector<vector<int> > counts;

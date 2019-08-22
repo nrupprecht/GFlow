@@ -6,7 +6,7 @@
 
 namespace GFlowSimulation {
 
-  Visualization::Visualization() : do_wrap(false) {
+  Visualization::Visualization() : do_wrap(true) {
     createColorBank(10); // Default size - 10
     resolution = 1536;
   };
