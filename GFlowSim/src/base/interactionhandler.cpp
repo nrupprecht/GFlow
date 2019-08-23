@@ -9,8 +9,7 @@
 
 namespace GFlowSimulation {
 
-  InteractionHandler::InteractionHandler(GFlow *gflow) : Base(gflow), velocity(gflow->getSimDimensions()), 
-    process_bounds(sim_dimensions), simulation_bounds(sim_dimensions) {};
+  InteractionHandler::InteractionHandler(GFlow *gflow) : Base(gflow), velocity(gflow->getSimDimensions()), process_bounds(sim_dimensions), simulation_bounds(sim_dimensions) {};
 
   InteractionHandler::~InteractionHandler() {
     if (positions) dealloc_array_2d(positions);
@@ -83,7 +82,6 @@ namespace GFlowSimulation {
 
   void InteractionHandler::construct() {
     // \todo Some of these things should not be called if there are multiple different interaction handlers.
-
     
     // Remove all halo and ghost particles, wrap particles, if parallel then pass particles and figure out ghost particles, 
     // and do particle removal. Don't time this part with the interactionhandler timer, it counts as MPI and simdata related
@@ -201,6 +199,9 @@ namespace GFlowSimulation {
       }
     }
     max_small_sigma = 1.025*max_under;
+
+    // Syncronize max small sigma - take the max.
+    MPIObject::mpi_max(max_small_sigma);
   }
 
   bool InteractionHandler::check_needs_remake() {

@@ -367,6 +367,12 @@ namespace GFlowSimulation {
     else return nullptr;
   }
 
+  RealType** SimData::VectorData(const string& name) {
+    int i = getVectorData(name);
+    if (-1<i) return vdata[i];
+    else return nullptr;
+  }
+
   RealType* SimData::Sg() {
     return sdata[0];
   }
@@ -388,6 +394,12 @@ namespace GFlowSimulation {
     else return nullptr;
   }
 
+  RealType* SimData::ScalarData(const string& name) {
+    int i = getScalarData(name);
+    if (-1<i) return sdata[i];
+    else return nullptr;
+  }
+
   int* SimData::Type() {
     return idata[0];
   }
@@ -406,6 +418,12 @@ namespace GFlowSimulation {
 
   int* SimData::IntegerData(int i) {
     if (i<idata.size()) return idata[i];
+    else return nullptr;
+  }
+
+  int* SimData::IntegerData(const string& name) {
+    int i = getIntegerData(name);
+    if (-1<i) return idata[i];
     else return nullptr;
   }
 
@@ -999,23 +1017,11 @@ namespace GFlowSimulation {
     }
     ghost_search_timer.stop();
 
-    
-    // --- Make sure the entries of buffer list are large enough.
-   
-    // for (int i=0; i<neighbor_ranks.size(); ++i) {
-    //   // Find the number of elements we need to send. The total amount of space we need will be s*ghost_data_width, since each
-    //   // particle needs size ghost_data_width.
-    //   int s = send_ids[i].size();
-    //   // If the i-th buffer is smaller than it needs to be, resize it.
-    //   if (buffer_list[i].size()<s*ghost_data_width) buffer_list[i].resize(s*ghost_data_width);
-    // }
-
-
     // --- Send ghost particles to other processors.
     ghost_send_timer.start();
     // Send particle information, but do not delete the original particles, since they will be ghosts on the other processors.
     for (int i=0; i<neighbor_ranks.size(); ++i)
-      send_particle_data(send_ghost_list[i], neighbor_ranks[i], buffer_list[i], &request_list[i], &request, send_ghost_tag, false);
+      send_particle_data_relative(send_ghost_list[i], neighbor_ranks[i], buffer_list[i], &request_list[i], &request, send_ghost_tag, i);
     ghost_send_timer.stop();
 
     // Reset n_ghosts.
@@ -1042,7 +1048,7 @@ namespace GFlowSimulation {
 
     // Reset counters.
     _last_n_ghosts_sent = _last_n_ghosts_recv = 0;
-    
+
     // Update the positions information of ghost particles on other processors.
     ghost_send_timer.start();
     for (int i=0; i<neighbor_ranks.size(); ++i) {
@@ -1054,10 +1060,19 @@ namespace GFlowSimulation {
         _last_n_ghosts_sent += size;
         // Make sure buffer is large enough.
         if (buffer_list[i].size()<size*ghost_data_width) buffer_list[i].resize(size*ghost_data_width);
+
+        // Find the center of the neighbor's bounds.
+        RealType bcm[4], xrel[4]; // Assumes sim_dimensions <= 4.
+        topology->get_neighbor_bounds(i).center(bcm);
+
         // Pack the data into buffer_list
         int j = 0;
         for (int id : send_ghost_list[i]) {
-          copyVec(X(id), &buffer_list[i][ghost_data_width*j], sim_dimensions);
+          // Get the position of the particle, relative to the other processor.
+          gflow->getDisplacement(X(id), bcm, xrel);
+          plusEqVec(xrel, bcm, sim_dimensions);
+          // Copy the (relative) vector to the buffer.
+          copyVec(xrel, &buffer_list[i][ghost_data_width*j], sim_dimensions);
           ++j;
         }
         // Send the data (non-blocking) back to the processor.
@@ -1131,6 +1146,38 @@ namespace GFlowSimulation {
     }
   }
 
+  inline void SimData::send_particle_data_relative(const vector<int>& send_ids, int n_rank, vector<RealType>& buffer, MPI_Request* size_request, MPI_Request* send_request, int tag, int n_index) {
+    // How many particles to send.
+    int size = send_ids.size();
+    // Tell the processor how many particles to expect. Use a non-blocking send, store the request 
+    MPIObject::send_single(size, n_rank, send_size_tag);
+    // Send the actual particles, if there are any.
+    if (size>0) {
+
+      // Find the center of the neighbor's bounds.
+      RealType bcm[4], xrel[4]; // Assumes sim_dimensions <= 4.
+      topology->get_neighbor_bounds(n_index).center(bcm);
+
+      // Make sure buffer is big enough to send data.
+      if (buffer.size()<size*data_width) buffer.resize(size*data_width);
+      // Send the actual data. Copy data into buffer
+      for (int j=0; j<size; ++j) {
+        int id = send_ids[j];
+        // Get the position of the particle, relative to the other processor.
+        gflow->getDisplacement(X(id), bcm, xrel);
+        plusEqVec(xrel, bcm, sim_dimensions);
+        // Copy particle information to the buffer, using the relative position. \todo Automate a way to specify arbitrary subsets of the particle data to send.
+        copyVec(xrel, &buffer[data_width*j], sim_dimensions); // Position
+        copyVec(V(id), &buffer[data_width*j + sim_dimensions], sim_dimensions); // Velocity
+        buffer[data_width*j + 2*sim_dimensions + 0] = Sg(id); // Radius
+        buffer[data_width*j + 2*sim_dimensions + 1] = Im(id); // Inverse mass
+        buffer[data_width*j + 2*sim_dimensions + 2] = Type(id); // Type
+      }
+      // Send the data (non-blocking).
+      MPI_Isend(buffer.data(), size*data_width, MPI_FLOAT, n_rank, tag, MPI_COMM_WORLD, send_request);
+    }
+  }
+
   inline int SimData::recv_new_particle_data(int n_rank, vector<RealType>& buffer, int tag) {
     // We will get the size from the other processor.
     int size = 0;
@@ -1172,23 +1219,6 @@ namespace GFlowSimulation {
     }
     // Return the number of particles that were received.
     return size;
-  }
-
-  inline int SimData::recv_particle_data(int n_rank, vector<RealType>& buffer) {
-
-    MPI_Status status;
-    MPI_Probe(n_rank, 0, MPI_COMM_WORLD, &status);
-
-    int size = 0;
-    MPI_Get_count(&status, MPI_INT, &size);
-
-    if (size>0) {
-
-
-    }
-
-    return size;
-
   }
 
 #endif // USE_MPI == 1

@@ -58,8 +58,14 @@ namespace GFlowSimulation {
     RealType rho = simData->size() / process_bounds.vol();
     RealType candidate = inv_sphere_volume((target_list_size)/rho + 0.5*sphere_volume(max_small_sigma, sim_dimensions), sim_dimensions) - 2*max_small_sigma;
     skin_depth = max(static_cast<RealType>(0.5 * max_small_sigma), candidate);
+    // Use the same skin depth on all processors - take the average.
+    if (topology) {
+      MPIObject::mpi_sum(skin_depth);
+      skin_depth /= static_cast<RealType>(topology->getNumProc());
+    }
 
-    // Use max_small_sigma
+    // Use max_small_sigma. It is important that all processors share a consistent min_small_cutoff.
+    // This can be achieved by sharing a max_small_sigma, and skin_depth.
     target_cell_size = min_small_cutoff = 2*max_small_sigma+skin_depth;
 
     // Calculate cell grid data

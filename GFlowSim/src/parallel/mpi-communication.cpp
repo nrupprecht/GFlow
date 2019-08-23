@@ -78,6 +78,14 @@ namespace GFlowSimulation {
     #endif
   }
 
+  void MPIObject::mpi_max(RealType& val) {
+    #if USE_MPI == 1
+    RealType max_val = 0;
+    MPI_Allreduce(&val, &max_val, 1, MPI_FLOAT, MPI_MAX, MPI_COMM_WORLD);
+    val = max_val;
+    #endif
+  }
+
   void MPIObject::mpi_and(bool& val) {
     #if USE_MPI == 1
     int v = val ? 1 : 0, gv = 1;

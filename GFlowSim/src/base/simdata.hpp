@@ -88,6 +88,7 @@ namespace GFlowSimulation {
     RealType&  F(int, int);
 
     RealType** VectorData(int);
+    RealType** VectorData(const string&);
 
     // --- Get scalar data
     RealType* Sg();
@@ -96,6 +97,7 @@ namespace GFlowSimulation {
     RealType& Im(int);
 
     RealType* ScalarData(int);
+    RealType* ScalarData(const string&);
 
     // --- Get integer data
     int* Type();
@@ -104,6 +106,7 @@ namespace GFlowSimulation {
     int& Id(int);
 
     int* IntegerData(int);
+    int* IntegerData(const string&);
 
     // --- Constant accessors
 
@@ -397,11 +400,11 @@ namespace GFlowSimulation {
     //! from this processor.
     inline void send_particle_data(const vector<int>&, int, vector<RealType>&, MPI_Request*, MPI_Request*, int, bool=false);
 
+    //! \brief Send particles, so that their position relative to the other processor is minimal. Used for sending ghost particles.
+    inline void send_particle_data_relative(const vector<int>&, int, vector<RealType>&, MPI_Request*, MPI_Request*, int, int);
+
     //! \brief Recieve particle information, and use it to create new particles. Return the number of particles recieved.
     inline int recv_new_particle_data(int, vector<RealType>&, int);
-
-    //! \brief ...
-    inline int recv_particle_data(int, vector<RealType>&);
 
     //! \brief Width of data to send when migrating particles.
     int data_width = 0;
@@ -411,6 +414,10 @@ namespace GFlowSimulation {
 
     //! \brief All the processors that are neighbors.
     vector<int> neighbor_ranks;
+
+    //! \brief A vector of flags that are true if the neighbor may be wrapping adjacent.
+    vector<bool> neighbor_wraps;
+
 
     //! \brief Maps rank to position in neighbor_ranks.
     std::map<int, int> neighbor_map;

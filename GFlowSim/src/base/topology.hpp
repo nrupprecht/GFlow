@@ -34,6 +34,9 @@ namespace GFlowSimulation {
     //! \brief Whether this particle should be owned by this processor.
     virtual bool owned_particle(const RealType*) = 0;
 
+    //! \brief Return the bounds of the i-th neighboring processor.
+    virtual const Bounds& get_neighbor_bounds(int) const = 0;
+
     //! \brief Get the bounds for the whole simulation.
     Bounds getSimulationBounds() const;
 

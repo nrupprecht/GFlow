@@ -38,6 +38,9 @@ namespace GFlowSimulation {
     //! \brief Perform an MPI AllReduce, using Min.
     static void mpi_min(RealType&);
 
+    //! \brief Perform an MPI AllReduce, using Max.
+    static void mpi_max(RealType&);
+
     //! \brief Sync the value of a boolean, performing a logical AND.
     static void mpi_and(bool&);
 

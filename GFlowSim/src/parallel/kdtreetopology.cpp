@@ -1,4 +1,6 @@
 #include "kdtreetopology.hpp"
+// Other files
+#include "../utility/vectormath.hpp"
 
 namespace GFlowSimulation {
 
@@ -28,8 +30,19 @@ namespace GFlowSimulation {
     container.clear();
 
     for (int i=0; i<neighbor_ranks.size(); ++i) {
-      if (neighbor_nodes[i]->bounds.distance(x) < cutoff)
+
+      // Find the minimum image displacement between the center of the bounds and the particle.
+
+      RealType bcm[4], dx[4]; // Assumes sim_dimensions <= 4.
+      neighbor_nodes[i]->bounds.center(bcm); 
+      gflow->getDisplacement(x, bcm, dx);
+      // Get the position of the particle, relative to the bounds.
+      plusEqVec(dx, bcm, sim_dimensions);
+
+      if (neighbor_nodes[i]->bounds.distance(dx) < cutoff) {
         container.push_back(i);
+        //if (fabs(dx[0] - x[0]) > 0.01) cout << rank << ", (" << x[0] << ", " << x[1] << ")" << ", (" << dx[0] << ", " << dx[1] << ")" << endl;
+      }
     }
   }
 
@@ -118,27 +131,46 @@ namespace GFlowSimulation {
   }
 
   void KDTreeTopology::find_neighbors() {
+    // Helping vectors.
+    Vec bcm(sim_dimensions), cm(sim_dimensions), dx(sim_dimensions);
+    // Get the center of this processor's bounds.
+    process_bounds.center(cm.data);
+
     for (auto node : all_processor_nodes) {
       Bounds& bounds = node->bounds;
 
       // \todo Processors may be neighbors if they are "close enough" to each other, even if they don't directly touch.
       // \todo And what about large particles?
+      RealType cutoff = 0.1; // \todo Use the cutoff here to fix the above problems.
+
+      // Get minimim image dispacement between centers of the bounds.
+      bounds.center(bcm.data);
+      gflow->getDisplacement(bcm.data, cm.data, dx.data);
 
       // Check if the processor bounds are adjacent.
       bool adjacent = true;
-      for (int d=0; d<sim_dimensions; ++d) {
-        if (bounds.min[d]<=process_bounds.max[d] && process_bounds.min[d]<=bounds.max[d]);
-        else {
-          adjacent = false;
-          break;
-        }
+      for (int d=0; d<sim_dimensions && adjacent; ++d) {
+        if (0.5*(process_bounds.wd(d) + bounds.wd(d)) + cutoff < dx[d]) adjacent = false;
       }
+
+      // bool adjacent = true;
+      // for (int d=0; d<sim_dimensions; ++d) {
+      //   if (bounds.min[d]<=process_bounds.max[d] && process_bounds.min[d]<=bounds.max[d]);
+      //   else {
+      //     adjacent = false;
+      //     break;
+      //   }
+      // }
 
       if (adjacent) {
         neighbor_nodes.push_back(node);
         neighbor_ranks.push_back(node->rank);
       }
     }
+  }
+
+  const Bounds& KDTreeTopology::get_neighbor_bounds(int i) const {
+    return neighbor_nodes.at(i)->bounds;
   }
 
 }
