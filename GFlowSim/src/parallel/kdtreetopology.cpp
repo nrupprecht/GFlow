@@ -86,7 +86,18 @@ namespace GFlowSimulation {
     }
 
     // Correct dimension
-    dim %= sim_dimensions;
+    //dim %= sim_dimensions;
+
+    // Decide on splitting dimension. This splits along the largest dimension.
+    RealType maxwidth = node->bounds.wd(0);
+    dim = 0;
+    for (int d=0; d<sim_dimensions; ++d) {
+      if (node->bounds.wd(d)>maxwidth) {
+        maxwidth = node->bounds.wd(d);
+        dim = d;
+      }
+    }
+
     // Assign splitting dimension.
     node->split_dim = dim;
 

@@ -205,8 +205,6 @@ namespace GFlowSimulation {
     // Update particles in the cells
     update_cells();
 
-    RealType max_reasonable = sqr(0.9*simulation_bounds.wd(0));
-
     // Tuples
     int *tuple1 = new int[sim_dimensions], *tuple2 = new int[sim_dimensions];
     int *cell_index = new int[sim_dimensions], *center = new int[sim_dimensions];
@@ -329,8 +327,12 @@ namespace GFlowSimulation {
     // Update particles in the cells
     update_cells();
 
-    // Set a "maximum reasonable distance"
-    RealType max_reasonable = sqr(0.5*simulation_bounds.wd(0));
+    // Maximum reasonable distance.
+    RealType max_reasonable = sqr(0.9*simulation_bounds.wd(0));
+    for (int d=1; d<sim_dimensions; ++d) {
+      RealType mr = sqr(0.9*simulation_bounds.wd(d));
+      if (mr<max_reasonable) max_reasonable = mr;
+    }
 
     // If there are no interaction, we don't need to make any verlet lists
     if (gflow->getInteractions().empty()) return;

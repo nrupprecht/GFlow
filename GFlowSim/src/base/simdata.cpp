@@ -1166,6 +1166,7 @@ namespace GFlowSimulation {
         // Get the position of the particle, relative to the other processor.
         gflow->getDisplacement(X(id), bcm, xrel);
         plusEqVec(xrel, bcm, sim_dimensions);
+
         // Copy particle information to the buffer, using the relative position. \todo Automate a way to specify arbitrary subsets of the particle data to send.
         copyVec(xrel, &buffer[data_width*j], sim_dimensions); // Position
         copyVec(V(id), &buffer[data_width*j + sim_dimensions], sim_dimensions); // Velocity

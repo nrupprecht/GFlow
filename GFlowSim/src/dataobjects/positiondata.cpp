@@ -34,6 +34,8 @@ namespace GFlowSimulation {
 
     // Record all the data
     vector<float> data;
+
+    // Store the data for this processor.
     storeData.store(data);
 
     #if USE_MPI == 1
