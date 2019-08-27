@@ -355,6 +355,20 @@ namespace GFlowSimulation {
     // Get the boundary conditions
     const BCFlag *bcs = gflow->getBCs();
     int *search_dims = new int[sim_dimensions];
+
+    
+    /*
+    for (int id1=0; id1<simData->size(); ++id1) {
+      RealType r = sg[id1];
+      for (int id2=id1+1; id2<simData->size(); ++id2) {
+        RealType d = gflow->getDistance(x[id1], x[id2]);
+        if (sqr(d) < sqr(r + sg[id2] + skin_depth))
+          pair_interaction(id1, id2);
+      }
+    }
+    */
+
+    
     for (const auto &c : cells) {
       for (auto p=c.particle_ids.begin(); p!=c.particle_ids.end(); ++p) {
         // The id of the particle
@@ -432,6 +446,7 @@ namespace GFlowSimulation {
         }
       }
     }
+    
     // Close all
     forceMaster->close();
 
@@ -475,12 +490,31 @@ namespace GFlowSimulation {
     //! For now, just use halo cells whenever possible.
     for (int d=0; d<sim_dimensions; ++d) {
       if (bcs[d]==BCFlag::WRAP) {
-        border_type_up[d] = 1;
-        border_type_down[d] = 1;
+        // This processor takes up the whole bounds in this dimension, there are no processors above or below this one.
+        if (process_bounds.wd(d)==simulation_bounds.wd(d)) {
+          border_type_up[d]   = 0;
+          border_type_down[d] = 0;
+        }
+        // There are one or more processors above and below this one.
+        else {
+          // If this processor expects ghost particles that are wrapped.
+          if (process_bounds.max[d]==simulation_bounds.max[d]) border_type_up[d] = 2;
+          // Ghost particles, but not wrapped ones.
+          else border_type_up[d] = 1;
+
+          // If this processor expects ghost particles that are wrapped.
+          if (process_bounds.min[d]==simulation_bounds.min[d]) border_type_down[d] = 2;
+          // Ghost particles, but not wrapped ones.
+          else border_type_down[d] = 1;
+        }
       }
       else {
-        border_type_up[d] = 0;
-        border_type_down[d] = 0;
+        // Are there ghost particles?
+        if (process_bounds.max[d]==simulation_bounds.max[d]) border_type_up[d] = 0;
+        else border_type_up[d] = 1;
+        // Are there ghost particles?
+        if (process_bounds.min[d]==simulation_bounds.min[d]) border_type_down[d] = 0;
+        else border_type_down[d] = 1;
       }
     }
     
@@ -553,9 +587,6 @@ namespace GFlowSimulation {
     // --- Assign cell types, adjacent cells, set cell bounds
     for (int c=0; c<size; ++c) {
       linear_to_tuple(c, tuple1);
-      //bool edge = false;
-      //for (int d=0; d<sim_dimensions; ++d) edge |= ((tuple1[d]==0 || tuple1[d]==dims[d]-1) && dim_shift_down[d]);
-      //if (edge) continue;
 
       // Set cell neighbors
       for (auto n : neighbor_indices) {
@@ -618,17 +649,19 @@ namespace GFlowSimulation {
     bool good_index = true;
     const BCFlag *bcs = gflow->getBCs();
     for (int d=0; d<sim_dimensions; ++d) {
-      if (index[d]>=dims[d]-dim_shift_up[d]) {
+      // Going HIGHER than the border.
+      if (index[d]>=dims[d]) {
         // Check if we should wrap
-        if (bcs[d]==BCFlag::WRAP && wrap)
-          index[d] -= (dims[d]-dim_shift_down[d]-dim_shift_up[d]);
+        if (bcs[d]==BCFlag::WRAP && border_type_up[d]==0 && wrap)
+          index[d] -= dims[d];
         // If not, this is a bad index
         else good_index = false;
       }
-      if (index[d]<dim_shift_down[d]) {
+      // Going LOWER than the border.
+      if (index[d]<0) {
         // Check if we should wrap
-        if (bcs[d]==BCFlag::WRAP && wrap) 
-          index[d] += (dims[d]-dim_shift_down[d]-dim_shift_up[d]);
+        if (bcs[d]==BCFlag::WRAP && border_type_down[d]==0 && wrap) 
+          index[d] += dims[d];
         // If not, this is a bad index
         else good_index = false;
       }

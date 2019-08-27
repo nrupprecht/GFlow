@@ -50,6 +50,10 @@ namespace GFlowSimulation {
       return 2*PI/sqrt(2*repulsion/mass);
     }
 
+    void setRepulsion(RealType r) {
+      repulsion = 0<=r ? r : 0;
+    }
+
   private:
     //! \brief HThe strength of the force.
     RealType repulsion = DEFAULT_HARD_SPHERE_REPULSION;
@@ -438,7 +442,7 @@ namespace GFlowSimulation {
         // history of particles, even between neighbor list updates, which is too much of a pain 
         // for now.
         RealType Ft = - c1 * (K_t*0 + M_eff*vt);
-	// Limit the maximum force.
+	       // Limit the maximum force.
         RealType maxF = fabs(mu*Fn);
         if (Ft>maxF) Ft = mu*Fn;
         else if (Ft<-maxF) Ft = -maxF;

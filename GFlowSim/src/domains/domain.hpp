@@ -108,12 +108,12 @@ namespace GFlowSimulation {
 
     //! \brief What type of borders there are in the "up" directions.
     //!
-    //! 0 - None, 1 - Halo, 2 - Wrap.
+    //! 0 - No ghost particles, 1 - Ghost particles, no wrapping, 2 - Ghost particles, wrapping.
     int *border_type_up;
 
     //! \brief What type of borders there are in the "down" directions.
     //!
-    //! 0 - None, 1 - Halo, 2 - Wrap.
+    //! 0 - No ghost particles, 1 - Ghost particles, no wrapping, 2 - Ghost particles, wrapping.
     int *border_type_down;
 
     int *dim_shift_up;
