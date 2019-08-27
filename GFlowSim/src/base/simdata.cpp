@@ -1153,7 +1153,6 @@ namespace GFlowSimulation {
     MPIObject::send_single(size, n_rank, send_size_tag);
     // Send the actual particles, if there are any.
     if (size>0) {
-
       // Find the center of the neighbor's bounds.
       RealType bcm[4], xrel[4]; // Assumes sim_dimensions <= 4.
       topology->get_neighbor_bounds(n_index).center(bcm);
@@ -1166,8 +1165,8 @@ namespace GFlowSimulation {
         // Get the position of the particle, relative to the other processor.
         gflow->getDisplacement(X(id), bcm, xrel);
         plusEqVec(xrel, bcm, sim_dimensions);
-
-        // Copy particle information to the buffer, using the relative position. \todo Automate a way to specify arbitrary subsets of the particle data to send.
+        // Copy particle information to the buffer, using the relative position. 
+        // \todo Automate a way to specify arbitrary subsets of the particle data to send.
         copyVec(xrel, &buffer[data_width*j], sim_dimensions); // Position
         copyVec(V(id), &buffer[data_width*j + sim_dimensions], sim_dimensions); // Velocity
         buffer[data_width*j + 2*sim_dimensions + 0] = Sg(id); // Radius
@@ -1201,19 +1200,6 @@ namespace GFlowSimulation {
         RealType r    = buffer[data_width*j + 2*sim_dimensions + 0];
         RealType im   = buffer[data_width*j + 2*sim_dimensions + 1];
         RealType type = buffer[data_width*j + 2*sim_dimensions + 2];
-
-        // CHECK
-        int t = static_cast<int>(type);
-        if (t>0) {
-          cout << "Rank " << topology->getRank() << " got bad data. Type was " << t << " Throwing.\n";
-
-          int count = 0;
-          MPI_Get_count(&status, MPI_FLOAT, &count);
-
-          cout << status.MPI_TAG << " vs " << tag << ", " << count << " vs " << size*data_width << endl;
-          throw false;
-        }
-
         // Add particle to simdata.
         addParticle(X.data, V.data, r, im, static_cast<int>(type));
       } 
