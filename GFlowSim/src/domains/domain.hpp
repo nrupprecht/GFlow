@@ -15,6 +15,7 @@ namespace GFlowSimulation {
     //! \brief Destructor.
     virtual ~Domain() override;
 
+    //! \brief Initialize the domain.
     virtual void initialize() override;
 
     //! \brief Get all the particles within a radius of another particle
@@ -60,6 +61,9 @@ namespace GFlowSimulation {
     //!
     //! This effects the dimensions of the domain, since there may need to be halo/ghost cells in some dimensions.
     inline void assign_border_types();
+
+    //! \brief Calculate a good skin depth.
+    inline void calculate_skin_depth();
 
     //! \brief Calculates the domain cell dimensions, widths, and inverse widths given 
     //! that the cutoff has been calculated. 
@@ -116,7 +120,11 @@ namespace GFlowSimulation {
     //! 0 - No ghost particles, 1 - Ghost particles, no wrapping, 2 - Ghost particles, wrapping.
     int *border_type_down;
 
+    //! \brief The number of halo or ghost sectors added below.
+    //!
+    //! We don't actually need this number (as of now), we only need dim_shift_down, but we keep it for completeness.
     int *dim_shift_up;
+    //! \brief The number of halo or ghost sectors added below.
     int *dim_shift_down;
 
     //! \brief A vector holding all the cells in the domain.

@@ -1,6 +1,7 @@
 #include "kdtreetopology.hpp"
 // Other files
 #include "../utility/vectormath.hpp"
+#include "../base/interactionhandler.hpp"
 
 namespace GFlowSimulation {
 
@@ -30,9 +31,7 @@ namespace GFlowSimulation {
     container.clear();
 
     for (int i=0; i<neighbor_ranks.size(); ++i) {
-
       // Find the minimum image displacement between the center of the bounds and the particle.
-
       RealType bcm[4], dx[4]; // Assumes sim_dimensions <= 4.
       neighbor_nodes[i]->bounds.center(bcm); 
       gflow->getDisplacement(x, bcm, dx);
@@ -41,7 +40,6 @@ namespace GFlowSimulation {
 
       if (neighbor_nodes[i]->bounds.distance(dx) < cutoff) {
         container.push_back(i);
-        //if (fabs(dx[0] - x[0]) > 0.01) cout << rank << ", (" << x[0] << ", " << x[1] << ")" << ", (" << dx[0] << ", " << dx[1] << ")" << endl;
       }
     }
   }
@@ -148,11 +146,11 @@ namespace GFlowSimulation {
     process_bounds.center(cm.data);
 
     for (auto node : all_processor_nodes) {
+      // Get the bounds for the node.
       Bounds& bounds = node->bounds;
 
-      // \todo Processors may be neighbors if they are "close enough" to each other, even if they don't directly touch.
-      // \todo And what about large particles?
-      RealType cutoff = 0.1; // \todo Use the cutoff here to fix the above problems.
+      // \todo What about large particles?
+      RealType cutoff = handler->getSkinDepth();
 
       // Get minimim image dispacement between centers of the bounds.
       bounds.center(bcm.data);

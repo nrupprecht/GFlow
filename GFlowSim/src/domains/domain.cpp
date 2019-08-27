@@ -55,14 +55,7 @@ namespace GFlowSimulation {
     assign_border_types();
 
     // Calculate skin depth
-    RealType rho = simData->size() / process_bounds.vol();
-    RealType candidate = inv_sphere_volume((target_list_size)/rho + 0.5*sphere_volume(max_small_sigma, sim_dimensions), sim_dimensions) - 2*max_small_sigma;
-    skin_depth = max(static_cast<RealType>(0.5 * max_small_sigma), candidate);
-    // Use the same skin depth on all processors - take the average.
-    if (topology) {
-      MPIObject::mpi_sum(skin_depth);
-      skin_depth /= static_cast<RealType>(topology->getNumProc());
-    }
+    calculate_skin_depth();
 
     // Use max_small_sigma. It is important that all processors share a consistent min_small_cutoff.
     // This can be achieved by sharing a max_small_sigma, and skin_depth.
@@ -484,8 +477,8 @@ namespace GFlowSimulation {
   }
 
   inline void Domain::assign_border_types() {
-    
-    const BCFlag *bcs = Base::gflow->getBCs(); // Get the boundary condition flags
+    // Get the boundary condition flags
+    const BCFlag *bcs = Base::gflow->getBCs(); 
     //! \todo Use topology object to determine border types.
     //! For now, just use halo cells whenever possible.
     for (int d=0; d<sim_dimensions; ++d) {
@@ -517,7 +510,17 @@ namespace GFlowSimulation {
         else border_type_down[d] = 1;
       }
     }
-    
+  }
+
+  inline void Domain::calculate_skin_depth() {
+    RealType rho = simData->size() / process_bounds.vol();
+    RealType candidate = inv_sphere_volume((target_list_size)/rho + 0.5*sphere_volume(max_small_sigma, sim_dimensions), sim_dimensions) - 2*max_small_sigma;
+    skin_depth = max(static_cast<RealType>(0.5 * max_small_sigma), candidate);
+    // Use the same skin depth on all processors - take the average.
+    if (topology) {
+      MPIObject::mpi_sum(skin_depth);
+      skin_depth /= static_cast<RealType>(topology->getNumProc());
+    }
   }
 
   void Domain::calculate_domain_cell_dimensions() {
