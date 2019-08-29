@@ -396,6 +396,13 @@ namespace GFlowSimulation {
     //! \brief Exchange ghost particle information with neighboring domains.
     inline void update_ghost_particles();
 
+    //! \brief Send ghost particle updates to other processors.
+    inline void send_ghost_updates();
+    //! \brief Start receiving ghost particle updates.
+    inline void start_ghost_recv();
+    //! \brief Receive ghost particle updates from other processors and store data.
+    inline void recv_ghost_updates();
+
     //! \brief Pack up the particle data for the specified ids and send it to another processor, optionally deleting the original particles
     //! from this processor.
     inline void send_particle_data(const vector<int>&, int, vector<RealType>&, MPI_Request*, MPI_Request*, int, bool=false);

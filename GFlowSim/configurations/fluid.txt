@@ -1,0 +1,68 @@
+
+// This is a 2d simulation
+Dimensions: 2
+
+// Set the simulation bounds
+Bounds: {
+  : -Front, Length  // X
+  : -Height, Height // Y
+}
+
+// VARIABLES
+Var: MinR=0.05
+Var: MaxR=0.05
+Var: Velocity=2.2
+Var: Length=40
+Var: Height=20
+Var: Front=20
+
+Integrator: VelocityVerlet
+
+Boundary: {
+  : Wrap
+  : Repulse
+}
+
+// Set the number of particle types
+NTypes: 2
+
+// Creates the force network.
+Force-grid: {
+  : 0, 0, LennardJones
+  : 0, 1, HardSphere
+}
+
+// Fill an area with particles
+Fill: Area {
+  // Fill all the simulation with particles
+  Bounds: Full
+
+  Template: TypeA {
+    Radius: Proportional {
+      Min: MinR
+      Max: MaxR
+    }
+    Mass: Density=1
+    Type: 0
+  }
+
+  Number: Phi=0.1 {
+    TypeA : 1
+  }
+
+  Velocity: Velocity
+}
+
+Particle {
+  Position: 0, 0
+  Sigma: 5
+  Velocity: 0, 0
+  Mass: inf
+  Type: 1
+}
+
+Reconcile: Remove=0.9
+
+Relax: 1
+
+Modifier: WindTunnel=Velocity

@@ -563,7 +563,7 @@ namespace GFlowSimulation {
         fout << "     Interaction " << c << ":           length " << it_size << "\n";
         ++c;
       }
-      fout << "  - Inter.s per particle:     " << static_cast<double>(inters) / particles << "\n";
+      fout << "  - Inter.s per particle:     " << static_cast<double>(inters) / simData->number() << "\n";
       fout << "\n";
     }
 

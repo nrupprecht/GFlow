@@ -198,7 +198,7 @@ namespace GFlowSimulation {
       // --- Do interactions
 
       // Clear force buffers
-      clearForces(); 
+      clearForces();
 
       // Reflect or repulse particles. We only need to wrap before sectorizing particles, but we need to apply forces at every timestep.
       reflectPositions(); // This only involves velocities, so it could be done before or after clear forces.

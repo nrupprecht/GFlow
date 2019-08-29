@@ -1043,11 +1043,17 @@ namespace GFlowSimulation {
   }
 
   inline void SimData::update_ghost_particles() {
+    send_ghost_updates();
+    start_ghost_recv();
+    recv_ghost_updates();
+  }
+
+  inline void SimData::send_ghost_updates() {
     // Start mpi timer.
     gflow->startMPIGhostTimer();
 
-    // Reset counters.
-    _last_n_ghosts_sent = _last_n_ghosts_recv = 0;
+    // Reset counter.
+    _last_n_ghosts_sent = 0;
 
     // Update the positions information of ghost particles on other processors.
     ghost_send_timer.start();
@@ -1081,6 +1087,17 @@ namespace GFlowSimulation {
     }
     ghost_send_timer.stop();
 
+    // Stop mpi timer.
+    gflow->stopMPIGhostTimer();
+  }
+
+  inline void SimData::start_ghost_recv() {
+    // Start mpi timer.
+    gflow->startMPIGhostTimer();
+
+    // Reset counter.
+    _last_n_ghosts_recv = 0;
+
     // Start non-blocking receives of ghost particle data.
     ghost_recv_timer.start();
     for (int i=0; i<neighbor_ranks.size(); ++i) {
@@ -1095,6 +1112,14 @@ namespace GFlowSimulation {
       }
     }
     ghost_recv_timer.stop();
+
+    // Stop mpi timer.
+    gflow->stopMPIGhostTimer();
+  }
+
+  inline void SimData::recv_ghost_updates() {
+    // Start mpi timer.
+    gflow->startMPIGhostTimer();
 
     // Collect received data and pack it.
     for (int i=0, p_id=_first_ghost; i<neighbor_ranks.size(); ++i) {
