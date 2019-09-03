@@ -34,23 +34,19 @@ namespace GFlowSimulation {
     do_potential = s;
   }
 
-  void Interaction::addPair(const int id1, const int id2) {
-    verlet_wrap.push_back(id1);
-    verlet_wrap.push_back(id2);
-  }
-
-  void Interaction::addPairNW(const int id1, const int id2) {
-    verlet.push_back(id1);
-    verlet.push_back(id2);
+  void Interaction::addPair(const int id1, const int id2, const int list) {
+    verlet[list].push_back(id1);
+    verlet[list].push_back(id2);
   }
 
   void Interaction::clear() {
-    verlet.clear();
-    verlet_wrap.clear();
+    verlet[0].clear();
+    verlet[1].clear();
+    verlet[2].clear();
   }
 
   int Interaction::size() const {
-    return (verlet.size() + verlet_wrap.size())/2;
+    return (verlet[0].size() + verlet[1].size() + verlet[2].size())/2;
   }
 
 }

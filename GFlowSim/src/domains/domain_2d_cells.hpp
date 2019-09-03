@@ -51,6 +51,16 @@ namespace GFlowSimulation {
     //! (5) Calls the ForceMaster clear() function
     //! (6) Calls fillXVL() to record the positions of the particles
     virtual void construct() override;
+
+    //! \brief Construct interactions for a single particle
+    //!
+    //! If the insert flag is set to true, the particle will first be added to the relevent domain or data structure
+    //! (if applicable), if not, it will not be added.
+    //! This function should be called after construct.
+    virtual void constructFor(int, bool=false) override {
+      cout << "Warning: constructFor not implemented for this class." << endl;
+      exit(0);
+    }
  
   private:
 

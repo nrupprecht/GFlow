@@ -41,9 +41,9 @@ namespace GFlowSimulation {
     vector<int> moved;
 
     // --- Go through all particles
-    for (int i=0; i<verlet.size(); i+=2) {
-      int id1 = verlet[i];
-      int id2 = verlet[i+1];
+    for (int i=0; i<verlet[0].size(); i+=2) {
+      int id1 = verlet[0][i];
+      int id2 = verlet[0][i+1];
       // Check if the types are good
       if (type[id1]<0 || type[id2]<0) continue;
       // The object of larger type will be the wall, make this id2

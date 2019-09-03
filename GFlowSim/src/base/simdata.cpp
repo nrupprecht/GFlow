@@ -575,8 +575,8 @@ namespace GFlowSimulation {
     halo_map.push_back(_size); // Halo local id
     halo_map.push_back(id);    // Original local id
     // Make a copy of the particle
-    Vec x(sim_dimensions); x = X(id);
-    Vec v(sim_dimensions); v = V(id);
+    Vec x(sim_dimensions, X(id));
+    Vec v(sim_dimensions, V(id));
     RealType radius = Sg(id);
     RealType im = Im(id);
     int type = Type(id);
@@ -630,7 +630,7 @@ namespace GFlowSimulation {
     removeHaloAndGhostParticles();
 
     // Wrap the particles, so they are in their cannonical positions
-    Base::gflow->wrapPositions();
+    gflow->wrapPositions();
 
     #if USE_MPI == 1
       // Get rank and number of processors.
@@ -643,8 +643,8 @@ namespace GFlowSimulation {
       #if _CLANG_ == 1
         // If there are multiple processors.
         if (numProc>1 && !neighbor_ranks.empty()) {          
-          // --- Move particles that belong to other domains to those domains, and delete them from here. Then receive
-          //     particles from other domains that belong to this domain.
+          // Move particles that belong to other domains to those domains, and delete them from here. Then receive
+          // particles from other domains that belong to this domain.
           exchange_particles();
 
           // Start mpi timer.
@@ -659,6 +659,7 @@ namespace GFlowSimulation {
 
           // --- Look for particles that need to be ghosts on other processors.
           if (gflow->use_ghosts()) {
+            // Create ghost particles.
             create_ghost_particles();
 
             // Start mpi timer.

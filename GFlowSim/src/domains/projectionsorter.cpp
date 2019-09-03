@@ -44,12 +44,13 @@ namespace GFlowSimulation {
         while (id2<size && x[id2][0] < x[id2][0] < end_value) {
           gflow->getDisplacement(x[id1], x[id2], dX);
           RealType dsqr = dX[0]*dX[0] + dX[1]*dX[1];
-          if (dsqr<sqr(sg[id1] + sg[id2] + skin_depth)) pair_interaction(id1, id2);
+          if (dsqr<sqr(sg[id1] + sg[id2] + skin_depth)) pair_interaction(id1, id2, 1);
           ++id2;
         }
       }
     }
 
+    // Record positions.
     record_positions();
 
     // End timer.

@@ -72,6 +72,27 @@ namespace GFlowSimulation {
 
 
 
+  template<int d> inline int get_index(const RealType *x, const RealType *min, const RealType *invW, const int *shift, const int *dims, const int *products) {
+    // Calculate index.
+    int index = static_cast<int>((x[d-1] - min[d-1])*invW[d-1]) + shift[d-1];
+    // Keep in bounds.
+    index = (dims[d-1]<=index) ? dims[d-1]-1 : index;
+    index = (index<0) ? 0 : index;
+    // Recursive.
+    return index*products[d] + get_index<d-1>(x, min, invW, shift, dims, products);
+  }
+  template<> inline int get_index<1>(const RealType *x, const RealType *min, const RealType *invW, const int *shift, const int *dims, const int *products) {
+    // Calculate index
+    int index = static_cast<int>((x[0] - min[0])*invW[0]) + shift[0];
+    // Keep in bounds.
+    index = (dims[0]<=index) ? dims[0]-1 : index;
+    index = (index<0) ? 0 : index;
+    // Return
+    return index*products[1];
+  }
+
+
+
   // --- Simd related
 
   /*

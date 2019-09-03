@@ -24,6 +24,16 @@ namespace GFlowSimulation {
       }
     }
 
+    Vec(int d, const RealType *v) : dimensions(d) {
+      // Do not allow negative length vectors.
+      if (d<0) d = 0;
+      // If not a length zero vector, allocate data.
+      if (d>0) {
+        data = new RealType[d];
+        for (int i=0; i<d; ++i) data[i] = v[i];
+      }
+    }
+
     Vec(const Vec& v) : dimensions(v.dimensions), data(nullptr) {
       // If vector has positive length, allocate array.
       if (dimensions>0) data = new RealType[dimensions];

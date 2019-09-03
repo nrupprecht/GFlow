@@ -293,22 +293,13 @@ namespace GFlowSimulation {
       }
   }
 
-  void InteractionHandler::pair_interaction(int id1, int id2) {
+  void InteractionHandler::pair_interaction(const int id1, const int id2, const int list) {
     // Make sure it is not the case that both particles are not real.
     if (!simData->isReal(id1) && !simData->isReal(id2)) return;
     // Get the interaction.
     Interaction *it = interaction_grid[simData->Type(id1)][simData->Type(id2)];
     // A null force means no interaction
-    if (it) it->addPair(id1, id2);
-  }
-
-  void InteractionHandler::pair_interaction_nw(int id1, int id2) {
-    // Make sure it is not the case that both particles are not real.
-    if (!simData->isReal(id1) && !simData->isReal(id2)) return;
-    // Get the interaction.
-    Interaction *it = interaction_grid[simData->Type(id1)][simData->Type(id2)];
-    // A null force means no interaction
-    if (it) it->addPairNW(id1, id2);
+    if (it) it->addPair(id1, id2, list);
   }
 
 }

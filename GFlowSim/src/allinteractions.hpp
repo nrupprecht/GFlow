@@ -5,7 +5,6 @@
 #include "interactions/generic-forces.hpp"
 
 // Parent classes.
-#include "interactions/hard_sphere.hpp"
 #include "interactions/hard_sphere__reflecting__2d.hpp"
 #include "interactions/demon_wall.hpp"
 

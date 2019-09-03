@@ -296,7 +296,7 @@ namespace GFlowSimulation {
         rsqr = sqr(dx[0]) + sqr(dx[1]);
         // If close enough, check if they interact.
         if (rsqr < sqr(radius1 + sg[id2])) // *max_cutoffs[simData->Type(id2)]
-          pair_interaction_nw(id1, id2);
+          pair_interaction(id1, id2);
       }
 
       // "Increment" id2

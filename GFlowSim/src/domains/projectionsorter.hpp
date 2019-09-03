@@ -12,6 +12,16 @@ namespace GFlowSimulation {
     //! \brief Construct verlet lists.
     virtual void construct() override;
 
+    //! \brief Construct interactions for a single particle
+    //!
+    //! If the insert flag is set to true, the particle will first be added to the relevent domain or data structure
+    //! (if applicable), if not, it will not be added.
+    //! This function should be called after construct.
+    virtual void constructFor(int, bool=false) override {
+      cout << "Warning: constructFor not implemented for this class." << endl;
+      exit(0);
+    }
+
     virtual void getAllWithin(int, vector<int>&, RealType=-1.) override;
 
     //! \brief Get all the particles withing a radius of some position.

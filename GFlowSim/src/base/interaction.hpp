@@ -50,12 +50,7 @@ namespace GFlowSimulation {
     //! \brief Add a pair of particles whose distance may need to be wrapped.
     //!
     //! Adds the pair to the verlet_wrap list.
-    virtual void addPair(const int, const int);
-    
-    //! \brief Add a pair of interacting particles that do not need to have their distances wrapped.
-    //!
-    //! Adds the pair to the verlet_wrap list.
-    virtual void addPairNW(const int, const int);
+    virtual void addPair(const int, const int, const int);
 
     //! \brief Signals that the pair additions are done.
     virtual void close() {};
@@ -71,12 +66,15 @@ namespace GFlowSimulation {
 
   protected:
 
-    //! \brief The verlet list for interactions that do not need to worry about wrapping distances.
-    vector<int> verlet;
-
-    //! \brief The verlet list for interactions that potentially need to wrap distances.
-    vector<int> verlet_wrap;
-
+    //! \brief The verlet lists for interactions that do not need to worry about wrapping distances.
+    //!
+    //! There are three types of verlet lists: \n
+    //!   0 - Interactions that don't need the minimum image convention.
+    //!   1 - Interactions that do need the minimum image convention.
+    //!   2 - Interaction list for ghost particles.
+    //!
+    //! Perhaps one day, this will be extended so there can be more verlet lists, but for now, this should be fine.
+    vector<int> verlet[3];
 
     //! \brief The cutoff, i.e. how many times greater than the particle radius can a particle interact with other particles.
     //!

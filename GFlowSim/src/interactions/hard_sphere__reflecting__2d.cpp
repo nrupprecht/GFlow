@@ -24,9 +24,9 @@ namespace GFlowSimulation {
     RealType sg1, sg2, dx, dy, rsqr, r, invr, magnitude;
 
     // --- Go through all particles
-    for (int i=0; i<verlet.size(); i+=2) {
-      int id1 = verlet[i];
-      int id2 = verlet[i+1];
+    for (int i=0; i<verlet[0].size(); i+=2) {
+      int id1 = verlet[0][i];
+      int id2 = verlet[0][i+1];
       // Check if the types are good
       if (type[id1]<0 || type[id2]<0) continue;
       // Calculate displacement.
@@ -86,7 +86,7 @@ namespace GFlowSimulation {
     }
 
     // --- Do verlet wrap part.
-    if (verlet_wrap.empty()) return;
+    if (verlet[1].empty()) return;
 
     // Get the bounds and boundary conditions
     Bounds bounds = Base::gflow->getBounds(); // Simulation bounds
@@ -96,9 +96,9 @@ namespace GFlowSimulation {
     RealType bnd_x = bounds.wd(0);
     RealType bnd_y = bounds.wd(1);
 
-    for (int i=0; i<verlet_wrap.size(); i+=2) {
-      int id1 = verlet_wrap[i];
-      int id2 = verlet_wrap[i+1];
+    for (int i=0; i<verlet[1].size(); i+=2) {
+      int id1 = verlet[1][i];
+      int id2 = verlet[1][i+1];
       // Check if the types are good
       if (type[id1]<0 || type[id2]<0) continue;
       // Calculate displacement.

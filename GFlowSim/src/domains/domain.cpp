@@ -9,6 +9,8 @@
 
 #include "../base/topology.hpp"
 
+#include "../utility/generic-dimension.hpp"
+
 namespace GFlowSimulation {
 
   Domain::Domain(GFlow *gflow) : DomainBase(gflow) {
@@ -347,28 +349,15 @@ namespace GFlowSimulation {
     int    *type = Base::simData->Type();
     // Get the boundary conditions
     const BCFlag *bcs = gflow->getBCs();
-    int *search_dims = new int[sim_dimensions];
-
-    
-    /*
-    for (int id1=0; id1<simData->size(); ++id1) {
-      RealType r = sg[id1];
-      for (int id2=id1+1; id2<simData->size(); ++id2) {
-        RealType d = gflow->getDistance(x[id1], x[id2]);
-        if (sqr(d) < sqr(r + sg[id2] + skin_depth))
-          pair_interaction(id1, id2);
-      }
-    }
-    */
-
+    vector<int> search_dims(sim_dimensions, 0);
     
     for (const auto &c : cells) {
       for (auto p=c.particle_ids.begin(); p!=c.particle_ids.end(); ++p) {
         // The id of the particle
         int id1 = *p;
         RealType *cutoffs_id1 = cutoff_grid[type[id1]];
-
         RealType sigma1 = sg[id1]*max_cutoffs[type[id1]];
+
         // If sigma is <= than max_small_sigma, only look through cell stencil
         if (sigma1<=max_small_sigma) {
           // All other particles in the same sector
@@ -381,7 +370,7 @@ namespace GFlowSimulation {
             // Look for distance between particles
             RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
             if (r2 < sqr((sg[id1] + sg[id2])*cutoffs_id1[type[id2]] + skin_depth)) {
-              pair_interaction_nw(id1, id2);
+              pair_interaction(id1, id2);
             }
           }
           // Seach through list of adjacent cells
@@ -392,8 +381,8 @@ namespace GFlowSimulation {
               // Look for distance between particles
               RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
               if (r2 < sqr((sg[id1] + sg[id2])*cutoffs_id1[type[id2]] + skin_depth))
-                pair_interaction_nw(id1, id2);
-              else if (r2>max_reasonable) pair_interaction(id1, id2);
+                pair_interaction(id1, id2);
+              else if (r2>max_reasonable) pair_interaction(id1, id2, 1);
             }
         }
         
@@ -416,7 +405,7 @@ namespace GFlowSimulation {
           // Look in a hypercube.
           for (int j=0; j<prod; ++j) {
             // Turn j into a tuple
-            getAddressCM(j, search_dims, tuple1, sim_dimensions);
+            getAddressCM(j, search_dims.data(), tuple1, sim_dimensions);
             // Shift so it is a displacement
             subtractVec(tuple1, center, tuple2, sim_dimensions);
             // Get the cell at the displacement from the particle's cell
@@ -431,8 +420,8 @@ namespace GFlowSimulation {
                 if (id1==id2 || sg[id2]>sg[id1]) continue;
                 RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
                 if (r2 < sqr((sg[id1] + sg[id2])*cutoffs_id1[type[id2]] + skin_depth))
-                  pair_interaction(id1, id2);
-                else if (max_reasonable<r2) pair_interaction(id1, id2);
+                  pair_interaction(id1, id2, 1);
+                else if (max_reasonable<r2) pair_interaction(id1, id2, 1);
               }
             }
           }
@@ -448,10 +437,13 @@ namespace GFlowSimulation {
     delete [] tuple2;
     delete [] cell_index;
     delete [] center;
-    delete [] search_dims;
 
     // Start timer.
     stop_timer();
+  }
+
+  void Domain::constructFor(int id, bool insert) {
+
   }
 
   void Domain::setCellSize(RealType) {
@@ -687,6 +679,8 @@ namespace GFlowSimulation {
     }
     // Return the index
     return linear;
+
+    //return get_index<2>(x, process_bounds.min, inverseW, dim_shift_down, dims, products);
   }
 
   inline void Domain::add_to_cell(const RealType *x, int id) {

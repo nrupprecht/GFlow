@@ -33,6 +33,13 @@ namespace GFlowSimulation {
     //! \brief Construct objects for interactions. This contains common construction tasks.
     virtual void construct();
 
+    //! \brief Construct interactions for a single particle.
+    //!
+    //! If the insert flag is set to true, the particle will first be added to the relevent domain or data structure
+    //! (if applicable), if not, it will not be added.
+    //! This function should be called after construct.
+    virtual void constructFor(int, bool=false) = 0;
+
     // --- Locator functions
 
     //! \brief Get all the particles within a radius of another particle
@@ -120,13 +127,10 @@ namespace GFlowSimulation {
 
     //! \brief If the two particles interact, and the interaction is handled by this interaction handler, add to the relevant interaction.
     //!
-    //! This version adds particles to the verlet_wrap list.
-    void pair_interaction(int, int);
-
-    //! \brief If the two particles interact, and the interaction is handled by this interaction handler, add to the relevant interaction.
-    //!
-    //! This version adds particles to the verlet (no wrapping) list.
-    void pair_interaction_nw(int, int);
+    //! \param id1 (Local) id of the first particle.
+    //! \param id2 (Local) id of the second particle.
+    //! \param list Which interaction list to add the particles to. Default list is list 0 (the non-wrapping list).
+    void pair_interaction(const int, const int, const int=0);
 
     // --- Data ---
 
