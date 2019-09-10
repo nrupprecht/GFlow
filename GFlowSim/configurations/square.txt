@@ -1,0 +1,108 @@
+// Granular "wind tunnel" simulation
+// For small radii, e.g. 0.0125-0.015, needed a max dt of 0.0002.
+
+// This is a 2d simulation
+Dimensions: 2
+
+// Set the simulation bounds
+Bounds: {
+  : -Front, Length  // X
+  : -Height, Height // Y
+}
+
+// VARIABLES
+Var: MinR=0.04
+Var: MaxR=0.05
+Var: Velocity=2.2
+Var: Length=18
+Var: Height=6
+Var: Front=6
+
+Integrator: VelocityVerlet
+
+Boundary: {
+  : Wrap
+  : Repulse
+}
+
+// Set the number of particle types
+NTypes: 2
+
+// Creates a random force network of HardSphere and Lennard-Jones forces
+Force-grid: Hertz // HardSphereDs //   
+
+// Fill an area with particles
+Fill: Area {
+  // Fill all the simulation with particles
+  Bounds: Full
+
+  Template: TypeA {
+    Radius: Proportional {
+      Min: MinR
+      Max: MaxR
+    }
+    Mass: Density=1
+    Type: 0
+  }
+
+  Number: Phi=0.93 {
+    TypeA : 1
+  }
+
+  // Don't put balls in the square.
+  Excluded: {
+    : -1.1, 1.1
+    : -1.1, 1.1
+  }
+
+  Velocity: Zero
+}
+
+Var: wallType=0
+
+Fill: Wall {
+  Start: -1, -1
+  End: 1, -1
+  Radius: MinR
+  Type: wallType
+}
+Fill: Wall {
+  Start: -1, -1
+  End: -1, 1
+  Radius: MinR
+  Type: wallType
+}
+Fill: Wall {
+  Start: 1, 1
+  End: 1, -1
+  Radius: MinR
+  Type: wallType
+}
+Fill: Wall {
+  Start: 1, 1
+  End: -1, 1
+  Radius: MinR
+  Type: wallType
+}
+
+// Bottom wall
+Fill: Wall {
+  Start: -Front, -Height
+  End: Length, -Height
+  Radius: MinR
+  Type: wallType
+}
+
+// Top wall
+Fill: Wall {
+  Start: -Front, Height
+  End: Length, Height
+  Radius: MinR
+  Type: wallType
+}
+
+//Reconcile: Remove=0.9
+
+Relax: 1
+
+Modifier: WindTunnel=Velocity

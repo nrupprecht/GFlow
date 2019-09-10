@@ -205,12 +205,17 @@ namespace GFlowSimulation {
   }
 
   bool InteractionHandler::check_needs_remake() {
+    // Needs remake local
+    bool needs_remake = false;
+
     // Set time point
     last_check = gflow->getElapsedTime();
     // Don't go to long without updating
-    if (last_check - last_update > max_update_delay) return true;
+    if (last_check - last_update > max_update_delay) needs_remake = true;
+
     // Find the maximum possible motion
     RealType max_motion = find_max_motion();
+
     // Calculate motion ratio, next update delay
     RealType motion_ratio = max_motion/skin_depth;
     update_delay = min(max_update_delay, mv_ratio_tolerance * motion_factor * (last_check - last_update) / motion_ratio);
@@ -219,11 +224,9 @@ namespace GFlowSimulation {
       ave_miss += motion_ratio;
     }
     // The remake condition.
-    bool needs_remake = (motion_ratio > mv_ratio_tolerance * motion_factor);
-    //  
-    // #if USE_MPI == 1
-    MPIObject::mpi_or(needs_remake);
-    // #endif
+    needs_remake |= (motion_ratio > mv_ratio_tolerance * motion_factor);
+
+    //MPIObject::mpi_or(needs_remake);
     // Set the flag in gflow.
     gflow->handler_needs_remake() = needs_remake;
     // Return needs_remake.

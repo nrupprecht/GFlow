@@ -65,7 +65,7 @@ you can set the Temperature variable to be 1.0 from the command line by running 
 
 Values are similar for variables, but cannot be set from the command line, and can be functions of variables and previously defines values. Another difference is a value **must** be a numerical value (it will evaluate as a float type). Therefore, any variables that the value depends on must evaluate as numbers. Arithmetic expressions with '+' '-' '*' '/' '(' and ')' may be used. For example, a value called "length" can be defined as
 
-    Value: lenth = (width + 1)/2
+    Value: length = (width + 1)/2
   
 and used to define subsequent values, e.g.
 
@@ -109,7 +109,11 @@ Forces are by default reflexive, that is, it is unneccessary to also say *: 1, 0
 |--------------|-------------------------------------------------------------------------------------------------------|
 | HardSphere   | Hard sphere force - spring like repulsion.                                                            |
 | HardSphereDs | Hard sphere force with dissipation                                                                    |
+| HardSphereReflecting | Hard sphere interaction where spheres effectively reflect off of one another.		       |
+| Hertz	       | Hertzian granular force (without history)							       |
+| Hooke	       | Hookean granular force (without history)							       |
 | LennardJones | Lennard Jones 6-12 force.                                                                             |
+| Coulomb      | (Short range) coulomb force.									       |
 | Buckingham   | Buckingham force.                                                                                     |
 | Detector     | Not a force, but an interaction that stops the simulation  if a particle with enough kinetic hits it. |
 | None         | Explicit indication that there is no force.                                                           |
@@ -128,7 +132,9 @@ This is useful in the simulation of many-type-physics simulations. The file pars
 
 The following data is not *essential* to include in a configuration file (i.e. if the information is not included, default values will be assumed, and no exceptions will be thrown), but is often useful, or at least a good idea to include explicitly.
 
-**Dimensions**: The number of dimensions the simulation should run in. In theory, any positive integer is valid, but high dimensional simulation will be very slow, and I have not tested them extensively. The number of dimensions is two by default, and can be specified as
+**Dimensions**: The number of dimensions the simulation should run in. In theory, any positive integer is valid, but high dimensional simulation will be very slow, and I have not tested them extensively.
+Also, most forces are implemented by generic classes that take the dimension as a template argument, and only dimensions 1-4 are hard coded into the "interaction-choice" class. If you want more dimensions, you have to add a new if statement in that class.
+The number of dimensions is two by default, and can be specified as
 
     Dimensions: [D]
 
@@ -333,4 +339,4 @@ where *factor* is the overlap factor between particles: (R1 + R2 - r) / min(R1, 
 
 ## Conclusion
 
-As development continues, more advanced configurations will become possible. This guide is current as of the time of its writing, on 4/4/2019. In the directory *GFlow/GFlowSimulation/configurations*, there are a number of sample configuration files.
+As development continues, more advanced configurations will become possible. This guide is current as of the time of its writing, on 4/4/2019. Some updates were made on 9/9/2019, but I still have some options to fill in. In the directory *GFlow/GFlowSimulation/configurations*, there are a number of sample configuration files.

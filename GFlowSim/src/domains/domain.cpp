@@ -285,7 +285,7 @@ namespace GFlowSimulation {
               for (auto &id2 : cells[linear].particle_ids) {
                 // If the other particle is a larger particle, it will take care of this interaction
                 if (id1==id2 || sg[id2]>sg[id1] || (sg[id1]==sg[id2] && id1<id2)) continue; // IF TWO PARTICLES ARE THE SAME SIZE, ERROR
-                Base::gflow->getDisplacement(Base::simData->X(id1), Base::simData->X(id2), dX);
+                gflow->getDisplacement(x[id1], x[id2], dX);
                 RealType r = magnitudeVec(dX, sim_dimensions);
 
                 RealType overlap = sg[id1] + sg[id2] - r;
@@ -339,18 +339,19 @@ namespace GFlowSimulation {
     const vector<RealType> & max_cutoffs = forceMaster->getMaxCutoff();
 
     // Tuples
-    int *tuple1 = new int[sim_dimensions], *tuple2 = new int[sim_dimensions];
+    vector<int> tuple1(sim_dimensions), tuple2(sim_dimensions);
+    //int *tuple1 = new int[sim_dimensions], *tuple2 = new int[sim_dimensions];
     int *cell_index = new int[sim_dimensions], *center = new int[sim_dimensions];
     Vec dx(sim_dimensions);
 
     // Find potential neighbors
-    RealType *sg = Base::simData->Sg();
-    RealType **x = Base::simData->X();
-    int    *type = Base::simData->Type();
+    RealType *sg = simData->Sg();
+    RealType **x = simData->X();
+    int    *type = simData->Type();
     // Get the boundary conditions
     const BCFlag *bcs = gflow->getBCs();
     vector<int> search_dims(sim_dimensions, 0);
-    
+
     for (const auto &c : cells) {
       for (auto p=c.particle_ids.begin(); p!=c.particle_ids.end(); ++p) {
         // The id of the particle
@@ -394,33 +395,34 @@ namespace GFlowSimulation {
           for (int d=0; d<sim_dimensions; ++d) {
             center[d] = static_cast<int>(ceil(search_width/widths[d]));
             // Search dimensions can't be so large that any cells are searched more than once.
-            search_dims[d] = min(2*center[d]+1, dims[d]);
+            // Note: this needs to be 2*(center[d]+1) not 2*center[d] + 1. This caused an error before.
+            search_dims[d] = min(2*(center[d]+1), dims[d]);
             // Correct center based on actual search dimensions.
             center[d] = static_cast<int>(ceil(search_dims[d]/2.));
             prod *= search_dims[d];
           }
 
           // The tuple address of the cell the particle is in
-          get_cell_index_tuple(x[id1], cell_index);          
+          get_cell_index_tuple(x[id1], cell_index);
           // Look in a hypercube.
           for (int j=0; j<prod; ++j) {
             // Turn j into a tuple
-            getAddressCM(j, search_dims.data(), tuple1, sim_dimensions);
+            getAddressCM(j, search_dims.data(), tuple1.data(), sim_dimensions);
             // Shift so it is a displacement
-            subtractVec(tuple1, center, tuple2, sim_dimensions);
+            subtractVec(tuple1.data(), center, tuple2.data(), sim_dimensions);
             // Get the cell at the displacement from the particle's cell
-            addVec(tuple2, cell_index, tuple1, sim_dimensions);
+            addVec(tuple2.data(), cell_index, tuple1.data(), sim_dimensions);
             // If the cell is valid, look for particles
-            if(correct_index(tuple1)) {
+            if(correct_index(tuple1.data())) {
               // Get the linear address of the other cell
               int linear;
-              tuple_to_linear(linear, tuple1);
+              tuple_to_linear(linear, tuple1.data());
               for (auto &id2 : cells[linear].particle_ids) {
                 // If the other particle is a larger particle, it will take care of this interaction
                 if (id1==id2 || sg[id2]>sg[id1]) continue;
                 RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
-                if (r2 < sqr((sg[id1] + sg[id2])*cutoffs_id1[type[id2]] + skin_depth))
-                  pair_interaction(id1, id2, 1);
+                if (r2 < sqr((sigma1 + sg[id2])*cutoffs_id1[type[id2]] + skin_depth))
+                  pair_interaction(id1, id2);
                 else if (max_reasonable<r2) pair_interaction(id1, id2, 1);
               }
             }
@@ -433,8 +435,6 @@ namespace GFlowSimulation {
     forceMaster->close();
 
     // Clean up
-    delete [] tuple1;
-    delete [] tuple2;
     delete [] cell_index;
     delete [] center;
 

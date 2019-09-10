@@ -427,7 +427,7 @@ namespace GFlowSimulation {
       subtract_vec<dims>(V, Vn, Vt);
 
       // Angular velocities.
-      if (dims==2 && om!=nullptr && tq!=nullptr) {
+      if (dims==2 && om!=nullptr && tq!=nullptr && mu>0) {
         // Tangential normal direction for 2d.
         RealType Nt[dims];
         Nt[0] = -X[1];
@@ -448,7 +448,7 @@ namespace GFlowSimulation {
         else if (Ft<-maxF) Ft = -maxF;
 
         // Update tangential forces.
-        sum_eq_vec_scaled<dims>(f[id1], Nt, Ft);
+        sum_eq_vec_scaled<dims>(f[id1], Nt,  Ft);
         sum_eq_vec_scaled<dims>(f[id2], Nt, -Ft);
 
         // Update torques.

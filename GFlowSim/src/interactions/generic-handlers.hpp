@@ -71,6 +71,9 @@ namespace GFlowSimulation {
       // Do forces.
       dolist<false>(0);
       dolist<true> (1);
+
+      // If ghost particles needed to be wrapped, they already had that done when their image
+      // was passed to the processor.
       dolist<false>(2);
     }
 
@@ -138,12 +141,19 @@ namespace GFlowSimulation {
       }
     }
 
+    //! \brief The most recent (and current) head particle for the list that we are adding particles to.
+    //!
+    //! If a pair of particles (id1, id2) is inserted into list n where id1!=last_head[n], then we start
+    //! a new list, and update last_head[n] = id1.
     int last_head[3];
 
-    vector<int> first_neighbor[3];
+    //! \brief The (local) particle id of the i-th head.
     vector<int> head_list[3];
 
-    //! \brief The number of interaction pairs.
+    //! \brief The first neighbor of the i-th head particle (for the n-th list) is located at first_neighbor[n][i]
+    vector<int> first_neighbor[3];
+
+    //! \brief The number of interaction pairs (across all the verlet lists in this interaction).
     int pairs = 0;
   };
 
@@ -169,9 +179,7 @@ namespace GFlowSimulation {
 
       // If ghost particles needed to be wrapped, they already had that done when their image
       // was passed to the processor.
-      dolist<false>(verlet[2]);
-
-      
+      dolist<false>(verlet[2]); 
     }
 
   private:
@@ -240,20 +248,7 @@ namespace GFlowSimulation {
     //!
     //! Adds the pair to the verlet_wrap list.
     virtual void addPair(const int id1, const int id2, const int list) override {
-      switch (list) {
-        case 0: {
-          verlet_pairs[0].push_back(std::make_pair(id1, id2));
-          break;
-        }
-        case 1: {
-          verlet_pairs[1].push_back(std::make_pair(id1, id2));
-          break;
-        }
-        case 2: {
-          verlet_pairs[2].push_back(std::make_pair(id1, id2));
-          break;
-        }
-      }
+      verlet_pairs[list].push_back(std::make_pair(id1, id2));
     }
 
     //! \brief Clears the verlet list.
@@ -335,8 +330,8 @@ namespace GFlowSimulation {
           static_cast<const ForceType*>(this)->force(id1, id2, R1, R2, rsqr, X, f);
       }
     }
-    
-    //! \brief The no-wrap verlet list. A list of pairs of interacting particles.
+
+    //! \brief The verlet lists.
     vector<pair<int, int> > verlet_pairs[3];
   };
 
