@@ -16,6 +16,7 @@
 #include "dataobjects/parameters.hpp"
 
 // Graph objects
+#include "dataobjects/graphobjects/average-omega-data.hpp"
 #include "dataobjects/graphobjects/avevelocitydata.hpp"
 #include "dataobjects/graphobjects/bonded-energy-data.hpp"
 #include "dataobjects/graphobjects/boundaryforcedata.hpp"

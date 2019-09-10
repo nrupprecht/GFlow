@@ -60,6 +60,7 @@ int main(int argc, char **argv) {
   bool bondenergy = false;
   bool keTypes = false;
   bool totalKE = false; // Record average kinetic energy (per particle)
+  bool aveOm = false; // Average angular velocity
   bool secRemake = false; 
   bool bdForces = false;
   bool timestep = false;
@@ -121,6 +122,7 @@ int main(int argc, char **argv) {
   parser.get("bondenergy", bondenergy);
   parser.get("KETypes", keTypes);
   parser.get("totalKE", totalKE);
+  parser.get("aveOm", aveOm);
   parser.get("secRemake", secRemake);
   parser.get("bdForces", bdForces);
   parser.get("timestep", timestep);
@@ -238,6 +240,7 @@ int main(int argc, char **argv) {
   if (energy)      gflow->addDataObject(new TotalEnergyData(gflow));
   if (bondenergy)  gflow->addDataObject(new BondedEnergyData(gflow));
   if (keTypes)     gflow->addDataObject(new KineticEnergyTypesData(gflow, true));
+  if (aveOm)       gflow->addDataObject(new AverageOmegaData(gflow));
   if (bdForces)    gflow->addDataObject(new BoundaryForceData(gflow));
   if (timestep)    gflow->addDataObject(new TimeStepData(gflow));
   if (averages)    gflow->addDataObject(new AverageData(gflow));

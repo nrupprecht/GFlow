@@ -580,7 +580,7 @@ namespace GFlowSimulation {
         Nt[0] = -X[1];
         Nt[1] =  X[0];
 
-        RealType vt = dot_vec<dims>(Vt, Nt); //sqrt(dot_vec<dims>(Vt, Vt));        
+        RealType vt = dot_vec<dims>(Vt, Nt); //sqrt(dot_vec<dims>(Vt, Vt));
 
         // Calculate difference in velocities at the point of intersection.
         vt -= om[id1]*R1 + om[id2]*R2; // Relative surface velocity due to angular velocity.

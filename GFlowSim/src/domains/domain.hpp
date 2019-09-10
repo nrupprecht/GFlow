@@ -43,7 +43,7 @@ namespace GFlowSimulation {
     //! Resets cells, then creates all the neighbor lists from the cells.
     virtual void construct() override;
 
-    //! \brief Construct interactions for a single particle
+    //! \brief Construct interactions for a single particle.
     //!
     //! If the insert flag is set to true, the particle will first be added to the relevent domain or data structure
     //! (if applicable), if not, it will not be added.
