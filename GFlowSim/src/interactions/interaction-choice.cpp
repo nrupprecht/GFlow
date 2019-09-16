@@ -63,6 +63,11 @@ namespace GFlowSimulation {
       // Nothing per-say invalid about requesting this force in this dimension, it just isn't coded in.
       else throw InvalidInteraction(token + ", " + toStr(sim_dimensions) + "." + err);
     }
+    // Generic, but dimension specific
+    else if (token==TriangleToken) {
+      return new TriangleForce2DVLP(gflow);
+    }
+
     // Non-generic types.
     else if (token==HardSphereReflectingToken) {
       if (sim_dimensions==2)

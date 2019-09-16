@@ -66,10 +66,10 @@ namespace GFlowSimulation {
 
     inline bool do_checks(const vector<float>&);
 
-    inline void get_values(const float*, const float* &, const float* &, float&, int&, float&, float&, int&);
+    inline void get_values(const float*, const float* &, const float* &, float&, int&, float&, float&, float&, int&);
 
     //! \brief Determine what color a particle should be.
-    inline void determine_color(RGBApixel&, int, const float*, const float*, int, float, float, int);
+    inline void determine_color(RGBApixel&, int, const float*, const float*, int, float, float, float, int);
 
     //! \brief Set up the camera to be in the standard position.
     inline void standard_camera_setup();
@@ -94,6 +94,9 @@ namespace GFlowSimulation {
 
     //! \brief Where in the data for a particle is the distance traveled.
     int distance_place = -1;
+
+    //! \brief Where in the data for particle is the angular velocity.
+    int omega_place = -1;
 
     //! \brief Where in the data the stripe data is.
     int stripex_place = -1;

@@ -435,16 +435,16 @@ namespace GFlowSimulation {
         RealType vt = dot_vec<dims>(Vt, Nt); //sqrt(dot_vec<dims>(Vt, Vt));        
 
         // Calculate difference in velocities at the point of intersection.
-        vt -= om[id1]*R1 + om[id2]*R2; // Relative surface velocity due to angular velocity.
+        vt -= (om[id1]*R1 + om[id2]*R2); // Relative surface velocity due to angular velocity.
 
         // Instead of K_t * 0, it should really be based on an "angular spring" stretching, 
         // see e.g. Luding, Gran. Matter 2008, v 10, p. 235. But I'd have to keep track of the
         // history of particles, even between neighbor list updates, which is too much of a pain 
         // for now.
-        RealType Ft = - c1 * (K_t*0 + M_eff*vt);
+        RealType Ft = - c1 * (K_t*0 + M_eff*gamma_t*vt);
 	       // Limit the maximum force.
         RealType maxF = fabs(mu*Fn);
-        if (Ft>maxF) Ft = mu*Fn;
+        if      (Ft> maxF) Ft =  maxF;
         else if (Ft<-maxF) Ft = -maxF;
 
         // Update tangential forces.
@@ -452,8 +452,8 @@ namespace GFlowSimulation {
         sum_eq_vec_scaled<dims>(f[id2], Nt, -Ft);
 
         // Update torques.
-        tq[id1] += Ft*R1;
-        tq[id2] += Ft*R2;
+        tq[id1] -= Ft*R1;
+        tq[id2] -= Ft*R2;
       }
 
       // Calculate potential
@@ -589,7 +589,7 @@ namespace GFlowSimulation {
         // see e.g. Luding, Gran. Matter 2008, v 10, p. 235. But I'd have to keep track of the
         // history of particles, even between neighbor list updates, which is too much of a pain 
         // for now.
-        RealType Ft = - (K_t*0 + M_eff*vt);
+        RealType Ft = - (K_t*0 + M_eff*gamma_t*vt);
 
         RealType maxF = fabs(mu*Fn);
         if (Ft>maxF) Ft = mu*Fn;
@@ -600,8 +600,8 @@ namespace GFlowSimulation {
         sum_eq_vec_scaled<dims>(f[id2], Nt, -Ft);
 
         // Update torques.
-        tq[id1] += Ft*R1;
-        tq[id2] += Ft*R2;
+        tq[id1] -= Ft*R1;
+        tq[id2] -= Ft*R2;
       }
 
       // Calculate potential
@@ -650,6 +650,66 @@ namespace GFlowSimulation {
   //! \brief Define the HookeVLP class to be Hooke force using verlet list pairs container.
   template<int dims> 
   using HookeVLP = HookeGeneric<dims, VerletListPairs>;
+
+
+  /*
+  *  \brief Generic class for Triangle - Triangle interaction. Only defined for 2D simulations.
+  *
+  */
+  template<template<int, class> class handler> class TriangleForce2D : public handler<2, HookeGeneric<2, handler> > {
+  public:
+    //! \brief Typedef for the handler type.
+    typedef handler<2, HookeGeneric<2, handler> > Handler;
+
+    TriangleForce2D(GFlow *gflow) : Handler(gflow) {
+      // Add the needed data entries and integrator.
+      if (gflow->getSimDimensions()==2) {
+        th_add = Base::simData->requestScalarData("Th");
+        om_add = Base::simData->requestScalarData("Om");
+        tq_add = Base::simData->requestScalarData("Tq");
+        // Add an angular integrator.
+        Base::gflow->addIntegrator(new AngularVelocityVerlet2d(gflow));
+      }
+      else throw BadDimension();
+    }
+
+    virtual void interact() const override {
+      // Make sure pointers are correct.
+      if (-1<om_add && -1<tq_add) {
+        th = Base::simData->ScalarData(th_add);
+        om = Base::simData->ScalarData(om_add);
+        tq = Base::simData->ScalarData(tq_add);
+      }
+
+      // Now do interactions.
+      Handler::interact();
+    }
+
+    void force(const int id1, const int id2, const RealType R1, const RealType R2, const RealType rsqr, RealType *X, RealType **f) const {
+      // Calculate distance, inverse distance.
+      RealType r = sqrt(rsqr);
+      RealType invr = 1./r;
+      // Create a normal vector
+      scalar_mult_eq_vec<2>(X, invr);
+
+      // \todo Fill this in later.
+    }
+
+  private:
+
+    //! \brief The array address for angular position (theta).
+    int th_add = -1;
+    //! \brief The array address for angular velocity.
+    int om_add = -1;
+    //! \brief The array address for torque.
+    int tq_add = -1;
+
+    //! \brief Pointers to necessary data.
+    mutable RealType *th = nullptr, *om = nullptr, *tq = nullptr;
+  };
+
+  //! \brief Define the TriangleForce2DVLP class to be Triangle force using verlet list pairs container.
+  using TriangleForce2DVLP = TriangleForce2D<VerletListPairs>;
 
 };
 

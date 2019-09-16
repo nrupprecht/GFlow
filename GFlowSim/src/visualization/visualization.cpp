@@ -155,9 +155,10 @@ namespace GFlowSimulation {
     // Draw all particles
     for (int i=0; i<data.size(); i+=dataWidth) {
       // Get valudes
-      const float *pos, *vel; float sigma, distance, stripex; 
+      const float *pos, *vel; 
+      float sigma, distance, omega, stripex; 
       int type, proc;
-      get_values(&data[i], pos, vel, sigma, type, distance, stripex, proc);
+      get_values(&data[i], pos, vel, sigma, type, distance, omega, stripex, proc);
       // If type<0, continue
       if (type<0) continue;      
       // Find the center of the particle
@@ -166,7 +167,7 @@ namespace GFlowSimulation {
       float rf = sigma/wx;
       // --- Determine the color
       RGBApixel color = RGB_Green;
-      determine_color(color, i, pos, vel, type, distance, stripex, proc);
+      determine_color(color, i, pos, vel, type, distance, omega, stripex, proc);
       // --- Create the color function.
       // xf, yf \in [-1, 1] (roughly - could be a bit larger)
       std::function<RGBApixel(float, float, bool&)> colorF = 
@@ -212,9 +213,10 @@ namespace GFlowSimulation {
     // Draw all particles
     for (int i=0; i<data.size(); i+=dataWidth) {
       // Get valudes
-      const float *pos, *vel; float sigma, distance, stripex; 
+      const float *pos, *vel; 
+      float sigma, distance, omega, stripex; 
       int type, proc;
-      get_values(&data[i], pos, vel, sigma, type, distance, stripex, proc);
+      get_values(&data[i], pos, vel, sigma, type, distance, omega, stripex, proc);
       // If type<0, continue
       if (type<0) continue;
       // Find the center of the particle
@@ -228,7 +230,7 @@ namespace GFlowSimulation {
 
       // --- Determine the color
       RGBApixel color = RGB_Green;
-      determine_color(color, i, pos, vel, type, distance, stripex, proc);
+      determine_color(color, i, pos, vel, type, distance, omega, stripex, proc);
       // --- Create the color function.
       // xf, yf \in [-1, 1] (roughly - could be a bit larger)
       std::function<RGBApixel(float, float, bool&)> colorF = 
@@ -264,13 +266,14 @@ namespace GFlowSimulation {
     // Do checks of positions
     if (!do_checks(data)) return;
     // Add all particles to the ray tracer
-    const float *pos, *vel; float sigma, distance, stripex; 
+    const float *pos, *vel; 
+    float sigma, distance, omega, stripex; 
     int type, proc;
     for (int i=0; i<data.size(); i+=dataWidth) {
       // Get values
-      get_values(&data[i], pos, vel, sigma, type, distance, stripex, proc);
+      get_values(&data[i], pos, vel, sigma, type, distance, omega, stripex, proc);
       // Determine the color
-      determine_color(color, i, pos, vel, type, distance, stripex, proc);      
+      determine_color(color, i, pos, vel, type, distance, omega, stripex, proc);      
       // Add the sphere to the ray tracer.
       tracer.addSphere(pos, sigma, color);
     }
@@ -356,6 +359,7 @@ namespace GFlowSimulation {
     sg_place = -1;
     type_place = -1;
     distance_place = -1;
+    omega_place = -1;
     stripex_place = -1;
   }
 
@@ -373,7 +377,8 @@ namespace GFlowSimulation {
     // Scalar data
     int shift     = vector_data.size()*dimensions;
     sg_place      = find("Sg", scalar_data) + shift;
-    stripex_place = find("StripeX", scalar_data) + shift;    
+    stripex_place = find("StripeX", scalar_data) + shift;   
+    omega_place   = find("Om", scalar_data) + shift; 
 
     // Integer data
     shift += scalar_data.size();
@@ -399,6 +404,10 @@ namespace GFlowSimulation {
       cout << "No stripe-x data detected. Switching to color option 0.\n";
       color_option = 0;
     }
+    else if (color_option==7 && omega_place<0) {
+      cout << "No angular velocity data detected. Switching to color option 0.\n";
+      color_option = 0;
+    }
     // Make sure we have the appropriate normalization factors.
     // This will generally only happen when we are making a single image.
     if (color_option==0 && ntypes>colorBank.size()) {
@@ -421,18 +430,19 @@ namespace GFlowSimulation {
     return true;
   }
 
-  inline void Visualization::get_values(const float * pdata, const float * &pos, const float * &vel, float& sigma, int& type, float& distance, float& stripex, int& proc) {
+  inline void Visualization::get_values(const float * pdata, const float * &pos, const float * &vel, float& sigma, int& type, float& distance, float& omega, float& stripex, int& proc) {
     // Get individual entries
     pos = pos_place<0 ? nullptr : &pdata[pos_place];
     vel = vel_place<0 ? nullptr : &pdata[vel_place]; // Point to start of velocity data
     sigma = sg_place<0 ? 0 : pdata[sg_place]; // Get sigma
     type = type_place<0 ? 0 : static_cast<int>(pdata[type_place]); // Get type
     distance = distance_place<0 ? 0 : pdata[distance_place]; // Get distance traveled
+    omega = omega_place<0 ? 0 : pdata[omega_place];
     stripex  = stripex_place<0  ? 0 : pdata[stripex_place];
     proc = proc_place<0 ? 0 : pdata[proc_place];
   }
 
-  inline void Visualization::determine_color(RGBApixel& color, int i, const float *pos, const float *vel, int type, float distance, float stripex, int proc) {
+  inline void Visualization::determine_color(RGBApixel& color, int i, const float *pos, const float *vel, int type, float distance, float omega, float stripex, int proc) {
     if (!colorBank.empty()) {
       switch (color_option) {
         default:
@@ -485,6 +495,15 @@ namespace GFlowSimulation {
         }
         case 6: { // Color by processor data
           color = getColor(proc);
+          break;
+        }
+        case 7: {
+          RealType scaled = fabs(omega/(2.*PI));
+          RealType sign = omega>0. ? 1. : -1.;
+          const RealType control = 100.;
+          RealType factor = 0.5*sign*control*scaled/(1.+control*scaled) + 0.5;
+          // Select color
+          color = RGBApixel(0, 255*factor, 255*(1-factor)); // Temporary
           break;
         }
       }

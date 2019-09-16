@@ -11,8 +11,9 @@ namespace GFlowSimulation {
     add_vector_data_entry("X");
     add_vector_data_entry("V");
     add_scalar_data_entry("Sg");
-    add_scalar_data_entry("StripeX");
     add_integer_data_entry("Type");
+    add_scalar_data_entry("StripeX");
+    add_scalar_data_entry("Om");
   };
 
   void PositionData::pre_integrate() {

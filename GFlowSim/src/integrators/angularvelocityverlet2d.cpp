@@ -35,8 +35,8 @@ namespace GFlowSimulation {
     RealType hdt = 0.5*gflow->getDT();
     #if SIMD_TYPE==SIMD_NONE
     for (int i=0; i<total; i+=2) {
-      RealType II = 2*im[i]/sqr(sg[i]); // Inverse moment of inertia.
-      om[i] += hdt*II*tq[i];
+      RealType iII = 2*im[i]/sqr(sg[i]); // Inverse moment of inertia.
+      om[i] += hdt*iII*tq[i];
     }
     #else
     // Put hdt into a simd vector
@@ -67,7 +67,7 @@ namespace GFlowSimulation {
       return;
     }
 
-    // --- Update positions -- It seems to be marginally faster to have this in a separate loop.
+    // --- Update angles
     // Do serially
     #if SIMD_TYPE==SIMD_NONE
     for (int i=0; i<total; ++i) {

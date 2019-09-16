@@ -2,7 +2,7 @@
 Dimensions: 2
 
 Var: phi=0.5
-Var: width=4
+Var: width=8
 
 // Set the simulation bounds
 Bounds: {
@@ -18,7 +18,7 @@ Boundary: Wrap
 NTypes: 1
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
-Force-grid: HardSphere
+Force-grid: Hertz
 
 // Fill an area with particles
 Fill: Area {

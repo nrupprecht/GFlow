@@ -21,7 +21,6 @@ Boundary: Repulse
 // 2 : Solvent
 NTypes: 4
 
-// Creates a random force network of HardSphere and Lennard-Jones forces
 Force-grid: {
   : 0, 0, None // Polymer - Polymer  
   : 0, 1, None // Polymer - Chain

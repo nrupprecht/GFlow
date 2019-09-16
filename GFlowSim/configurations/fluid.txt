@@ -11,10 +11,10 @@ Bounds: {
 // VARIABLES
 Var: MinR=0.05
 Var: MaxR=0.05
-Var: Velocity=2.2
-Var: Length=40
-Var: Height=20
-Var: Front=20
+Var: Velocity=2
+Var: Length=15
+Var: Height=10
+Var: Front=15
 
 Integrator: VelocityVerlet
 
@@ -46,16 +46,16 @@ Fill: Area {
     Type: 0
   }
 
-  Number: Phi=0.1 {
+  Number: Phi=0.3 {
     TypeA : 1
   }
 
-  Velocity: Velocity
+  //Velocity: Zero
 }
 
 Particle {
   Position: 0, 0
-  Sigma: 5
+  Sigma: 3
   Velocity: 0, 0
   Mass: inf
   Type: 1

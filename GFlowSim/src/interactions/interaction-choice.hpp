@@ -16,6 +16,7 @@ namespace GFlowSimulation {
   const string CoulombToken = "Coulomb";
   const string HertzToken = "Hertz";
   const string HookeToken = "Hooke";
+  const string TriangleToken = "Triangle";
 
   /**
   *  \brief Error class for trying to pick an interaction that doesn't exist.
