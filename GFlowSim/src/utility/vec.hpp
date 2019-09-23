@@ -13,7 +13,7 @@ namespace GFlowSimulation {
   *  a constructor and destructor.
   */
   struct Vec {
-    //! \brief Constructor. Sets up the array.
+    //! \brief Minimal constructor. Only needs the dimensionality of the vector. Sets up the array as an array of zeros.
     Vec(int d) : dimensions(d), data(nullptr) {
       // Do not allow negative length vectors.
       if (d<0) d = 0;
@@ -24,6 +24,7 @@ namespace GFlowSimulation {
       }
     }
 
+    //! \brief Constructor that copies a vector.
     Vec(int d, const RealType *v) : dimensions(d) {
       // Do not allow negative length vectors.
       if (d<0) d = 0;
@@ -34,6 +35,7 @@ namespace GFlowSimulation {
       }
     }
 
+    //! \brief Copy constructor.
     Vec(const Vec& v) : dimensions(v.dimensions), data(nullptr) {
       // If vector has positive length, allocate array.
       if (dimensions>0) data = new RealType[dimensions];
@@ -41,10 +43,14 @@ namespace GFlowSimulation {
       for (int i=0; i<dimensions; ++i) data[i] = v.data[i];
     }
 
+    //! \brief Move constructor.
     Vec(Vec&& v) : dimensions(v.dimensions), data(v.data) {
       // So v doesn't delete our data.
       v.data = nullptr;
     }
+
+    //! \brief Wrap a raw pointer. WARNING: be sure to call unwrap before vector goes out of scope.
+    Vec(RealType *v, int dims) : data(v), dimensions(dims) {};
 
     //! \brief Destructor.
     ~Vec() {
@@ -57,6 +63,7 @@ namespace GFlowSimulation {
       return data;
     }
 
+    //! \brief Copy equals.
     Vec& operator=(const Vec& v) {
       // Resize array if necessary.
       if (v.dimensions!=dimensions) {
@@ -70,6 +77,7 @@ namespace GFlowSimulation {
       return *this;
     }
 
+    //! \brief Move equals.
     Vec& operator=(Vec&& v) {
       // Copy data
       dimensions = v.dimensions;
@@ -114,11 +122,16 @@ namespace GFlowSimulation {
     }
 
     //! \brief Access square brackets operator.
-    RealType& operator[](int i) { return data[i]; }
+    RealType& operator[](int i) { 
+      return data[i]; 
+    }
 
     //! \brief Access square brackets operator.
-    RealType& operator[](int i) const { return data[i]; }
+    RealType& operator[](int i) const { 
+      return data[i]; 
+    }
 
+    //! \brief Set all the entries of the vector to be the same number.
     void set1(RealType r) {
       for (int d=0; d<dimensions; ++d) data[d] = r;
     }
@@ -140,6 +153,7 @@ namespace GFlowSimulation {
       return v;
     }
 
+    //! \brief Normalize this vector. Returns true if normalization was successful (magnitude was non-zero).
     bool normalize() {
       RealType acc = 0;
       for (int d=0; d<dimensions; ++d) acc += data[d]*data[d];
@@ -190,7 +204,7 @@ namespace GFlowSimulation {
       return out;
     }
 
-    friend void subtractVec(const Vec x, const Vec y, Vec z) {
+    friend void subtractVec(const Vec x, const Vec y, Vec& z) {
       for (int d=0; d<z.dimensions; ++d) z[d] = x[d]-y[d];
     }
 
@@ -235,16 +249,19 @@ namespace GFlowSimulation {
       return v;
     }
 
+    //! \brief Square a vector, obtaining the magnitude squared.
     friend RealType sqr(const Vec a) {
       RealType s = 0;
       for (int i=0; i<a.dimensions; ++i) s += a.data[i]*a.data[i];
       return s;
     }
 
+    //! \brief Cross product of 2d vectors. Returns the z component.
     friend inline RealType crossVec2(const Vec x, const Vec y) {
       return x[0]*y[1] - x[1]*y[0];
     }
 
+    //! \brief Find the distance between the ends of two vectors.
     friend RealType distanceVec(const Vec a, const Vec b) {
       // Check dimensions
       if (a.dimensions!=b.dimensions) throw DimensionMismatch("Disctance vec.");
@@ -254,6 +271,7 @@ namespace GFlowSimulation {
       return sqrt(acc);
     }
 
+    //! \brief Find the distance (magnitude) of a vector.
     friend RealType distance(const Vec a) {
       return sqrt(sqr(a));
     }
@@ -281,6 +299,7 @@ namespace GFlowSimulation {
     };
 
   private:
+    //! \brief The dimensionality of the vector. We keep this private, since no one should be allowed to change this.
     int dimensions;
   };
 

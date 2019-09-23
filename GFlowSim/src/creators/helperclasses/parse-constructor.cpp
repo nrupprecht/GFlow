@@ -239,23 +239,8 @@ namespace GFlowSimulation {
   Interaction* ParseConstructor::getInteraction(HeadNode *head, const std::map<string, string>& variables, string token, GFlow *gflow) {
     // Choose the interaction
     Interaction *interaction = InteractionChoice::choose(gflow, token, gflow->getSimDimensions());
-
-    // Look for options
-    TreeParser parser(head, variables);
-    parser.addHeadingOptional("Repulsion");
-    // Repulsion - for hard spheres.
-    RealType rp = 0;
-    if (parser.firstArg("Repulsion", rp)) {
-      if (gflow->getSimDimensions()==2) {
-        HardSphereVL<2> *hs = dynamic_cast<HardSphereVL<2>*>(interaction);
-        if (hs) hs->setRepulsion(rp);
-      }
-      if (gflow->getSimDimensions()==3) {
-        HardSphereVL<3> *hs = dynamic_cast<HardSphereVL<3>*>(interaction);
-        if (hs) hs->setRepulsion(rp);
-      }
-    }
-
+    // Have the interaction construct itself.
+    if (interaction) interaction->parse_construct(head, variables);
     // Return
     return interaction;
   }

@@ -85,6 +85,9 @@ namespace GFlowSimulation {
     //! \brief Set the skin depth.
     virtual void setSkinDepth(RealType);
 
+    //! \brief Calculate a good skin depth.
+    virtual void calculate_skin_depth();
+
     //! \brief Set the maximum update delay.
     void setMaxUpdateDelay(RealType);
 
@@ -125,12 +128,14 @@ namespace GFlowSimulation {
     //! \brief Set up interaction and cutoff grids.
     inline void set_up_grids();
 
+public:
     //! \brief If the two particles interact, and the interaction is handled by this interaction handler, add to the relevant interaction.
     //!
     //! \param id1 (Local) id of the first particle.
     //! \param id2 (Local) id of the second particle.
     //! \param list Which interaction list to add the particles to. Default list is list 0 (the non-wrapping list).
     void pair_interaction(const int, const int, const int=0);
+protected:
 
     // --- Data ---
 
@@ -186,6 +191,12 @@ namespace GFlowSimulation {
     //! The extra amount around a particle that the domain should count as being a particle neighbor. So if
     //! d(x, y) < rx + ry + skin_depth, the particles are neighbors.
     RealType skin_depth = DEFAULT_SKIN_DEPTH;
+
+    //! \brief The target number of particles in each particle's verlet list.
+    //!
+    //! Despite the fact that particles come in integer numbers, the target list size is a real, since it
+    //! determines the skin depth via multiplication, and the *average* list size can be a real.
+    RealType target_list_size = 4.;
     
     //! \brief The maximum "small" cutoff for a particle.
     //!

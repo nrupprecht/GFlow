@@ -55,22 +55,25 @@ namespace GFlowSimulation {
     //! Causes a rebuild of all the cells.
     virtual void setCellSize(RealType) override;
 
+    //! \brief Traverse the cells structure, calling a function on pairs of particles that are close to one another.
+    //!
+    //! The function that is passed in should expect to receive particles' id1, id2, wrapping type (0 - no wrapping
+    //! required, 1 - wrapping required), radius of particle 1, radius of particle 2, and distance between particles.
+    void traverseCells(std::function<void(int, int, int, RealType, RealType, RealType)>);
+
   private:
 
     //! \brief Migrate particles to another processor.
-    virtual void migrate_particles() override;
+    virtual void migrate_particles() override {};
     //! \brief Make halo particles.
-    virtual void construct_halo_particles() override;
+    virtual void construct_halo_particles() override {};
     //! \brief Communicate with other processors to create ghost particles.
-    virtual void construct_ghost_particles() override;
+    virtual void construct_ghost_particles() override {};
 
     //! \brief Determine what type of borders the domain has.
     //!
     //! This effects the dimensions of the domain, since there may need to be halo/ghost cells in some dimensions.
     inline void assign_border_types();
-
-    //! \brief Calculate a good skin depth.
-    inline void calculate_skin_depth();
 
     //! \brief Calculates the domain cell dimensions, widths, and inverse widths given 
     //! that the cutoff has been calculated. 
@@ -95,18 +98,18 @@ namespace GFlowSimulation {
     inline void fill_cells();
 
     //! \brief Turns a linear cell index into a (DIMENSIONS)-dimensional index
-    inline void linear_to_tuple(const int, int*);
+    inline void linear_to_tuple(const int, vector<int>&);
 
     //! \brief Turns a (DIMENSIONS)-dimensional index into a linear cell index.
-    inline void tuple_to_linear(int&, const int*);
+    inline void tuple_to_linear(int&, const vector<int>&);
 
     //! \brief Correct a linear index for wrapping. Returns true if the index is a valid cell.
     //!
     //! If the flag is set to false, we do not wrap positions.
-    inline bool correct_index(int*, bool=true);
+    inline bool correct_index(vector<int>&, bool=true);
 
     //! \brief Get the tuple index of a cell that a position lies in.
-    inline void get_cell_index_tuple(const RealType*, int*);
+    inline void get_cell_index_tuple(const RealType*, vector<int>&);
 
     //! \brief Get the linear index of the cell that a position lies within.
     inline int get_cell_index(const RealType*);
@@ -136,6 +139,9 @@ namespace GFlowSimulation {
 
     //! \brief A vector holding all the cells in the domain.
     vector<Cell> cells;
+
+    //! \brief Function used for setting an excluded particle when calling getAllWithin
+    int _exclude = -1;
   };
 
 }

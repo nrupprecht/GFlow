@@ -143,6 +143,17 @@ namespace GFlowSimulation {
     skin_depth = s;
   }
 
+  inline void InteractionHandler::calculate_skin_depth() {
+    RealType rho = simData->size() / process_bounds.vol();
+    RealType candidate = inv_sphere_volume((target_list_size)/rho + 0.5*sphere_volume(max_small_sigma, sim_dimensions), sim_dimensions) - 2*max_small_sigma;
+    skin_depth = max(static_cast<RealType>(0.5 * max_small_sigma), candidate);
+    // Use the same skin depth on all processors - take the average.
+    if (topology) {
+      MPIObject::mpi_sum(skin_depth);
+      skin_depth /= static_cast<RealType>(topology->getNumProc());
+    }
+  }
+
   void InteractionHandler::setMaxUpdateDelay(RealType delay) {
     max_update_delay = delay;
   }

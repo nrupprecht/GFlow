@@ -30,15 +30,6 @@ namespace GFlowSimulation {
     if (locals_changed) update_local_ids();
     locals_changed = false;
 
-    // A lambda for checking if the local id list contains an id.
-    // auto contains = [&] (int id) -> bool {
-    //   // Try to find the id in the vector.
-    //   auto it = std::find(local_ids.begin(), local_ids.end(), id);
-    //   // If the iterator returns an element of local_ids, then id is in local group.
-    //   // Therefore, check if it is a valid element, i.e. it != local_ids.end().
-    //   return it!=local_ids.end();
-    // };
-
     // Go through all non-group particles
     for (int i=0; i<size; ++i) {
       // Only look at real particles that are not in the group

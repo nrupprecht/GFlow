@@ -57,13 +57,13 @@ namespace GFlowSimulation {
     // --- Data
 
     //! \brief Number of cells in each dimension
-    int *dims;
+    int *dims = nullptr;
 
     //! \brief The widths of a cell in each dimension
-    RealType *widths;
+    RealType *widths = nullptr;
 
     //! \brief The inverse widths of a cell in each dimension
-    RealType *inverseW;
+    RealType *inverseW = nullptr;
 
     // --- Sectorization constants
 
@@ -73,12 +73,6 @@ namespace GFlowSimulation {
     //! to fit in the domain in each dimension, the actual widths will be different. They will be at
     //! least this large though.
     RealType target_cell_size = 0.;
-
-    //! \brief The target number of particles in each particle's verlet list.
-    //!
-    //! Despite the fact that particles come in integer numbers, the target list size is a real, since it
-    //! determines the skin depth via multiplication, and the *average* list size can be a real.
-    RealType target_list_size = 4.;
 
     //! \brief The minimum allowable cutoff for small particles, 2*max_small_sigma + skin_depth
     RealType min_small_cutoff = 0.; 
