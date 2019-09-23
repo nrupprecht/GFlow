@@ -5,9 +5,9 @@
 
 namespace GFlowSimulation {
 
-  WallSlideBody::WallSlideBody(GFlow *gflow, int d) : Body(gflow), slide_dimension(d) {};
+  WallSlideBody::WallSlideBody(GFlow *gflow, int d) : Body(gflow), Group(gflow), slide_dimension(d) {};
 
-  WallSlideBody::WallSlideBody(GFlow *gflow, Group group, int d) : Body(gflow), slide_dimension(d) {
+  WallSlideBody::WallSlideBody(GFlow *gflow, Group group, int d) : Body(gflow), Group(gflow), slide_dimension(d) {
     // Set the group part of this body.
     *dynamic_cast<Group*>(this) = group;
   }
@@ -17,16 +17,16 @@ namespace GFlowSimulation {
     if (global_ids.empty()) return;
 
     // Update local ids
-    update_local_ids(simData);
+    update_local_ids();
 
     // Set all velocities to zero
-    RealType **v = simData->V();
+    auto v = simData->V();
     for (auto id : local_ids)
       zeroVec(v[id], sim_dimensions);
 
     // Check length
-    RealType **x = simData->X();
-    RealType *sg = simData->Sg();
+    auto x = simData->X();
+    auto sg = simData->Sg();
     Vec max(sim_dimensions), min(sim_dimensions);
     copyVec(x[local_ids[0]], min);
     max = min;
@@ -47,11 +47,11 @@ namespace GFlowSimulation {
     // Make sure slide dimension is valid
     if (slide_dimension<0 || sim_dimensions<=slide_dimension) return;
     // If necessary, update local ids.
-    if (simData->getNeedsRemake()) update_local_ids(simData);
+    if (simData->getNeedsRemake()) update_local_ids();
 
     // Get the force and inverse mass arrays.
-    RealType **f = simData->F();
-    RealType *im = simData->Im();
+    auto f = simData->F();
+    auto im = simData->Im();
 
     // Net force on and total mass of the body
     Fnet = 0;

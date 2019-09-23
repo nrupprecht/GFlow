@@ -9,17 +9,26 @@ namespace GFlowSimulation {
   *  \brief This class deals with keeping track of local and global ids of groups of particles.
   *
   *  This class DOES NOT inherit from base, so we can use multiple inheritance and not worry about diamond inheritance.
+  *  Currently, this class contains a weak pointer to a SimData object.
   */
   class Group {
   public:
-    //! \brief Default constructor.
-    Group() {};
+    //! \brief Constructor that takes a pointer to simData.
+    Group(shared_ptr<SimData>);
+
+    //! \brief Constructor that takes a pointer to the gflow object.
+    Group(GFlow*);
     
     //! \brief Copy constructor
     Group(const Group&);
 
     //! \brief Equals
     Group& operator=(const Group &);
+
+    //! \brief Set this group to be a different group, erasing the information contained in the original group.
+    //!
+    //! The same thing as *this = <other group>.
+    void set(Group&);
 
     // --- Accessors
 
@@ -36,50 +45,52 @@ namespace GFlowSimulation {
     int g_at(int) const;
 
     //! \brief Find the position of the center of mass of the group.
-    void findCenterOfMass(RealType*, SimData*) const;
+    void findCenterOfMass(RealType*) const;
 
     //! \brief Find the center of mass velocity of the group.
-    void findCOMVelocity(RealType*, SimData*) const;
+    void findCOMVelocity(RealType*) const;
 
     //! \brief Find the net force on the group.
-    void findNetForce(RealType*, SimData*) const;
+    void findNetForce(RealType*) const;
 
     //! \brief Find the total mass of the objects in the group.
-    RealType findTotalMass(SimData*) const;
+    RealType findTotalMass() const;
 
-    void findClosestObject(const RealType*, RealType*, SimData*) const;
+    //! \brief Find the displacement between the closest object in the group and a point.
+    void findClosestObject(const RealType*, RealType*) const;
 
     //! \brief Add a velocity to all the particles.
-    void addVelocity(RealType*, SimData*) const;
+    void addVelocity(RealType*) const;
 
     //! \brief Add whatever force is necessary to each particle to increase its acceleration by the given amount.
-    void addAcceleration(RealType*, SimData*) const;
+    void addAcceleration(RealType*) const;
 
     //! \brief Gets the index of where the local id is stored in the local_ids vector.
-    //!
-    //! Only works if use_correspondence is true. If not, or the local id is not in the group, returns -1.
     int getIndex(int) const;
 
-    // --- Mutators
+    //! \brief Check whether the group contains a particle, by local id.
+    bool contains(int) const;
 
-    //! \brief Set this group to be a different group, erasing the information contained in the original group.
-    //!
-    //! The same thing as *this = <other group>.
-    void set(Group&);
+    //! \brief Get the sum of the distances between adjacent particles in the group, as if they formed a 
+    //! chain, and we wanted to know its length.
+    RealType getChainedLength() const;
+
+    // --- Mutators
 
     //! \brief Add a particle, via global id, to the body.
     //!
     //! This does not check if the id is a repeat.
     virtual void add(int);
 
-    //! \brief Update the vector of local ids to correspond to the correct particles.
-    void update_local_ids(SimData*) const;
+    //! \brief Check how far a position is from a group object.
+    //!
+    //! Depending on the type of group, this could be done in different ways.
+    virtual RealType distance(RealType*);
 
-    void setUseCorrespondence(bool);
+    //! \brief Update the vector of local ids to correspond to the correct particles.
+    void update_local_ids() const;
 
   protected:
-    //! \brief Remakes to correspondence map if use_correspondence is true.
-    void redo_correspondence() const;
 
     //! \brief The global ids of the particles in the group.
     vector<int> global_ids;
@@ -87,10 +98,10 @@ namespace GFlowSimulation {
     //! \brief The local ids of the particles in the group.
     mutable vector<int> local_ids;
 
-    //! \brief Map from local ids to place in the local id vector.
-    mutable std::multimap<int, int> correspondence;
-    //! \brief Whether to use the correspondence object.
-    bool use_correspondence = false;
+    //! \brief Weak pointer to the simdata object the group exists in.
+    //!
+    //! I could probably replace this with a shared_ptr - it probably wouldn't matter. I will have to test and see which is faster (if it matters).
+    std::weak_ptr<SimData> sim_data;
 
   };
 

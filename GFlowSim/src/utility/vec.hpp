@@ -52,6 +52,11 @@ namespace GFlowSimulation {
       data = nullptr;
     }
 
+    //! \brief Implicit cast to realtype pointer.
+    operator RealType*() {
+      return data;
+    }
+
     Vec& operator=(const Vec& v) {
       // Resize array if necessary.
       if (v.dimensions!=dimensions) {
@@ -183,6 +188,10 @@ namespace GFlowSimulation {
       for (int i=0; i<a.dimensions; ++i) out[i] = a[i] - b[i];
       // Return vector
       return out;
+    }
+
+    friend void subtractVec(const Vec x, const Vec y, Vec z) {
+      for (int d=0; d<z.dimensions; ++d) z[d] = x[d]-y[d];
     }
 
     Vec& operator-=(const Vec v) {

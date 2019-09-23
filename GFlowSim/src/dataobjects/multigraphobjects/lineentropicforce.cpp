@@ -5,8 +5,7 @@
 
 namespace GFlowSimulation {
 
-  LineEntropicForce::LineEntropicForce(GFlow *gflow) 
-    : MultiGraphObject(gflow, "LineEntropicForce", "time", "F/(rho kB T L)", gflow->getSimDimensions()) {};
+  LineEntropicForce::LineEntropicForce(GFlow *gflow) : MultiGraphObject(gflow, "LineEntropicForce", "time", "F/(rho kB T L)", gflow->getSimDimensions()), group(gflow) {};
 
   void LineEntropicForce::post_step() {
     // Only record if enough time has gone by
@@ -15,7 +14,7 @@ namespace GFlowSimulation {
     if (group.size()==0) return;
 
     // Make sure local ids are up to date.
-    if (locals_changed) group.update_local_ids(simData);
+    if (locals_changed) group.update_local_ids();
     locals_changed = false;
 
     // Add a new entry to modify
@@ -39,7 +38,7 @@ namespace GFlowSimulation {
 
     // Set the forces
     Vec F(sim_dimensions);
-    group.findNetForce(F.data, simData);
+    group.findNetForce(F.data);
     // Set each dimension of force.
     for (int d=0; d<sim_dimensions; ++d) getY(d) = norm*F[d]; 
   }
@@ -52,8 +51,8 @@ namespace GFlowSimulation {
     group = g;
     if (setLength) {
       // Set length
-      int first = simData->getLocalID( group.g_at(0) );
-      int last = simData->getLocalID ( group.g_at(group.size()-1) );
+      int first = simData->getLocalID(group.g_at(0));
+      int last = simData->getLocalID(group.g_at(group.size()-1));
       length = simData->X(last, 1) - simData->X(first, 1);
     }
   }

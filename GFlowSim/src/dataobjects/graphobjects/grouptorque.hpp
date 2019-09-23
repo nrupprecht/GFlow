@@ -21,7 +21,7 @@ namespace GFlowSimulation {
     void setGroup(class Group&);
 
     //! \brief Calculate the torque on a group of objects.
-    static RealType calculate_torque(SimData*, const Group&);
+    static RealType calculate_torque(shared_ptr<SimData>, const Group&);
 
   private:
     //! \brief The group of particles that we compute the torque of.

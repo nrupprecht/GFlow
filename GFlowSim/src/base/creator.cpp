@@ -116,7 +116,7 @@ namespace GFlowSimulation {
     gflow->integrator = integrator;
   }
 
-  void Creator::fix_particle_velocities(SimData *simData) {
+  void Creator::fix_particle_velocities(shared_ptr<SimData> simData) {
     for (auto &fix : particle_fixers) {
       // Get local id of the particle
       int id = simData->getLocalID(fix.global_id);

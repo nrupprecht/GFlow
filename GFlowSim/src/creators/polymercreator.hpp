@@ -29,7 +29,11 @@ namespace GFlowSimulation {
     //! \brief Create a single polymer from a pattern and some random walk statistics, etc.
     Group createSinglePolymer(GFlow*, const RealType*, const RealType*, const vector<bool>&, RealType, int, int);
 
+    //! \brief Create a line in which the primary spheres are placed uniformly at random in non-overlapping configurations.
     Group createRandomLine(GFlow*, const RealType*, const RealType, const RealType, const RealType=1.);
+
+    //! \brief Create a line in which the primary spheres are spaced evenly.
+    Group createOrderedLine(GFlow*, const RealType*, const RealType, const RealType, const RealType=1.);
 
     //! \brief Create a pair of infinitely massive polymers some distance away from one another, oriented in the y direction.
     void createParallelPolymers(GFlow*, const RealType, const RealType, const RealType);

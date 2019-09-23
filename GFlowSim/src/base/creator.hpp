@@ -64,7 +64,7 @@ namespace GFlowSimulation {
     static void relax(class GFlow*, RealType=0.25);
 
     //! \brief Use the particle fixers to assign particle velocities.
-    void fix_particle_velocities(SimData*);
+    void fix_particle_velocities(shared_ptr<SimData>);
 
     //! \brief Clear all the particle fixers
     void clear_particle_fixers();

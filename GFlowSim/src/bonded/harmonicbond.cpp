@@ -9,11 +9,10 @@ namespace GFlowSimulation {
   HarmonicBond::HarmonicBond(GFlow *gflow, RealType K) : Bond(gflow), springConstant(K) {};
 
   void HarmonicBond::addBond(int gid1, int gid2) {
-    SimData *sd = Base::simData;
-    int id1 = sd->getLocalID(gid1), id2 = sd->getLocalID(gid2);
+    int id1 = simData->getLocalID(gid1), id2 = simData->getLocalID(gid2);
     // Calculate the distance between the particles
     RealType dX[8]; // <-- Assumes that (sim_dimensions < 9)
-    Base::gflow->getDisplacement(sd->X(id1), sd->X(id2), dX);
+    Base::gflow->getDisplacement(simData->X(id1), simData->X(id2), dX);
     RealType r = magnitudeVec(dX, sim_dimensions);
     // Add global ids
     gleft.push_back(gid1);

@@ -15,7 +15,8 @@ namespace GFlowSimulation {
     bounds(Bounds(2))
   {
     // Set up basic objects. The integrator will be created by the creator.
-    simData      = new SimData(this);
+    //simData      = new SimData(this);
+    simData = std::make_shared<SimData>(this); // shared_ptr<SimData>(new SimData(this));
     integrator   = nullptr;
     handler      = new Domain(this);
     dataMaster   = new DataMaster(this);
@@ -32,7 +33,7 @@ namespace GFlowSimulation {
   }
 
   GFlow::~GFlow() {
-    if (simData)      delete simData;
+    //if (simData)      delete simData;
     if (integrator)   delete integrator;
     if (handler)      delete handler;
     if (dataMaster)   delete dataMaster;
@@ -384,7 +385,8 @@ namespace GFlowSimulation {
     return bondedInteractions;
   }
 
-  SimData* GFlow::getSimData() {
+  //SimData* GFlow::getSimData() {
+  shared_ptr<class SimData> GFlow::getSimData() {
     return simData;
   }
 

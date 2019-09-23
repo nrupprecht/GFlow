@@ -6,7 +6,7 @@
 
 namespace GFlowSimulation {
 
-  TwoPolymerBinForce::TwoPolymerBinForce(GFlow *gflow) : MultiGraphObject(gflow, "TwoPolymerBinForce", "x", "<F>", 3) {
+  TwoPolymerBinForce::TwoPolymerBinForce(GFlow *gflow) : MultiGraphObject(gflow, "TwoPolymerBinForce", "x", "<F>", 3), polyA(gflow), polyB(gflow) {
     // Data
     resetData(nbins);
     // Set label.
@@ -48,8 +48,8 @@ namespace GFlowSimulation {
 
     // Make sure local ids are up to date.
     if (locals_changed) {
-      polyA.update_local_ids(simData);
-      polyB.update_local_ids(simData);
+      polyA.update_local_ids();
+      polyB.update_local_ids();
     }
     locals_changed = false;
     // Find stats for both polymers.
@@ -115,7 +115,7 @@ namespace GFlowSimulation {
   }
 
   inline void TwoPolymerBinForce::find_forces(int choice, RealType norm) {
-    RealType **x = simData->X();
+    auto x = simData->X();
     Vec X1(sim_dimensions), X2(sim_dimensions), dX(sim_dimensions), A(sim_dimensions), B(sim_dimensions);
 
     // Select objects

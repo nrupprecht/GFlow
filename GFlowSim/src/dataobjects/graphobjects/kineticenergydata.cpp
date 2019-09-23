@@ -22,10 +22,10 @@ namespace GFlowSimulation {
     if(isnan(ke)) throw NanValue("KE");
   }
 
-  RealType KineticEnergyData::calculate_kinetic(SimData *simData, bool average) {
+  RealType KineticEnergyData::calculate_kinetic(shared_ptr<SimData> simData, bool average) {
     RealType ke = 0;
-    RealType **v = simData->V();
-    RealType *im = simData->Im();
+    auto v = simData->V();
+    auto im = simData->Im();
     int size = simData->size();
     int sim_dimensions = simData->getSimDimensions();
     int count = 0;
@@ -41,7 +41,7 @@ namespace GFlowSimulation {
     return average ? ke/static_cast<RealType>(count) : ke;
   }
 
-  RealType KineticEnergyData::calculate_temperature(SimData *simData) {
+  RealType KineticEnergyData::calculate_temperature(shared_ptr<SimData> simData) {
     // Get the kinetic energy.
     RealType ke = KineticEnergyData::calculate_kinetic(simData, true);
     // Calculate temperature.

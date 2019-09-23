@@ -10,7 +10,7 @@ namespace GFlowSimulation {
     StoreData();
 
     //! \brief Compute the data places.
-    void initialize(class SimData*);
+    void initialize(shared_ptr<class SimData>);
 
     void set_vector_data(const vector<string>&);
     void set_scalar_data(const vector<string>&);
@@ -61,7 +61,7 @@ namespace GFlowSimulation {
     int nTypes;
 
     //! \brief A pointer to the simdata class the data comes from.
-    class SimData *simData;
+    shared_ptr<class SimData> simData;
 
   };
 

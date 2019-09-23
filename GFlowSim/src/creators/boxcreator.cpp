@@ -87,7 +87,7 @@ namespace GFlowSimulation {
     }
 
     // The simdata object
-    SimData *simData = gflow->simData;
+    auto simData = gflow->simData;
 
     // Add some objects
     simData->reserve(number);

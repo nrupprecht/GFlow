@@ -9,7 +9,7 @@
 
 namespace GFlowSimulation {
 
-  Demon::Demon(GFlow *gflow) : Modifier(gflow), tau(0.1), startTime(0) {
+  Demon::Demon(GFlow *gflow) : Modifier(gflow), Group(gflow), tau(0.1), startTime(0) {
     // Set up data objects
     kineticL = new GraphObject(gflow, "KineticL", "t", "KE");
     kineticR = new GraphObject(gflow, "KineticR", "t", "KE");
@@ -54,7 +54,7 @@ namespace GFlowSimulation {
     // Set up vector of door particle positions.
     door_positions = vector<Vec>(size(), Vec(sim_dimensions));
     // Update local ids.
-    update_local_ids(simData);
+    update_local_ids();
     // Get data from simdata.
     RealType **x = simData->X();
     // Put particles back
@@ -162,7 +162,7 @@ namespace GFlowSimulation {
     RealType door_area = 0;
     if (size()>0) {
       // Update local variables
-      update_local_ids(simData);
+      update_local_ids();
       // Look for bounding box.
       RealType mn = door_positions[0][1], mx = door_positions[0][1];
       for (const auto& v : door_positions) {        
@@ -345,7 +345,7 @@ namespace GFlowSimulation {
     Vec p(sim_dimensions);
     p.set1(pos);
     // Update local ids.
-    update_local_ids(simData);
+    update_local_ids();
     // Get data from simdata.
     RealType **x = simData->X();
     // Put particles far away
@@ -360,7 +360,7 @@ namespace GFlowSimulation {
 
   inline void Demon::close_door() {
     // Update local ids.
-    update_local_ids(simData);
+    update_local_ids();
     // Get data from simdata.
     RealType **x = simData->X();
     // Put particles back

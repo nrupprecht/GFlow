@@ -126,7 +126,8 @@ namespace GFlowSimulation {
     const vector<class Bonded*>& getBondedInteractions() const;
 
     //! \brief Get the sim data object.
-    class SimData* getSimData();
+    //class SimData* getSimData();
+    shared_ptr<class SimData> getSimData();
 
     //! \brief Get the data master object.
     class DataMaster* getDataMaster();
@@ -318,7 +319,8 @@ namespace GFlowSimulation {
     inline void handleModifiers();
 
     // --- Data - public so anyone can access it
-    class SimData     *simData = nullptr;      // Particle data
+    shared_ptr<class SimData> simData;
+    //class SimData     *simData = nullptr;      // Particle data
     class Integrator  *integrator = nullptr;   // Integrator
     class InteractionHandler *handler = nullptr;      
     class DataMaster  *dataMaster = nullptr;   // DataMaster object for unified data collection  

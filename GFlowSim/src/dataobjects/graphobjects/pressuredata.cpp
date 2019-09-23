@@ -22,7 +22,7 @@ namespace GFlowSimulation {
 
   RealType PressureData::calculate_pressure(GFlow *gflow) {
     // SimData pointer
-    SimData *simData = gflow->getSimData();
+    auto simData = gflow->getSimData();
     int sim_dimensions = simData->getSimDimensions();
     // Get data
     RealType ke = KineticEnergyData::calculate_kinetic(simData, true);

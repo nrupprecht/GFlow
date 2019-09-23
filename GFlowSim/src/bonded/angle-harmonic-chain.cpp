@@ -2,30 +2,20 @@
 
 namespace GFlowSimulation {
 
-  AngleHarmonicChain::AngleHarmonicChain(GFlow *gflow)
-    : Bonded(gflow), springConstant(1.5*DEFAULT_SPRING_CONSTANT), angleConstant(0.05) {
-    use_correspondence = true;
-  };
+  AngleHarmonicChain::AngleHarmonicChain(GFlow *gflow): Bonded(gflow), Group(gflow), springConstant(1.5*DEFAULT_SPRING_CONSTANT), angleConstant(0.05) {};
 
-  AngleHarmonicChain::AngleHarmonicChain(GFlow *gflow, RealType K) 
-    : Bonded(gflow), springConstant(K), angleConstant(0.05) {
-    use_correspondence = true;
-  };
+  AngleHarmonicChain::AngleHarmonicChain(GFlow *gflow, RealType K) : Bonded(gflow), Group(gflow), springConstant(K), angleConstant(0.05) {};
 
-  AngleHarmonicChain::AngleHarmonicChain(GFlow *gflow, RealType K, RealType A)
-    : Bonded(gflow), springConstant(K), angleConstant(A) {
-    use_correspondence = true;
-  };
+  AngleHarmonicChain::AngleHarmonicChain(GFlow *gflow, RealType K, RealType A) : Bonded(gflow), Group(gflow), springConstant(K), angleConstant(A) {};
 
   void AngleHarmonicChain::addAtom(int gid) {
-    SimData *sd = Base::simData;
     if (global_ids.empty()) add(gid);
     else {
       int gid1 = *global_ids.rbegin(); // Last particle in the chain
-      int id1 = sd->getLocalID(gid1), id = sd->getLocalID(gid);
+      int id1 = simData->getLocalID(gid1), id = simData->getLocalID(gid);
       // Calculate the distance between the particles
       RealType dX[8]; // <-- Assumes that (sim_dimensions < 9)
-      Base::gflow->getDisplacement(sd->X(id1), sd->X(id), dX);
+      Base::gflow->getDisplacement(simData->X(id1), simData->X(id), dX);
       RealType r = magnitudeVec(dX, sim_dimensions);
       // Add global ids
       add(gid);
@@ -45,7 +35,7 @@ namespace GFlowSimulation {
     // Zero force buffers.
     for (auto &v : forces) v.zero();
     // Possibly update local ids
-    if (simData->getNeedsRemake()) update_local_ids(simData);
+    if (simData->getNeedsRemake()) update_local_ids();
   }
 
   void AngleHarmonicChain::setSpringConstant(RealType s) {
@@ -62,10 +52,9 @@ namespace GFlowSimulation {
   }
 
   const Vec& AngleHarmonicChain::getForceByID(int id) {
-    if (!use_correspondence) throw Exception("Angle harmonic chain must have use_correspondence = true.");
-    auto it = correspondence.find(id);
-    if (it==correspondence.end()) throw Exception("Angle harmonic chain does not contain that local id.");
-    return forces[it->second];
+    int index = getIndex(id);
+    if (index<0) throw Exception("Chain does not contain that particle.");
+    return forces[index];
   }
 
 }

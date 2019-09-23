@@ -5,18 +5,18 @@
 
 namespace GFlowSimulation {
 
-  RigidBody_2d::RigidBody_2d(GFlow *gflow) : Body(gflow) {};
+  RigidBody_2d::RigidBody_2d(GFlow *gflow) : Body(gflow), Group(gflow) {};
 
   void RigidBody_2d::post_forces() {
     // If size is zero, this body is empty.
     if (size()==0) return;
     // If needed, remake local ids.
-    if (simData->getNeedsRemake()) update_local_ids(simData);
+    if (simData->getNeedsRemake()) update_local_ids();
 
     // Get the position, force, and inverse mass arrays.
-    RealType **x = simData->X();
-    RealType **f = simData->F();
-    RealType *im = simData->Im();
+    auto x = simData->X();
+    auto f = simData->F();
+    auto im = simData->Im();
 
     // Get the bounds and boundary conditions
     Bounds bounds = Base::gflow->getBounds(); // Simulation bounds

@@ -2,12 +2,12 @@
 
 namespace GFlowSimulation {
 
-  GroupAngular::GroupAngular(GFlow *gflow) : MultiGraphObject(gflow, "GroupAngular", "time", "Mom. of Inertia", 3) {
+  GroupAngular::GroupAngular(GFlow *gflow) : MultiGraphObject(gflow, "GroupAngular", "time", "Mom. of Inertia", 3), Group(gflow) {
     axis_y[1] = "Ang. Momentum";
     axis_y[2] = "Torque";
   };
 
-  GroupAngular::GroupAngular(GFlow*, Group& g) : MultiGraphObject(gflow, "GroupAngular", "time", "Mom. of Inertia", 3), group(g) {
+  GroupAngular::GroupAngular(GFlow*, Group& g) : MultiGraphObject(gflow, "GroupAngular", "time", "Mom. of Inertia", 3), Group(g) {
     axis_y[1] = "Ang. Momentum";
     axis_y[2] = "Torque";
   };
@@ -26,43 +26,21 @@ namespace GFlowSimulation {
     getY(2) = T;
   }
 
-  void GroupAngular::setGroup(Group& g) {
-    group = g;
-  }
-
   void GroupAngular::calculate_angular_quantities() {
     if (simData==nullptr) return;
     // Update local ids?
-    if (locals_changed) group.update_local_ids(simData);
-
-    cout << "Here" << endl;
-
-    cout << simData << endl;
+    if (locals_changed) update_local_ids();
 
     // Find center of mass of the group.
     Vec com(sim_dimensions);
-    group.findCenterOfMass(com.data, simData);
-
-    cout << "Here" << endl;
+    findCenterOfMass(com.data);
 
     // Compute net angular velocity.
     Vec X(sim_dimensions), V(sim_dimensions), F(sim_dimensions);
     II = L = T = 0;
 
-    cout << "Here" << endl;
-
-    for (int i=0; i<group.size(); ++i) {
-
-      cout << "There" << endl;
-      cout << group.size() << endl;
-      cout << group.at(i) << endl;
-
-      int id = group.at(i);
-
-      cout << id << endl;
-
-      cout << simData->size() << endl;
-
+    for (int i=0; i<size(); ++i) {
+      int id = at(i);
       // Get the position and force.
       X = simData->X(id);
       X -= com;

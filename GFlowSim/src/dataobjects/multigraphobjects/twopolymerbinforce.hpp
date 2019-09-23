@@ -70,10 +70,10 @@ namespace GFlowSimulation {
     //! \brief The radius of a primary particle in the polymers.
     RealType radius = 0.05;
 
-    //! \brief The "left" wall.
+    //! \brief The "left" polymer.
     Group polyA;
     
-    //! \brief The "right" wall.
+    //! \brief The "right" polymer.
     Group polyB;
 
     //! \brief The "left" chain.

@@ -75,6 +75,8 @@ namespace GFlowSimulation {
       if (dc=="inf") imC = 0;
       else imC = 1./(convert<RealType>(dc)*sphere_volume(rC, sim_dimensions));
     }
+
+    imP = imC = 1e-6;
     
     // --- Done gathering parameters, ready to act.
 
@@ -95,7 +97,6 @@ namespace GFlowSimulation {
       gflow->addDataObject(correlation);
     }
 
-    //TwoGroupHarmonic *groupharmonic = nullptr;
     if (number==2) {
       polycorr = new TwoPolymerBinForce(gflow);
       polycorr->setCType(idC);
@@ -103,12 +104,6 @@ namespace GFlowSimulation {
       polycorr->setMaxDistance(10*rP);
       polycorr->setNBins(250);
       gflow->addDataObject(polycorr);
-      /*
-      groupharmonic = new TwoGroupHarmonic(gflow);
-      gflow->addBonded(groupharmonic);
-      groupharmonic->setMinDistance(0); // No minimum distance
-      groupharmonic->setMaxDistance(25.*rP);
-      */
     }
 
     if (pair) {
@@ -137,16 +132,11 @@ namespace GFlowSimulation {
             //groupharmonic->setGroupB(group);
           }
         }
-        /*
-        gflow->addModifier(new TorqueRemover(gflow, group));
-        gflow->addModifier(new ForceRemover (gflow, group));
-        */
       }
     }
     
     // Add local fixers to the particle fixers master list
     particle_fixers.insert(particle_fixers.end(), p_fixers.begin(), p_fixers.end());
-    
   }
 
   inline void PolymerCreator::make_bond_objects(GFlow *gflow) {
@@ -230,7 +220,7 @@ namespace GFlowSimulation {
 
   Group PolymerCreator::createRandomPolymer(GFlow *gflow, RealType length, RealType phi, int idP, int idC) {
     // Valid probability, number, radii, and types are needed
-    if (phi>1 || phi<0 || length<=0 || rP<0 || rC<0 || idP<0 || idP>=gflow->getNTypes() || idC<0 || idC>=gflow->getNTypes()) return Group();
+    if (phi>1 || phi<0 || length<=0 || rP<0 || rC<0 || idP<0 || idP>=gflow->getNTypes() || idC<0 || idC>=gflow->getNTypes()) return Group(gflow);
 
     // Get number of dimensions
     int sim_dimensions = gflow->sim_dimensions;
@@ -272,7 +262,7 @@ namespace GFlowSimulation {
 
   Group PolymerCreator::createSinglePolymer(GFlow *gflow, const RealType *x0, const RealType *v0, const vector<bool>& chain_ordering, RealType sigma_v, int idP, int idC) {
     // Get simdata and bounds
-    SimData *sd = gflow->simData;
+    auto sd = gflow->simData;
     Bounds bnds = gflow->bounds;
 
     // Get number of dimensions
@@ -298,7 +288,7 @@ namespace GFlowSimulation {
     copyVec(v0, V);
 
     // Create a group
-    Group group;
+    Group group(gflow);
     int start_id = sd->getNextGlobalID(), end_id;
 
     // Create chain
@@ -308,7 +298,7 @@ namespace GFlowSimulation {
       gid2 = end_id = sd->getNextGlobalID();
 
       // Add gid2 to the correlation object
-      if (correlation && useCorr) correlation->addToGroup(gid2);
+      if (correlation && useCorr) correlation->add(gid2);
 
       // What type of particle should be generated
       next_type = chain_ordering[i] ? 0 : 1;
@@ -348,7 +338,7 @@ namespace GFlowSimulation {
     }
 
     // Give the polymer some initial energy.
-    RealType vsgma = 0.001;
+    RealType vsgma = 0.; //0.001;
     for (int id=start_id; id<=end_id; ++id) {
       // Random velocity direction
       randomNormalVec(V.data, sim_dimensions);
@@ -373,7 +363,7 @@ namespace GFlowSimulation {
 
   Group PolymerCreator::createRandomLine(GFlow *gflow, const RealType *x, const RealType phi, const RealType length, const RealType spacing) {
     // Get simdata and bounds
-    SimData *sd = gflow->simData;
+    auto sd = gflow->simData;
     Bounds bnds = gflow->bounds;
 
     // Get number of dimensions
@@ -388,7 +378,7 @@ namespace GFlowSimulation {
     std::sort(marks.begin(), marks.end());
 
     // Create a group
-    Group group;
+    Group group(gflow);
 
     // Vectors
     Vec X(sim_dimensions), ZERO(sim_dimensions);
@@ -410,7 +400,56 @@ namespace GFlowSimulation {
       sd->addParticle(X.data, ZERO.data, rP, imP, idP);
 
       // Add gid2 to the correlation object
-      if (correlation && useCorr) correlation->addToGroup(gid);
+      if (correlation && useCorr) correlation->add(gid);
+
+      // Add particle
+      group.add(gid);
+    }
+
+    // Increment polymer counter
+    ++n_polymers;
+
+    // Return group
+    return group;
+  }
+
+  Group PolymerCreator::createOrderedLine(GFlow *gflow, const RealType *x, const RealType phi, const RealType length, const RealType spacing) {
+    // Get simdata and bounds
+    auto sd = gflow->simData;
+    Bounds bnds = gflow->bounds;
+
+    // Get number of dimensions
+    int sim_dimensions = gflow->sim_dimensions;
+
+    // Calculate the number of particles.
+    int n = phi * length / (2 * spacing * rP);
+    // Calculate distance between adjacent spheres.
+    RealType distance = length / n;
+
+    // Create a group
+    Group group(gflow);
+
+    // Vectors
+    Vec X(sim_dimensions), ZERO(sim_dimensions);
+    copyVec(x, X);
+    // Add particles
+    for (int i=0; i<n; ++i) {
+      // Next particle position
+      if (i==0)
+        X[1] += 0.5*distance;
+      else 
+        X[1] += distance;
+      // Wrap X
+      for (int d=0; d<sim_dimensions; ++d) {
+        if      (X[d]< bnds.min[d]) X[d] += bnds.wd(d);
+        else if (X[d]>=bnds.max[d]) X[d] -= bnds.wd(d);
+      }
+      // Add particle
+      int gid = sd->getNextGlobalID();
+      sd->addParticle(X.data, ZERO.data, rP, imP, idP);
+
+      // Add gid2 to the correlation object
+      if (correlation && useCorr) correlation->add(gid);
 
       // Add particle
       group.add(gid);
@@ -428,6 +467,7 @@ namespace GFlowSimulation {
     int sim_dimensions = gflow->sim_dimensions;
 
     RealType spacing = 1.;
+    // Change the inverse mass to preserve uniform mass per unit length.
     imP /= spacing;
 
     // Create a random polymer according to the specification.
@@ -467,7 +507,7 @@ namespace GFlowSimulation {
 
     // Give back harmonic bonds
     harmonicbonds = bonds;
-
+    // Correct the inverse mass.
     imP *= spacing;
   }
 

@@ -90,10 +90,10 @@ namespace GFlowSimulation {
       auto& heads = head_list[list];
 
       // Get the data pointers.
-      RealType **x = simData->X();
-      RealType **f = simData->F();
-      RealType *rd = simData->Sg();
-      int    *type = simData->Type();
+      auto x = simData->X();
+      auto f = simData->F();
+      auto rd = simData->Sg();
+      auto type = simData->Type();
 
       // Make sure all needed pointers are non null.
       // \todo Should probably have some sort of global error message system.

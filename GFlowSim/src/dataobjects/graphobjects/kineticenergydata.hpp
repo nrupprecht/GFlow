@@ -14,10 +14,10 @@ namespace GFlowSimulation {
     virtual void post_step() override;
 
     //! \brief Calculate the kinetic energy of the particles in the simdata.
-    static RealType calculate_kinetic(SimData*, bool=false);
+    static RealType calculate_kinetic(shared_ptr<SimData>, bool=false);
 
     //! \brief Calculate the temperature of the particles in the simdata.
-    static RealType calculate_temperature(SimData*);
+    static RealType calculate_temperature(shared_ptr<SimData>);
 
   private:
     //! \brief Whether to use the average kinetic energy per particle (as opposed to the total kinetic energy).

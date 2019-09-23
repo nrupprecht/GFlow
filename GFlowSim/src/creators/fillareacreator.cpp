@@ -137,7 +137,7 @@ namespace GFlowSimulation {
       throw BadStructure("If using a single type, we need a nonzero number of particles.");
 
     // Get the simdata
-    SimData *simData = gflow->getSimData();
+    auto simData = gflow->getSimData();
 
     // Normal velocities
     auto choose_by_normal = [&] (RealType *V, RealType *X, RealType sigma, RealType im, int type) -> void {

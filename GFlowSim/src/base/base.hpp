@@ -43,7 +43,7 @@ namespace GFlowSimulation {
     friend class GFlow;
 
     class GFlow* getGFlow() const;
-    class SimData* getSimData() const;
+    shared_ptr<class SimData> getSimData() const;
     class Integrator* getIntegrator() const;
     class InteractionHandler* getHandler() const;
     class DataMaster* getDataMaster() const;
@@ -54,7 +54,7 @@ namespace GFlowSimulation {
 
   protected:
     class GFlow        *gflow;
-    class SimData      *simData;
+    shared_ptr<class SimData> simData;
     class Integrator   *integrator;
     class InteractionHandler *handler;
     class DataMaster   *dataMaster; 

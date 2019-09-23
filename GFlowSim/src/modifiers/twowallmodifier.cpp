@@ -4,7 +4,7 @@
 
 namespace GFlowSimulation {
 
-  TwoWallModifier::TwoWallModifier(GFlow *gflow) : Modifier(gflow), wallA(WallSlideBody(gflow)), wallB(WallSlideBody(gflow)), 
+  TwoWallModifier::TwoWallModifier(GFlow *gflow) : Modifier(gflow), wallA(gflow), wallB(gflow), 
     max_distance(-1.), min_distance(-1.), acceleration(50.) {
     // Add the bodies to gflow
     gflow->addBody(&wallA);
@@ -15,8 +15,8 @@ namespace GFlowSimulation {
     gflow->addDataObject(data_object);
   };
 
-  TwoWallModifier::TwoWallModifier(GFlow *gflow, const Group& group1, const Group& group2) : Modifier(gflow), wallA(WallSlideBody(gflow, group1)), 
-    wallB(WallSlideBody(gflow, group2)), max_distance(-1.), min_distance(-1.), acceleration(50.) {
+  TwoWallModifier::TwoWallModifier(GFlow *gflow, const Group& group1, const Group& group2) : Modifier(gflow), wallA(gflow, group1), 
+    wallB(gflow, group2), max_distance(-1.), min_distance(-1.), acceleration(50.) {
     // Add the bodies to gflow
     gflow->addBody(&wallA);
     gflow->addBody(&wallB);
@@ -43,9 +43,9 @@ namespace GFlowSimulation {
     if (a!=0) {
       Vec A(sim_dimensions);
       A[0] = a;
-      wallA.addAcceleration(A.data, simData);
+      wallA.addAcceleration(A.data);
       A.negate();
-      wallB.addAcceleration(A.data, simData);
+      wallB.addAcceleration(A.data);
     }
   }
 

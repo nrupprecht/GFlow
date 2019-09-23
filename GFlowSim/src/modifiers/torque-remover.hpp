@@ -6,7 +6,7 @@
 
 namespace GFlowSimulation {
 
-  class TorqueRemover : public Modifier {
+  class TorqueRemover : public Modifier, public Group {
   public:
     //! \brief Constructor.
     TorqueRemover(GFlow*);
@@ -19,13 +19,6 @@ namespace GFlowSimulation {
 
     //! \brief Remove the net torque from the group of objects.
     virtual void post_forces() override;
-
-    //! \brief Set the group.
-    void setGroup(Group&);
-
-  private:
-    //! \brief A pointer to the group of particles from which to remove torque.
-    Group group;
   };
 
 }

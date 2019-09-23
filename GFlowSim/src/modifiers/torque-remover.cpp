@@ -5,21 +5,21 @@
 
 namespace GFlowSimulation {
 
-  TorqueRemover::TorqueRemover(GFlow *gflow) : Modifier(gflow) {};
+  TorqueRemover::TorqueRemover(GFlow *gflow) : Modifier(gflow), Group(gflow) {};
 
-  TorqueRemover::TorqueRemover(GFlow *gflow, Group& g) : Modifier(gflow), group(g) {};
+  TorqueRemover::TorqueRemover(GFlow *gflow, Group& g) : Modifier(gflow), Group(g) {};
 
   void TorqueRemover::pre_integrate() {
-    group.update_local_ids(simData);
+    update_local_ids();
 
     // Find center of mass of the group.
     Vec com(sim_dimensions), X(sim_dimensions), V(sim_dimensions);
-    group.findCenterOfMass(com.data, simData);
+    findCenterOfMass(com.data);
 
     // Compute total antular velocity.
     RealType L = 0, II = 0;
-    for (int i=0; i<group.size(); ++i) {
-      int id = group.at(i);
+    for (int i=0; i<size(); ++i) {
+      int id = at(i);
       // Get the position and force.
       gflow->getDisplacement(simData->X(id), com.data, X.data);
       // Compute
@@ -31,8 +31,8 @@ namespace GFlowSimulation {
     // Calculate angular velocity
     RealType omega = L / II;
 
-    for (int i=0; i<group.size(); ++i) {
-      int id = group.at(i);
+    for (int i=0; i<size(); ++i) {
+      int id = at(i);
       // Remove angular velocity.
       gflow->getDisplacement(simData->X(id), com.data, X.data);
       V[0] =   omega * X[1];
@@ -46,24 +46,24 @@ namespace GFlowSimulation {
     Modifier::post_forces();
 
     // We need there to be a valid group.
-    if (group.empty() || simData==nullptr) return;
+    if (empty() || simData==nullptr) return;
 
     // This only works (for now?) in two dimensions.
     if (sim_dimensions!=2) return;
 
     // Update local ids?
-    if (simData->getNeedsRemake()) group.update_local_ids(simData);
+    if (simData->getNeedsRemake()) update_local_ids();
 
     // Find center of mass of the group.
     Vec com(sim_dimensions);
-    group.findCenterOfMass(com.data, simData);
+    findCenterOfMass(com.data);
 
     // Compute total torque. We must use torque = dII/dt * omega + II * alpha 
     // since II is non-constant.
     Vec X(sim_dimensions), V(sim_dimensions), F(sim_dimensions);
     RealType L = 0, torque = 0, II = 0;
-    for (int i=0; i<group.size(); ++i) {
-      int id = group.at(i);
+    for (int i=0; i<size(); ++i) {
+      int id = at(i);
       //X = simData->X(id);
       //X -= com;
       //gflow->minimumImage(X.data);
@@ -80,17 +80,13 @@ namespace GFlowSimulation {
     RealType alpha = II>0 ? torque/II : 0;
 
     // Apply torque to counteract the angular acceleration.
-    for (int i=0; i<group.size(); ++i) {
-      int id = group.at(i);
+    for (int i=0; i<size(); ++i) {
+      int id = at(i);
       gflow->getDisplacement(simData->X(id), com.data, X.data);
       RealType mass = 1./simData->Im(id);
       simData->F(id, 0) += mass * alpha * X[1];
       simData->F(id, 1) -= mass * alpha * X[0];
     }
-  }
-
-  void TorqueRemover::setGroup(Group& g) {
-    group = g;
   }
 
 }

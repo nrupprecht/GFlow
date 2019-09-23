@@ -45,6 +45,11 @@ using std::chrono::duration_cast;
 
 #include <map>
 
+#include <memory> // For pointers
+using std::unique_ptr;
+using std::shared_ptr;
+using std::weak_ptr;
+
 #include "simd_types.hpp"
 
 /**

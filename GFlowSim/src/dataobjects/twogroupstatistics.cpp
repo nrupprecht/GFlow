@@ -2,7 +2,7 @@
 
 namespace GFlowSimulation {
 
-  TwoGroupStatistics::TwoGroupStatistics(GFlow *gflow) : DataObject(gflow, "TwoGroupStatistics") {
+  TwoGroupStatistics::TwoGroupStatistics(GFlow *gflow) : DataObject(gflow, "TwoGroupStatistics"), group1(gflow), group2(gflow) {
     setBins(50, 101);
   };
 
@@ -16,34 +16,34 @@ namespace GFlowSimulation {
 
     // Find the local ids of the group atoms if simdata has altered the local ids.
     if (locals_changed) {
-      group1.update_local_ids(simData);
-      group2.update_local_ids(simData);
+      group1.update_local_ids();
+      group2.update_local_ids();
     }
     locals_changed = false;
 
     // Find the centers of mass for each group
-    RealType *rcm1 = new RealType[sim_dimensions], *rcm2 = new RealType[sim_dimensions], *dr = new RealType[sim_dimensions];
-    group1.findCenterOfMass(rcm1, simData);
-    group2.findCenterOfMass(rcm2, simData);
+    Vec rcm1(sim_dimensions), rcm2(sim_dimensions), dr(sim_dimensions);
+    group1.findCenterOfMass(rcm1);
+    group2.findCenterOfMass(rcm2);
     gflow->getDisplacement(rcm2, rcm1, dr);
-    RealType R = sqrt(dotVec(dr, dr, sim_dimensions));
+    RealType R = distance(dr);
 
     // If within the cutoff radius, bin the data
     if (R<r_max) {
       // Normalize dr
-      normalizeVec(dr, sim_dimensions);
+      dr.normalize();
       // Find the net force on each group
-      RealType *f1 = new RealType[sim_dimensions], *f2 = new RealType[sim_dimensions], *dF = new RealType[sim_dimensions];
-      group1.findNetForce(f1, simData);
-      group2.findNetForce(f2, simData);
-      subtractVec(f2, f1, dF, sim_dimensions);
-      RealType rel_f = dotVec(dF, dr, sim_dimensions);
+      Vec f1(sim_dimensions), f2(sim_dimensions), dF(sim_dimensions);
+      group1.findNetForce(f1);
+      group2.findNetForce(f2);
+      subtractVec(f2, f1, dF);
+      RealType rel_f = dotVec(dF.data, dr.data, sim_dimensions);
       // Find the com velocity for each group
-      RealType *v1 = new RealType[sim_dimensions], *v2 = new RealType[sim_dimensions], *vr = new RealType[sim_dimensions];
-      group1.findCOMVelocity(v1, simData);
-      group2.findCOMVelocity(v2, simData);
-      subtractVec(v2, v1, vr, sim_dimensions);
-      RealType rel_v = dotVec(vr, dr, sim_dimensions);
+      Vec v1(sim_dimensions), v2(sim_dimensions), vr(sim_dimensions);
+      group1.findCOMVelocity(v1.data);
+      group2.findCOMVelocity(v2.data);
+      subtractVec(v2.data, v1.data, vr.data, sim_dimensions);
+      RealType rel_v = dotVec(vr.data, dr.data, sim_dimensions);
       
       // Distance bin
       int br = (R/r_max)*bins_x;
@@ -54,21 +54,7 @@ namespace GFlowSimulation {
       // Velocity bin
       int bv = static_cast<int>(0.5*bins_y*(rel_v + v_max)/v_max);
       if (0<=bv && bv<bins_y) ++count_v[br][bv];
-
-      // Clean up
-      delete [] f1;
-      delete [] f2;
-      delete [] dF;
-      delete [] v1;
-      delete [] v2;
-      delete [] vr;
-    }
-
-    // Clean up
-    delete [] rcm1;
-    delete [] rcm2; 
-    delete [] dr;
-   
+    }   
   }
 
   bool TwoGroupStatistics::writeToFile(string fileName, bool useName) {

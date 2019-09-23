@@ -46,7 +46,7 @@ namespace GFlowSimulation {
     gflow->simData->addParticle(2);
 
     // Get pointers to particle data
-    SimData *simData = gflow->simData;
+    auto simData = gflow->simData;
 
     // Rightwards ball
     zeroVec(simData->X(0), sim_dimensions); 

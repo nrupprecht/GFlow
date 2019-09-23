@@ -6,20 +6,13 @@
 
 namespace GFlowSimulation {
 
-  class GroupNetForce : public MultiGraphObject {
+  class GroupNetForce : public MultiGraphObject, Group {
   public:
     //! \brief Default constructor.
     GroupNetForce(GFlow*);
 
     //! \brief Collect the position data from simdata --- happens during the post-step phase
     virtual void post_step() override;
-
-    //! \brief Set the group to track.
-    void setGroup(const Group&);
-
-  private:
-    //! \brief The group of particles in question.
-    Group group;
   };
 
 }

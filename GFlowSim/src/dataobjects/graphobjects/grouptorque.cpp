@@ -2,7 +2,7 @@
 
 namespace GFlowSimulation {
 
-  GroupTorque::GroupTorque(GFlow *gflow) : GraphObject(gflow, "Torque", "time", "Torque") {};
+  GroupTorque::GroupTorque(GFlow *gflow) : GraphObject(gflow, "Torque", "time", "Torque"), group(gflow) {};
 
   GroupTorque::GroupTorque(GFlow*, Group& g) : GraphObject(gflow, "Torque", "time", "Torque"), group(g) {};
 
@@ -21,9 +21,9 @@ namespace GFlowSimulation {
     group = g;
   }
 
-  RealType GroupTorque::calculate_torque(SimData *simData, const Group& group) {
+  RealType GroupTorque::calculate_torque(shared_ptr<SimData> simData, const Group& group) {
     // Update local ids?
-    if (simData->getNeedsRemake()) group.update_local_ids(simData);
+    if (simData->getNeedsRemake()) group.update_local_ids();
 
     // Get gflow and the number of dimensions.
     int sim_dimensions = simData->getSimDimensions();
@@ -31,7 +31,7 @@ namespace GFlowSimulation {
 
     // Find center of mass of the group.
     Vec com(sim_dimensions);
-    group.findCenterOfMass(com.data, simData);
+    group.findCenterOfMass(com.data);
 
     // Compute total torque.
     Vec X(sim_dimensions), Acc(sim_dimensions);

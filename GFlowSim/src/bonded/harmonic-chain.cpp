@@ -7,17 +7,16 @@ namespace GFlowSimulation {
   HarmonicChain::HarmonicChain(GFlow *gflow, RealType K) : Bonded(gflow), springConstant(K) {};
 
   void HarmonicChain::addAtom(int gid) {
-    SimData *sd = Base::simData;
     if (global_ids.empty()) {
       local_ids.push_back(gid);
       global_ids.push_back(gid);
     }
     else {
       int gid1 = *global_ids.rbegin();
-      int id1 = sd->getLocalID(gid1), id = sd->getLocalID(gid);
+      int id1 = simData->getLocalID(gid1), id = simData->getLocalID(gid);
       // Calculate the distance between the particles
       RealType dX[8]; // <-- Assumes that (sim_dimensions < 9)
-      Base::gflow->getDisplacement(sd->X(id1), sd->X(id), dX);
+      Base::gflow->getDisplacement(simData->X(id1), simData->X(id), dX);
       RealType r = magnitudeVec(dX, sim_dimensions);
       // Add global ids
       global_ids.push_back(gid);
@@ -34,9 +33,8 @@ namespace GFlowSimulation {
 
   void HarmonicChain::interact() const {
     // Get simdata, check if the local ids need updating
-    SimData *sd = Base::simData;
-    RealType **f = sd->F();
-    if (sd->getNeedsRemake()) updateLocalIDs();
+    auto f = simData->F();
+    if (simData->getNeedsRemake()) updateLocalIDs();
     RealType dX[8]; // <-- Assumes that (sim_dimensions < 9)
     
     for (int i=0; i+1<local_ids.size(); ++i) {
@@ -44,7 +42,7 @@ namespace GFlowSimulation {
       int id1 = local_ids[i], id2 = local_ids[i+1];
 
       // Calculate displacement
-      Base::gflow->getDisplacement(sd->X(id1), sd->X(id2), dX);
+      Base::gflow->getDisplacement(simData->X(id1), simData->X(id2), dX);
       RealType r = magnitudeVec(dX, sim_dimensions);
 
       // Calculate displacement from equilibrium
@@ -63,10 +61,9 @@ namespace GFlowSimulation {
     // Make sure sizes are the same
     int nbonds = global_ids.size();
     // Update local ids
-    SimData *sd = Base::simData;
     for (int i=0; i<nbonds; ++i) {
       int gid = global_ids[i];
-      int id = sd->getLocalID(gid);
+      int id = simData->getLocalID(gid);
       local_ids[i] = id;
     }
   }

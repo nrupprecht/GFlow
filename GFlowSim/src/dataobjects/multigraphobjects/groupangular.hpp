@@ -6,7 +6,7 @@
 
 namespace GFlowSimulation {
 
-  class GroupAngular : public MultiGraphObject {
+  class GroupAngular : public MultiGraphObject, Group {
   public:
     //! \brief Constructor.
     GroupAngular(GFlow*);
@@ -17,20 +17,19 @@ namespace GFlowSimulation {
     //! \brief Compute the torque on the group.
     virtual void post_step() override;
 
-    //! \brief Set the group.
-    void setGroup(class Group&);
-
     //! \brief Calculates all the angular quantities.
     void calculate_angular_quantities();
 
+    //! \brief Get the last calculated moment of inertia of the particles.
     RealType getII();
+
+    //! \brief Get the last calculated angular momentum of the particles.
     RealType getL();
+
+    //! \brief Get the last calculated torque on the particles.
     RealType getTorque();
 
   private:
-    //! \brief The group of particles that we compute the torque of.
-    class Group group;
-
     //! \brief The last calculated moment of inertia.
     RealType II = 0;
 
