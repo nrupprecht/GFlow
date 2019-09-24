@@ -8,6 +8,9 @@
 
 namespace GFlowSimulation {
 
+  //! \brief Typedef for the function type that gets passed into traverse pairs functions.
+  using PairFunction = std::function<void(int, int, int, RealType, RealType, RealType)>;
+
   /**
   *  \brief Sets up interactions.
   *
@@ -55,7 +58,14 @@ namespace GFlowSimulation {
     virtual void getAllWithin(Vec, vector<int>&, RealType=-1.)=0;
 
     //! \brief Remove particles that are overlapping by more than some fraction.
-    virtual void removeOverlapping(RealType)=0;
+    virtual void removeOverlapping(RealType);
+
+    //! \brief Function that traverses the internal data structures of interaction handlers and calls a function on
+    //! all pairs of particles that are within cutoff + skin depth distance of one another.
+    //!
+    //! The function (a PairFunction) that is passed in should expect to receive particles' id1, id2, wrapping type (0 - no wrapping
+    //! required, 1 - wrapping required), radius of particle 1, radius of particle 2, and distance between particles.
+    virtual void traversePairs(PairFunction)=0;
 
     // --- Accessors ---
 
@@ -85,9 +95,6 @@ namespace GFlowSimulation {
     //! \brief Set the skin depth.
     virtual void setSkinDepth(RealType);
 
-    //! \brief Calculate a good skin depth.
-    virtual void calculate_skin_depth();
-
     //! \brief Set the maximum update delay.
     void setMaxUpdateDelay(RealType);
 
@@ -103,18 +110,17 @@ namespace GFlowSimulation {
 
   protected:
 
-    //! \brief Migrate particles to another processor.
-    virtual void migrate_particles()=0;
-    //! \brief Make halo particles.
-    virtual void construct_halo_particles()=0;
-    //! \brief Communicate with other processors to create ghost particles.
-    virtual void construct_ghost_particles()=0;
+    //! \brief Calculate a good skin depth.
+    virtual void calculate_skin_depth();
 
     //! \brief Calculates the maximum "small sigma."
     //!
     //! Particles that are larger than max_small_sigma are "large particles," and must search more than
     //! one sector around them.
     virtual void calculate_max_small_sigma();
+
+    //! \brief Child classes should overload this to do any updates to data structures necessary before construction.
+    virtual void structure_updates() {};
 
     //! \brief Check if the interactions need to be remade.
     bool check_needs_remake();
@@ -128,14 +134,15 @@ namespace GFlowSimulation {
     //! \brief Set up interaction and cutoff grids.
     inline void set_up_grids();
 
-public:
+    //! \brief Determine what type of borders the domain has.
+    inline void assign_border_types();
+
     //! \brief If the two particles interact, and the interaction is handled by this interaction handler, add to the relevant interaction.
     //!
     //! \param id1 (Local) id of the first particle.
     //! \param id2 (Local) id of the second particle.
     //! \param list Which interaction list to add the particles to. Default list is list 0 (the non-wrapping list).
     void pair_interaction(const int, const int, const int=0);
-protected:
 
     // --- Data ---
 
@@ -245,6 +252,18 @@ protected:
 
     //! \brief Whether the domain has been initialized or not.
     bool initialized = false;
+
+
+
+    //! \brief What type of borders there are in the "up" directions.
+    //!
+    //! 0 - No ghost particles, 1 - Ghost particles, no wrapping, 2 - Ghost particles, wrapping.
+    vector<int> border_type_up;
+
+    //! \brief What type of borders there are in the "down" directions.
+    //!
+    //! 0 - No ghost particles, 1 - Ghost particles, no wrapping, 2 - Ghost particles, wrapping.
+    vector<int> border_type_down;
 
   };
 

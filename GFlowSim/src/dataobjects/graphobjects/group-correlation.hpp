@@ -44,6 +44,9 @@ namespace GFlowSimulation {
 
     //! \brief How many times data was collected. 
     int data_iters = 0;
+
+    //! \brief If true, we find the distance to the "chain" that connects adjacent (by index) particles in the group.
+    bool find_chain_distance = true;
   };
 
 }

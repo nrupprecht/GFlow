@@ -13,35 +13,7 @@
 
 namespace GFlowSimulation {
 
-  Domain::Domain(GFlow *gflow) : DomainBase(gflow) {
-    // Allocate arrays
-    border_type_up = new int[sim_dimensions];
-    border_type_down = new int[sim_dimensions];
-    dim_shift_up = new int[sim_dimensions];
-    dim_shift_down = new int[sim_dimensions];
-    products = new int[sim_dimensions+1];
-    // Initialize to zero
-    zeroVec(border_type_up, sim_dimensions);
-    zeroVec(border_type_down, sim_dimensions);
-    zeroVec(dim_shift_up, sim_dimensions);
-    zeroVec(dim_shift_down, sim_dimensions);
-    zeroVec(products, sim_dimensions);
-  };
-
-  Domain::~Domain() {
-    // Delete this object's data.
-    if (border_type_up)   delete [] border_type_up;
-    if (border_type_down) delete [] border_type_down;
-    if (dim_shift_up)     delete [] dim_shift_up;
-    if (dim_shift_down)   delete [] dim_shift_down;
-    if (products)         delete [] products;
-    // Null pointers, just in case.
-    border_type_up = nullptr;
-    border_type_down = nullptr;
-    dim_shift_up = nullptr;
-    dim_shift_down = nullptr;
-    products = nullptr;
-  }
+  Domain::Domain(GFlow *gflow) : DomainBase(gflow), products(sim_dimensions+1, 0), dim_shift_up(sim_dimensions, 0), dim_shift_down(sim_dimensions, 0) {};
 
   void Domain::initialize() {
     //! \todo Domains are generally initialized several times, though they doesn't need to be. Find a way to check whether we
@@ -54,7 +26,7 @@ namespace GFlowSimulation {
     if (process_bounds.vol()<=0 || isnan(process_bounds.vol()) || simData==nullptr || simData->size()==0) return;
 
     // Assign border types - do this before creating cells.
-    assign_border_types();
+    // assign_border_types();
 
     // Calculate skin depth
     calculate_skin_depth();
@@ -136,47 +108,7 @@ namespace GFlowSimulation {
       }
     }
   }
-
-  void Domain::removeOverlapping(RealType factor) {
-    // Update particles in the cells
-    update_cells();
-
-    // Call traverse cells, marking particles that overlap too much for removal.
-    traverseCells([&] (int id1, int id2, int, RealType r1, RealType r2, RealType rsqr) {
-      RealType overlap = r1 + r2 - sqrt(rsqr);
-      if (overlap/min(r1, r2) > factor) simData->markForRemoval(id2);
-    });
-
-    // Remove particles
-    Base::simData->doParticleRemoval();
-  }
-
-  void Domain::construct() {
-    // Domain base common tasks
-    DomainBase::construct();
-    // Start timer.
-    start_timer();
-    // Update particles in the cells
-    update_cells();
-
-    // If there are no interaction, we don't need to make any verlet lists
-    if (gflow->getInteractions().empty()) return;
-    // If there is no force master, return
-    if (forceMaster==nullptr) return;
-    // Make sure force master has interaction array set up
-    forceMaster->initialize_does_interact();
-    
-    // Traverse cells, adding particle pairs that are within range of one another to the interaction.
-    traverseCells([&] (int id1, int id2, int w_type, RealType, RealType, RealType) {
-      pair_interaction(id1, id2, w_type);
-    });
-    
-    // Close all
-    forceMaster->close();
-    // Stop timer.
-    stop_timer();
-  }
-
+  
   void Domain::constructFor(int id, bool insert) {
 
   }
@@ -185,12 +117,7 @@ namespace GFlowSimulation {
     // @todo Implement this.
   }
 
-  inline void Domain::update_cells() {
-    clear_cells();
-    fill_cells();
-  }
-
-  void Domain::traverseCells(std::function<void(int, int, int, RealType, RealType, RealType)> body) {
+  void Domain::traversePairs(std::function<void(int, int, int, RealType, RealType, RealType)> body) {
     // Get the array of max cutoffs
     const vector<RealType> & max_cutoffs = forceMaster->getMaxCutoff();
 
@@ -203,14 +130,11 @@ namespace GFlowSimulation {
 
     // Tuples
     vector<int> tuple1(sim_dimensions), tuple2(sim_dimensions), cell_index(sim_dimensions), center(sim_dimensions), search_dims(sim_dimensions);
-    Vec dx(sim_dimensions);
 
     // Find potential neighbors
     auto sg = simData->Sg();
     auto x = simData->X();
     auto type = simData->Type();
-    // Get the boundary conditions
-    const auto bcs = gflow->getBCs();
 
     // Go through all the cells in the simulation.
     for (const auto &c : cells) {
@@ -286,46 +210,15 @@ namespace GFlowSimulation {
                   body(id1, id2, 1, sg[id1], sg[id2], r2);
               }
             }
-          }
+          } 
         }
       }
     }
   }
 
-  inline void Domain::assign_border_types() {
-    // Get the boundary condition flags
-    const BCFlag *bcs = Base::gflow->getBCs(); 
-    //! \todo Use topology object to determine border types.
-    //! For now, just use halo cells whenever possible.
-    for (int d=0; d<sim_dimensions; ++d) {
-      if (bcs[d]==BCFlag::WRAP) {
-        // This processor takes up the whole bounds in this dimension, there are no processors above or below this one.
-        if (process_bounds.wd(d)==simulation_bounds.wd(d)) {
-          border_type_up[d]   = 0;
-          border_type_down[d] = 0;
-        }
-        // There are one or more processors above and below this one.
-        else {
-          // If this processor expects ghost particles that are wrapped.
-          if (process_bounds.max[d]==simulation_bounds.max[d]) border_type_up[d] = 2;
-          // Ghost particles, but not wrapped ones.
-          else border_type_up[d] = 1;
-
-          // If this processor expects ghost particles that are wrapped.
-          if (process_bounds.min[d]==simulation_bounds.min[d]) border_type_down[d] = 2;
-          // Ghost particles, but not wrapped ones.
-          else border_type_down[d] = 1;
-        }
-      }
-      else {
-        // Are there ghost particles?
-        if (process_bounds.max[d]==simulation_bounds.max[d]) border_type_up[d] = 0;
-        else border_type_up[d] = 1;
-        // Are there ghost particles?
-        if (process_bounds.min[d]==simulation_bounds.min[d]) border_type_down[d] = 0;
-        else border_type_down[d] = 1;
-      }
-    }
+  inline void Domain::structure_updates() {
+    clear_cells();
+    fill_cells();
   }
 
   void Domain::calculate_domain_cell_dimensions() {

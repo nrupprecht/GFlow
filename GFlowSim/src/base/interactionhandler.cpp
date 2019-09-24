@@ -9,7 +9,8 @@
 
 namespace GFlowSimulation {
 
-  InteractionHandler::InteractionHandler(GFlow *gflow) : Base(gflow), velocity(gflow->getSimDimensions()), process_bounds(sim_dimensions), simulation_bounds(sim_dimensions) {};
+  InteractionHandler::InteractionHandler(GFlow *gflow) : Base(gflow), velocity(gflow->getSimDimensions()), process_bounds(sim_dimensions), simulation_bounds(sim_dimensions),
+    border_type_up(sim_dimensions, 0), border_type_down(sim_dimensions, 0) {};
 
   InteractionHandler::~InteractionHandler() {
     if (positions) dealloc_array_2d(positions);
@@ -39,6 +40,9 @@ namespace GFlowSimulation {
       update_decision_type = 1;
     }
     #endif
+
+    // Assign what types of borders the region managed by this handler has.
+    assign_border_types();
   }
 
   void InteractionHandler::pre_integrate() {
@@ -81,7 +85,7 @@ namespace GFlowSimulation {
   }
 
   void InteractionHandler::construct() {
-    // \todo Some of these things should not be called if there are multiple different interaction handlers.
+    // \todo Some of these things should not be called if there are multiple different interaction handlers, e.g. simData->update().
     
     // Remove all halo and ghost particles, wrap particles, if parallel then pass particles and figure out ghost particles, 
     // and do particle removal. Don't time this part with the interactionhandler timer, it counts as MPI and simdata related
@@ -91,8 +95,9 @@ namespace GFlowSimulation {
     // Start timed object timer.
     start_timer();
 
-    // Reset the verlet lists of all the forces
+    // Reset the verlet lists of all the forces and make sure force master has interaction array set up
     forceMaster->clear();
+    forceMaster->initialize_does_interact();
     
     // Set timer
     last_update = gflow->getElapsedTime();
@@ -100,15 +105,43 @@ namespace GFlowSimulation {
     steps_since_last_remake = 0;
     // Increment counter
     ++number_of_remakes;
-    // Set gflow flags.
-    gflow->handler_needs_remake() = false;
-    gflow->handler_remade()       = true;
 
     // Record where the particles were
     if (update_decision_type==0 && auto_record_positions) record_positions();
 
-    // Stop timed object timer.
+    // Set gflow flags. This should happen before any return points.
+    gflow->handler_needs_remake() = false;
+    gflow->handler_remade() = true;
+
+    // If there are no interaction, or the forceMaster is null, we don't need to make any verlet lists
+    if (gflow->getInteractions().empty() || forceMaster==nullptr) return;
+
+    // Update data structures.
+    structure_updates();
+    
+    // Traverse cells, adding particle pairs that are within range of one another to the interaction.
+    traversePairs([&] (int id1, int id2, int w_type, RealType, RealType, RealType) {
+      pair_interaction(id1, id2, w_type);
+    });
+    
+    // Close all interactions.
+    forceMaster->close();
+    // Stop timer.
     stop_timer();
+  }
+
+  void InteractionHandler::removeOverlapping(RealType factor) {
+    // Update particles in the cells
+    structure_updates();
+
+    // Call traverse cells, marking particles that overlap too much for removal.
+    traversePairs([&] (int id1, int id2, int, RealType r1, RealType r2, RealType rsqr) {
+      RealType overlap = r1 + r2 - sqrt(rsqr);
+      if (overlap/min(r1, r2) > factor) simData->markForRemoval(id2);
+    });
+
+    // Remove particles
+    simData->doParticleRemoval();
   }
 
   int InteractionHandler::getNumberOfRemakes() const {
@@ -143,17 +176,6 @@ namespace GFlowSimulation {
     skin_depth = s;
   }
 
-  inline void InteractionHandler::calculate_skin_depth() {
-    RealType rho = simData->size() / process_bounds.vol();
-    RealType candidate = inv_sphere_volume((target_list_size)/rho + 0.5*sphere_volume(max_small_sigma, sim_dimensions), sim_dimensions) - 2*max_small_sigma;
-    skin_depth = max(static_cast<RealType>(0.5 * max_small_sigma), candidate);
-    // Use the same skin depth on all processors - take the average.
-    if (topology) {
-      MPIObject::mpi_sum(skin_depth);
-      skin_depth /= static_cast<RealType>(topology->getNumProc());
-    }
-  }
-
   void InteractionHandler::setMaxUpdateDelay(RealType delay) {
     max_update_delay = delay;
   }
@@ -168,6 +190,17 @@ namespace GFlowSimulation {
       simulation_bounds = topology->getSimulationBounds();
       // Check if the process bounds have changed. If so, reinitialize. This will correctly set process_bounds.
       if (process_bounds != topology->getProcessBounds()) initialize();
+    }
+  }
+
+  void InteractionHandler::calculate_skin_depth() {
+    RealType rho = simData->size() / process_bounds.vol();
+    RealType candidate = inv_sphere_volume((target_list_size)/rho + 0.5*sphere_volume(max_small_sigma, sim_dimensions), sim_dimensions) - 2*max_small_sigma;
+    skin_depth = max(static_cast<RealType>(0.5 * max_small_sigma), candidate);
+    // Use the same skin depth on all processors - take the average.
+    if (topology) {
+      MPIObject::mpi_sum(skin_depth);
+      skin_depth /= static_cast<RealType>(topology->getNumProc());
     }
   }
 
@@ -305,6 +338,42 @@ namespace GFlowSimulation {
           cutoff_grid[i][j] = (interaction_grid[i][j]) ? interaction_grid[i][j]->getCutoff() : 0.;
         }
       }
+  }
+
+  inline void InteractionHandler::assign_border_types() {
+    // Get the boundary condition flags
+    const auto bcs = Base::gflow->getBCs(); 
+    //! \todo Use topology object to determine border types.
+    //! For now, just use halo cells whenever possible.
+    for (int d=0; d<sim_dimensions; ++d) {
+      if (bcs[d]==BCFlag::WRAP) {
+        // This processor takes up the whole bounds in this dimension, there are no processors above or below this one.
+        if (process_bounds.wd(d)==simulation_bounds.wd(d)) {
+          border_type_up[d]   = 0;
+          border_type_down[d] = 0;
+        }
+        // There are one or more processors above and below this one.
+        else {
+          // If this processor expects ghost particles that are wrapped.
+          if (process_bounds.max[d]==simulation_bounds.max[d]) border_type_up[d] = 2;
+          // Ghost particles, but not wrapped ones.
+          else border_type_up[d] = 1;
+
+          // If this processor expects ghost particles that are wrapped.
+          if (process_bounds.min[d]==simulation_bounds.min[d]) border_type_down[d] = 2;
+          // Ghost particles, but not wrapped ones.
+          else border_type_down[d] = 1;
+        }
+      }
+      else {
+        // Are there ghost particles?
+        if (process_bounds.max[d]==simulation_bounds.max[d]) border_type_up[d] = 0;
+        else border_type_up[d] = 1;
+        // Are there ghost particles?
+        if (process_bounds.min[d]==simulation_bounds.min[d]) border_type_down[d] = 0;
+        else border_type_down[d] = 1;
+      }
+    }
   }
 
   void InteractionHandler::pair_interaction(const int id1, const int id2, const int list) {

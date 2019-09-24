@@ -118,11 +118,6 @@ namespace GFlowSimulation {
     create_cells();
   }
 
-
-  void Domain2DCells::migrate_particles() {
-
-  }
-
   void Domain2DCells::construct_halo_particles() {
     // No particles.
     if (simData->size()==0) return;
@@ -175,10 +170,6 @@ namespace GFlowSimulation {
     // Tell the location of the first halo particle.
     simData->setFirstHalo(size);
     simData->setFirstGhost(simData->size());
-  }
-
-  void Domain2DCells::construct_ghost_particles() {
-
   }
 
   inline void Domain2DCells::create_cells() {

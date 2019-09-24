@@ -28,7 +28,7 @@ namespace GFlowSimulation {
     groupA.findCenterOfMass(X1.data);
     groupB.findCenterOfMass(X2.data);
     gflow->getDisplacement (X2.data, X1.data, dX.data);
-    RealType d = distance(dX);
+    RealType d = magnitude(dX);
     dX.normalize();
     // Compute accelerations
     if (d<min_distance) {

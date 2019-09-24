@@ -26,7 +26,7 @@ namespace GFlowSimulation {
     group1.findCenterOfMass(rcm1);
     group2.findCenterOfMass(rcm2);
     gflow->getDisplacement(rcm2, rcm1, dr);
-    RealType R = distance(dr);
+    RealType R = magnitude(dr);
 
     // If within the cutoff radius, bin the data
     if (R<r_max) {

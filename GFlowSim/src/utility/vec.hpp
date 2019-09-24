@@ -271,8 +271,8 @@ namespace GFlowSimulation {
       return sqrt(acc);
     }
 
-    //! \brief Find the distance (magnitude) of a vector.
-    friend RealType distance(const Vec a) {
+    //! \brief Find the magnitude of a vector.
+    friend RealType magnitude(const Vec a) {
       return sqrt(sqr(a));
     }
 

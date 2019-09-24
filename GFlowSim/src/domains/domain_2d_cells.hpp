@@ -63,17 +63,10 @@ namespace GFlowSimulation {
     }
  
   private:
-
-    //! \brief Migrate particles to another processor.
-    virtual void migrate_particles() override;
-
     //! \brief Make halo particles.
     //!
     //! This function assumes that there are currently no halo or ghost particles stored in simdata.
-    virtual void construct_halo_particles() override;
-
-    //! \brief Communicate with other processors to create ghost particles.
-    virtual void construct_ghost_particles() override;
+    void construct_halo_particles();
 
     //! \brief Calculates the dimensions of the grid, and the cell widths and inverse widths.
     virtual void calculate_domain_cell_dimensions() override;

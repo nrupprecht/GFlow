@@ -75,8 +75,6 @@ namespace GFlowSimulation {
       if (dc=="inf") imC = 0;
       else imC = 1./(convert<RealType>(dc)*sphere_volume(rC, sim_dimensions));
     }
-
-    imP = imC = 0.001;
     
     // --- Done gathering parameters, ready to act.
 
