@@ -2,9 +2,6 @@
 
 namespace GFlowSimulation {
 
-  // Dimension setting constructor
-  Cell::Cell(int d) {}
-
   // Copy constructor
   Cell::Cell(const Cell& cell) {
     particle_ids = cell.particle_ids;

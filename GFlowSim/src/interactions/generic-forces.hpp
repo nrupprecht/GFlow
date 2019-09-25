@@ -322,8 +322,8 @@ namespace GFlowSimulation {
   //! \brief Define the CoulombVLP class to be Coulomb force using verlet list pairs container.
   template<int dims> 
   using CoulombVLP = CoulombGeneric<dims, VerletListPairs>;
-
-
+  
+  
   /*
   * \brief Generic class for Buckingham forces.
   *
@@ -416,8 +416,8 @@ namespace GFlowSimulation {
   //! \brief Define the LennardJonesVLP class to be lennard jones force using verlet list pairs container.
   template<int dims> 
   using BuckinghamVLP = BuckinghamGeneric<dims, VerletListPairs>;
-
-
+  
+  
   /*
   * \brief Generic class for Hertz-type forces.
   *

@@ -45,22 +45,6 @@ namespace GFlowSimulation {
     initialized = true;
   }
 
-  void Domain2D::getAllWithin(int id1, vector<int>& neighbors, RealType distance) {
-    // STUB
-  }
-
-  void Domain2D::removeOverlapping(RealType) {
-    // STUB
-  }
-
-  void Domain2D::setSkinDepth(RealType) {
-
-  }
-
-  void Domain2D::setCellSize(RealType) {
-
-  }
-
   void Domain2D::construct() {
     DomainBase::construct();
 

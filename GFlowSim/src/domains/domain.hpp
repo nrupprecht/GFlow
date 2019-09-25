@@ -12,9 +12,6 @@ namespace GFlowSimulation {
     //! \brief Default constructor.
     Domain(GFlow*);
 
-    //! \brief Initialize the domain.
-    virtual void initialize() override;
-
     //! \brief Get all the particles within a radius of another particle
     //!
     //! Fills a passed in vector with the ids of all the particles that lie within
@@ -32,11 +29,6 @@ namespace GFlowSimulation {
     //! This function should be called after construct.
     virtual void constructFor(int, bool=false) override;
 
-    //! \brief Set the minimum cell size. 
-    //!
-    //! Causes a rebuild of all the cells.
-    virtual void setCellSize(RealType) override;
-
     //! \brief Traverse the cells structure, calling a function on pairs of particles that are close to one another.
     //!
     //! The function that is passed in should expect to receive particles' id1, id2, wrapping type (0 - no wrapping
@@ -45,6 +37,8 @@ namespace GFlowSimulation {
 
   private:
 
+    // --- Overloaded functions
+
     //! \brief Update the linked cells structure.
     virtual void structure_updates() override;
 
@@ -52,23 +46,10 @@ namespace GFlowSimulation {
     //! that the cutoff has been calculated. 
     inline void calculate_domain_cell_dimensions() override;
 
-    //! \brief Calculates the array of products used to convert between linear and tuple indices.
-    inline void calculate_product_array();
-
     //! \brief Create the cells.
-    inline void create_cells();
+    virtual void create_cells() override;
 
-    //! \brief Updates the cells - this just clears the cells, fills them, and records how many particles there were.
-    //!
-    //! \see clear_cells
-    //! \see fill_cells
-    inline void update_cells();
-
-    //! \brief Clear all the particle IDs from all the cells
-    inline void clear_cells();
-
-    //! \brief Put all particles in the domain into cells.
-    inline void fill_cells();
+    // --- Helper functions
 
     //! \brief Turns a linear cell index into a (DIMENSIONS)-dimensional index
     inline void linear_to_tuple(const int, vector<int>&);
@@ -100,26 +81,6 @@ namespace GFlowSimulation {
 
     //! \brief The number of halo or ghost sectors added below.
     vector<int> dim_shift_down;
-
-    // //! \brief Array of products, used to compute linear indices from vectors or tuple indices.
-    // int *products;
-
-    // //! \brief What type of borders there are in the "up" directions.
-    // //!
-    // //! 0 - No ghost particles, 1 - Ghost particles, no wrapping, 2 - Ghost particles, wrapping.
-    // int *border_type_up;
-
-    // //! \brief What type of borders there are in the "down" directions.
-    // //!
-    // //! 0 - No ghost particles, 1 - Ghost particles, no wrapping, 2 - Ghost particles, wrapping.
-    // int *border_type_down;
-
-    // //! \brief The number of halo or ghost sectors added below.
-    // //!
-    // //! We don't actually need this number (as of now), we only need dim_shift_down, but we keep it for completeness.
-    // int *dim_shift_up;
-    // //! \brief The number of halo or ghost sectors added below.
-    // int *dim_shift_down;
 
     //! \brief A vector holding all the cells in the domain.
     vector<Cell> cells;

@@ -15,7 +15,7 @@ namespace GFlowSimulation {
 
   struct Cell {
     //! \brief Dimension setting constructor
-    Cell(int d);
+    Cell() {};
 
     //! \brief Copy constructor
     Cell(const Cell& cell);

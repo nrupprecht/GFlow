@@ -4,49 +4,13 @@
 #include "../base/simdata.hpp"
 #include "../utility/vectormath.hpp"
 #include "../base/forcemaster.hpp"
-
 #include "../base/interaction.hpp"
-
 #include "../base/topology.hpp"
-
 #include "../utility/generic-dimension.hpp"
 
 namespace GFlowSimulation {
 
   Domain::Domain(GFlow *gflow) : DomainBase(gflow), products(sim_dimensions+1, 0), dim_shift_up(sim_dimensions, 0), dim_shift_down(sim_dimensions, 0) {};
-
-  void Domain::initialize() {
-    //! \todo Domains are generally initialized several times, though they doesn't need to be. Find a way to check whether we
-    //! actually need to initialize the domain.
-
-    // Common initialization tasks. Calculates max small sigma.
-    DomainBase::initialize();
-
-    // If bounds are unset, then don't make sectors. We cannot initialize if simdata is null
-    if (process_bounds.vol()<=0 || isnan(process_bounds.vol()) || simData==nullptr || simData->size()==0) return;
-
-    // Assign border types - do this before creating cells.
-    // assign_border_types();
-
-    // Calculate skin depth
-    calculate_skin_depth();
-
-    // Use max_small_sigma. It is important that all processors share a consistent min_small_cutoff.
-    // This can be achieved by sharing a max_small_sigma, and skin_depth.
-    target_cell_size = min_small_cutoff = 2*max_small_sigma+skin_depth;
-
-    // Calculate cell grid data
-    calculate_domain_cell_dimensions();
-
-    // Create the cells
-    create_cells();
-
-    // Construct the interaction handlers for the forces
-    construct();
-
-    // The domain has been initialized
-    initialized = true;
-  }
 
   void Domain::getAllWithin(int id1, vector<int>& neighbors, RealType distance) {
     // Set exclude flag so the more general getAllWithin function doesn't count id1 as a valid particle.
@@ -108,13 +72,9 @@ namespace GFlowSimulation {
       }
     }
   }
-  
+
   void Domain::constructFor(int id, bool insert) {
-
-  }
-
-  void Domain::setCellSize(RealType) {
-    // @todo Implement this.
+    // \todo Implement this.
   }
 
   void Domain::traversePairs(std::function<void(int, int, int, RealType, RealType, RealType)> body) {
@@ -206,7 +166,7 @@ namespace GFlowSimulation {
                 RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
                 if (r2 < sqr((sigma1 + sg[id2])*cutoffs_id1[type[id2]] + skin_depth))
                   body(id1, id2, 0, sg[id1], sg[id2], r2);
-                else if (max_reasonable<r2) 
+                else if (max_reasonable<r2)
                   body(id1, id2, 1, sg[id1], sg[id2], r2);
               }
             }
@@ -217,8 +177,16 @@ namespace GFlowSimulation {
   }
 
   inline void Domain::structure_updates() {
-    clear_cells();
-    fill_cells();
+    // Clear cells
+    for (auto &c : cells) c.particle_ids.clear();
+    // We should have just done a particle removal, so we can use number, not size (since all arrays are compressed)
+    int number = Base::simData->number();
+    auto x = simData->X();
+    auto type = Base::simData->Type();
+    // Bin all the particles
+    for (int i=0; i<number; ++i)
+      if (0<=type[i] && forceMaster->typeInteracts(type[i])) 
+        add_to_cell(x[i], i);
   }
 
   void Domain::calculate_domain_cell_dimensions() {
@@ -245,10 +213,6 @@ namespace GFlowSimulation {
     }
 
     // Initialize products array
-    calculate_product_array();
-  }
-
-  inline void Domain::calculate_product_array() {
     products[sim_dimensions] = 1;
     for (int d=sim_dimensions-1; d>=0; --d)
       products[d] = dims[d]*products[d+1];
@@ -258,29 +222,24 @@ namespace GFlowSimulation {
     // --- Create the cells
     // Get the total number of cells - The dims MUST be set first.
     const int size = getNumCells();
-    cells = vector<Cell>(size, Cell(sim_dimensions));
+    cells = vector<Cell>(size);
 
     // Holder for tuple index
-    //int *tuple1 = new int[sim_dimensions], *tuple2 = new int[sim_dimensions];
     vector<int> tuple1(sim_dimensions), tuple2(sim_dimensions);
     
     // --- Create a neighborhood stencil to help us find adjacent cells.
-    int sweep = ceil(min_small_cutoff/min(widths, sim_dimensions));
-    vector<int*> neighbor_indices;
-    int *little_dims = new int[sim_dimensions], *center = new int[sim_dimensions];
+    int sweep = ceil(min_small_cutoff/min(widths));
+    vector<vector<int> > neighbor_indices;
+    vector<int> little_dims(sim_dimensions), center(sim_dimensions);
     for (int d=0; d<sim_dimensions; ++d) little_dims[d] = 2*sweep+1;
-    for (int d=0; d<sim_dimensions; ++d) center[d]      = sweep;
+    for (int d=0; d<sim_dimensions; ++d) center[d] = sweep;
 
     // Create stencil
     for (int i=0; i<floor(0.5*pow(2*sweep+1, sim_dimensions)); ++i) {
-      getAddressCM(i, little_dims, tuple1.data(), sim_dimensions);
-      subtractVec(tuple1.data(), center, tuple2.data(), sim_dimensions);
+      getAddressCM(i, little_dims.data(), tuple1.data(), sim_dimensions);
+      subtractVec(tuple1.data(), center.data(), tuple2.data(), sim_dimensions);
       int dr2 = sqr(tuple2.data(), sim_dimensions);
-      if (dr2<sqr(sweep+1)) {
-        int *new_index = new int[sim_dimensions];
-        copyVec(tuple2.data(), new_index, sim_dimensions);
-        neighbor_indices.push_back(new_index);
-      }
+      if (dr2<sqr(sweep+1)) neighbor_indices.push_back(tuple2);
     }
 
     // At this point, the vector neighor_indices now contains all the relative indices of neighbors cells.
@@ -291,8 +250,8 @@ namespace GFlowSimulation {
       linear_to_tuple(c, tuple1);
 
       // Set cell neighbors
-      for (auto n : neighbor_indices) {
-        addVec(tuple1.data(), n, tuple2.data(), sim_dimensions);
+      for (auto neigh : neighbor_indices) {
+        addVec(tuple1.data(), neigh.data(), tuple2.data(), sim_dimensions);
         
         if (correct_index(tuple2, true)) {
           int linear;
@@ -301,32 +260,12 @@ namespace GFlowSimulation {
         }
       }
     }
-
-    // Clean up 
-    delete [] little_dims;
-    delete [] center;
-    for (auto &n : neighbor_indices) delete [] n;
-  }
-
-  inline void Domain::clear_cells() {
-    for (auto &c : cells) c.particle_ids.clear();
-  }
-
-  inline void Domain::fill_cells() {
-    // We should have just done a particle removal, so we can use number, not size (since all arrays are compressed)
-    int number = Base::simData->number();
-    auto x = simData->X();
-    auto type = Base::simData->Type();
-    // Bin all the particles
-    for (int i=0; i<number; ++i)
-      if (0<=type[i] && forceMaster->typeInteracts(type[i])) 
-        add_to_cell(x[i], i);
   }
 
   // Turns a linear cell index into a (DIMENSIONS)-dimensional index
   inline void Domain::linear_to_tuple(int linear, vector<int>& tuple) {
     // Same as the get address function in
-    getAddressCM(linear, dims, tuple.data(), sim_dimensions); // We need to use the column major form
+    getAddressCM(linear, dims.data(), tuple.data(), sim_dimensions); // We need to use the column major form
   }
 
   // Turns a (DIMENSIONS)-dimensional index into a linear cell index

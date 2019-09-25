@@ -8,24 +8,21 @@ namespace GFlowSimulation {
   /** 
   *  \brief The base class for domain decomposition classes.
   *
-  *  MPI tutorials: <http://mpitutorial.com/>
-  *
   */
   class DomainBase : public InteractionHandler {
   public:
     //! Constructor
     DomainBase(GFlow*);
 
-    //! Destructor
-    virtual ~DomainBase();
+    virtual void initialize() override;
 
     // --- Accessors
 
     //! Get the array of the number of cells in each dimension
-    const int* getDims() const;
+    const vector<int>& getDims() const;
 
     //! Get the array of the width of the cells in each dimension
-    const RealType* getWidths() const;
+    const vector<RealType>& getWidths() const;
 
     //! Get the total number of cells in the domain
     int getNumCells() const;
@@ -33,20 +30,8 @@ namespace GFlowSimulation {
     //! \brief Get the min small cutoff.
     RealType getCutoff() const;
 
-    // --- Mutators
-
-    //! \brief Set the skin depth. This function is virtual, as the inheriting class
-    //! may need to remake itself after doing this.
-    virtual void setSkinDepth(RealType) override;
-
-    //! \brief Set the cell size. 
-    //!
-    //! Really, this suggests a cell size. It must be larger than the minimum possible cell size, 
-    //! and must evenly divide the size of the domain.
-    virtual void setCellSize(RealType)=0;
-
     // GFlow is a friend class
-    friend class GFlow;
+    //friend class GFlow;
 
   protected:
 
@@ -54,16 +39,19 @@ namespace GFlowSimulation {
     //! that the cutoff has been calculated.
     virtual void calculate_domain_cell_dimensions()=0;
 
+    //! \brief Create the cells.
+    virtual void create_cells()=0;
+
     // --- Data
 
     //! \brief Number of cells in each dimension
-    int *dims = nullptr;
+    vector<int> dims;
 
     //! \brief The widths of a cell in each dimension
-    RealType *widths = nullptr;
+    vector<RealType> widths;
 
     //! \brief The inverse widths of a cell in each dimension
-    RealType *inverseW = nullptr;
+    vector<RealType> inverseW;
 
     // --- Sectorization constants
 

@@ -8,31 +8,40 @@
 
 namespace GFlowSimulation {
 
-  DomainBase::DomainBase(GFlow *gflow) : InteractionHandler(gflow) {
-    // Allocate arrays
-    dims     = new int[sim_dimensions];
-    widths   = new RealType[sim_dimensions];
-    inverseW = new RealType[sim_dimensions];
-    // Set to zero
-    zeroVec(dims, sim_dimensions);
-    zeroVec(widths, sim_dimensions);
-    zeroVec(inverseW, sim_dimensions);
-  }; 
+  DomainBase::DomainBase(GFlow *gflow) : InteractionHandler(gflow), dims(sim_dimensions, 0), widths(sim_dimensions, 0.), inverseW(sim_dimensions, 0.) {};
 
-  DomainBase::~DomainBase() {
-    if (dims)     delete [] dims;
-    if (widths)   delete [] widths;
-    if (inverseW) delete [] inverseW;
-    dims     = nullptr;
-    widths   = nullptr;
-    inverseW = nullptr;
+  void DomainBase::initialize() {
+    // Base tasks.
+    InteractionHandler::initialize();
+
+    // If bounds are unset, then don't make sectors. We cannot initialize if simdata is null
+    if (process_bounds.vol()<=0 || isnan(process_bounds.vol()) || simData==nullptr || simData->size()==0) return;
+
+    // Calculate skin depth
+    calculate_skin_depth();
+
+    // Use max_small_sigma. It is important that all processors share a consistent min_small_cutoff.
+    // This can be achieved by sharing a max_small_sigma, and skin_depth.
+    target_cell_size = min_small_cutoff = 2*max_small_sigma+skin_depth;
+
+    // Calculate cell grid data
+    calculate_domain_cell_dimensions();
+
+    // Create the cells
+    create_cells();
+
+    // Construct the interaction handlers for the forces
+    construct();
+
+    // The domain has been initialized
+    initialized = true;
   }
 
-  const int* DomainBase::getDims() const {
+  const vector<int>& DomainBase::getDims() const {
     return dims;
   }
 
-  const RealType* DomainBase::getWidths() const {
+  const vector<RealType>& DomainBase::getWidths() const {
     return widths;
   }
 
@@ -44,11 +53,6 @@ namespace GFlowSimulation {
 
   RealType DomainBase::getCutoff() const {
     return min_small_cutoff;
-  }
-
-  void DomainBase::setSkinDepth(RealType s) {
-    InteractionHandler::setSkinDepth(s);
-    min_small_cutoff = 2*max_small_sigma + skin_depth;
   }
 
 }

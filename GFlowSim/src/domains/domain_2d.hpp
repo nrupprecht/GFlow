@@ -15,30 +15,17 @@ namespace GFlowSimulation {
 
     //! \brief Set up the domain.
     virtual void initialize() override;
-
+    
     //! \brief Get all the particles within a radius of another particle
     //! Fills a passed in vector with the ids of all the particles that lie within
     //! a specified distance of a given particle.\n
     //! This function must be overloaded by all children of DomainBase.
-    virtual void getAllWithin(int, vector<int>&, RealType=-1.) override;
+    virtual void getAllWithin(int, vector<int>&, RealType=-1.) override { cout << "Error: unimplemented.\n"; };
 
     //! \brief Get all the particles withing a radius of some position.
-    virtual void getAllWithin(Vec, vector<int>&, RealType=-1.) override {};
-
-    //! \brief Remove particles that are overlapping by more than some fraction.
-    virtual void removeOverlapping(RealType) override;
+    virtual void getAllWithin(Vec, vector<int>&, RealType=-1.) override { cout << "Error: unimplemented.\n"; };
 
     // --- Mutators
-
-    //! \brief Set the skin depth. This function is virtual, as the inheriting class
-    //! may need to remake itself after doing this.
-    virtual void setSkinDepth(RealType) override;
-
-    //! \brief Set the cell size. 
-    //!
-    //! Really, this suggests a cell size. It must be larger than the minimum possible cell size, 
-    //! and must evenly divide the size of the domain.
-    virtual void setCellSize(RealType) override;
 
     //! \brief Remakes interactionhandlers (if neccessary).
     //!
