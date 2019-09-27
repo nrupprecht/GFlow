@@ -3,6 +3,8 @@
 
 #include "../utility/utility.hpp"
 #include "../parallel/mpi-communication.hpp"
+// So base objects can receive a parse tree and construct themselves.
+#include "../utility/treeparser.hpp" 
 
 namespace GFlowSimulation {
 
@@ -38,6 +40,11 @@ namespace GFlowSimulation {
     virtual void post_forces()    {};
     virtual void post_step()      {};
     virtual void post_integrate() {};
+
+    //! \brief Allow an object to construct itself based on a parse tree of instructions.
+    //!
+    //! A head node and a map of variables is passed in.
+    virtual void parse_construct(HeadNode*, const std::map<string, string>&) {};
 
     // GFlow is a friend class
     friend class GFlow;

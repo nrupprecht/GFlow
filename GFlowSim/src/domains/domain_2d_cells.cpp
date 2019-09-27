@@ -38,38 +38,11 @@ namespace GFlowSimulation {
     initialized = true;
   }
 
-  void Domain2DCells::getAllWithin(int id1, vector<int>& neighbors, RealType distance) {
-    // STUB
-  }
-
-  void Domain2DCells::removeOverlapping(RealType) {
-    // STUB
-  }
-
-  void Domain2DCells::setSkinDepth(RealType) {
-
-  }
-
-  void Domain2DCells::setCellSize(RealType) {
-
-  }
-
-  void Domain2DCells::construct() {
-    // Base object construct.
-    DomainBase::construct();
-
-    // Only bother constructing under some circumstances.
-    if (forceMaster==nullptr || !forceMaster->interactingTypes()) return;
-
-    // Start timer.
-    timer.start();
-
-    // Fill up cells.
-    update_cells();
-
-    RealType **x = simData->X(), *sg = simData->Sg();
+  void Domain2DCells::traversePairs(PairFunction body) {
+    auto x = simData->X();
+    auto sg = simData->Sg();
     RealType dx[2], rsqr;
-    int *type = simData->Type();
+    auto type = simData->Type();
 
     for (const auto &c1 : cells)
       for (auto p=c1.particle_ids.begin(); p!=c1.particle_ids.end(); ++p) {
@@ -85,21 +58,18 @@ namespace GFlowSimulation {
           dx[1] = x[id1][1] - x[id2][1];
           rsqr = sqr(dx[0]) + sqr(dx[1]);
           // If close enough, check if they interact.
-          if (rsqr < sqr(radius1 + sg[id2]))
-            pair_interaction(id1, id2, 0);
+          if (rsqr < sqr(radius1 + sg[id2] + skin_depth))
+            body(id1, id2, 0, radius1, sg[id2], rsqr);
         }
 
         // Search through adjacent cells.
         if (sg[id1] < max_small_sigma) {
-          for (auto c2 : c1.adjacent) check_cell(id1, c2);
+          for (auto c2 : c1.adjacent) check_cell(id1, c2, body);
         }
         else {
           // Large particle.
         }
       }
-
-
-    forceMaster->close();
   }
 
   void Domain2DCells::calculate_domain_cell_dimensions() {
@@ -114,13 +84,6 @@ namespace GFlowSimulation {
       // Add halo or ghost cells.
       dims[d] += (min_side_edge_cells[d] + max_side_edge_cells[d]);
     }
-
-    create_cells();
-  }
-
-
-  void Domain2DCells::migrate_particles() {
-
   }
 
   void Domain2DCells::construct_halo_particles() {
@@ -177,15 +140,16 @@ namespace GFlowSimulation {
     simData->setFirstGhost(simData->size());
   }
 
-  void Domain2DCells::construct_ghost_particles() {
-
+  void Domain2DCells::structure_updates() {
+    // Fill up cells.
+    update_cells();
   }
 
-  inline void Domain2DCells::create_cells() {
+  void Domain2DCells::create_cells() {
     // Compute number of cells.
     const int size = dims[0]*dims[1];
     if (size==cells.size()) return;
-    cells = vector<Cell>(size, Cell(sim_dimensions));
+    cells = vector<Cell>(size, Cell());
 
     // Create stencil of offsets.
     const int stencil_size = 4;
@@ -239,11 +203,11 @@ namespace GFlowSimulation {
     }
   }
 
-  inline void Domain2DCells::check_cell(int id1, const Cell *cell) {
+  inline void Domain2DCells::check_cell(int id1, const Cell *cell, PairFunction body) {
     // Set up.
     RealType dx[2], radius1 = simData->Sg(id1) + skin_depth, rsqr = 0;
-    RealType **x = simData->X();
-    RealType *sg = simData->Sg();
+    auto x = simData->X();
+    auto sg = simData->Sg();
 
     for (const auto id2 : cell->particle_ids) {
       // If the other particle is a large particle, it will take care of this interaction
@@ -253,12 +217,14 @@ namespace GFlowSimulation {
       dx[1] = x[id1][1] - x[id2][1];
       rsqr = sqr(dx[0]) + sqr(dx[1]);
       // If close enough, check if they interact.
-      if (rsqr < sqr(radius1 + sg[id2]) || rsqr > sqr(0.9*simulation_bounds.wd(0))) // *max_cutoffs[simData->Type(id2)]
-        pair_interaction(id1, id2);
+      if (rsqr < sqr(radius1 + sg[id2] + skin_depth))
+        body(id1, id2, 0, radius1, sg[id2], rsqr);
+      else if (rsqr > sqr(0.9*simulation_bounds.wd(0))) // *max_cutoffs[simData->Type(id2)]
+        body(id1, id2, 1, radius1, sg[id2], rsqr);
     }
   }
 
-  inline void Domain2DCells::check_cell_large(int id1, int id2) {
+  inline void Domain2DCells::check_cell_large(int id1, int id2, PairFunction) {
     if (id2<0) return;
 
     // Set up.

@@ -143,7 +143,7 @@ namespace GFlowSimulation {
         gflow->getDisplacement(X2.data, X1.data, dX.data);
         //dX = X2 - X1;
         //gflow->minimumImage(dX.data);
-        RealType d = distance(dX);
+        RealType d = magnitude(dX);
         // Check if this is the new min
         if (d<minD1) {
           // Previous min displacement becomes second smallest displacement
@@ -166,7 +166,7 @@ namespace GFlowSimulation {
         // Set A to be the "actual" displacment, and minD1 to be the "actual" distance.
         if (0<=lambda && lambda<=1) {
           A += lambda*dX;
-          minD1 = distance(A);
+          minD1 = magnitude(A);
         }
         // Else, nothing needs to be done.
       }

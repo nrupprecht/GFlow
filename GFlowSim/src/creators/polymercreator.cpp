@@ -75,8 +75,6 @@ namespace GFlowSimulation {
       if (dc=="inf") imC = 0;
       else imC = 1./(convert<RealType>(dc)*sphere_volume(rC, sim_dimensions));
     }
-
-    imP = imC = 1e-6;
     
     // --- Done gathering parameters, ready to act.
 
@@ -201,9 +199,12 @@ namespace GFlowSimulation {
       RealType expected = 0.5*(marks[i] - marks[i-1])/rC;
       // If using uniform spacing, there will (could) be chain particles "inside" the primary particles
       if (uniform_spacing) expected += extra;
-
       int ncl = floor(expected);
+
       if (drand48()<(static_cast<RealType>(ncl)-expected)) ++ncl;
+      // Don't have a dangling initial chain.
+      if (i==1) ncl = max(0, ncl-1);
+
       // Add the chain links
       for (int j=0; j<ncl; ++j) chain_ordering.push_back(false);
       // Add the primary ball
@@ -214,6 +215,7 @@ namespace GFlowSimulation {
     int ncl = floor(expected);
     if (drand48()<(static_cast<RealType>(ncl)-expected)) ++ncl;
     // Add the chain links
+
     for (int j=0; j<ncl; ++j) chain_ordering.push_back(false);
     // We have created the chain ordering, and are done.
   }

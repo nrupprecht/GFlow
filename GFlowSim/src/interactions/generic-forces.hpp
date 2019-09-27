@@ -54,6 +54,16 @@ namespace GFlowSimulation {
       repulsion = 0<=r ? r : 0;
     }
 
+    //! \brief Get data from a simulation creation file via a parse tree to create this interaction.
+    virtual void parse_construct(HeadNode *head, const std::map<string, string>& variables) override {
+      // Create a parser
+      TreeParser parser(head, variables);
+      // Add a heading.
+      parser.addHeadingOptional("Repulsion");
+      // Gather parameters
+      parser.firstArg("Repulsion", repulsion);
+    }
+
   private:
     //! \brief HThe strength of the force.
     RealType repulsion = DEFAULT_HARD_SPHERE_REPULSION;
@@ -67,7 +77,6 @@ namespace GFlowSimulation {
 
   template<int dims> 
   using HardSphereVL = HardSphereGeneric<dims, VerletList>;
-
 
 
   /*
@@ -117,6 +126,18 @@ namespace GFlowSimulation {
 
     virtual RealType suggest_timescale(RealType mass) const override {
       return 2*PI/sqrt(2*repulsion/mass);
+    }
+
+    //! \brief Get data from a simulation creation file via a parse tree to create this interaction.
+    virtual void parse_construct(HeadNode *head, const std::map<string, string>& variables) override {
+      // Create a parser
+      TreeParser parser(head, variables);
+      // Add a heading.
+      parser.addHeadingOptional("Repulsion");
+      parser.addHeadingOptional("Dissipation");
+      // Gather parameters
+      parser.firstArg("Repulsion", repulsion);
+      parser.firstArg("Dissipation", dissipation);
     }
 
   private:
@@ -193,6 +214,21 @@ namespace GFlowSimulation {
       }      
     }
 
+    //! \brief Get data from a simulation creation file via a parse tree to create this interaction.
+    virtual void parse_construct(HeadNode *head, const std::map<string, string>& variables) override {
+      // Create a parser
+      TreeParser parser(head, variables);
+      // Add a heading.
+      parser.addHeadingOptional("Strength");
+      parser.addHeadingOptional("Cutoff");
+      // Gather parameters
+      RealType cut = -1.;
+      parser.firstArg("Strength", strength);
+      parser.firstArg("Cutoff", cut);
+      // Make sure potential energy shift and cutoff are good values.
+      setCutoff(cut);
+    }
+
   private:
     //! \brief The strength of the force.
     RealType strength = DEFAULT_LENNARD_JONES_STRENGTH;
@@ -258,6 +294,21 @@ namespace GFlowSimulation {
       }      
     }
 
+    //! \brief Get data from a simulation creation file via a parse tree to create this interaction.
+    virtual void parse_construct(HeadNode *head, const std::map<string, string>& variables) override {
+      // Create a parser
+      TreeParser parser(head, variables);
+      // Add a heading.
+      parser.addHeadingOptional("Strength");
+      parser.addHeadingOptional("Cutoff");
+      // Gather parameters
+      RealType cut = -1.;
+      parser.firstArg("Strength", strength);
+      parser.firstArg("Cutoff", cut);
+      // Make sure potential energy shift and cutoff are good values.
+      setCutoff(cut);
+    }
+
   private:
     //! \brief The strength of the force.
     RealType strength = 0.0025;
@@ -271,9 +322,8 @@ namespace GFlowSimulation {
   //! \brief Define the CoulombVLP class to be Coulomb force using verlet list pairs container.
   template<int dims> 
   using CoulombVLP = CoulombGeneric<dims, VerletListPairs>;
-
-
-
+  
+  
   /*
   * \brief Generic class for Buckingham forces.
   *
@@ -330,6 +380,23 @@ namespace GFlowSimulation {
       }      
     }
 
+    //! \brief Get data from a simulation creation file via a parse tree to create this interaction.
+    virtual void parse_construct(HeadNode *head, const std::map<string, string>& variables) override {
+      // Create a parser
+      TreeParser parser(head, variables);
+      // Add a heading.
+      parser.addHeadingOptional("Strength");
+      parser.addHeadingOptional("Cutoff");
+      parser.addHeadingOptional("Ratio");
+      // Gather parameters
+      RealType cut = -1.;
+      parser.firstArg("Strength", strength);
+      parser.firstArg("Cutoff", cut);
+      parser.firstArg("Ratio", ratio);
+      // Make sure potential energy shift and cutoff are good values.
+      setCutoff(cut);
+    }
+
   private:
     //! \brief The strength of the force.
     RealType strength = 0.0025;
@@ -349,9 +416,8 @@ namespace GFlowSimulation {
   //! \brief Define the LennardJonesVLP class to be lennard jones force using verlet list pairs container.
   template<int dims> 
   using BuckinghamVLP = BuckinghamGeneric<dims, VerletListPairs>;
-
-
-
+  
+  
   /*
   * \brief Generic class for Hertz-type forces.
   *
@@ -474,6 +540,25 @@ namespace GFlowSimulation {
 
     void setMu(const RealType m) { mu = 0<=m ? m : mu; }
 
+    //! \brief Get data from a simulation creation file via a parse tree to create this interaction.
+    virtual void parse_construct(HeadNode *head, const std::map<string, string>& variables) override {
+      // Create a parser
+      TreeParser parser(head, variables);
+      // Add a heading.
+      parser.addHeadingOptional("Kn");
+      parser.addHeadingOptional("Kt");
+      parser.addHeadingOptional("GammaN");
+      parser.addHeadingOptional("GammaT");
+      parser.addHeadingOptional("Mu");
+      // Gather parameters
+      RealType cut = -1.;
+      parser.firstArg("Kn", K_n);
+      parser.firstArg("Kt", K_t);
+      parser.firstArg("GammaN", gamma_n);
+      parser.firstArg("GammaT", gamma_t);
+      parser.firstArg("Mu", mu);
+    }
+
   private:
     //! \brief Normal elastic constant.
     RealType K_n = 5000.;
@@ -502,7 +587,6 @@ namespace GFlowSimulation {
   //! \brief Define the HertzVLP class to be Hertz force using verlet list pairs container.
   template<int dims> 
   using HertzVLP = HertzGeneric<dims, VerletListPairs>;
-
 
 
   /*
@@ -621,6 +705,25 @@ namespace GFlowSimulation {
     void setGammaT(const RealType gt) { gamma_t = 0<=gt ? gt : gamma_t; }
 
     void setMu(const RealType m) { mu = 0<=m ? m : mu; }
+
+    //! \brief Get data from a simulation creation file via a parse tree to create this interaction.
+    virtual void parse_construct(HeadNode *head, const std::map<string, string>& variables) override {
+      // Create a parser
+      TreeParser parser(head, variables);
+      // Add a heading.
+      parser.addHeadingOptional("Kn");
+      parser.addHeadingOptional("Kt");
+      parser.addHeadingOptional("GammaN");
+      parser.addHeadingOptional("GammaT");
+      parser.addHeadingOptional("Mu");
+      // Gather parameters
+      RealType cut = -1.;
+      parser.firstArg("Kn", K_n);
+      parser.firstArg("Kt", K_t);
+      parser.firstArg("GammaN", gamma_n);
+      parser.firstArg("GammaT", gamma_t);
+      parser.firstArg("Mu", mu);
+    }
 
   private:
     //! \brief Normal elastic constant.

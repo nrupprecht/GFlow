@@ -30,27 +30,53 @@ namespace GFlowSimulation {
     if (locals_changed) update_local_ids();
     locals_changed = false;
 
-    // A lambda for checking if the local id list contains an id.
-    // auto contains = [&] (int id) -> bool {
-    //   // Try to find the id in the vector.
-    //   auto it = std::find(local_ids.begin(), local_ids.end(), id);
-    //   // If the iterator returns an element of local_ids, then id is in local group.
-    //   // Therefore, check if it is a valid element, i.e. it != local_ids.end().
-    //   return it!=local_ids.end();
-    // };
+    RealType minDist = -1; // We can check for this easily
+
+    // For finding distance to chain.
+    Vec normal(sim_dimensions), dx(sim_dimensions);
+    // A function for correcting distances.
+    auto check_adjacent = [&] (int i, int id_min, int id2) {
+      // Get the vectors we need.
+      gflow->getDisplacement(x[i], x[id_min], dx.data);
+      gflow->getDisplacement(x[id2], x[id_min], normal.data);
+      normal.normalize();
+      // Project the displacement from the closest particle to particle i onto the chain from the closest particle
+      // to its neighbor in the chain.
+      RealType project = normal*dx;
+      // If the outside particle is closer to the chain than to the group particle, correct the distance.
+      if (project>0) {
+        dx -= project*normal;
+        RealType new_distance = magnitude(dx);
+        if (new_distance<minDist) minDist = new_distance;
+      }
+    };
 
     // Go through all non-group particles
     for (int i=0; i<size; ++i) {
       // Only look at real particles that are not in the group
       if (type[i]<0 || contains(i)) continue;
       // Compute which group particle is closest to particle i.
-      RealType minDist = -1; // We can check for this easily
+      minDist = -1; // We can check for this easily
+      int index = 0, min_index = -1; // Keep track of the index (in the group) of the close particle.
       for (auto id : local_ids) {
         // Compute distance
         RealType r = gflow->getDistance(x[id], x[i]);
         // Check if the distance is close enough, and smaller than the min distance so far
-        if (r<minDist || minDist==-1) minDist = r;
+        if (r<minDist || minDist==-1) {
+          minDist = r;
+          min_index = index;
+        }
+        ++index;
       }
+      
+      // Correct if we want the distance-from-chain.
+      if (find_chain_distance && minDist<1.2*radius) {
+        // Check left segement, if one exists: X---(min)
+        if (min_index>0) check_adjacent(i, local_ids[min_index], local_ids[min_index-1]);
+        // Check right segment, if one exists: (min)---X 
+        if (min_index+1<Group::size()) check_adjacent(i, local_ids[min_index], local_ids[min_index+1]);
+      }
+
       // If a close enough group particle was found.
       if (0<=minDist && minDist<=radius) {
         // Compute the bin

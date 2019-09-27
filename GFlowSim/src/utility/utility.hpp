@@ -103,6 +103,10 @@ namespace GFlowSimulation {
     return max(max(a, b), c);
   }
 
+  template<typename T> inline T max(const vector<T>& v) {
+    return *std::max_element(v.begin(), v.end());
+  }
+
   //! Find the min of two objects
   template<typename T> inline T min(T a, T b) {
     return a<b ? a : b;
@@ -110,6 +114,10 @@ namespace GFlowSimulation {
 
   template<typename T> inline T min(T a, T b, T c) {
     return min(min(a, b), c);
+  }
+
+  template<typename T> inline T min(const vector<T>& v) {
+    return *std::min_element(v.begin(), v.end());
   }
 
   template<typename T> inline T clamp(T a) {

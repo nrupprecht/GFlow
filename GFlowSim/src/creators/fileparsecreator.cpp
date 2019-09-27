@@ -287,9 +287,9 @@ namespace GFlowSimulation {
       if (parser.argName()=="Random") makeRandomForces();
       // Expect the force type. Every particle type interacts via the same interaction.
       else {
-	// This allows the force string to be a variable.
-	string token = parser.get_variable_string(parser.argName());
-	if (token.empty()) token = parser.argName();
+      	// This allows the force string to be a variable.
+      	string token = parser.get_variable_string(parser.argName());
+      	if (token.empty()) token = parser.argName();
         Interaction * it = ParseConstructor::getInteraction(parser.getNode(), variables, token, gflow);
         gflow->forceMaster->setInteraction(it);
       }

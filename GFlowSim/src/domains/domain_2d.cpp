@@ -45,22 +45,6 @@ namespace GFlowSimulation {
     initialized = true;
   }
 
-  void Domain2D::getAllWithin(int id1, vector<int>& neighbors, RealType distance) {
-    // STUB
-  }
-
-  void Domain2D::removeOverlapping(RealType) {
-    // STUB
-  }
-
-  void Domain2D::setSkinDepth(RealType) {
-
-  }
-
-  void Domain2D::setCellSize(RealType) {
-
-  }
-
   void Domain2D::construct() {
     DomainBase::construct();
 
@@ -177,11 +161,6 @@ namespace GFlowSimulation {
     else cell_pointers = nullptr;
   }
 
-
-  void Domain2D::migrate_particles() {
-
-  }
-
   void Domain2D::construct_halo_particles() {
     // No particles.
     if (simData->size()==0) return;
@@ -234,10 +213,6 @@ namespace GFlowSimulation {
     // Tell the location of the first halo particle.
     simData->setFirstHalo(size);
     simData->setFirstGhost(simData->size());
-  }
-
-  void Domain2D::construct_ghost_particles() {
-
   }
 
   inline void Domain2D::update_cells() {
