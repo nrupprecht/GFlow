@@ -14,6 +14,8 @@ namespace GFlowSimulation {
     GraphObject::pre_integrate();
     // Clear bins data
     bins = vector<int>(nbins, 0);
+    average_length = 0;
+    data_iters = 0;
   }
 
   //! \brief Collect the position data from simdata --- happens during the post-step phase
@@ -86,6 +88,8 @@ namespace GFlowSimulation {
       }
     }
 
+    // Update average length.
+    average_length += getChainedLength();
     // Increment counter
     ++data_iters;
   }
@@ -108,7 +112,8 @@ namespace GFlowSimulation {
     if (bins.empty() || Group::size()==0) return true;
 
     // Get the length of the chain.
-    RealType group_length = 2*getChainedLength();
+    average_length /= data_iters;
+    RealType group_length = 2*average_length;
 
     // Push data into the data vector
     for (int i=0; i<bins.size(); ++i) {

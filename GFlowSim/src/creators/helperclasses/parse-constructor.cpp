@@ -9,7 +9,6 @@ namespace GFlowSimulation {
     Region *region = nullptr;
     // Simulation dimensions
     int sim_dimensions = gflow->getSimDimensions();
-
     // Check if we should use the full simulation bounds - the bounds are then rectangular
     if (head->subHeads.empty() && head->params.size()>0 && head->params[0]->partA=="Full")
       region = new RectangularRegion(sim_dimensions, gflow->getBounds());
@@ -55,8 +54,8 @@ namespace GFlowSimulation {
           if (head->subHeads[d]->params.size()!=2 || !head->subHeads[d]->subHeads.empty()) 
             throw BadStructure("Bounds need a min and a max, we found "+toStr(head->subHeads[d]->params.size())+" parameters.");
           // Extract the bounds.
-	  RealType mn = Eval::evaluate( head->subHeads[d]->params[0]->partA, variables );
-	  RealType mx = Eval::evaluate( head->subHeads[d]->params[1]->partA, variables );
+      	  RealType mn = Eval::evaluate( head->subHeads[d]->params[0]->partA, variables );
+      	  RealType mx = Eval::evaluate( head->subHeads[d]->params[1]->partA, variables );
           rreg->min(d) = mn;
           rreg->max(d) = mx;
         }

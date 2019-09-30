@@ -37,6 +37,15 @@ namespace GFlowSimulation {
     z[0] = x[0] + y[0];
   }
 
+  template<int d> inline void add_vec(const int *x, const int *y, int *z) {
+    z[d-1] = x[d-1] + y[d-1];
+    // Recursion.
+    add_vec<d-1>(x, y, z);
+  }
+  template<> inline void add_vec<1>(const int *x, const int *y, int *z) {
+    z[0] = x[0] + y[0];
+  }
+
   //! \brief Template function for subtracting vectors.
   template<int d> inline void subtract_vec(const RealType *x, const RealType *y, RealType *z) {
     z[d-1] = x[d-1] - y[d-1];
@@ -89,6 +98,24 @@ namespace GFlowSimulation {
     dst[0] = src[0];
   }
 
+  template<int d> inline void copy_vec(const int *src, int *dst) {
+    dst[d-1] = src[d-1];
+    copy_vec<d-1>(src, dst);
+  }
+  template<> inline void copy_vec<1>(const int *src, int *dst) {
+    dst[0] = src[0];
+  }
+
+
+  //! \brief Set all the elements of a vector to be a single value
+  template<int d> inline void set1_vec(int *vec, int val) {
+    vec[d-1] = val;
+    set1_vec<d-1>(vec, val);
+  }
+  template<> inline void set1_vec<1>(int *vec, int val) {
+    vec[0] = val;
+  }
+
 
 
   template<int d> inline int get_index(const RealType *x, const RealType *min, const RealType *invW, const int *shift, const int *dims, const int *products) {
@@ -109,6 +136,33 @@ namespace GFlowSimulation {
     // Return
     return index*products[1];
   }
+
+  //! \brief Get the product of all the elements in an array.
+  template<int d> inline int product(vector<int> array) {
+    return array[d-1]*product<d-1>(array);
+  }
+  template<> inline int product<1>(vector<int> array) {
+    return array[0];
+  }
+
+
+  template<int d> inline void for_loop_helper(std::function<void(int*)> body, int *index, int *lower, int *upper) {
+    for (index[d-1] = lower[d-1]; index[d-1]<upper[d-1]; ++index[d-1]) {
+      for_loop_helper<d-1>(body, index, lower, upper);
+    }
+  }
+  template<> inline void for_loop_helper<1>(std::function<void(int*)> body, int *index, int *lower, int *upper) {
+    body(index);
+  }
+
+  template<int d> inline void for_loop(std::function<void(int*)> body, int *lower, int *upper) {
+    int index[d];
+    copy_vec<d>(lower, index);
+
+    for_loop_helper<d>(body, index, lower, upper);
+  }
+
+  
 
 
 

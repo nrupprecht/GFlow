@@ -11,9 +11,6 @@ namespace GFlowSimulation {
     //! \brief Default constructor.
     Domain2DCells(GFlow*);
 
-    //! \brief Set up the domain.
-    virtual void initialize() override;
-
     //! \brief Get all the particles within a radius of another particle
     //! Fills a passed in vector with the ids of all the particles that lie within
     //! a specified distance of a given particle.\n
@@ -45,6 +42,7 @@ namespace GFlowSimulation {
     //! This function assumes that there are currently no halo or ghost particles stored in simdata.
     void construct_halo_particles();
 
+    //! \brief Update the cells structure.
     virtual void structure_updates() override;
 
     //! \brief Calculates the dimensions of the grid, and the cell widths and inverse widths.
@@ -61,12 +59,6 @@ namespace GFlowSimulation {
 
     //! \brief Do a cell check for a large particle.
     inline void check_cell_large(int, int, PairFunction);
-
-    //! \brief Adjustments for halo or ghost cells on the min side.
-    int min_side_edge_cells[2];
-
-    //! \brief Adjustments for halo or ghost cells on the max side.
-    int max_side_edge_cells[2];
 
     //! \brief A vector holding all the cells in the domain.
     vector<Cell> cells;

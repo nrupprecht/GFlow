@@ -290,13 +290,17 @@ namespace GFlowSimulation {
       	// This allows the force string to be a variable.
       	string token = parser.get_variable_string(parser.argName());
       	if (token.empty()) token = parser.argName();
-        Interaction * it = ParseConstructor::getInteraction(parser.getNode(), variables, token, gflow);
-        gflow->forceMaster->setInteraction(it);
+        // Set all forces to be the chosen force.
+        gflow->forceMaster->setInteraction(ParseConstructor::getInteraction(parser.getNode(), variables, token, gflow));
       }
     }
     // Expect the force type, with a body specifying parameters. Every particle type interacts via the same interaction.
     else if (parser.args_size()==1) {
-      gflow->forceMaster->setInteraction(ParseConstructor::getInteraction(parser.getNode(), variables, parser.argName(), gflow));
+      // This allows the force string to be a variable.
+      string token = parser.get_variable_string(parser.argName());
+      if (token.empty()) token = parser.argName();
+      // Set all forces to be the chosen force.
+      gflow->forceMaster->setInteraction(ParseConstructor::getInteraction(parser.getNode(), variables, token, gflow));
     }
     // The interaction grid is specified.
     else { 
@@ -343,10 +347,12 @@ namespace GFlowSimulation {
       FillAreaCreator fa(global_templates);
       PolymerCreator pc(global_templates);
       WallCreator wc(global_templates);
+      CircleCreator cc(global_templates);
       do { 
         if      (parser.argName()=="Area")    fa.createArea(parser.getNode(), gflow, variables, particle_fixers);
         else if (parser.argName()=="Polymer") pc.createArea(parser.getNode(), gflow, variables, particle_fixers);
         else if (parser.argName()=="Wall")    wc.createArea(parser.getNode(), gflow, variables, particle_fixers);
+        else if (parser.argName()=="Circle")  cc.createArea(parser.getNode(), gflow, variables, particle_fixers);
         else throw BadStructure("Unrecognized fill option: [" + parser.argName() + "].");
       } while (parser.next());
     }
@@ -536,7 +542,7 @@ namespace GFlowSimulation {
   }
 
   inline void FileParseCreator::makeRandomForces() {
-    // Assign random interactions, either LennardJones or Coulomb (for now), and with equal probability (for now)
+    // Assign random interactions, either HardSphere, LennardJones, or Coulomb (for now), and with equal probability (for now)
     Interaction *hs = InteractionChoice::choose(gflow, HardSphereToken, sim_dimensions);
     Interaction *lj = InteractionChoice::choose(gflow, LennardJonesToken, sim_dimensions);
     Interaction *cl = InteractionChoice::choose(gflow, CoulombToken, sim_dimensions);

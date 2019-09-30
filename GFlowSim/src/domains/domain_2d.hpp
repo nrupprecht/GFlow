@@ -12,9 +12,6 @@ namespace GFlowSimulation {
 
     //! \brief Destructor.
     ~Domain2D();
-
-    //! \brief Set up the domain.
-    virtual void initialize() override;
     
     //! \brief Get all the particles within a radius of another particle
     //! Fills a passed in vector with the ids of all the particles that lie within
@@ -69,15 +66,9 @@ namespace GFlowSimulation {
     //! \brief Do a cell check for a large particle.
     inline void check_cell_large(int, int);
 
-    //! \brief Adjustments for halo or ghost cells on the min side.
-    int min_side_edge_cells[2];
-
-    //! \brief Adjustments for halo or ghost cells on the max side.
-    int max_side_edge_cells[2];
-
     //! \brief Whether there are is halo duplication in the 0, 1 directions
     bool halo_cells[2];
-
+    
     //! \brief The i-th entry points to the first particle in the i-th cell, or to -1 if empty.
     int *cell_pointers = nullptr;
 

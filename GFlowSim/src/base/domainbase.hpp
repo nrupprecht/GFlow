@@ -14,6 +14,7 @@ namespace GFlowSimulation {
     //! Constructor
     DomainBase(GFlow*);
 
+    //! \brief Initialize a domain type interaction handler, in part by calling polymorphic functions that child classes overload.
     virtual void initialize() override;
 
     // --- Accessors
@@ -30,9 +31,6 @@ namespace GFlowSimulation {
     //! \brief Get the min small cutoff.
     RealType getCutoff() const;
 
-    // GFlow is a friend class
-    //friend class GFlow;
-
   protected:
 
     //! \brief Calculates the domain cell dimensions, widths, and inverse widths given 
@@ -41,6 +39,22 @@ namespace GFlowSimulation {
 
     //! \brief Create the cells.
     virtual void create_cells()=0;
+
+    // --- Helper functions
+
+    //! \brief Get the tuple index of a cell that a position lies in.
+    void get_cell_index_tuple(const RealType*, vector<int>&);
+
+    //! \brief Get the linear index of the cell that a position lies within.
+    int get_cell_index(const RealType*);
+
+    //! \brief Turns a linear cell index into a (DIMENSIONS)-dimensional index
+    void linear_to_tuple(const int, vector<int>&);
+    void linear_to_tuple(const int, int*);
+
+    //! \brief Turns a (DIMENSIONS)-dimensional index into a linear cell index.
+    void tuple_to_linear(int&, const vector<int>&);
+    void tuple_to_linear(int&, const int*);
 
     // --- Data
 
@@ -53,7 +67,16 @@ namespace GFlowSimulation {
     //! \brief The inverse widths of a cell in each dimension
     vector<RealType> inverseW;
 
-    // --- Sectorization constants
+    //! \brief The number of halo or ghost sectors added below.
+    //!
+    //! We don't actually need this number (as of now), we only need dim_shift_down, but we keep it for completeness.
+    vector<int> dim_shift_up;
+
+    //! \brief The number of halo or ghost sectors added below.
+    vector<int> dim_shift_down;
+
+    //! \brief Helper array for doing indexing.
+    vector<int> products;
 
     //! \brief The target cell size. 
     //!
@@ -61,9 +84,6 @@ namespace GFlowSimulation {
     //! to fit in the domain in each dimension, the actual widths will be different. They will be at
     //! least this large though.
     RealType target_cell_size = 0.;
-
-    //! \brief The minimum allowable cutoff for small particles, 2*max_small_sigma + skin_depth
-    RealType min_small_cutoff = 0.; 
   };
 
 }

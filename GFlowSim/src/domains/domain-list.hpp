@@ -1,16 +1,19 @@
+#ifndef __DOMAIN_LIST_HPP__GFLOW__
+#define __DOMAIN_LIST_HPP__GFLOW__
 
-#ifndef __DOMAIN_TEST_HPP__GFLOW__
-#define __DOMAIN_TEST_HPP__GFLOW__
-
-#include "../base/domainbase.hpp"
-#include "cell.hpp"
+#include "../base/domainbase.hpp" 
+#include "../utility/generic-dimension.hpp"
 
 namespace GFlowSimulation {
 
-  class Domain : public DomainBase {
+  /**
+  * \brief A true linked cells domain object, where the cells are implemented via a linked list.
+  * 
+  */
+  class DomainList : public DomainBase {
   public:
     //! \brief Default constructor.
-    Domain(GFlow*);
+    DomainList(GFlow*);
 
     //! \brief Get all the particles within a radius of another particle
     //!
@@ -49,22 +52,14 @@ namespace GFlowSimulation {
     //! \brief Create the cells.
     virtual void create_cells() override;
 
-    // --- Helper functions
+    // --- Data members
 
-    //! \brief Correct a linear index for wrapping. Returns true if the index is a valid cell.
-    //!
-    //! If the flag is set to false, we do not wrap positions.
-    inline bool correct_index(vector<int>&, bool=true);
+    //! \brief The N-th entry points to the first particle in the N-th cell, or to -1 if the cell is empty.
+    vector<int> cell_list;
+    //! \brief The particle points to the next particle in the same cell, or to -1 if it is the last particle in a cell.
+    vector<int> particle_list;
 
-    //! \brief Add a particle to the cell it belongs in.
-    inline void add_to_cell(const RealType*, int);
-
-    //! \brief A vector holding all the cells in the domain.
-    vector<Cell> cells;
-
-    //! \brief Function used for setting an excluded particle when calling getAllWithin
-    int _exclude = -1;
   };
 
 }
-#endif // __DOMAIN_TEST_HPP__GFLOW__
+#endif // __DOMAIN_LIST_HPP__GFLOW__

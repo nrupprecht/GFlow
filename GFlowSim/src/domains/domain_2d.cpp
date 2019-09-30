@@ -7,10 +7,10 @@ namespace GFlowSimulation {
 
   Domain2D::Domain2D(GFlow *gflow) : DomainBase(gflow) {
     // Initialize to 0.
-    min_side_edge_cells[0] = 1;
-    min_side_edge_cells[1] = 0;
-    max_side_edge_cells[0] = 1;
-    max_side_edge_cells[1] = 1;
+    dim_shift_down[0] = 1;
+    dim_shift_down[1] = 0;
+    dim_shift_up[0] = 1;
+    dim_shift_up[1] = 1;
     // Initialize to false.
     halo_cells[0] = halo_cells[1] = false;
   };
@@ -18,31 +18,6 @@ namespace GFlowSimulation {
   Domain2D::~Domain2D() {
     if (cell_pointers) delete [] cell_pointers;
     if (linked_cells) delete [] linked_cells;
-  }
-
-  void Domain2D::initialize() {
-    // Common initialization tasks
-    DomainBase::initialize();
-
-    // If bounds are unset, then don't make sectors. We cannot initialize if simdata is null
-    if (process_bounds.vol()<=0 || simData==nullptr || simData->size()==0) return; 
-
-    // Calculate skin depth
-    RealType rho = simData->size() / process_bounds.vol();
-    RealType candidate = inv_sphere_volume((target_list_size)/rho + 0.5*sphere_volume(max_small_sigma, sim_dimensions), sim_dimensions) - 2*max_small_sigma;
-    skin_depth = max(static_cast<RealType>(0.5 * max_small_sigma), candidate);
-
-    // Use max_small_sigma
-    target_cell_size = min_small_cutoff = 2*max_small_sigma+skin_depth;
-
-    // Calculate cell grid data
-    calculate_domain_cell_dimensions();
-
-    // Construct the interaction handlers for the forces
-    construct();
-
-    // The domain is now initialized.
-    initialized = true;
   }
 
   void Domain2D::construct() {
@@ -109,16 +84,16 @@ namespace GFlowSimulation {
               int cx2 = cx1 + dx, cy2 = cy1 + dy;
               // Potentially wrap cells
               if (wrapX) {
-                if (cx2<min_side_edge_cells[0]) cx2 += dims[0] - min_side_edge_cells[0] - max_side_edge_cells[0];
-                else if (dims[0]+min_side_edge_cells[0]<cx2) cx2 -= dims[0] - min_side_edge_cells[0] - max_side_edge_cells[0];
+                if (cx2<dim_shift_down[0]) cx2 += dims[0] - dim_shift_down[0] - dim_shift_up[0];
+                else if (dims[0]+dim_shift_down[0]<cx2) cx2 -= dims[0] - dim_shift_down[0] - dim_shift_up[0];
               }
               if (wrapY) {
-                if (cy2<min_side_edge_cells[1]) cy2 += dims[1] - min_side_edge_cells[1] - max_side_edge_cells[1];
-                else if (dims[1]+min_side_edge_cells[0]<cy2) cy2 -= dims[1] - min_side_edge_cells[1] - max_side_edge_cells[1];
+                if (cy2<dim_shift_down[1]) cy2 += dims[1] - dim_shift_down[1] - dim_shift_up[1];
+                else if (dims[1]+dim_shift_down[0]<cy2) cy2 -= dims[1] - dim_shift_down[1] - dim_shift_up[1];
               }
               // If a good cell, search through it.
-              if ( min_side_edge_cells[0]<=cx2 && cx2<dims[0]+min_side_edge_cells[0] 
-                && min_side_edge_cells[1]<=cy2 && cy2<dims[1]+min_side_edge_cells[1]) {
+              if ( dim_shift_down[0]<=cx2 && cx2<dims[0]+dim_shift_down[0] 
+                && dim_shift_down[1]<=cy2 && cy2<dims[1]+dim_shift_down[1]) {
                 int c2 = cy2*dims[0] + cx2;
                 id2 = cell_pointers[c2];
                 check_cell_large(id1, id2);
@@ -147,7 +122,7 @@ namespace GFlowSimulation {
       inverseW[d] = 1./widths[d];
 
       // Add halo or ghost cells.
-      dims[d] += (min_side_edge_cells[d] + max_side_edge_cells[d]);
+      dims[d] += (dim_shift_down[d] + dim_shift_up[d]);
     }
 
     // Compute number of cells. If we need to change it, allocate a new array.
@@ -238,8 +213,8 @@ namespace GFlowSimulation {
     RealType shiftX = process_bounds.min[0]*inverseW[0], shiftY = process_bounds.min[1]*inverseW[1];
     for (int i=0; i<size; ++i) {
       // Compute the cell index of the particle
-      int cx = static_cast<int>(x[i][0]*inverseW[0] - shiftX) + min_side_edge_cells[0];
-      int cy = static_cast<int>(x[i][1]*inverseW[1] - shiftY) + min_side_edge_cells[1];
+      int cx = static_cast<int>(x[i][0]*inverseW[0] - shiftX) + dim_shift_down[0];
+      int cy = static_cast<int>(x[i][1]*inverseW[1] - shiftY) + dim_shift_down[1];
       
       // Checks -> these may not be necessary.
       if (cx<0) cx = 0;

@@ -1,6 +1,14 @@
 // Granular "wind tunnel" simulation
 // For small radii, e.g. 0.0125-0.015, needed a max dt of 0.0002.
 
+// VARIABLES
+Var: MinR=0.04
+Var: MaxR=0.05
+Var: Velocity=2.2
+Var: Length=18
+Var: Height=6
+Var: Front=6
+
 // This is a 2d simulation
 Dimensions: 2
 
@@ -9,14 +17,6 @@ Bounds: {
   : -Front, Length  // X
   : -Height, Height // Y
 }
-
-// VARIABLES
-Var: MinR=0.04
-Var: MaxR=0.05
-Var: Velocity=2.2
-Var: Length=18
-Var: Height=6
-Var: Front=6
 
 Integrator: VelocityVerlet
 
@@ -49,14 +49,17 @@ Fill: Area {
     TypeA : 1
   }
 
+  Excluded: Sphere {
+    : 0, 0
+    : 1 + 2*MinR
+  }
+
   Velocity: Zero
 }
 
-Particle {
-  Position: 0, 0
-  Sigma: 1
-  Velocity: 0, 0
-  Mass: inf
+Fill: Circle {
+  Center: 0, 0
+  Sigma: MinR
 }
 
 Reconcile: Remove=0.9

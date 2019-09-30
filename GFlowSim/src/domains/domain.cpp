@@ -10,7 +10,7 @@
 
 namespace GFlowSimulation {
 
-  Domain::Domain(GFlow *gflow) : DomainBase(gflow), products(sim_dimensions+1, 0), dim_shift_up(sim_dimensions, 0), dim_shift_down(sim_dimensions, 0) {};
+  Domain::Domain(GFlow *gflow) : DomainBase(gflow) {};
 
   void Domain::getAllWithin(int id1, vector<int>& neighbors, RealType distance) {
     // Set exclude flag so the more general getAllWithin function doesn't count id1 as a valid particle.
@@ -211,11 +211,6 @@ namespace GFlowSimulation {
       }
       else dim_shift_up[d] = 0;
     }
-
-    // Initialize products array
-    products[sim_dimensions] = 1;
-    for (int d=sim_dimensions-1; d>=0; --d)
-      products[d] = dims[d]*products[d+1];
   }
 
   inline void Domain::create_cells() {
@@ -228,6 +223,7 @@ namespace GFlowSimulation {
     vector<int> tuple1(sim_dimensions), tuple2(sim_dimensions);
     
     // --- Create a neighborhood stencil to help us find adjacent cells.
+    RealType min_small_cutoff = 2*max_small_sigma + skin_depth;
     int sweep = ceil(min_small_cutoff/min(widths));
     vector<vector<int> > neighbor_indices;
     vector<int> little_dims(sim_dimensions), center(sim_dimensions);
@@ -262,21 +258,6 @@ namespace GFlowSimulation {
     }
   }
 
-  // Turns a linear cell index into a (DIMENSIONS)-dimensional index
-  inline void Domain::linear_to_tuple(int linear, vector<int>& tuple) {
-    // Same as the get address function in
-    getAddressCM(linear, dims.data(), tuple.data(), sim_dimensions); // We need to use the column major form
-  }
-
-  // Turns a (DIMENSIONS)-dimensional index into a linear cell index
-  // This is column major form.
-  inline void Domain::tuple_to_linear(int &linear, const vector<int>& tuple) {
-    // Product lambda
-    linear = 0;
-    for (int d=0; d<sim_dimensions; ++d)
-      linear += tuple[d]*products[d+1];
-  }
-
   inline bool Domain::correct_index(vector<int>& index, bool wrap) {
     bool good_index = true;
     const BCFlag *bcs = gflow->getBCs();
@@ -299,23 +280,6 @@ namespace GFlowSimulation {
       }
     }
     return good_index;
-  }
-
-  inline void Domain::get_cell_index_tuple(const RealType *x, vector<int>& index) {
-    for (int d=0; d<sim_dimensions; ++d)
-      index[d] = static_cast<int>((x[d] - process_bounds.min[d])*inverseW[d]) + dim_shift_down[d];
-  }
-
-  int Domain::get_cell_index(const RealType *x) {
-    int linear = 0;
-    for (int d=0; d<sim_dimensions; ++d) {
-      RealType index = static_cast<int>((x[d] - process_bounds.min[d])*inverseW[d]) + dim_shift_down[d];
-      if (index>=dims[d]) index = dims[d]-1;
-      else if (index<0)   index = 0;
-      linear += index*products[d+1];
-    }
-    // Return the index
-    return linear;
   }
 
   inline void Domain::add_to_cell(const RealType *x, int id) {
