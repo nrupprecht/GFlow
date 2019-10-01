@@ -2,12 +2,13 @@
 // For small radii, e.g. 0.0125-0.015, needed a max dt of 0.0002.
 
 // VARIABLES
-Var: MinR=0.04
-Var: MaxR=0.05
+Var: MinR=0.03
+Var: MaxR=0.36
 Var: Velocity=2.2
 Var: Length=18
-Var: Height=6
-Var: Front=6
+Var: Height=10
+Var: Front=18
+Var: Mu=0.25
 
 // This is a 2d simulation
 Dimensions: 2
@@ -30,7 +31,7 @@ NTypes: 1
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
 Force-grid: Hertz {
-  Mu: 0.25
+  Mu: Mu
 }
 
 // Fill an area with particles
