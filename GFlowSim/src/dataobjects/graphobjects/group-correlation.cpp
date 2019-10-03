@@ -31,7 +31,7 @@ namespace GFlowSimulation {
     // Update local ids?
     if (locals_changed) update_local_ids();
     locals_changed = false;
-
+    
     RealType minDist = -1; // We can check for this easily
 
     // For finding distance to chain.
@@ -114,12 +114,13 @@ namespace GFlowSimulation {
     // Get the length of the chain.
     average_length /= data_iters;
     RealType group_length = 2*average_length;
+    RealType rho = (simData->number() - Group::size()) / gflow->getBounds().vol(); // Number density
 
     // Push data into the data vector
     for (int i=0; i<bins.size(); ++i) {
       RealType r = (i+0.5)*bin_width;
       data.push_back(RPair(r, 
-         static_cast<RealType>(bins[i])/static_cast<RealType>(data_iters) / ((group_length + 2*PI*r) * bin_width)
+         static_cast<RealType>(bins[i])/static_cast<RealType>(data_iters) / ((group_length + 2*PI*r) * bin_width * rho)
       ));
     }
 

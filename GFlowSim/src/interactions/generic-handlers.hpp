@@ -326,7 +326,7 @@ namespace GFlowSimulation {
         R1 = rd[id1];
         R2 = rd[id2];
         // If close, interact.
-        if (rsqr < sqr((R1 + R2)*cutoff)) 
+        if (rsqr < sqr((R1 + R2)*cutoff))
           static_cast<const ForceType*>(this)->force(id1, id2, R1, R2, rsqr, X, f);
       }
     }

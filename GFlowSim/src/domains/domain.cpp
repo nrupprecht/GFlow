@@ -101,6 +101,7 @@ namespace GFlowSimulation {
       for (auto p=c.particle_ids.begin(); p!=c.particle_ids.end(); ++p) {
         // The id of the particle
         int id1 = *p;
+        if (type[id1]<0) continue;
         RealType *cutoffs_id1 = cutoff_grid[type[id1]];
         RealType sigma1 = sg[id1]*max_cutoffs[type[id1]];
 
@@ -110,7 +111,7 @@ namespace GFlowSimulation {
           for (auto q = p+1; q!=c.particle_ids.end(); ++q) {
             int id2 = *q;
             // If the other particle is a large particle, it will take care of this interaction
-            if (sg[id2]*max_cutoffs[type[id2]]>max_small_sigma) continue;
+            if (type[id1]<0 || sg[id2]*max_cutoffs[type[id2]]>max_small_sigma) continue;
             // Look for distance between particles
             RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
             if (r2 < sqr((sg[id1] + sg[id2])*cutoffs_id1[type[id2]] + skin_depth))
@@ -120,7 +121,7 @@ namespace GFlowSimulation {
           for (const auto &d : c.adjacent)
             for (const auto id2 : d->particle_ids) {
               // If the other particle is a large particle, it will take care of this interaction
-              if (sg[id2]*max_cutoffs[type[id2]]>max_small_sigma) continue;
+              if (type[id2]<0 || sg[id2]*max_cutoffs[type[id2]]>max_small_sigma) continue;
               // Look for distance between particles
               RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
               if (r2 < sqr((sg[id1] + sg[id2])*cutoffs_id1[type[id2]] + skin_depth))
@@ -132,6 +133,7 @@ namespace GFlowSimulation {
         
         // If sigma is > max_small_sigma, we have to look through more cells
         else {
+          
           // Calculate sweep "radius"
           RealType search_width = 2*sigma1+skin_depth;
           int prod = 1;
@@ -171,6 +173,7 @@ namespace GFlowSimulation {
               }
             }
           } 
+          
         }
       }
     }

@@ -31,6 +31,7 @@ namespace GFlowSimulation {
     parser.addHeadingOptional("H");
     parser.addHeadingOptional("Correlation");
     parser.addHeadingOptional("Special");
+    parser.addHeadingOptional("Line");
     // Check headings for validity
     parser.check();
 
@@ -50,6 +51,7 @@ namespace GFlowSimulation {
     string dp = "", dc = "";
     useAngle = true;
     bool special = false;
+    bool line = false;
 
     // Gather parameters
     parser.firstArg("Number", number);
@@ -65,14 +67,15 @@ namespace GFlowSimulation {
     parser.firstArg("Phi", phi);
     parser.firstArg("H", h);
     parser.firstArg("Special", special);
+    parser.firstArg("Line", line);
 
     // Potentially change masses.
     if (dp!="") {
-      if (dp=="inf") imP = 0;
+      if (dp=="inf") imP = 0.00001; // \todo Setting this to 0 causes problems
       else imP = 1./(convert<RealType>(dp)*sphere_volume(rP, sim_dimensions));
     }
     if (dc!="") {
-      if (dc=="inf") imC = 0;
+      if (dc=="inf") imC = 0.00001; // \todo Setting this to 0 causes problems
       else imC = 1./(convert<RealType>(dc)*sphere_volume(rC, sim_dimensions));
     }
     
@@ -116,18 +119,22 @@ namespace GFlowSimulation {
           else idP = 3;
         }
         // Create the polymer, recording the group for future use.
-        Group group = createRandomPolymer(gflow, length, phi, idP, idC);
+        Group group(gflow->getSimData());
+        if (line) {
+          Vec Center(sim_dimensions);
+          gflow->getBounds().center(Center.data);
+          group = createRandomLine(gflow, Center.data, phi, length, 1.0);
+        }
+        else group = createRandomPolymer(gflow, length, phi, idP, idC);
 
         if (polycorr) {
           if (n_polymers==1) {
             polycorr->setFirstPolymer(group);
             polycorr->setFirstChain(harmonicchain);
-            //groupharmonic->setGroupA(group);
           }
           if (n_polymers==2) {
             polycorr->setSecondPolymer(group);
             polycorr->setSecondChain(harmonicchain);
-            //groupharmonic->setGroupB(group);
           }
         }
       }

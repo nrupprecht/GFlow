@@ -12,11 +12,10 @@ namespace GFlowSimulation {
 
   GFlow::GFlow(int dims) : requested_time(0), total_requested_time(0), elapsed_time(0), total_time(0), 
     iter(0), repulsion(DEFAULT_HARD_SPHERE_REPULSION), dissipation(0), center_attraction(0), sim_dimensions(dims),
-    bounds(Bounds(2))
+    bounds(dims)
   {
     // Set up basic objects. The integrator will be created by the creator.
-    //simData      = new SimData(this);
-    simData = std::make_shared<SimData>(this); // shared_ptr<SimData>(new SimData(this));
+    simData = std::make_shared<SimData>(this);
     integrator   = nullptr;
     handler      = new Domain(this);
     dataMaster   = new DataMaster(this);
@@ -24,8 +23,6 @@ namespace GFlowSimulation {
     topology     = new KDTreeTopology(this);
     // Set up boundary conditions
     boundaryConditions = new BCFlag[sim_dimensions];
-    // Set up bounds to have the propper dimensions
-    bounds = Bounds(sim_dimensions);
     // Set wrapping to true by default
     setAllBCs(BCFlag::WRAP);
     // Initialize all base objects, so they have valid pointers to one another

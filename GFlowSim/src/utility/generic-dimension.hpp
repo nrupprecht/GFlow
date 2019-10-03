@@ -145,26 +145,55 @@ namespace GFlowSimulation {
     return array[0];
   }
 
+  // Helper functions for arbitrary for loop go into unnamed namespace.
+  namespace {
+    template<int d> inline void for_loop_helper(std::function<void(int*)> body, int *index, int *lower, int *upper) {
+      for (index[d-1] = lower[d-1]; index[d-1]<upper[d-1]; ++index[d-1]) {
+        for_loop_helper<d-1>(body, index, lower, upper);
+      }
+    }
+    template<> inline void for_loop_helper<1>(std::function<void(int*)> body, int *index, int *lower, int *upper) {
+      for (index[0] = lower[0]; index[0]<upper[0]; ++index[0]) {
+        body(index);
+      }
+    }
 
-  template<int d> inline void for_loop_helper(std::function<void(int*)> body, int *index, int *lower, int *upper) {
-    for (index[d-1] = lower[d-1]; index[d-1]<upper[d-1]; ++index[d-1]) {
-      for_loop_helper<d-1>(body, index, lower, upper);
+    template<int d> inline void for_loop_helper_max(std::function<void(int*, int)> body, int *index, int *lower, int *upper, int& counts, int max_counts) {
+      for (index[d-1] = lower[d-1]; index[d-1]<upper[d-1] && counts<max_counts; ++index[d-1]) {
+        for_loop_helper_max<d-1>(body, index, lower, upper, counts, max_counts);
+      }
+    }
+    template<> inline void for_loop_helper_max<1>(std::function<void(int*, int)> body, int *index, int *lower, int *upper, int& counts, int max_counts) {
+      for (index[0] = lower[0]; index[0]<upper[0] && counts<max_counts; ++index[0], ++counts) {
+        body(index, counts);
+      }
     }
   }
-  template<> inline void for_loop_helper<1>(std::function<void(int*)> body, int *index, int *lower, int *upper) {
-    body(index);
-  }
 
+  // Arbitrary dimensional for loop
   template<int d> inline void for_loop(std::function<void(int*)> body, int *lower, int *upper) {
     int index[d];
     copy_vec<d>(lower, index);
-
+    // Use the for_loop_helper function with the index.
     for_loop_helper<d>(body, index, lower, upper);
   }
 
-  
+  // Arbitrary dimensional for loop that only executes max_counts steps.
+  template<int d> inline void for_loop(std::function<void(int*, int)> body, int *lower, int *upper, int max_counts) {
+    int index[d];
+    copy_vec<d>(lower, index);
+    int counts = 0;
+    // Use the for_loop_helper function with the index.
+    for_loop_helper_max<d>(body, index, lower, upper, counts, max_counts);
+  }
 
 
+  template<int d> constexpr inline int power(int x) {
+    return x*power<d-1>(x);
+  }
+  template<> constexpr inline int power<1>(int x) {
+    return x;
+  }
 
   // --- Simd related
 

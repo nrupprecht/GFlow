@@ -1071,7 +1071,7 @@ namespace GFlowSimulation {
         // Find the center of the neighbor's bounds.
         RealType bcm[4], xrel[4]; // Assumes sim_dimensions <= 4.
         topology->get_neighbor_bounds(i).center(bcm);
-
+        
         // Pack the data into buffer_list
         int j = 0;
         for (int id : send_ghost_list[i]) {
