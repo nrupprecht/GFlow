@@ -155,21 +155,12 @@ namespace GFlowSimulation {
       // Get minimim image dispacement between centers of the bounds.
       bounds.center(bcm.data);
       gflow->getDisplacement(bcm.data, cm.data, dx.data);
-
+     
       // Check if the processor bounds are adjacent.
       bool adjacent = true;
       for (int d=0; d<sim_dimensions && adjacent; ++d) {
-        if (0.5*(process_bounds.wd(d) + bounds.wd(d)) + cutoff < dx[d]) adjacent = false;
+        if (0.5*(process_bounds.wd(d) + bounds.wd(d)) + cutoff < fabs(dx[d])) adjacent = false;
       }
-
-      // bool adjacent = true;
-      // for (int d=0; d<sim_dimensions; ++d) {
-      //   if (bounds.min[d]<=process_bounds.max[d] && process_bounds.min[d]<=bounds.max[d]);
-      //   else {
-      //     adjacent = false;
-      //     break;
-      //   }
-      // }
 
       if (adjacent) {
         neighbor_nodes.push_back(node);

@@ -60,6 +60,9 @@ namespace GFlowSimulation {
     //! Returns true if the bounds were changed.
     bool setSimulationBounds(const Bounds&);
 
+    const Bounds& getSimulationBounds() { return simulation_bounds; }
+    const Bounds& getProcessBounds() { return process_bounds; }
+
   protected:
 
     //! \brief The total bounds of the simulation.

@@ -2,12 +2,12 @@
 // For small radii, e.g. 0.0125-0.015, needed a max dt of 0.0002.
 
 // VARIABLES
-Var: MinR=0.03
-Var: MaxR=0.36
+Var: MinR=0.030
+Var: MaxR=0.036
 Var: Velocity=2.2
-Var: Length=18
+Var: Length=20
 Var: Height=10
-Var: Front=18
+Var: Front=8
 Var: Mu=0.25
 
 // This is a 2d simulation
