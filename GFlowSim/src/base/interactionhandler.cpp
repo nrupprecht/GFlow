@@ -201,7 +201,7 @@ namespace GFlowSimulation {
   void InteractionHandler::calculate_skin_depth() {
     // Try to pick a skin depth such that the expected number of particles in each verlet list is the chosen number.
     RealType rho = simData->size() / process_bounds.vol();
-    RealType candidate = inv_sphere_volume((target_list_size)/rho + 0.5*sphere_volume(max_small_sigma, sim_dimensions), sim_dimensions) - 2*max_small_sigma;
+    RealType candidate = inv_sphere_volume((2.2*target_list_size)/rho + 0.5*sphere_volume(max_small_sigma, sim_dimensions), sim_dimensions) - 2*max_small_sigma;
     skin_depth = max(static_cast<RealType>(0.5 * max_small_sigma), candidate);
     // Use the same skin depth on all processors - take the average.
     if (topology) {

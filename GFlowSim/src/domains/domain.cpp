@@ -73,8 +73,24 @@ namespace GFlowSimulation {
     }
   }
 
-  void Domain::constructFor(int id, bool insert) {
-    // \todo Implement this.
+  void Domain::constructFor(int id1, bool insert) {
+    // Find all neighor particles.
+    auto x = simData->X();
+    auto sg = simData->Sg();
+    vector<int> neighbors;
+    // Search for nearby particles.
+    Vec X(sim_dimensions);
+    X.wrap(x[id1], sim_dimensions);
+    getAllWithin(X, neighbors, 2*sg[id1] + skin_depth);
+    X.unwrap();
+    // Build lists for the particle. List type 2.
+    for (auto id2 : neighbors) {
+      RealType r = gflow->getDistance(x[id1], x[id2]);
+      if (r<sg[id1]+sg[id2]+skin_depth)
+        pair_interaction(id1, id2, 2);
+    }
+    // If insert flag is set to true, insert into cells
+    if (insert) add_to_cell(x[id1], id1);
   }
 
   void Domain::traversePairs(std::function<void(int, int, int, RealType, RealType, RealType)> body) {
@@ -133,7 +149,6 @@ namespace GFlowSimulation {
         
         // If sigma is > max_small_sigma, we have to look through more cells
         else {
-          
           // Calculate sweep "radius"
           RealType search_width = 2*sigma1+skin_depth;
           int prod = 1;
@@ -173,7 +188,6 @@ namespace GFlowSimulation {
               }
             }
           } 
-          
         }
       }
     }

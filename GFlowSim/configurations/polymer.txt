@@ -5,7 +5,7 @@ Var: length=10
 Var: number=1
 Var: phi=0.5
 Var: corr=0
-Var: phiP=0.1
+Var: phiF=0.1
 
 Dimensions: dimensions
 
@@ -23,7 +23,7 @@ Boundary: Wrap
 NTypes: 4
 
 Force-grid: {
-  : 0, 0, None // Polymer - Polymer  
+  : 0, 0, HardSphere // Polymer - Polymer  
   : 0, 1, None // Polymer - Chain
   : 0, 2, HardSphere {
     Repulsion: 500
@@ -32,7 +32,7 @@ Force-grid: {
 
   : 1, 1, HardSphere // Chain - Chain
 
-  : 2, 2, None // Solvent - Solvent
+  : 2, 2, HardSphere // Solvent - Solvent
   
   : 3, 1, None // Polymer - Chain
   : 3, 2, HardSphere
@@ -46,10 +46,6 @@ Fill: Polymer {
   r: 0.02
   Phi: phi
   Correlation: corr
-  Special: 1
-
-  //DensityP: inf
-  //DensityC: inf
 }
 
 // Fill an area with particles
@@ -63,7 +59,7 @@ Fill: Area {
     Type: 2
   }
 
-  Number: Phi=phiP {
+  Number: Phi=phiF {
     TypeA : 1
   }
 

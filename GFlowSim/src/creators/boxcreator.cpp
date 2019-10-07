@@ -24,7 +24,7 @@ namespace GFlowSimulation {
   GFlow* BoxCreator::createSimulation() {
     // Seed random number generators
     srand48(time(0));
-
+    
     // Values
     int number = -1; // -1 means use volume density
     int sample = 0;

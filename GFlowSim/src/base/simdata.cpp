@@ -101,6 +101,8 @@ namespace GFlowSimulation {
     ghost_wait_timer.clear();
     exchange_search_timer.clear(); 
     ghost_search_timer.clear();
+    // Remove any bad particles.
+    removeBadParticles();
   }
 
   void SimData::post_integrate() {
@@ -272,12 +274,32 @@ namespace GFlowSimulation {
   void SimData::sortParticles(Vec& direction) {
     // Make sure all particles are valid, and compressed
     doParticleRemoval(); // This only sets the needs remake flag if it removes particles.
-
     // FOR NOW: JUST SORT ALONG X AXIS
     quick_sort(0, _number-1, 0);
-
     // Set needs remake flag
     setNeedsRemake(true);
+  }
+
+  void SimData::removeBadParticles() {
+    // Most of the time, we probably won't need to remove any particles. We only need to remake structures if we do. So keep track.
+    bool removed_some = false;
+    // Look for bad particles.
+    for (int i=0; i<_size; ++i) {
+      for (int d=0; d<sim_dimensions; ++d) {
+        // If a component of position or velocity is nan, remove that particle.
+        if (isnan(X(i, d)) || isnan(V(i, d))) {
+          markForRemoval(i);
+          removed_some = true;
+          break;
+        }
+      }
+    }
+    if (removed_some) {
+      // Remove particles.
+      doParticleRemoval();
+      // Set the needs remake flag
+      setNeedsRemake(true);
+    }
   }
 
   void SimData::updateHaloParticles() {
@@ -1032,7 +1054,7 @@ namespace GFlowSimulation {
     for (int i=0; i<neighbor_ranks.size(); ++i) {
       // Rank of the i-th neighbor.
       int n_rank = neighbor_ranks[i];
-      // Recieve ghost particles, create new particles for them.
+      // Receive ghost particles, create new particles for them.
       recv_ghost_sizes[i] = recv_new_particle_data(n_rank, recv_buffer[i], send_ghost_tag);
       // Update number of ghosts.
       n_ghosts += recv_ghost_sizes[i];

@@ -141,6 +141,27 @@ namespace GFlowSimulation {
       x[d] = drand48()*wd(d) + min[d];
   }
 
+  Bounds Bounds::intersection(const Bounds A, const Bounds B) {
+    if (A.dimensions!=B.dimensions) throw BadDimension("Bounds intersection.");
+    Bounds C(A.dimensions);
+    bool null_intersection = false;
+    for (int d=0; d<C.dimensions; ++d) {
+      C.min[d] = GFlowSimulation::max(A.min[d], B.min[d]);
+      C.max[d] = GFlowSimulation::min(A.max[d], B.max[d]);
+      if (C.max[d]<=C.min[d]) {
+        null_intersection = true;
+        break;
+      }
+    }
+    // If empty intersection, set to zeros.
+    if (null_intersection) {
+      for (int d=0; d<C.dimensions; ++d)
+        C.min[d] = C.max[d] = 0.;
+    }
+    // Return the bounds.
+    return C;
+  }
+
   RealType max_width(const Bounds& bnds) {
     RealType a = bnds.wd(0), b = bnds.wd(1), c = bnds.wd(2);
     return max(a, b, c);

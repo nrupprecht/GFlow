@@ -92,10 +92,10 @@ namespace GFlowSimulation {
     mutable RealType potential = 0;
 
     //! \brief Whether to do virial calculation.
-    bool do_virial = true;
+    bool do_virial = false;
 
     //! \brief Whether to do potential energy calculation.
-    bool do_potential = true;
+    bool do_potential = false;
   };
 
 }

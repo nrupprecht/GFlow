@@ -60,6 +60,9 @@ namespace GFlowSimulation {
     //! \brief Set the input vector to be a uniformly random position from within the bounds. 
     void randomPoint(RealType*) const;
 
+    //! \brief Returns the intersection of two bounds objects, or min = max = {0, ... } if there is no intersection.
+    static Bounds intersection(const Bounds, const Bounds);
+
     //! \brief Find the maximum bounds width.
     friend RealType max_width(const Bounds&);
 

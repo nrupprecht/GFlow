@@ -82,7 +82,7 @@ namespace GFlowSimulation {
     //! \brief Boundary condition flag.
     //!
     //! Use for when we want all the boundary conditions to be the same.
-    BCFlag bcFlag;
+    BCFlag bcFlag = BCFlag::WRAP;
 
     //! \brief Bounds of the simulation we are creating.
     Bounds simBounds;

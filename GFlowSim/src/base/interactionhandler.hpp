@@ -203,7 +203,7 @@ namespace GFlowSimulation {
     //!
     //! Despite the fact that particles come in integer numbers, the target list size is a real, since it
     //! determines the skin depth via multiplication, and the *average* list size can be a real.
-    RealType target_list_size = 4.;
+    RealType target_list_size = 2.;
     
     //! \brief The maximum "small" cutoff for a particle.
     //!
@@ -252,8 +252,6 @@ namespace GFlowSimulation {
 
     //! \brief Whether the domain has been initialized or not.
     bool initialized = false;
-
-
 
     //! \brief What type of borders there are in the "up" directions.
     //!
