@@ -182,19 +182,27 @@ namespace GFlowSimulation {
     // The maximum number of attempts to make
     int max_attempts = 50;
 
-    // Correct number/volume if we are doing a parallel setup, since some particles will be initialized on another processor.
-    //! \todo This only works if the region is rectangular.
-    auto process_bounds = gflow->getTopology()->getProcessBounds();
-    auto region_bounds = region->get_bounding_box();
-    auto intersection = Bounds::intersection(process_bounds, region_bounds);
-    // Correct number, if necessary.
-    number = number * region_bounds.vol() / region->vol();
+    
     
     // --- Fill the region with particles
     Vec X(sim_dimensions), V(sim_dimensions);
     RealType sigma(0.), im(0.);
     int type(0), N(0);
-    RealType ke(0.);
+    RealType ke(0.), Vol = region->vol();
+    // Correct number/volume if we are doing a parallel setup, since some particles will be initialized on another processor.
+    // We can only handle this case for now, since we need to intersect the region with the process bounds.
+    if (dynamic_cast<RectangularRegion*>(region)) {
+      //! \todo This only works if the region is rectangular.
+      auto process_bounds = gflow->getTopology()->getProcessBounds();
+      auto region_bounds = region->get_bounding_box();
+      auto intersection = Bounds::intersection(process_bounds, region_bounds);
+      // Correct number, if necessary.
+      number = number * region_bounds.vol() / region->vol();
+      Vol = intersection.vol();
+      // Make the region into the intersection region.
+      delete region;
+      region = new RectangularRegion(sim_dimensions, intersection);
+    }
 
     // If we are filling to a specified volume fraction or number density.
     if (option==0 || option==1) {
@@ -214,7 +222,7 @@ namespace GFlowSimulation {
       std::discrete_distribution<int> choice(probabilities.begin(), probabilities.end());
 
       // Keep track of number and total volume of particle as we add them.
-      RealType vol = 0, Vol = region_bounds.vol(); // Vol = region->vol();
+      RealType vol = 0;
       // A function that checks if we should keep adding particles.
       auto keep_adding = [&] () -> bool {
         // Phi - fill to a volume fraction.
