@@ -728,21 +728,36 @@ namespace GFlowSimulation {
   }
 
   void SimData::clearV() {
+    // Start simdata timer.
+    timer.start();
+    // Clear velocities
     RealType *v = V_arr();
     for (int i=0; i<_size*sim_dimensions; ++i) v[i] = 0;
+    // Stop simdata timer.
+    timer.stop();
   }
 
   void SimData::clearF() {
+    // Start simdata timer.
+    timer.start();
+    // Clear forces
     RealType *f = F_arr();
     for (int i=0; i<_size*sim_dimensions; ++i) f[i] = 0;
+    // Stop simdata timer.
+    timer.stop();
   }
 
   void SimData::clearScalar(const string id) {
+    // Start simdata timer.
+    timer.start();
+    // Clear scalar
     int address = getScalarData(id);
     if (address>=0) {
       RealType *entry = ScalarData(address);
       for (int i=0; i<_size; ++i) entry[i] = 0;
     }
+    // Stop simdata timer.
+    timer.stop();
   }
 
   int SimData::getLocalID(int global) const {

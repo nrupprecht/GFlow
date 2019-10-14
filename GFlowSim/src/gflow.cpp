@@ -30,13 +30,11 @@ namespace GFlowSimulation {
   }
 
   GFlow::~GFlow() {
-    //if (simData)      delete simData;
     if (integrator)   delete integrator;
     if (handler)      delete handler;
     if (dataMaster)   delete dataMaster;
     if (forceMaster)  delete forceMaster;
     if (topology)     delete topology;
-    simData = nullptr;
     integrator = nullptr;
     handler = nullptr;
     dataMaster = nullptr;
@@ -65,8 +63,7 @@ namespace GFlowSimulation {
   bool GFlow::initialize() {
     bool non_null = true;
     // --- Initialize all the subobjects
-    if (simData) simData->initialize();
-    else non_null = false;
+    simData->initialize();
 
     if(integrator) integrator->initialize();
     else non_null = false;
@@ -138,7 +135,7 @@ namespace GFlowSimulation {
     if (simData->X()==nullptr || simData->V()==nullptr || simData->F()==nullptr) {
       throw UnexpectedNullPointer("Some array in simdata was null that shouldn't be.");
     }
-
+    
     // Set run mode, if it is currently "idle"
     if (runMode==RunMode::IDLE) setRunMode(RunMode::SIM);
 
