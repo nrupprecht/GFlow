@@ -48,6 +48,14 @@ namespace GFlowSimulation {
     virtual bool writeToFile(string, bool=true) override;
 
   protected:
+    //! \brief Gather and average data on processor 0.
+    void gatherAverageData(const RealType, RealType, int);
+
+    //! \brief Gather and average data on processor 0. Average with a Realtype.
+    void gatherAverageData(const RealType, RealType, RealType);
+
+    //! \brief Gather sum of all data on processor 0.
+    void gatherData(const RealType, RealType);
 
     //! \brief The data, as a vector of pairs of real numbers
     vector<RPair> data;

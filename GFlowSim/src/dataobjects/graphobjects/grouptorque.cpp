@@ -9,12 +9,8 @@ namespace GFlowSimulation {
   void GroupTorque::post_step() {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
-
-    // Get data.
-    RealType time = Base::gflow->getElapsedTime();
-    RealType torque = calculate_torque(simData, group);
-    // Store data.
-    data.push_back(RPair(time, torque));
+    // Store data. These functions work correctly with multiprocessor runs.
+    gatherData(gflow->getElapsedTime(), calculate_torque(simData, group));
   }
 
   void GroupTorque::setGroup(Group& g) {

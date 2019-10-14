@@ -59,6 +59,9 @@ namespace GFlowSimulation {
 
     RealType& atY(int, int);
 
+    //! \brief Gather and average data on processor 0.
+    void gatherAverageData(const RealType, const Vec, int);
+
     //! \brief The different types of data the multigraph is keeping track of.
     //!
     //! The first entry is the x value, the other [ndata] values are the data.

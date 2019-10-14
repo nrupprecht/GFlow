@@ -7,9 +7,8 @@ namespace GFlowSimulation {
   void BoundaryForceData::post_step() {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
-
-    // Store data
-    data.push_back(RPair(Base::gflow->getElapsedTime(), Base::gflow->getBoundaryForce()));
+    // Store data. These functions work correctly with multiprocessor runs.
+    gatherData(gflow->getElapsedTime(), gflow->getBoundaryForce());
   }
 
   RealType BoundaryForceData::getAverage() const {

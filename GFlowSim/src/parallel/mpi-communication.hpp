@@ -8,6 +8,11 @@ namespace GFlowSimulation {
  
   class MPIObject {
   public:
+    //! \brief Gets the rank of this processor.
+    static int getRank();
+    //! \brief Gets the total number of processors.
+    static int getNumProc();
+
     //! \brief Call an mpi barrier.
     static void barrier();
     //! \brief Call an mpi barrier, use the timer to time how long the barrier lasted.
@@ -34,6 +39,9 @@ namespace GFlowSimulation {
 
     //! \brief Perform MPI Reduce, using sum, gathering on rank 0. Real type version.
     static void mpi_sum0(RealType&);
+
+    //! \brief Perform MPI Reduce, using sum, on an entire buffer, gathering on rank 0. Real type version.
+    static void mpi_sum0(RealType*, int);
 
     //! \brief Perform an MPI AllReduce, using Min.
     static void mpi_min(RealType&);

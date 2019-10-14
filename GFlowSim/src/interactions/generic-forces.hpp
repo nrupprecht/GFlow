@@ -78,6 +78,8 @@ namespace GFlowSimulation {
   template<int dims> 
   using HardSphereVL = HardSphereGeneric<dims, VerletList>;
 
+  template<int dims> using HardSphereVLVP = HardSphereGeneric<dims, VerletListVecPairs>;
+
 
   /*
   * \brief Generic class for hard sphere forces with dissipation.
@@ -153,6 +155,8 @@ namespace GFlowSimulation {
   //! \brief Define the HardSphereVLP class to be hard sphere force using verlet list pairs container.
   template<int dims> 
   using HardSphereDsVLP = HardSphereDsGeneric<dims, VerletListPairs>;
+
+  template<int dims> using HardSphereDsVLVP = HardSphereDsGeneric<dims, VerletListVecPairs>;
 
 
   /*
@@ -243,6 +247,8 @@ namespace GFlowSimulation {
   template<int dims> 
   using LennardJonesVLP = LennardJonesGeneric<dims, VerletListPairs>;
 
+  template<int dims> using LennardJonesVLVP = LennardJonesGeneric<dims, VerletListVecPairs>;
+
 
   /*
   * \brief Generic class for (short range) coulombic forces.
@@ -322,6 +328,8 @@ namespace GFlowSimulation {
   //! \brief Define the CoulombVLP class to be Coulomb force using verlet list pairs container.
   template<int dims> 
   using CoulombVLP = CoulombGeneric<dims, VerletListPairs>;
+
+  template<int dims> using CoulombVLVP = CoulombGeneric<dims, VerletListVecPairs>;
   
   
   /*
@@ -416,6 +424,8 @@ namespace GFlowSimulation {
   //! \brief Define the LennardJonesVLP class to be lennard jones force using verlet list pairs container.
   template<int dims> 
   using BuckinghamVLP = BuckinghamGeneric<dims, VerletListPairs>;
+
+  template<int dims> using BuckinghamVLVP = BuckinghamGeneric<dims, VerletListVecPairs>;
   
   
   /*
@@ -588,6 +598,8 @@ namespace GFlowSimulation {
   template<int dims> 
   using HertzVLP = HertzGeneric<dims, VerletListPairs>;
 
+  template<int dims> using HertzVLVP = HertzGeneric<dims, VerletListVecPairs>;
+
 
   /*
   * \brief Generic class for Hertz-type forces.
@@ -753,6 +765,8 @@ namespace GFlowSimulation {
   //! \brief Define the HookeVLP class to be Hooke force using verlet list pairs container.
   template<int dims> 
   using HookeVLP = HookeGeneric<dims, VerletListPairs>;
+
+  template<int dims> using HookeVLVP = HookeGeneric<dims, VerletListVecPairs>;
 
 
   /*

@@ -30,14 +30,8 @@ namespace GFlowSimulation {
     // Check if there was anything to store
     if (count==0) return;
 
-    // Add a new entry to modify
-    addEntry(Base::gflow->getElapsedTime());
-
-    // Store data
-    RealType c = static_cast<RealType>(count);
-    for (int d=0; d<sim_dimensions; ++d) {
-      getY(d) = ave[d] / c;
-    }
+    // Create an entry with the average data. This function handles multiprocessor runs correctly.
+    gatherAverageData(Base::gflow->getElapsedTime(), ave, count);
   }
 
 }

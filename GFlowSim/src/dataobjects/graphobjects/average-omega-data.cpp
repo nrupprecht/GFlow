@@ -26,16 +26,11 @@ namespace GFlowSimulation {
         RealType m = 1./im[n];
         omega += om[n]*m;
         mass += m;
-
       }
     }
-    omega /= mass;
 
-    // Store data
-    RealType time = gflow->getElapsedTime();
-    data.push_back(RPair(time, omega));
-    // A useful check
-    if(isnan(omega)) throw NanValue("Omega");
+    // Store data. These functions work correctly with multiprocessor runs.
+    gatherAverageData(gflow->getElapsedTime(), omega, mass);
   }
 
 }

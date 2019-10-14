@@ -2,6 +2,18 @@
 
 namespace GFlowSimulation {
 
+  int MPIObject::getRank() {
+    int rank = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    return rank;
+  }
+
+  int MPIObject::getNumProc() {
+    int numProc = 0;
+    MPI_Comm_size(MPI_COMM_WORLD, &numProc);
+    return numProc; 
+  }
+
   void MPIObject::barrier() {
     #if USE_MPI == 1
     // Call the general barrier
@@ -70,6 +82,15 @@ namespace GFlowSimulation {
     #endif
   }
 
+  void MPIObject::mpi_sum0(RealType *buffer, int counts) {
+    #if USE_MPI == 1
+    int rank = getRank();
+    // If rank 0, gather to the same buffer.
+    if (rank==0) MPI_Reduce(MPI_IN_PLACE, buffer, counts, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+    else MPI_Reduce(buffer, buffer, counts, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+    #endif
+  }
+
   void MPIObject::mpi_min(RealType& val) {
     #if USE_MPI == 1
     RealType min_val = 0;
@@ -89,8 +110,7 @@ namespace GFlowSimulation {
   void MPIObject::mpi_and(bool& val) {
     #if USE_MPI == 1
     int v = val ? 1 : 0, gv = 1;
-    MPI_Allreduce(&v, &gv, 1, MPI_INT, /*MPI_MIN*/ MPI_LAND, MPI_COMM_WORLD);
-    //val = (gv==1);
+    MPI_Allreduce(&v, &gv, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
     val = gv;
     #endif
   }
@@ -99,7 +119,6 @@ namespace GFlowSimulation {
     #if USE_MPI == 1
     int v = val ? 1 : 0, gv = 1;
     MPI_Allreduce(&v, &gv, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
-    //val = (gv==1);
     val = gv;
     #endif
   }

@@ -9,8 +9,7 @@ namespace GFlowSimulation {
     if (!DataObject::_check()) return;
 
     // Store data
-    RealType time = Base::gflow->getElapsedTime();
-    data.push_back(RPair(time, gflow->getDT()));
+    if (topology->getRank()==0) addEntry(Base::gflow->getElapsedTime(), gflow->getDT());
   }
-
+  
 }

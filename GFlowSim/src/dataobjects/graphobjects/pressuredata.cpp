@@ -11,13 +11,11 @@ namespace GFlowSimulation {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
     
-    // We will look at the L1 distance between particles that potentially interact
-    vector<RealType> pressures;
-    // Store data
-    RealType time = Base::gflow->getElapsedTime();
+    // Calculate pressure.
     RealType Ptot = calculate_pressure(gflow);
-    // Store data
-    data.push_back(RPair(time, Ptot));
+
+    // Store data. These functions work correctly with multiprocessor runs.
+    gatherData(gflow->getElapsedTime(), Ptot);
   }
 
   RealType PressureData::calculate_pressure(GFlow *gflow) {

@@ -16,13 +16,10 @@ namespace GFlowSimulation {
     // Add potential energy from bonded interactions
     auto bonded_interactions = gflow->getBondedInteractions();
     for (auto it : bonded_interactions) energy += it->getPotential();
-    // If we want the average
-    if (useAve && Base::simData->size()>0) energy /= Base::simData->size();;
-    // Store data
-    RealType time = gflow->getElapsedTime();
-    data.push_back(RPair(time, energy));
-    // A useful check
-    if(isnan(energy)) throw NanValue("Bonded Energy");
+    
+    // Store data. These functions work correctly with multiprocessor runs.
+    if (useAve) gatherAverageData(gflow->getElapsedTime(), energy, simData->size());
+    else gatherData(gflow->getElapsedTime(), energy);
   }
 
 }

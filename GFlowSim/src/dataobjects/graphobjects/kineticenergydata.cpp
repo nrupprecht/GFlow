@@ -7,19 +7,11 @@ namespace GFlowSimulation {
   void KineticEnergyData::post_step() {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
-
     // Get data.
-    RealType time = Base::gflow->getElapsedTime();
-    RealType ke = calculate_kinetic(simData, useAve);
-
-    #if USE_MPI == 1
-    MPIObject::mpi_sum(ke);
-    #endif 
-    // Store data.
-    if (topology->getRank()==0) data.push_back(RPair(time, ke));
-
-    // A useful check
-    if(isnan(ke)) throw NanValue("KE");
+    RealType ke = calculate_kinetic(simData, false);
+    // Store data. These functions work correctly with multiprocessor runs.
+    if (useAve) gatherAverageData(gflow->getElapsedTime(), ke, simData->size());
+    else gatherData(gflow->getElapsedTime(), ke);
   }
 
   RealType KineticEnergyData::calculate_kinetic(shared_ptr<SimData> simData, bool average) {

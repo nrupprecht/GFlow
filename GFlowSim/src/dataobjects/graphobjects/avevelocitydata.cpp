@@ -23,11 +23,9 @@ namespace GFlowSimulation {
         av += magnitudeVec(v[n], sim_dimensions);
         ++count;
       }
-    // If we want the average
-    av /= count;
-    // Store data
-    RealType time = Base::gflow->getElapsedTime();
-    data.push_back(RPair(time, av));
+
+    // Store data. These functions work correctly with multiprocessor runs.
+    gatherAverageData(gflow->getElapsedTime(), av, count);
   }
 
 }

@@ -89,4 +89,32 @@ namespace GFlowSimulation {
     return true;
   }
 
+  void GraphObject::gatherAverageData(const RealType x, RealType yval, int count) {
+    // Gather data and data counts on processor 0.
+    MPIObject::mpi_sum0(count);
+    MPIObject::mpi_sum0(yval);
+    // Check for NANs
+    if (isnan(yval)) throw NanValue("GraphObject::gatherAverageData");
+    // If this is the root processor (0), store the data average.
+    if (topology->getRank()==0) addEntry(x, yval/count);
+  }
+
+  void GraphObject::gatherAverageData(const RealType x, RealType yval, RealType weight) {
+    // Gather data and data counts on processor 0.
+    MPIObject::mpi_sum0(weight);
+    MPIObject::mpi_sum0(yval);
+    // Check for NANs
+    if (isnan(yval)) throw NanValue("GraphObject::gatherAverageData");
+    // If this is the root processor (0), store the data average.
+    if (topology->getRank()==0) addEntry(x, yval/weight);
+  }
+
+  void GraphObject::gatherData(const RealType x, RealType yval) {
+    MPIObject::mpi_sum0(yval);
+    // Check for NANs
+    if (isnan(yval)) throw NanValue("GraphObject::gatherAverageData");
+    // If this is the root processor (0), store the data.
+    if (topology->getRank()==0) addEntry(x, yval);
+  }
+
 }

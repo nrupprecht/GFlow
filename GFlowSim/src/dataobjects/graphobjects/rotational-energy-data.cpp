@@ -33,11 +33,9 @@ namespace GFlowSimulation {
     }
     energy *= 0.5;
 
-    // Store data
-    RealType time = gflow->getElapsedTime();
-    data.push_back(RPair(time, energy));
-    // A useful check
-    if(isnan(energy)) throw NanValue("Energy");
+    // Store data. These functions work correctly with multiprocessor runs.
+    if (useAve) gatherAverageData(gflow->getElapsedTime(), energy, count);
+    else gatherData(gflow->getElapsedTime(), energy);
   }
 
 }
