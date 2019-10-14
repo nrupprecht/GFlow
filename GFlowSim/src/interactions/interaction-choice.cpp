@@ -9,7 +9,7 @@ namespace GFlowSimulation {
     if (token==NoneToken) return nullptr;
     else if (token==HardSphereToken) {
       if      (sim_dimensions==1) return new HardSphereVLP<1>(gflow);
-      else if (sim_dimensions==2) return new HardSphereVLVP<2>(gflow);
+      else if (sim_dimensions==2) return new HardSphereVLP<2>(gflow);
       else if (sim_dimensions==3) return new HardSphereVLP<3>(gflow);
       else if (sim_dimensions==4) return new HardSphereVLP<4>(gflow);
       // Nothing per-say invalid about requesting this force in this dimension, it just isn't coded in.

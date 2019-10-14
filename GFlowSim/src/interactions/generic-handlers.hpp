@@ -80,9 +80,9 @@ namespace GFlowSimulation {
   private:
 
     //! \brief Do the forces for a single list. 
-    template<bool wrapping> void dolist(const int list) const {
+    template<bool wrapping> inline void dolist(const int list) const {
       // Reference to the requested list.
-      vector<int> &verlet_list = verlet[list];
+      const vector<int> &verlet_list = verlet[list];
       // If there are no particles, return.
       if (verlet_list.empty()) return;
       // Get references to the rest of the list data we need.
@@ -93,11 +93,10 @@ namespace GFlowSimulation {
       auto x = simData->X();
       auto f = simData->F();
       auto rd = simData->Sg();
-      auto type = simData->Type();
 
       // Make sure all needed pointers are non null.
       // \todo Should probably have some sort of global error message system.
-      if (x==nullptr || f==nullptr || rd==nullptr || type==nullptr) return;
+      if (x==nullptr || f==nullptr || rd==nullptr) return;
 
       // Needed constants
       RealType R1, R2, rsqr, r, X[dims];
@@ -122,9 +121,6 @@ namespace GFlowSimulation {
         for (int j=first[i]; j<first[i+1]; ++j) {
           // Get id of neighbor.
           int id2 = verlet_list[j];
-
-          // Check if the types are good
-          if (type[id1]<0 || type[id2]<0) continue;
           // Calculate displacement.
           subtract_vec<dims>(x[id1], x[id2], X);
           // Harmonic corrections to distance.
@@ -185,7 +181,7 @@ namespace GFlowSimulation {
   private:
 
     //! \brief Do the forces for a single list. 
-    template<bool wrapping> void dolist(const vector<int>& verlet_list) const {
+    template<bool wrapping> inline void dolist(const vector<int>& verlet_list) const {
       // If the list is empty, return.
       if (verlet_list.empty()) return;
 
@@ -193,11 +189,10 @@ namespace GFlowSimulation {
       RealType **x = simData->X();
       RealType **f = simData->F();
       RealType *rd = simData->Sg();
-      int    *type = simData->Type();
 
       // Make sure all needed pointers are non null.
       // \todo Should probably have some sort of global error message system.
-      if (x==nullptr || f==nullptr || rd==nullptr || type==nullptr) return;
+      if (x==nullptr || f==nullptr || rd==nullptr) return;
 
       // Needed constants
       RealType R1, R2, rsqr, r, X[dims];
@@ -218,8 +213,6 @@ namespace GFlowSimulation {
       for (int i=0; i<verlet_list.size(); i+=2) {
         int id1 = verlet_list[i];
         int id2 = verlet_list[i+1];
-        // Check if the types are good
-        if (type[id1]<0 || type[id2]<0) continue;
         // Calculate displacement.
         subtract_vec<dims>(x[id1], x[id2], X);
         // Harmonic corrections to distance.
@@ -281,7 +274,7 @@ namespace GFlowSimulation {
   private:
 
     //! \brief Do the forces for a single list. 
-    template<bool wrapping> void dolist(const vector<pair<int, int> >& verlet_list) const {
+    template<bool wrapping> inline void dolist(const vector<pair<int, int> >& verlet_list) const {
       // If the list is empty, return.
       if (verlet_list.empty()) return;
 
@@ -289,11 +282,10 @@ namespace GFlowSimulation {
       RealType **x = simData->X();
       RealType **f = simData->F();
       RealType *rd = simData->Sg();
-      int    *type = simData->Type();
 
       // Make sure all needed pointers are non null.
       // \todo Should probably have some sort of global error message system.
-      if (x==nullptr || f==nullptr || rd==nullptr || type==nullptr) return;
+      if (x==nullptr || f==nullptr || rd==nullptr) return;
 
       // Needed constants
       RealType R1, R2, rsqr, r, X[dims];
@@ -314,8 +306,6 @@ namespace GFlowSimulation {
       for (const auto vpair : verlet_list) {
         int id1 = vpair.first;
         int id2 = vpair.second;
-        // Check if the types are good
-        if (type[id1]<0 || type[id2]<0) continue;
         // Calculate displacement.
         subtract_vec<dims>(x[id1], x[id2], X);
         // Harmonic corrections to distance.

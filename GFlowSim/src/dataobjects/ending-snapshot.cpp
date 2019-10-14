@@ -25,7 +25,7 @@ namespace GFlowSimulation {
   void EndingSnapshot::post_integrate() {
     // Gather data from this processor.
     storeData.store(final_data);
-    // Collect addition data.
+    // Collect addition data from other processors.
     MPIObject::mpi_reduce0_position_data(final_data);
     // If we are not the root, erase the data. It is unnecessary.
     if (topology->getRank()!=0) final_data.clear();
