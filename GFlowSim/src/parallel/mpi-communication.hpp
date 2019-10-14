@@ -60,6 +60,9 @@ namespace GFlowSimulation {
 
     //! \brief Receive a single int value from another processor.
     static void recv_single(int&, int, int=0);
+
+    //! \brief Gather position data together onto the root processor.
+    static void mpi_reduce0_position_data(vector<RealType>&);
   };
 
 }

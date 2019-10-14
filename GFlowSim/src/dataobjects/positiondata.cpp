@@ -38,51 +38,10 @@ namespace GFlowSimulation {
 
     // Store the data for this processor.
     storeData.store(data);
-
-    #if USE_MPI == 1
-      int rank = topology->getRank();
-      int numProc = topology->getNumProc();
-      
-      if (numProc>1) {
-        #if _CLANG_ == 1
-          // Receive all data.
-          if (rank==0) {
-            vector<int> recv_size(numProc, 0);
-            int total = 0;
-            for (int i=1; i<numProc; ++i) {
-              MPI_Recv(&recv_size[i], 1, MPI_INT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-              total += recv_size[i];
-            }
-            // The end of the data from this processor
-            int place = data.size();
-            // Resize data
-            data.resize(data.size()+total, 0.);
-            // Collect all the data from the processors.
-            for (int i=1; i<numProc; ++i) {
-              if (recv_size[i]>0) MPI_Recv(&data[place], recv_size[i], MPI_FLOAT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-              place += recv_size[i];
-            }
-          }
-          else {
-            // First send amount of data will will send.
-            int size = data.size();
-            MPI_Send(&size, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
-            // Then send the actual data, if there is any to send.
-            if (size>0) MPI_Send(&data[0], size, MPI_FLOAT, 0, 0, MPI_COMM_WORLD);
-          }
-        // if _CLANG_ != 1
-        #else
-          // STUB
-          throw false;
-        #endif 
-      }
-      
-      // Store this timestep's data
-      if (rank==0) positions.push_back(data);
-    #else
-      // if USE_MPI != 1
-      positions.push_back(data);
-    #endif
+    // Collect addition data from other processors.
+    MPIObject::mpi_reduce0_position_data(data);
+    // If we are the root processor, store the data.
+    if (topology->getRank()==0) positions.push_back(data);
   }
 
   bool PositionData::writeToFile(string fileName, bool useName) {
