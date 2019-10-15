@@ -2,7 +2,7 @@
 #define __MPI_COMMUNICATION_HPP__GFLOW__
 
 #include "../utility/utility.hpp"
-#include "../utility/timer.hpp"
+#include "../other/timedobject.hpp"
 
 namespace GFlowSimulation {
  
@@ -16,13 +16,13 @@ namespace GFlowSimulation {
     //! \brief Call an mpi barrier.
     static void barrier();
     //! \brief Call an mpi barrier, use the timer to time how long the barrier lasted.
-    static void barrier(Timer&);
+    static void barrier(TimedObject&);
 
     #if USE_MPI == 1 // MPI_Request needs mpi to compile
     //! \brief Call for an mpi wait.
     static void wait(MPI_Request&);
     //! \brief Call for an mpi wait, use the timer to time how long the wait lasted.
-    static void wait(MPI_Request&, Timer&);
+    static void wait(MPI_Request&, TimedObject&);
 
     //! \brief Test whether a request has been fulfilled. Non-blocking.
     static bool test(MPI_Request&);

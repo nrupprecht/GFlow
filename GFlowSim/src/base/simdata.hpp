@@ -274,14 +274,14 @@ namespace GFlowSimulation {
 
     // --- MPI related timers.
 
-    Timer barrier_timer;
-    Timer send_timer;
-    Timer recv_timer;
-    Timer ghost_send_timer;
-    Timer ghost_recv_timer;
-    Timer ghost_wait_timer;
-    Timer exchange_search_timer;
-    Timer ghost_search_timer;
+    TimedObject barrier_timer;
+    TimedObject send_timer;
+    TimedObject recv_timer;
+    TimedObject ghost_send_timer;
+    TimedObject ghost_recv_timer;
+    TimedObject ghost_wait_timer;
+    TimedObject exchange_search_timer;
+    TimedObject ghost_search_timer;
 
   private:
     // --- Helper functions.

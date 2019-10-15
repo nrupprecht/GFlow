@@ -9,7 +9,7 @@ namespace GFlowSimulation {
 
   void VelocityVerlet::pre_forces() {
     // Start the timer
-    timer.start();
+    start_timer();
 
     // Call base class
     Integrator::pre_forces();
@@ -135,12 +135,12 @@ namespace GFlowSimulation {
     #endif
 
     // Stop timer
-    timer.stop();
+    stop_timer();
   }
 
   void VelocityVerlet::post_forces() {
     // Start the timer
-    timer.start();
+    start_timer();
 
     // Call to parent class
     Integrator::post_forces();
@@ -168,13 +168,6 @@ namespace GFlowSimulation {
       for (int i=0; i<total; ++i) {
       	int id = i/sim_dimensions;
       	v[i] += hdt*im[id]*f[i];
-      	// Debug mode asserts
-        #if DEBUG==1
-      	assert(!isnan(f[i]));
-      	assert(!isnan(v[i]));
-      	assert(fabs(v[i])<MAX_REASONABLE_V);
-      	assert(fabs(f[i])<MAX_REASONABLE_F);
-        #endif
       }
     }
 
@@ -218,7 +211,7 @@ namespace GFlowSimulation {
     #endif
 
     // Stop timer
-    timer.stop();
+    stop_timer();
   }
 
 }

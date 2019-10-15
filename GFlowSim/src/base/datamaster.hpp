@@ -2,6 +2,7 @@
 #define __DATA_MASTER_HPP__GFLOW__
 
 #include "dataobject.hpp"
+#include "../other/timedobject.hpp"
 
 namespace GFlowSimulation {
 
@@ -13,7 +14,7 @@ namespace GFlowSimulation {
   *  saving data from its data objects to a unified output file system.
   *
   */
-  class DataMaster : public Base {
+  class DataMaster : public Base, public TimedObject {
   public:
     //! \brief Constructor.
     DataMaster(GFlow*);
@@ -54,7 +55,7 @@ namespace GFlowSimulation {
     //! \brief Do a coordinated write to a directory. Returns true if all writes were successful.
     bool writeToDirectory(string);
 
-    //! \brief Reset the time - use e.g. after relaxation step.
+    //! \brief Set the run_time record to zero.
     void resetTimer();
 
     //! \brief Set start recording time.
@@ -108,12 +109,6 @@ namespace GFlowSimulation {
     //! Run time (real time).
     RealType run_time = 0;
 
-    //! When the timer started.
-    high_resolution_clock::time_point start_time;
-
-    //! Whether the timer is running.
-    bool timing = false; 
-
     //! Time to start taking data.
     RealType startRecTime = 0;
 
@@ -122,9 +117,9 @@ namespace GFlowSimulation {
 
     //! \brief Files that should be written to the summary directory: {name, contents}.
     vector<pair<string, string> > files;
-
-    //! \brief Keeps track of how much time is spent running data objects.
-    Timer data_timer;
+    
+    //! \brief A total run time timer.
+    Timer runTimer;
   };
 
 }

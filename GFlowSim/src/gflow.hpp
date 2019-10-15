@@ -3,8 +3,7 @@
 
 #include "base/base.hpp"
 #include "utility/utility.hpp"
-
-#include "utility/timer.hpp"
+#include "other/timedobject.hpp"
 
 // Note to self: Using debuggers in MPI parallel: https://www.open-mpi.org/faq/?category=debugging
 // mpirun -np 2 xterm -e lldb ./bin/driver
@@ -389,18 +388,18 @@ namespace GFlowSimulation {
     // Timing
 
     //! \brief Timer used to time how long the bonded interactions take.
-    Timer bonded_timer;
+    TimedObject bonded_timer;
 
     //! \brief Timer used to time how long the body execution takes.
-    Timer body_timer;
+    TimedObject body_timer;
 
     //! \brief Timer used to time how much time mpi particle exchange operations take up. This timer should be started and stopped 
     //! by classes invoking MPI.
-    Timer mpi_exchange_timer;
+    TimedObject mpi_exchange_timer;
 
     //! \brief Timer used to time how much time mpi ghost syncronization operations take up. This timer should be started and stopped 
     //! by classes invoking MPI.
-    Timer mpi_ghost_timer;
+    TimedObject mpi_ghost_timer;
 
     //! \brief Whether to print updates to a screen.
     bool print_updates = false;

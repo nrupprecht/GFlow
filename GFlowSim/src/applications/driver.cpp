@@ -98,6 +98,7 @@ int main(int argc, char **argv) {
   string writeDirectory = "RunData";
   int boundary = 1;
   bool forces = true;
+  bool timing = true;
   string monitor = ""; // Monitor file
 
   // Modifiers
@@ -154,6 +155,7 @@ int main(int argc, char **argv) {
   parser.get("temperature", temperature);
   parser.get("boundary", boundary);
   parser.get("forces", forces);
+  parser.get("timing", timing);
 
   if (!quiet && rank==0) {
     #if DEBUG==1
@@ -216,6 +218,9 @@ int main(int argc, char **argv) {
     if (!quiet) cout << "GFlow was null. Exiting.\n";
     return 1;
   }
+
+  // Whether we want to do full timing or not.
+  TimedObject::setTimingOn(timing);
 
   // --- Make sure we didn't enter any illegal tokens - do this after gflow creation since creator uses flags
   try {

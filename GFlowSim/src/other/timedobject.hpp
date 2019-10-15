@@ -19,9 +19,20 @@ namespace GFlowSimulation {
     //! \brief Get the time of the object timer.
     double get_time();
 
+    //! \brief Check whether the timers are all on or off.
+    static bool getTimingOn();
+
+    //! \brief Turn on or off all the timers.
+    static void setTimingOn(bool t);
+
   protected:
     //! \brief The actual timer.
     Timer timer;
+
+    //! \brief Whether the timers should work.
+    //!
+    //! Not doing timing can actually save a lot of time depending on the system.
+    static bool timing_on;
   };
 
 }

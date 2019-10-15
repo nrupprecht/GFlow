@@ -140,10 +140,10 @@ namespace GFlowSimulation {
     if (runMode==RunMode::IDLE) setRunMode(RunMode::SIM);
 
     // GFlow local timers. Timed objects' timers are cleared by call to pre_integrate.
-    bonded_timer.clear();
-    body_timer.clear();
-    mpi_exchange_timer.clear();
-    mpi_ghost_timer.clear();
+    bonded_timer.clear_timer();
+    body_timer.clear_timer();
+    mpi_exchange_timer.clear_timer();
+    mpi_ghost_timer.clear_timer();
 
     // --> Pre-integrate
     _running = true;
@@ -210,17 +210,17 @@ namespace GFlowSimulation {
 
         // Calculate bonded interactions.
         if (!bondedInteractions.empty()) {
-          bonded_timer.start();
+          bonded_timer.start_timer();
           for (auto bd : bondedInteractions) bd->interact();
-          bonded_timer.stop();
+          bonded_timer.stop_timer();
         }
       }
 
       // Update bodies - this may include forces.
       if (!bodies.empty()) {
-        body_timer.start();
+        body_timer.start_timer();
         for (auto b : bodies) b->correct();
-        body_timer.stop();
+        body_timer.stop_timer();
       }
 
       // Do modifier removal
@@ -699,19 +699,19 @@ namespace GFlowSimulation {
   }
 
   void GFlow::startMPIExchangeTimer() {
-    mpi_exchange_timer.start();
+    mpi_exchange_timer.start_timer();
   }
 
   void GFlow::stopMPIExchangeTimer() {
-    mpi_exchange_timer.stop();
+    mpi_exchange_timer.stop_timer();
   }
 
   void GFlow::startMPIGhostTimer() {
-    mpi_ghost_timer.start();
+    mpi_ghost_timer.start_timer();
   }
 
   void GFlow::stopMPIGhostTimer() {
-    mpi_ghost_timer.stop();
+    mpi_ghost_timer.stop_timer();
   }
 
   void GFlow::syncRunning() {

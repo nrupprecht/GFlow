@@ -21,12 +21,12 @@ namespace GFlowSimulation {
     #endif
   }
 
-  void MPIObject::barrier(Timer &timer) {
+  void MPIObject::barrier(TimedObject &timer) {
     #if USE_MPI == 1
     // Call the general barrier
-    timer.start();
+    timer.start_timer();
     MPI_Barrier(MPI_COMM_WORLD);
-    timer.stop();
+    timer.stop_timer();
     #endif
   }
 
@@ -36,10 +36,10 @@ namespace GFlowSimulation {
     MPI_Wait(&request, MPI_STATUS_IGNORE);
   }
   
-  void MPIObject::wait(MPI_Request& request, Timer& timer) {
-    timer.start();
+  void MPIObject::wait(MPI_Request& request, TimedObject& timer) {
+    timer.start_timer();
     MPI_Wait(&request, MPI_STATUS_IGNORE);
-    timer.stop();
+    timer.stop_timer();
   }
 
   bool MPIObject::test(MPI_Request& request) {

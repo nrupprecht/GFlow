@@ -40,63 +40,94 @@ namespace GFlowSimulation {
   }
 
   void DataMaster::startTimer() {
-    start_time = current_time();
-    timing = true;
+    runTimer.start();
   }
 
-    // End the timer and add the new time to the record
+  // End the timer and add the new time to the record
   void DataMaster::endTimer() {
-    if (timing) {
-      auto end_time = current_time();
-      run_time += time_span(end_time, start_time);
-      timing = false;
-    }
+    runTimer.stop();
+    run_time += runTimer.time();
+    runTimer.clear();
   }
 
   void DataMaster::pre_integrate() {
+    // Start run timer.
     startTimer();
-    // Always allow preintegrate step to happen.
-    for (auto& dob : dataObjects)
-      if (dob) dob->pre_integrate();
+    // Do preintegrate.
+    if (dataObjects.empty()) {
+      // Start timer.
+      start_timer();
+      // Always allow preintegrate step to happen (don't check startRecTime).
+      for (auto& dob : dataObjects)
+	if (dob) dob->pre_integrate();
+      // End timing
+      stop_timer();
+    }
   }
 
   void DataMaster::pre_step() {
-    data_timer.start();
-    if (Base::gflow->getElapsedTime()<startRecTime) return;
-    for (auto& dob : dataObjects)
-      if (dob) dob->pre_step();
-    data_timer.stop();
+    if (!dataObjects.empty() && gflow->getElapsedTime()>=startRecTime) {
+      // Start timing.
+      start_timer();
+      // Call for all data objects.
+      for (auto& dob : dataObjects)
+	if (dob) dob->pre_step();
+      // Stop timing.
+      stop_timer();
+    }
   }
 
   void DataMaster::pre_forces() {
-    data_timer.start();
-    if (Base::gflow->getElapsedTime()<startRecTime) return;
-    for (auto& dob : dataObjects)
-      if (dob) dob->pre_forces();
-    data_timer.stop();
+    if (!dataObjects.empty() && gflow->getElapsedTime()>=startRecTime) {
+      // Start timing.
+      start_timer();
+      // Call for all data objects.
+      if (Base::gflow->getElapsedTime()<startRecTime) return;
+      for (auto& dob : dataObjects)
+	if (dob) dob->pre_forces();
+      // Stop timing.
+      stop_timer();
+    }
   }
 
   void DataMaster::post_forces() {
-    data_timer.start();
-    if (Base::gflow->getElapsedTime()<startRecTime) return;
-    for (auto& dob : dataObjects)
-      if (dob) dob->post_forces();
-    data_timer.stop();
+    if (!dataObjects.empty() && gflow->getElapsedTime()>=startRecTime) {
+      // Start timing.
+      start_timer();
+      // Call for all data objects.
+      for (auto& dob : dataObjects)
+	if (dob) dob->post_forces();
+      // Stop timing.
+      stop_timer();
+    }
   }
 
   void DataMaster::post_step() {
-    data_timer.start();
-    if (Base::gflow->getElapsedTime()<startRecTime) return;
-    for (auto& dob : dataObjects)
-      if (dob) dob->post_step();
-    data_timer.stop();
+    if (!dataObjects.empty() && gflow->getElapsedTime()>=startRecTime) {
+      // Start timing.
+      start_timer();
+      // Call for all data objects.
+      for (auto& dob : dataObjects)
+	if (dob) dob->post_step();
+      // Stop timing.
+      stop_timer();
+    }
   }
 
   void DataMaster::post_integrate() {
-    endTimer();
-    for (auto& dob : dataObjects) {
-      if (dob) dob->post_integrate();
+    if (!dataObjects.empty() && gflow->getElapsedTime()>=startRecTime) {
+      // Start timing.
+      start_timer();
+      // Call for all data objects.
+      for (auto& dob : dataObjects) {
+	if (dob) dob->post_integrate();
+      }
+      // Stop timing.
+      stop_timer();
     }
+    
+    // End the run timer.
+    endTimer();
   }
 
   bool DataMaster::writeToDirectory(string writeDirectory) {
@@ -290,7 +321,7 @@ namespace GFlowSimulation {
 
     // Helper lambda - checks whether run_time was non-zero. Pretty prints.
     auto toStrPP = [&] (RealType x, int precision=3) -> string {
-      return (run_time>0 ? pprint(x, 3, 3) : "--");
+      return (run_time>0 ? (x>0.001 ? pprint(x, 3, 3) : pprint(0, 3, 3)) : "--");
     };
     // Helper lambda - checks whether run_time was non-zero. Normal version.
     auto toStrRT = [&] (RealType x, int precision=3) -> string {
@@ -350,7 +381,7 @@ namespace GFlowSimulation {
       formats("- Inverse Ratio:", toStrRT(1./ratio));
       fout << "\n";
 
-      if (Base::gflow->getTotalTime()>0) {
+      if (Base::gflow->getTotalTime()>0 && TimedObject::getTimingOn()) {
         fout << "Timing breakdown:\n";
         const int entries = 9;
         double timing[entries], total = 0;
@@ -358,16 +389,15 @@ namespace GFlowSimulation {
         timing[0] = integrator->get_time();
         timing[1] = handler->get_time();
         timing[2] = forceMaster->get_time();
-        timing[3] = gflow->bonded_timer.time();
-        timing[4] = gflow->body_timer.time();
-        timing[5] = data_timer.time();
+        timing[3] = gflow->bonded_timer.get_time();
+        timing[4] = gflow->body_timer.get_time();
+        timing[5] = get_time();
         timing[6] = simData->get_time();
-        timing[7] = gflow->mpi_exchange_timer.time();
-        timing[8] = gflow->mpi_ghost_timer.time();
+        timing[7] = gflow->mpi_exchange_timer.get_time();
+        timing[8] = gflow->mpi_ghost_timer.get_time();
         double forces_time = timing[2] + timing[3] + timing[4];
         double mpi_time = timing[7] + timing[8];
         // Print timing data.
-        
         fout << "  -- Integration:             " << toStrPP(timing[0]/run_time*100) << sep << timing[0] << "\n";
         fout << "  -- Pre-forces, domain:      " << toStrPP(timing[1]/run_time*100) << sep << timing[1] << "\n";
         fout << "  -- Forces:                  " << toStrPP(forces_time/run_time*100) << sep << forces_time << "\n";
@@ -390,6 +420,7 @@ namespace GFlowSimulation {
         }
         fout << "\n";
       }
+      else fout << "No timing data.\n\n";
     }
 
     // Calculate volume that the particles on each processor take up.
@@ -460,12 +491,12 @@ namespace GFlowSimulation {
       if (rank==0) {
         fout << "MPI and parallelization:\n";
         formats("- MPI ranks:", toStr(numProc));
-        fout << "  - Ghost time per step:      " << gflow->mpi_ghost_timer.time()/iterations << "\n";
-        fout << "  - Ghost fraction:           " << toStrRT(gflow->mpi_ghost_timer.time() / run_time) << "\n";
+        fout << "  - Ghost time per step:      " << gflow->mpi_ghost_timer.get_time()/iterations << "\n";
+        fout << "  - Ghost fraction:           " << toStrRT(gflow->mpi_ghost_timer.get_time() / run_time) << "\n";
         fout << "  - Last # ghosts sent:       " << simData->getLastNGhostsSent() << "\n";
         fout << "  - Last # ghosts received:   " << simData->getLastNGhostsRecv() << "\n";
-        fout << "  - Time per exchange:        " << gflow->mpi_exchange_timer.time()/handler->getNumberOfRemakes() << "\n";
-        fout << "  - Exchange fraction:        " << toStrRT((iterations*gflow->mpi_exchange_timer.time())/(run_time*handler->getNumberOfRemakes())) << "\n";
+        fout << "  - Time per exchange:        " << gflow->mpi_exchange_timer.get_time()/handler->getNumberOfRemakes() << "\n";
+        fout << "  - Exchange fraction:        " << toStrRT((iterations*gflow->mpi_exchange_timer.get_time())/(run_time*handler->getNumberOfRemakes())) << "\n";
         fout << "  - Last # exchange sent:     " << simData->getLastNExchangeSent() << "\n";
         fout << "  - Last # exchange received: " << simData->getLastNExchangeRecv() << "\n";
         fout << "\n";
@@ -474,14 +505,14 @@ namespace GFlowSimulation {
       // Gather data from processors.
       const int n_timers = 8;
       double timing[n_timers];
-      timing[0] = simData->send_timer.time();
-      timing[1] = simData->recv_timer.time();
-      timing[2] = simData->barrier_timer.time();
-      timing[3] = simData->exchange_search_timer.time();
-      timing[4] = simData->ghost_send_timer.time();
-      timing[5] = simData->ghost_recv_timer.time();
-      timing[6] = simData->ghost_wait_timer.time();
-      timing[7] = simData->ghost_search_timer.time();
+      timing[0] = simData->send_timer.get_time();
+      timing[1] = simData->recv_timer.get_time();
+      timing[2] = simData->barrier_timer.get_time();
+      timing[3] = simData->exchange_search_timer.get_time();
+      timing[4] = simData->ghost_send_timer.get_time();
+      timing[5] = simData->ghost_recv_timer.get_time();
+      timing[6] = simData->ghost_wait_timer.get_time();
+      timing[7] = simData->ghost_search_timer.get_time();
 
       double *gather_timing = nullptr;
       if (rank==0) gather_timing = new double[n_timers*numProc];

@@ -5,9 +5,9 @@
 Var: MinR=0.030
 Var: MaxR=0.036
 Var: Velocity=2.2
-Var: Length=20
+Var: Length=25
 Var: Height=10
-Var: Front=8
+Var: Front=10
 Var: Mu=0.25
 
 // This is a 2d simulation
