@@ -225,7 +225,7 @@ namespace GFlowSimulation {
     if (remove_list.empty() || _number==0) return;
 
     // Start simdata timer.
-    timer.start();
+    start_timer();
 
     // Fill in all holes
     int count_back = _size, removed = 0;
@@ -254,7 +254,7 @@ namespace GFlowSimulation {
     if (removed>0) setNeedsRemake();
 
     // Start simdata timer.
-    timer.stop();
+    stop_timer();
   }
 
   void SimData::sortParticles() {
@@ -304,7 +304,7 @@ namespace GFlowSimulation {
 
   void SimData::updateHaloParticles() {
     // Start simdata timer.
-    timer.start();
+    start_timer();
 
     // First pass: update the primary (actual) particle from the force data of the halo particles.
     // Doing this in two passes takes care of the fact that some particles may generate multiple halos.
@@ -324,7 +324,7 @@ namespace GFlowSimulation {
     }
 
     // Start simdata timer.
-    timer.stop();
+    stop_timer();
   }
 
   void SimData::updateGhostParticles() {
@@ -613,7 +613,7 @@ namespace GFlowSimulation {
 
   void SimData::removeHaloParticles() {
     // Start timer.
-    timer.start();
+    start_timer();
 
     // Mark halo particles for removal
     for (int i=0; i<halo_map.size(); i+=2) 
@@ -624,13 +624,13 @@ namespace GFlowSimulation {
     _number_halo = 0;
 
     // Stop timer.
-    timer.stop();
+    stop_timer();
   }
 
   void SimData::removeGhostParticles() {
   #if USE_MPI == 1
     // Start timer.
-    timer.start();
+    start_timer();
 
     // Check if this is necessary.
     if (n_ghosts<=0) return;
@@ -638,7 +638,7 @@ namespace GFlowSimulation {
     for (int i=0; i<n_ghosts; ++i) markForRemoval(_first_ghost+i);
 
     // Stop timer.
-    timer.start();
+    stop_timer();
   #endif
   }
 
@@ -729,27 +729,27 @@ namespace GFlowSimulation {
 
   void SimData::clearV() {
     // Start simdata timer.
-    timer.start();
+    start_timer();
     // Clear velocities
     RealType *v = V_arr();
     for (int i=0; i<_size*sim_dimensions; ++i) v[i] = 0;
     // Stop simdata timer.
-    timer.stop();
+    stop_timer();
   }
 
   void SimData::clearF() {
     // Start simdata timer.
-    timer.start();
+    start_timer();
     // Clear forces
     RealType *f = F_arr();
     for (int i=0; i<_size*sim_dimensions; ++i) f[i] = 0;
     // Stop simdata timer.
-    timer.stop();
+    stop_timer();
   }
 
   void SimData::clearScalar(const string id) {
     // Start simdata timer.
-    timer.start();
+    start_timer();
     // Clear scalar
     int address = getScalarData(id);
     if (address>=0) {
@@ -757,7 +757,7 @@ namespace GFlowSimulation {
       for (int i=0; i<_size; ++i) entry[i] = 0;
     }
     // Stop simdata timer.
-    timer.stop();
+    stop_timer();
   }
 
   int SimData::getLocalID(int global) const {
