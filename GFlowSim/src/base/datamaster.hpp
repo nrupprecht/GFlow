@@ -77,9 +77,6 @@ namespace GFlowSimulation {
     //! This flag indicates that local ids have changed for sim data.
     void setLocalsChanged(bool);
 
-    //! \brief Set all print plot flags in all applicable data objects.
-    void setAllPrintPlots(bool);
-
     // GFlow is a friend class
     friend class GFlow;
     friend class FileParserCreator;

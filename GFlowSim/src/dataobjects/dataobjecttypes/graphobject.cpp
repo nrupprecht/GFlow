@@ -49,10 +49,6 @@ namespace GFlowSimulation {
     axis_y = ay;
   }
 
-  void GraphObject::setPrintPlot(bool p) {
-    print_plot = p;
-  }
-
   bool GraphObject::writeToFile(string fileName, bool useName) {
     // Check if there's anything to do
     if (data.empty()) return true;
@@ -72,19 +68,6 @@ namespace GFlowSimulation {
     fout << axis_x << endl << axis_y << endl;
     fout.close();
     
-    // Optionally print a plot of the data using vistools.
-    if (print_plot) {
-      // Draw a graph using a palette object
-      Palette graph(1024,512);
-      GraphOptions options;
-      options.setMinY(0);
-      options.setBackground(RGB_White);
-      options.setLineColor(RGB_Red);
-      // Draw the graph
-      graph.drawGraph2d(data, options);
-      graph.writeToFile(dirName+"/"+dataName+".bmp");
-    }
-
     // Return success
     return true;
   }

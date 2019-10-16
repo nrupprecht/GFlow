@@ -200,19 +200,39 @@ namespace GFlowSimulation {
         // Write to one of the directories
         switch (dob->getType()) {
           case DataObjectType::GRAPH: {
-            success &= dob->writeToFile(graphDirectory, true);
+	    try {
+	      success &= dob->writeToFile(graphDirectory, true);
+	    }
+	    catch (...) {
+	      cout << "An error occured in writing a graph object.\n";
+	    }
             break;
           }
           case DataObjectType::MULTIGRAPH: {
-            success &= dob->writeToFile(multiGraphDirectory, true);
+	    try {
+	      success &= dob->writeToFile(multiGraphDirectory, true);
+	    }
+	    catch (...) {
+	      cout << "An error occured in writing a multigraph object.\n";
+	    }
             break;
           }
           case DataObjectType::VOLUMEPLOT: {
-            success &= dob->writeToFile(volumePlotDirectory, true);
+	    try {
+	      success &= dob->writeToFile(volumePlotDirectory, true);
+	    }
+	    catch (...) {
+	      cout << "An error occured in writing a volume plot object.\n";
+	    }
             break;
           }
           case DataObjectType::GENERAL: {
-            success &= dob->writeToFile(generalDirectory, true);
+	    try {
+	      success &= dob->writeToFile(generalDirectory, true);
+	    }
+	    catch (...) {
+	      cout << "An error occured in writing a general object.\n";
+	    }
             break;
           }
           default: {
@@ -264,13 +284,6 @@ namespace GFlowSimulation {
 
   void DataMaster::setLocalsChanged(bool c) {
     for (auto dob : dataObjects) dob->setLocalsChanged(c);
-  }
-
-  void DataMaster::setAllPrintPlots(bool p) {
-    for (auto dob : dataObjects) {
-      auto ob = dynamic_cast<GraphObject*>(dob);
-      if (ob) ob->setPrintPlot(p);
-    }
   }
 
   inline bool DataMaster::writeSummary(string writeDirectory) {

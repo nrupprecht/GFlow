@@ -40,24 +40,29 @@ namespace GFlowSimulation {
       dirName += ("/"+dataName+"/");
     // Make a directory for the data
     mkdir(dirName.c_str(), 0777);
-    
-    // Make some images
-    Visualization vis;
-    vis.setMetaParameters(storeData); // Let the visualization object have the data positions and other meta data
-    int dataWidth = storeData.getDataWidth();
-    // Kinetic energy snapshot
-    vis.setColorOption(2);
-    if (sim_dimensions<3) vis.createImage(dirName+"/kinetic.bmp", final_data);
-    else vis.createImage3d(dirName+"/kinetic.bmp", final_data);
-    // Direction snapshot
-    vis.setColorOption(3);
-    if (sim_dimensions<3) vis.createImage(dirName+"/direction.bmp", final_data);
-    else vis.createImage3d(dirName+"/direction.bmp", final_data);
-    // Type snapshot
-    if (gflow->getNTypes()>1) {
-      vis.setColorOption(0);
-      if (sim_dimensions<3) vis.createImage(dirName+"/types.bmp", final_data);
-      else vis.createImage3d(dirName+"/types.bmp", final_data);
+ 
+    try {
+      // Make some images
+      Visualization vis;
+      vis.setMetaParameters(storeData); // Let the visualization object have the data positions and other meta data
+      int dataWidth = storeData.getDataWidth();
+      // Kinetic energy snapshot
+      vis.setColorOption(2);
+      if (sim_dimensions<3) vis.createImage(dirName+"/kinetic.bmp", final_data);
+      else vis.createImage3d(dirName+"/kinetic.bmp", final_data);
+      // Direction snapshot
+      vis.setColorOption(3);
+      if (sim_dimensions<3) vis.createImage(dirName+"/direction.bmp", final_data);
+      else vis.createImage3d(dirName+"/direction.bmp", final_data);
+      // Type snapshot
+      if (gflow->getNTypes()>1) {
+	vis.setColorOption(0);
+	if (sim_dimensions<3) vis.createImage(dirName+"/types.bmp", final_data);
+	else vis.createImage3d(dirName+"/types.bmp", final_data);
+      }
+    }
+    catch (...) {
+      cout << "Error in creating snapshot. Continuing.\n";
     }
 
     // Write the actual data.

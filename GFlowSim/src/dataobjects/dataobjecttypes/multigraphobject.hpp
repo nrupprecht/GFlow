@@ -79,9 +79,6 @@ namespace GFlowSimulation {
     //! \brief The axis labels.
     string axis_x="x";
     vector<string> axis_y;
-
-    //! \brief If true, we use vistools to print the graph.
-    bool print_plot = true;
   };
 
 }
