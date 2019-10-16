@@ -1041,6 +1041,7 @@ namespace GFlowSimulation {
     // First, clear all the send_ghost_lists entries.
     for (int i=0; i<neighbor_ranks.size(); ++i) send_ghost_list[i].clear();
 
+    // Search for particles that should be ghosts on other processors.
     ghost_search_timer.start_timer();
     vector<int> overlaps; // Helping vector
     RealType skin_depth = handler->getSkinDepth();
@@ -1165,13 +1166,6 @@ namespace GFlowSimulation {
       if (size>0) {
         // Wait for request to be filled.
         MPIObject::wait(request_list[i], ghost_wait_timer);
-
-         //ghost_wait_timer.start();
-         //int count = 0;
-         //while (!MPIObject::test(request_list[i])); // ++count;
-         //ghost_wait_timer.stop();
-         //cout << "Rank: " << topology->getRank() << ", Iter: " << gflow->getIter() << ", Flag: " << gflow->handler_remade() << ", " << count << "\n";
-
         // Unpack the position data into the ghost particles.
         for (int j=0; j<size; ++j, ++p_id) {
           copyVec(&recv_buffer[i][ghost_data_width*j], X(p_id), sim_dimensions);

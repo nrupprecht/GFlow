@@ -38,6 +38,7 @@ namespace GFlowSimulation {
 
     // Store the data for this processor.
     storeData.store(data);
+
     // Collect addition data from other processors.
     MPIObject::mpi_reduce0_position_data(data);
     // If we are the root processor, store the data.

@@ -54,12 +54,12 @@ namespace GFlowSimulation {
     // Start run timer.
     startTimer();
     // Do preintegrate.
-    if (dataObjects.empty()) {
+    if (!dataObjects.empty()) {
       // Start timer.
       start_timer();
       // Always allow preintegrate step to happen (don't check startRecTime).
-      for (auto& dob : dataObjects)
-	if (dob) dob->pre_integrate();
+      for (auto& dob : dataObjects) 
+        if (dob) dob->pre_integrate();
       // End timing
       stop_timer();
     }
@@ -71,7 +71,7 @@ namespace GFlowSimulation {
       start_timer();
       // Call for all data objects.
       for (auto& dob : dataObjects)
-	if (dob) dob->pre_step();
+	      if (dob) dob->pre_step();
       // Stop timing.
       stop_timer();
     }
@@ -84,7 +84,7 @@ namespace GFlowSimulation {
       // Call for all data objects.
       if (Base::gflow->getElapsedTime()<startRecTime) return;
       for (auto& dob : dataObjects)
-	if (dob) dob->pre_forces();
+        if (dob) dob->pre_forces();
       // Stop timing.
       stop_timer();
     }
@@ -96,7 +96,7 @@ namespace GFlowSimulation {
       start_timer();
       // Call for all data objects.
       for (auto& dob : dataObjects)
-	if (dob) dob->post_forces();
+	      if (dob) dob->post_forces();
       // Stop timing.
       stop_timer();
     }
@@ -200,39 +200,39 @@ namespace GFlowSimulation {
         // Write to one of the directories
         switch (dob->getType()) {
           case DataObjectType::GRAPH: {
-	    try {
-	      success &= dob->writeToFile(graphDirectory, true);
-	    }
-	    catch (...) {
-	      cout << "An error occured in writing a graph object.\n";
-	    }
+      	    try {
+      	      success &= dob->writeToFile(graphDirectory, true);
+      	    }
+      	    catch (...) {
+      	      cout << "An error occured in writing a graph object.\n";
+      	    }
             break;
           }
           case DataObjectType::MULTIGRAPH: {
-	    try {
-	      success &= dob->writeToFile(multiGraphDirectory, true);
-	    }
-	    catch (...) {
-	      cout << "An error occured in writing a multigraph object.\n";
-	    }
+      	    try {
+      	      success &= dob->writeToFile(multiGraphDirectory, true);
+      	    }
+      	    catch (...) {
+      	      cout << "An error occured in writing a multigraph object.\n";
+      	    }
             break;
           }
           case DataObjectType::VOLUMEPLOT: {
-	    try {
-	      success &= dob->writeToFile(volumePlotDirectory, true);
-	    }
-	    catch (...) {
-	      cout << "An error occured in writing a volume plot object.\n";
-	    }
+      	    try {
+      	      success &= dob->writeToFile(volumePlotDirectory, true);
+      	    }
+      	    catch (...) {
+      	      cout << "An error occured in writing a volume plot object.\n";
+      	    }
             break;
           }
           case DataObjectType::GENERAL: {
-	    try {
-	      success &= dob->writeToFile(generalDirectory, true);
-	    }
-	    catch (...) {
-	      cout << "An error occured in writing a general object.\n";
-	    }
+      	    try {
+      	      success &= dob->writeToFile(generalDirectory, true);
+      	    }
+      	    catch (...) {
+      	      cout << "An error occured in writing a general object.\n";
+      	    }
             break;
           }
           default: {

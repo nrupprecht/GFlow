@@ -431,6 +431,10 @@ namespace GFlowSimulation {
   }
 
   RealType GFlow::getDistance(const RealType *x, const RealType *y) {
+    return sqrt(getDistanceSqr(x, y));
+  }
+
+  RealType GFlow::getDistanceSqr(const RealType *x, const RealType *y) {
     RealType dist = 0;
     for (int d=0; d<sim_dimensions; ++d) {
       RealType ds = x[d] - y[d];
@@ -440,7 +444,7 @@ namespace GFlowSimulation {
       }
       dist += sqr(ds);
     }
-    return sqrt(dist);
+    return dist;
   }
 
   RunMode GFlow::getRunMode() {

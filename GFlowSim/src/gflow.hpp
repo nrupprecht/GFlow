@@ -152,7 +152,11 @@ namespace GFlowSimulation {
     //! \brief Get the minimum image distance of a single component.
     void minimumImage(RealType&, int);
 
+    //! \brief Get the minimum image distance between two positions.
     RealType getDistance(const RealType*, const RealType*);
+
+    //! \brief Get the minimum image distance squared between two positions.
+    RealType getDistanceSqr(const RealType*, const RealType*);
 
     //! \brief Get the run mode of the simulation.
     RunMode getRunMode();
