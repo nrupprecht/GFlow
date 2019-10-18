@@ -231,10 +231,10 @@ int main(int argc, char **argv) {
 
   // --- Add data objects
   gflow->setStartRecTime(startRecTime);
-  if (snapshot) gflow->addDataObject(new EndingSnapshot(gflow));
-  if (totalKE || ke) gflow->addDataObject(new KineticEnergyData(gflow, ke));
-  if (rotE)          gflow->addDataObject(new RotationalEnergyData(gflow));
-  if (kebin>0)       gflow->addDataObject(new KineticEnergyBin(gflow, kebin));
+  if (snapshot)    gflow->addDataObject(new EndingSnapshot(gflow));
+  if (totalKE||ke) gflow->addDataObject(new KineticEnergyData(gflow, ke));
+  if (rotE)        gflow->addDataObject(new RotationalEnergyData(gflow));
+  if (kebin>0)     gflow->addDataObject(new KineticEnergyBin(gflow, kebin));
   if (energy)      gflow->addDataObject(new TotalEnergyData(gflow));
   if (bondenergy)  gflow->addDataObject(new BondedEnergyData(gflow));
   if (keTypes)     gflow->addDataObject(new KineticEnergyTypesData(gflow, true));
@@ -242,18 +242,18 @@ int main(int argc, char **argv) {
   if (bdForces)    gflow->addDataObject(new BoundaryForceData(gflow));
   if (timestep)    gflow->addDataObject(new TimeStepData(gflow));
   if (averages)    gflow->addDataObject(new AverageData(gflow));
-  if (aveV) gflow->addDataObject(new AverageVelocityData(gflow));
-  if (aveP) gflow->addDataObject(new AveragePositionData(gflow));
-  if (minDistances) gflow->addDataObject(new MinInteractingDistance(gflow));
+  if (aveV)        gflow->addDataObject(new AverageVelocityData(gflow));
+  if (aveP)        gflow->addDataObject(new AveragePositionData(gflow));
+  if (minDistances)gflow->addDataObject(new MinInteractingDistance(gflow));
   if (percolation) gflow->addDataObject(new PercolationData(gflow, skin));
   if (psnapshot)   gflow->addDataObject(new PercolationSnapshot(gflow, skin));
   if (memdist)     gflow->addDataObject(new MemoryDistance(gflow));
   if (pressure)    gflow->addDataObject(new PressureData(gflow));
   if (numberdata)  gflow->addDataObject(new NumberData(gflow));
-  if (stripex)     gflow->addModifier(new StripeX(gflow));
   if (centercorr)  gflow->addDataObject(new CenterCorrelation(gflow));
   if (velocityvp)  gflow->addDataObject(new VelocityVolumePlot(gflow));
   if (radiusvp)    gflow->addDataObject(new RadiusVolumePlot(gflow));
+  if (stripex)     gflow->addModifier(new StripeX(gflow));
   // Add this last, as it takes the most time.
   if (animate /*|| stripex*/) {
     auto pd = new PositionData(gflow);

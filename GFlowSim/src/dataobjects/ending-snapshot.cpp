@@ -56,9 +56,9 @@ namespace GFlowSimulation {
       else vis.createImage3d(dirName+"/direction.bmp", final_data);
       // Type snapshot
       if (gflow->getNTypes()>1) {
-	vis.setColorOption(0);
-	if (sim_dimensions<3) vis.createImage(dirName+"/types.bmp", final_data);
-	else vis.createImage3d(dirName+"/types.bmp", final_data);
+      	vis.setColorOption(0);
+      	if (sim_dimensions<3) vis.createImage(dirName+"/types.bmp", final_data);
+      	else vis.createImage3d(dirName+"/types.bmp", final_data);
       }
     }
     catch (...) {

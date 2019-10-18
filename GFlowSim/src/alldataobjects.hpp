@@ -27,6 +27,7 @@
 #include "dataobjects/graphobjects/kineticenergydata.hpp"
 #include "dataobjects/graphobjects/memorydistance.hpp"
 #include "dataobjects/graphobjects/mininteractingdistance.hpp"
+#include "dataobjects/graphobjects/persistence-length.hpp"
 #include "dataobjects/graphobjects/pressuredata.hpp"
 #include "dataobjects/graphobjects/rotational-energy-data.hpp"
 #include "dataobjects/graphobjects/timestepdata.hpp"

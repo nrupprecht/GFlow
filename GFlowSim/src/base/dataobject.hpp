@@ -13,7 +13,7 @@ namespace GFlowSimulation {
   enum class DataType { POSITION, VELOCITY, SIGMA, TYPE, DISTANCE };
 
   //! \brief The catagories that a data object can fall under.
-  enum class DataObjectType { GRAPH, MULTIGRAPH, VOLUMEPLOT, GENERAL };
+  enum class DataObjectType { GRAPH, MULTIGRAPH, MULTIBIN, VOLUMEPLOT, GENERAL };
 
   inline std::ostream& operator<<(std::ostream& out, DataObjectType type) {
     switch (type) {

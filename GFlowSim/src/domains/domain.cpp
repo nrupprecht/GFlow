@@ -27,6 +27,8 @@ namespace GFlowSimulation {
   void Domain::getAllWithin(Vec X, vector<int>& neighbors, RealType distance) {
     // Default distance
     if (distance<0) distance = 2*max_small_sigma;
+    // Clear our the vector.
+    neighbors.clear();
 
     // Set up
     vector<int> tuple1(sim_dimensions), tuple2(sim_dimensions), cell_index(sim_dimensions), center(sim_dimensions), search_dims(sim_dimensions);
@@ -143,7 +145,7 @@ namespace GFlowSimulation {
               if (r2 < sqr((sg[id1] + sg[id2])*cutoffs_id1[type[id2]] + skin_depth))
                 body(id1, id2, 0, sg[id1], sg[id2], r2);
               else if (r2>max_reasonable) 
-                body(id1, id2, 1, sg[id1], sg[id2], r2);
+                body(id1, id2, 1, sg[id1], sg[id2], r2);                
             }
         }
         

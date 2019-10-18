@@ -2,6 +2,7 @@
 // Other files
 #include "../../base/simdata.hpp"
 #include "../../utility/vectormath.hpp"
+#include "../../base/interactionhandler.hpp"
 
 namespace GFlowSimulation {
 
@@ -53,8 +54,16 @@ namespace GFlowSimulation {
       }
     };
 
-    // Go through all non-group particles
-    for (int i=0; i<size; ++i) {
+    // Look for particles near the chain using the interaction handler's get all within function.    
+    vector<int> neighbors;
+    std::set<int> all_neighbors;
+    for (int i=0; i<Group::size(); ++i) {
+      handler->getAllWithin(Group::at(i), neighbors, 1.2*radius);
+      for (auto id : neighbors) all_neighbors.insert(id);
+    }
+
+    // Check which of the potential neighbors are close enough.
+    for (auto i : all_neighbors) {
       // Only look at real particles that are not in the group
       if (type[i]<0 || contains(i)) continue;
       // Compute which group particle is closest to particle i.
@@ -69,8 +78,7 @@ namespace GFlowSimulation {
           min_index = index;
         }
         ++index;
-      }
-      
+      }      
       // Correct if we want the distance-from-chain.
       if (find_chain_distance && minDist<1.2*radius) {
         // Check left segement, if one exists: X---(min)

@@ -73,9 +73,6 @@ namespace GFlowSimulation {
     //! \brief The number of types of data that the class is keeping track of.
     int ndata;
 
-    //! \brief The number of data entries that were added.
-    int ndata_points = 0;
-
     //! \brief The axis labels.
     string axis_x="x";
     vector<string> axis_y;

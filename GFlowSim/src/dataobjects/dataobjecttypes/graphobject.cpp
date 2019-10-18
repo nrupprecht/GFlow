@@ -49,6 +49,19 @@ namespace GFlowSimulation {
     axis_y = ay;
   }
 
+  void GraphObject::makeBins(const RealType min, const RealType max, const int nbins) {
+    data.clear();
+    if (nbins>0) {
+      data = vector<RPair>(nbins, RPair(0,0));
+      // Set bin ticks.
+      if (nbins>1) {
+        RealType dbin = (max-min)/(nbins-1);
+        for (int i=0; i<nbins; ++i) data[i].first = min + dbin*i;
+      }
+      else data[0].first = 0.5*(min+max);
+    }
+  }
+
   bool GraphObject::writeToFile(string fileName, bool useName) {
     // Check if there's anything to do
     if (data.empty()) return true;

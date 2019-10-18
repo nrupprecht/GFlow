@@ -6,7 +6,7 @@
 
 namespace GFlowSimulation {
 
-  class GroupTorque : public GraphObject {
+  class GroupTorque : public GraphObject, public Group {
   public:
     //! \brief Constructor.
     GroupTorque(GFlow*);
@@ -17,15 +17,8 @@ namespace GFlowSimulation {
     //! \brief Compute the torque on the group.
     virtual void post_step() override;
 
-    //! \brief Set the group.
-    void setGroup(class Group&);
-
     //! \brief Calculate the torque on a group of objects.
     static RealType calculate_torque(shared_ptr<SimData>, const Group&);
-
-  private:
-    //! \brief The group of particles that we compute the torque of.
-    class Group group;
   };
 
 }

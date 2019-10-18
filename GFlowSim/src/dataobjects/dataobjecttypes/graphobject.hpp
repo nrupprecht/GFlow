@@ -39,6 +39,9 @@ namespace GFlowSimulation {
     //! \brief Set the names of the axes.
     void setAxes(const string&, const string&);
 
+    //! \brief Set up the data to be bins, with values between the given min and max, and the specified number of bins.
+    void makeBins(const RealType, const RealType, const int);
+
     //! \brief Write data to a file - if true, the string is a path, and you should use your own name as the file name.
     //!
     //! Returns true for success.

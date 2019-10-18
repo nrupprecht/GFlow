@@ -327,7 +327,7 @@ namespace GFlowSimulation {
     // --- Print timing summary
     RealType requestedTime = Base::gflow ? Base::gflow->getTotalRequestedTime() : 0;
     RealType ratio = Base::gflow->getTotalTime()/run_time;
-    int iterations = Base::gflow->getIter(), particles = Base::simData->number();
+    int iterations = Base::gflow->getIter(), particles = Base::simData->number_owned();
     MPIObject::mpi_sum0(particles);
 
     // --- Print helping lambda functions.

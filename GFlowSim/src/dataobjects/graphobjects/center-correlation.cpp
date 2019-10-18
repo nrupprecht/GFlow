@@ -17,16 +17,16 @@ namespace GFlowSimulation {
     RealType dr = radius/nbins;
     Bounds bnds = gflow->getBounds();
     // Create center coordinate
-    RealType *center = new RealType[sim_dimensions], *acc = new RealType[sim_dimensions];
+    Vec center(sim_dimensions), acc(sim_dimensions);
     center[0] = 0;
     for (int d=0; d<sim_dimensions; ++d) center[d] = bnds.min[d] + 0.5*bnds.wd(d);
     // Look through all particles
     for (int n=0; n<size; ++n) {
       if (simData->Im(n)>0) { // Only look at movable particles
         // Measure distance from a line at x=0.
-        subtractVec(simData->X(n), center, acc, sim_dimensions);
+        subtractVec(simData->X(n), center.data, acc.data, sim_dimensions);
         acc[0] = 0;
-        RealType d=dotVec(acc, acc, sim_dimensions);
+        RealType d=acc*acc;
         // Check if particles are within th radius
         if (d<sqr(radius)) {
           int b = sqrt(d)/dr;
@@ -35,9 +35,6 @@ namespace GFlowSimulation {
         }
       }
     }
-    // Clean up
-    delete [] center;
-    delete [] acc;
   }
 
   void CenterCorrelation::setRadius(RealType r) {

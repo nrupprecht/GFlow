@@ -1051,6 +1051,7 @@ namespace GFlowSimulation {
       RealType cutoff = 2 * Sg(id) * forceMaster->getMaxCutoff(Type(id)) + skin_depth;
       // Check if the particle overlaps with another domain.
       topology->domain_overlaps(X(id), cutoff, overlaps);
+
       // Store the particle id in the send_ghost_list entry for every processor we need to send this particle to as a ghost.
       for (auto proc_n : overlaps) send_ghost_list[proc_n].push_back(id);            
     }

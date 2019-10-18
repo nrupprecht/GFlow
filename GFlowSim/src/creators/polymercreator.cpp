@@ -50,7 +50,6 @@ namespace GFlowSimulation {
     useCorr = false;
     string dp = "", dc = "";
     useAngle = true;
-    bool special = false;
     bool line = false;
 
     // Gather parameters
@@ -66,7 +65,6 @@ namespace GFlowSimulation {
     parser.firstArg("Correlation", useCorr);
     parser.firstArg("Phi", phi);
     parser.firstArg("H", h);
-    parser.firstArg("Special", special);
     parser.firstArg("Line", line);
 
     // Potentially change masses.
@@ -92,7 +90,7 @@ namespace GFlowSimulation {
       correlation = new GroupCorrelation(gflow);
       // Create a group correlation object
       correlation = new GroupCorrelation(gflow);
-      correlation->setRadius(4.0*rP);
+      correlation->setRadius(2.5*rP);
       correlation->setNBins(250);
       // Add the correlation object
       gflow->addDataObject(correlation);
@@ -113,11 +111,6 @@ namespace GFlowSimulation {
     else {
       // Create all the polymers
       for (int i=0; i<number; ++i) {
-
-        if (special) {
-          if (i==0) idP = 0;
-          else idP = 3;
-        }
         // Create the polymer, recording the group for future use.
         Group group(gflow->getSimData());
         if (line) {
@@ -126,6 +119,9 @@ namespace GFlowSimulation {
           group = createRandomLine(gflow, Center.data, phi, length, 1.0);
         }
         else group = createRandomPolymer(gflow, length, phi, idP, idC);
+
+        // Add a correlation item.
+        if (i==0) gflow->addDataObject(new PersistenceLength(gflow, group));
 
         if (polycorr) {
           if (n_polymers==1) {

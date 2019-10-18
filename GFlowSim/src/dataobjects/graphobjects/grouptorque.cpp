@@ -2,25 +2,21 @@
 
 namespace GFlowSimulation {
 
-  GroupTorque::GroupTorque(GFlow *gflow) : GraphObject(gflow, "Torque", "time", "Torque"), group(gflow) {};
+  GroupTorque::GroupTorque(GFlow *gflow) : GraphObject(gflow, "Torque", "time", "Torque"), Group(gflow) {};
 
-  GroupTorque::GroupTorque(GFlow*, Group& g) : GraphObject(gflow, "Torque", "time", "Torque"), group(g) {};
+  GroupTorque::GroupTorque(GFlow*, Group& g) : GraphObject(gflow, "Torque", "time", "Torque"), Group(g) {};
 
   void GroupTorque::post_step() {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
+    // Update local ids?
+    if (locals_changed) update_local_ids();
+    locals_changed = false;
     // Store data. These functions work correctly with multiprocessor runs.
-    gatherData(gflow->getElapsedTime(), calculate_torque(simData, group));
-  }
-
-  void GroupTorque::setGroup(Group& g) {
-    group = g;
+    gatherData(gflow->getElapsedTime(), calculate_torque(simData, *static_cast<Group*>(this)));
   }
 
   RealType GroupTorque::calculate_torque(shared_ptr<SimData> simData, const Group& group) {
-    // Update local ids?
-    if (simData->getNeedsRemake()) group.update_local_ids();
-
     // Get gflow and the number of dimensions.
     int sim_dimensions = simData->getSimDimensions();
     GFlow *gflow = simData->getGFlow();
