@@ -532,7 +532,7 @@ namespace GFlowSimulation {
       // Gather data from all processors.
       MPI_Gather(&timing, n_timers, MPI_DOUBLE, gather_timing, n_timers, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-      if (rank==0) {
+      if (rank==0 && Base::gflow->getTotalTime()>0 && TimedObject::getTimingOn()) {
         for (int i=0; i<numProc; ++i) {
           fout << "MPI - Process " << i << ":\n";
           fout << "  - Exchange send time:       " << report(gather_timing[i*n_timers + 0]);
