@@ -34,6 +34,7 @@ namespace GFlowSimulation {
     locals_changed = false;
     
     RealType minDist = -1; // We can check for this easily
+    const RealType margin = 1.5;
 
     // For finding distance to chain.
     Vec normal(sim_dimensions), dx(sim_dimensions);
@@ -58,7 +59,7 @@ namespace GFlowSimulation {
     vector<int> neighbors;
     std::set<int> all_neighbors;
     for (int i=0; i<Group::size(); ++i) {
-      handler->getAllWithin(Group::at(i), neighbors, 1.2*radius);
+      handler->getAllWithin(Group::at(i), neighbors, margin*radius);
       for (auto id : neighbors) all_neighbors.insert(id);
     }
 
@@ -80,7 +81,7 @@ namespace GFlowSimulation {
         ++index;
       }      
       // Correct if we want the distance-from-chain.
-      if (find_chain_distance && minDist<1.2*radius) {
+      if (find_chain_distance && minDist<margin*radius) {
         // Check left segement, if one exists: X---(min)
         if (min_index>0) check_adjacent(i, local_ids[min_index], local_ids[min_index-1]);
         // Check right segment, if one exists: (min)---X 
@@ -88,7 +89,7 @@ namespace GFlowSimulation {
       }
 
       // If a close enough group particle was found.
-      if (0<=minDist && minDist<=radius) {
+      if (minDist<=radius) {
         // Compute the bin
         int b = minDist/bin_width;
         // Bin the data

@@ -91,7 +91,7 @@ namespace GFlowSimulation {
       // Create a group correlation object
       correlation = new GroupCorrelation(gflow);
       correlation->setRadius(2.5*rP);
-      correlation->setNBins(250);
+      correlation->setNBins(150);
       // Add the correlation object
       gflow->addDataObject(correlation);
     }
@@ -100,8 +100,8 @@ namespace GFlowSimulation {
       polycorr = new TwoPolymerBinForce(gflow);
       polycorr->setCType(idC);
       polycorr->setRadius(rP);
-      polycorr->setMaxDistance(10*rP);
-      polycorr->setNBins(250);
+      polycorr->setMaxDistance(2.5*rP);
+      polycorr->setNBins(150);
       gflow->addDataObject(polycorr);
     }
 
@@ -150,7 +150,9 @@ namespace GFlowSimulation {
         harmonicbonds = new HarmonicBond_2d(gflow);
         gflow->addBonded(harmonicbonds);
       }
-      if (useAngle) harmonicchain = new AngleHarmonicChain_2d(gflow);
+      if (useAngle) {
+        harmonicchain = new AngleHarmonicChain_2d(gflow);
+      }
     }
     else if (sim_dimensions==3) {
       if (harmonicbonds==nullptr && !useAngle) {
@@ -173,7 +175,7 @@ namespace GFlowSimulation {
     }
     if (harmonicchain) {
       harmonicchain->setSpringConstant(8.*pow(rC/0.01, sim_dimensions-1)*DEFAULT_SPRING_CONSTANT);
-      harmonicchain->setAngleConstant(0.05);
+      harmonicchain->setAngleConstant(0.05 / 100);
       gflow->addBonded(harmonicchain);
     }
   }
@@ -335,7 +337,7 @@ namespace GFlowSimulation {
       if (gid1!=-1 && harmonicbonds && harmonicchain!=nullptr) harmonicbonds->addBond(gid1, gid2);
       if (harmonicchain) harmonicchain->addAtom(gid2);
 
-      // Primary type
+      // Add to group
       group.add(gid2);
 
       // Set last type

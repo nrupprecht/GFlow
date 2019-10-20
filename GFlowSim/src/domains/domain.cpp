@@ -39,7 +39,7 @@ namespace GFlowSimulation {
     // Calculate sweep "radius"
     int prod = 1;
     for (int d=0; d<sim_dimensions; ++d) {
-      center[d] = static_cast<int>(ceil(distance/widths[d]));
+      center[d] = 1 + static_cast<int>(ceil(distance*inverseW[d]));
       // Search dimensions can't be so large that any cells are searched more than once.
       search_dims[d] = min(2*center[d]+1, dims[d]);
       // Correct center based on actual search dimensions.

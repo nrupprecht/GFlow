@@ -48,7 +48,10 @@ namespace GFlowSimulation {
 
   void PersistenceLength::post_integrate() {
     if (ndata_points>0) 
-      for (auto &pr : data) pr.second /= ndata_points;
+      for (int i=0; i<data.size(); ++i) {
+        data[i].first = i+1;
+        data[i].second /= ndata_points;
+      }
   }
 
 }
