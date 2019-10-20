@@ -17,10 +17,10 @@ Integrator: NoseHooverVelocityVerlet
 Boundary: Wrap
 
 // Set the number of particle types
-// 0, 3 : Polymers A, B - primary particles.
-// 1 : Chain
+// 0 : Polymers primary particles.
+// 1 : Polymer chain
 // 2 : Solvent
-NTypes: 4
+NTypes: 3
 
 Force-grid: {
   : 0, 0, HardSphere // Polymer - Polymer  
@@ -28,15 +28,8 @@ Force-grid: {
   : 0, 2, HardSphere {
     Repulsion: 500
   }
-  : 0, 3, HardSphere
-
   : 1, 1, HardSphere // Chain - Chain
-
-  : 2, 2, HardSphere // Solvent - Solvent
-  
-  : 3, 1, None // Polymer - Chain
-  : 3, 2, HardSphere
-  : 3, 3, None // Polymer - Polymer
+  : 2, 2, None // Solvent - Solvent
 }
 
 Fill: Polymer {

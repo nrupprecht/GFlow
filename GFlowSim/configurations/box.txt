@@ -2,7 +2,7 @@
 Dimensions: 2
 
 Var: phi=0.5
-Var: width=8
+Var: width=4
 
 // Set the simulation bounds
 Bounds: {
@@ -12,7 +12,10 @@ Bounds: {
 
 Integrator: VelocityVerlet
 
-Boundary: Wrap
+Boundary: {
+  : Repulse
+  : Wrap
+}
 
 // Set the number of particle types
 NTypes: 1
