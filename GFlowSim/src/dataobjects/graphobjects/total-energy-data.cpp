@@ -7,6 +7,10 @@ namespace GFlowSimulation {
   // Constructor
   TotalEnergyData::TotalEnergyData(GFlow *gflow, bool ave) : GraphObject(gflow, "Energy", "time", "total energy"), useAve(ave) {};
 
+  void TotalEnergyData::pre_integrate() {
+    forceMaster->setCalculatePotential(true);
+  }
+
   void TotalEnergyData::post_step() {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
