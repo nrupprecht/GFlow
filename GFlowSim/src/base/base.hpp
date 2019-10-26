@@ -46,6 +46,9 @@ namespace GFlowSimulation {
     //! A head node and a map of variables is passed in.
     virtual void parse_construct(HeadNode*, const std::map<string, string>&) {};
 
+    //! \brief Return the number of bytes that this object takes up.
+    virtual int memory_usage();
+
     // GFlow is a friend class
     friend class GFlow;
 

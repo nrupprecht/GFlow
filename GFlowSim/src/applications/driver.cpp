@@ -28,17 +28,12 @@ using namespace GFlowSimulation;
 #include "../other/evaluation.hpp"
 
 int main(int argc, char **argv) {
+  // MPI related.
   int rank(0), numProc(1);
   #if USE_MPI == 1
-    #if _CLANG_ == 1
-      MPI_Init(&argc, &argv);
-      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-      MPI_Comm_size(MPI_COMM_WORLD, &numProc);
-    #else
-      MPI::Init(argc, argv);
-      rank = MPI::COMM_WORLD.Get_rank();
-      numProc = MPI::COMM_WORLD.Get_size();
-    #endif
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &numProc);
   // Wait here.
   MPIObject::barrier();
   #endif
@@ -331,6 +326,12 @@ int main(int argc, char **argv) {
   // Delete creator, gflow
   if (creator) delete creator;
   if (gflow)   delete gflow;
+
+  // Final barrier, to make sure that all data has been written.
+  #if USE_MPI == 1
+  // Sync here.
+  MPIObject::barrier();
+  #endif // USE_MPI == 1
   
   // Finalize mpi
   #if USE_MPI == 1

@@ -662,45 +662,27 @@ namespace GFlowSimulation {
       // Sync the terminate flag.
       gflow->syncRunning();
 
-      #if _CLANG_ == 1
-        // If there are multiple processors.
-        if (numProc>1 && !neighbor_ranks.empty()) {          
-          // Move particles that belong to other domains to those domains, and delete them from here. Then receive
-          // particles from other domains that belong to this domain.
-          exchange_particles();
+      // If there are multiple processors.
+      if (numProc>1 && !neighbor_ranks.empty()) {          
+        // Move particles that belong to other domains to those domains, and delete them from here. Then receive
+        // particles from other domains that belong to this domain.
+        exchange_particles();
 
-          // Start mpi timer.
-          gflow->startMPIExchangeTimer();
-          // Make sure all requests are processed.
-          MPIObject::barrier(barrier_timer);
-          // Stop mpi timer.
-          gflow->stopMPIExchangeTimer();
+        // Start adding ghost particles here.
+        int save_first_ghost = _size;
 
-          // Start adding ghost particles here.
-          int save_first_ghost = _size;
-
-          // --- Look for particles that need to be ghosts on other processors.
-          if (gflow->use_ghosts()) {
-            // Create ghost particles.
-            create_ghost_particles();
-
-            // Start mpi timer.
-            gflow->startMPIExchangeTimer();
-            // Make sure all requests are processed.
-            MPIObject::barrier(barrier_timer);
-            // Stop mpi timer.
-            gflow->stopMPIExchangeTimer();
-          }
-
-          // Adding new particles increments _first_halo and _first_ghost, so we have to correct them.
-          _first_ghost = save_first_ghost;
-          _first_halo  = save_first_ghost;
+        // --- Look for particles that need to be ghosts on other processors.
+        if (gflow->use_ghosts()) {
+          // Create ghost particles.
+          create_ghost_particles();
         }
-        // If there is only one processor, even though this is an MPI run.
-        else doParticleRemoval();
-      #else
-        // \todo Cover this case later (non CLANG). Best way to do this is make objects that work with or without CLANG.
-      #endif // _CLANG_ == 1
+
+        // Adding new particles increments _first_halo and _first_ghost, so we have to correct them.
+        _first_ghost = save_first_ghost;
+        _first_halo  = save_first_ghost;
+      }
+      // If there is only one processor, even though this is an MPI run.
+      else doParticleRemoval();
     #else 
       // If not parallel, just do particle removal.
       doParticleRemoval();
@@ -1032,6 +1014,9 @@ namespace GFlowSimulation {
 
     // Stop mpi timer.
     gflow->stopMPIExchangeTimer();
+
+    // Barrier so everyone syncs up here
+    MPIObject::barrier(barrier_timer);
   }
 
   inline void SimData::create_ghost_particles() {
@@ -1080,6 +1065,9 @@ namespace GFlowSimulation {
 
     // Stop mpi timer.
     gflow->stopMPIGhostTimer();
+
+    // Sync up after ghost exchange
+    MPIObject::barrier(barrier_timer);
   }
 
   inline void SimData::update_ghost_particles() {

@@ -16,8 +16,8 @@ namespace GFlowSimulation {
     // Get and store data
     Vec ave(sim_dimensions);
 
-    RealType **x = Base::simData->X();
-    RealType *im = Base::simData->Im();
+    auto x  = Base::simData->X();
+    auto im = Base::simData->Im();
     int size = Base::simData->size(), *type = Base::simData->Type();
     // Compute totals
     int count = 0;

@@ -14,6 +14,10 @@ namespace GFlowSimulation {
     else throw UnexpectedNullPointer("GFlow should not be null.");
   }
 
+  int Base::memory_usage() {
+    return 10*sizeof(int*);
+  }
+
   GFlow* Base::getGFlow() const {
     return gflow;
   }

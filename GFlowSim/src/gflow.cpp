@@ -160,7 +160,8 @@ namespace GFlowSimulation {
     dataMaster->pre_integrate();
     forceMaster->pre_integrate();
 
-    // Run Timer - for printing updates.
+    // Run Timer - for printing updates. We use a timer, not a timed object, so that if timed objects are turned off,
+    // we still can collect timing data.
     Timer timer;
     timer.start();
 
@@ -257,7 +258,7 @@ namespace GFlowSimulation {
 	      terminate();
       }
       // Possibly print updates to the screen or to a file.
-      if (print_updates && runMode==RunMode::SIM && 
+      if (print_updates && topology->getRank()==0 && runMode==RunMode::SIM && 
         static_cast<int>((elapsed_time-dt)/update_interval) < static_cast<int>((elapsed_time)/update_interval)) 
       {
         RealType live_ratio = elapsed_time / timer.current();
@@ -274,7 +275,7 @@ namespace GFlowSimulation {
     }
     
     // Possibly print a closing update
-    if (print_updates && runMode==RunMode::SIM) {
+    if (print_updates && topology->getRank()==0 && runMode==RunMode::SIM) {
       (*monitor) << " ---- End of run ----\n\n";
     }
 
