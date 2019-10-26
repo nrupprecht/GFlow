@@ -255,7 +255,7 @@ int main(int argc, char **argv) {
   if (radiusvp)    gflow->addDataObject(new RadiusVolumePlot(gflow));
   if (stripex)     gflow->addModifier(new StripeX(gflow));
   // Add this last, as it takes the most time.
-  if (animate /*|| stripex*/) {
+  if (animate) {
     auto pd = new PositionData(gflow);
     gflow->addDataObject(pd);
     if (videoLength>0) pd->setFPS((20.*videoLength)/time);
@@ -295,9 +295,8 @@ int main(int argc, char **argv) {
     cout << "Initialized, ready to run:\t" << time_span(current_time(), start_time) << "\n";
     cout << "Running with " << num_particles << " particles.\n";
   }
-  //try {
-  gflow->run();
-  /*
+  try {
+    gflow->run();
   }
   catch (Exception *exc) {
     if (!quiet && rank==0)
@@ -311,7 +310,6 @@ int main(int argc, char **argv) {
     // Rethrow the exception
     throw;
   }
-  */
   // More detailed exception handling
   // @todo Exception handling.
 

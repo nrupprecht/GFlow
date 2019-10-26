@@ -18,17 +18,18 @@ namespace GFlowSimulation {
     RealType ke = 0;
     auto v = simData->V();
     auto im = simData->Im();
-    int size = simData->size();
+    int size = simData->number_owned();
     int sim_dimensions = simData->getSimDimensions();
     int count = 0;
-    for (int n=0; n<size; ++n)
-      if (im[n]>0 && simData->isReal(n)) {
+    for (int n=0; n<size; ++n) {
+      RealType vsqr = sqr(v[n], sim_dimensions);
+      if (im[n]>0 && simData->isReal(n) && !isnan(vsqr)) {
         RealType m = 1./im[n];
-        ke += m*sqr(v[n], sim_dimensions);
+        ke += m*vsqr;
         ++count;
       }
+    }
     ke *= 0.5;
-
     // Return the total kinetic energy
     return average ? ke/static_cast<RealType>(count) : ke;
   }

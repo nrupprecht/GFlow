@@ -8,13 +8,15 @@ Dimensions: 3
 Var: MinR=0.1
 Var: MaxR=0.12
 Var: Velocity=2
-Var: End=6
+Var: Length=6
+Var: Front=4
+Var: Width=4
 
 // Set the simulation bounds
 Bounds: {
-  : -4, End
-  : -4, 4
-  : -4, 4
+  : -Front, Length
+  : -Width, Width
+  : -Width, Width
 }
 
 Integrator: VelocityVerlet
@@ -29,9 +31,7 @@ Boundary: {
 NTypes: 1
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
-Force-grid: {
-  : 0, 0, HardSphereDs
-}
+Force-grid: Hertz
 
 // Fill an area with particles
 Fill: Area {
