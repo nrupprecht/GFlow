@@ -116,18 +116,28 @@ namespace GFlowSimulation {
     else if (color_option==4)
       findMaxDistance(data);
 
-    // Set up the camera
-    standard_camera_setup();
+    if (choice_3d) {
+      // Set up the camera
+      standard_camera_setup();
 
-    // Create all the images
-    for (int i=0; i<data.size(); ++i) {
-      string fileName = dirName + "/frame" + toStr(i) + ".bmp";
-      frame = i;
-      createImage3d(fileName, data[i]);
-      // projectImage(fileName, data[i]); // For now, we just draw a projected image
+      // Create all the images
+      for (int i=0; i<data.size(); ++i) {
+        string fileName = dirName + "/frame" + toStr(i) + ".bmp";
+        frame = i;
+        createImage3d(fileName, data[i]);
+        // projectImage(fileName, data[i]); // For now, we just draw a projected image
+      }
+      // Clean up the ray tracer's kd tree structure.
+      tracer.empty();
     }
-    // Clean up the ray tracer's kd tree structure.
-    tracer.empty();
+    else {
+      // Create all the images
+      for (int i=0; i<data.size(); ++i) {
+        string fileName = dirName + "/frame" + toStr(i) + ".bmp";
+        frame = i;
+        projectImage(fileName, data[i]); // For now, we just draw a projected image
+      }
+    }
     // Timing
     auto end_time = current_time();
     // Print timing.

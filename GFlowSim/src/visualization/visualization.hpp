@@ -20,12 +20,18 @@ namespace GFlowSimulation {
     //! \brief Constructor.
     Visualization();
 
+    //! Read a csv file and create images from all the data in the file.
     bool load_and_create(string, string);
 
+    //! \brief Manually set the size of te color bank.
     void setColorBankSize(int);
 
+    //! \brief Set a radius multiplier factor.
+    //!
+    //! This option was used before the variable cutoff system was used, and is therefore mostly obsolete.
     void setRadiusMultiple(float);
 
+    //! \brief Set the coloring option.
     void setColorOption(int);
 
     void setResolution(int);
@@ -121,6 +127,11 @@ namespace GFlowSimulation {
 
     //! \brief Whether to wrap at the boundaries or not
     bool do_wrap = true;
+
+    //! \brief Whether to create a 3D image, or just a projection when rendering in 3D
+    //!
+    //! True - 3D image, False - projection.
+    bool choice_3d = false;
 
     //! \brief Whether the (3D) camera has been set up by anyone or anything.
     bool camera_set = false;

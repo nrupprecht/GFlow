@@ -152,4 +152,16 @@ namespace GFlowSimulation {
     }
   }
 
+  void MultiGraphObject::gatherData(const RealType x, const Vec yvals) {
+    // Gather data and data counts on processor 0.
+    MPIObject::mpi_sum0(yvals.data, yvals.size());
+    // If this is the root processor (0), store the data.
+    if (topology->getRank()==0) {
+      // Add an entry with the given x value.
+      addEntry(x);
+      // Store data
+      for (int d=0; d<sim_dimensions; ++d) getY(d) = yvals[d];
+    }
+  }
+
 }

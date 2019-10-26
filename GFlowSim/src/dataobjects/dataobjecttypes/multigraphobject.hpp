@@ -62,6 +62,9 @@ namespace GFlowSimulation {
     //! \brief Gather and average data on processor 0.
     void gatherAverageData(const RealType, const Vec, int);
 
+    //! \brief Gather sum of all data on processor 0.
+    void gatherData(const RealType, const Vec);
+
     //! \brief The different types of data the multigraph is keeping track of.
     //!
     //! The first entry is the x value, the other [ndata] values are the data.

@@ -12,6 +12,10 @@ namespace GFlowSimulation {
 
     //! @brief Collect the position data from simdata --- happens during the post-step phase
     virtual void post_step();
+
+  private:
+    //! \brief Whether to record average position, or sum of positions.
+    bool useAve = true;
   };
 
 }
