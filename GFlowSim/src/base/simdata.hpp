@@ -65,8 +65,8 @@ namespace GFlowSimulation {
     //! \brief Do a quick sort based on particle's position, projected onto a vector.
     void sortParticles(Vec&);
 
-    //! \brief Remove particles that have NAN positions or velocities.
-    void removeBadParticles();
+    //! \brief Remove particles that have NAN positions or velocities. Return true if any were removed. If the flag is set to true, do particle removal if any particles were marked for removal.
+    bool removeBadParticles(bool=true);
 
     //! \brief Update the primary particle that halo particles correspond to.
     void updateHaloParticles();

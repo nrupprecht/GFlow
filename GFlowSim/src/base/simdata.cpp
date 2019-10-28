@@ -280,7 +280,7 @@ namespace GFlowSimulation {
     setNeedsRemake(true);
   }
 
-  void SimData::removeBadParticles() {
+  bool SimData::removeBadParticles(bool do_removal) {
     // Most of the time, we probably won't need to remove any particles. We only need to remake structures if we do. So keep track.
     bool removed_some = false;
     // Look for bad particles.
@@ -294,12 +294,13 @@ namespace GFlowSimulation {
         }
       }
     }
-    if (removed_some) {
+    if (removed_some && do_removal) {
       // Remove particles.
       doParticleRemoval();
       // Set the needs remake flag
       setNeedsRemake(true);
     }
+    return removed_some;
   }
 
   void SimData::updateHaloParticles() {
@@ -663,7 +664,11 @@ namespace GFlowSimulation {
       gflow->syncRunning();
 
       // If there are multiple processors.
-      if (numProc>1 && !neighbor_ranks.empty()) {          
+      if (numProc>1 && !neighbor_ranks.empty()) {
+
+	// TEST Remove bad (NAN) particles
+	removeBadParticles(false);
+
         // Move particles that belong to other domains to those domains, and delete them from here. Then receive
         // particles from other domains that belong to this domain.
         exchange_particles();

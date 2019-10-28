@@ -99,6 +99,9 @@ namespace GFlowSimulation {
     // Get the array of max cutoffs
     const vector<RealType> & max_cutoffs = forceMaster->getMaxCutoff();
 
+    // Checks
+    if (cutoff_grid==nullptr) return;
+
     // Maximum reasonable distance.
     RealType max_reasonable = sqr(0.9*simulation_bounds.wd(0));
     for (int d=1; d<sim_dimensions; ++d) {

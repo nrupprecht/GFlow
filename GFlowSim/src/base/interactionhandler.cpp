@@ -114,18 +114,19 @@ namespace GFlowSimulation {
     gflow->handler_remade() = true;
 
     // If there are no interaction, or the forceMaster is null, we don't need to make any verlet lists
-    if (gflow->getInteractions().empty() || forceMaster==nullptr) return;
-
-    // Update data structures.
-    structure_updates();
+    if (!gflow->getInteractions().empty() && forceMaster!=nullptr && gflow->getUseForces()) {
+      // Update data structures.
+      structure_updates();
+      
+      // Traverse cells, adding particle pairs that are within range of one another to the interaction.
+      traversePairs([&] (int id1, int id2, int w_type, RealType, RealType, RealType) {
+	  pair_interaction(id1, id2, w_type);
+	});
+      
+      // Close all interactions.
+      forceMaster->close();
+    }
     
-    // Traverse cells, adding particle pairs that are within range of one another to the interaction.
-    traversePairs([&] (int id1, int id2, int w_type, RealType, RealType, RealType) {
-      pair_interaction(id1, id2, w_type);
-    });
-    
-    // Close all interactions.
-    forceMaster->close();
     // Stop timer.
     stop_timer();
   }
