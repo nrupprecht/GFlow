@@ -40,18 +40,19 @@ namespace GFlowSimulation {
     //! \brief Reserve space for particles, extending the lengths of all arrays to the requested size.
     void reserve(int);
 
-    //! \brief Add a default particle, the properties of this particle should be set from the outside after this is called.
-    void addParticle();
+    //! \brief Add a default particle, the properties of this particle should be set from the outside after this is called. Returns
+    //! the id of the added particle.
+    int addParticle();
 
-    //! \brief Add several default particles. Same as calling addParticle multiple times.
-    void addParticle(int);
+    //! \brief Add several default particles. Same as calling addParticle multiple times. Returns the id of the first particle added.
+    int addParticle(int);
 
-    //! \brief Add a particle to the simdata.
+    //! \brief Add a particle to the simdata. Returns the id of the added particle.
     //!
     //! Add a particle to the simdata. This is the public version of the function, so we can only add owned particles. 
     //! Depending on how many particles are in the array, and the array capacities, it may be necessary to resize the array 
     //! to add the particle.
-    void addParticle(const RealType*, const RealType*, const RealType, const RealType, const int);
+    int addParticle(const RealType*, const RealType*, const RealType, const RealType, const int);
 
     // \brief Mark a particle for removal.
     void markForRemoval(const int);
@@ -481,6 +482,18 @@ namespace GFlowSimulation {
 
     vector<MPI_Request> request_list;
     MPI_Request request;
+
+    // --- What types of data to send to adjacent processors.
+
+    //! \brief Whether ghost particles' velocity should be sent.
+    bool send_ghost_velocity = false;
+    //! \brief Whether ghost particles' angular velocity should be sent.
+    bool send_ghost_omega = false;
+
+public:
+
+    void setSendGhostVelocity(bool b) { send_ghost_velocity = b; }
+    void setSendGhostOmega(bool b) { send_ghost_omega = b; }
 
     #endif
   };

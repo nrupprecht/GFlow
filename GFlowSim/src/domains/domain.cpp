@@ -103,9 +103,9 @@ namespace GFlowSimulation {
     if (cutoff_grid==nullptr) return;
 
     // Maximum reasonable distance.
-    RealType max_reasonable = sqr(0.9*simulation_bounds.wd(0));
+    RealType max_reasonable = sqr(0.5*simulation_bounds.wd(0));
     for (int d=1; d<sim_dimensions; ++d) {
-      RealType mr = sqr(0.9*simulation_bounds.wd(d));
+      RealType mr = sqr(0.5*simulation_bounds.wd(d));
       if (mr<max_reasonable) max_reasonable = mr;
     }
 
@@ -147,7 +147,7 @@ namespace GFlowSimulation {
               RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
               if (r2 < sqr((sg[id1] + sg[id2])*cutoffs_id1[type[id2]] + skin_depth))
                 body(id1, id2, 0, sg[id1], sg[id2], r2);
-              else if (r2>max_reasonable) 
+              else if (r2>max_reasonable)
                 body(id1, id2, 1, sg[id1], sg[id2], r2);                
             }
         }

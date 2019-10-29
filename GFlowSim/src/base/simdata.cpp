@@ -64,10 +64,17 @@ namespace GFlowSimulation {
       // Set up recv_buffer.
       recv_buffer.resize(n_size);
     }
-    // Set data width - position (sim_dimensions), velocity (sim_dimensions), radius (1), inverse mass (1), and type (1).
-    data_width = 2*sim_dimensions + 3;
+
+    // Set data width - send all data to adjacent processors when migrating ghosts.
+    // \todo We don't actually need to migrate force data.
+    data_width = vdata.size()*sim_dimensions + sdata.size() + idata.size();
+
     // Set ghost data width - position (sim_dimensions).
     ghost_data_width = sim_dimensions;
+    // Do we need to send velocity?
+    if (send_ghost_velocity) ghost_data_width += sim_dimensions;
+    // Do we need to send angular velocity?
+    if (send_ghost_omega) ghost_data_width += 1; // In two dimensions, omega is a scalar.
     #endif
 
     //*****
@@ -136,7 +143,7 @@ namespace GFlowSimulation {
     _capacity = num;
   }
 
-  void SimData::addParticle() {
+  int SimData::addParticle() {
     if (_size+1 > _capacity) {
       int new_capacity = max(32, static_cast<int>(0.25*_capacity));
       resize_owned(new_capacity);
@@ -153,15 +160,18 @@ namespace GFlowSimulation {
     // Assumes that there are no halo or ghost particles.
     ++_first_halo;
     ++_first_ghost;
+    // Return particle id.
+    return _size-1;
   }
 
   //! \param num The number of particle slots to add.
-  void SimData::addParticle(int num) {
-    if (num<=0) return;
+  int SimData::addParticle(int num) {
+    if (num<=0) return -1;
     if (_size+num > _capacity) {
       int new_capacity = max(32, static_cast<int>(0.25*(num+_size-_capacity)));
       resize_owned(new_capacity);
     }
+    int address = _size;
     for (int i=0; i<num; ++i) {
       // Reset all data
       reset_particle(_size);
@@ -176,6 +186,8 @@ namespace GFlowSimulation {
       ++_first_halo;
       ++_first_ghost;
     }
+    // Return first particle id.
+    return address;
   }
 
   //! \param x The position of the particle.
@@ -183,7 +195,7 @@ namespace GFlowSimulation {
   //! \param sg The cutoff radius of the particle.
   //! \param im The inverse mass of the particle.
   //! \param type The type of the particle.
-  void SimData::addParticle(const RealType *x, const RealType *v, const RealType sg, const RealType im, const int type) {
+  int SimData::addParticle(const RealType *x, const RealType *v, const RealType sg, const RealType im, const int type) {
     // If not enough spots to add a new owned particle, create more
     if (_size+1 > _capacity) {
       int new_capacity = max(32, static_cast<int>(0.25*_size));
@@ -205,6 +217,8 @@ namespace GFlowSimulation {
     // Assumes that there are no halo or ghost particles.
     ++_first_halo;
     ++_first_ghost;
+    // Return particle id.
+    return _size-1;
   }
 
   void SimData::markForRemoval(const int id) {
@@ -1088,6 +1102,10 @@ namespace GFlowSimulation {
     // Reset counter.
     _last_n_ghosts_sent = 0;
 
+    // Possibly get a pointer to angular velocity data.
+    RealType *om = nullptr;
+    if (send_ghost_omega) om = ScalarData("Om");
+
     // Update the positions information of ghost particles on other processors.
     ghost_send_timer.start_timer();
     for (int i=0; i<neighbor_ranks.size(); ++i) {
@@ -1112,6 +1130,18 @@ namespace GFlowSimulation {
           plusEqVec(xrel, bcm, sim_dimensions);
           // Copy the (relative) vector to the buffer.
           copyVec(xrel, &buffer_list[i][ghost_data_width*j], sim_dimensions);
+          int pointer = sim_dimensions;
+          // Possibly send velocity data.
+          if (send_ghost_velocity) {
+            copyVec(V(id), &buffer_list[i][ghost_data_width*j + pointer], sim_dimensions);
+            pointer += sim_dimensions; // Adjust counter.
+          }
+          // Possibly send angular velocity data.
+          if (send_ghost_omega) {
+            buffer_list[i][ghost_data_width*j + pointer] = om[id];
+            ++pointer; // Adjust counter.
+          }
+          // Increment.
           ++j;
         }
         // Send the data (non-blocking) back to the processor.
@@ -1154,15 +1184,32 @@ namespace GFlowSimulation {
     // Start mpi timer.
     gflow->startMPIGhostTimer();
 
+    // Possibly get a pointer to angular velocity data.
+    RealType *om = nullptr;
+    if (send_ghost_omega) om = ScalarData("Om");
+
     // Collect received data and pack it.
-    for (int i=0, p_id=_first_ghost; i<neighbor_ranks.size(); ++i) {
+    for (int i=0, id=_first_ghost; i<neighbor_ranks.size(); ++i) {
       int size = recv_ghost_sizes[i];
       if (size>0) {
+
         // Wait for request to be filled.
         MPIObject::wait(request_list[i], ghost_wait_timer);
+
         // Unpack the position data into the ghost particles.
-        for (int j=0; j<size; ++j, ++p_id) {
-          copyVec(&recv_buffer[i][ghost_data_width*j], X(p_id), sim_dimensions);
+        for (int j=0; j<size; ++j, ++id) {
+          copyVec(&recv_buffer[i][ghost_data_width*j], X(id), sim_dimensions);
+          int pointer = sim_dimensions;
+          // Possibly receive velocity data.
+          if (send_ghost_velocity) {
+            copyVec(&buffer_list[i][ghost_data_width*j + pointer], V(id), sim_dimensions);
+            pointer += sim_dimensions; // Adjust counter.
+          }
+          // Possibly receive angular velocity data.
+          if (send_ghost_omega) {
+            om[id] = buffer_list[i][ghost_data_width*j + pointer];
+            ++pointer; // Adjust counter.
+          }
         }
       }
     }
@@ -1183,12 +1230,22 @@ namespace GFlowSimulation {
       // Send the actual data. Copy data into buffer
       for (int j=0; j<size; ++j) {
         int id = send_ids[j];
+        // Pack vector data.
+        for (int i=0; i<vdata.size(); ++i) copyVec(vdata[i][id], &buffer[data_width*j + i*sim_dimensions], sim_dimensions);
+        // Pack scalar data.
+        for (int i=0; i<sdata.size(); ++i) buffer[data_width*j + vdata.size()*sim_dimensions + i] = sdata[i][id];
+        // Pack integer data.
+        for (int i=0; i<idata.size(); ++i) buffer[data_width*j + vdata.size()*sim_dimensions + sdata.size() + i] = idata[i][id];
+
+        /*
         // Copy particle information to the buffer. \todo Automate a way to specify arbitrary subsets of the particle data to send.
         copyVec(X(id), &buffer[data_width*j], sim_dimensions); // Position
         copyVec(V(id), &buffer[data_width*j + sim_dimensions], sim_dimensions); // Velocity
         buffer[data_width*j + 2*sim_dimensions + 0] = Sg(id); // Radius
         buffer[data_width*j + 2*sim_dimensions + 1] = Im(id); // Inverse mass
         buffer[data_width*j + 2*sim_dimensions + 2] = Type(id); // Type
+        */
+
         // Mark particle for removal.
         if (remove) markForRemoval(id);
       }
@@ -1219,10 +1276,27 @@ namespace GFlowSimulation {
         // Copy particle information to the buffer, using the relative position. 
         // \todo Automate a way to specify arbitrary subsets of the particle data to send.
         copyVec(xrel, &buffer[data_width*j], sim_dimensions); // Position
+
+        // Send the rest of the data the normal way
+        // Pack vector data.
+        for (int i=1; i<vdata.size(); ++i) {
+          copyVec(vdata[i][id], &buffer[data_width*j + i*sim_dimensions], sim_dimensions);
+        }
+        // Pack scalar data.
+        for (int i=0; i<sdata.size(); ++i) {
+          buffer[data_width*j + vdata.size()*sim_dimensions + i] = sdata[i][id];
+        }
+        // Pack integer data.
+        for (int i=0; i<idata.size(); ++i) {
+          buffer[data_width*j + vdata.size()*sim_dimensions + sdata.size() + i] = *reinterpret_cast<RealType*>(&idata[i][id]);
+        }
+
+        /*
         copyVec(V(id), &buffer[data_width*j + sim_dimensions], sim_dimensions); // Velocity
         buffer[data_width*j + 2*sim_dimensions + 0] = Sg(id); // Radius
         buffer[data_width*j + 2*sim_dimensions + 1] = Im(id); // Inverse mass
         buffer[data_width*j + 2*sim_dimensions + 2] = Type(id); // Type
+        */
       }
       // Send the data (non-blocking).
       MPI_Isend(buffer.data(), size*data_width, MPI_FLOAT, n_rank, tag, MPI_COMM_WORLD, send_request);
@@ -1245,7 +1319,18 @@ namespace GFlowSimulation {
       MPI_Recv(buffer.data(), size*data_width, MPI_FLOAT, n_rank, tag, MPI_COMM_WORLD, &status);
       // Add particle.
       for (int j=0; j<size; ++j) {
-        // Position, (velocity is zero), 
+        // Add a spot for a particle, then copy the data into this particle.
+        int id = addParticle(); // Get id of new particle.
+
+        // Unpack vector data.
+        for (int i=0; i<vdata.size(); ++i) copyVec(&buffer[data_width*j + i*sim_dimensions], vdata[i][id], sim_dimensions);
+        // Unpack scalar data.
+        for (int i=0; i<sdata.size(); ++i) sdata[i][id] = buffer[data_width*j + vdata.size()*sim_dimensions + i];
+        // Unpack integer data.
+        for (int i=0; i<idata.size(); ++i) idata[i][id] = *reinterpret_cast<int*>(&buffer[data_width*j + vdata.size()*sim_dimensions + sdata.size() + i]);
+
+        /*
+        // Position, (velocity is zero)
         copyVec(&buffer[data_width*j], X);
         copyVec(&buffer[data_width*j + sim_dimensions], V);
         RealType r    = buffer[data_width*j + 2*sim_dimensions + 0];
@@ -1253,6 +1338,7 @@ namespace GFlowSimulation {
         RealType type = buffer[data_width*j + 2*sim_dimensions + 2];
         // Add particle to simdata.
         addParticle(X.data, V.data, r, im, static_cast<int>(type));
+        */
       } 
     }
     // Return the number of particles that were received.
