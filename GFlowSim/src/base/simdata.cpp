@@ -1236,16 +1236,6 @@ namespace GFlowSimulation {
         for (int i=0; i<sdata.size(); ++i) buffer[data_width*j + vdata.size()*sim_dimensions + i] = sdata[i][id];
         // Pack integer data.
         for (int i=0; i<idata.size(); ++i) buffer[data_width*j + vdata.size()*sim_dimensions + sdata.size() + i] = idata[i][id];
-
-        /*
-        // Copy particle information to the buffer. \todo Automate a way to specify arbitrary subsets of the particle data to send.
-        copyVec(X(id), &buffer[data_width*j], sim_dimensions); // Position
-        copyVec(V(id), &buffer[data_width*j + sim_dimensions], sim_dimensions); // Velocity
-        buffer[data_width*j + 2*sim_dimensions + 0] = Sg(id); // Radius
-        buffer[data_width*j + 2*sim_dimensions + 1] = Im(id); // Inverse mass
-        buffer[data_width*j + 2*sim_dimensions + 2] = Type(id); // Type
-        */
-
         // Mark particle for removal.
         if (remove) markForRemoval(id);
       }
@@ -1276,27 +1266,13 @@ namespace GFlowSimulation {
         // Copy particle information to the buffer, using the relative position. 
         // \todo Automate a way to specify arbitrary subsets of the particle data to send.
         copyVec(xrel, &buffer[data_width*j], sim_dimensions); // Position
-
-        // Send the rest of the data the normal way
-        // Pack vector data.
-        for (int i=1; i<vdata.size(); ++i) {
-          copyVec(vdata[i][id], &buffer[data_width*j + i*sim_dimensions], sim_dimensions);
-        }
+        // Send the rest of the data the normal way. Pack vector data.
+        for (int i=1; i<vdata.size(); ++i) copyVec(vdata[i][id], &buffer[data_width*j + i*sim_dimensions], sim_dimensions);
         // Pack scalar data.
-        for (int i=0; i<sdata.size(); ++i) {
-          buffer[data_width*j + vdata.size()*sim_dimensions + i] = sdata[i][id];
-        }
+        for (int i=0; i<sdata.size(); ++i) buffer[data_width*j + vdata.size()*sim_dimensions + i] = sdata[i][id];
         // Pack integer data.
-        for (int i=0; i<idata.size(); ++i) {
+        for (int i=0; i<idata.size(); ++i) 
           buffer[data_width*j + vdata.size()*sim_dimensions + sdata.size() + i] = *reinterpret_cast<RealType*>(&idata[i][id]);
-        }
-
-        /*
-        copyVec(V(id), &buffer[data_width*j + sim_dimensions], sim_dimensions); // Velocity
-        buffer[data_width*j + 2*sim_dimensions + 0] = Sg(id); // Radius
-        buffer[data_width*j + 2*sim_dimensions + 1] = Im(id); // Inverse mass
-        buffer[data_width*j + 2*sim_dimensions + 2] = Type(id); // Type
-        */
       }
       // Send the data (non-blocking).
       MPI_Isend(buffer.data(), size*data_width, MPI_FLOAT, n_rank, tag, MPI_COMM_WORLD, send_request);
@@ -1321,24 +1297,13 @@ namespace GFlowSimulation {
       for (int j=0; j<size; ++j) {
         // Add a spot for a particle, then copy the data into this particle.
         int id = addParticle(); // Get id of new particle.
-
         // Unpack vector data.
         for (int i=0; i<vdata.size(); ++i) copyVec(&buffer[data_width*j + i*sim_dimensions], vdata[i][id], sim_dimensions);
         // Unpack scalar data.
         for (int i=0; i<sdata.size(); ++i) sdata[i][id] = buffer[data_width*j + vdata.size()*sim_dimensions + i];
         // Unpack integer data.
-        for (int i=0; i<idata.size(); ++i) idata[i][id] = *reinterpret_cast<int*>(&buffer[data_width*j + vdata.size()*sim_dimensions + sdata.size() + i]);
-
-        /*
-        // Position, (velocity is zero)
-        copyVec(&buffer[data_width*j], X);
-        copyVec(&buffer[data_width*j + sim_dimensions], V);
-        RealType r    = buffer[data_width*j + 2*sim_dimensions + 0];
-        RealType im   = buffer[data_width*j + 2*sim_dimensions + 1];
-        RealType type = buffer[data_width*j + 2*sim_dimensions + 2];
-        // Add particle to simdata.
-        addParticle(X.data, V.data, r, im, static_cast<int>(type));
-        */
+        for (int i=0; i<idata.size(); ++i) 
+          idata[i][id] = *reinterpret_cast<int*>(&buffer[data_width*j + vdata.size()*sim_dimensions + sdata.size() + i]);
       } 
     }
     // Return the number of particles that were received.

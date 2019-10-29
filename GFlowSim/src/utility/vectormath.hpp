@@ -23,6 +23,13 @@ namespace GFlowSimulation {
     return dt;
   }
 
+  //! \brief A dot product function that can handle a more diverse set of inputs and outputs.
+  template<typename T, typename U, typename V> T inline dotVec(const U *x, const V *y, int dimensions) {
+    T dt(0);
+    for (int d=0; d<dimensions; ++d) dt += x[d]*y[d];
+    return dt;
+  }
+
   template<typename T> void inline hadamardVec(const T *x, const T *y, T *z, int dimensions) {
     for (int d=0; d<dimensions; ++d) z[d] = x[d]*y[d];
   }

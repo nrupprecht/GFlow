@@ -246,18 +246,22 @@ namespace GFlowSimulation {
     
     // --- Create a neighborhood stencil to help us find adjacent cells.
     RealType min_small_cutoff = 2*max_small_sigma + skin_depth;
-    int sweep = ceil(min_small_cutoff/min(widths));
     vector<vector<int> > neighbor_indices;
     vector<int> little_dims(sim_dimensions), center(sim_dimensions);
-    for (int d=0; d<sim_dimensions; ++d) little_dims[d] = 2*sweep+1;
-    for (int d=0; d<sim_dimensions; ++d) center[d] = sweep;
+    int volume = 1;
+    for (int d=0; d<sim_dimensions; ++d) {
+      int sweep = ceil(min_small_cutoff/widths[d]);
+      little_dims[d] = 2*sweep+1;
+      center[d] = sweep;
+      volume *= little_dims[d];
+    }
 
     // Create stencil
-    for (int i=0; i<floor(0.5*pow(2*sweep+1, sim_dimensions)); ++i) {
+    for (int i=0; i<floor(0.5*volume); ++i) {
       getAddressCM(i, little_dims.data(), tuple1.data(), sim_dimensions);
       subtractVec(tuple1.data(), center.data(), tuple2.data(), sim_dimensions);
-      int dr2 = sqr(tuple2.data(), sim_dimensions);
-      if (dr2<sqr(sweep+1)) neighbor_indices.push_back(tuple2);
+      int dr2 = dotVec<RealType, int, RealType>(tuple2.data(), widths.data(), sim_dimensions);
+      if (dr2<sqr(min_small_cutoff)) neighbor_indices.push_back(tuple2);
     }
 
     // At this point, the vector neighor_indices now contains all the relative indices of neighbors cells.
@@ -269,8 +273,9 @@ namespace GFlowSimulation {
 
       // Set cell neighbors
       for (auto neigh : neighbor_indices) {
+        // Get the potential neighbor cell's index using the stencil.
         addVec(tuple1.data(), neigh.data(), tuple2.data(), sim_dimensions);
-        
+        // The index may fall out of bounds.
         if (correct_index(tuple2, true)) {
           int linear;
           tuple_to_linear(linear, tuple2);
