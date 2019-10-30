@@ -67,7 +67,7 @@ namespace GFlowSimulation {
           // Don't count the excluded particle.
           if (id2==_exclude) continue;
           // If the other particle is a larger particle, it will take care of this interaction
-          Base::gflow->getDisplacement(X.data, Base::simData->X(id2), dX.data());
+          gflow->getDisplacement(X.data, simData->X(id2), dX.data());
           RealType r = magnitudeVec(dX.data(), sim_dimensions);
           if (r<distance) neighbors.push_back(id2);
         }
@@ -113,8 +113,8 @@ namespace GFlowSimulation {
     vector<int> tuple1(sim_dimensions), tuple2(sim_dimensions), cell_index(sim_dimensions), center(sim_dimensions), search_dims(sim_dimensions);
 
     // Find potential neighbors
-    auto sg = simData->Sg();
     auto x = simData->X();
+    auto sg = simData->Sg();
     auto type = simData->Type();
 
     // Go through all the cells in the simulation.
@@ -198,17 +198,76 @@ namespace GFlowSimulation {
     }
   }
 
+  void Domain::traverseGhostPairs(PairFunction body) {
+    //! Notes: This function only works if there are no large particles (at least, any near the ghost particles).
+
+    // Checks
+    if (cutoff_grid==nullptr) return;
+
+    // Maximum reasonable distance.
+    RealType max_reasonable = sqr(0.5*simulation_bounds.wd(0));
+    for (int d=1; d<sim_dimensions; ++d) {
+      RealType mr = sqr(0.5*simulation_bounds.wd(d));
+      if (mr<max_reasonable) max_reasonable = mr;
+    }
+
+    // Get data.
+    auto x = simData->X();
+    auto sg = simData->Sg();
+    auto type = simData->Type();
+
+    //vector<int> tuple {0,0};
+
+    // Traverse all ghost particles.
+    for (int id1 = simData->first_ghost(); id1<simData->size(); ++id1) {
+      // The index of the cell that ghost particle id1 is in.
+      int index = get_halo_cell_index(x[id1]);
+      RealType *cutoffs_id1 = cutoff_grid[type[id1]];
+      // Look at particles in the same cell and in neighboring cells.
+      auto cell = cells[index];
+
+      /*
+      if (topology->getRank()==1) {
+        linear_to_tuple(index, tuple);
+        cout << toStrVec(x[id1], 2) << " --> " << tuple[0] << ", " << tuple[1] << " / " << dims[0] << ", " << dims[1] << "\n";
+      }
+      */
+
+      // Neighboring cells. The same cell is one of its "neighbors."
+      for (auto c : cell.adjacent) {
+        for (auto id2 : c->particle_ids) {
+          RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], sim_dimensions);
+          if (r2 < sqr((sg[id1] + sg[id2])*cutoffs_id1[type[id2]] + skin_depth) || max_reasonable<r2)
+            body(id1, id2, 2, sg[id1], sg[id2], r2);
+        }
+      }
+    }
+  }
+
   inline void Domain::structure_updates() {
     // Clear cells
     for (auto &c : cells) c.particle_ids.clear();
     // We should have just done a particle removal, so we can use number, not size (since all arrays are compressed)
-    int number = Base::simData->number();
+    int number = simData->number_owned(); // Ghost and halo particles are not binned.
     auto x = simData->X();
-    auto type = Base::simData->Type();
+    auto type = simData->Type();
     // Bin all the particles
     for (int i=0; i<number; ++i)
-      if (0<=type[i] && forceMaster->typeInteracts(type[i])) 
+      if (0<=type[i] && forceMaster->typeInteracts(type[i]))
         add_to_cell(x[i], i);
+
+    /*
+    if (topology->getRank()==0) {
+      cout << " ----- \n";
+      for (int y=dims[1]-1; y>=0; --y) {
+        for (int x=0; x<dims[0]; ++x) {
+          cout << "A=" << cells[x*dims[1] + y].adjacent.size() << " / N=" << cells[x*dims[1] + y].particle_ids.size() << "\t";
+        }
+        cout << endl;
+      }
+    }
+    */
+    
   }
 
   void Domain::calculate_domain_cell_dimensions() {
@@ -257,7 +316,7 @@ namespace GFlowSimulation {
     }
 
     // Create stencil
-    for (int i=0; i<floor(0.5*volume); ++i) {
+    for (int i=0; i<floor(volume); ++i) {
       getAddressCM(i, little_dims.data(), tuple1.data(), sim_dimensions);
       subtractVec(tuple1.data(), center.data(), tuple2.data(), sim_dimensions);
       int dr2 = dotVec<RealType, int, RealType>(tuple2.data(), widths.data(), sim_dimensions);
@@ -271,15 +330,35 @@ namespace GFlowSimulation {
     for (int c=0; c<size; ++c) {
       linear_to_tuple(c, tuple1);
 
-      // Set cell neighbors
-      for (auto neigh : neighbor_indices) {
-        // Get the potential neighbor cell's index using the stencil.
-        addVec(tuple1.data(), neigh.data(), tuple2.data(), sim_dimensions);
-        // The index may fall out of bounds.
-        if (correct_index(tuple2, true)) {
-          int linear;
-          tuple_to_linear(linear, tuple2);
-          cells[c].adjacent.push_back(&cells[linear]);
+      if (is_halo_cell(tuple1)) {
+        // Set cell neighbors - all cells are neighbors, not just half. Only ghost particles should be able to be in ghost cells.
+        for (auto neigh : neighbor_indices) {
+          // Get the potential neighbor cell's index using the stencil.
+          addVec(tuple1.data(), neigh.data(), tuple2.data(), sim_dimensions);
+          // The index may fall out of bounds.
+          if (correct_index(tuple2, true)) {
+            // Only need to consider non-halo cells, since halo cells don't contain particles.
+            if (!is_halo_cell(tuple2)) {
+              int linear;
+              tuple_to_linear(linear, tuple2);
+              cells[c].adjacent.push_back(&cells[linear]);
+            }
+          }
+        }
+      }
+      else {
+        // Set cell neighbors
+        for (int i=0; i<floor(0.5*volume); ++i) {
+          auto& neigh = neighbor_indices[i];
+        //for (auto neigh : neighbor_indices) {
+          // Get the potential neighbor cell's index using the stencil.
+          addVec(tuple1.data(), neigh.data(), tuple2.data(), sim_dimensions);
+          // The index may fall out of bounds.
+          if (correct_index(tuple2, true)) {
+            int linear;
+            tuple_to_linear(linear, tuple2);
+            cells[c].adjacent.push_back(&cells[linear]);
+          }
         }
       }
     }
@@ -310,9 +389,18 @@ namespace GFlowSimulation {
   }
 
   inline void Domain::add_to_cell(const RealType *x, int id) {
-    int linear = get_cell_index(Base::simData->X(id));
+    int linear = get_cell_index(simData->X(id));
     // Stores the *local* id of the particle
     cells[linear].particle_ids.push_back(id);
+  }
+
+  inline bool Domain::is_halo_cell(const vector<int>& index) {
+    // Test of the cell is a halo cell.
+    for (int d=0; d<sim_dimensions; ++d) {
+      if (index[d]<dim_shift_down[d] || dims[d]-dim_shift_up[d]<=index[d]) return true;
+    }
+    // If the cell failed all the tests, it is not a halo cell.
+    return false;
   }
 
 }

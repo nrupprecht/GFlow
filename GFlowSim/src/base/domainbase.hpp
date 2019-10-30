@@ -48,6 +48,9 @@ namespace GFlowSimulation {
     //! \brief Get the linear index of the cell that a position lies within.
     int get_cell_index(const RealType*);
 
+    //! \brief Get the linear index of the cell that a position lies within.
+    int get_halo_cell_index(const RealType*);
+
     //! \brief Turns a linear cell index into a (DIMENSIONS)-dimensional index
     void linear_to_tuple(const int, vector<int>&);
     void linear_to_tuple(const int, int*);

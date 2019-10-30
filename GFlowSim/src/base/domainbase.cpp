@@ -69,8 +69,21 @@ namespace GFlowSimulation {
     int linear = 0;
     for (int d=0; d<sim_dimensions; ++d) {
       RealType index = static_cast<int>((x[d] - process_bounds.min[d])*inverseW[d]) + dim_shift_down[d];
-      if (index>=dims[d]) index = dims[d]-1;
-      else if (index<0)   index = 0;
+      if (index>=dims[d]-dim_shift_up[d]) index = dims[d]-dim_shift_up[d]-1;
+      else if (index<dim_shift_down[d])   index = dim_shift_down[d];
+      linear += index*products[d+1];
+    }
+    // Return the index
+    return linear;
+  }
+
+  int DomainBase::get_halo_cell_index(const RealType *x) {
+    int linear = 0;
+    for (int d=0; d<sim_dimensions; ++d) {
+      int index;
+      if (x[d]>process_bounds.max[d]) index = dims[d]-1;
+      // Otherwise, find cell index as usual.
+      else index = max(static_cast<int>((x[d] - process_bounds.min[d])*inverseW[d]), 0);
       linear += index*products[d+1];
     }
     // Return the index

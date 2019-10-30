@@ -55,7 +55,6 @@ namespace GFlowSimulation {
     for (i=0; i<total-simd_data_size; i+=simd_data_size) {
       simd_float _f = simd_load(&f[i]);
       simd_float V = simd_load(&v[i]);
-
       
       simd_float _im;
       switch (sim_dimensions) {
@@ -80,15 +79,6 @@ namespace GFlowSimulation {
       simd_float V_new = V + dV;
       // Store the updated velocity
       simd_store(V_new, &v[i]);
-      // Debug mode asserts
-      #if DEBUG==1
-      for (int j=0; j<simd_data_size; ++j) {
-        assert(!isnan(f[i+j]));
-        assert(!isnan(v[i+j]));
-        assert(fabs(v[i+j])<MAX_REASONABLE_V);
-        assert(fabs(f[i+j])<MAX_REASONABLE_F);
-      }
-      #endif
     }
     // Left overs
     for (; i<total; ++i) {
@@ -118,19 +108,10 @@ namespace GFlowSimulation {
       simd_float dX = simd_mult(V, dt_vec);
       simd_float X_new = simd_add(X, dX);
       simd_store(X_new, &x[i]);
-      #if DEBUG==1
-      for (int j=0; j<simd_data_size; ++j) {
-        assert(!isnan(v[i+j]));
-      }
-      #endif
     }
     // Left overs
     for (; i<total; ++i) {
       x[i] += dt*v[i];
-      // Debug mode asserts
-      #if DEBUG==1
-      assert(!isnan(x[i]));
-      #endif 
     }
     #endif
 

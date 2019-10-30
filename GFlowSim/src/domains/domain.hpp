@@ -35,6 +35,13 @@ namespace GFlowSimulation {
     //! required, 1 - wrapping required), radius of particle 1, radius of particle 2, and distance between particles.
     virtual void traversePairs(PairFunction) override;
 
+    //! \brief Function that traverses ghost particles, calling a function on all ghost-real pairs of particls that are within
+    //! cutoff + skin depth distance of one another.
+    //!
+    //! The function (a PairFunction) that is passed in should expect to receive particles' id1, id2, wrapping type (0 - no wrapping
+    //! required, 1 - wrapping required), radius of particle 1, radius of particle 2, and distance between particles.
+    virtual void traverseGhostPairs(PairFunction) override;
+
   private:
 
     // --- Overloaded functions
@@ -58,6 +65,9 @@ namespace GFlowSimulation {
 
     //! \brief Add a particle to the cell it belongs in.
     inline void add_to_cell(const RealType*, int);
+
+    //! \brief Returns whether or not a cell is a halo cell.
+    inline bool is_halo_cell(const vector<int>&);
 
     //! \brief A vector holding all the cells in the domain.
     vector<Cell> cells;

@@ -184,6 +184,12 @@ namespace GFlowSimulation {
     //! \brief Returns the number of owned particles on this processor (does not count halo or ghost particles).
     int number_owned() const;
 
+    //! \brief Return the number of ghost particles on this processor.
+    int number_ghosts() const;
+
+    //! \brief Get the index of the first ghost particle.
+    int first_ghost() const;
+
     //! \brief Return the number of types of particles.
     int ntypes() const;
 
@@ -451,9 +457,6 @@ namespace GFlowSimulation {
     //! \brief The i-th entry in the vector contains the number of particles (NOT data size) that the i-th neighboring 
     //! processor will send to this processor.
     vector<int> recv_size;
-
-    //! \brief The number of ghost particles in this structure.
-    int n_ghosts = 0;
 
     //! \brief Record the last number of ghost particles we had to send (so we can keep track).
     int _last_n_ghosts_sent = 0;

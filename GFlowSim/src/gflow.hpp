@@ -295,6 +295,9 @@ namespace GFlowSimulation {
     //! \brief Set the terminate flag to true.
     void terminate();
 
+    //! \brief Tell gflow that an exception has occured.
+    void registerException(Exception*);
+
     // Creators are a friend classes --- all must be since friendship is not inherited
     friend class Creator;
     friend class BoxCreator;
@@ -427,6 +430,9 @@ namespace GFlowSimulation {
     bool _use_forces = true;
     //! \brief If true, and using mpi, create ghost particles.
     bool _use_ghosts = true;
+
+    //! \brief A list of "exception" that have been raised.
+    vector<Exception*> error_handling;
 
     bool _simdata_needs_remake = false;
     bool _simdata_remade       = false;

@@ -117,11 +117,16 @@ namespace GFlowSimulation {
     if (!gflow->getInteractions().empty() && forceMaster!=nullptr && gflow->getUseForces()) {
       // Update data structures.
       structure_updates();
+
+      // The interaction function
+      auto interaction_function = [&] (int id1, int id2, int w_type, RealType, RealType, RealType) {
+        pair_interaction(id1, id2, w_type);
+      };
       
       // Traverse cells, adding particle pairs that are within range of one another to the interaction.
-      traversePairs([&] (int id1, int id2, int w_type, RealType, RealType, RealType) {
-	  pair_interaction(id1, id2, w_type);
-	});
+      traversePairs(interaction_function);
+      // Traverse ghost particle - real particle pairs.
+      if (simData->number_ghosts()>0) traverseGhostPairs(interaction_function);
       
       // Close all interactions.
       forceMaster->close();

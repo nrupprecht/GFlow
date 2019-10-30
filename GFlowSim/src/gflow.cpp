@@ -729,10 +729,18 @@ namespace GFlowSimulation {
   void GFlow::terminate() {
     // If this is the only processor, we don't have to wait for anyone.
     if (topology->getNumProc()==1) _running = false;
-    // Set terminate flag to true.
-    _terminate = true;
-    // Set the terminate time
-    termination_time = elapsed_time;
+    // By doing this, we only record the first termination time.
+    if (!_terminate) {
+      // Set terminate flag to true.
+      _terminate = true;
+      // Set the terminate time
+      termination_time = elapsed_time;
+    }
+  }
+
+  void GFlow::registerException(Exception *ex) {
+    error_handling.push_back(ex);
+    terminate();
   }
 
   inline void GFlow::clearForces() {

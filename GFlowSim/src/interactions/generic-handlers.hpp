@@ -70,11 +70,8 @@ namespace GFlowSimulation {
 
       // Do forces.
       dolist<false>(0);
-      dolist<true> (1);
-
-      // If ghost particles needed to be wrapped, they already had that done when their image
-      // was passed to the processor.
-      dolist<false>(2);
+      dolist<true>(1);
+      dolist<true>(2);
     }
 
   private:
@@ -171,11 +168,8 @@ namespace GFlowSimulation {
 
       // Do forces.
       dolist<false>(verlet[0]);
-      dolist<true> (verlet[1]);
-
-      // If ghost particles needed to be wrapped, they already had that done when their image
-      // was passed to the processor.
-      dolist<false>(verlet[2]); 
+      dolist<true>(verlet[1]);
+      dolist<true>(verlet[2]); 
     }
 
   private:
@@ -267,8 +261,8 @@ namespace GFlowSimulation {
 
       // Do forces.
       dolist<false>(verlet_pairs[0]);
-      dolist<true> (verlet_pairs[1]);
-      dolist<false>(verlet_pairs[2]);
+      dolist<true>(verlet_pairs[1]);
+      dolist<true>(verlet_pairs[2]);
     }
 
   private:

@@ -648,9 +648,9 @@ namespace GFlowSimulation {
     start_timer();
 
     // Check if this is necessary.
-    if (n_ghosts<=0) return;
+    if (_number_ghost<=0) return;
     // Remove ghost particles.
-    for (int i=0; i<n_ghosts; ++i) markForRemoval(_first_ghost+i);
+    for (int i=0; i<_number_ghost; ++i) markForRemoval(_first_ghost+i);
 
     // Stop timer.
     stop_timer();
@@ -722,6 +722,14 @@ namespace GFlowSimulation {
 
   int SimData::number_owned() const {
     return _number - _number_halo - _number_ghost;
+  }
+
+  int SimData::number_ghosts() const {
+    return _number_ghost;
+  }
+
+  int SimData::first_ghost() const {
+    return _first_ghost;
   }
 
   int SimData::ntypes() const {
@@ -1069,7 +1077,7 @@ namespace GFlowSimulation {
     ghost_send_timer.stop_timer();
 
     // Reset n_ghosts.
-    n_ghosts = 0;
+    _number_ghost = 0;
     // Get ghosts from all neighbors.
     ghost_recv_timer.start_timer();
     for (int i=0; i<neighbor_ranks.size(); ++i) {
@@ -1078,7 +1086,7 @@ namespace GFlowSimulation {
       // Receive ghost particles, create new particles for them.
       recv_ghost_sizes[i] = recv_new_particle_data(n_rank, recv_buffer[i], send_ghost_tag);
       // Update number of ghosts.
-      n_ghosts += recv_ghost_sizes[i];
+      _number_ghost += recv_ghost_sizes[i];
     }
     ghost_recv_timer.stop_timer();
 

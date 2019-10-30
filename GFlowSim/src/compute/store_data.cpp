@@ -81,15 +81,16 @@ namespace GFlowSimulation {
 
   void StoreData::store(vector<float>& data) {
     data.clear();
+    int number = simData->number_owned();
 
     // If there are no particles/no data, return
-    if (dataWidth==0 || simData==nullptr || simData->number_owned()==0) return;
+    if (dataWidth==0 || simData==nullptr || number==0) return;
     // Set up data
-    data = vector<float>(dataWidth*simData->number_owned(), 0);
+    data = vector<float>(dataWidth*number, 0);
 
     // Fill the array
     int data_pointer = 0;
-    for (int n=0; n<simData->size(); ++n) {
+    for (int n=0; n<number; ++n) {
       // If not a particle, continue
       if (simData->Type(n)<0) continue;
       // Copy data
