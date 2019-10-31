@@ -216,8 +216,6 @@ namespace GFlowSimulation {
     auto sg = simData->Sg();
     auto type = simData->Type();
 
-    //vector<int> tuple {0,0};
-
     // Traverse all ghost particles.
     for (int id1 = simData->first_ghost(); id1<simData->size(); ++id1) {
       // The index of the cell that ghost particle id1 is in.
@@ -225,14 +223,6 @@ namespace GFlowSimulation {
       RealType *cutoffs_id1 = cutoff_grid[type[id1]];
       // Look at particles in the same cell and in neighboring cells.
       auto cell = cells[index];
-
-      /*
-      if (topology->getRank()==1) {
-        linear_to_tuple(index, tuple);
-        cout << toStrVec(x[id1], 2) << " --> " << tuple[0] << ", " << tuple[1] << " / " << dims[0] << ", " << dims[1] << "\n";
-      }
-      */
-
       // Neighboring cells. The same cell is one of its "neighbors."
       for (auto c : cell.adjacent) {
         for (auto id2 : c->particle_ids) {
@@ -254,20 +244,7 @@ namespace GFlowSimulation {
     // Bin all the particles
     for (int i=0; i<number; ++i)
       if (0<=type[i] && forceMaster->typeInteracts(type[i]))
-        add_to_cell(x[i], i);
-
-    /*
-    if (topology->getRank()==0) {
-      cout << " ----- \n";
-      for (int y=dims[1]-1; y>=0; --y) {
-        for (int x=0; x<dims[0]; ++x) {
-          cout << "A=" << cells[x*dims[1] + y].adjacent.size() << " / N=" << cells[x*dims[1] + y].particle_ids.size() << "\t";
-        }
-        cout << endl;
-      }
-    }
-    */
-    
+        add_to_cell(x[i], i);    
   }
 
   void Domain::calculate_domain_cell_dimensions() {

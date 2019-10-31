@@ -52,7 +52,7 @@ namespace GFlowSimulation {
       // Send ghost list array.
       send_ghost_list.resize(n_size);
       // Request list array.
-      request_list.resize(n_size);
+      request_list = vector<MPI_Request>(n_size);
       // Recieve ghost sizes vector
       recv_ghost_sizes.resize(n_size);
       // Send size.
@@ -342,12 +342,22 @@ namespace GFlowSimulation {
     stop_timer();
   }
 
-  void SimData::updateGhostParticles() {
+  void SimData::startGhostParticleUpdates() {
   #if USE_MPI == 1
     // Return if the arrays are not allocated, or this there is only one processor.
     if (send_ids.empty() || topology->getNumProc()==1) return;
     // Update ghost particles.
-    update_ghost_particles();
+    send_ghost_updates();
+    start_ghost_recv();
+  #endif // USE_MPI == 1
+  }
+
+  void SimData::finishGhostParticleUpdates() {
+  #if USE_MPI == 1
+    // Return if the arrays are not allocated, or this there is only one processor.
+    if (send_ids.empty() || topology->getNumProc()==1) return;
+    // Update ghost particles.
+    recv_ghost_updates();
   #endif // USE_MPI == 1
   }
 
@@ -679,9 +689,6 @@ namespace GFlowSimulation {
 
       // If there are multiple processors.
       if (numProc>1 && !neighbor_ranks.empty()) {
-
-	// TEST Remove bad (NAN) particles
-	removeBadParticles(false);
 
         // Move particles that belong to other domains to those domains, and delete them from here. Then receive
         // particles from other domains that belong to this domain.
@@ -1097,12 +1104,6 @@ namespace GFlowSimulation {
     MPIObject::barrier(barrier_timer);
   }
 
-  inline void SimData::update_ghost_particles() {
-    send_ghost_updates();
-    start_ghost_recv();
-    recv_ghost_updates();
-  }
-
   inline void SimData::send_ghost_updates() {
     // Start mpi timer.
     gflow->startMPIGhostTimer();
@@ -1200,7 +1201,6 @@ namespace GFlowSimulation {
     for (int i=0, id=_first_ghost; i<neighbor_ranks.size(); ++i) {
       int size = recv_ghost_sizes[i];
       if (size>0) {
-
         // Wait for request to be filled.
         MPIObject::wait(request_list[i], ghost_wait_timer);
 
