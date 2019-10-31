@@ -192,9 +192,12 @@ namespace GFlowSimulation {
       
       // --- Do interactions
 
+      // Clear force buffers
+      clearForces();
+
       // This involves velocities, so it should be done before ghost particles, but can be done before or after clear forces.
       reflectPositions();
-      repulsePositions(); // But this needs to be done after clear forces.
+      repulsePositions(); // This needs to be done after clear forces.
       attractPositions(); // This does too.
 
       // Update ghost particles. This the positions of particles on this processor that are ghosts on other processors back to 
@@ -204,9 +207,6 @@ namespace GFlowSimulation {
         simData->finishGhostParticleUpdates(); 
       }
 
-      // Clear force buffers
-      clearForces();
-      
       // Calculate interactions and forces.
       if (_use_forces) {
         // Calculate interactions.
@@ -574,7 +574,7 @@ namespace GFlowSimulation {
 
     // Get a pointer to position data and the number of particles in simData
     RealType **x = simData->X(), **v = simData->V();
-    int size = simData->size();
+    int size = simData->size_owned();
 
     // Reflect all the particles
     for (int d=0; d<sim_dimensions; ++d)
@@ -604,7 +604,7 @@ namespace GFlowSimulation {
 
     // Get a pointer to position data and the number of particles in simData
     RealType **x = simData->X(), **v = simData->V(), **f = simData->F();
-    int size = simData->size();
+    int size = simData->size_owned();
     // Reset boundary force and energy
     boundaryForce = 0;
     boundaryEnergy = 0;
@@ -643,7 +643,7 @@ namespace GFlowSimulation {
     // Get a pointer to position data and the number of particles in simData
     RealType **x = simData->X(), **f = simData->F();
     RealType *im = simData->Im();
-    int size = simData->size();
+    int size = simData->size_owned();
     // Find the center of the simulation
     RealType *center = new RealType[sim_dimensions];
     RealType *X = new RealType[sim_dimensions], *dX = new RealType[sim_dimensions];

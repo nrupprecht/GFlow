@@ -432,15 +432,8 @@ namespace GFlowSimulation {
     //! \brief All the processors that are neighbors.
     vector<int> neighbor_ranks;
 
-    //! \brief A vector of flags that are true if the neighbor may be wrapping adjacent.
-    vector<bool> neighbor_wraps;
-
-
     //! \brief Maps rank to position in neighbor_ranks.
     std::map<int, int> neighbor_map;
-
-    //! \brief A map between global id of ghost particles and local IDs.
-    std::map<int, int> ghost_map_recv;
 
     /// Sending data
 
