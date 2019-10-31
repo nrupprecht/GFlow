@@ -19,8 +19,11 @@ namespace GFlowSimulation {
     //! \brief Default Constructor.
     Interaction(GFlow*);
 
-    //! \brief Calculate all the forces between atoms in the verlet lists.
+    //! \brief Calculate all the forces between all pairs of atoms.
     virtual void interact() const;
+
+    //! \brief Calculate forces involving a ghost particle.
+    virtual void interact_ghosts() const {};
 
     // --- Accessors
 
@@ -86,10 +89,13 @@ namespace GFlowSimulation {
     //!
     //! The pressure formula is: P = N k T/V + 1/(DIMENSIONS*V) \sum_i (r_i \dot F_i)
     //! This term should be used like: virial = \sum_i (r_i \dot F_i)
-    mutable RealType virial = 0;
+    mutable RealType virial = 0.;
 
     //! \brief The potential energy for the interaction.
-    mutable RealType potential = 0;
+    mutable RealType potential = 0.;
+
+    //! \brief If the interaction is about to compute for halo/ghost - real particle pairs, this should be set to 1/2 so potential energy is not overcounted.
+    mutable RealType potential_factor = 1.;
 
     //! \brief Whether to do virial calculation.
     bool do_virial = false;

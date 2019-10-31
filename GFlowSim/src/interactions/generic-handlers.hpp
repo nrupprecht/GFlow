@@ -4,6 +4,8 @@
 #include "../base/interaction.hpp"
 #include "../utility/generic-dimension.hpp"
 
+#include "../base/topology.hpp"
+
 namespace GFlowSimulation {
 
   template<int dims, class ForceType> class VerletList : public Interaction {
@@ -71,7 +73,21 @@ namespace GFlowSimulation {
       // Do forces.
       dolist<false>(0);
       dolist<true>(1);
+    }
+
+    //! \brief Iterate through all 
+    virtual void interact_ghosts() const override {
+      // Common tasks 
+      Interaction::interact_ghosts();
+
+      // Do dimensional check.
+      // \todo Should probably have some sort of global error message system.
+      if (sim_dimensions!=dims) return;
+
+      // Do forces for ghosts.
+      potential_factor = 0.5;
       dolist<true>(2);
+      potential_factor = 1.0;
     }
 
   private:
@@ -169,7 +185,21 @@ namespace GFlowSimulation {
       // Do forces.
       dolist<false>(verlet[0]);
       dolist<true>(verlet[1]);
-      dolist<true>(verlet[2]); 
+    }
+
+    //! \brief Iterate through all 
+    virtual void interact_ghosts() const override {
+      // Common tasks 
+      Interaction::interact_ghosts();
+
+      // Do dimensional check.
+      // \todo Should probably have some sort of global error message system.
+      if (sim_dimensions!=dims) return;
+
+      // Do forces for ghosts.
+      potential_factor = 0.5;
+      dolist<true>(verlet[2]);
+      potential_factor = 1.0;
     }
 
   private:
@@ -262,7 +292,22 @@ namespace GFlowSimulation {
       // Do forces.
       dolist<false>(verlet_pairs[0]);
       dolist<true>(verlet_pairs[1]);
-      dolist<true>(verlet_pairs[2]);
+    }
+
+    //! \brief Iterate through all 
+    virtual void interact_ghosts() const override {
+      // Common tasks 
+      Interaction::interact_ghosts();
+
+      // Do dimensional check.
+      // \todo Should probably have some sort of global error message system.
+      if (sim_dimensions!=dims) return;
+
+      // Do forces for ghosts.
+      potential_factor = 0.5;
+      if (Interaction::topology->getNumProc()>=4) dolist<false>(verlet_pairs[2]);
+      else dolist<true>(verlet_pairs[2]);
+      potential_factor = 1.0;
     }
 
   private:

@@ -192,17 +192,19 @@ namespace GFlowSimulation {
       
       // --- Do interactions
 
+      // This involves velocities, so it should be done before ghost particles, but can be done before or after clear forces.
+      reflectPositions();
+
+      // Update ghost particles. This the positions of particles on this processor that are ghosts on other processors back to 
+      // the other processors. This should be done after VV second half kick happens.
+      if (!_handler_remade && _use_ghosts) simData->startGhostParticleUpdates();
+
       // Clear force buffers
       clearForces();
 
       // Reflect or repulse particles. We only need to wrap before sectorizing particles, but we need to apply forces at every timestep.
-      reflectPositions(); // This only involves velocities, so it could be done before or after clear forces.
       repulsePositions(); // But this needs to be done after clear forces.
       attractPositions(); // This does too.
-
-      // Update ghost particles. This the positions of particles on this processor that are ghosts on other processors back to 
-      // the other processors. This should be done after VV second half kick happens.
-      if (!_handler_remade && _use_ghosts) simData->updateGhostParticles();
 
       // Calculate interactions and forces.
       if (_use_forces) {
@@ -217,6 +219,11 @@ namespace GFlowSimulation {
         }
       }
 
+      // Finish updating ghost particles.
+      if (!_handler_remade && _use_ghosts) simData->finishGhostParticleUpdates();      
+      // Calculate ghost particle forces
+      if (_use_forces) forceMaster->interact_ghosts();
+      
       // Update bodies - this may include forces.
       if (!bodies.empty()) {
         body_timer.start_timer();

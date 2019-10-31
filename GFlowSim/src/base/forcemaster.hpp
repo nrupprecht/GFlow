@@ -29,6 +29,9 @@ namespace GFlowSimulation {
     //! \brief Run all the interactions.
     void interact();
 
+    //! \brief Run all the interactions involving ghosts.
+    void interact_ghosts();
+
     //! \brief Get a pointer to the force that the particle pair belongs in. Null means no force.
     Interaction* getInteraction(int, int);
 

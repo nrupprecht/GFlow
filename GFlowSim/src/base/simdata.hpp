@@ -73,7 +73,10 @@ namespace GFlowSimulation {
     void updateHaloParticles();
 
     //! \brief Update particles on other processors.
-    void updateGhostParticles();
+    void startGhostParticleUpdates();
+
+    //! \brief Receive ghost particle data from other processors.
+    void finishGhostParticleUpdates();
 
     // --- Accessors
 
@@ -402,9 +405,6 @@ namespace GFlowSimulation {
 
     //! \brief Figure out which particles should be ghost particles, and send copies of them to neighboring processors.
     inline void create_ghost_particles();
-
-    //! \brief Exchange ghost particle information with neighboring domains.
-    inline void update_ghost_particles();
 
     //! \brief Send ghost particle updates to other processors.
     inline void send_ghost_updates();
