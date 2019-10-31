@@ -82,9 +82,8 @@ namespace GFlowSimulation {
     for (int d=0; d<sim_dimensions; ++d) {
       int index;
       if (x[d]>process_bounds.max[d]) index = dims[d]-1;
-      else if (x[d]<process_bounds.min[d]) index = 0;
       // Otherwise, find cell index as usual.
-      else index = max(static_cast<int>((x[d] - process_bounds.min[d])*inverseW[d] + dim_shift_down[d]), 0);
+      else index = max(static_cast<int>((x[d] - process_bounds.min[d])*inverseW[d]), 0);
       linear += index*products[d+1];
     }
     // Return the index
