@@ -281,6 +281,7 @@ namespace GFlowSimulation {
     void addIntegerData(string);
 
     friend class ForceMaster;
+    friend class DataMaster;
 
     // --- MPI related timers.
 

@@ -514,39 +514,6 @@ namespace GFlowSimulation {
         fout << "  - Last # exchange received: " << simData->getLastNExchangeRecv() << "\n";
         fout << "\n";
       }
-
-      // Gather data from processors.
-      const int n_timers = 8;
-      double timing[n_timers];
-      timing[0] = simData->send_timer.get_time();
-      timing[1] = simData->recv_timer.get_time();
-      timing[2] = simData->barrier_timer.get_time();
-      timing[3] = simData->exchange_search_timer.get_time();
-      timing[4] = simData->ghost_send_timer.get_time();
-      timing[5] = simData->ghost_recv_timer.get_time();
-      timing[6] = simData->ghost_wait_timer.get_time();
-      timing[7] = simData->ghost_search_timer.get_time();
-
-      double *gather_timing = nullptr;
-      if (rank==0) gather_timing = new double[n_timers*numProc];
-      // Gather data from all processors.
-      MPI_Gather(&timing, n_timers, MPI_DOUBLE, gather_timing, n_timers, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-      if (rank==0 && Base::gflow->getTotalTime()>0 && TimedObject::getTimingOn()) {
-        for (int i=0; i<numProc; ++i) {
-          fout << "MPI - Process " << i << ":\n";
-          fout << "  - Exchange send time:       " << report(gather_timing[i*n_timers + 0]);
-          fout << "  - Exchange receive time:    " << report(gather_timing[i*n_timers + 1]);
-          fout << "  - Exchange barrier time:    " << report(gather_timing[i*n_timers + 2]);
-          fout << "  - Exchange search time:     " << report(gather_timing[i*n_timers + 3]);
-          fout << "  - Ghost send time:          " << report(gather_timing[i*n_timers + 4]);
-          fout << "  - Ghost receive time:       " << report(gather_timing[i*n_timers + 5]);
-          fout << "  - Ghost wait time:          " << report(gather_timing[i*n_timers + 6]);
-          fout << "  - Ghost search time:        " << report(gather_timing[i*n_timers + 7]);
-          fout << "\n";
-        }
-        fout << "\n";
-      }
     }
     #endif // USE_MPI == 1
 
@@ -773,11 +740,27 @@ namespace GFlowSimulation {
       return false;
     }
 
+    // --- Values
+
+    const int left_align = 25;
+    const int column_width = 10;
+    const int rank = topology->getRank();
+    const int num_proc = topology->getNumProc();
+
     // --- Helper functions
 
     auto format_al = [] (string str, int size) -> string {
-      for (int i=0; i<size-str.length(); ++i) str += ' ';
+      int remainder = size-str.length();
+      for (int i=0; i<remainder; ++i) str += ' ';
       return str;
+    };
+
+    auto format_ar = [] (string str, int size) -> string {
+      string str2;
+      int remainder = size-str.length();
+      for (int i=0; i<remainder; ++i) str2 += ' ';
+      str2 += str;
+      return str2;
     };
 
     auto repeat = [] (char c, int size) -> string {
@@ -786,40 +769,112 @@ namespace GFlowSimulation {
       return str;
     };
 
+    auto print_row_int = [&] (const string& descriptor, int val, vector<int>& vec) {
+      MPIObject::mpi_gather(val, vec);
+      if (rank==0) {
+        fout << format_al(descriptor, left_align) << "|";
+        for (int i=0; i<num_proc; ++i) fout << format_ar(toStr(vec[i]), column_width);
+        fout << "\n";
+      }
+    };
+
+    auto print_row_float = [&] (const string& descriptor, float val, vector<float>& vec) {
+      MPIObject::mpi_gather(val, vec);
+      if (rank==0) {
+        fout << format_al(descriptor, left_align) << "|";
+        for (int i=0; i<num_proc; ++i) fout << format_ar(toStr(vec[i]), column_width);
+        fout << "\n";
+      }
+    };
+
+    auto pretty_print_row_float = [&] (const string& descriptor, float val, vector<float>& vec, float normalize, const string& sep) {
+      MPIObject::mpi_gather(val, vec);
+      if (rank==0) {
+        fout << format_al(descriptor, left_align) << "|";
+        for (int i=0; i<num_proc; ++i) fout << format_ar(pprint(vec[i]/normalize, 3, 2)+sep, column_width);
+        fout << "\n";
+      }
+    };
+
     // Print Header
     fout << "**********          RUN LOG          **********\n";
     fout << "*******  GFlow Granular Simulator v 4.0 *******\n";
     fout << "********** 2018, Nathaniel Rupprecht **********\n";
     fout << "***********************************************\n\n";
 
-    const int left_align = 15;
-
     // Print column labels - ranks.
-    fout << repeat(' ', left_align);
+    fout << repeat(' ', left_align+1);
     for (int i=0; i<topology->getNumProc(); ++i)
-      fout << "Rank " << i << "  ";
+      fout << format_ar("Rank "+ toStr(i), column_width);
     fout << "\n";
 
     // Print separator
-    for (int i=0; i<topology->getNumProc(); ++i)
-      fout << "-------";
+    fout << repeat('-', left_align);
+    fout << "X";
+    fout << repeat('-', num_proc*column_width);
     fout << "\n";
 
     // --- Print information for each processor
 
-    fout << format_al("# Neighbors:", left_align);
+    vector<int> int_vector(num_proc, 0);
+    vector<float> float_vector(num_proc, 0.f);
+
+    int neighbors = simData->neighbor_ranks.size();
+    MPIObject::mpi_gather(neighbors, int_vector);
+    fout << format_al("# Neighbors:", left_align) << "|";
+    for (int i=0; i<num_proc; ++i) fout << format_ar(toStr(int_vector[i]), column_width);
     fout << "\n";
 
-    fout << format_al("# Particles:", left_align);
+    int size = simData->number_owned();
+    print_row_int("# Particles:", size, int_vector);
+
+    int ghosts = simData->number_ghosts();
+    print_row_int("# Ghosts:", ghosts, int_vector);
+
+    // Volume of bounds.
+    float volume = handler->getProcessBounds().vol();
+    print_row_float("Volume:", volume, float_vector);
+
+    // Aspect ratio of bounds.
+    float ratio = handler->getProcessBounds().aspect_ratio();
+    print_row_float("Aspect ratio:", ratio, float_vector);
+
+
+    // --- Print separator
+    fout << repeat('-', left_align);
+    fout << "X";
+    fout << repeat('-', num_proc*column_width);
     fout << "\n";
 
-    fout << format_al("# Ghosts:", left_align);
-    fout << "\n";
+    // If timing was done.
+    if (gflow->getTotalTime()>0 && TimedObject::getTimingOn()) {
+      const int n_timers = 8;
+      float timing[n_timers];
+      string labels[n_timers];
+      timing[0] = simData->send_timer.get_time();
+      timing[1] = simData->recv_timer.get_time();
+      timing[2] = simData->barrier_timer.get_time();
+      timing[3] = simData->exchange_search_timer.get_time();
+      timing[4] = simData->ghost_send_timer.get_time();
+      timing[5] = simData->ghost_recv_timer.get_time();
+      timing[6] = simData->ghost_wait_timer.get_time();
+      timing[7] = simData->ghost_search_timer.get_time();
 
-    fout << format_al("Volume:", left_align);
-    fout << "\n";
+      if (rank==0) {
+        labels[0] = "Exchange send time:";
+        labels[1] = "Exchange recv time:";
+        labels[2] = "Exchange barrier time:";
+        labels[3] = "Exchange search time:";
+        labels[4] = "Ghost send time:";
+        labels[5] = "Ghost recv time:";
+        labels[6] = "Ghost wait time:";
+        labels[7] = "Ghost search time:";
+      }
 
-
+      for (int i=0; i<n_timers; ++i) {
+        pretty_print_row_float(labels[i], timing[i], float_vector, 0.01*run_time, "%");
+      }
+    }
 
     // Return success.
     return true;

@@ -174,6 +174,10 @@ namespace GFlowSimulation {
     return missed_target>0 ? ave_miss / missed_target : 0;
   }
 
+  const Bounds& InteractionHandler::getProcessBounds() const {
+    return process_bounds;
+  }
+
   void InteractionHandler::setSampleSize(int s) {
     sample_size = s;
   }

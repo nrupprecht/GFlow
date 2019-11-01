@@ -94,6 +94,9 @@ namespace GFlowSimulation {
     //! \brief Get the average miss.
     RealType getAverageMiss() const;
 
+    //! \brief Get the bounds managed by this process.
+    const Bounds& getProcessBounds() const;
+
     // --- Mutators ---
 
     //! \brief Set the sample size variable.

@@ -103,6 +103,16 @@ namespace GFlowSimulation {
     return v;
   }
 
+  RealType Bounds::aspect_ratio() const {
+    RealType m = max[0] - min[0], M = m;
+    for (int d=0; d<dimensions; ++d) {
+      RealType dx = max[d] - min[d];
+      if (dx>M) M = dx;
+      else if (dx<m) m = dx;
+    }
+    return M/m;
+  }
+
   RealType Bounds::boundary() const {
     RealType v = vol(), bd = 0;
     for (int d=0; d<dimensions; ++d) {

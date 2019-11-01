@@ -45,6 +45,9 @@ namespace GFlowSimulation {
     //! \brief Get the volume of the bounds.
     RealType vol() const;
 
+    //! \brief Get the max/min lengths.
+    RealType aspect_ratio() const;
+
     //! \brief Get the perimeter, area, volume, etc. of the bounds.
     RealType boundary() const;
 

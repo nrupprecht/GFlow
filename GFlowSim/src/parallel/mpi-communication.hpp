@@ -46,6 +46,20 @@ namespace GFlowSimulation {
     //! \brief Perform MPI Reduce, using sum, on an entire buffer, gathering on rank 0. Real type version.
     static void mpi_sum0(RealType*, int);
 
+    static void mpi_gather(vector<int>&);
+
+    static void mpi_gather(const int& data, vector<int>& buffer) {
+      #if USE_MPI == 1
+      MPI_Gather(&data, 1, MPI_INT, buffer.data(), 1, MPI_INT, 0, MPI_COMM_WORLD);
+      #endif
+    }
+
+    static void mpi_gather(const float& data, vector<float>& buffer) {
+      #if USE_MPI == 1
+      MPI_Gather(&data, 1, MPI_FLOAT, buffer.data(), 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+      #endif
+    }
+
     //! \brief Perform an MPI AllReduce, using Min.
     static void mpi_min(RealType&);
 
