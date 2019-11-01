@@ -664,88 +664,91 @@ namespace GFlowSimulation {
     out << "\n";
   }
 
-  inline void DataMaster::writeDomainData(std::ostream&) {
-    
-  }
-
   inline bool DataMaster::writeLogFile(string writeDirectory) {
-    std::ofstream fout(writeDirectory+"/log.txt");
-    if (fout.fail()) {
-      // Write error message
-      std::cerr << "Failed to open file [" << writeDirectory << "/run_log.txt]." << endl;
-      return false;
-    }
-    // Print Header
-    fout << "**********          RUN LOG          **********\n";
-    fout << "*******  GFlow Granular Simulator v 4.0 *******\n";
-    fout << "********** 2018, Nathaniel Rupprecht **********\n";
-    fout << "***********************************************\n\n";
+    if (topology->getRank()==0) {
+      std::ofstream fout(writeDirectory+"/log.txt");
+      if (fout.fail()) {
+        // Write error message
+        std::cerr << "Failed to open file [" << writeDirectory << "/run_log.txt]." << endl;
+        return false;
+      }
+      // Print Header
+      fout << "**********          RUN LOG          **********\n";
+      fout << "*******  GFlow Granular Simulator v 4.0 *******\n";
+      fout << "********** 2018, Nathaniel Rupprecht **********\n";
+      fout << "***********************************************\n\n";
 
-    // --- Print version related data
-    fout << "Github and version info:\n";
-    // Get the github version. 
-    std::ifstream fin("../.git/refs/heads/master");
-    if (fin.fail()) {
-      fout << "  - Github version:            --\n";
-    }
-    else {
-      string commit_hash;
-      fin >> commit_hash;
-      fin.close();
-      fout << "  - Github version:           " << commit_hash << "\n";
-    }
-    fout << "\n";
+      // --- Print version related data
+      fout << "Github and version info:\n";
+      // Get the github version. 
+      std::ifstream fin("../.git/refs/heads/master");
+      if (fin.fail()) {
+        fout << "  - Github version:            --\n";
+      }
+      else {
+        string commit_hash;
+        fin >> commit_hash;
+        fin.close();
+        fout << "  - Github version:           " << commit_hash << "\n";
+      }
+      fout << "\n";
 
-    fout << "SIMD info:\n";
-    fout << "  - SIMD type:                ";
-    switch (SIMD_TYPE) {
-      case 0: {
-        fout << "No SIMD\n";
-        break;
+      fout << "SIMD info:\n";
+      fout << "  - SIMD type:                ";
+      switch (SIMD_TYPE) {
+        case 0: {
+          fout << "No SIMD\n";
+          break;
+        }
+        case 1: {
+          fout << "SSE\n";
+          break;
+        }
+        case 2: {
+          fout << "AVX\n";
+          break;
+        }
+        case 3: {
+          fout << "AVX2\n";
+          break;
+        }
+        case 4: {
+          fout << "MIC\n";
+          break;
+        }
+        default: {
+          fout << "Unrecognized\n";
+          break;
+        }
       }
-      case 1: {
-        fout << "SSE\n";
-        break;
-      }
-      case 2: {
-        fout << "AVX\n";
-        break;
-      }
-      case 3: {
-        fout << "AVX2\n";
-        break;
-      }
-      case 4: {
-        fout << "MIC\n";
-        break;
-      }
-      default: {
-        fout << "Unrecognized\n";
-        break;
-      }
-    }
 
-    // Close file stream
-    fout.close();
+      // Close file stream
+      fout.close();
+    }
 
     // Return success
     return true;
   }
 
   inline bool DataMaster::writeMPIFile(string writeDirectory) {
-    std::ofstream fout(writeDirectory+"/mpi-log.txt");
-    if (fout.fail()) {
-      // Write error message
-      std::cerr << "Failed to open file [" << writeDirectory << "/run_log.txt]." << endl;
-      return false;
-    }
-
     // --- Values
 
     const int left_align = 25;
     const int column_width = 10;
     const int rank = topology->getRank();
     const int num_proc = topology->getNumProc();
+
+    // Stream.
+    std::ofstream fout;
+
+    if (rank==0) {
+      fout.open(writeDirectory+"/mpi-log.txt");
+      if (fout.fail()) {
+        // Write error message
+        std::cerr << "Failed to open file [" << writeDirectory << "/run_log.txt]." << endl;
+        return false;
+      }
+    }
 
     // --- Helper functions
 
@@ -875,6 +878,9 @@ namespace GFlowSimulation {
         pretty_print_row_float(labels[i], timing[i], float_vector, 0.01*run_time, "%");
       }
     }
+
+    // Close the file stream.
+    if (rank==0) fout.close();
 
     // Return success.
     return true;

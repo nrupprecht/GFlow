@@ -90,13 +90,10 @@ namespace GFlowSimulation {
     //! \brief Write particle data to a stream..
     inline void writeParticleData(std::ostream&);
 
-    //! \brief Compute and write data concerning the domain to a stream.
-    inline void writeDomainData(std::ostream&);
-
     //! \brief Write more technical data to a separate file.
     inline bool writeLogFile(string);
 
-    //! \brief Write more technical MPI related data to a separate file.
+    //! \brief Write more technical MPI related data to its own separate file.
     inline bool writeMPIFile(string);
 
     //! \brief Command line arguments.
