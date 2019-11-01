@@ -351,6 +351,9 @@ namespace GFlowSimulation {
     //! \brief A map between global and local ids, <global, local>.
     std::unordered_map<int, int> id_map;
 
+    //! \brief Whether to use the id_map.
+    bool use_id_map = false;
+
     //! \brief A map between local halo particle ids and primary (local) IDs.
     std::vector<int> halo_map;
 
@@ -415,10 +418,10 @@ namespace GFlowSimulation {
 
     //! \brief Pack up the particle data for the specified ids and send it to another processor, optionally deleting the original particles
     //! from this processor.
-    inline void send_particle_data(const vector<int>&, int, vector<RealType>&, MPI_Request*, MPI_Request*, int, bool=false);
+    inline void send_particle_data(const vector<int>&, int, vector<RealType>&, MPI_Request*, int, bool=false);
 
     //! \brief Send particles, so that their position relative to the other processor is minimal. Used for sending ghost particles.
-    inline void send_particle_data_relative(const vector<int>&, int, vector<RealType>&, MPI_Request*, MPI_Request*, int, int);
+    inline void send_particle_data_relative(const vector<int>&, int, vector<RealType>&, MPI_Request*, int, int);
 
     //! \brief Recieve particle information, and use it to create new particles. Return the number of particles recieved.
     inline int recv_new_particle_data(int, vector<RealType>&, int);
@@ -476,8 +479,8 @@ namespace GFlowSimulation {
     //! \brief A buffer for receiving data.
     vector<vector<RealType> > recv_buffer;
 
-    vector<MPI_Request> request_list;
-    MPI_Request request;
+    vector<MPI_Request> recv_request_list;
+    vector<MPI_Request> send_request_list;
 
     // --- What types of data to send to adjacent processors.
 

@@ -623,6 +623,8 @@ namespace GFlowSimulation {
       // Write the log file
       writeLogFile(writeDirectory);
     }
+    // Write MPI log file.
+    if (topology->getNumProc()>1) writeMPIFile(writeDirectory);
 
     // Return success
     return true;
@@ -760,6 +762,66 @@ namespace GFlowSimulation {
     fout.close();
 
     // Return success
+    return true;
+  }
+
+  inline bool DataMaster::writeMPIFile(string writeDirectory) {
+    std::ofstream fout(writeDirectory+"/mpi-log.txt");
+    if (fout.fail()) {
+      // Write error message
+      std::cerr << "Failed to open file [" << writeDirectory << "/run_log.txt]." << endl;
+      return false;
+    }
+
+    // --- Helper functions
+
+    auto format_al = [] (string str, int size) -> string {
+      for (int i=0; i<size-str.length(); ++i) str += ' ';
+      return str;
+    };
+
+    auto repeat = [] (char c, int size) -> string {
+      string str;
+      for (int i=0; i<size; ++i) str += c;
+      return str;
+    };
+
+    // Print Header
+    fout << "**********          RUN LOG          **********\n";
+    fout << "*******  GFlow Granular Simulator v 4.0 *******\n";
+    fout << "********** 2018, Nathaniel Rupprecht **********\n";
+    fout << "***********************************************\n\n";
+
+    const int left_align = 15;
+
+    // Print column labels - ranks.
+    fout << repeat(' ', left_align);
+    for (int i=0; i<topology->getNumProc(); ++i)
+      fout << "Rank " << i << "  ";
+    fout << "\n";
+
+    // Print separator
+    for (int i=0; i<topology->getNumProc(); ++i)
+      fout << "-------";
+    fout << "\n";
+
+    // --- Print information for each processor
+
+    fout << format_al("# Neighbors:", left_align);
+    fout << "\n";
+
+    fout << format_al("# Particles:", left_align);
+    fout << "\n";
+
+    fout << format_al("# Ghosts:", left_align);
+    fout << "\n";
+
+    fout << format_al("Volume:", left_align);
+    fout << "\n";
+
+
+
+    // Return success.
     return true;
   }
 

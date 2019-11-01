@@ -51,14 +51,15 @@ namespace GFlowSimulation {
       send_ids.resize(n_size);
       // Send ghost list array.
       send_ghost_list.resize(n_size);
-      // Request list array.
-      request_list = vector<MPI_Request>(n_size);
+      // Request list arrays.
+      recv_request_list.resize(n_size);
+      send_request_list.resize(n_size);
       // Recieve ghost sizes vector
       recv_ghost_sizes.resize(n_size);
       // Send size.
       send_size.resize(n_size);
       // Set up neighbor map
-      for (int i=0; i<n_size; ++i) neighbor_map.insert(pair<int, int>(neighbor_ranks[i], i));
+      for (int i=0; i<n_size; ++i) neighbor_map.emplace(neighbor_ranks[i], i);
       // Set up buffer list.
       buffer_list.resize(n_size);
       // Set up recv_buffer.
@@ -152,7 +153,7 @@ namespace GFlowSimulation {
     reset_particle(_size);
     // Set type, give a global id
     Type(_size) = 0;
-    id_map.insert(IPair(_size, next_global_id));
+    if (use_id_map) id_map.emplace(_size, next_global_id);
     Id(_size) = next_global_id++;
     ++_number;
     ++_size;
@@ -177,7 +178,7 @@ namespace GFlowSimulation {
       reset_particle(_size);
       // Set type, give a global id
       Type(_size) = 0;
-      id_map.insert(IPair(_size, next_global_id));
+      if (use_id_map) id_map.emplace(_size, next_global_id);
       Id(_size) = next_global_id++;
       ++_number;
       ++_size;
@@ -209,7 +210,7 @@ namespace GFlowSimulation {
     Sg(_size) = sg;
     Im(_size) = im;
     Type(_size) = type;
-    id_map.insert(IPair(_size, next_global_id));
+    if (use_id_map) id_map.emplace(_size, next_global_id);
     Id(_size) = next_global_id++;
     ++_number;
     ++_size;
@@ -225,9 +226,9 @@ namespace GFlowSimulation {
     // If the particle has already been marked for removal, or is beyond the end of the array, return.
     if (Type(id)<0 || id>=_size) return;
     // Mark for removal, clear some data
-    remove_list.insert(id);
+    remove_list.emplace(id);
     Type(id) = -1;
-    id_map.erase(Id(id));
+    if (use_id_map) id_map.erase(Id(id));
     Id(id) = -1;
     // This is probably unneccesary, but set V, F to zero.
     zeroVec(V(id), sim_dimensions);
@@ -563,7 +564,7 @@ namespace GFlowSimulation {
     auto it = vector_data_map.find(name);
     if (it!=vector_data_map.end()) return it->second;
     // Otherwise, create a data entry
-    vector_data_map.insert(SIPair(name, vdata.size()));
+    vector_data_map.emplace(name, vdata.size());
     RealType **address = alloc_array_2d<RealType>(_capacity, sim_dimensions);
     vdata.push_back(address);
     // Return the entry
@@ -575,7 +576,7 @@ namespace GFlowSimulation {
     auto it = scalar_data_map.find(name);
     if (it!=scalar_data_map.end()) return it->second;
     // Otherwise, create a data entry
-    scalar_data_map.insert(SIPair(name, sdata.size()));
+    scalar_data_map.emplace(name, sdata.size());
     RealType *address = new RealType[_capacity];
     sdata.push_back(address);
     // Return the entry
@@ -587,7 +588,7 @@ namespace GFlowSimulation {
     auto it = integer_data_map.find(name);
     if (it!=integer_data_map.end()) return it->second;
     // Otherwise, create a data entry
-    integer_data_map.insert(SIPair(name, idata.size()));
+    integer_data_map.emplace(name, idata.size());
     int *address = new int[_capacity];
     idata.push_back(address);
     // Return the entry
@@ -777,9 +778,12 @@ namespace GFlowSimulation {
   }
 
   int SimData::getLocalID(int global) const {
-    auto it = id_map.find(global);
-    // Return the global iterator. We use -1 to mean "no such particle."
-    return it==id_map.end() ? -1 : it->second;
+    if (use_id_map) {
+      auto it = id_map.find(global);
+      // Return the global iterator. We use -1 to mean "no such particle."
+      return it==id_map.end() ? -1 : it->second;
+    }
+    return -2;
   }
 
   int SimData::getNextGlobalID() const {
@@ -852,17 +856,17 @@ namespace GFlowSimulation {
   }
 
   void SimData::addVectorData(string name) {
-    vector_data_map.insert(SIPair(name, vector_data_map.size()));
+    vector_data_map.emplace(name, vector_data_map.size());
     vdata.push_back(nullptr);
   }
 
   void SimData::addScalarData(string name) {
-    scalar_data_map.insert(SIPair(name, scalar_data_map.size()));
+    scalar_data_map.emplace(name, scalar_data_map.size());
     sdata.push_back(nullptr);
   }
 
   void SimData::addIntegerData(string name) {
-    integer_data_map.insert(SIPair(name, integer_data_map.size()));
+    integer_data_map.emplace(name, integer_data_map.size());
     idata.push_back(nullptr);
   }
 
@@ -934,10 +938,12 @@ namespace GFlowSimulation {
     for (auto i : idata) std::swap(i[id1], i[id2]);
     
     // Swap global ids
-    auto it1 = id_map.find(g1);
-    auto it2 = id_map.find(g2);
-    if (id_map.end()!=it1 && id_map.end()!=it2) 
-      std::swap(it1->second, it2->second);
+    if (use_id_map) {
+      auto it1 = id_map.find(g1);
+      auto it2 = id_map.find(g2);
+      if (id_map.end()!=it1 && id_map.end()!=it2) 
+        std::swap(it1->second, it2->second);
+    }
 
     // Set flag
     setNeedsRemake(true);
@@ -1023,7 +1029,7 @@ namespace GFlowSimulation {
     // Send particle information, deleting the particles that we send.
     send_timer.start_timer();
     for (int i=0; i<neighbor_ranks.size(); ++i) 
-      send_particle_data(send_ids[i], neighbor_ranks[i], buffer_list[i], &request_list[i], &request, send_particle_tag, true);
+      send_particle_data(send_ids[i], neighbor_ranks[i], buffer_list[i], &send_request_list[i], send_particle_tag, true);
     send_timer.stop_timer();
 
     // Stop mpi timer. Particle removal counts as a simdata update task.
@@ -1049,8 +1055,11 @@ namespace GFlowSimulation {
     // Stop mpi timer.
     gflow->stopMPIExchangeTimer();
 
+    // Wait for send request to be filled, so resources can be released.
+    MPIObject::wait_all(send_request_list);
+
     // Barrier so everyone syncs up here
-    MPIObject::barrier(barrier_timer);
+    //MPIObject::barrier(barrier_timer); // DON'T NEED THIS (?)
   }
 
   inline void SimData::create_ghost_particles() {
@@ -1080,7 +1089,7 @@ namespace GFlowSimulation {
     ghost_send_timer.start_timer();
     // Send particle information, but do not delete the original particles, since they will be ghosts on the other processors.
     for (int i=0; i<neighbor_ranks.size(); ++i)
-      send_particle_data_relative(send_ghost_list[i], neighbor_ranks[i], buffer_list[i], &request_list[i], &request, send_ghost_tag, i);
+      send_particle_data_relative(send_ghost_list[i], neighbor_ranks[i], buffer_list[i], &send_request_list[i], send_ghost_tag, i);
     ghost_send_timer.stop_timer();
 
     // Reset n_ghosts.
@@ -1097,11 +1106,14 @@ namespace GFlowSimulation {
     }
     ghost_recv_timer.stop_timer();
 
+    // Wait on send requests so resources can be released.
+    MPIObject::wait_all(send_request_list);
+    
     // Stop mpi timer.
     gflow->stopMPIGhostTimer();
 
     // Sync up after ghost exchange
-    MPIObject::barrier(barrier_timer);
+    //MPIObject::barrier(barrier_timer); // DON'T NEED THIS (?)
   }
 
   inline void SimData::send_ghost_updates() {
@@ -1154,7 +1166,7 @@ namespace GFlowSimulation {
           ++j;
         }
         // Send the data (non-blocking) back to the processor.
-        MPI_Isend(buffer_list[i].data(), size*ghost_data_width, MPI_FLOAT, neighbor_ranks[i], update_ghost_tag, MPI_COMM_WORLD, &request);
+        MPI_Isend(buffer_list[i].data(), size*ghost_data_width, MPI_FLOAT, neighbor_ranks[i], update_ghost_tag, MPI_COMM_WORLD, &send_request_list[i]);
       }
     }
     ghost_send_timer.stop_timer();
@@ -1180,7 +1192,7 @@ namespace GFlowSimulation {
         // Make sure buffer size is good.
         if (recv_buffer[i].size() < size*ghost_data_width) recv_buffer[i].resize(size*ghost_data_width);
         // Start the non-blocking receieve.
-        MPI_Irecv(recv_buffer[i].data(), size*ghost_data_width, MPI_FLOAT, neighbor_ranks[i], update_ghost_tag, MPI_COMM_WORLD, &request_list[i]);
+        MPI_Irecv(recv_buffer[i].data(), size*ghost_data_width, MPI_FLOAT, neighbor_ranks[i], update_ghost_tag, MPI_COMM_WORLD, &recv_request_list[i]);
       }
     }
     ghost_recv_timer.stop_timer();
@@ -1202,7 +1214,7 @@ namespace GFlowSimulation {
       int size = recv_ghost_sizes[i];
       if (size>0) {
         // Wait for request to be filled.
-        MPIObject::wait(request_list[i], ghost_wait_timer);
+        MPIObject::wait(recv_request_list[i], ghost_wait_timer);
 
         // Unpack the position data into the ghost particles.
         for (int j=0; j<size; ++j, ++id) {
@@ -1222,11 +1234,14 @@ namespace GFlowSimulation {
       }
     }
 
+    // Wait for the data that we sent in send_ghost_updates to be sent, so resources can be released.
+    MPIObject::wait_all(send_request_list);
+
     // Stop mpi timer.
     gflow->stopMPIGhostTimer();
   }
 
-  inline void SimData::send_particle_data(const vector<int>& send_ids, int n_rank, vector<RealType>& buffer, MPI_Request* size_request, MPI_Request* send_request, int tag, bool remove) {
+  inline void SimData::send_particle_data(const vector<int>& send_ids, int n_rank, vector<RealType>& buffer, MPI_Request* send_request, int tag, bool remove) {
     // How many particles to send.
     int size = send_ids.size();
     // Tell the processor how many particles to expect. Use a non-blocking send, store the request 
@@ -1250,9 +1265,10 @@ namespace GFlowSimulation {
       // Send the data (non-blocking).
       MPI_Isend(buffer.data(), size*data_width, MPI_FLOAT, n_rank, tag, MPI_COMM_WORLD, send_request);
     }
+    else *send_request = MPI_REQUEST_NULL;
   }
 
-  inline void SimData::send_particle_data_relative(const vector<int>& send_ids, int n_rank, vector<RealType>& buffer, MPI_Request* size_request, MPI_Request* send_request, int tag, int n_index) {
+  inline void SimData::send_particle_data_relative(const vector<int>& send_ids, int n_rank, vector<RealType>& buffer, MPI_Request* send_request, int tag, int n_index) {
     // How many particles to send.
     int size = send_ids.size();
     // Tell the processor how many particles to expect. Use a non-blocking send, store the request 
@@ -1285,6 +1301,7 @@ namespace GFlowSimulation {
       // Send the data (non-blocking).
       MPI_Isend(buffer.data(), size*data_width, MPI_FLOAT, n_rank, tag, MPI_COMM_WORLD, send_request);
     }
+    else *send_request = MPI_REQUEST_NULL;
   }
 
   inline int SimData::recv_new_particle_data(int n_rank, vector<RealType>& buffer, int tag) {
@@ -1294,8 +1311,6 @@ namespace GFlowSimulation {
     MPIObject::recv_single(size, n_rank, send_size_tag);
     // Get the actual particles, if there are any.
     if (size>0) {
-      // Vectors for unpacking.
-      Vec X(sim_dimensions), V(sim_dimensions);
       // Resize buffer if neccessary.
       if (buffer.size()<size*data_width) buffer.resize(size*data_width); 
       // Receive buffer.

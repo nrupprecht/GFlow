@@ -96,6 +96,9 @@ namespace GFlowSimulation {
     //! \brief Write more technical data to a separate file.
     inline bool writeLogFile(string);
 
+    //! \brief Write more technical MPI related data to a separate file.
+    inline bool writeMPIFile(string);
+
     //! \brief Command line arguments.
     int argc = 0;
     char **argv = nullptr;

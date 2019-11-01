@@ -24,6 +24,9 @@ namespace GFlowSimulation {
     //! \brief Call for an mpi wait, use the timer to time how long the wait lasted.
     static void wait(MPI_Request&, TimedObject&);
 
+    //! \brief Wait all on a vector of mpi requests.
+    static void wait_all(vector<MPI_Request>&);
+
     //! \brief Test whether a request has been fulfilled. Non-blocking.
     static bool test(MPI_Request&);
     #endif

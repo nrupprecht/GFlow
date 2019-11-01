@@ -42,6 +42,10 @@ namespace GFlowSimulation {
     timer.stop_timer();
   }
 
+  void MPIObject::wait_all(vector<MPI_Request>& requests) {
+    MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
+  }
+
   bool MPIObject::test(MPI_Request& request) {
     int valid = 0;
     MPI_Test(&request, &valid, MPI_STATUS_IGNORE);
