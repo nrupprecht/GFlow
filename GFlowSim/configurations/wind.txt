@@ -57,7 +57,7 @@ Fill: Area {
     : 1 + 2*MinR
   }
 
-  Velocity: Zero
+  Velocity: Velocity, 0
 }
 
 Fill: Circle {

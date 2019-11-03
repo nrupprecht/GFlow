@@ -51,7 +51,7 @@ Fill: Area {
     TypeA : 1
   }
 
-  Velocity: Zero
+  Velocity: Velocity, 0, 0
 }
 
 Particle {
