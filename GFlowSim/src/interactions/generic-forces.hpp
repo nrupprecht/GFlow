@@ -444,7 +444,7 @@ namespace GFlowSimulation {
       }
 
       // Now do interactions.
-      Handler::interact();
+      if (om!=nullptr && tq!=nullptr) Handler::interact();
     }
 
     void force(const int id1, const int id2, const RealType R1, const RealType R2, const RealType rsqr, RealType *X, RealType **f) const {
@@ -491,7 +491,7 @@ namespace GFlowSimulation {
       subtract_vec<dims>(V, Vn, Vt);
 
       // Angular velocities.
-      if (dims==2 && om!=nullptr && tq!=nullptr && mu>0) {
+      if (dims==2 && mu>0) {
         // Tangential normal direction for 2d.
         RealType Nt[dims];
         Nt[0] = -X[1];
@@ -525,11 +525,12 @@ namespace GFlowSimulation {
       if (Interaction::do_potential) {
         //Interaction::potential += 0;
       }
+      */
       // Calculate virial
       if (Interaction::do_virial) {
         Interaction::virial += Fn*r;
       }
-      */
+      
     }
 
     void setKn(const RealType kn) { K_n = 0<=kn ? kn : K_n; }
@@ -617,7 +618,7 @@ namespace GFlowSimulation {
       }
 
       // Now do interactions.
-      Handler::interact();
+      if (om!=nullptr && tq!=nullptr) Handler::interact();
     }
 
     void force(const int id1, const int id2, const RealType R1, const RealType R2, const RealType rsqr, RealType *X, RealType **f) const {
@@ -658,7 +659,7 @@ namespace GFlowSimulation {
       subtract_vec<dims>(V, Vn, Vt);
 
       // Angular velocities.
-      if (dims==2 && om!=nullptr && tq!=nullptr) {
+      if (dims==2) {
         // Tangential normal direction for 2d.
         RealType Nt[dims];
         Nt[0] = -X[1];
@@ -785,7 +786,7 @@ namespace GFlowSimulation {
       }
 
       // Now do interactions.
-      Handler::interact();
+      if (th!=nullptr && om!=nullptr && tq!=nullptr) Handler::interact();
     }
 
     void force(const int id1, const int id2, const RealType R1, const RealType R2, const RealType rsqr, RealType *X, RealType **f) const {

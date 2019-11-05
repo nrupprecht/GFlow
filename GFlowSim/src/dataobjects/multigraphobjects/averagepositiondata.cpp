@@ -18,7 +18,7 @@ namespace GFlowSimulation {
 
     auto x  = Base::simData->X();
     auto im = Base::simData->Im();
-    int size = Base::simData->size(), *type = Base::simData->Type();
+    int size = Base::simData->size_owned(), *type = Base::simData->Type();
     // Compute totals
     int count = 0;
     for (int n=0; n<size; ++n)
@@ -27,8 +27,6 @@ namespace GFlowSimulation {
           ave[d] += x[n][d];
         ++count;
       }
-    // Check if there was anything to store
-    if (count==0) return;
 
     // Create an entry with the average data. This function handles multiprocessor runs correctly.
     if (useAve) gatherAverageData(Base::gflow->getElapsedTime(), ave, count);

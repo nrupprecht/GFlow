@@ -62,6 +62,7 @@ int main(int argc, char **argv) {
   bool averages = false;
   bool aveV = false;
   bool aveP = false;
+  bool dev = false;
   bool minDistances = false;
   bool percolation = false;
   bool psnapshot = false;
@@ -119,6 +120,7 @@ int main(int argc, char **argv) {
   parser.get("averages", averages);
   parser.get("aveV", aveV);
   parser.get("aveP", aveP);
+  parser.get("dev", dev);
   parser.get("minDistances", minDistances);
   parser.get("percolation", percolation);
   parser.get("psnapshot", psnapshot);
@@ -239,6 +241,7 @@ int main(int argc, char **argv) {
   if (averages)    gflow->addDataObject(new AverageData(gflow));
   if (aveV)        gflow->addDataObject(new AverageVelocityData(gflow));
   if (aveP)        gflow->addDataObject(new AveragePositionData(gflow));
+  if (dev)         gflow->addDataObject(new OscillationData(gflow));
   if (minDistances)gflow->addDataObject(new MinInteractingDistance(gflow));
   if (percolation) gflow->addDataObject(new PercolationData(gflow, skin));
   if (psnapshot)   gflow->addDataObject(new PercolationSnapshot(gflow, skin));

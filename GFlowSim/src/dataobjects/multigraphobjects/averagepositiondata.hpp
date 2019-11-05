@@ -7,11 +7,11 @@ namespace GFlowSimulation {
  
   class AveragePositionData : public MultiGraphObject {
   public:
-    //! @brief Constructor
+    //! \brief Constructor
     AveragePositionData(GFlow*);
 
-    //! @brief Collect the position data from simdata --- happens during the post-step phase
-    virtual void post_step();
+    //! \brief Collect the position data from simdata --- happens during the post-step phase
+    virtual void post_step() override;
 
   private:
     //! \brief Whether to record average position, or sum of positions.

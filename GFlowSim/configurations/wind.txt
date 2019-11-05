@@ -55,7 +55,7 @@ Fill: Area {
 
   Excluded: Sphere {
     : 0, 0
-    : 1 + 2*MinR
+    : Radius + 2*MinR
   }
 
   Velocity: Velocity, 0
