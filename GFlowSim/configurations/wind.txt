@@ -9,6 +9,7 @@ Var: Length=25
 Var: Height=10
 Var: Front=10
 Var: Mu=0.25
+Var: Radius=1
 
 // This is a 2d simulation
 Dimensions: 2
@@ -63,6 +64,7 @@ Fill: Area {
 Fill: Circle {
   Center: 0, 0
   Sigma: MinR
+  Radius: Radius
 }
 
 Reconcile: Remove=0.9
