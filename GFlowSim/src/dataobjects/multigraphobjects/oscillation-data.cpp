@@ -32,24 +32,20 @@ namespace GFlowSimulation {
   }
 
   void OscillationData::post_integrate() {
-
-    cout << "Post integrate" << endl;
-
-    Vec ave(sim_dimensions);
-    // Sum.
-    for (auto entry : multi_data) {
-      for (int i=1; i<entry.size(); ++i)
-        ave[i-1] += entry[i];
+    if (topology->getRank()==0) {
+      // Sum.
+      Vec ave(sim_dimensions);
+      for (int i=0; i<ndata_points; ++i)
+	for (int j=1; j<ndata+1; ++j)
+	  ave[j-1] += multi_data[j][i];
+      // Compute average value
+      for (int i=0; i<sim_dimensions; ++i) ave[i] /= multi_data.size();
+      // Subtract away average value
+      for (auto entry : multi_data) {
+	for (int i=1; i<entry.size(); ++i)
+	  entry[i] -= ave[i-1];
+      }
     }
-    // Compute average value
-    for (int i=0; i<sim_dimensions; ++i) ave[i] /= multi_data.size();
-    // Subtract away average value
-    for (auto entry : multi_data) {
-      for (int i=1; i<entry.size(); ++i)
-        entry[i] -= ave[i-1];
-    }
-
-    cout << "Done" << endl;
   }
 
 }
