@@ -60,6 +60,28 @@ namespace GFlowSimulation {
       #endif
     }
 
+    static void mpi_broadcast(int& data, int root=0) {
+      #if USE_MPI == 1
+      MPI_Bcast(&data, 1, MPI_INT, root, MPI_COMM_WORLD);
+      #endif
+    }
+
+    static void mpi_broadcast(char* data, int size, int root=0) {
+      #if USE_MPI == 1
+      MPI_Bcast(data, size, MPI_CHAR, root, MPI_COMM_WORLD);
+      #endif
+    }
+
+    static void mpi_broadcast(int* data, int size, int root=0) {
+      #if USE_MPI == 1
+      MPI_Bcast(data, size, MPI_INT, root, MPI_COMM_WORLD);
+      #endif
+    }
+
+    static void mpi_broadcast(vector<int>& data, int root=0) {
+      mpi_broadcast(data.data(), data.size(), root);
+    }
+
     //! \brief Perform an MPI AllReduce, using Min.
     static void mpi_min(RealType&);
 

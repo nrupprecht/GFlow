@@ -30,10 +30,47 @@ using namespace GFlowSimulation;
 int main(int argc, char **argv) {
   // MPI related.
   int rank(0), numProc(1);
+
+  // So arguments can be passed around.
+  char **processor_argv = argv;
+
   #if USE_MPI == 1
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &numProc);
+
+  // Make sure everyone gets the arguments supplied to the root processor.
+  MPIObject::mpi_broadcast(argc);
+  vector<int> arg_sizes(argc, 0);
+  // Allocate processor arguments.
+  processor_argv = new char*[argc];
+
+  // Broadcast to everyone else.
+  if (rank==0) {
+    // Get the sizes of each argument, so we can send them.
+    for (int i=0; i<argc; ++i) arg_sizes[i] = strlen(argv[i]);
+    // Broadcast sizes
+    MPIObject::mpi_broadcast(arg_sizes);
+    // Broadcast strings.
+    for (int i=0; i<argc; ++i) {
+      processor_argv[i] = new char[arg_sizes[i]+1];
+      processor_argv[i][arg_sizes[i]] = '\0';
+      copyVec(argv[i], processor_argv[i], arg_sizes[i]);
+      MPIObject::mpi_broadcast(processor_argv[i], arg_sizes[i]);
+    }
+  }
+  // Receive arguments from rank 0.
+  else {
+    // Receive sizes broadcast.
+    MPIObject::mpi_broadcast(arg_sizes);
+    // Receive strings.
+    for (int i=0; i<argc; ++i) {
+      processor_argv[i] = new char[arg_sizes[i]+1];
+      processor_argv[i][arg_sizes[i]] = '\0';
+      MPIObject::mpi_broadcast(processor_argv[i], arg_sizes[i]);
+    }
+  }
+
   // Wait here.
   MPIObject::barrier();
   #endif
@@ -100,7 +137,7 @@ int main(int argc, char **argv) {
   RealType temperature = 0;
 
   // --- For getting command line arguments
-  ArgParse parser(argc, argv);
+  ArgParse parser(argc, processor_argv);
   parser.get("debug", debug_flag); 
   parser.get("load", load);
   parser.get("animate", animate);
