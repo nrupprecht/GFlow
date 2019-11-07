@@ -42,10 +42,6 @@ namespace GFlowSimulation {
     return numProc;
   }
 
-  MPIObject& Topology::getMPIObject() {
-    return mpi;
-  }
-
   bool Topology::is_initialized() const {
     return sim_dimensions>0 && process_bounds.vol()>0;
   }

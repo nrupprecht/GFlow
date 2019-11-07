@@ -49,9 +49,6 @@ namespace GFlowSimulation {
     //! \brief Get the number of processors for the MPI run.
     int getNumProc() const;
 
-    //! \brief Return the mpi object.
-    MPIObject& getMPIObject();
-
     //! \brief Return true if the topology is set up.
     bool is_initialized() const;
 
@@ -76,8 +73,6 @@ namespace GFlowSimulation {
 
     //! \brief The rank of this processor.
     int rank;
-
-    MPIObject mpi;
   };
 
 }

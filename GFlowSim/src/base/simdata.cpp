@@ -111,6 +111,19 @@ namespace GFlowSimulation {
     ghost_search_timer.clear_timer();
     // Remove any bad particles.
     removeBadParticles();
+
+    // Make sure data widths are up to date.
+    #if USE_MPI == 1
+    // Set data width - send all data to adjacent processors when migrating ghosts.
+    // \todo We don't actually need to migrate force data.
+    data_width = vdata.size()*sim_dimensions + sdata.size() + idata.size();
+    // Set ghost data width - position (sim_dimensions).
+    ghost_data_width = sim_dimensions;
+    // Do we need to send velocity?
+    if (send_ghost_velocity) ghost_data_width += sim_dimensions;
+    // Do we need to send angular velocity?
+    if (send_ghost_omega) ghost_data_width += 1; // In two dimensions, omega is a scalar.
+    #endif // USE_MPI == 1
   }
 
   void SimData::post_integrate() {

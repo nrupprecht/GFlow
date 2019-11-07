@@ -218,7 +218,7 @@ namespace GFlowSimulation {
     RealType candidate = inv_sphere_volume((2.2*target_list_size)/rho + 0.5*sphere_volume(max_small_sigma, sim_dimensions), sim_dimensions) - 2*max_small_sigma;
     skin_depth = max(static_cast<RealType>(0.5 * max_small_sigma), candidate);
     // Use the same skin depth on all processors - take the average.
-    if (topology) {
+    if (topology && topology->getNumProc()>1) {
       MPIObject::mpi_sum(skin_depth);
       skin_depth /= static_cast<RealType>(topology->getNumProc());
     }
@@ -234,7 +234,7 @@ namespace GFlowSimulation {
     // Find average sigma
     RealType sigma = 0, max_sigma = 0;
     int count = 0;
-    for (int n=0; n<simData->size(); ++n) {
+    for (int n=0; n<simData->size_owned(); ++n) {
       // Check that the type is valid, and is an interacting type
       int type = simData->Type(n);
       if (type<0 || !forceMaster->typeInteracts(type)) 

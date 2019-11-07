@@ -280,6 +280,11 @@ namespace GFlowSimulation {
     //! \brief Add an integer data entry.
     void addIntegerData(string);
 
+    //! \brief Set the send ghost velocity flag.
+    void setSendGhostVelocity(bool b) { send_ghost_velocity = b; }
+    //! \brief Set the send ghost omega flag.
+    void setSendGhostOmega(bool b) { send_ghost_omega = b; }
+
     friend class ForceMaster;
     friend class DataMaster;
 
@@ -489,12 +494,6 @@ namespace GFlowSimulation {
     bool send_ghost_velocity = false;
     //! \brief Whether ghost particles' angular velocity should be sent.
     bool send_ghost_omega = false;
-
-public:
-
-    void setSendGhostVelocity(bool b) { send_ghost_velocity = b; }
-    void setSendGhostOmega(bool b) { send_ghost_omega = b; }
-
     #endif
   };
 

@@ -150,8 +150,9 @@ namespace GFlowSimulation {
     _terminate = false;
     elapsed_time = 0;
     iter = 0;
-    // Set up all objects
-    for (auto m : modifiers) m->pre_integrate();
+    // Set up all objects.
+    // Put modifiers first so if anything is modified, the other objects can react to it.
+    for (auto m : modifiers) m->pre_integrate(); 
     for (auto b : bodies) b->pre_integrate();
     simData->pre_integrate();
     integrator->pre_integrate();

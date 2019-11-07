@@ -36,8 +36,9 @@ int main(int argc, char **argv) {
 
   #if USE_MPI == 1
   MPI_Init(&argc, &argv);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &numProc);
+  // Get rank and number of processors.
+  rank = MPIObject::getRank();
+  numProc = MPIObject::getNumProc();
 
   // Make sure everyone gets the arguments supplied to the root processor.
   MPIObject::mpi_broadcast(argc);

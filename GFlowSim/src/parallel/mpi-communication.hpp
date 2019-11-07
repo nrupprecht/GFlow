@@ -4,105 +4,223 @@
 #include "../utility/utility.hpp"
 #include "../other/timedobject.hpp"
 
-namespace GFlowSimulation {
- 
-  class MPIObject {
-  public:
-    //! \brief Gets the rank of this processor.
-    static int getRank();
-    //! \brief Gets the total number of processors.
-    static int getNumProc();
+namespace MPIObject {
 
-    //! \brief Call an mpi barrier.
-    static void barrier();
-    //! \brief Call an mpi barrier, use the timer to time how long the barrier lasted.
-    static void barrier(TimedObject&);
+  using namespace GFlowSimulation;
 
-    #if USE_MPI == 1 // MPI_Request needs mpi to compile
-    //! \brief Call for an mpi wait.
-    static void wait(MPI_Request&);
-    //! \brief Call for an mpi wait, use the timer to time how long the wait lasted.
-    static void wait(MPI_Request&, TimedObject&);
+  #if USE_MPI == 1
+  //! \brief MPI Type functions. This allows MPI types to be statically determined in template functions.
+  template<typename T> inline MPI_Datatype mpi_type() { return MPI_INT; }
+  template<> inline MPI_Datatype mpi_type<float>() { return MPI_FLOAT; }
+  template<> inline MPI_Datatype mpi_type<double>() { return MPI_DOUBLE; }
+  template<> inline MPI_Datatype mpi_type<char>() { return MPI_CHAR; }
+  #endif // USE_MPI == 1
 
-    //! \brief Wait all on a vector of mpi requests.
-    static void wait_all(vector<MPI_Request>&);
-
-    //! \brief Test whether a request has been fulfilled. Non-blocking.
-    static bool test(MPI_Request&);
+  inline int getRank() {
+    #if USE_MPI == 1
+    int rank = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    return rank;
+    #else 
+    return 0;
     #endif
+  }
 
-    //! \brief Perform MPI AllReduce, using sum. Integer version.
-    static void mpi_sum(int&);
+  inline int getNumProc() {
+    #if USE_MPI == 1
+    int numProc = 0;
+    MPI_Comm_size(MPI_COMM_WORLD, &numProc);
+    return numProc; 
+    #else 
+    return 1;
+    #endif 
+  }
 
-    //! \brief Perform MPI Reduce, using sum, gathering on rank 0, using sum. Integer version.
-    static void mpi_sum0(int&);
+  inline void barrier() {
+    #if USE_MPI == 1
+    // Call the general barrier
+    MPI_Barrier(MPI_COMM_WORLD);
+    #endif
+  }
 
-    //! \brief Perform MPI AllReduce, using sum. Real type version.
-    static void mpi_sum(RealType&);
+  inline void barrier(TimedObject &timer) {
+    #if USE_MPI == 1
+    // Call the general barrier
+    timer.start_timer();
+    MPI_Barrier(MPI_COMM_WORLD);
+    timer.stop_timer();
+    #endif
+  }
 
-    //! \brief Perform MPI Reduce, using sum, gathering on rank 0. Real type version.
-    static void mpi_sum0(RealType&);
+  inline void wait(MPI_Request& request) {
+    #if USE_MPI == 1
+    MPI_Wait(&request, MPI_STATUS_IGNORE);
+    #endif
+  }
+  
+  inline void wait(MPI_Request& request, TimedObject& timer) {
+    #if USE_MPI == 1
+    timer.start_timer();
+    MPI_Wait(&request, MPI_STATUS_IGNORE);
+    timer.stop_timer();
+    #endif
+  }
 
-    //! \brief Perform MPI Reduce, using sum, on an entire buffer, gathering on rank 0. Real type version.
-    static void mpi_sum0(RealType*, int);
+  inline void wait_all(vector<MPI_Request>& requests) {
+    #if USE_MPI == 1
+    MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
+    #endif
+  }
 
-    static void mpi_gather(vector<int>&);
+  inline bool test(MPI_Request& request) {
+    #if USE_MPI == 1
+    int valid = 0;
+    MPI_Test(&request, &valid, MPI_STATUS_IGNORE);
+    return (valid!=0);
+    #else
+    return true;
+    #endif // USE_MPI == 1
+  }
 
-    static void mpi_gather(const int& data, vector<int>& buffer) {
-      #if USE_MPI == 1
-      MPI_Gather(&data, 1, MPI_INT, buffer.data(), 1, MPI_INT, 0, MPI_COMM_WORLD);
-      #endif
-    }
+  template<typename T> inline void mpi_sum(T& term) {
+    #if USE_MPI == 1
+    T sum = 0;
+    MPI_Allreduce(&term, &sum, 1, mpi_type<T>(), MPI_SUM, MPI_COMM_WORLD);
+    term = sum;
+    #endif
+  }
 
-    static void mpi_gather(const float& data, vector<float>& buffer) {
-      #if USE_MPI == 1
-      MPI_Gather(&data, 1, MPI_FLOAT, buffer.data(), 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
-      #endif
-    }
+  template<typename T> inline void mpi_sum0(T& term) {
+    #if USE_MPI == 1
+    T sum = 0;
+    MPI_Reduce(&term, &sum, 1, mpi_type<T>(), MPI_SUM, 0, MPI_COMM_WORLD);
+    term = sum;
+    #endif
+  }
 
-    static void mpi_broadcast(int& data, int root=0) {
-      #if USE_MPI == 1
-      MPI_Bcast(&data, 1, MPI_INT, root, MPI_COMM_WORLD);
-      #endif
-    }
+  template<typename T> inline void mpi_sum0(T *buffer, int counts) {
+    #if USE_MPI == 1
+    int rank = getRank();
+    // If rank 0, gather to the same buffer.
+    if (rank==0) MPI_Reduce(MPI_IN_PLACE, buffer, counts, mpi_type<T>(), MPI_SUM, 0, MPI_COMM_WORLD);
+    else MPI_Reduce(buffer, buffer, counts, mpi_type<T>(), MPI_SUM, 0, MPI_COMM_WORLD);
+    #endif
+  }
 
-    static void mpi_broadcast(char* data, int size, int root=0) {
-      #if USE_MPI == 1
-      MPI_Bcast(data, size, MPI_CHAR, root, MPI_COMM_WORLD);
-      #endif
-    }
+  template<typename T> inline void mpi_min(T& val) {
+    #if USE_MPI == 1
+    T min_val = 0;
+    MPI_Allreduce(&val, &min_val, 1, mpi_type<T>(), MPI_MIN, MPI_COMM_WORLD);
+    val = min_val;
+    #endif
+  }
 
-    static void mpi_broadcast(int* data, int size, int root=0) {
-      #if USE_MPI == 1
-      MPI_Bcast(data, size, MPI_INT, root, MPI_COMM_WORLD);
-      #endif
-    }
+  template<typename T> inline void mpi_max(T& val) {
+    #if USE_MPI == 1
+    T max_val = 0;
+    MPI_Allreduce(&val, &max_val, 1, mpi_type<T>(), MPI_MAX, MPI_COMM_WORLD);
+    val = max_val;
+    #endif
+  }
 
-    static void mpi_broadcast(vector<int>& data, int root=0) {
-      mpi_broadcast(data.data(), data.size(), root);
-    }
+  inline void mpi_and(bool& val) {
+    #if USE_MPI == 1
+    int v = val ? 1 : 0, gv = 1;
+    MPI_Allreduce(&v, &gv, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
+    val = gv;
+    #endif
+  }
 
-    //! \brief Perform an MPI AllReduce, using Min.
-    static void mpi_min(RealType&);
+  inline void mpi_or(bool& val) {
+    #if USE_MPI == 1
+    int v = val ? 1 : 0, gv = 1;
+    MPI_Allreduce(&v, &gv, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+    val = gv;
+    #endif
+  }
 
-    //! \brief Perform an MPI AllReduce, using Max.
-    static void mpi_max(RealType&);
+  template<typename T> inline void send_single(T& val, int rank, int tag) {
+    #if USE_MPI == 1
+    MPI_Request request;
+    MPI_Isend(&val, 1, mpi_type<T>(), rank, tag, MPI_COMM_WORLD, &request);  
+    #endif
+  }
 
-    //! \brief Sync the value of a boolean, performing a logical AND.
-    static void mpi_and(bool&);
+  template<typename T> inline void recv_single(T& val, int rank, int tag) {
+    #if USE_MPI == 1
+    MPI_Recv(&val, 1, mpi_type<T>(), rank, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE); 
+    #endif
+  }
 
-    //! \brief Sync the value of a boolean, performing a logical OR.
-    static void mpi_or(bool&);
+  inline void mpi_reduce0_position_data(vector<RealType>& data) {
+    #if USE_MPI == 1
+      int rank = getRank();
+      int numProc = getNumProc();
+      if (numProc>1) {
+        // Receive all data.
+        if (rank==0) {
+          vector<int> recv_size(numProc, 0);
+          int total = 0;
+          for (int i=1; i<numProc; ++i) {
+            MPI_Recv(&recv_size[i], 1, MPI_INT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            total += recv_size[i];
+          }
+          // The end of the data from this processor
+          int place = data.size();
+          // Resize data
+          data.resize(data.size()+total, 0.);
+          // Collect all the data from the processors.
+          for (int i=1; i<numProc; ++i) {
+            if (recv_size[i]>0) MPI_Recv(&data[place], recv_size[i], mpi_type<RealType>(), i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            place += recv_size[i];
+          }
+        }
+        else {
+          // First send amount of data will will send.
+          int size = data.size();
+          MPI_Send(&size, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+          // Then send the actual data, if there is any to send.
+          if (size>0) MPI_Send(&data[0], size, mpi_type<RealType>(), 0, 0, MPI_COMM_WORLD);
+        }
+      }
+    #endif
+  }
 
-    //! \brief Send a single int value to another processor.
-    static void send_single(int&, int, int=0);
+  template<typename T> inline void mpi_gather(const T& data, vector<T>& buffer) {
+    #if USE_MPI == 1
+    MPI_Gather(&data, 1, mpi_type<T>(), buffer.data(), 1, MPI_INT, 0, MPI_COMM_WORLD);
+    #endif
+  }
 
-    //! \brief Receive a single int value from another processor.
-    static void recv_single(int&, int, int=0);
+  inline void mpi_gather(const float& data, vector<float>& buffer) {
+    #if USE_MPI == 1
+    MPI_Gather(&data, 1, MPI_FLOAT, buffer.data(), 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    #endif
+  }
 
-    //! \brief Gather position data together onto the root processor.
-    static void mpi_reduce0_position_data(vector<RealType>&);
-  };
+  inline void mpi_broadcast(int& data, int root=0) {
+    #if USE_MPI == 1
+    MPI_Bcast(&data, 1, MPI_INT, root, MPI_COMM_WORLD);
+    #endif
+  }
+
+  inline void mpi_broadcast(char* data, int size, int root=0) {
+    #if USE_MPI == 1
+    MPI_Bcast(data, size, MPI_CHAR, root, MPI_COMM_WORLD);
+    #endif
+  }
+
+  inline void mpi_broadcast(int* data, int size, int root=0) {
+    #if USE_MPI == 1
+    MPI_Bcast(data, size, MPI_INT, root, MPI_COMM_WORLD);
+    #endif
+  }
+
+  inline void mpi_broadcast(vector<int>& data, int root=0) {
+    #if USE_MPI == 1
+    mpi_broadcast(data.data(), data.size(), root);
+    #endif 
+  }
 
 }
 #endif // __MPI_COMMUNICATION_HPP__GFLOW__
