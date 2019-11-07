@@ -96,6 +96,9 @@ namespace GFlowSimulation {
 
     //! \brief Get the bounds managed by this process.
     const Bounds& getProcessBounds() const;
+    
+    //! \brief Get the bounds of the whole simulation.
+    const Bounds& getSimulationBounds() const;
 
     // --- Mutators ---
 

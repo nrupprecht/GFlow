@@ -178,6 +178,10 @@ namespace GFlowSimulation {
     return process_bounds;
   }
 
+  const Bounds& InteractionHandler::getSimulationBounds() const {
+    return simulation_bounds;
+  }
+
   void InteractionHandler::setSampleSize(int s) {
     sample_size = s;
   }
