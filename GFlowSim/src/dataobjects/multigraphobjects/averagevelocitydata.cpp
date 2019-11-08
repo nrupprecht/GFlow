@@ -23,9 +23,11 @@ namespace GFlowSimulation {
     int count = 0;
     for (int n=0; n<size; ++n)
       if (im[n]>0 && type[n]>-1) {
-        for (int d=0; d<sim_dimensions; ++d)
-          ave[d] += v[n][d];
-        ++count;
+        if (!isnan(v[n][0])) {
+          for (int d=0; d<sim_dimensions; ++d)
+            ave[d] += v[n][d];
+          ++count;
+        }
       }
     // Check if there was anything to store
     if (count==0) return;

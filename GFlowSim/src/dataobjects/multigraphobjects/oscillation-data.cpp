@@ -20,7 +20,7 @@ namespace GFlowSimulation {
 
     // Compute totals
     for (int n=0; n<size; ++n) {
-      if (im[n]>0 && type[n]>-1) {
+      if (im[n]>0 && !isnan(x[n][0]) && type[n]>-1) { // Presumably, if one component is nan, all are.
         RealType mass = 1./im[n];
         for (int d=0; d<sim_dimensions; ++d)
           pos[d] += mass*x[n][d];
@@ -36,14 +36,14 @@ namespace GFlowSimulation {
       // Sum.
       Vec ave(sim_dimensions);
       for (int i=0; i<ndata_points; ++i)
-	for (int j=1; j<ndata+1; ++j)
-	  ave[j-1] += multi_data[j][i];
+      	for (int j=1; j<ndata+1; ++j)
+      	  ave[j-1] += multi_data[j][i];
       // Compute average value
       for (int i=0; i<sim_dimensions; ++i) ave[i] /= multi_data.size();
       // Subtract away average value
       for (auto entry : multi_data) {
-	for (int i=1; i<entry.size(); ++i)
-	  entry[i] -= ave[i-1];
+      	for (int i=1; i<entry.size(); ++i)
+      	  entry[i] -= ave[i-1];
       }
     }
   }
