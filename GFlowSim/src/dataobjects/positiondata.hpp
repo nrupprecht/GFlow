@@ -33,10 +33,16 @@ namespace GFlowSimulation {
 
     void clear_all_data_entries();
 
+    //! \brief Set the visual bounds. Only particles within these bounds will be saved.
+    void set_visual_bounds(const Bounds&);
+
     // The demon modifer is a friend.
     friend class Demon;
 
   private:
+
+    //! \brief The bounds in which we want to record data.
+    Bounds visual_bounds;
 
     //! \brief  The time steps of when the data was gathered
     vector<float> timeStamps;

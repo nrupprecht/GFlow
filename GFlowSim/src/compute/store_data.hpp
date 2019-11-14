@@ -16,6 +16,8 @@ namespace GFlowSimulation {
     void set_scalar_data(const vector<string>&);
     void set_integer_data(const vector<string>&);
 
+    void set_data_boundary(const Bounds&);
+
     const vector<string>& get_vector_data() const;
     const vector<string>& get_scalar_data() const;
     const vector<string>& get_integer_data() const;

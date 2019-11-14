@@ -13,6 +13,9 @@
 // MPI communicator.
 #include "../parallel/mpi-communication.hpp"
 
+// For strlen
+#include <cstring>
+
 /*
 *  --- NOTES:
 *  Running functions dynamically:

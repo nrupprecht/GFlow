@@ -6,14 +6,14 @@
 
 namespace GFlowSimulation {
   // Constructor
-  PositionData::PositionData(GFlow *gflow) : DataObject(gflow, "Pos") {
+  PositionData::PositionData(GFlow *gflow) : DataObject(gflow, "Pos"), visual_bounds(gflow->getBounds()) {
     // The data to gather
     add_vector_data_entry("X");
     add_vector_data_entry("V");
     add_scalar_data_entry("Sg");
-    add_integer_data_entry("Type");
-    add_scalar_data_entry("StripeX");
-    add_scalar_data_entry("Om");
+    //add_integer_data_entry("Type");
+    //add_scalar_data_entry("StripeX");
+    //add_scalar_data_entry("Om");
   };
 
   void PositionData::pre_integrate() {
@@ -21,7 +21,18 @@ namespace GFlowSimulation {
     storeData.set_scalar_data(scalar_data_entries);
     storeData.set_integer_data(integer_data_entries);
     storeData.initialize(simData);
-    // Store initial data
+
+    /*
+    visual_bounds = Bounds(2);
+    visual_bounds.min[0] = -24;
+    visual_bounds.max[0] = 96;
+    visual_bounds.min[1] = -18;
+    visual_bounds.max[1] = 18;
+    */
+
+    // Do this after initialize, so bounds are not overwritten.
+    storeData.set_data_boundary(visual_bounds);
+    // Store initial data (t=0 data).
     storeData.store(initial_data);
   }
 
@@ -74,6 +85,10 @@ namespace GFlowSimulation {
     vector_data_entries.clear();
     scalar_data_entries.clear();
     integer_data_entries.clear();
+  }
+
+  void PositionData::set_visual_bounds(const Bounds& bnds) {
+    visual_bounds = bnds;
   }
 
 }

@@ -67,6 +67,10 @@ namespace GFlowSimulation {
     integer_data_entries = v;
   }
 
+  void StoreData::set_data_boundary(const Bounds& bnds) {
+    bounds = bnds;
+  }
+
   const vector<string>& StoreData::get_vector_data() const {
     return vector_data_entries;
   }
@@ -92,7 +96,7 @@ namespace GFlowSimulation {
     int data_pointer = 0;
     for (int n=0; n<number; ++n) {
       // If not a particle, continue
-      if (simData->Type(n)<0) continue;
+      if (simData->Type(n)<0 || !bounds.contains(simData->X(n))) continue;
       // Copy data
       for (auto v : vector_data_positions) {
         RealType **vd = simData->VectorData(v);
