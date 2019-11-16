@@ -16,7 +16,9 @@ Var: Length=15
 Var: Height=10
 Var: Front=15
 
-Integrator: VelocityVerlet
+Integrator: LangevinIntegrator {
+  Temperature: 100
+}
 
 Boundary: {
   : Wrap
@@ -46,23 +48,19 @@ Fill: Area {
     Type: 0
   }
 
-  Number: Phi=0.3 {
+  Number: Phi=0.35 {
     TypeA : 1
   }
 
-  //Velocity: Zero
+  Velocity: Velocity
 }
 
-Particle {
-  Position: 0, 0
-  Sigma: 3
-  Velocity: 0, 0
-  Mass: inf
-  Type: 1
+Fill: Circle {
+  Center: 0, 0
+  Sigma: MinR
+  Radius: 3
 }
 
 Reconcile: Remove=0.9
 
 Relax: 1
-
-Modifier: WindTunnel=Velocity

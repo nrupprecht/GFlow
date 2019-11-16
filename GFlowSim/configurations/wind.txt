@@ -10,6 +10,8 @@ Var: Height=10
 Var: Front=10
 Var: Mu=0.25
 Var: Radius=1
+Var: Gamma=1000
+Var: Kappa=5000
 
 // This is a 2d simulation
 Dimensions: 2
@@ -33,6 +35,8 @@ NTypes: 1
 // Creates a random force network of HardSphere and Lennard-Jones forces
 Force-grid: Hertz {
   Mu: Mu
+  GammaN: Gamma
+  Kn: Kappa
 }
 
 // Fill an area with particles
