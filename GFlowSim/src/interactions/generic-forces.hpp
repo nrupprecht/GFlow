@@ -562,12 +562,12 @@ namespace GFlowSimulation {
 
   private:
     //! \brief Normal elastic constant.
-    RealType K_n = 5000.;
+    RealType K_n = 5'000.;
     //! \brief Tangential elastic constant.
-    RealType K_t = 5000. * 2./7.;
+    RealType K_t = 5'000. * 2./7.;
 
     //! \brief Normal viscoelastic constant.
-    RealType gamma_n = 1000.;
+    RealType gamma_n = 1'000.;
     //! \brief Tangential viscoelastic constant.
     RealType gamma_t = 700.;
 

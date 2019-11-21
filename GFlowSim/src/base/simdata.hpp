@@ -358,7 +358,7 @@ namespace GFlowSimulation {
     std::unordered_map<int, int> id_map;
 
     //! \brief Whether to use the id_map.
-    bool use_id_map = false;
+    bool use_id_map = true;
 
     //! \brief A map between local halo particle ids and primary (local) IDs.
     std::vector<int> halo_map;

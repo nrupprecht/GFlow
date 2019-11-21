@@ -26,8 +26,8 @@ const int simd_valid = 0xffffffff;
   inline simd_float simd_mask(const simd_float a, const simd_float m) { return simd_cast_float(simd_and(simd_cast_int(a), simd_cast_int(m))); }
 
   // Setting, loading, storing
-  inline simd_float simd_load (const float *a)                   { return *a; }
-  inline simd_float simd_load_u(const float *a)                  { return *a; }
+  inline simd_float simd_load (const float *a)                         { return *a; }
+  inline simd_float simd_load_u(const float *a)                        { return *a; }
   inline simd_float simd_set1 (const float a)                          { return a; }
   inline simd_int   simd_set1_int(const int a)                         { return a; }
   inline simd_float simd_set_zero ()                                   { return 0; }

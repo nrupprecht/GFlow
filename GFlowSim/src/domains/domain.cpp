@@ -366,7 +366,7 @@ namespace GFlowSimulation {
   }
 
   inline void Domain::add_to_cell(const RealType *x, int id) {
-    int linear = get_cell_index(simData->X(id));
+    int linear = get_cell_index(x);
     // Stores the *local* id of the particle
     cells[linear].particle_ids.push_back(id);
   }

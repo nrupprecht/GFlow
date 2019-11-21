@@ -117,6 +117,16 @@ namespace GFlowSimulation {
   }
 
 
+  //! \brief Set all the elements of a vector to be a single value
+  template<int d> inline void set1_vec(RealType *vec, RealType val) {
+    vec[d-1] = val;
+    set1_vec<d-1>(vec, val);
+  }
+  template<> inline void set1_vec<1>(RealType *vec, RealType val) {
+    vec[0] = val;
+  }
+
+
 
   template<int d> inline int get_index(const RealType *x, const RealType *min, const RealType *invW, const int *shift, const int *dims, const int *products) {
     // Calculate index.
