@@ -21,56 +21,27 @@ namespace GFlowSimulation {
 
   template<int dims> class ParticleContainer_AOS {
   public:
+    //! \brief Default constructor.
+    ParticleContainer_AOS();
+
+    //! \brief Initialize the particle container. After this point, no new entries should be added.
+    void initialize();
+
+    //! \brief Is this the structure-of-arrays version (no).
+    bool is_soa();
+
+    void update();
+
+    int add_vector_entry(const string& name);
+
+    int add_scalar_entry(const string& name);
+
+    int add_integer_entry(const string& name);
 
     // --- Accessing structs.
     struct vec_access;
     struct scalar_access;
     struct integer_access;
-
-    //! \brief Default constructor.
-    ParticleContainer_AOS() {
-      // Essential vector data.
-      vector_data_names = vector<string> {"X", "V", "F"};
-      // Essential scalar data.
-      scalar_data_names = vector<string> {"R", "Im"};
-      // Essential integer data.
-      integer_data_names = vector<string> {"Type", "ID"};
-    }
-
-    //! \brief Initialize the particle container. After this point, no new entries should be added.
-    void initialize() {
-      initialized = true;
-    }
-
-    //! \brief Is this the structure-of-arrays version (no).
-    bool is_soa() { return false; }
-
-    void update() {};
-
-    int add_vector_entry(const string& name) {
-      if (!initialized && std::find(begin(vector_data_names), end(vector_data_names), name)==vector_data_names.end()) {
-        vector_data_names.push_back(name);
-        ++n_vectors;
-        return n_vectors-1;
-      }
-      return -1;
-    }
-    int add_scalar_entry(const string& name) {
-      if (!initialized && std::find(begin(scalar_data_names), end(scalar_data_names), name)==scalar_data_names.end()) {
-        scalar_data_names.push_back(name);
-        ++n_scalars;
-        return n_scalars-1;
-      }
-      return -1;
-    }
-    int add_integer_entry(const string& name) {
-      if (!initialized && std::find(begin(integer_data_names), end(integer_data_names), name)==integer_data_names.end()) {
-        integer_data_names.push_back(name);
-        ++n_integers;
-        return n_integers-1;
-      }
-      return -1;
-    }
 
     vec_access X() { return vec_access(data_ptr, data_width, 0); }
     vec_access V() { return vec_access(data_ptr, data_width, dims); }
@@ -128,24 +99,7 @@ namespace GFlowSimulation {
 
     //! \brief Resize the particle data memory so that more (or fewer) particles fit in memory. Owned particles (up to total_size) are
     //! transfered to the new memory.
-    void resize(const int total_size) {
-      if (total_size<=0) return;
-      // In case we are resize to a smaller size.
-      const int copy_size = std::min(_size_owned, total_size);
-      // Create new pointer, copy data.
-      real *new_data = new real[total_size];
-      if (data_ptr) {
-        delete [] data_ptr;
-        copyVec(data_ptr, new_data, copy_size*data_width);
-      }
-      // Set ptr to new data.
-      data_ptr = new_data;
-      // Reset counters.
-      _first_ghost = total_size;
-      _number_ghost = 0;
-      _size_ghost = 0;
-      _capacity = total_size;
-    }
+    void resize(const int total_size);
 
     //! \brief Has initialization occured.
     bool initialized = false;

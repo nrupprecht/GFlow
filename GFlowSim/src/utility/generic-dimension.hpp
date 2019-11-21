@@ -67,7 +67,6 @@ namespace GFlowSimulation {
     x[0] *= m;
   }
 
-
   //! \brief Template function for a vector += vector.
   template<int d> inline void sum_eq_vec(RealType *x, const RealType *y) {
     x[d-1] += y[d-1];
@@ -76,6 +75,16 @@ namespace GFlowSimulation {
   }
   template<> inline void sum_eq_vec<1>(RealType *x, const RealType *y) {
     x[0] += y[0];
+  }
+
+  //! \brief Template function for a vector += vector.
+  template<int d> inline void subtract_eq_vec(RealType *x, const RealType *y) {
+    x[d-1] -= y[d-1];
+    // Recursion.
+    subtract_eq_vec<d-1>(x, y);
+  }
+  template<> inline void subtract_eq_vec<1>(RealType *x, const RealType *y) {
+    x[0] -= y[0];
   }
   
   //! \brief Template function for a vector += scalar * vector.

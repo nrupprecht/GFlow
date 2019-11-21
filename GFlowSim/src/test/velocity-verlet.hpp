@@ -13,11 +13,13 @@ namespace GFlowSimulation {
     virtual void post_forces();
 
   private:
-
+    //! \brief Update positions using simd.
     inline void update_positions_simd();
+    //! \brief Update positions without using simd.
     inline void update_positions_nosimd();
-
+    //! \brief Update velocities using simd.
     inline void update_velocities_simd();
+    //! \brief Update velocities without using simd.
     inline void update_velocities_nosimd();
 
     // Pointer to particle data.

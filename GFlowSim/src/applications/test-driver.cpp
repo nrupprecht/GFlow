@@ -9,10 +9,8 @@ int main(int argc, char **argv) {
   ParticleContainer<sim_dimensions> particles;
 
   particles.initialize();
-
-
   VelocityVerlet<sim_dimensions> integrator(&particles);
-  
+
   int N = 1018;
   real dt = 0.001;
   real hdt = 0.5*dt;

@@ -7,7 +7,7 @@
 
 namespace GFlowSimulation {
   // Choose which type of particle container to use.
-  template<int dims> using ParticleContainer = ParticleContainer_SOA<dims>;
+  template<int dims> using ParticleContainer = ParticleContainer_AOS<dims>;
 }
 
 #endif // __CONTAINER_LAYOUT_HPP__GFLOW__

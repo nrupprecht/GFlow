@@ -20,10 +20,8 @@ template<int dims> struct ParticleContainer_AOS<dims>::vec_access {
   void store_simd(int contiguous_index, simd_float value) {
     real array[simd_data_size];
     simd_store(value, array);
-
     int d = contiguous_index % dims, array_index = 0;
     int offset = (contiguous_index / dims)*data_width;
-
     while (array_index<simd_data_size) {
       for (; d<dims && array_index<simd_data_size; ++d, ++array_index)
         data_ptr[offset + d] = array[array_index];

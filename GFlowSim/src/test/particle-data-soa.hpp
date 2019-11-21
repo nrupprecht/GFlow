@@ -21,62 +21,27 @@ namespace GFlowSimulation {
 
   template<int dims> class ParticleContainer_SOA {
   public:
+    //! \brief Constructor.
+    ParticleContainer_SOA();
+
+    //! \brief Initialize the particle container. After this point, no new entries should be added.
+    void initialize();
+
+    //! \brief Is this the structure-of-arrays version (yes).
+    bool is_soa();
+
+    void update();
+
+    int add_vector_entry(const string& name);
+
+    int add_scalar_entry(const string& name);
+
+    int add_integer_entry(const string& name);
 
     // --- Accessing structs.
     struct vec_access;
     struct scalar_access;
     struct integer_access;
-
-    //! \brief Constructor.
-    ParticleContainer_SOA() {
-      // Essential vector data.
-      vector_data = vector<real**> {nullptr, nullptr, nullptr};
-      vector_data_names = vector<string> {"X", "V", "F"};
-      // Essential scalar data.
-      scalar_data = vector<real*> {nullptr, nullptr};
-      scalar_data_names = vector<string> {"R", "Im"};
-      // Essential integer data.
-      integer_data = vector<int*> {nullptr, nullptr};
-      integer_data_names = vector<string> {"Type", "ID"};
-    }
-
-    //! \brief Initialize the particle container. After this point, no new entries should be added.
-    void initialize() {
-      initialized = true;
-    }
-
-    //! \brief Is this the structure-of-arrays version (yes).
-    bool is_soa() { return true; }
-
-    void update() {};
-
-    int add_vector_entry(const string& name) {
-      if (!initialized && std::find(begin(vector_data_names), end(vector_data_names), name)==vector_data_names.end()) {
-        vector_data.push_back(nullptr);
-        vector_data_names.push_back(name);
-        ++n_vectors;
-        return vector_data.size()-1;
-      }
-      return -1;
-    }
-    int add_scalar_entry(const string& name) {
-      if (!initialized && std::find(begin(scalar_data_names), end(scalar_data_names), name)==scalar_data_names.end()) {
-        scalar_data.push_back(nullptr);
-        scalar_data_names.push_back(name);
-        ++n_scalars;
-        return scalar_data.size()-1;
-      }
-      return -1;
-    }
-    int add_integer_entry(const string& name) {
-      if (!initialized && std::find(begin(integer_data_names), end(integer_data_names), name)==integer_data_names.end()) {
-        integer_data.push_back(nullptr);
-        integer_data_names.push_back(name);
-        ++n_integers;
-        return integer_data.size()-1;
-      }
-      return -1;
-    }
 
     vec_access X() { return vec_access(vector_data[0]); }
     vec_access V() { return vec_access(vector_data[1]); }
@@ -125,6 +90,7 @@ namespace GFlowSimulation {
     //! \brief The number of (valid) owned particles stored in this data structure.
     int number() const;
 
+    //! \brief Mark a particle for removal.
     void mark_for_removal(int id);
 
     //! \brief Remove particles that have been marked, and fill in space. Particles will contiguous after this function.
@@ -134,38 +100,7 @@ namespace GFlowSimulation {
 
     //! \brief Resize the particle data memory so that more (or fewer) particles fit in memory. Owned particles (up to total_size) are
     //! transfered to the new memory.
-    void resize(const int total_size) {
-      if (total_size<=0) return;
-      // In case we are resize to a smaller size.
-      const int copy_size = std::min(_size_owned, total_size);
-      // Allocate space for vector data, and copy old data.
-      for (auto& ptr : vector_data) {
-        real **old_ptr = ptr;
-        ptr = alloc_array_2d<real>(total_size, dims);
-        if (copy_size*dims>0) copyVec(old_ptr, ptr, copy_size*dims);
-        if (old_ptr) dealloc_array_2d(old_ptr);
-      }
-      // Allocate space for scalar data, and copy old data.
-      for (auto& ptr : scalar_data) {
-        real *old_ptr = ptr;
-        ptr = new real[total_size];
-        if (copy_size*dims>0) copyVec(old_ptr, ptr, copy_size);
-        if (old_ptr) delete [] old_ptr;
-      }
-      // Allocate space for scalar data, and copy old data.
-      for (auto& ptr : integer_data) {
-        int *old_ptr = ptr;
-        ptr = new int[total_size];
-        if (copy_size*dims>0) copyVec(old_ptr, ptr, copy_size);
-        if (old_ptr) delete [] old_ptr;
-      }
-
-      // Reset counters.
-      _first_ghost = total_size;
-      _number_ghost = 0;
-      _size_ghost = 0;
-      _capacity = total_size;
-    }
+    void resize(const int total_size);
 
     //! \brief Has initialization occured.
     bool initialized = false;
