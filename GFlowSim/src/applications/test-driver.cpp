@@ -4,30 +4,66 @@
 
 using namespace GFlowSimulation;
 
+template<int dims, template<int> class Container> inline pair<real, real> test_container(Container<dims>&, int);
+
 int main(int argc, char **argv) {
-  const int sim_dimensions = 2;
-  ParticleContainer<sim_dimensions> particles;
+  // MPI related.
+  #if USE_MPI == 1
+  MPI_Init(&argc, &argv);
+  #endif
 
-  particles.initialize();
-  VelocityVerlet<sim_dimensions> integrator(&particles);
+  constexpr int sim_dimensions = 2;
+  GFlow gflow(sim_dimensions);
 
-  int N = 1018;
+  {
+    cout << "Testing array of structures. ";
+    ParticleContainer_AOS<sim_dimensions> particles(&gflow);
+    particles.initialize();
+    auto [time, run_time] = test_container(particles, 1018);
+    // Print message.
+    cout << "Time: " << time << ", Ratio: " << run_time/time << endl;
+  }
+
+  {
+    cout << "Testing structure of arryas. ";
+    ParticleContainer_SOA<sim_dimensions> particles(&gflow);
+    particles.initialize();
+    auto [time, run_time] = test_container(particles, 1018);
+    // Print message.
+    cout << "Time: " << time << ", Ratio: " << run_time/time << endl;
+  }
+  
+  // Finalize mpi
+  #if USE_MPI == 1
+  MPI_Finalize();
+  #endif
+
+  return 0;
+}
+
+
+//! \brief Function to test particle containers.
+template<int dims, template<int> class Container> inline pair<real, real> test_container(Container<dims>& particles, int n_particles) {
+  // Create an integrator.
+  VelocityVerlet<2, Container> integrator(particles.getGFlow());
+  integrator.setContainer(&particles);
+
   real dt = 0.001;
   real hdt = 0.5*dt;
   real T = 1000.;
   int Nstep = T/dt;
-
   real width = 4.;
-
-  particles.reserve(N);
-  for (int i=0; i<N; ++i) {
+  // Add random particles.
+  particles.reserve(n_particles);
+  for (int i=0; i<n_particles; ++i) {
     particles.add_particle(vec<2>{width*drand48(), width*drand48()}, vec<2>{drand48()-0.5, drand48()-0.5}, 0.05, 1.f);
   }
 
-  auto x = particles.X();
-
+  // A timer.
   Timer timer;
   timer.start();
+
+  integrator.pre_integrate();
 
   int last_wrap = 0;
   int wrap_delay = 15;
@@ -38,7 +74,8 @@ int main(int argc, char **argv) {
     // Harmonic boundary conditions
     if (nstep-last_wrap<wrap_delay);
     else {
-      for (int i=0; i<N; ++i) {
+      auto x = particles.X();
+      for (int i=0; i<n_particles; ++i) {
         // X direction.
         if (x(i,0)<0) x(i,0) += width;
         else if (width<=x(i,0)) x(i,0) -= width;
@@ -53,13 +90,13 @@ int main(int argc, char **argv) {
     integrator.post_forces();
   }
 
+
+  integrator.post_integrate();
+
+  // Stop timer.
   timer.stop();
-
-  cout << "Done.\nTime: " << timer.time() << endl;
-  cout << "Ratio: " << T/timer.time() << endl;
-  
-
-  return 0;
+  // Return statistics.
+  return std::make_pair(timer.time(), T);
 }
 
 /*

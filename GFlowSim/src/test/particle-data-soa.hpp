@@ -1,6 +1,9 @@
 #ifndef __PARTICLE_CONTAINER__GFLOW__
 #define __PARTICLE_CONTAINER__GFLOW__
 
+#include "../gflow.hpp"
+#include "../other/timedobject.hpp"
+
 #include <string>
 using std::string;
 
@@ -16,20 +19,31 @@ using std::vector;
 #include "../utility/simd_generic.hpp"
 
 #include "d-vec.hpp"
+#include "container-base.hpp"
 
 namespace GFlowSimulation {
 
-  template<int dims> class ParticleContainer_SOA {
+  template<int dims> class ParticleContainer_SOA : public Base, public ContainerBase, public TimedObject {
   public:
     //! \brief Constructor.
-    ParticleContainer_SOA();
+    ParticleContainer_SOA(GFlow*);
+
+    //! \brief Destructor.
+    ~ParticleContainer_SOA();
 
     //! \brief Initialize the particle container. After this point, no new entries should be added.
-    void initialize();
+    virtual void initialize() override;
+
+    //! \brief Resets timers.
+    virtual void pre_integrate() override;
+
+    //! \brief Remove all halo and ghost particles.
+    virtual void post_integrate() override;
 
     //! \brief Is this the structure-of-arrays version (yes).
     bool is_soa();
 
+    //! \brief Update simdata, migrate particles to other processors, handle assignment and initialization of ghost particles.
     void update();
 
     int add_vector_entry(const string& name);
@@ -84,12 +98,6 @@ namespace GFlowSimulation {
     //! Assumes that there are no ghost particles. Only owned particles will be transfered (if there are any).
     void reserve(uint s);
 
-    //! \brief The size particle entries that may contain valid owned particles.
-    int size() const;
-
-    //! \brief The number of (valid) owned particles stored in this data structure.
-    int number() const;
-
     //! \brief Mark a particle for removal.
     void mark_for_removal(int id);
 
@@ -102,58 +110,14 @@ namespace GFlowSimulation {
     //! transfered to the new memory.
     void resize(const int total_size);
 
-    //! \brief Has initialization occured.
-    bool initialized = false;
-
-    //! \brief Whether to use the id map.
-    bool use_id_map = true;
-
-    //! \brief Records where removed particles are located.
-    vector<int> remove_list;
-
-    //! \brief A map between global and local ids, <global, local>.
-    std::unordered_map<int, int> id_map;
-
-    //! \brief Size of the array that is taken up by owned particles. Owned particle may be in the memory range [0, _size_owned].
-    int _size_owned = 0;
-    //! \brief The number of owned particles. 
-    //!
-    //! It must be the case that _number_owned <= _size_owned.
-    int _number_owned = 0;
-    //! \brief The address of the first ghost particle. All particles after this point must be ghosts. 
-    //!
-    //! It must be the case that _first_ghost >= _size_owned.
-    int _first_ghost = 0;
-    //! \brief The number of ghost particles.
-    //!
-    //! It must be the case that _number_ghost <= _size_ghost.
-    int _number_ghost = 0;
-    //! \brief The size of space that may be take up by ghost particles. 
-    //! Ghost particles may be in the memory range [_first_ghost, _first_ghost + _size_ghost].
-    //!
-    //! It must be the case that _first_ghost + size_ghost <= _capacity.
-    int _size_ghost = 0;
-
-    //! \brief The total number of particles that can fit in the arrays.
-    int _capacity = 0;
-
-    // ---> Data layout
-
-    //! \brief The number of vector, scalar, integer, and matrix data entries.
-    int n_vectors = 3, n_scalars = 2, n_integers = 2, n_matrices = 0;
-
     //! \brief Vector data. Vectors are [dim] - dimensional vectors.
     vector<real**> vector_data;
-    //! \brief Names of the vector data.
-    vector<string> vector_data_names;
+    
     //! \brief Scalar data. Single entries.
     vector<real*> scalar_data;
-    //! \brief Names of the scalar data.
-    vector<string> scalar_data_names;
+
     //! \brief Integer data.
     vector<int*> integer_data;
-    //! \brief Names of the integer data.
-    vector<string> integer_data_names;
   };
 
   // Template function implementations.

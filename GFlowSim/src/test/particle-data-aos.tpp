@@ -1,7 +1,7 @@
 // \file Template implementation file for particle-data-aos.hpp.
 
 template<int dims> 
-ParticleContainer_AOS<dims>::ParticleContainer_AOS() {
+ParticleContainer_AOS<dims>::ParticleContainer_AOS(GFlow *gflow) : Base(gflow) {
   // Essential vector data.
   vector_data_names = vector<string> {"X", "V", "F"};
   // Essential scalar data.
@@ -11,8 +11,24 @@ ParticleContainer_AOS<dims>::ParticleContainer_AOS() {
 }
 
 template<int dims> 
+ParticleContainer_AOS<dims>::~ParticleContainer_AOS() {
+  if (data_ptr) delete [] data_ptr;
+}
+
+template<int dims> 
 void ParticleContainer_AOS<dims>::initialize() {
   initialized = true;
+}
+
+template<int dims> 
+void ParticleContainer_AOS<dims>::pre_integrate() {
+  // Clear the timed object timer.
+  clear_timer();
+}
+
+template<int dims> 
+void ParticleContainer_AOS<dims>::post_integrate() {
+
 }
 
 template<int dims> 
@@ -73,7 +89,6 @@ int ParticleContainer_AOS<dims>::add_particle(vec<dims> x, vec<dims> v, real r, 
     int new_capacity = _capacity + std::max(32, static_cast<int>(0.15*_capacity));
     resize(new_capacity);
   }
-
   // Add in particle by incrementing size counters, copying/clearing data.
   zeroVec(&data_ptr[data_width*_size_owned], data_width);
   // Now set the data.
@@ -92,16 +107,6 @@ int ParticleContainer_AOS<dims>::add_particle(vec<dims> x, vec<dims> v, real r, 
 template<int dims> 
 void ParticleContainer_AOS<dims>::reserve(uint s) {
   if (_capacity<s) resize(s);
-}
-
-template<int dims> 
-int ParticleContainer_AOS<dims>::size() const {
-  return _size_owned;
-}
-
-template<int dims> 
-int ParticleContainer_AOS<dims>::number() const {
-  return _number_owned;
 }
 
 template<int dims> 

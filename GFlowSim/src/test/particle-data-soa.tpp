@@ -1,7 +1,7 @@
 // \file Template implementation file for particle-data-soa.hpp.
 
 template<int dims>
-ParticleContainer_SOA<dims>::ParticleContainer_SOA() {
+ParticleContainer_SOA<dims>::ParticleContainer_SOA(GFlow *gflow) : Base(gflow) {
   // Essential vector data.
   vector_data = vector<real**> {nullptr, nullptr, nullptr};
   vector_data_names = vector<string> {"X", "V", "F"};
@@ -14,8 +14,33 @@ ParticleContainer_SOA<dims>::ParticleContainer_SOA() {
 }
 
 template<int dims>
+ParticleContainer_SOA<dims>::~ParticleContainer_SOA() {
+  for (auto& ptr : vector_data) 
+    if (ptr) dealloc_array_2d(ptr);
+  for (auto& ptr : scalar_data) 
+    if (ptr) delete [] ptr;
+  for (auto& ptr : integer_data) 
+    if (ptr) delete [] ptr;
+  // Clear vectors, just in case.
+  vector_data.clear();
+  scalar_data.clear();
+  integer_data.clear();
+}
+
+template<int dims> 
 void ParticleContainer_SOA<dims>::initialize() {
   initialized = true;
+}
+
+template<int dims> 
+void ParticleContainer_SOA<dims>::pre_integrate() {
+  // Clear the timed object timer.
+  clear_timer();
+}
+
+template<int dims> 
+void ParticleContainer_SOA<dims>::post_integrate() {
+
 }
 
 template<int dims>
@@ -99,24 +124,49 @@ void ParticleContainer_SOA<dims>::reserve(uint s) {
 }
 
 template<int dims>
-int ParticleContainer_SOA<dims>::size() const {
-  return _size_owned;
-}
-
-template<int dims>
-int ParticleContainer_SOA<dims>::number() const {
-  return _number_owned;
-}
-
-template<int dims>
 void ParticleContainer_SOA<dims>::mark_for_removal(int id) {
   Type(id) = -1;
   remove_list.push_back(id);
 }
 
 template<int dims>
-void do_particle_removal() {
+void ParticleContainer_SOA<dims>::do_particle_removal() {
+  /*
+  // If there is nothing to remove, we're done
+  if (remove_list.empty() || _number==0) return;
 
+  // Start simdata timer.
+  start_timer();
+
+  // Fill in all holes
+  int count_back = _size, removed = 0;
+  for(auto id : remove_list) {
+    // The type of a particle that has been marked for removal is -1.
+    do {
+      --count_back;
+    } while (Type(count_back)<0);
+
+    if (count_back>id) {
+      swap_particle(count_back, id);
+      ++removed;
+    }
+    else break;
+  }
+  // Decrease number.
+  _number_owned -= remove_list.size();
+  // Array is compressed.
+  _size_owned = _number;
+  // Clear the remove list
+  remove_list.clear();
+
+  // We need to update. Removed could be zero if, e.g. only and all of the N particles were removed.
+  // Arguably, you still might want to remake. There could be extra entries in the verlet list that 
+  // it would be better to get rid of.
+  if (removed>0) set_needs_remake();
+
+  // Start simdata timer.
+  stop_timer();
+  */
 }
 
 template<int dims>

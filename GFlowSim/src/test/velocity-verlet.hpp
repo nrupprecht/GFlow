@@ -2,15 +2,24 @@
 #define __VELOCITY_VERLET_HPP__GFLOW__TEST
 
 #include "container-layout.hpp"
+#include "../base/integrator.hpp"
 
 namespace GFlowSimulation {
 
-  template<int dims> class VelocityVerlet {
+  template<int dims, template<int> class Container=ParticleContainer> 
+  class VelocityVerlet : public Integrator {
   public:
-    VelocityVerlet(ParticleContainer<dims> *p) : particles(p) {};
+    VelocityVerlet(GFlow *gflow) : Integrator(gflow) {
+      dt = 0.001;
+      adjust_dt = false;
+    };
 
-    virtual void pre_forces();
-    virtual void post_forces();
+    void setContainer(Container<dims> *p) {
+      particles = p;
+    }
+
+    virtual void pre_forces() override;
+    virtual void post_forces() override;
 
   private:
     //! \brief Update positions using simd.
@@ -23,15 +32,12 @@ namespace GFlowSimulation {
     inline void update_velocities_nosimd();
 
     // Pointer to particle data.
-    ParticleContainer<dims> *particles;
-
-    // Keep numbers here for now.
-    real dt = 0.001;
-    real hdt = 0.5*dt;
+    Container<dims> *particles = nullptr;
   };
 
 
-  template<int dims> void VelocityVerlet<dims>::pre_forces() {
+  template<int dims, template<int> class Container> 
+  void VelocityVerlet<dims, Container>::pre_forces() {
     if (dims==2 || particles->is_soa()) {
       update_velocities_simd();
       update_positions_simd();
@@ -42,12 +48,14 @@ namespace GFlowSimulation {
     }
   }
 
-  template<int dims> void VelocityVerlet<dims>::post_forces() {
+  template<int dims, template<int> class Container> 
+  void VelocityVerlet<dims, Container>::post_forces() {
     if (dims==2 || particles->is_soa()) update_velocities_simd();
     else update_velocities_nosimd();
   }
 
-  template<int dims> inline void VelocityVerlet<dims>::update_positions_simd() {
+  template<int dims, template<int> class Container> 
+  inline void VelocityVerlet<dims, Container>::update_positions_simd() {
     // Get accessors.
     auto x = particles->X();
     auto v = particles->V();
@@ -67,7 +75,8 @@ namespace GFlowSimulation {
       x[k] += dt*v[k];
   }
 
-  template<int dims> inline void VelocityVerlet<dims>::update_positions_nosimd() {
+  template<int dims, template<int> class Container> 
+  inline void VelocityVerlet<dims, Container>::update_positions_nosimd() {
     // Get accessors.
     auto x = particles->X();
     auto v = particles->V();
@@ -76,12 +85,14 @@ namespace GFlowSimulation {
       x(i) += dt*v(i);
   }
 
-  template<int dims> inline void VelocityVerlet<dims>::update_velocities_simd() {
+  template<int dims, template<int> class Container> 
+  inline void VelocityVerlet<dims, Container>::update_velocities_simd() {
     // Get accesors.
     auto v = particles->V();
     auto f = particles->F();
     auto im = particles->Im();
     // Do as much as possible using simd.
+    real hdt = 0.5*dt;
     simd_float hdt_s = simd_set1(hdt);
     int k=0, size = particles->size();
     for (; k+simd_data_size < dims*size; k+=simd_data_size) {
@@ -98,12 +109,14 @@ namespace GFlowSimulation {
       v[k] += hdt*im(k)*f[k];
   }
 
-  template<int dims> inline void VelocityVerlet<dims>::update_velocities_nosimd() {
+  template<int dims, template<int> class Container> 
+  inline void VelocityVerlet<dims, Container>::update_velocities_nosimd() {
     // Get accessors.
     auto v = particles->V();
     auto f = particles->F();
     auto im = particles->Im();
     // Update velocities.
+    real hdt = 0.5*dt;
     for (int i=0; i<particles->size(); ++i) 
       v(i) += hdt*im(i)*f(i);
   } 
