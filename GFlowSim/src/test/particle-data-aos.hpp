@@ -23,7 +23,7 @@ using std::vector;
 
 namespace GFlowSimulation {
 
-  template<int dims> class ParticleContainer_AOS : public Base, public ContainerBase, public TimedObject {
+  template<int dims> class ParticleContainer_AOS : public ContainerBase {
   public:
     //! \brief Default constructor.
     ParticleContainer_AOS(GFlow*);

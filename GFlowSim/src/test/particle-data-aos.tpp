@@ -1,7 +1,7 @@
 // \file Template implementation file for particle-data-aos.hpp.
 
 template<int dims> 
-ParticleContainer_AOS<dims>::ParticleContainer_AOS(GFlow *gflow) : Base(gflow) {
+ParticleContainer_AOS<dims>::ParticleContainer_AOS(GFlow *gflow) : ContainerBase(gflow) {
   // Essential vector data.
   vector_data_names = vector<string> {"X", "V", "F"};
   // Essential scalar data.

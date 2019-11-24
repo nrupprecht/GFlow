@@ -1,16 +1,20 @@
 #include "../utility/timer.hpp"
 
 #include "../test/velocity-verlet.hpp"
+#include "../test/d-domain.hpp"
 
 using namespace GFlowSimulation;
 
+// Forward reference to the test function.
 template<int dims, template<int> class Container> inline pair<real, real> test_container(Container<dims>&, int);
 
+// Main.
 int main(int argc, char **argv) {
   // MPI related.
   #if USE_MPI == 1
   MPI_Init(&argc, &argv);
   #endif
+
 
   constexpr int sim_dimensions = 2;
   GFlow gflow(sim_dimensions);
@@ -45,7 +49,7 @@ int main(int argc, char **argv) {
 //! \brief Function to test particle containers.
 template<int dims, template<int> class Container> inline pair<real, real> test_container(Container<dims>& particles, int n_particles) {
   // Create an integrator.
-  VelocityVerlet<2, Container> integrator(particles.getGFlow());
+  VelocityVerlet<dims, Container> integrator(particles.getGFlow());
   integrator.setContainer(&particles);
 
   real dt = 0.001;
@@ -59,13 +63,17 @@ template<int dims, template<int> class Container> inline pair<real, real> test_c
     particles.add_particle(vec<2>{width*drand48(), width*drand48()}, vec<2>{drand48()-0.5, drand48()-0.5}, 0.05, 1.f);
   }
 
+
   // A timer.
   Timer timer;
   timer.start();
 
   integrator.pre_integrate();
 
+  DomainD<dims, Container> domain(&particles);
+
   int last_wrap = 0;
+
   int wrap_delay = 15;
   for (int nstep=0; nstep<Nstep; ++nstep) {
     // Integrator first half kick.
@@ -84,12 +92,13 @@ template<int dims, template<int> class Container> inline pair<real, real> test_c
         else if (width<=x(i,1)) x(i,1) -= width;
       }
       last_wrap = nstep;
+
+      //domain.structure_updates();
     }
 
     // Integrator second half kick.
     integrator.post_forces();
   }
-
 
   integrator.post_integrate();
 

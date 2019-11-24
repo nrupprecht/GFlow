@@ -2,12 +2,19 @@
 #define __PARTICLE_CONTAINER_BASE_HPP__GFLOW__
 
 #include "../utility/utility.hpp"
+#include "../other/timedobject.hpp"
+#include "../gflow.hpp"
 
 namespace GFlowSimulation {
 
+  //enum struct DataLayout { SOA, AOS };
+
   //! \brief This class contains data and functions common to all particle container/simdata type objects.
-  class ContainerBase {
+  class ContainerBase : public Base, public TimedObject {
   public:
+    //! \brief Default constructor.
+    ContainerBase(GFlow *gflow) : Base(gflow) {};
+
     //! \brief Set the needs remake flag.
     void set_needs_remake(bool r) { needs_remake = r; }
 

@@ -38,6 +38,10 @@ namespace GFlowSimulation {
 
   template<int dims, template<int> class Container> 
   void VelocityVerlet<dims, Container>::pre_forces() {
+    #if SIMD_TYPE==SIMD_NONE
+    update_velocities_nosimd();
+    update_positions_nosimd();
+    #else 
     if (dims==2 || particles->is_soa()) {
       update_velocities_simd();
       update_positions_simd();
@@ -46,16 +50,23 @@ namespace GFlowSimulation {
       update_velocities_nosimd();
       update_positions_nosimd();
     }
+    #endif // SIMD_TYPE!=SIMD_NONE
   }
 
   template<int dims, template<int> class Container> 
   void VelocityVerlet<dims, Container>::post_forces() {
+    #if SIMD_TYPE==SIMD_NONE
+    update_velocities_nosimd();
+    #else
     if (dims==2 || particles->is_soa()) update_velocities_simd();
     else update_velocities_nosimd();
+    #endif
   }
 
   template<int dims, template<int> class Container> 
   inline void VelocityVerlet<dims, Container>::update_positions_simd() {
+    if (particles==nullptr) return;
+    #if SIMD_TYPE!=SIMD_NONE
     // Get accessors.
     auto x = particles->X();
     auto v = particles->V();
@@ -73,10 +84,12 @@ namespace GFlowSimulation {
     // Remaining part must be done serially.
     for (; k<dims*size; ++k) 
       x[k] += dt*v[k];
+    #endif
   }
 
   template<int dims, template<int> class Container> 
   inline void VelocityVerlet<dims, Container>::update_positions_nosimd() {
+    if (particles==nullptr) return;
     // Get accessors.
     auto x = particles->X();
     auto v = particles->V();
@@ -87,6 +100,8 @@ namespace GFlowSimulation {
 
   template<int dims, template<int> class Container> 
   inline void VelocityVerlet<dims, Container>::update_velocities_simd() {
+    if (particles==nullptr) return;
+    #if SIMD_TYPE!=SIMD_NONE
     // Get accesors.
     auto v = particles->V();
     auto f = particles->F();
@@ -107,10 +122,12 @@ namespace GFlowSimulation {
     // Remaining part must be done serially.
     for (; k<dims*size; ++k) 
       v[k] += hdt*im(k)*f[k];
+    #endif
   }
 
   template<int dims, template<int> class Container> 
   inline void VelocityVerlet<dims, Container>::update_velocities_nosimd() {
+    if (particles==nullptr) return;
     // Get accessors.
     auto v = particles->V();
     auto f = particles->F();

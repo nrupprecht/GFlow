@@ -23,7 +23,11 @@ using std::vector;
 
 namespace GFlowSimulation {
 
-  template<int dims> class ParticleContainer_SOA : public Base, public ContainerBase, public TimedObject {
+  // template<int dims, DataLayout layout> class ParticleContainer : public ContainerBase {
+
+  // };
+
+  template<int dims> class ParticleContainer_SOA : public ContainerBase {
   public:
     //! \brief Constructor.
     ParticleContainer_SOA(GFlow*);

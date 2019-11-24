@@ -1,7 +1,7 @@
 // \file Template implementation file for particle-data-soa.hpp.
 
 template<int dims>
-ParticleContainer_SOA<dims>::ParticleContainer_SOA(GFlow *gflow) : Base(gflow) {
+ParticleContainer_SOA<dims>::ParticleContainer_SOA(GFlow *gflow) : ContainerBase(gflow) {
   // Essential vector data.
   vector_data = vector<real**> {nullptr, nullptr, nullptr};
   vector_data_names = vector<string> {"X", "V", "F"};
