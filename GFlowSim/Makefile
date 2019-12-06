@@ -162,3 +162,8 @@ forces:
 creators:
 	rm obj/src/creators/*
 	make
+
+.PHONY : remake
+remake:
+	rm -f obj/test-driver.o
+	make
