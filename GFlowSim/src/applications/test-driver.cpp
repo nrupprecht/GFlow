@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
   #endif
 
   int n_particles = 1018;
-
+  
   {
     cout << "Testing array of structures. ";
     auto pr = test_container<2, DataLayout::AOS>(n_particles);
@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
     // Print message.
     cout << "Time: " << time << ", Ratio: " << run_time/time << endl;
   }
-
+  
   {
     cout << "Testing structure of arrays. ";
     auto pr = test_container<2, DataLayout::SOA>(n_particles);
@@ -75,7 +75,8 @@ inline pair<real, real> test_container(int n_particles) {
   real T = 1000.;
   int Nstep = T/dt;
   real width = 4.;
-  bool use_harmonic = false;
+  bool use_harmonic = true;
+
   // Add random particles.
   particles.reserve(n_particles);
   for (int i=0; i<n_particles; ++i) {
@@ -88,14 +89,18 @@ inline pair<real, real> test_container(int n_particles) {
 
   integrator.pre_integrate();
 
+  // Animation
+  int frames = 100, frames_captured = 0;
+  vector<vector<real> > animation_data;
+
+
   int wrap_delay = 15, last_wrap = 0, last_construct = 0;
   for (int nstep=0; nstep<Nstep; ++nstep) { // Nstep
     // Integrator first half kick.
     integrator.pre_forces();
     
     // Harmonic boundary conditions
-    if (nstep-last_wrap<wrap_delay);
-    else if (use_harmonic) {
+    if (nstep-last_wrap>=wrap_delay && use_harmonic) {
       auto x = particles.X();
       auto f = particles.F();
       for (int i=0; i<n_particles; ++i) {
@@ -109,7 +114,7 @@ inline pair<real, real> test_container(int n_particles) {
       last_wrap = nstep;
     }
     // Construct verlet lists.
-    if (nstep-last_construct<wrap_delay) {
+    if (nstep-last_construct>=wrap_delay) {
       domain.construct();
       last_construct = nstep;
     }
@@ -120,17 +125,51 @@ inline pair<real, real> test_container(int n_particles) {
       auto f = particles.F();
       for (int i=0; i<n_particles; ++i) {
         for (int d=0; d<dims; ++d) {
-          if (x(i, d)<0) f(i, d) = 10;
-          else if (width<=x(i, d)) f(i, d) = 10;
+          if (x(i, d)<0) f(i, d) = -100*(x(i,d));
+          else if (width<=x(i, d)) f(i, d) = 100*(width-x(i,d));
         }
       }
     }
 
     // Integrator second half kick.
     integrator.post_forces();
+
+    
+    if (frames_captured<frames && nstep % 67==0) {
+      auto x = particles.X();
+      vector<real> data(3*n_particles);
+      for (int n=0; n<n_particles; ++n) {
+        data[3*n] = x(n,0);
+        data[3*n + 1] = x(n,1);
+        data[3*n + 2] = 0.05;
+      }
+      animation_data.push_back(std::move(data));
+      ++frames_captured;
+    }
+    
   }
 
   integrator.post_integrate();
+
+  /*
+  // Print data width, dimensions, data iterations, ntypes
+  ofstream fout("RunData/general/Pos/data.csv"); 
+  // Position and radius.
+  fout << dims + 1 << "," << dims << "," << frames << "," << 1 << "\n";
+  fout << "0,0,4,4\n";
+  fout << "1,X\n";
+  fout << "1,Sg\n";
+  fout << "0\n";
+  for (int i=0; i<animation_data.size(); ++i) {
+    auto &data = animation_data[i];
+    fout << data.size();
+    for (auto v : data)
+      fout << "," << v;
+    fout << endl;
+  }
+  fout.close();
+  */
+
 
   // Stop timer.
   timer.stop();

@@ -152,5 +152,13 @@ namespace GFlowSimulation {
   //! \brief Define integer vector.
   template<int dims> using ivec = vec<dims, int>;
 
+  template<int dims, typename T>
+  void mod_eq(vec<dims, T> v1, const vec<dims, T> v2) {
+    for (int d=0; d<dims; ++d) {
+      if (v1[d]<0) v1[d] += v2[d];
+      else if (v2[d]<=v1[d]) v1[d] -= v2[d];
+    }
+  }
+
 }
 #endif // __D_VEC_HPP__GFLOW__

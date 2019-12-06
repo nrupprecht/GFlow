@@ -6,8 +6,6 @@
 
 namespace GFlowSimulation {
 
-  
-
   template<int dims, DataLayout layout> 
   class DomainD : public Base {
   public:
@@ -29,7 +27,7 @@ namespace GFlowSimulation {
       process_bounds = simulation_bounds;
 
       // Set up bounds.
-      int number_of_cells = 1;
+      number_of_cells = 1;
       for (int d=0; d<dims; ++d) {
         dimensions[d] = static_cast<int>(process_bounds.wd(0) / target_cell_size);
         widths[d] = process_bounds.wd(0) / dimensions[d];
@@ -38,10 +36,9 @@ namespace GFlowSimulation {
         number_of_cells *= dimensions[d];
       }
 
-      // Set up arrays.
       first_occupant = vector<int>(number_of_cells, -1);
-      number_of_neighbors = vector<int>(number_of_cells, 0);
-      neighbor_cells = vector<int>(number_of_cells, 0);
+
+      create_cells();
     }
 
     void construct() {
@@ -84,6 +81,12 @@ namespace GFlowSimulation {
         // Convert to int.
         ivec<dims> index;
         index.copy_vec_cast(xc);
+        // Make sure index is in bounds
+        for (int d=0; d<dims; ++d) {
+          if (index[d]<0) index[d] = 0;
+          else if (dimensions[d]<=index[d]) index[d] = dimensions[d]-1;
+        }
+        // Linear index
         int linear = index*products;
 
         // Insert into cell
@@ -101,7 +104,7 @@ namespace GFlowSimulation {
       int id0, id1;
 
       // Walk through cells.
-      ivec<dims> cell1(0,0);
+      ivec<dims> cell1(0, 0);
       for (cell1[1]=0; cell1[1]<dimensions[1]; ++cell1[1])
         for (cell1[0]=0; cell1[0]<dimensions[0]; ++cell1[0]) {
           // First particle in the central cell.
@@ -124,7 +127,6 @@ namespace GFlowSimulation {
               // Increment particle.
               id1 = next_occupant[id1];
             }
-
             // --- Search through neighboring cells.
             for (int i=0; i<n_neighbors; ++i) {
               // Linear address of a neighboring cell.
@@ -144,12 +146,59 @@ namespace GFlowSimulation {
                 id1 = next_occupant[id1];
               }
             }
-
             // Next particle in the central cell.
             id0 = next_occupant[id0];
           }
         }
     }
+
+    void create_cells() {
+      // Set up arrays.
+      number_of_neighbors = vector<int>(number_of_cells, 0);
+      neighbor_cells = vector<int>(number_of_cells, 0);
+
+      const BCFlag *bcs = gflow->getBCs();
+
+      // Walk through cells.
+      ivec<dims> cell1(0, 0), cell2(0, 0);
+      int linear2 = 0;
+      for (cell1[1]=0; cell1[1]<dimensions[1]; ++cell1[1])
+        for (cell1[0]=0; cell1[0]<dimensions[0]; ++cell1[0]) {
+          int linear1 = cell1*products;
+          // Location of first neighbor cell.
+          neighbor_cells[linear1] = neighbor_list.size()-1;
+          
+          cell2 = cell1;
+
+          // Bottom neighbors.
+
+          --cell2[0]; --cell2[1];
+          mod_eq(cell2, dimensions);
+          linear2 = cell2*products;
+          neighbor_list.push_back(linear2);
+
+          ++cell2[0];
+          //mod_eq(cell2, dimensions);
+          linear2 = cell2*products;
+          neighbor_list.push_back(linear2);
+
+          ++cell2[0];
+          mod_eq(cell2, dimensions);
+          linear2 = cell2*products;
+          neighbor_list.push_back(linear2);
+
+          // Left neighbor.
+          cell2 = cell1;
+          --cell2[0];
+          mod_eq(cell2, dimensions);
+          linear2 = cell2*products;
+          neighbor_list.push_back(linear2);
+
+          // Number of neighbors.
+          number_of_neighbors[linear1] = 4;
+        }
+    }
+
 
   private:
     //! \brief The skin depth.
