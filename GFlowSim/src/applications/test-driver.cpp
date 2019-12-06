@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
   MPI_Init(&argc, &argv);
   #endif
 
-  int n_particles = 4;
+  int n_particles = 1018;
 
   {
     cout << "Testing array of structures. ";
@@ -28,7 +28,6 @@ int main(int argc, char **argv) {
     cout << "Time: " << time << ", Ratio: " << run_time/time << endl;
   }
 
-  /*
   {
     cout << "Testing structure of arrays. ";
     auto pr = test_container<2, DataLayout::SOA>(n_particles);
@@ -38,7 +37,6 @@ int main(int argc, char **argv) {
     // Print message.
     cout << "Time: " << time << ", Ratio: " << run_time/time << endl;
   }
-  */
   
   
   // Finalize mpi
@@ -61,8 +59,6 @@ inline pair<real, real> test_container(int n_particles) {
   }
   gflow.setBounds(bnds);
 
-  cout << gflow.getBounds() << endl;
-
   ParticleContainer<dims, layout> particles(&gflow);
   particles.initialize();
 
@@ -74,26 +70,17 @@ inline pair<real, real> test_container(int n_particles) {
   domain.setContainer(&particles);
   domain.initialize();
 
-
   real dt = 0.001;
   real hdt = 0.5*dt;
   real T = 1000.;
   int Nstep = T/dt;
   real width = 4.;
+  bool use_harmonic = false;
   // Add random particles.
   particles.reserve(n_particles);
   for (int i=0; i<n_particles; ++i) {
-    particles.add_particle(vec<dims>{width*drand48(), width*drand48()}, /*vec<2>{drand48()-0.5, drand48()-0.5}*/
-    vec<2>{0.135, 0.246}, 0.05, 1.f);
+    particles.add_particle(vec<dims>{width*drand48(), width*drand48()}, vec<2>{drand48()-0.5, drand48()-0.5}, 0.05, 1.f);
   }
-
-  cout << "LOOK: ";
-  auto ptr = particles.data_ptr;
-  for (int i=0; i<10*n_particles; ++i) {
-    if (i%10==0) cout << "\n";
-    cout << ptr[i] << " ";
-  }
-  cout << endl << endl;
 
   // A timer.
   Timer timer;
@@ -101,18 +88,16 @@ inline pair<real, real> test_container(int n_particles) {
 
   integrator.pre_integrate();
 
-  int last_wrap = 0;
-
-  int wrap_delay = 15;
-  for (int nstep=0; nstep<5; ++nstep) { // Nstep
+  int wrap_delay = 15, last_wrap = 0, last_construct = 0;
+  for (int nstep=0; nstep<Nstep; ++nstep) { // Nstep
     // Integrator first half kick.
     integrator.pre_forces();
     
     // Harmonic boundary conditions
-    /*
     if (nstep-last_wrap<wrap_delay);
-    else {
+    else if (use_harmonic) {
       auto x = particles.X();
+      auto f = particles.F();
       for (int i=0; i<n_particles; ++i) {
         // X direction.
         if (x(i,0)<0) x(i,0) += width;
@@ -122,24 +107,30 @@ inline pair<real, real> test_container(int n_particles) {
         else if (width<=x(i,1)) x(i,1) -= width;
       }
       last_wrap = nstep;
-      
-      //domain.structure_updates();
     }
-    */
+    // Construct verlet lists.
+    if (nstep-last_construct<wrap_delay) {
+      domain.construct();
+      last_construct = nstep;
+    }
+
+    // Repulsive force
+    if (!use_harmonic) {
+      auto x = particles.X();
+      auto f = particles.F();
+      for (int i=0; i<n_particles; ++i) {
+        for (int d=0; d<dims; ++d) {
+          if (x(i, d)<0) f(i, d) = 10;
+          else if (width<=x(i, d)) f(i, d) = 10;
+        }
+      }
+    }
 
     // Integrator second half kick.
-    // integrator.post_forces();
-
-    cout << "LOOK: ";
-    auto ptr = particles.data_ptr;
-    for (int i=0; i<10*n_particles; ++i) {
-      if (i%10==0) cout << "\n";
-      cout << ptr[i] << " ";
-    }
-    cout << endl << endl;
+    integrator.post_forces();
   }
 
-  // integrator.post_integrate();
+  integrator.post_integrate();
 
   // Stop timer.
   timer.stop();

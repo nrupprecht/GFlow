@@ -19,63 +19,99 @@ template<int dims> struct ParticleContainer<dims, DataLayout::AOS>::vec_access {
   }
   
   //! \brief Load contiguous entries into simd vector
+  //! ONLY WORKS FOR 2 DIMENSIONS.
   simd_float load_to_simd(const int  contiguous_index) {
-  //           (   Particle #  *  data_width  ) + offset
-  int first = (contiguous_index/2) * data_width + offset;
+    //           (   Particle #  *  data_width  ) + offset
+    int first = (contiguous_index/2) * data_width + offset;
 
-  cout << "Loading " << offset << ": " << first + data_width + 1 << ", " << first + 
-data_width << ", " << first+1 << ", " << first << endl;
-  cout << "Values: " << data_ptr[first + data_width + 1] << ", " << data_ptr[first +
- data_width] << ", " << data_ptr[first + 1] << ", " << data_ptr[first] << endl;
+    #if SIMD_TYPE==SIMD_NONE
+    return data_ptr[first];
+    #elif SIMD_TYPE==SIMD_SSE3
+    return _mm_set_ps(
+      data_ptr[first + data_width + 1],
+      data_ptr[first + data_width],
+      data_ptr[first + 1],
+      data_ptr[first]
+    );
+    #elif SIMD_TYPE==AVX || SIMD_TYPE==AVX2
+    return _mm256_set_ps(
+      data_ptr[first + 3*data_width + 1],
+      data_ptr[first + 3*data_width],
+      data_ptr[first + 2*data_width + 1],
+      data_ptr[first + 2*data_width],
+      data_ptr[first + data_width + 1],
+      data_ptr[first + data_width],
+      data_ptr[first + 1],
+      data_ptr[first]
+    );  
+    #elif SIMD_TYPE==SIMD_MIC
+    return _mm512_set_ps(
+      data_ptr[first + 7*data_width + 1],
+      data_ptr[first + 7*data_width],
+      data_ptr[first + 6*data_width + 1],
+      data_ptr[first + 6*data_width],
+      data_ptr[first + 5*data_width + 1],
+      data_ptr[first + 5*data_width],
+      data_ptr[first + 4*data_width + 1],
+      data_ptr[first + 4*data_width]
+      data_ptr[first + 3*data_width + 1],
+      data_ptr[first + 3*data_width],
+      data_ptr[first + 2*data_width + 1],
+      data_ptr[first + 2*data_width],
+      data_ptr[first + data_width + 1],
+      data_ptr[first + data_width],
+      data_ptr[first + 1],
+      data_ptr[first]
+    );
+    #endif
+  }
 
-  #if SIMD_TYPE==SIMD_NONE
-  return data_ptr[first];
-  #elif SIMD_TYPE==SIMD_SSE3
-  return _mm_set_ps(
-    data_ptr[first + data_width + 1],
-    data_ptr[first + data_width],
-    data_ptr[first + 1],
-    data_ptr[first]
-  );
-  #elif SIMD_TYPE==AVX || SIMD_TYPE==AVX2
-  return _mm256_set_ps(
-    data_ptr[first + 3*data_width + 1],
-    data_ptr[first + 3*data_width],
-    data_ptr[first + 2*data_width + 1],
-    data_ptr[first + 2*data_width],
-    data_ptr[first + data_width + 1],
-    data_ptr[first + data_width],
-    data_ptr[first + 1],
-    data_ptr[first]
-  );  
-  #elif SIMD_TYPE==SIMD_MIC
-  return _mm512_set_ps(
-    data_ptr[first + 7*data_width + 1],
-    data_ptr[first + 7*data_width],
-    data_ptr[first + 6*data_width + 1],
-    data_ptr[first + 6*data_width],
-    data_ptr[first + 5*data_width + 1],
-    data_ptr[first + 5*data_width],
-    data_ptr[first + 4*data_width + 1],
-    data_ptr[first + 4*data_width]
-    data_ptr[first + 3*data_width + 1],
-    data_ptr[first + 3*data_width],
-    data_ptr[first + 2*data_width + 1],
-    data_ptr[first + 2*data_width],
-    data_ptr[first + data_width + 1],
-    data_ptr[first + data_width],
-    data_ptr[first + 1],
-    data_ptr[first]
-  );
-  #endif
-}
+  //! ONLY WORKS FOR 2 DIMENSIONS.
+  void store_simd(const int contiguous_index, simd_float value) {
+    //           (   Particle #  *  data_width  ) + offset
+    int first = (contiguous_index/2) * data_width + offset;
 
+    #if SIMD_TYPE!=SIMD_NONE
+    real array[simd_data_size];
+    simd_store(value, static_cast<real*>(array));
+    #endif
 
-
-
-  template<int simd_width=simd_data_size> void store_simd(const int contiguous_index, simd_float value);
-
-  //template<int simd_width=simd_data_size> void store_simd(const int contiguous_index, simd_float value);
+    #if SIMD_TYPE==SIMD_NONE
+    data_ptr[first] = value;
+    
+    #elif SIMD_TYPE==SIMD_SSE3
+      data_ptr[first + 1*data_width + 1] = array[3];
+      data_ptr[first + 1*data_width + 0] = array[2];
+      data_ptr[first + 0*data_width + 1] = array[1];
+      data_ptr[first + 0*data_width + 0] = array[0];
+    #elif SIMD_TYPE==SIMD_AVX || SIMD_TYPE==SIMD_AVX2
+      data_ptr[first + 3*data_width + 1] = array[7];
+      data_ptr[first + 3*data_width + 0] = array[6];
+      data_ptr[first + 2*data_width + 1] = array[5];
+      data_ptr[first + 2*data_width + 0] = array[4];
+      data_ptr[first + 1*data_width + 1] = array[3];
+      data_ptr[first + 1*data_width + 0] = array[2];
+      data_ptr[first + 0*data_width + 1] = array[1];
+      data_ptr[first + 0*data_width + 0] = array[0];
+    #elif SIMD_TYPE==SIMD_MIC
+      data_ptr[first + 7*data_width + 1] = array[15];
+      data_ptr[first + 7*data_width + 0] = array[14];
+      data_ptr[first + 6*data_width + 1] = array[13];
+      data_ptr[first + 6*data_width + 0] = array[12];
+      data_ptr[first + 5*data_width + 1] = array[11];
+      data_ptr[first + 5*data_width + 0] = array[10];
+      data_ptr[first + 4*data_width + 1] = array[9];
+      data_ptr[first + 4*data_width + 0] = array[8];
+      data_ptr[first + 3*data_width + 1] = array[7];
+      data_ptr[first + 3*data_width + 0] = array[6];
+      data_ptr[first + 2*data_width + 1] = array[5];
+      data_ptr[first + 2*data_width + 0] = array[4];
+      data_ptr[first + 1*data_width + 1] = array[3];
+      data_ptr[first + 1*data_width + 0] = array[2];
+      data_ptr[first + 0*data_width + 1] = array[1];
+      data_ptr[first + 0*data_width + 0] = array[0];
+    #endif
+  }
 
   friend ParticleContainer<dims, DataLayout::AOS>;
 
@@ -88,103 +124,8 @@ private:
   const int data_width, offset;
 };
 
-/*
-//! \brief Specify for two dimensions and SSE simd.
-template<> template<>
-simd_float ParticleContainer<2, DataLayout::AOS>::vec_access::load_to_simd(const int contiguous_index) {
-  //           (   Particle #  *  data_width  ) + offset
-  int first = (contiguous_index/2) * data_width + offset;
-
-  cout << "Loading " << offset << ": " << first + data_width + 1 << ", " << first + data_width << ", " << first+1 << ", " << first << endl;
-  cout << "Values: " << data_ptr[first + data_width + 1] << ", " << data_ptr[first + data_width] << ", " << data_ptr[first + 1] << ", " << data_ptr[first] << endl;
-
-  #if SIMD_TYPE==SIMD_NONE
-  return data_ptr[first];
-  #elif SIMD_TYPE==SIMD_SSE3
-  return _mm_set_ps(
-    data_ptr[first + data_width + 1], 
-    data_ptr[first + data_width],
-    data_ptr[first + 1], 
-    data_ptr[first]
-  );
-  #elif SIMD_TYPE==AVX || SIMD_TYPE==AVX2
-  return _mm256_set_ps(
-    data_ptr[first + 3*data_width + 1],
-    data_ptr[first + 3*data_width],
-    data_ptr[first + 2*data_width + 1],
-    data_ptr[first + 2*data_width],
-    data_ptr[first + data_width + 1],
-    data_ptr[first + data_width],
-    data_ptr[first + 1],
-    data_ptr[first]
-  );
-  #elif SIMD_TYPE==SIMD_MIC 
-  return _mm512_set_ps(
-    data_ptr[first + 7*data_width + 1],
-    data_ptr[first + 7*data_width],
-    data_ptr[first + 6*data_width + 1],
-    data_ptr[first + 6*data_width],
-    data_ptr[first + 5*data_width + 1],
-    data_ptr[first + 5*data_width],
-    data_ptr[first + 4*data_width + 1],
-    data_ptr[first + 4*data_width]
-    data_ptr[first + 3*data_width + 1],
-    data_ptr[first + 3*data_width],
-    data_ptr[first + 2*data_width + 1],
-    data_ptr[first + 2*data_width],
-    data_ptr[first + data_width + 1],
-    data_ptr[first + data_width],
-    data_ptr[first + 1],
-    data_ptr[first]
-  );
-  #endif
-}
-*/
-
-//! \brief Specify for two dimensions and SSE simd.
-template<> template<>
-void ParticleContainer<2, DataLayout::AOS>::vec_access::store_simd<4>(const int contiguous_index, simd_float value) {
-  real array[4]; // Simd data size = 4.
-
-  //           (   Particle #  *  data_width  ) + offset
-  int first = (contiguous_index/2) * data_width + offset;
-  simd_store_u(value, static_cast<real*>(array));
-
-  cout << "Stored array: " << array[0] << " " << array[1] << " " << array[2] << " " << array[3] << endl;
 
 
-  data_ptr[first + data_width + 1] = array[3];
-  data_ptr[first + data_width] = array[2];
-  data_ptr[first + 1] = array[1];
-  data_ptr[first] = array[0];
-}
-
-// //! \brief Store from a simd vector into contiguous entries.
-//   void store_simd(int contiguous_index, simd_float value) {
-//     real array[simd_data_size];
-//     simd_store(value, array);
-//     int d = contiguous_index % dims, array_index = 0;
-//     int off = (contiguous_index / dims)*data_width + offset;
-//     while (array_index<simd_data_size) {
-//       for (; d<dims && array_index<simd_data_size; ++d, ++array_index) {
-//         data_ptr[off + d] = array[array_index];
-//       }
-//       // Reset d.
-//       d = 0;
-//       // Point to next particle.
-//       off += data_width - dims;
-//     }
-//   }
-
-// template<> template<> void ParticleContainer_AOS<2>::vec_access::store_simd<4>(const int contiguous_index, simd_float value) {
-//   real scratch[4];
-//   simd_store(value, scratch);
-//   int first = contiguous_index/4;
-//   data_ptr[first + offset] = scratch[0];
-//   data_ptr[first + offset + 1] = scratch[1];
-//   data_ptr[first + offset + data_width] = scratch[2];
-//   data_ptr[first + offset + data_width + 1] = scratch[3];
-// }
 
 
 //! \brief A helper class that accesses particle scalar data from a particle container in an implementation agnostic manner.

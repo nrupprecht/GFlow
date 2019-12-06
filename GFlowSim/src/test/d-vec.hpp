@@ -122,7 +122,13 @@ namespace GFlowSimulation {
       cast_vec<dims, T>(*this, v);
     }
 
-  //private:
+    template<typename T> friend real distanceSqr(const vec<dims, T> v1, const vec<dims, T> v2) {
+      real dSqr = 0;
+      for (int d=0; d<dims; ++d) dSqr += sqr(v1[d] - v2[d]);
+      return dSqr;
+    }
+
+  private:
 
     template<int d, typename T> struct cast_vec {
       cast_vec(volatile vec& v1, const vec<dims, T>& v2) : recursive(v1, v2) {

@@ -89,43 +89,14 @@ namespace GFlowSimulation {
     // Do as much as possible using simd.
     simd_float dt_s = simd_set1(dt);
     int k = 0, size = particles->size();
-
-
-    cout << " Start of VV ------ \n";
-      for (int i=0; i<10*size; ++i) {
-        if (i%10==0 && i!=0) cout << endl;
-        cout << particles->data_ptr[i] << " ";
-      }
-      cout << endl;
-      cout << " ------ \n";
-
-
-
     for (; k+simd_data_size <= dims*size; k+=simd_data_size) {
       simd_float x_s = x.load_to_simd(k);
       simd_float v_s = v.load_to_simd(k);
       // Update position
       simd_float dv_s = dt_s * v_s;
-
-      cout << "Xs = " << simd_to_str(x_s) << ", Vs = " << simd_to_str(v_s) << " -> ";
-
       x_s = x_s + dv_s;
-
-      cout << simd_to_str(x_s) << endl;
-      
-
       // Store position
       x.store_simd(k, x_s);
-
-      cout << " ------ \n";
-      for (int i=0; i<10*size; ++i) {
-        if (i%10==0 && i!=0) cout << endl;
-        cout << particles->data_ptr[i] << " ";
-      }
-      cout << endl;
-      cout << " ------ \n";
-
-
     }
     // Remaining part must be done serially.
     for (; k<dims*size; ++k) 
@@ -146,9 +117,6 @@ namespace GFlowSimulation {
 
   template<int dims, DataLayout layout> 
   inline void VelocityVerlet<dims, layout>::update_velocities_simd() {
-
-    return;
-
     if (particles==nullptr) return;
     #if SIMD_TYPE!=SIMD_NONE
     // Get accesors.
@@ -166,7 +134,7 @@ namespace GFlowSimulation {
       // Update velocity.
       v_s += hdt_s * im_s * f_s;
       // Store velocity.
-      // v.store_simd(k, v_s);
+      v.store_simd(k, v_s);
     }
     // Remaining part must be done serially.
     for (; k<dims*size; ++k) 
