@@ -65,7 +65,7 @@ endif
 #OPENCV   := $(shell pkg-config --cflags --libs opencv)
 CFLAGS   := -c $(CSTD) $(DEBUG) $(OPTIMIZE) $(FLAGS)
 
-all: $(BIN)/$(APP) $(BIN)/vistools
+all: $(BIN)/$(APP) $(BIN)/vistools $(BIN)/test-driver
 #$(BIN)/lineattraction $(BIN)/wallattraction $(BIN)/polymerattraction $(BIN)/demonrates
 
 # Executables
@@ -79,6 +79,11 @@ $(BIN)/vistools: obj/vistools.o $(OBJS)
 	@mkdir -p `dirname $@`
 	@echo "Linking $@..."
 	@$(CC) -o $@ obj/vistools.o $(OBJS)
+
+$(BIN)/test-driver: obj/test-driver.o $(OBJS)
+	@mkdir -p `dirname $@`
+	@echo "Linking $@..."
+	@$(CC) -o $@ $< $(OBJS)
 
 #$(BIN)/lineattraction: obj/lineattraction.o $(OBJS)
 #	@mkdir -p `dirname $@`
@@ -115,6 +120,11 @@ $(OBJ)/driver.o: src/applications/driver.cpp
 	@$(CC) $(CFLAGS) $< -o $@
 
 $(OBJ)/vistools.o: src/applications/vistools.cpp
+	@mkdir -p `dirname $@`
+	@echo "Compiling $<..."
+	@$(CC) $(CFLAGS) $< -o $@
+
+$(OBJ)/test-driver.o: src/applications/test-driver.cpp
 	@mkdir -p `dirname $@`
 	@echo "Compiling $<..."
 	@$(CC) $(CFLAGS) $< -o $@
