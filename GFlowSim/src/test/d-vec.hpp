@@ -122,7 +122,7 @@ namespace GFlowSimulation {
       cast_vec<dims, T>(*this, v);
     }
 
-    template<typename T> friend real distanceSqr(const vec<dims, T> v1, const vec<dims, T> v2) {
+    friend real distanceSqr(const vec v1, const vec v2) {
       real dSqr = 0;
       for (int d=0; d<dims; ++d) dSqr += sqr(v1[d] - v2[d]);
       return dSqr;
