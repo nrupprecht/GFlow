@@ -81,9 +81,9 @@ namespace GFlowSimulation {
     integer_access i_entry(int i) { return integer_access(data_ptr, data_width, n_vectors*dims + n_scalars + i); }
 
     void setType(int i, int ty) { data_ptr[i*data_width + n_vectors*dims + n_scalars] = *reinterpret_cast<real*>(&ty); }
-    const int Type(int i) { return *reinterpret_cast<int*>(&data_ptr[i*data_width + n_vectors*dims + n_scalars]); }
+    int Type(int i) { return *reinterpret_cast<int*>(&data_ptr[i*data_width + n_vectors*dims + n_scalars]); }
     void setId(int i, int id) { data_ptr[i*data_width + n_vectors*dims + n_scalars + 1] = *reinterpret_cast<real*>(&id); }
-    const int Id(int i) { return *reinterpret_cast<int*>(data_ptr[i*data_width + n_vectors*dims + n_scalars + 1]); }
+    int Id(int i) { return *reinterpret_cast<int*>(data_ptr[i*data_width + n_vectors*dims + n_scalars + 1]); }
 
     //! \brief Clear all the [ar]-th vector entries of all the particles.
     void clear_vec(int ar);

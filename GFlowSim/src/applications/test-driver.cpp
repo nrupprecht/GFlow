@@ -20,19 +20,26 @@ int main(int argc, char **argv) {
 
   {
     cout << "Testing array of structures. ";
-    auto [time, run_time] = test_container<2, DataLayout::AOS>(n_particles);
+    auto pr = test_container<2, DataLayout::AOS>(n_particles);
+    auto time = pr.first;
+    auto run_time = pr.second;
+    // auto [time, run_time] = test_container<2, DataLayout::AOS>(n_particles);
     // Print message.
     cout << "Time: " << time << ", Ratio: " << run_time/time << endl;
   }
 
   /*
   {
-    cout << "Testing structure of arryas. ";
-    auto [time, run_time] = test_container<2, DataLayout::SOA>(n_particles);
+    cout << "Testing structure of arrays. ";
+    auto pr = test_container<2, DataLayout::SOA>(n_particles);
+    auto time = pr.first;
+    auto run_time = pr.second;
+    //auto [time, run_time] = test_container<2, DataLayout::SOA>(n_particles);
     // Print message.
     cout << "Time: " << time << ", Ratio: " << run_time/time << endl;
   }
   */
+  
   
   // Finalize mpi
   #if USE_MPI == 1

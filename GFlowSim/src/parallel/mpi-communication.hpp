@@ -52,35 +52,29 @@ namespace MPIObject {
     #endif
   }
 
+#if USE_MPI == 1
+
   inline void wait(MPI_Request& request) {
-    #if USE_MPI == 1
     MPI_Wait(&request, MPI_STATUS_IGNORE);
-    #endif
   }
   
   inline void wait(MPI_Request& request, TimedObject& timer) {
-    #if USE_MPI == 1
     timer.start_timer();
     MPI_Wait(&request, MPI_STATUS_IGNORE);
     timer.stop_timer();
-    #endif
   }
 
   inline void wait_all(vector<MPI_Request>& requests) {
-    #if USE_MPI == 1
     MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
-    #endif
   }
 
   inline bool test(MPI_Request& request) {
-    #if USE_MPI == 1
     int valid = 0;
     MPI_Test(&request, &valid, MPI_STATUS_IGNORE);
     return (valid!=0);
-    #else
-    return true;
-    #endif // USE_MPI == 1
   }
+
+#endif 
 
   template<typename T> inline void mpi_sum(T& term) {
     #if USE_MPI == 1

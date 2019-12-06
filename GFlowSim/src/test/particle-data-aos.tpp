@@ -85,8 +85,8 @@ int ParticleContainer<dims, DataLayout::AOS>::add_particle(vec<dims> x, real r, 
 
 template<int dims> 
 int ParticleContainer<dims, DataLayout::AOS>::add_particle(vec<dims> x, vec<dims> v, real r, real mass, int type) {
-  if (_size_owned >= _capacity) {
-    int new_capacity = _capacity + std::max(32, static_cast<int>(0.15*_capacity));
+  if ((_size_owned+1)*data_width >= _capacity) {
+    int new_capacity = _capacity + std::max(32, static_cast<int>(0.15*_size_owned)*data_width);
     resize(new_capacity);
   }
   // Add in particle by incrementing size counters, copying/clearing data.
@@ -107,7 +107,7 @@ int ParticleContainer<dims, DataLayout::AOS>::add_particle(vec<dims> x, vec<dims
 
 template<int dims> 
 void ParticleContainer<dims, DataLayout::AOS>::reserve(uint s) {
-  if (_capacity<s) resize(s);
+  if (_capacity<s) resize(s*data_width);
 }
 
 template<int dims> 
@@ -125,12 +125,12 @@ template<int dims>
 void ParticleContainer<dims, DataLayout::AOS>::resize(const int total_size) {
   if (total_size<=0) return;
   // In case we are resize to a smaller size.
-  const int copy_size = std::min(_size_owned, total_size);
+  const int copy_size = std::min(_size_owned*data_width, total_size);
   // Create new pointer, copy data.
   real *new_data = new real[total_size];
   if (data_ptr) {
+    copyVec(data_ptr, new_data, copy_size);
     delete [] data_ptr;
-    copyVec(data_ptr, new_data, copy_size*data_width);
   }
   // Set ptr to new data.
   data_ptr = new_data;

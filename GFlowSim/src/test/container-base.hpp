@@ -32,7 +32,9 @@ namespace GFlowSimulation {
     //! The local id is where in the array is the particle stored. The global id is a unique identifier for
     //! every particle that has ever existed in the simulation.
     int get_local_ID(int id) const {
-      if (auto it = id_map.find(id); it!=id_map.end()) return it->second;
+      // mpic++ deosn't work correctly with initializer-if's, so we have to do this the old fashion way.
+      auto it = id_map.find(id);
+      if (it!=id_map.end()) return it->second;
       else return -1;
     }
 

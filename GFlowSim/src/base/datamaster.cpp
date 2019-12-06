@@ -818,7 +818,7 @@ namespace GFlowSimulation {
     fout << "\n";
 
     // --- Print information for each processor
-
+    #if USE_MPI==1
     vector<int> int_vector(num_proc, 0);
     vector<float> float_vector(num_proc, 0.f);
 
@@ -878,6 +878,7 @@ namespace GFlowSimulation {
         pretty_print_row_float(labels[i], timing[i], float_vector, 0.01*run_time, "%");
       }
     }
+#endif // USE_MPI==1
 
     // Close the file stream.
     if (rank==0) fout.close();
