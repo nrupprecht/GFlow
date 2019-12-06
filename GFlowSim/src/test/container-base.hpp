@@ -7,7 +7,7 @@
 
 namespace GFlowSimulation {
 
-  //enum struct DataLayout { SOA, AOS };
+  enum struct DataLayout { SOA, AOS };
 
   //! \brief This class contains data and functions common to all particle container/simdata type objects.
   class ContainerBase : public Base, public TimedObject {
@@ -95,6 +95,9 @@ namespace GFlowSimulation {
     //! \brief Names of the integer data.
     vector<string> integer_data_names;
   };
+
+
+  template<int dims, DataLayout layout=DataLayout::SOA> class ParticleContainer : public ContainerBase {};
 
 }
 #endif // __PARTICLE_CONTAINER_BASE_HPP__GFLOW__

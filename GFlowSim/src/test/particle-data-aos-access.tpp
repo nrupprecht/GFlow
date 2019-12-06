@@ -1,7 +1,7 @@
 // \file Template implementation file for the vector, scalar, and integer access structs from particle-data-aos.hpp.
 
 //! \brief A helper class that accesses particle data from a particle container in an implementation agnostic manner.
-template<int dims> struct ParticleContainer_AOS<dims>::vec_access {
+template<int dims> struct ParticleContainer<dims, DataLayout::AOS>::vec_access {
   vec<dims> operator() (const int i) { return vec<dims>(&data_ptr[i*data_width + offset]); }
   const vec<dims> operator() (const int i) const { return vec<dims>(&data_ptr[i*data_width + offset]); }
   real& operator() (const int i, const int d) { return data_ptr[i*data_width + offset + d]; }
@@ -13,28 +13,19 @@ template<int dims> struct ParticleContainer_AOS<dims>::vec_access {
   real& operator[] (const int contiguous_index) { return data_ptr[data_width*(contiguous_index/dims) + offset + (contiguous_index % dims)]; }
   const real operator[] (const int contiguous_index) const { return data_ptr[data_width*(contiguous_index/dims) + offset + (contiguous_index % dims)]; }
 
-  //! \brief Load contiguous entries into simd vector
-  template<int simd_width=simd_data_size> simd_float load_to_simd(const int contiguous_index) {};
-  
-  //! \brief Store from a simd vector into contiguous entries.
-  void store_simd(int contiguous_index, simd_float value) {
-    real array[simd_data_size];
-    simd_store(value, array);
-    int d = contiguous_index % dims, array_index = 0;
-    int offset = (contiguous_index / dims)*data_width;
-    while (array_index<simd_data_size) {
-      for (; d<dims && array_index<simd_data_size; ++d, ++array_index)
-        data_ptr[offset + d] = array[array_index];
-      // Reset d.
-      d = 0;
-      // Point to next particle.
-      offset += data_width - dims;
-    }
+  //! \brief Return a copy of the vector.
+  vec<dims>&& copy(int i) {
+    return vec<dims>(&data_ptr[i*data_width + offset]);
   }
+  
+  //! \brief Load contiguous entries into simd vector
+  template<int simd_width=simd_data_size> simd_float load_to_simd(const int contiguous_index);
+  
+  template<int simd_width=simd_data_size> void store_simd(const int contiguous_index, simd_float value);
 
   //template<int simd_width=simd_data_size> void store_simd(const int contiguous_index, simd_float value);
 
-  friend ParticleContainer_AOS<dims>;
+  friend ParticleContainer<dims, DataLayout::AOS>;
 
 private:
   //! \brief Private constructor, so only ParticleContainer can create a vec_access.
@@ -46,13 +37,56 @@ private:
 };
 
 //! \brief Specify for two dimensions and SSE simd.
-template<> template<> simd_float ParticleContainer_AOS<2>::vec_access::load_to_simd<4>(int contiguous_index) {
-  int first = contiguous_index/4;
+template<> template<>
+simd_float ParticleContainer<2, DataLayout::AOS>::vec_access::load_to_simd<4>(const int contiguous_index) {
+  //           (   Particle #  *  data_width  ) + offset
+  int first = (contiguous_index/2) * data_width + offset;
+
+  cout << "Loading " << offset << ": " << first + data_width + 1 << ", " << first + data_width << ", " << first+1 << ", " << first << endl;
+  cout << "Values: " << data_ptr[first + data_width + 1] << ", " << data_ptr[first + data_width] << ", " << data_ptr[first + 1] << ", " << data_ptr[first] << endl;
+
   return _mm_set_ps(
-    data_ptr[first + offset], data_ptr[first + offset + 1], 
-    data_ptr[first + offset + data_width], data_ptr[first + offset + data_width + 1]
+    data_ptr[first + data_width + 1], 
+    data_ptr[first + data_width],
+    data_ptr[first + 1], 
+    data_ptr[first]
   );
 }
+
+//! \brief Specify for two dimensions and SSE simd.
+template<> template<>
+void ParticleContainer<2, DataLayout::AOS>::vec_access::store_simd<4>(const int contiguous_index, simd_float value) {
+  real array[4]; // Simd data size = 4.
+
+  //           (   Particle #  *  data_width  ) + offset
+  int first = (contiguous_index/2) * data_width + offset;
+  simd_store_u(value, static_cast<real*>(array));
+
+  cout << "Stored array: " << array[0] << " " << array[1] << " " << array[2] << " " << array[3] << endl;
+
+
+  data_ptr[first + data_width + 1] = array[3];
+  data_ptr[first + data_width] = array[2];
+  data_ptr[first + 1] = array[1];
+  data_ptr[first] = array[0];
+}
+
+// //! \brief Store from a simd vector into contiguous entries.
+//   void store_simd(int contiguous_index, simd_float value) {
+//     real array[simd_data_size];
+//     simd_store(value, array);
+//     int d = contiguous_index % dims, array_index = 0;
+//     int off = (contiguous_index / dims)*data_width + offset;
+//     while (array_index<simd_data_size) {
+//       for (; d<dims && array_index<simd_data_size; ++d, ++array_index) {
+//         data_ptr[off + d] = array[array_index];
+//       }
+//       // Reset d.
+//       d = 0;
+//       // Point to next particle.
+//       off += data_width - dims;
+//     }
+//   }
 
 // template<> template<> void ParticleContainer_AOS<2>::vec_access::store_simd<4>(const int contiguous_index, simd_float value) {
 //   real scratch[4];
@@ -66,13 +100,13 @@ template<> template<> simd_float ParticleContainer_AOS<2>::vec_access::load_to_s
 
 
 //! \brief A helper class that accesses particle scalar data from a particle container in an implementation agnostic manner.
-template<int dims> struct ParticleContainer_AOS<dims>::scalar_access {
+template<int dims> struct ParticleContainer<dims, DataLayout::AOS>::scalar_access {
   real& operator() (const int i) { return data_ptr[i*data_width + offset]; }
   const real operator() (const int i) const { return data_ptr[i*data_width + offset]; }
 
   template<int simd_size=simd_data_size> simd_float valign_load_to_simd(int contiguous_index); 
 
-  friend ParticleContainer_AOS<dims>;
+  friend ParticleContainer<dims, DataLayout::AOS>;
 
 private:
   //! \brief Private constructor, so only ParticleContainer can create a scalar_access.
@@ -84,18 +118,24 @@ private:
 };
 
 
-template<> template<> simd_float ParticleContainer_AOS<2>::scalar_access::valign_load_to_simd<4>(int contiguous_index) {
-  int first = contiguous_index/4;
-  return _mm_set_ps(data_ptr[first + offset], data_ptr[first + offset], 
-    data_ptr[first + offset + data_width], data_ptr[first + offset + data_width]);
+template<> template<>
+simd_float ParticleContainer<2, DataLayout::AOS>::scalar_access::valign_load_to_simd<4>(int contiguous_index) {
+  //           (   Particle #  *  data_width  ) + offset
+  int first = (contiguous_index/2) * data_width + offset;
+  return _mm_set_ps(
+    data_ptr[first + data_width], 
+    data_ptr[first + data_width], 
+    data_ptr[first], 
+    data_ptr[first]
+  );
 }
 
 //! \brief A helper class that accesses particle integer data from a particle container in an implementation agnostic manner.
-template<int dims> struct ParticleContainer_AOS<dims>::integer_access {
+template<int dims> struct ParticleContainer<dims, DataLayout::AOS>::integer_access {
   int& operator() (const int i) { return *reinterpret_cast<int*>(&data_ptr[i*data_width + offset]); }
   const int operator() (const int i) const { return *reinterpret_cast<int*>(&data_ptr[i*data_width + offset]); }
 
-  friend ParticleContainer_AOS<dims>;
+  friend ParticleContainer<dims, DataLayout::AOS>;
 
 private:
   //! \brief Private constructor, so only ParticleContainer can create a scalar_access.
@@ -105,3 +145,4 @@ private:
   real *data_ptr = nullptr;
   const int data_width, offset;
 };
+

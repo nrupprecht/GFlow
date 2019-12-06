@@ -10,25 +10,25 @@ namespace GFlowSimulation {
   //! in, it also has a pointer to the location where its data is. So a vec can ``wrap'' a real*, and allow us to treat it as a vec.
   template<int dims, typename scalar=real> struct vec {
     //! \brief Default constructor. Creates a zero vector.
-    vec() : access(static_cast<scalar*>(X)) {
+    vec() : access(static_cast<volatile scalar*>(X)) {
       zero();
     };
 
     //! \brief Setting constructor, sets all entries to be the same value.
-    vec(scalar v) : access(static_cast<scalar*>(X)) {
+    vec(scalar v) : access(static_cast<volatile scalar*>(X)) {
       set1_vec<dims>(access, v);
     }
 
     //! \brief Wrapping constructor. Wraps a memory address to act as a vector.
-    vec(scalar* data) : access(data) {};
+    vec(scalar* data) : access(static_cast<volatile scalar*>(data)) {};
 
     //! \brief Copy constructor.
-    vec(const vec& v) : access(static_cast<scalar*>(X)) {
-      copy_vec<dims>(v.access, access);
-    }
+    //!
+    //! The vector points to the same underlying memory location as v, becoming a reference for it.
+    vec(const vec& v) : access(v.access) {};
 
     //! \brief Component setting constructor.
-    template<typename ...Params> vec(Params... pack) : access(static_cast<scalar*>(X)) {
+    template<typename ...Params> vec(Params... pack) : access(static_cast<volatile scalar*>(X)) {
       if (sizeof...(pack)!=dims) throw false;
       int i = 0;
       for (auto &&x : {pack...}) {
@@ -38,15 +38,8 @@ namespace GFlowSimulation {
     }
 
     //! Equals operator.
-    template<typename T> vec& operator=(const vec<dims,T>& v) {
-      this->copy_vec_cast(v.access, access);
-      return *this;
-    }
-
-    //! Move equals operator.
-    template<typename T> vec& operator=(const vec<dims,T>&& v) {
-      access = static_cast<scalar*>(X);
-      this->copy_vec_cast(v.access, access);
+    volatile vec& operator=(const vec& v) volatile {
+      copy_vec<dims>(v.access, access);
       return *this;
     }
 
@@ -100,10 +93,10 @@ namespace GFlowSimulation {
     }
 
     //! \brief Access function.
-    scalar& operator[] (int i) { return access[i]; }
+    volatile scalar& operator[] (int i) volatile { return access[i]; }
 
     //! \brief Constant access function.
-    const scalar operator[] (int i) const { return access[i]; }
+    const volatile scalar& operator[] (int i) const volatile { return access[i]; }
 
     //! \brief Set the whole vector to be zero.
     void zero() {
@@ -125,39 +118,33 @@ namespace GFlowSimulation {
       return out;
     }
 
-    template<typename T> void copy_vec_cast(const vec<dims, T>& v) {
+    template<typename T> void copy_vec_cast(const vec<dims, T>& v) volatile {
       cast_vec<dims, T>(*this, v);
     }
 
   //private:
 
     template<int d, typename T> struct cast_vec {
-      cast_vec(vec& v1, const vec<dims, T>& v2) : recursive(v1, v2) {
+      cast_vec(volatile vec& v1, const vec<dims, T>& v2) : recursive(v1, v2) {
         v1[d-1] = static_cast<scalar>(v2[d-1]);
       }
       // Sub member.
       cast_vec<d-1, T> recursive;
     };
     template<typename T> struct cast_vec<0, T> {
-      cast_vec(vec& v1, const vec<dims, T>& v2) {
+      cast_vec(volatile vec& v1, const vec<dims, T>& v2) {
         v1[0] = static_cast<scalar>(v2[0]);
       }
     };
-
-    // template<int d, typename T> inline void copy_vec_cast_helper(const vec<dims, T>& v) {
-    //   access[d-1] = static_cast<scalar>(v[d-1]);
-    //   copy_vec_cast_helper<d-1, T>(v);
-    // }
-
-    // template<typename T> inline void copy_vec_cast_helper<1>(const vec<dims, T>& v) {
-    //   access[0] = static_cast<scalar>(v[0]);
-    // }
 
     //! \brief Address reference.
     volatile scalar *access;
     //! \brief Internal data.
     scalar X[dims];
   };
+
+  //! \brief Define integer vector.
+  template<int dims> using ivec = vec<dims, int>;
 
 }
 #endif // __D_VEC_HPP__GFLOW__

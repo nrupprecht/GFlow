@@ -23,13 +23,16 @@ using std::vector;
 
 namespace GFlowSimulation {
 
-  template<int dims> class ParticleContainer_AOS : public ContainerBase {
+  template<int dims> class ParticleContainer<dims, DataLayout::AOS> : public ContainerBase {
   public:
+
+    typedef ParticleContainer<dims, DataLayout::AOS> SelfType;
+
     //! \brief Default constructor.
-    ParticleContainer_AOS(GFlow*);
+    ParticleContainer(GFlow*);
 
     //! \brief Destructor.
-    ~ParticleContainer_AOS();
+    ~ParticleContainer();
 
     //! \brief Initialize the particle container. After this point, no new entries should be added.
     virtual void initialize() override;
@@ -77,8 +80,10 @@ namespace GFlowSimulation {
     integer_access Id() { return integer_access(data_ptr, data_width, n_vectors*dims + n_scalars + 1); }
     integer_access i_entry(int i) { return integer_access(data_ptr, data_width, n_vectors*dims + n_scalars + i); }
 
-    int& Type(int i) { return *reinterpret_cast<int*>(&data_ptr[i*data_width + n_vectors*dims + n_scalars]); }
-    int& Id(int i) { return *reinterpret_cast<int*>(data_ptr[i*data_width + n_vectors*dims + n_scalars + 1]); }
+    void setType(int i, int ty) { data_ptr[i*data_width + n_vectors*dims + n_scalars] = *reinterpret_cast<real*>(&ty); }
+    const int Type(int i) { return *reinterpret_cast<int*>(&data_ptr[i*data_width + n_vectors*dims + n_scalars]); }
+    void setId(int i, int id) { data_ptr[i*data_width + n_vectors*dims + n_scalars + 1] = *reinterpret_cast<real*>(&id); }
+    const int Id(int i) { return *reinterpret_cast<int*>(data_ptr[i*data_width + n_vectors*dims + n_scalars + 1]); }
 
     //! \brief Clear all the [ar]-th vector entries of all the particles.
     void clear_vec(int ar);
@@ -104,7 +109,7 @@ namespace GFlowSimulation {
     //! \brief Remove particles that have been marked, and fill in space. Particles will contiguous after this function.
     void do_particle_removal();
 
-  private:
+  //private:
 
     //! \brief Resize the particle data memory so that more (or fewer) particles fit in memory. Owned particles (up to total_size) are
     //! transfered to the new memory.

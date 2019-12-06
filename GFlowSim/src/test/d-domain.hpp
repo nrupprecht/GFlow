@@ -6,30 +6,37 @@
 
 namespace GFlowSimulation {
 
-  template<int dims> using ivec = vec<dims, int>;
+  
 
-  template<int sim_dimensions, template<int> class Container=ParticleContainer> 
-  class DomainD {
+  template<int dims, DataLayout layout> 
+  class DomainD : public Base {
   public:
 
-    DomainD(Container<sim_dimensions> *prts) : particles(prts), process_bounds(sim_dimensions), simulation_bounds(sim_dimensions) {};
+    typedef ParticleContainer<dims, layout> Container;
+
+    DomainD(GFlow *gflow) : Base(gflow), process_bounds(dims), simulation_bounds(dims) {};
+
+    void setContainer(Container *ptr) {
+      particles = ptr;
+    }
 
     void initialize() {
       // Set target cell size. Cells must be at least this large.
       target_cell_size = 2*max_small_radius + skin_depth;
+      // Make sure simulation bounds is correct.
+      simulation_bounds = gflow->getBounds();
+      // Set the process bounds.
+      process_bounds = simulation_bounds;
 
       // Set up bounds.
       int prod = 1;
-      for (int d=0; d<sim_dimensions; ++d) {
+      for (int d=0; d<dims; ++d) {
         dimensions[d] = static_cast<int>(process_bounds.wd(0) / target_cell_size);
         widths[d] = process_bounds.wd(0) / dimensions[d];
         inv_widths[d] = 1./widths[d];
         products[d] = prod;
         prod *= dimensions[d];
       }
-
-
-
     }
 
     void structure_updates() {
@@ -41,14 +48,22 @@ namespace GFlowSimulation {
         next_occupant = vector<int>(size, -1);
       }
 
+      // The low corner. Particle positions should be relative to this.
+      vec<dims> corner(process_bounds.min);
+
       for (int i=0; i<size; ++i) {
-        vec<sim_dimensions> xc = x[i];
+        vec<dims> xc;
+        xc = x(i);
+        xc -= corner;
         hadamard_equals(xc, inv_widths);
-        
+
         // Convert to int.
-        ivec<sim_dimensions> index;
+        ivec<dims> index;
         index.copy_vec_cast(xc);
         int linear = index*products;
+
+        //cout << x(i) << " -> " << xc << " " << index << " " << linear << endl;
+        cout << x(i) << endl;
       }
     }
 
@@ -64,18 +79,19 @@ namespace GFlowSimulation {
     vector<int> next_occupant;
 
     //! \brief The container of particles.
-    Container<sim_dimensions> *particles = nullptr;
+    Container *particles = nullptr;
 
-    vec<sim_dimensions> widths;
-    vec<sim_dimensions> inv_widths;
+    vec<dims> widths;
+    vec<dims> inv_widths;
+
 
     //! \brief The dimensionality of the sector grid.
-    ivec<sim_dimensions> dimensions;
+    ivec<dims> dimensions;
 
-    ivec<sim_dimensions> dim_shift_up[sim_dimensions];
-    ivec<sim_dimensions> dims_shift_down[sim_dimensions];
+    ivec<dims> dim_shift_up[dims];
+    ivec<dims> dims_shift_down[dims];
 
-    ivec<sim_dimensions> products;
+    ivec<dims> products;
 
     //! \brief The bounds of the domain
     Bounds process_bounds;

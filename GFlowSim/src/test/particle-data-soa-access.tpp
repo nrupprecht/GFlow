@@ -1,7 +1,7 @@
 // \file Template implementation file for the vector, scalar, and integer access structs from particle-data-soa.hpp.
 
 //! \brief A helper class that accesses particle data from a particle container in an implementation agnostic manner.
-template<int dims> struct ParticleContainer_SOA<dims>::vec_access {
+template<int dims> struct ParticleContainer<dims, DataLayout::SOA>::vec_access {
   //! \brief Access an entire vector.
   vec<dims> operator() (const int i) { return vec<dims>(data_ptr[i]); }
   const vec<dims> operator() (const int i) const { return vec<dims>(data_ptr[i]); }
@@ -29,7 +29,7 @@ template<int dims> struct ParticleContainer_SOA<dims>::vec_access {
     simd_store_u(value, &data_ptr[0][contiguous_index]);
   }
 
-  friend ParticleContainer_SOA<dims>;
+  friend ParticleContainer<dims, DataLayout::SOA>;
 
 private:
   //! \brief Private constructor, so only ParticleContainer can create a vec_access.
@@ -40,7 +40,7 @@ private:
 };
 
 //! \brief A helper class that accesses particle scalar data from a particle container in an implementation agnostic manner.
-template<int dims> struct ParticleContainer_SOA<dims>::scalar_access {
+template<int dims> struct ParticleContainer<dims, DataLayout::SOA>::scalar_access {
   real& operator() (const int i) { return data_ptr[i]; }
   const real operator() (const int i) const { return data_ptr[i]; }
 
@@ -51,7 +51,7 @@ template<int dims> struct ParticleContainer_SOA<dims>::scalar_access {
       data_ptr[(contiguous_index+1)/dims], data_ptr[contiguous_index/dims]);
   }
 
-  friend ParticleContainer_SOA<dims>;
+  friend ParticleContainer<dims, DataLayout::SOA>;
 
 private:
   //! \brief Private constructor, so only ParticleContainer can create a scalar_access.
@@ -62,11 +62,11 @@ private:
 };
 
 //! \brief A helper class that accesses particle integer data from a particle container in an implementation agnostic manner.
-template<int dims> struct ParticleContainer_SOA<dims>::integer_access {
+template<int dims> struct ParticleContainer<dims, DataLayout::SOA>::integer_access {
   int& operator() (const int i) { return data_ptr[i]; }
   const int operator() (const int i) const { return data_ptr[i]; }
 
-  friend ParticleContainer_SOA<dims>;
+  friend ParticleContainer<dims, DataLayout::SOA>;
 
 private:
   //! \brief Private constructor, so only ParticleContainer can create a scalar_access.

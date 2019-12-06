@@ -1,7 +1,7 @@
 // \file Template implementation file for particle-data-soa.hpp.
 
 template<int dims>
-ParticleContainer_SOA<dims>::ParticleContainer_SOA(GFlow *gflow) : ContainerBase(gflow) {
+ParticleContainer<dims, DataLayout::SOA>::ParticleContainer(GFlow *gflow) : ContainerBase(gflow) {
   // Essential vector data.
   vector_data = vector<real**> {nullptr, nullptr, nullptr};
   vector_data_names = vector<string> {"X", "V", "F"};
@@ -14,7 +14,7 @@ ParticleContainer_SOA<dims>::ParticleContainer_SOA(GFlow *gflow) : ContainerBase
 }
 
 template<int dims>
-ParticleContainer_SOA<dims>::~ParticleContainer_SOA() {
+ParticleContainer<dims, DataLayout::SOA>::~ParticleContainer() {
   for (auto& ptr : vector_data) 
     if (ptr) dealloc_array_2d(ptr);
   for (auto& ptr : scalar_data) 
@@ -28,31 +28,31 @@ ParticleContainer_SOA<dims>::~ParticleContainer_SOA() {
 }
 
 template<int dims> 
-void ParticleContainer_SOA<dims>::initialize() {
+void ParticleContainer<dims, DataLayout::SOA>::initialize() {
   initialized = true;
 }
 
 template<int dims> 
-void ParticleContainer_SOA<dims>::pre_integrate() {
+void ParticleContainer<dims, DataLayout::SOA>::pre_integrate() {
   // Clear the timed object timer.
   clear_timer();
 }
 
 template<int dims> 
-void ParticleContainer_SOA<dims>::post_integrate() {
+void ParticleContainer<dims, DataLayout::SOA>::post_integrate() {
 
 }
 
 template<int dims>
-bool ParticleContainer_SOA<dims>::is_soa() { 
+bool ParticleContainer<dims, DataLayout::SOA>::is_soa() { 
   return true; 
 }
 
 template<int dims>
-void ParticleContainer_SOA<dims>::update() {};
+void ParticleContainer<dims, DataLayout::SOA>::update() {};
 
 template<int dims>
-int ParticleContainer_SOA<dims>::add_vector_entry(const string& name) {
+int ParticleContainer<dims, DataLayout::SOA>::add_vector_entry(const string& name) {
   if (!initialized && std::find(begin(vector_data_names), end(vector_data_names), name)==vector_data_names.end()) {
     vector_data.push_back(nullptr);
     vector_data_names.push_back(name);
@@ -63,7 +63,7 @@ int ParticleContainer_SOA<dims>::add_vector_entry(const string& name) {
 }
 
 template<int dims>
-int ParticleContainer_SOA<dims>::add_scalar_entry(const string& name) {
+int ParticleContainer<dims, DataLayout::SOA>::add_scalar_entry(const string& name) {
   if (!initialized && std::find(begin(scalar_data_names), end(scalar_data_names), name)==scalar_data_names.end()) {
     scalar_data.push_back(nullptr);
     scalar_data_names.push_back(name);
@@ -74,7 +74,7 @@ int ParticleContainer_SOA<dims>::add_scalar_entry(const string& name) {
 }
 
 template<int dims>
-int ParticleContainer_SOA<dims>::add_integer_entry(const string& name) {
+int ParticleContainer<dims, DataLayout::SOA>::add_integer_entry(const string& name) {
   if (!initialized && std::find(begin(integer_data_names), end(integer_data_names), name)==integer_data_names.end()) {
     integer_data.push_back(nullptr);
     integer_data_names.push_back(name);
@@ -85,18 +85,18 @@ int ParticleContainer_SOA<dims>::add_integer_entry(const string& name) {
 }
 
 template<int dims>
-void ParticleContainer_SOA<dims>::clear_vec(int ar) {
+void ParticleContainer<dims, DataLayout::SOA>::clear_vec(int ar) {
   real *data = static_cast<real*>(vector_data[ar][0]);
   for (int i=0; i<_size_owned*dims; ++i) data[i] = 0.;
 }
 
 template<int dims>
-int ParticleContainer_SOA<dims>::add_particle(vec<dims> x, real r, real mass, int type) {
+int ParticleContainer<dims, DataLayout::SOA>::add_particle(vec<dims> x, real r, real mass, int type) {
   return add_particle(x, vec<dims>(), r, mass, type);
 }
 
 template<int dims>
-int ParticleContainer_SOA<dims>::add_particle(vec<dims> x, vec<dims> v, real r, real mass, int type) {
+int ParticleContainer<dims, DataLayout::SOA>::add_particle(vec<dims> x, vec<dims> v, real r, real mass, int type) {
   if (_size_owned >= _capacity) {
     int new_capacity = _capacity + std::max(32, static_cast<int>(0.15*_capacity));
     resize(new_capacity);
@@ -119,18 +119,18 @@ int ParticleContainer_SOA<dims>::add_particle(vec<dims> x, vec<dims> v, real r, 
 }
 
 template<int dims>
-void ParticleContainer_SOA<dims>::reserve(uint s) {
+void ParticleContainer<dims, DataLayout::SOA>::reserve(uint s) {
   if (_capacity<s) resize(s);
 }
 
 template<int dims>
-void ParticleContainer_SOA<dims>::mark_for_removal(int id) {
+void ParticleContainer<dims, DataLayout::SOA>::mark_for_removal(int id) {
   Type(id) = -1;
   remove_list.push_back(id);
 }
 
 template<int dims>
-void ParticleContainer_SOA<dims>::do_particle_removal() {
+void ParticleContainer<dims, DataLayout::SOA>::do_particle_removal() {
   /*
   // If there is nothing to remove, we're done
   if (remove_list.empty() || _number==0) return;
@@ -170,7 +170,7 @@ void ParticleContainer_SOA<dims>::do_particle_removal() {
 }
 
 template<int dims>
-void ParticleContainer_SOA<dims>::resize(const int total_size) {
+void ParticleContainer<dims, DataLayout::SOA>::resize(const int total_size) {
   if (total_size<=0) return;
   // In case we are resize to a smaller size.
   const int copy_size = std::min(_size_owned, total_size);

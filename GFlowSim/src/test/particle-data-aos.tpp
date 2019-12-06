@@ -1,7 +1,7 @@
 // \file Template implementation file for particle-data-aos.hpp.
 
 template<int dims> 
-ParticleContainer_AOS<dims>::ParticleContainer_AOS(GFlow *gflow) : ContainerBase(gflow) {
+ParticleContainer<dims, DataLayout::AOS>::ParticleContainer(GFlow *gflow) : ContainerBase(gflow) {
   // Essential vector data.
   vector_data_names = vector<string> {"X", "V", "F"};
   // Essential scalar data.
@@ -11,38 +11,38 @@ ParticleContainer_AOS<dims>::ParticleContainer_AOS(GFlow *gflow) : ContainerBase
 }
 
 template<int dims> 
-ParticleContainer_AOS<dims>::~ParticleContainer_AOS() {
+ParticleContainer<dims, DataLayout::AOS>::~ParticleContainer() {
   if (data_ptr) delete [] data_ptr;
 }
 
 template<int dims> 
-void ParticleContainer_AOS<dims>::initialize() {
+void ParticleContainer<dims, DataLayout::AOS>::initialize() {
   initialized = true;
 }
 
 template<int dims> 
-void ParticleContainer_AOS<dims>::pre_integrate() {
+void ParticleContainer<dims, DataLayout::AOS>::pre_integrate() {
   // Clear the timed object timer.
   clear_timer();
 }
 
 template<int dims> 
-void ParticleContainer_AOS<dims>::post_integrate() {
+void ParticleContainer<dims, DataLayout::AOS>::post_integrate() {
 
 }
 
 template<int dims> 
-bool ParticleContainer_AOS<dims>::is_soa() { 
+bool ParticleContainer<dims, DataLayout::AOS>::is_soa() { 
   return false; 
 }
 
 template<int dims> 
-void ParticleContainer_AOS<dims>::update() {
+void ParticleContainer<dims, DataLayout::AOS>::update() {
 
 };
 
 template<int dims> 
-int ParticleContainer_AOS<dims>::add_vector_entry(const string& name) {
+int ParticleContainer<dims, DataLayout::AOS>::add_vector_entry(const string& name) {
   if (!initialized && std::find(begin(vector_data_names), end(vector_data_names), name)==vector_data_names.end()) {
     vector_data_names.push_back(name);
     ++n_vectors;
@@ -52,7 +52,7 @@ int ParticleContainer_AOS<dims>::add_vector_entry(const string& name) {
 }
 
 template<int dims> 
-int ParticleContainer_AOS<dims>::add_scalar_entry(const string& name) {
+int ParticleContainer<dims, DataLayout::AOS>::add_scalar_entry(const string& name) {
   if (!initialized && std::find(begin(scalar_data_names), end(scalar_data_names), name)==scalar_data_names.end()) {
     scalar_data_names.push_back(name);
     ++n_scalars;
@@ -62,7 +62,7 @@ int ParticleContainer_AOS<dims>::add_scalar_entry(const string& name) {
 }
 
 template<int dims> 
-int ParticleContainer_AOS<dims>::add_integer_entry(const string& name) {
+int ParticleContainer<dims, DataLayout::AOS>::add_integer_entry(const string& name) {
   if (!initialized && std::find(begin(integer_data_names), end(integer_data_names), name)==integer_data_names.end()) {
     integer_data_names.push_back(name);
     ++n_integers;
@@ -72,19 +72,19 @@ int ParticleContainer_AOS<dims>::add_integer_entry(const string& name) {
 }
 
 template<int dims> 
-void ParticleContainer_AOS<dims>::clear_vec(int ar) {
+void ParticleContainer<dims, DataLayout::AOS>::clear_vec(int ar) {
   int address = ar*dims;
   for (int i=0; i<_size_owned; ++i, ar += data_width) 
     set1_vec<dims>(&data_ptr[address], 0);
 }
 
 template<int dims> 
-int ParticleContainer_AOS<dims>::add_particle(vec<dims> x, real r, real mass, int type) {
+int ParticleContainer<dims, DataLayout::AOS>::add_particle(vec<dims> x, real r, real mass, int type) {
   return add_particle(x, vec<dims>(), r, mass, type);
 }
 
 template<int dims> 
-int ParticleContainer_AOS<dims>::add_particle(vec<dims> x, vec<dims> v, real r, real mass, int type) {
+int ParticleContainer<dims, DataLayout::AOS>::add_particle(vec<dims> x, vec<dims> v, real r, real mass, int type) {
   if (_size_owned >= _capacity) {
     int new_capacity = _capacity + std::max(32, static_cast<int>(0.15*_capacity));
     resize(new_capacity);
@@ -96,7 +96,8 @@ int ParticleContainer_AOS<dims>::add_particle(vec<dims> x, vec<dims> v, real r, 
   V(_size_owned) = v;
   R(_size_owned) = r;
   Im(_size_owned) = 1./mass;
-  Type(_size_owned) = type;
+  setType(_size_owned, type);
+  setId(_size_owned, 0); // Set id to 0. This is not correct.
   // Increment counters.
   ++_number_owned;
   ++_size_owned;
@@ -105,23 +106,23 @@ int ParticleContainer_AOS<dims>::add_particle(vec<dims> x, vec<dims> v, real r, 
 }
 
 template<int dims> 
-void ParticleContainer_AOS<dims>::reserve(uint s) {
+void ParticleContainer<dims, DataLayout::AOS>::reserve(uint s) {
   if (_capacity<s) resize(s);
 }
 
 template<int dims> 
-void ParticleContainer_AOS<dims>::mark_for_removal(int id) {
+void ParticleContainer<dims, DataLayout::AOS>::mark_for_removal(int id) {
   Type(id) = -1;
   remove_list.push_back(id);
 }
 
 template<int dims> 
-void ParticleContainer_AOS<dims>::do_particle_removal() {
+void ParticleContainer<dims, DataLayout::AOS>::do_particle_removal() {
   
 }
 
 template<int dims> 
-void ParticleContainer_AOS<dims>::resize(const int total_size) {
+void ParticleContainer<dims, DataLayout::AOS>::resize(const int total_size) {
   if (total_size<=0) return;
   // In case we are resize to a smaller size.
   const int copy_size = std::min(_size_owned, total_size);

@@ -6,7 +6,8 @@
 using namespace GFlowSimulation;
 
 // Forward reference to the test function.
-template<int dims, template<int> class Container> inline pair<real, real> test_container(Container<dims>&, int);
+template<int dims, DataLayout layout> 
+inline pair<real, real> test_container(int);
 
 // Main.
 int main(int argc, char **argv) {
@@ -15,27 +16,23 @@ int main(int argc, char **argv) {
   MPI_Init(&argc, &argv);
   #endif
 
-
-  constexpr int sim_dimensions = 2;
-  GFlow gflow(sim_dimensions);
+  int n_particles = 4;
 
   {
     cout << "Testing array of structures. ";
-    ParticleContainer_AOS<sim_dimensions> particles(&gflow);
-    particles.initialize();
-    auto [time, run_time] = test_container(particles, 1018);
+    auto [time, run_time] = test_container<2, DataLayout::AOS>(n_particles);
     // Print message.
     cout << "Time: " << time << ", Ratio: " << run_time/time << endl;
   }
 
+  /*
   {
     cout << "Testing structure of arryas. ";
-    ParticleContainer_SOA<sim_dimensions> particles(&gflow);
-    particles.initialize();
-    auto [time, run_time] = test_container(particles, 1018);
+    auto [time, run_time] = test_container<2, DataLayout::SOA>(n_particles);
     // Print message.
     cout << "Time: " << time << ", Ratio: " << run_time/time << endl;
   }
+  */
   
   // Finalize mpi
   #if USE_MPI == 1
@@ -47,10 +44,29 @@ int main(int argc, char **argv) {
 
 
 //! \brief Function to test particle containers.
-template<int dims, template<int> class Container> inline pair<real, real> test_container(Container<dims>& particles, int n_particles) {
+template<int dims, DataLayout layout> 
+inline pair<real, real> test_container(int n_particles) {
+  GFlow gflow(dims);
+  Bounds bnds(dims);
+  for (int i=0; i<dims; ++i) {
+    bnds.min[i] = 0;
+    bnds.max[i] = 4.;
+  }
+  gflow.setBounds(bnds);
+
+  cout << gflow.getBounds() << endl;
+
+  ParticleContainer<dims, layout> particles(&gflow);
+  particles.initialize();
+
   // Create an integrator.
-  VelocityVerlet<dims, Container> integrator(particles.getGFlow());
+  VelocityVerlet<dims, layout> integrator(&gflow);
   integrator.setContainer(&particles);
+
+  DomainD<dims, layout> domain(&gflow);
+  domain.setContainer(&particles);
+  domain.initialize();
+
 
   real dt = 0.001;
   real hdt = 0.5*dt;
@@ -60,9 +76,17 @@ template<int dims, template<int> class Container> inline pair<real, real> test_c
   // Add random particles.
   particles.reserve(n_particles);
   for (int i=0; i<n_particles; ++i) {
-    particles.add_particle(vec<2>{width*drand48(), width*drand48()}, vec<2>{drand48()-0.5, drand48()-0.5}, 0.05, 1.f);
+    particles.add_particle(vec<dims>{width*drand48(), width*drand48()}, /*vec<2>{drand48()-0.5, drand48()-0.5}*/
+    vec<2>{0.135, 0.246}, 0.05, 1.f);
   }
 
+  cout << "LOOK: ";
+  auto ptr = particles.data_ptr;
+  for (int i=0; i<10*n_particles; ++i) {
+    if (i%10==0) cout << "\n";
+    cout << ptr[i] << " ";
+  }
+  cout << endl << endl;
 
   // A timer.
   Timer timer;
@@ -70,16 +94,15 @@ template<int dims, template<int> class Container> inline pair<real, real> test_c
 
   integrator.pre_integrate();
 
-  DomainD<dims, Container> domain(&particles);
-
   int last_wrap = 0;
 
   int wrap_delay = 15;
-  for (int nstep=0; nstep<Nstep; ++nstep) {
+  for (int nstep=0; nstep<5; ++nstep) { // Nstep
     // Integrator first half kick.
     integrator.pre_forces();
     
     // Harmonic boundary conditions
+    /*
     if (nstep-last_wrap<wrap_delay);
     else {
       auto x = particles.X();
@@ -92,15 +115,24 @@ template<int dims, template<int> class Container> inline pair<real, real> test_c
         else if (width<=x(i,1)) x(i,1) -= width;
       }
       last_wrap = nstep;
-
+      
       //domain.structure_updates();
     }
+    */
 
     // Integrator second half kick.
-    integrator.post_forces();
+    // integrator.post_forces();
+
+    cout << "LOOK: ";
+    auto ptr = particles.data_ptr;
+    for (int i=0; i<10*n_particles; ++i) {
+      if (i%10==0) cout << "\n";
+      cout << ptr[i] << " ";
+    }
+    cout << endl << endl;
   }
 
-  integrator.post_integrate();
+  // integrator.post_integrate();
 
   // Stop timer.
   timer.stop();

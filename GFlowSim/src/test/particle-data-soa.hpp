@@ -23,17 +23,16 @@ using std::vector;
 
 namespace GFlowSimulation {
 
-  // template<int dims, DataLayout layout> class ParticleContainer : public ContainerBase {
-
-  // };
-
-  template<int dims> class ParticleContainer_SOA : public ContainerBase {
+  template<int dims> class ParticleContainer<dims, DataLayout::SOA> : public ContainerBase {
   public:
+
+    typedef ParticleContainer<dims, DataLayout::SOA> SelfType;
+
     //! \brief Constructor.
-    ParticleContainer_SOA(GFlow*);
+    ParticleContainer(GFlow*);
 
     //! \brief Destructor.
-    ~ParticleContainer_SOA();
+    ~ParticleContainer();
 
     //! \brief Initialize the particle container. After this point, no new entries should be added.
     virtual void initialize() override;
