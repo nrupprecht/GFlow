@@ -160,5 +160,11 @@ namespace GFlowSimulation {
     }
   }
 
+  template<int dims, typename T> 
+  void sum_eq_scaled(vec<dims, T> v1, const vec<dims, T> v2, const T scalar) {
+    for (int d=0; d<dims; ++d)
+      v1[d] += scalar*v2[d];
+  }
+
 }
 #endif // __D_VEC_HPP__GFLOW__

@@ -53,10 +53,7 @@ namespace GFlowSimulation {
       };
 
       traversePairs(interaction_function);
-
     }
-
-    vector<pair<int, int> > verlet_list;
 
     void structure_updates() {
       auto x = particles->X();
@@ -199,6 +196,38 @@ namespace GFlowSimulation {
         }
     }
 
+    void interact() {
+      // Get data.
+      auto x = particles->X();
+      auto r = particles->R();
+      auto f = particles->F();
+
+      const real repulsion = DEFAULT_HARD_SPHERE_REPULSION;
+      // Go through pairs of particles.
+      for (auto vpair : verlet_list) {
+        int id0 = vpair.first;
+        int id1 = vpair.second;
+
+        real rsqr = distanceSqr(x(id0), x(id1));
+        real r0 = r(id0), r1 = r(id1);
+
+        if (rsqr < sqr(r0 + r1)) {
+          // Calculate distance, inverse distance.
+          auto X = x(id0) - x(id1);
+
+          RealType dr = sqrt(rsqr);
+          RealType invr = 1./dr;
+          // Create a normal vector
+          X *= invr;
+          // Calculate the magnitude of the force
+          RealType Fn = repulsion*(r0 + r1 - dr);
+          // Update forces
+          sum_eq_scaled<dims>(f(id0), X,  Fn);
+          sum_eq_scaled<dims>(f(id1), X, -Fn);
+        }
+      }
+    }
+
 
   private:
     //! \brief The skin depth.
@@ -229,7 +258,6 @@ namespace GFlowSimulation {
     //! \brief The inverse widths of a single cell.
     vec<dims> inv_widths;
 
-
     //! \brief The dimensionality of the sector grid.
     ivec<dims> dimensions;
 
@@ -243,6 +271,8 @@ namespace GFlowSimulation {
     
     //! \brief The bounds of the entire simulation
     Bounds simulation_bounds;
+
+    vector<pair<int, int> > verlet_list;
 
   };
 }

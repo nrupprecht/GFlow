@@ -6,6 +6,9 @@
 // So base objects can receive a parse tree and construct themselves.
 #include "../utility/treeparser.hpp" 
 
+//#define DIMENSIONS_DEFINED
+//constexpr int sim_dimensions = 2;
+
 namespace GFlowSimulation {
 
   /*
@@ -73,8 +76,10 @@ namespace GFlowSimulation {
     std::list<class Modifier*> *modifiersPtr;
     vector<class Interaction*> *interactionsPtr;
 
+    #ifndef DIMENSIONS_DEFINED
     //! \brief The number of dimensions in the simulation. We get this from GFlow.
     int sim_dimensions;
+    #endif
 
     //! \brief Pointer to the topology of the simulation
     class Topology *topology;

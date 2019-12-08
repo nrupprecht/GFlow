@@ -94,7 +94,7 @@ inline pair<real, real> test_container(int n_particles) {
   vector<vector<real> > animation_data;
 
 
-  int wrap_delay = 15, last_wrap = 0, last_construct = 0;
+  int wrap_delay = 15, construct_delay = 20, last_wrap = 0, last_construct = 0;
   for (int nstep=0; nstep<Nstep; ++nstep) { // Nstep
     // Integrator first half kick.
     integrator.pre_forces();
@@ -114,10 +114,12 @@ inline pair<real, real> test_container(int n_particles) {
       last_wrap = nstep;
     }
     // Construct verlet lists.
-    if (nstep-last_construct>=wrap_delay) {
+    if (nstep-last_construct>=construct_delay) {
       domain.construct();
       last_construct = nstep;
     }
+
+    //domain.interact();
 
     // Repulsive force
     if (!use_harmonic) {
@@ -145,13 +147,13 @@ inline pair<real, real> test_container(int n_particles) {
       }
       animation_data.push_back(std::move(data));
       ++frames_captured;
-    }
+    } 
     
   }
 
   integrator.post_integrate();
 
-  /*
+  
   // Print data width, dimensions, data iterations, ntypes
   ofstream fout("RunData/general/Pos/data.csv"); 
   // Position and radius.
@@ -168,7 +170,7 @@ inline pair<real, real> test_container(int n_particles) {
     fout << endl;
   }
   fout.close();
-  */
+  
 
 
   // Stop timer.
