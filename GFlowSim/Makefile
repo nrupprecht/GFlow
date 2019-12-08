@@ -83,7 +83,7 @@ $(BIN)/vistools: obj/vistools.o $(OBJS)
 $(BIN)/test-driver: obj/test-driver.o $(OBJS)
 	@mkdir -p `dirname $@`
 	@echo "Linking $@..."
-	@$(CC) -o $@ obj/test-driver.o $(OBJS)
+	@$(CC) -o $@ $< $(OBJS)
 
 #$(BIN)/lineattraction: obj/lineattraction.o $(OBJS)
 #	@mkdir -p `dirname $@`
