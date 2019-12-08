@@ -38,13 +38,6 @@ namespace GFlowSimulation {
       for (int i=0; i<total; ++i) {
         int id = i/sim_dimensions;
         v[i] += hdt*im[id]*f[i];
-        // Debug mode asserts
-        #if DEBUG==1
-      	assert(!isnan(f[i]));
-        assert(!isnan(v[i]));
-        assert(fabs(v[i])<MAX_REASONABLE_V);
-        assert(fabs(f[i])<MAX_REASONABLE_F);
-        #endif
       }
     }
     #else
@@ -135,7 +128,7 @@ namespace GFlowSimulation {
     // Half a timestep
     RealType hdt = 0.5*Integrator::dt;
     // Get arrays
-    RealType *x = simData->X_arr(), *v = simData->V_arr(), *f = simData->F_arr(), *im = simData->Im();
+    RealType *v = simData->V_arr(), *f = simData->F_arr(), *im = simData->Im();
 
     #if SIMD_TYPE==SIMD_NONE
     if (sim_dimensions==2) {

@@ -8,8 +8,8 @@ namespace GFlowSimulation {
 
   class Integrator : public Base, public TimedObject {
   public:
-    // Constructor
-    Integrator(GFlow *);
+    //! \brief Constructor.
+    Integrator(GFlow*);
 
     //! \brief Set up before the simulation starts running.
     virtual void pre_integrate() override;

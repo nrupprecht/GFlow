@@ -13,6 +13,8 @@ namespace GFlowSimulation {
   }
 
   void WindTunnel::post_forces() {
+    if (gflow->getRunMode()!=RunMode::SIM) return;
+
     // Check whether this processor overlaps with the acceleration zone.
     auto &bnds = topology->getProcessBounds();
     if (leftBound<=bnds.min[0] && bnds.max[0]<=rightBound) return;
@@ -22,22 +24,27 @@ namespace GFlowSimulation {
     vel[0] = velocity;
     auto x = simData->X();
     auto v = simData->V();
-    auto f = simData->F();
+    // auto f = simData->F();
     auto im = simData->Im();
 
     for (int i=0; i<size; ++i) {
       if (im[i]>0 && (x[i][0]<leftBound || rightBound<x[i][0])) {
+	/*
 	// Wrap particle velocity.
 	v2.wrap(v[i], sim_dimensions);
 	// Find relative velocity.
 	vel -= v2;
 	vel *= acceleration*(1.f/im[i]);
 	plusEqVec(f[i], vel.data, sim_dimensions);
+	*/
+	v[i][0] = velocity;
+	/*
 	// Unwrap velocity.
 	v2.unwrap();
 	// Reset vel.
 	vel.zero();
 	vel[0] = velocity;
+	*/
       }
     }
 

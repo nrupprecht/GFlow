@@ -824,19 +824,35 @@ namespace GFlowSimulation {
   }
 
   int SimData::getLastNGhostsSent() {
+    #if USE_MPI==1
     return _last_n_ghosts_sent;
+    #else
+    return -1;
+    #endif
   }
 
   int SimData::getLastNGhostsRecv() {
+    #if USE_MPI==1
     return _last_n_ghosts_recv;
+    #else
+    return -1;
+    #endif
   }
 
   int SimData::getLastNExchangeSent() {
+    #if USE_MPI==1
     return _last_n_exchange_sent;
+    #else
+    return -1;
+    #endif
   }
 
   int SimData::getLastNExchangeRecv() {
+    #if USE_MPI==1
     return _last_n_exchange_recv;
+    #else
+    return -1;
+    #endif
   }
 
   bool SimData::isReal(int id) {

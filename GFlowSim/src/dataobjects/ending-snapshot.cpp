@@ -12,7 +12,7 @@ namespace GFlowSimulation {
     scalar_data_entries.push_back("Sg");
     scalar_data_entries.push_back("StripeX");
     integer_data_entries.push_back("Type");
-    integer_data_entries.push_back("ID");
+    //integer_data_entries.push_back("ID");
   };
 
   void EndingSnapshot::pre_integrate() {

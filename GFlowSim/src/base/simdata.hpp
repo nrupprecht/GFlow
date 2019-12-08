@@ -281,9 +281,17 @@ namespace GFlowSimulation {
     void addIntegerData(string);
 
     //! \brief Set the send ghost velocity flag.
-    void setSendGhostVelocity(bool b) { send_ghost_velocity = b; }
+    void setSendGhostVelocity(bool b) { 
+      #if USE_MPI==1
+      send_ghost_velocity = b; 
+      #endif
+    }
     //! \brief Set the send ghost omega flag.
-    void setSendGhostOmega(bool b) { send_ghost_omega = b; }
+    void setSendGhostOmega(bool b) { 
+      #if USE_MPI==1
+      send_ghost_omega = b; 
+      #endif
+    }
 
     friend class ForceMaster;
     friend class DataMaster;
