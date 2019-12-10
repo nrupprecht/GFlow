@@ -28,7 +28,7 @@ namespace GFlowSimulation {
 
     // First angle.
     int id1 = at(1), id0 = at(0);
-    gflow->getDisplacement(x[id1], x[id0], dX1.data);
+    gflow->getDisplacement(x(id1), x(id0), dX1.data);
     dX1.normalize();
 
     // Calculate the average R0*Rk for bonds.
@@ -37,7 +37,7 @@ namespace GFlowSimulation {
       id1 = at(i+1);
 
       // Find the bonds.
-      gflow->getDisplacement(x[id1], x[id0], dX2.data);
+      gflow->getDisplacement(x(id1), x(id0), dX2.data);
       dX2.normalize();
       // Bin data.
       data[i-1].second += dX2*dX1;

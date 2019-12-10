@@ -26,15 +26,16 @@ namespace GFlowSimulation {
 
   void ConstantAcceleration::post_forces() {
     int size = Base::simData->size();
-    RealType *force = new RealType[sim_dimensions];
-    RealType *im = Base::simData->Im();
+
+    if (sim_dimensions>4) throw false;
+
+    RealType force[4];
+    auto im = Base::simData->Im();
     for (int n=0; n<size; ++n) {
-      RealType mass = im[n]>0 ? 1./im[n] : 0;
+      RealType mass = im(n)>0 ? 1./im(n) : 0;
       scalarMultVec(mass, acceleration, force, sim_dimensions);
       plusEqVec(Base::simData->F(n), force, sim_dimensions);
     }
-    // Clean up
-    delete [] force;
   }
 
 }

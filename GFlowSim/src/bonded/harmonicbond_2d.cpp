@@ -19,9 +19,9 @@ namespace GFlowSimulation {
     if (simData->getNeedsRemake()) updateLocalIDs();
 
     // Get simdata, check if the local ids need updating
-    RealType **x = simData->X();
-    RealType **f = simData->F();
-    int    *type = simData->Type();
+    auto x = simData->X();
+    auto f = simData->F();
+    auto type = simData->Type();
     // Displacement vector
     RealType dx[2], r, invr, dr, scale;
     // Get the bounds and boundary conditions
@@ -37,10 +37,10 @@ namespace GFlowSimulation {
       // Get the global, then local ids of the particles.
       int id1 = left[i], id2 = right[i];
       // Check if the types are good
-      if (type[id1]<0 || type[id2]<0) continue;
+      if (type(id1)<0 || type(id2)<0) continue;
       // Calculate displacement
-      dx[0] = x[id1][0] - x[id2][0];
-      dx[1] = x[id1][1] - x[id2][1];
+      dx[0] = x(id1, 0) - x(id2, 0);
+      dx[1] = x(id1, 1) - x(id2, 1);
       gflow->minimumImage(dx);
       // Get the distance, inverse distance
       r = sqrtf(dotVec(dx, dx, 2));
@@ -52,10 +52,10 @@ namespace GFlowSimulation {
       dx[0] *= scale;
       dx[1] *= scale;
       // Add forces to particles
-      f[id1][0] -= dx[0];
-      f[id1][1] -= dx[1];
-      f[id2][0] += dx[0];
-      f[id2][1] += dx[1];
+      f(id1, 0) -= dx[0];
+      f(id1, 1) -= dx[1];
+      f(id2, 0) += dx[0];
+      f(id2, 1) += dx[1];
 
       // Potential energy
       if (do_potential) {

@@ -14,15 +14,15 @@ namespace GFlowSimulation {
     // Compute kinetic energy.
     RealType energy = 0;
     int om_add = simData->getScalarData("Om");
-    RealType *om = simData->ScalarData(om_add);
-    RealType *im = simData->Im();
-    RealType *sg = simData->Sg();
-    int    *type = simData->Type();
+    auto om = simData->ScalarData(om_add);
+    auto im = simData->Im();
+    auto sg = simData->Sg();
+    auto type = simData->Type();
     int size = Base::simData->size();
     int count = 0;
 
     // Check if there is rotational motion.
-    if (om==nullptr) return;
+    if (om.isnull()) return;
 
     for (int n=0; n<size; ++n) {
       if (im[n]>0 && -1<type[n] && simData->isReal(n)) {

@@ -8,6 +8,8 @@
 #include <set> // For storing sets of holes in the arrays
 #include <unordered_map> // For mapping owned particles to halo particles
 
+#include "../test/d-vec.hpp"
+
 namespace GFlowSimulation {
 
   //! \brief Class that holds all the atom data for a domain.
@@ -80,65 +82,63 @@ namespace GFlowSimulation {
 
     // --- Accessors
 
+    struct vec_access;
+    struct scalar_access;
+    struct integer_access;
+
     // --- Get vector data
-    RealType** X();
-    RealType*  X_arr();
+    vec_access X();
     RealType*  X(int);
     RealType&  X(int, int);
-    RealType** V();
-    RealType*  V_arr();
+    vec_access V();
     RealType*  V(int);
     RealType&  V(int, int);
-    RealType** F();
-    RealType*  F_arr();
+    vec_access F();
     RealType*  F(int);
     RealType&  F(int, int);
 
-    RealType** VectorData(int);
-    RealType** VectorData(const string&);
+    vec_access VectorData(int);
+    vec_access VectorData(const string&);
 
     // --- Get scalar data
-    RealType* Sg();
+    scalar_access Sg();
     RealType& Sg(int);
-    RealType* Im();
+    scalar_access Im();
     RealType& Im(int);
 
-    RealType* ScalarData(int);
-    RealType* ScalarData(const string&);
+    scalar_access ScalarData(int);
+    scalar_access ScalarData(const string&);
 
     // --- Get integer data
-    int* Type();
+    integer_access Type();
     int& Type(int);
-    int* Id();
+    integer_access Id();
     int& Id(int);
 
-    int* IntegerData(int);
-    int* IntegerData(const string&);
+    integer_access IntegerData(int);
+    integer_access IntegerData(const string&);
 
     // --- Constant accessors
 
-    const RealType** X() const;
-    const RealType*  X_arr() const;
-    const RealType*  X(int) const;
-    const RealType&  X(int, int) const;
-    const RealType** V() const;
-    const RealType*  V_arr() const;
-    const RealType*  V(int) const;
-    const RealType&  V(int, int) const;
-    const RealType** F() const;
-    const RealType*  F_arr() const;
-    const RealType*  F(int) const;
-    const RealType&  F(int, int) const;
+    // const RealType** X() const;
+    // const RealType*  X(int) const;
+    // const RealType&  X(int, int) const;
+    // const RealType** V() const;
+    // const RealType*  V(int) const;
+    // const RealType&  V(int, int) const;
+    // const RealType** F() const;
+    // const RealType*  F(int) const;
+    // const RealType&  F(int, int) const;
 
-    const RealType* Sg() const;
-    const RealType& Sg(int) const;
-    const RealType* Im() const;
-    const RealType& Im(int) const;
+    // const RealType* Sg() const;
+    // const RealType& Sg(int) const;
+    // const RealType* Im() const;
+    // const RealType& Im(int) const;
 
-    const int* Type() const;
-    const int& Type(int) const;
-    const int* Id() const;
-    const int& Id(int) const;
+    // const int* Type() const;
+    // const int& Type(int) const;
+    // const int* Id() const;
+    // const int& Id(int) const;
 
     bool Valid(int) const;
 
@@ -504,6 +504,146 @@ namespace GFlowSimulation {
     bool send_ghost_omega = false;
     #endif
   };
+
+
+  //! \brief Struct for accessing the underlying vector data of SimData in a layout agnostic manner.
+  struct SimData::vec_access {
+    //! \brief Create a null vec_access object, to be assigned later.
+    vec_access() {};
+
+    //! \brief Access a vector.
+    real* operator() (const int id) { return data_ptr[id]; }
+    const real* operator() (const int id) const { return data_ptr[id]; }
+    //! \brief Access a component of a vector.
+    real& operator() (const int id, const int d) { return data_ptr[id][d]; }
+    real operator() (const int id, const int d) const { return data_ptr[id][d]; }
+    //! \brief Access a component via contiguous index.
+    real& operator[] (const int contiguous_index) { return (*data_ptr)[contiguous_index]; }
+    real operator[] (const int contiguous_index) const { return (*data_ptr)[contiguous_index]; }
+
+    //! \brief Load contiguous entries into simd vector
+    simd_float load_to_simd(const int contiguous_index) { return simd_load_u(&data_ptr[0][contiguous_index]); }
+
+    //! \brief Store from a simd vector into contiguous entries.
+    void store_simd(const int contiguous_index, const simd_float value) { simd_store_u(value, &data_ptr[0][contiguous_index]); }
+
+    //! \brief Return whether the underlying pointer is null.
+    bool isnull() { return data_ptr==nullptr; }
+
+    friend SimData;
+
+  private:
+    //! \brief Private constructor, so only ParticleContainer can create a vec_access.
+    vec_access(real** data) : data_ptr(data) {};
+
+    //! \brief Pointer to the underlying data.
+    real **data_ptr = nullptr;
+  };
+
+  //! \brief Struct for accessing the underlying scalar data of SimData in a layout agnostic manner.
+  struct SimData::scalar_access {
+    //! \brief Create a null scalar_access object, to be assigned later.
+    scalar_access() {};
+
+    real& operator() (const int i) { return data_ptr[i]; }
+    real operator() (const int i) const { return data_ptr[i]; }
+
+    real& operator[] (const int i) { return data_ptr[i]; }
+    real operator[] (const int i) const { return data_ptr[i]; }
+
+    //! \brief Load data to a simd vector such that the data aligns with the dimensionality of vectors.
+    //!
+    //! For example, if sim_dimensions==2, and we are using SSE, and 2 | k, im.valign_load_to_simd(k) -> { im[2*k], im[k], im[k+1], im[k+1] }.
+    template<int dims> 
+    simd_float valign_load_to_simd(const int contiguous_index) {
+      #if SIMD_TYPE==SIMD_NONE
+      return data_ptr[contiguous_index];
+      #elif SIMD_TYPE==SIMD_SSE3
+      return _mm_set_ps(
+        data_ptr[(contiguous_index+3)/dims], 
+        data_ptr[(contiguous_index+2)/dims],
+        data_ptr[(contiguous_index+1)/dims], 
+        data_ptr[contiguous_index/dims]
+      );
+      #elif SIMD_TYPE==AVX || SIMD_TYPE==AVX2
+      return _mm256_set_ps(
+        data_ptr[(contiguous_index+7)/dims],
+        data_ptr[(contiguous_index+6)/dims],
+        data_ptr[(contiguous_index+5)/dims],
+        data_ptr[(contiguous_index+4)/dims],
+        data_ptr[(contiguous_index+3)/dims],
+        data_ptr[(contiguous_index+2)/dims],
+        data_ptr[(contiguous_index+1)/dims],
+        data_ptr[contiguous_index/dims],
+      );
+      #elif SIMD_TYPE==SIMD_MIC
+      return _mm512_set_ps(
+        data_ptr[(contiguous_index+15)/dims],
+        data_ptr[(contiguous_index+14)/dims],
+        data_ptr[(contiguous_index+13)/dims],
+        data_ptr[(contiguous_index+12)/dims],
+        data_ptr[(contiguous_index+11)/dims],
+        data_ptr[(contiguous_index+10)/dims],
+        data_ptr[(contiguous_index+9)/dims],
+        data_ptr[(contiguous_index+8)/dims]
+        data_ptr[(contiguous_index+7)/dims],
+        data_ptr[(contiguous_index+6)/dims],
+        data_ptr[(contiguous_index+5)/dims],
+        data_ptr[(contiguous_index+4)/dims],
+        data_ptr[(contiguous_index+3)/dims],
+        data_ptr[(contiguous_index+2)/dims],
+        data_ptr[(contiguous_index+1)/dims],
+        data_ptr[contiguous_index/dims]
+      );
+      #endif
+    }
+
+    //! \brief Load a series of contiguous data to a simd vector.
+    simd_float load_to_simd(const int contiguous_index) { return simd_load_u(&data_ptr[contiguous_index]); }
+
+    //! \brief Store a simd vector to contiguous data.
+    void store_simd(const int contiguous_index, simd_float value) { simd_store_u(value, &data_ptr[contiguous_index]); }
+
+    //! \brief Return whether the underlying pointer is null.
+    bool isnull() { return data_ptr==nullptr; }
+
+    friend SimData;
+
+  private:
+    //! \brief Private constructor, so only ParticleContainer can create a scalar_access.
+    scalar_access(real* data) : data_ptr(data) {};
+
+    //! \brief Pointer to the underlying data.
+    real *data_ptr = nullptr;
+  };
+
+  //! \brief Struct for accessing the underlying integer data of SimData in a layout agnostic manner.
+  struct SimData::integer_access {
+    //! \brief Create a null integer_access object, to be assigned later.
+    integer_access() {};
+
+    int& operator() (const int i) { return data_ptr[i]; }
+    int operator() (const int i) const { return data_ptr[i]; }
+
+    int& operator[] (const int i) { return data_ptr[i]; }
+    int operator[] (const int i) const { return data_ptr[i]; }
+
+    //! \brief Return whether the underlying pointer is null.
+    bool isnull() { return data_ptr==nullptr; }
+
+    friend SimData;
+
+  private:
+    //! \brief Private constructor, so only ParticleContainer can create a scalar_access.
+    integer_access(int* data) : data_ptr(data) {};
+
+    //! \brief Pointer to the underlying data.
+    int *data_ptr = nullptr;
+  };
+
+  typedef SimData::vec_access vec_access;
+  typedef SimData::scalar_access scalar_access;
+  typedef SimData::integer_access integer_access;
 
 }
 

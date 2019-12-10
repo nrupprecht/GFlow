@@ -29,7 +29,7 @@ Force-grid: {
     Repulsion: 500
   }
   : 1, 1, HardSphere // Chain - Chain
-  : 2, 2, None // Solvent - Solvent
+  : 2, 2, HardSphere // Solvent - Solvent
 }
 
 Fill: Polymer {

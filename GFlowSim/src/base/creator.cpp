@@ -54,8 +54,8 @@ namespace GFlowSimulation {
     // New force master - has only hard sphere forces.
     ForceMaster forceMaster(gflow, ntypes);
     Integrator *rx_integrator = nullptr;
-    if (relax_integrator) rx_integrator = new RelaxIntegrator(gflow);
-    else rx_integrator = new OverdampedIntegrator(gflow);
+    if (relax_integrator) rx_integrator = choose_relax_integrator(gflow, sim_dimensions);
+    else rx_integrator = choose_overdamped_integrator(gflow, sim_dimensions);
 
     // Give gflow new data
     gflow->interactions.clear(); // Clear old forces
@@ -97,10 +97,13 @@ namespace GFlowSimulation {
     // Check for valid object
     if (gflow==nullptr) return;
 
+    // Get sim dimensions
+    int sim_dimensions = gflow->getSimDimensions();
+
     // Use overdamped integrator for relaxation
     Integrator *integrator = gflow->integrator; // Save integrator
-    RelaxIntegrator rx_integrator(gflow);
-    gflow->integrator = &rx_integrator;
+    Integrator *rx_integrator = choose_relax_integrator(gflow, sim_dimensions);
+    gflow->integrator = rx_integrator;
 
     // Make sure all forces are zero
     gflow->simData->clearF();
@@ -114,6 +117,8 @@ namespace GFlowSimulation {
     
     // Reset integrator
     gflow->integrator = integrator;
+    // Destroy relax integrator.
+    delete rx_integrator;
   }
 
   void Creator::fix_particle_velocities(shared_ptr<SimData> simData) {

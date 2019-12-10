@@ -1,6 +1,8 @@
 #ifndef __D_VEC_HPP__GFLOW__
 #define __D_VEC_HPP__GFLOW__
 
+#include "../utility/generic-dimension.hpp"
+
 namespace GFlowSimulation {
 
   //! \brief Typedef for real type.

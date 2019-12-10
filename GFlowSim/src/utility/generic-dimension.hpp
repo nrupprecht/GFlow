@@ -10,7 +10,7 @@ namespace GFlowSimulation {
   }
 
   //! \brief Template function applying harmonic corrections to a distance vector.
-  template<int d> inline void harmonic_correction(const volatile BCFlag *bcs, volatile RealType *r, const volatile RealType *widths) {
+  template<int d> inline void harmonic_correction(const BCFlag *bcs, volatile RealType *r, const RealType *widths) {
     if (isWrap(bcs[d-1])) {
       RealType dX = widths[d-1] - fabs(r[d-1]);
       if (dX<fabs(r[d-1])) r[d-1] = r[d-1]>0 ? -dX : dX;
@@ -18,7 +18,7 @@ namespace GFlowSimulation {
     // Recursion.
     harmonic_correction<d-1>(bcs, r, widths);
   }
-  template<> inline void harmonic_correction<0>(const volatile BCFlag *bcs, volatile RealType *r, const volatile RealType *widths) {};
+  template<> inline void harmonic_correction<0>(const BCFlag *bcs, volatile RealType *r, const RealType *widths) {};
 
   //! \brief Template function applying harmonic corrections to a distance vector.
   template<int d> inline void harmonic_correction(const BCFlag *bcs, RealType *r, const RealType *widths) {
@@ -122,6 +122,16 @@ namespace GFlowSimulation {
   }
 
 
+  //! \brief Negate a vector.
+  template<int d> inline void negate_vec(RealType *x) {
+    x[d-1] = -x[d-1];
+    negate_vec<d-1>(x);
+  }
+  template<> inline void negate_vec<1>(RealType *x) {
+    x[0] = -x[0];
+  };
+
+
   
   //! \brief Template function for a vector *= a scalar.
   template<int d> inline void scalar_mult_eq_vec(volatile RealType *x, const volatile RealType m) {
@@ -141,6 +151,15 @@ namespace GFlowSimulation {
   }
   template<> inline void scalar_mult_eq_vec<1>(RealType *x, const RealType m) {
     x[0] *= m;
+  }
+
+
+
+  template<int d> inline bool normalize_vec(RealType *x) {
+    RealType rsqr = dot_vec<d>(x, x);
+    if (rsqr==0) return false;
+    scalar_mult_eq_vec<d>(x, 1./sqrt(rsqr));
+    return true;
   }
 
 

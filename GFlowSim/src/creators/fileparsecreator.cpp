@@ -272,7 +272,7 @@ namespace GFlowSimulation {
       // Return to original level
       parser.up();
     }
-    else gflow->integrator = new VelocityVerlet(gflow);
+    else gflow->integrator = choose_velocity_verlet(gflow, sim_dimensions);
 
     // --- Look for number of particle types
     if (parser.firstArg(Types_Token, NTypes));
@@ -419,11 +419,11 @@ namespace GFlowSimulation {
     string token = parser.argName();
 
     Integrator *integrator = nullptr;
-    if      (token=="VelocityVerlet")       integrator = new VelocityVerlet(gflow);
-    else if (token=="OverdampedIntegrator") integrator = new OverdampedIntegrator(gflow);
+    if      (token=="VelocityVerlet")       integrator = choose_velocity_verlet(gflow, sim_dimensions);
+    else if (token=="OverdampedIntegrator") integrator = choose_overdamped_integrator(gflow, sim_dimensions);
     else if (token=="OverdampedLangevin")   integrator = new OverdampedLangevinIntegrator(gflow);
     else if (token=="LangevinIntegrator")   integrator = new LangevinIntegrator(gflow);
-    else if (token=="NoseHooverVelocityVerlet") integrator = new NoseHooverVelocityVerlet(gflow);
+    else if (token=="NoseHooverVelocityVerlet") integrator = choose_nose_hoover_velocity_verlet(gflow, sim_dimensions);
     else throw UnexpectedOption("Integrator choice was ["+token+"].");
     // Temperature and viscosity for LangevinType integrators
     LangevinTypeIntegrator* lti = dynamic_cast<LangevinTypeIntegrator*>(integrator);

@@ -12,7 +12,7 @@ namespace GFlowSimulation {
     // Get the size of the data that we need to go through.
     int size = simData->size();
     // Get arrays
-    RealType *v = Base::simData->V_arr(), *f = Base::simData->F_arr();
+    auto v = simData->V(), f = simData->F();
 
     // 
     #if SIMD_TYPE==SIMD_NONE
@@ -22,10 +22,10 @@ namespace GFlowSimulation {
     int i=0;
     simd_float _d_inv_v_char = simd_set1(damping*sqr(inv_v_char));
     for (; i<size*sim_dimensions-simd_data_size; i+=simd_data_size) {
-      simd_float _f = simd_load(&f[i]);
-      simd_float _v = simd_load(&v[i]);
+      simd_float _f = f.load_to_simd(i); // simd_load(&f[i]);
+      simd_float _v = v.load_to_simd(i); // simd_load(&v[i]);
       _f -= _d_inv_v_char * _v * _v;
-      simd_store(_f, &f[i]);
+      f.store_simd(i, _f); // simd_store(_f, &f[i]);
     }
     for (; i<size*sim_dimensions; ++i)
       f[i] -= damping * sqr(v[i]*inv_v_char);

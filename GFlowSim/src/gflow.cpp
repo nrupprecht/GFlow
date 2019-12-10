@@ -132,7 +132,7 @@ namespace GFlowSimulation {
       throw UnexpectedNullPointer("Error: Some object was null at GFlow initialization.");
     }
     // Check that simdata has good arrays. 
-    if (simData->X()==nullptr || simData->V()==nullptr || simData->F()==nullptr) {
+    if (simData->X().isnull() || simData->V().isnull() || simData->F().isnull()) {
       throw UnexpectedNullPointer("Some array in simdata was null that shouldn't be.");
     }
     
@@ -551,17 +551,20 @@ namespace GFlowSimulation {
     // Start simdata timer.
     simData->start_timer();
 
+    // Get a pointer to position data and the number of particles in simData
+    auto x = simData->X();
     int size = simData->size();
     for (int n=0; n<size; ++n) 
       for (int d=0; d<sim_dimensions; ++d) {
+        RealType min_bound = bounds.min[d], max_bound = bounds.max[d], width = bounds.wd(d);
         if (boundaryConditions[d]==BCFlag::WRAP) {
           // Create a local copy
-          RealType xlocal = simData->X(n, d);
-          // Wrap xlocal
-          if (xlocal<bounds.min[d]) xlocal = bounds.max[d]-fmod(bounds.min[d]-xlocal, bounds.wd(d));
-          else if (bounds.max[d]<=xlocal) xlocal = fmod(xlocal-bounds.min[d], bounds.wd(d))+bounds.min[d];
+          RealType xlocal = x(n, d);
+          // Periodic boundary correction.
+          if (xlocal<min_bound) xlocal = max_bound-fmod(min_bound-xlocal, width);
+          else if (max_bound<=xlocal) xlocal = fmod(xlocal-min_bound, width)+min_bound;
           // Set
-          simData->X(n, d) = xlocal;
+          x(n, d) = xlocal;
         }
       }
 
@@ -573,25 +576,24 @@ namespace GFlowSimulation {
     // Start simdata timer.
     simData->start_timer();
 
-    // Get a pointer to position data and the number of particles in simData
-    RealType **x = simData->X(), **v = simData->V();
+    // Get an accessor to position and velocity data and the number of particles in simData
+    auto x = simData->X(), v = simData->V();
     int size = simData->size_owned();
-
     // Reflect all the particles
     for (int d=0; d<sim_dimensions; ++d)
       if (boundaryConditions[d]==BCFlag::REFL) { 
         for (int n=0; n<size; ++n) {
           // Create a local copy
-          RealType xlocal = x[n][d];
+          RealType xlocal = x(n, d);
           if (xlocal<bounds.min[d]) {
             xlocal = 2*bounds.min[d] - xlocal ;
-            v[n][d] = -v[n][d];
+            v(n, d) = -v(n, d);
           }
           else if (bounds.max[d]<xlocal) {
             xlocal = 2*bounds.max[d] - xlocal;
-            v[n][d] = -v[n][d];
+            v(n, d) = -v(n, d);
           }
-          x[n][d] = xlocal;
+          x(n, d) = xlocal;
         }
       }
 
@@ -604,7 +606,7 @@ namespace GFlowSimulation {
     simData->start_timer();
 
     // Get a pointer to position data and the number of particles in simData
-    RealType **x = simData->X(), **v = simData->V(), **f = simData->F();
+    auto x = simData->X(), v = simData->V(), f = simData->F();
     int size = simData->size_owned();
     // Reset boundary force and energy
     boundaryForce = 0;
@@ -614,17 +616,17 @@ namespace GFlowSimulation {
       if (boundaryConditions[d]==BCFlag::REPL) { 
         for (int n=0; n<size; ++n) {
           // Create a local copy
-          if (x[n][d]<bounds.min[d]) {
-            RealType dx = bounds.min[d] - x[n][d];
-            RealType F = repulsion*dx + dissipation*clamp(-v[n][d]);
-            f[n][d] += F;
+          if (x(n, d)<bounds.min[d]) {
+            RealType dx = bounds.min[d] - x(n, d);
+            RealType F = repulsion*dx + dissipation*clamp(-v(n, d));
+            f(n, d) += F;
             boundaryForce += F;
             boundaryEnergy += 0.5*repulsion*sqr(dx);
           }
-          else if (bounds.max[d]<x[n][d]) {
-            RealType dx = (x[n][d] - bounds.max[d]);
-            RealType F = repulsion*dx + dissipation*clamp(v[n][d]);
-            f[n][d] -= F;
+          else if (bounds.max[d]<x(n, d)) {
+            RealType dx = (x(n, d) - bounds.max[d]);
+            RealType F = repulsion*dx + dissipation*clamp(v(n, d));
+            f(n, d) -= F;
             boundaryForce += F;
             boundaryEnergy += 0.5*repulsion*sqr(dx);
           }
@@ -642,8 +644,8 @@ namespace GFlowSimulation {
     // Only do this if center_attraction is nonzero
     if (center_attraction==0) return;
     // Get a pointer to position data and the number of particles in simData
-    RealType **x = simData->X(), **f = simData->F();
-    RealType *im = simData->Im();
+    auto x = simData->X(), f = simData->F();
+    auto im = simData->Im();
     int size = simData->size_owned();
     // Find the center of the simulation
     RealType *center = new RealType[sim_dimensions];
@@ -653,11 +655,11 @@ namespace GFlowSimulation {
     // Attract particles towards center with constant acceleration
     for (int n=0; n<size; ++n) {
       if (simData->Type(n)<0) continue;
-      copyVec(x[n], X, sim_dimensions);
+      copyVec(x(n), X, sim_dimensions);
       subtractVec(center, X, dX, sim_dimensions);
       normalizeVec(dX, sim_dimensions);
-      scalarMultVec(center_attraction/im[n], dX, sim_dimensions);
-      plusEqVec(f[n], dX, sim_dimensions);
+      scalarMultVec(center_attraction/im(n), dX, sim_dimensions);
+      plusEqVec(f(n), dX, sim_dimensions);
     }
     // Clean up
     delete [] center;

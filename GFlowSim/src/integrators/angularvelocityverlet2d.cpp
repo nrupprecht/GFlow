@@ -14,81 +14,11 @@ namespace GFlowSimulation {
     // Call base class
     Integrator::pre_forces();
 
-    // Look for data entries.
-    RealType *sg = simData->Sg();
-    RealType *im = simData->Im();
-    int th_add = simData->getScalarData("Th");
-    int om_add = simData->getScalarData("Om");
-    int tq_add = simData->getScalarData("Tq");
-    RealType *th = simData->ScalarData(th_add);
-    RealType *om = simData->ScalarData(om_add);
-    RealType *tq = simData->ScalarData(tq_add);
-    // Check to make sure we have all the data we need.
-    if (sim_dimensions!=2 || sg==nullptr || im==nullptr || om==nullptr || tq==nullptr) return;
-    
     // --- First half kick
+    update_velocity();
 
-    // Number of (real - non ghost) particles
-    const int total = simData->size_owned();
-    if (total==0) return;
-    // Half a timestep
-    RealType hdt = 0.5*gflow->getDT();
-    #if SIMD_TYPE==SIMD_NONE
-    for (int i=0; i<total; i+=2) {
-      RealType iII = 2*im[i]/sqr(sg[i]); // Inverse moment of inertia.
-      om[i] += hdt*iII*tq[i];
-    }
-    #else
-    // Put hdt into a simd vector
-    simd_float _2hdt = simd_set1(2*hdt);
-    int i;
-    for (i=0; i<total-simd_data_size; i+=simd_data_size) {
-
-      simd_float torque = simd_load(&tq[i]);
-      simd_float omega  = simd_load(&om[i]);
-      simd_float invM   = simd_load(&im[i]);
-      simd_float sigma  = simd_load(&sg[i]);
-
-      simd_float hII = invM/(sigma*sigma);
-      simd_float vec = _2hdt*hII*torque;
-      omega += vec;
-
-      simd_store(vec, &om[i]);
-    }
-    // Left overs
-    for (; i<total; ++i) {
-      RealType II = 2*im[i]/sqr(sg[i]); // Inverse moment of inertia.
-      om[i] += hdt*II*tq[i];
-    }
-    #endif
-
-    if (th==nullptr) {
-      timer.stop();
-      return;
-    }
-
-    // --- Update angles
-    // Do serially
-    #if SIMD_TYPE==SIMD_NONE
-    for (int i=0; i<total; ++i) {
-      th[i] += dt*om[i];
-    }
-    // Do with SIMD
-    #else
-    // Set dt
-    simd_float dt_vec = simd_set1(dt);
-    for (i=0; i<=total-simd_data_size; i+=simd_data_size) {
-      simd_float Th = simd_load(&th[i]);
-      simd_float Om = simd_load(&om[i]);
-      simd_float dTh = Om*dt_vec;
-      simd_float Th_new = Th+dTh;
-      simd_store(Th_new, &th[i]);
-    }
-    // Left overs
-    for (; i<total; ++i) {
-      th[i] += dt*om[i];
-    }
-    #endif
+    // --- Update angles (if there are any).
+    update_position();
 
     // Stop timer
     timer.stop();
@@ -101,55 +31,97 @@ namespace GFlowSimulation {
     // Call to parent class
     Integrator::post_forces();
 
-    // Look for data entries.
-    RealType *sg = simData->Sg();
-    RealType *im = simData->Im();
-    int om_add = simData->getScalarData("Om");
-    int tq_add = simData->getScalarData("Tq");
-    RealType *om = simData->ScalarData(om_add);
-    RealType *tq = simData->ScalarData(tq_add);
-    // Check to make sure we have all the data we need.
-    if (sim_dimensions!=2 || sg==nullptr || im==nullptr || om==nullptr || tq==nullptr) return;
-    
     // --- Second half kick
-
-    // Number of (real - non ghost) particles
-    const int total = simData->size_owned();
-    if (total==0) return;
-    // Half a timestep
-    RealType hdt = 0.5*gflow->getDT();
-
-    #if SIMD_TYPE==SIMD_NONE
-    for (int i=0; i<total; i+=2) {
-      RealType II = 2*im[i]/sqr(sg[i]); // Inverse moment of inertia.
-      om[i] += hdt*II*tq[i];
-    }
-    #else
-    // Put hdt into a simd vector
-    simd_float _2hdt = simd_set1(2*hdt);
-    int i;
-    for (i=0; i<total-simd_data_size; i+=simd_data_size) {
-
-      simd_float torque = simd_load(&tq[i]);
-      simd_float omega  = simd_load(&om[i]);
-      simd_float invM   = simd_load(&im[i]);
-      simd_float sigma  = simd_load(&sg[i]);
-
-      simd_float hII = invM/(sigma*sigma);
-      simd_float vec = _2hdt*hII*torque;
-      omega += vec;
-
-      simd_store(vec, &om[i]);
-    }
-    // Left overs
-    for (; i<total; ++i) {
-      RealType II = 2*im[i]/sqr(sg[i]); // Inverse moment of inertia.
-      om[i] += hdt*II*tq[i];
-    }
-    #endif
+    update_velocity();
 
     // Stop timer
     timer.stop();
+  }
+
+  inline void AngularVelocityVerlet2d::update_position() {
+    // Number of (real - non ghost) particles
+    const int size = simData->size_owned();
+    if (size==0) return;
+
+    // Look for data entries.
+    int th_add = simData->getScalarData("Th");
+    // There may very well not be angle data.
+    if (th_add<0) return;
+    // Get the rest of the data.
+    int om_add = simData->getScalarData("Om");
+    auto th = simData->ScalarData(th_add);
+    auto om = simData->ScalarData(om_add);
+    // Check to make sure we have all the data we need. 
+    if (sim_dimensions!=2 || th.isnull() || om.isnull()) return;
+
+    real dt = gflow->getDT();
+    #if SIMD_TYPE==SIMD_NONE // Do serially
+    for (int i=0; i<size; ++i)
+      th[i] += dt*om[i];
+    #else // Do with SIMD
+    simd_float _dt = simd_set1(dt);
+    int i;
+    for (i=0; i<=size-simd_data_size; i+=simd_data_size) {
+      // Load data to simd vectors.
+      simd_float _th = th.load_to_simd(i); // simd_load(&th[i]);
+      simd_float _om = om.load_to_simd(i); // simd_load(&om[i]);
+      // Do calculation.
+      _th += _om * _dt;
+      // Store result.
+      th.store_simd(i, _th); // simd_store(Th_new, &th[i]);
+    }
+    // Left overs
+    for (; i<size; ++i)
+      th[i] += dt*om[i];
+    #endif
+  }
+
+  inline void AngularVelocityVerlet2d::update_velocity() {
+    // Number of (real - non ghost) particles
+    const int size = simData->size_owned();
+    if (size==0) return;
+
+    // Look for data entries.
+    auto sg = simData->Sg(), im = simData->Im();
+    int th_add = simData->getScalarData("Th");
+    int om_add = simData->getScalarData("Om");
+    int tq_add = simData->getScalarData("Tq");
+    auto om = simData->ScalarData(om_add);
+    auto tq = simData->ScalarData(tq_add);
+    // Check to make sure we have all the data we need.
+    if (sim_dimensions!=2 || om.isnull() || tq.isnull()) return;
+
+    // Half a timestep
+    RealType hdt = 0.5*gflow->getDT();
+    #if SIMD_TYPE==SIMD_NONE
+    for (int i=0; i<size; i+=2) {
+      RealType iII = 2*im[i]/sqr(sg[i]); // Inverse moment of inertia.
+      om[i] += hdt*iII*tq[i];
+    }
+    #else
+    // Put hdt into a simd vector
+    real dt = 2*hdt;
+    simd_float _dt = simd_set1(dt);
+    int i;
+    for (i=0; i<=size-simd_data_size; i+=simd_data_size) {
+      // Load data to simd vectors.
+      simd_float _tq = tq.load_to_simd(i); // simd_load(&tq[i]);
+      simd_float _om = om.load_to_simd(i); // simd_load(&om[i]);
+      simd_float _im = im.load_to_simd(i); // simd_load(&im[i]);
+      simd_float _rd = sg.load_to_simd(i); // simd_load(&sg[i]);
+      // Do calculations
+      simd_float _hII = _im / (_rd*_rd);
+      simd_float vec = _dt * _hII * _tq;
+      _om += vec;
+      // Store result.
+      om.store_simd(i, _om); //simd_store(vec, &om[i]);
+    }
+    // Left overs
+    for (; i<size; ++i) {
+      RealType II = im[i]/sqr(sg[i]); // Inverse moment of inertia (actually, would be twice this, but we should also be using dt/2, so they cancel).
+      om[i] += dt*II*tq[i];
+    }
+    #endif
   }
 
 }

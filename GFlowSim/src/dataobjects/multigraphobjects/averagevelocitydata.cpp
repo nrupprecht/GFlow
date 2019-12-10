@@ -16,16 +16,17 @@ namespace GFlowSimulation {
     // Get and store data
     Vec ave(sim_dimensions);
 
-    RealType **v = Base::simData->V();
-    RealType *im = Base::simData->Im();
-    int size = Base::simData->size(), *type = Base::simData->Type();
+    auto v = simData->V();
+    auto im = simData->Im();
+    auto type = simData->Type();
+    int size = simData->size();
     // Compute totals
     int count = 0;
     for (int n=0; n<size; ++n)
       if (im[n]>0 && type[n]>-1) {
-        if (!isnan(v[n][0])) { // Presumably, if one component is nan, all are.
+        if (!isnan(v(n, 0))) { // Presumably, if one component is nan, all are.
           for (int d=0; d<sim_dimensions; ++d)
-            ave[d] += v[n][d];
+            ave[d] += v(n, d);
           ++count;
         }
       }

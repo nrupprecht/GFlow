@@ -21,7 +21,7 @@ namespace GFlowSimulation {
   *
   *  @see OverdampedLangevinIntegrator
   */
-  class OverdampedIntegrator : public Integrator {
+  template<int dimensions> class OverdampedIntegrator : public Integrator {
   public:
     //! \brief Constructor.
     OverdampedIntegrator(GFlow*);
@@ -45,6 +45,24 @@ namespace GFlowSimulation {
     //! \brief The maximum acceleration
     RealType maximum_acceleration = 0;
   };
+
+  // Include the implementation file.
+  #include "overdamped-integrator.tpp"
+
+  inline Integrator* choose_overdamped_integrator(GFlow *gflow, int sim_dimensions) {
+    switch (sim_dimensions) {
+      case 1:
+        return new OverdampedIntegrator<1>(gflow);
+      case 2:
+        return new OverdampedIntegrator<2>(gflow);
+      case 3: 
+        return new OverdampedIntegrator<3>(gflow);
+      case 4: 
+        return new OverdampedIntegrator<4>(gflow);
+      default:
+        throw BadDimension();
+    }
+  }
 
 }
 #endif // __OVERDAMPED_INTEGRATOR_HPP__GFLOW__

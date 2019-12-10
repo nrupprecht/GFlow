@@ -69,11 +69,6 @@ namespace GFlowSimulation {
     }
 
     // Non-generic types.
-    else if (token==HardSphereReflectingToken) {
-      if (sim_dimensions==2)
-        return new HardSphere_Reflecting_2d(gflow);
-      else throw InvalidInteraction(token + ", " + toStr(sim_dimensions));
-    }
     else if (token==DemonWallToken) {
       if (sim_dimensions==2)
         return new DemonWall(gflow);

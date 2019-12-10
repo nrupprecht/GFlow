@@ -41,8 +41,8 @@ namespace GFlowSimulation {
     // A function for correcting distances.
     auto check_adjacent = [&] (int i, int id_min, int id2) {
       // Get the vectors we need.
-      gflow->getDisplacement(x[i], x[id_min], dx.data);
-      gflow->getDisplacement(x[id2], x[id_min], normal.data);
+      gflow->getDisplacement(x(i), x(id_min), dx.data);
+      gflow->getDisplacement(x(id2), x(id_min), normal.data);
       normal.normalize();
       // Project the displacement from the closest particle to particle i onto the chain from the closest particle
       // to its neighbor in the chain.
@@ -72,7 +72,7 @@ namespace GFlowSimulation {
       int index = 0, min_index = -1; // Keep track of the index (in the group) of the close particle.
       for (auto id : local_ids) {
         // Compute distance
-        RealType r = gflow->getDistance(x[id], x[i]);
+        RealType r = gflow->getDistance(x(id), x(i));
         // Check if the distance is close enough, and smaller than the min distance so far
         if (r<minDist || minDist==-1) {
           minDist = r;

@@ -111,9 +111,8 @@ namespace GFlowSimulation {
 
   RealType Integrator::get_max_velocity() {
     // Check the velocity components of all the particles
-    RealType *v = simData->V_arr();
-    // Make sure the pointers are valid
-    if (v==nullptr) return 0.;
+    auto v = simData->V();
+
     // Find maxV
     RealType maxV = 0;
     const int total = sim_dimensions*simData->size();
@@ -124,16 +123,16 @@ namespace GFlowSimulation {
       if (maxV<fabs(v[i])) maxV = fabs(v[i]);
     #else 
     // Do as much as we can in parallel
-    simd_float MaxV = simd_set1(0.);
+    simd_float _maxv = simd_set1(0.);
     int i=0;
     for (; i<total-simd_data_size; i += simd_data_size) {
-      simd_float V = simd_abs(simd_load(&v[i]));
-      simd_float mask = simd_less_than(MaxV, V);
-      simd_update_masked(MaxV, V, mask);
+      simd_float _va = simd_abs(v.load_to_simd(i)); // simd_abs(simd_load(&v[i]));
+      simd_float _mask = simd_less_than(_maxv, _va);
+      simd_update_masked(_maxv, _va, _mask);
     }
-    // Consolidate MaxV
+    // Consolidate _maxv
     for (int d=0; d<simd_data_size; ++d) {
-      RealType mv = simd_get(d, MaxV);
+      RealType mv = simd_get(d, _maxv);
       if (maxV<mv) maxV = mv;
     }
     // Do the last part serially
@@ -146,17 +145,16 @@ namespace GFlowSimulation {
 
   RealType Integrator::get_max_acceleration() {
     // Check the acceleration components of all the particles
-    RealType *f = simData->F_arr(), *im = simData->Im();
-    // Make sure the pointers are valid
-    if (f==nullptr || im==nullptr) return 0.;
+    auto f = simData->F();
+    auto im = simData->Im();
+
     // Reset the maximum acceleration of any particle.
     RealType maxA = 0.;
     const int total = sim_dimensions*simData->size();
 
     // Do serially
     for (int i=0; i<total; ++i) {
-      int id = i/sim_dimensions;
-      RealType a = fabs(f[i]*im[id]);
+      RealType a = fabs(f[i]*im[i/sim_dimensions]);
       if (a>maxA) maxA = a;
     }
 

@@ -17,14 +17,14 @@ namespace GFlowSimulation {
 
     // Compute kinetic energy.
     RealType energy = 0;
-    RealType **v = simData->V();
-    RealType *im = simData->Im();
-    int    *type = simData->Type();
-    int size = Base::simData->size_owned();
+    auto v = simData->V();
+    auto im = simData->Im();
+    auto type = simData->Type();
+    int size = simData->size_owned();
     int count = 0;
     for (int n=0; n<size; ++n) {
       if (im[n]>0 && -1<type[n] && simData->isReal(n)) {
-        energy += sqr(v[n], sim_dimensions)/im[n];
+        energy += sqr(v(n), sim_dimensions)/im[n];
         ++count;
       }
     }
@@ -39,8 +39,9 @@ namespace GFlowSimulation {
     // Look for rotational energy
     int om_add = simData->getScalarData("Om");
     if (om_add>=0) {
-      RealType *om = simData->ScalarData(om_add), en = 0;
-      RealType *sg = simData->Sg();
+      RealType en = 0;
+      auto om = simData->ScalarData(om_add);
+      auto sg = simData->Sg();
       for (int n=0; n<size; ++n) {
         if (im[n]>0 && -1<type[n] && simData->isReal(n)) {
           RealType II = 0.5*sqr(sg[n])/im[n];

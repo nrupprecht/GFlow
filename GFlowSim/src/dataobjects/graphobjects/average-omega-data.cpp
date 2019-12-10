@@ -11,13 +11,13 @@ namespace GFlowSimulation {
 
     // Compute kinetic energy.
     int om_add = simData->getScalarData("Om");
-    RealType *om = simData->ScalarData(om_add);
-    RealType *im = simData->Im();
-    int    *type = simData->Type();
+    auto om = simData->ScalarData(om_add);
+    auto im = simData->Im();
+    auto type = simData->Type();
     int size = Base::simData->size();
 
     // Check if there is rotational motion.
-    if (om==nullptr) return;
+    if (om.isnull()) return;
 
     // Average the angular velocity, weighing by particle mass.
     RealType mass = 0, omega = 0;

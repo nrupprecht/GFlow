@@ -135,14 +135,14 @@ namespace GFlowSimulation {
           // Get id of neighbor.
           int id2 = verlet_list[j];
           // Calculate displacement.
-          subtract_vec<dims>(x[id1], x[id2], X);
+          subtract_vec<dims>(x(id1), x(id2), X);
           // Harmonic corrections to distance.
           if (wrapping) harmonic_correction<dims>(bcs, X, widths);
           // Calculate squared distance
           rsqr = dot_vec<dims>(X, X);
           // Get radii
-          R1 = rd[id1];
-          R2 = rd[id2];
+          R1 = rd(id1);
+          R2 = rd(id2);
           // If close, interact.
           if (rsqr < sqr((R1 + R2)*cutoff)) 
             static_cast<const ForceType*>(this)->force(id1, id2, R1, R2, rsqr, X, f);
@@ -210,13 +210,9 @@ namespace GFlowSimulation {
       if (verlet_list.empty()) return;
 
       // Get the data pointers.
-      RealType **x = simData->X();
-      RealType **f = simData->F();
-      RealType *rd = simData->Sg();
-
-      // Make sure all needed pointers are non null.
-      // \todo Should probably have some sort of global error message system.
-      if (x==nullptr || f==nullptr || rd==nullptr) return;
+      auto x = simData->X();
+      auto f = simData->F();
+      auto rd = simData->Sg();
 
       // Needed constants
       RealType R1, R2, rsqr, r, X[dims];
@@ -238,14 +234,14 @@ namespace GFlowSimulation {
         int id1 = verlet_list[i];
         int id2 = verlet_list[i+1];
         // Calculate displacement.
-        subtract_vec<dims>(x[id1], x[id2], X);
+        subtract_vec<dims>(x(id1), x(id2), X);
         // Harmonic corrections to distance.
         if (wrapping) harmonic_correction<dims>(bcs, X, widths);
         // Calculate squared distance
         rsqr = dot_vec<dims>(X, X);
         // Get radii
-        R1 = rd[id1];
-        R2 = rd[id2];
+        R1 = rd(id1);
+        R2 = rd(id2);
         // If close, interact.
         if (rsqr < sqr((R1 + R2)*cutoff)) 
           static_cast<const ForceType*>(this)->force(id1, id2, R1, R2, rsqr, X, f);
@@ -318,13 +314,9 @@ namespace GFlowSimulation {
       if (verlet_list.empty()) return;
 
       // Get the data pointers.
-      RealType **x = simData->X();
-      RealType **f = simData->F();
-      RealType *rd = simData->Sg();
-
-      // Make sure all needed pointers are non null.
-      // \todo Should probably have some sort of global error message system.
-      if (x==nullptr || f==nullptr || rd==nullptr) return;
+      auto x = simData->X();
+      auto f = simData->F();
+      auto rd = simData->Sg();
 
       // Needed constants
       RealType R1, R2, rsqr, r, X[dims];
@@ -346,14 +338,14 @@ namespace GFlowSimulation {
         int id1 = vpair.first;
         int id2 = vpair.second;
         // Calculate displacement.
-        subtract_vec<dims>(x[id1], x[id2], X);
+        subtract_vec<dims>(x(id1), x(id2), X);
         // Harmonic corrections to distance.
         if (wrapping) harmonic_correction<dims>(bcs, X, widths);
         // Calculate squared distance
         rsqr = dot_vec<dims>(X, X);
         // Get radii
-        R1 = rd[id1];
-        R2 = rd[id2];
+        R1 = rd(id1);
+        R2 = rd(id2);
         // If close, interact.
         if (rsqr < sqr((R1 + R2)*cutoff))
           static_cast<const ForceType*>(this)->force(id1, id2, R1, R2, rsqr, X, f);

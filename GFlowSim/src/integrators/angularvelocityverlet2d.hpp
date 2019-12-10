@@ -11,6 +11,10 @@ namespace GFlowSimulation {
     AngularVelocityVerlet2d(GFlow *);
     virtual void pre_forces() override;
     virtual void post_forces() override;
+
+  private:
+    inline void update_position();
+    inline void update_velocity();
   };
 
 }

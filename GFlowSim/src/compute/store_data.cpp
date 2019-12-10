@@ -99,18 +99,18 @@ namespace GFlowSimulation {
       if (simData->Type(n)<0 || !bounds.contains(simData->X(n))) continue;
       // Copy data
       for (auto v : vector_data_positions) {
-        RealType **vd = simData->VectorData(v);
-        if (vd!=nullptr) copyVec(vd[n], &data[data_pointer], sim_dimensions);
+        auto vd = simData->VectorData(v);
+        if (!vd.isnull()) copyVec(vd(n), &data[data_pointer], sim_dimensions);
         data_pointer += sim_dimensions;
       }
       for (auto s : scalar_data_positions) {
-        RealType *sd = simData->ScalarData(s);
-        if (sd!=nullptr) data[data_pointer] = sd[n];
+        auto sd = simData->ScalarData(s);
+        if (!sd.isnull()) data[data_pointer] = sd[n];
         ++data_pointer;
       }
       for (auto i : integer_data_positions) {
-        int *id = simData->IntegerData(i);
-        if (id!=nullptr) data[data_pointer] = id[n]; 
+        auto id = simData->IntegerData(i);
+        if (!id.isnull()) data[data_pointer] = id[n]; 
         ++data_pointer;
       }
       if (write_processor_info) {

@@ -14,13 +14,14 @@ namespace GFlowSimulation {
 
     // Get and store data
     RealType av = 0;
-    RealType **v = Base::simData->V();
-    RealType *im = Base::simData->Im();
-    int size = Base::simData->size(), *type = Base::simData->Type();
+    auto v = Base::simData->V();
+    auto im = Base::simData->Im();
+    auto type = Base::simData->Type();
+    int size = Base::simData->size();
     int count = 0;
     for (int n=0; n<size; ++n)
       if (im[n]>0 && type[n]>-1) {
-        av += magnitudeVec(v[n], sim_dimensions);
+        av += magnitudeVec(v(n), sim_dimensions);
         ++count;
       }
 

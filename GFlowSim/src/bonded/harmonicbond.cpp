@@ -35,8 +35,8 @@ namespace GFlowSimulation {
     if (simData->getNeedsRemake()) updateLocalIDs();
 
     // Get simdata, check if the local ids need updating
-    RealType **x = simData->X();
-    RealType **f = simData->F();
+    auto x = simData->X();
+    auto f = simData->F();
     RealType *dX = new RealType[sim_dimensions];
 
     for (int i=0; i<nbonds; ++i) {
@@ -44,7 +44,7 @@ namespace GFlowSimulation {
       int id1 = left[i], id2 = right[i];
       
       // Calculate displacement
-      Base::gflow->getDisplacement(x[id1], x[id2], dX);
+      Base::gflow->getDisplacement(x(id1), x(id2), dX);
       RealType r = magnitudeVec(dX, sim_dimensions);
 
       // Calculate displacement from equilibrium
@@ -54,8 +54,8 @@ namespace GFlowSimulation {
       // nX is now the force vector
       scalarMultVec(springConstant*dr, dX, sim_dimensions);
       // Add forces to particles
-      minusEqVec(f[id1], dX, sim_dimensions);
-      plusEqVec (f[id2], dX, sim_dimensions);
+      minusEqVec(f(id1), dX, sim_dimensions);
+      plusEqVec (f(id2), dX, sim_dimensions);
     }
 
     // Clean up.

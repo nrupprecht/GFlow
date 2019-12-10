@@ -30,7 +30,7 @@ namespace GFlowSimulation {
     gflow->setAllBCs(bcFlag);
 
     // Create an integrator
-    gflow->integrator = new VelocityVerlet(gflow);
+    gflow->integrator = choose_velocity_verlet(gflow, sim_dimensions);
 
     // Set the bounds of the gflow object --- for now, just make it [0,1] in each dimension
     for (int d=0; d<sim_dimensions; ++d) {

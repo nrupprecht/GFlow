@@ -56,12 +56,12 @@ namespace GFlowSimulation {
     // Update local ids.
     update_local_ids();
     // Get data from simdata.
-    RealType **x = simData->X();
+    auto x = simData->X();
     // Put particles back
     for (int i=0; i<size(); ++i) {
       int id = at(i);
       // Put the particle back in place.
-      copyVec(x[id], door_positions[i]);
+      copyVec(x(id), door_positions[i]);
     }
 
     // --- Look for an animation object, so we can modify it.
@@ -234,22 +234,22 @@ namespace GFlowSimulation {
     El = Er = 0.;
 
     // Get data from simdata.
-    RealType **x = simData->X();
-    RealType **v = simData->V();
-    RealType *sg = simData->Sg();
-    RealType *im = simData->Im();
-    int *side = simData->IntegerData(side_entry);
+    auto x = simData->X();
+    auto v = simData->V();
+    auto rd = simData->Sg();
+    auto im = simData->Im();
+    auto side = simData->IntegerData(side_entry);
 
     // Check all particles
     for (int i=0; i<simData->size(); ++i) {
       // Don't count walls.
-      if (im[i]==0) continue;
+      if (im(i)==0) continue;
       // Find current side
-      int sd = get_side(x[i]);
+      int sd = get_side(x(i));
       // Calculate energy
-      RealType ke = (1./im[i]) * 0.5 * sqr(v[i], sim_dimensions);
+      RealType ke = (1./im(i)) * 0.5 * sqr(v(i), sim_dimensions);
       // If the particle changed sides.
-      if (sd!=side[i]) {
+      if (sd!=side(i)) {
         // Left to right.
         if (sd==1) {
           ++nl;
@@ -275,17 +275,16 @@ namespace GFlowSimulation {
 
   inline void Demon::assign_side() {
     // Get data from simdata.
-    RealType **x = simData->X();
-    RealType *sg = simData->Sg();
-    int *side = simData->IntegerData(side_entry);
+    auto x = simData->X();
+    auto side = simData->IntegerData(side_entry);
     // Make sure side is a valid array.
-    if (side==nullptr) return;
+    if (side.isnull()) return;
     // Check all particles
     for (int i=0; i<simData->size(); ++i) {
       // Find current side
-      int sd = get_side(x[i]);
+      int sd = get_side(x(i));
       // Write side data
-      side[i] = sd;
+      side(i) = sd;
     }
   }
 
@@ -297,12 +296,12 @@ namespace GFlowSimulation {
       checkpoint_v = vector<Vec>(simData->size(), Vec(sim_dimensions));
     }
     // Get arrays from simdata
-    RealType **x = simData->X();
-    RealType **v = simData->V();
+    auto x = simData->X();
+    auto v = simData->V();
     // Write simdata to arrays
     for (int i=0; i<simData->size(); ++i) {
-      copyVec(x[i], checkpoint_x[i]);
-      copyVec(v[i], checkpoint_v[i]);
+      copyVec(x(i), checkpoint_x[i]);
+      copyVec(v(i), checkpoint_v[i]);
     }
 
     // Checkpoint animation data.
@@ -317,13 +316,13 @@ namespace GFlowSimulation {
     if (simData->size()!=checkpoint_x.size()) throw false;
 
     // Get arrays from simdata
-    RealType **x = simData->X();
-    RealType **v = simData->V();
+    auto x = simData->X();
+    auto v = simData->V();
 
     // Write arrays to simdata
     for (int i=0; i<simData->size(); ++i) {
-      copyVec(checkpoint_x[i], x[i]);
-      copyVec(checkpoint_v[i], v[i]);
+      copyVec(checkpoint_x[i], x(i));
+      copyVec(checkpoint_v[i], v(i));
     }
     // Reset the time in gflow.
     gflow->setElapsedTime(last_check);
@@ -347,12 +346,12 @@ namespace GFlowSimulation {
     // Update local ids.
     update_local_ids();
     // Get data from simdata.
-    RealType **x = simData->X();
+    auto x = simData->X();
     // Put particles far away
     for (int i=0; i<size(); ++i) {
       int id = at(i);
       // Put the particle back in place.
-      copyVec(p, x[id]);
+      copyVec(p, x(id));
     }
     // Set door open
     door_open = true;
@@ -362,12 +361,12 @@ namespace GFlowSimulation {
     // Update local ids.
     update_local_ids();
     // Get data from simdata.
-    RealType **x = simData->X();
+    auto x = simData->X();
     // Put particles back
     for (int i=0; i<size(); ++i) {
       int id = at(i);
       // Put the particle back in place.
-      copyVec(door_positions[i], x[id]);
+      copyVec(door_positions[i], x(id));
     }
     // Set door open
     door_open = false;

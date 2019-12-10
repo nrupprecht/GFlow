@@ -27,13 +27,13 @@ namespace GFlowSimulation {
     for (int ty=0; ty<ntypes; ++ty) keData[ty].push_back(RPair(time, 0));
     // Get and store data
     RealType ke = 0;
-    RealType **v = Base::simData->V();
-    RealType *im = Base::simData->Im();
+    auto v = Base::simData->V();
+    auto im = Base::simData->Im();
     int size = Base::simData->size();
     for (int n=0; n<size; ++n) {
       int type = Base::simData->Type(n);
       if (-1<type && type<ntypes && im[n]>0)
-        keData[type].rbegin()->second += sqr(v[n], sim_dimensions)/im[n];
+        keData[type].rbegin()->second += sqr(v(n), sim_dimensions)/im[n];
     }
     // Multiply by 1/2
     for (int ty=0; ty<ntypes; ++ty) {

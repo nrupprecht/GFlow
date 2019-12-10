@@ -18,7 +18,7 @@ namespace GFlowSimulation {
     clusters = vector<int>(number, -1);
     cluster_sizes.clear();
     // Get the types
-    const int *type = Base::simData->Type();
+    auto type = Base::simData->Type();
     // Stack for clustering
     std::stack<int> check_stack;
     // Pass into the handler's [getAllWithin] function

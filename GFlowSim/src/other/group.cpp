@@ -55,19 +55,19 @@ namespace GFlowSimulation {
     Bounds bounds = gflow->getBounds(); // Simulation bounds
 
     // Get position, mass arrays
-    RealType **x = simData->X();
-    RealType *im = simData->Im();
+    auto x = simData->X();
+    auto im = simData->Im();
     RealType mass = 0;
 
     // Set reference point
     int mid = floor(local_ids.size()/2);
-    copyVec(x[local_ids[mid]], r0.data, sim_dimensions);
+    copyVec(x(local_ids[mid]), r0.data, sim_dimensions);
     // Go through all particles
     for (auto id : local_ids) {
       // Get displacement between the particle and the reference point.
-      gflow->getDisplacement(x[id], r0.data, dr.data);
+      gflow->getDisplacement(x(id), r0.data, dr.data);
       // Get the mass of the particle - assumes none of the particles have infinite mass.
-      RealType m = 1./im[id];
+      RealType m = 1./im(id);
       mass += m;
       // Update Rcm
       plusEqVecScaled(Rcm.data, dr.data, m, sim_dimensions);
@@ -110,8 +110,8 @@ namespace GFlowSimulation {
     auto simData = sim_data.lock();
     int sim_dimensions = simData->getSimDimensions();
     // Get arrays
-    RealType **v = simData->V();
-    for (auto id : local_ids) plusEqVec(v[id], V, sim_dimensions);
+    auto v = simData->V();
+    for (auto id : local_ids) plusEqVec(v(id), V, sim_dimensions);
   }
 
   void Group::addAcceleration(RealType *A) const {
@@ -120,12 +120,12 @@ namespace GFlowSimulation {
     auto simData = sim_data.lock();
     int sim_dimensions = simData->getSimDimensions();
     // Get arrays
-    RealType **f = simData->F();
-    RealType *im = simData->Im();
+    auto f = simData->F();
+    auto im = simData->Im();
     for (auto id : local_ids) {
-      if (im[id]>0) {
-        RealType mass = 1./im[id];
-        plusEqVecScaled(f[id], A, mass, sim_dimensions);
+      if (im(id)>0) {
+        RealType mass = 1./im(id);
+        plusEqVecScaled(f(id), A, mass, sim_dimensions);
       }
     }
   }
@@ -149,7 +149,7 @@ namespace GFlowSimulation {
     // Compute distances between adjacent (in the order defined by the id list) particles.
     for (int i=0; i<local_ids.size()-1; ++i) {
       int id1 = local_ids[i], id2 = local_ids[i+1];
-      length += gflow->getDistance(x[id1], x[id2]);
+      length += gflow->getDistance(x(id1), x(id2));
     }
     // Return the length
     return length;
@@ -172,7 +172,7 @@ namespace GFlowSimulation {
     RealType _distance(1000000.), minimum_distance(1000000.);
     // Find closest object in the group to the point.
     for (auto id : local_ids) {
-      _distance = simData->getGFlow()->getDistance(x[id], point);
+      _distance = simData->getGFlow()->getDistance(x(id), point);
       if (_distance<minimum_distance) minimum_distance = _distance;
     }
     return _distance;
@@ -188,7 +188,7 @@ namespace GFlowSimulation {
     // Force array
     auto f = simData->F();
     // Compute net force
-    for (auto id : local_ids) plusEqVec(frc, f[id], sim_dimensions);
+    for (auto id : local_ids) plusEqVec(frc, f(id), sim_dimensions);
   }
 
   RealType Group::findTotalMass() const {
@@ -215,7 +215,7 @@ namespace GFlowSimulation {
     RealType maxD = 0;
     // Find closest object in the group to the point.
     for (auto id : local_ids) {
-      simData->getGFlow()->getDisplacement(x[id], point, disp.data);
+      simData->getGFlow()->getDisplacement(x(id), point, disp.data);
       RealType d = sqr(disp);
       if (d>maxD) {
         maxD = d;

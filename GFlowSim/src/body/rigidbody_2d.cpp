@@ -28,14 +28,14 @@ namespace GFlowSimulation {
 
     // Calculate center of mass position. We have to be careful, since there may be harmonic boundary conditions.
     RealType rcm[2], r0[2], fnet[2], I(0), tau(0);
-    zeroVec(rcm,  2);
-    zeroVec(fnet, 2);
+    set1_vec<2>(rcm, 0);
+    set1_vec<2>(fnet, 0);
     // Set the reference point to be the position of the first particle.
-    copyVec(x[local_ids[0]], r0, 2);
+    copy_vec<2>(x(local_ids[0]), r0);
     // Go through all body particles.
     for (auto id : local_ids) {
-      RealType dx = x[id][0] - r0[0];
-      RealType dy = x[id][1] - r0[1];
+      RealType dx = x(id, 0) - r0[0];
+      RealType dy = x(id, 1) - r0[1];
       // Harmonic corrections to distance.
       if (boundaryConditions[0]==BCFlag::WRAP) {
         RealType dX = bnd_x - fabs(dx);
@@ -46,17 +46,17 @@ namespace GFlowSimulation {
         if (dY<fabs(dy)) dy = dy>0 ? -dY : dY;
       }  
       // Get the mass of the particle - assumes none of the particles have infinite mass.
-      RealType m = 1./im[id];
+      RealType m = 1./im(id);
       // Update rcm
       rcm[0] += m*dx;
       rcm[1] += m*dy;
       // Update fnet
-      fnet[0] += f[id][0];
-      fnet[1] += f[id][1];
+      fnet[0] += f(id, 0);
+      fnet[1] += f(id, 1);
       // Update moment of inertia
       I += m*(dx*dx + dy*dy);
       // Update torque
-      tau += f[id][0]*dy - f[id][1]*dx;
+      tau += f(id, 0)*dy - f(id, 1)*dx;
     }
     // Divide by total mass and add to reference position to get the actual com position.
     rcm[0] /= mass;
@@ -78,8 +78,8 @@ namespace GFlowSimulation {
 
     // Set the forces for each particle.
     for (auto id : local_ids) {
-      RealType dx = x[id][0] - r0[0];
-      RealType dy = x[id][1] - r0[1];
+      RealType dx = x(id, 0) - r0[0];
+      RealType dy = x(id, 1) - r0[1];
       // Harmonic corrections to distance.
       if (boundaryConditions[0]==BCFlag::WRAP) {
         RealType dX = bnd_x - fabs(dx);
@@ -90,10 +90,10 @@ namespace GFlowSimulation {
         if (dY<fabs(dy)) dy = dy>0 ? -dY : dY;
       } 
       // Get the mass of the particle - assumes none of the particles have infinite mass.
-      RealType m = 1./im[id];
+      RealType m = 1./im(id);
       // Set the force on the particle.
-      f[id][0] = m*(A_lin[0] - alpha*dy);
-      f[id][1] = m*(A_lin[1] + alpha*dx);
+      f(id, 0) = m*(A_lin[0] - alpha*dy);
+      f(id, 1) = m*(A_lin[1] + alpha*dx);
     }
   }
 

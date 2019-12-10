@@ -375,12 +375,8 @@ namespace GFlowSimulation {
   #endif // USE_MPI == 1
   }
 
-  RealType** SimData::X() {
-    return vdata[0];
-  }
-
-  RealType* SimData::X_arr() {
-    return *vdata[0];
+  vec_access SimData::X() {
+    return vec_access(vdata[0]);
   }
 
   RealType* SimData::X(int i) {
@@ -391,12 +387,8 @@ namespace GFlowSimulation {
     return vdata[0][i][d];
   }
 
-  RealType** SimData::V() {
-    return vdata[1];
-  }
-
-  RealType* SimData::V_arr() {
-    return *vdata[1];
+  vec_access SimData::V() {
+    return vec_access(vdata[1]);
   }
 
   RealType* SimData::V(int i) {
@@ -407,12 +399,8 @@ namespace GFlowSimulation {
     return vdata[1][i][d];
   }
 
-  RealType** SimData::F() {
-    return vdata[2];
-  }
-
-  RealType* SimData::F_arr() {
-    return *vdata[2];
+  vec_access SimData::F() {
+    return vec_access(vdata[2]);
   }
 
   RealType* SimData::F(int i) {
@@ -423,150 +411,135 @@ namespace GFlowSimulation {
     return vdata[2][i][d];
   }
 
-  RealType** SimData::VectorData(int i) {
-    if (i<vdata.size()) return vdata[i];
-    else return nullptr;
+  vec_access SimData::VectorData(int i) {
+    if (i<0 || vdata.size()<=i) throw false; // \todo Real error
+    return vec_access(vdata[i]);
   }
 
-  RealType** SimData::VectorData(const string& name) {
+  vec_access SimData::VectorData(const string& name) {
     int i = getVectorData(name);
-    if (-1<i) return vdata[i];
-    else return nullptr;
+    return VectorData(i);
   }
 
-  RealType* SimData::Sg() {
-    return sdata[0];
+  scalar_access SimData::Sg() {
+    return scalar_access(sdata[0]);
   }
 
   RealType& SimData::Sg(int i) {
     return sdata[0][i];
   }
 
-  RealType* SimData::Im() {
-    return sdata[1];
+  scalar_access SimData::Im() {
+    return scalar_access(sdata[1]);
   }
 
   RealType& SimData::Im(int i) {
     return sdata[1][i];
   }
 
-  RealType* SimData::ScalarData(int i) {
-    if (i<sdata.size()) return sdata[i];
-    else return nullptr;
+  scalar_access SimData::ScalarData(int i) {
+    if (i<0 || sdata.size()<=i) throw false; // \todo Real error
+    return scalar_access(sdata[i]);
   }
 
-  RealType* SimData::ScalarData(const string& name) {
+  scalar_access SimData::ScalarData(const string& name) {
     int i = getScalarData(name);
-    if (-1<i) return sdata[i];
-    else return nullptr;
+    return ScalarData(i);
   }
 
-  int* SimData::Type() {
-    return idata[0];
+  integer_access SimData::Type() {
+    return integer_access(idata[0]);
   }
 
   int& SimData::Type(int i) {
     return idata[0][i];
   }
 
-  int* SimData::Id() {
-    return idata[1];
+  integer_access SimData::Id() {
+    return integer_access(idata[1]);
   }
 
   int& SimData::Id(int i) {
     return idata[1][i];
   }
 
-  int* SimData::IntegerData(int i) {
-    if (i<idata.size()) return idata[i];
-    else return nullptr;
+  integer_access SimData::IntegerData(int i) {
+    if (i<0 || idata.size()<=i) throw false; // \todo Real error
+    return integer_access(idata[i]);
   }
 
-  int* SimData::IntegerData(const string& name) {
+  integer_access SimData::IntegerData(const string& name) {
     int i = getIntegerData(name);
-    if (-1<i) return idata[i];
-    else return nullptr;
+    return IntegerData(i);
   }
 
-  const RealType** SimData::X() const {
-    return const_cast<const RealType**>(vdata[0]);
-  }
+  // const vec_access SimData::X() const {
+  //   return const_cast<const RealType**>(vdata[0]);
+  // }
 
-  const RealType* SimData::X_arr() const {
-    return *vdata[0];
-  }
+  // const RealType* SimData::X(int i) const {
+  //   return vdata[0][i];
+  // }
 
-  const RealType* SimData::X(int i) const {
-    return vdata[0][i];
-  }
+  // const RealType& SimData::X(int i, int d) const {
+  //   return vdata[0][i][d];
+  // }
 
-  const RealType& SimData::X(int i, int d) const {
-    return vdata[0][i][d];
-  }
+  // const RealType** SimData::V() const {
+  //   return const_cast<const RealType**>(vdata[1]);
+  // }
 
-  const RealType** SimData::V() const {
-    return const_cast<const RealType**>(vdata[1]);
-  }
+  // const RealType* SimData::V(int i) const {
+  //   return vdata[1][i];
+  // }
 
-  const RealType* SimData::V_arr() const {
-    return *vdata[1];
-  }
+  // const RealType& SimData::V(int i, int d) const {
+  //   return vdata[1][i][d];
+  // }
 
-  const RealType* SimData::V(int i) const {
-    return vdata[1][i];
-  }
+  // const RealType** SimData::F() const {
+  //   return const_cast<const RealType**>(vdata[2]);
+  // }
 
-  const RealType& SimData::V(int i, int d) const {
-    return vdata[1][i][d];
-  }
+  // const RealType* SimData::F(int i) const {
+  //   return vdata[2][i];
+  // }
 
-  const RealType** SimData::F() const {
-    return const_cast<const RealType**>(vdata[2]);
-  }
+  // const RealType& SimData::F(int i, int d) const {
+  //   return vdata[2][i][d];
+  // }
 
-  const RealType* SimData::F_arr() const {
-    return *vdata[2];
-  }
+  // const RealType* SimData::Sg() const {
+  //   return sdata[0];
+  // }
 
-  const RealType* SimData::F(int i) const {
-    return vdata[2][i];
-  }
+  // const RealType& SimData::Sg(int i) const {
+  //   return sdata[0][i];
+  // }
 
-  const RealType& SimData::F(int i, int d) const {
-    return vdata[2][i][d];
-  }
+  // const RealType* SimData::Im() const {
+  //   return sdata[1];
+  // }
 
-  const RealType* SimData::Sg() const {
-    return sdata[0];
-  }
+  // const RealType& SimData::Im(int i) const {
+  //   return sdata[1][i];
+  // }
 
-  const RealType& SimData::Sg(int i) const {
-    return sdata[0][i];
-  }
+  // const int* SimData::Type() const {
+  //   return idata[0];
+  // }
 
-  const RealType* SimData::Im() const {
-    return sdata[1];
-  }
+  // const int& SimData::Type(int i) const {
+  //   return idata[0][i];
+  // }
 
-  const RealType& SimData::Im(int i) const {
-    return sdata[1][i];
-  }
+  // const int* SimData::Id() const {
+  //   return idata[1];
+  // }
 
-  const int* SimData::Type() const {
-    return idata[0];
-  }
-
-  const int& SimData::Type(int i) const {
-    return idata[0][i];
-  }
-
-  const int* SimData::Id() const {
-    return idata[1];
-  }
-
-  const int& SimData::Id(int i) const {
-    return idata[1][i];
-  }
+  // const int& SimData::Id(int i) const {
+  //   return idata[1][i];
+  // }
 
   bool SimData::Valid(int i) const {
     return -1<idata[1][i];
@@ -761,7 +734,7 @@ namespace GFlowSimulation {
     // Start simdata timer.
     start_timer();
     // Clear velocities
-    RealType *v = V_arr();
+    auto v = V();
     for (int i=0; i<_size*sim_dimensions; ++i) v[i] = 0;
     // Stop simdata timer.
     stop_timer();
@@ -771,7 +744,7 @@ namespace GFlowSimulation {
     // Start simdata timer.
     start_timer();
     // Clear forces
-    RealType *f = F_arr();
+    auto f = F();
     for (int i=0; i<_size*sim_dimensions; ++i) f[i] = 0;
     // Stop simdata timer.
     stop_timer();
@@ -783,8 +756,8 @@ namespace GFlowSimulation {
     // Clear scalar
     int address = getScalarData(id);
     if (address>=0) {
-      RealType *entry = ScalarData(address);
-      for (int i=0; i<_size; ++i) entry[i] = 0;
+      auto entry = ScalarData(address);
+      for (int i=0; i<_size; ++i) entry(i) = 0;
     }
     // Stop simdata timer.
     stop_timer();
@@ -1153,7 +1126,7 @@ namespace GFlowSimulation {
     _last_n_ghosts_sent = 0;
 
     // Possibly get a pointer to angular velocity data.
-    RealType *om = nullptr;
+    scalar_access om;
     if (send_ghost_omega) om = ScalarData("Om");
 
     // Update the positions information of ghost particles on other processors.
@@ -1188,7 +1161,7 @@ namespace GFlowSimulation {
           }
           // Possibly send angular velocity data.
           if (send_ghost_omega) {
-            buffer_list[i][ghost_data_width*j + pointer] = om[id];
+            buffer_list[i][ghost_data_width*j + pointer] = om(id);
             ++pointer; // Adjust counter.
           }
           // Increment.
@@ -1235,7 +1208,7 @@ namespace GFlowSimulation {
     gflow->startMPIGhostTimer();
 
     // Possibly get a pointer to angular velocity data.
-    RealType *om = nullptr;
+    scalar_access om;
     if (send_ghost_omega) om = ScalarData("Om");
 
     // Collect received data and pack it.
@@ -1256,7 +1229,7 @@ namespace GFlowSimulation {
           }
           // Possibly receive angular velocity data.
           if (send_ghost_omega) {
-            om[id] = buffer_list[i][ghost_data_width*j + pointer];
+            om(id) = buffer_list[i][ghost_data_width*j + pointer];
             ++pointer; // Adjust counter.
           }
         }

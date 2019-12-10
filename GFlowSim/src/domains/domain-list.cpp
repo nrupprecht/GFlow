@@ -66,18 +66,18 @@ namespace GFlowSimulation {
       // Iterate through all particles in the cell
       for (; id1!=-1; id1 = particle_list[id1]) {
         // Cutoff data
-        RealType *cutoffs_id1 = cutoff_grid[type[id1]];
-        RealType sigma1 = sg[id1]*max_cutoffs[type[id1]];
+        RealType *cutoffs_id1 = cutoff_grid[type(id1)];
+        RealType sigma1 = sg(id1)*max_cutoffs[type(id1)];
 
         // Iterate through all particles in the same cell.
         int id2 = particle_list[id1];
         for (; id2!=-1; id2 = particle_list[id2]) {
           // If the other particle is a large particle, it will take care of this interaction
-          if (sg[id2]*max_cutoffs[type[id2]]<=max_small_sigma) {
+          if (sg(id2)*max_cutoffs[type(id2)]<=max_small_sigma) {
             // Look for distance between particles
-            RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], dimensions);
-            if (r2 < sqr((sg[id1] + sg[id2])*cutoffs_id1[type[id2]] + skin_depth)) {
-              body(id1, id2, 0, sg[id1], sg[id2], r2);
+            RealType r2 = getDistanceSqrNoWrap(x(id1), x(id2), dimensions);
+            if (r2 < sqr((sg(id1) + sg(id2))*cutoffs_id1[type(id2)] + skin_depth)) {
+              body(id1, id2, 0, sg(id1), sg(id2), r2);
             }
           }
         }
@@ -106,11 +106,11 @@ namespace GFlowSimulation {
               int id2 = cell_list[other_linear];
               for (; id2!=-1; id2 = particle_list[id2]) {
                 // If the other particle is a large particle, it will take care of this interaction
-                if (sg[id2]*max_cutoffs[type[id2]]>max_small_sigma) continue;
+                if (sg(id2)*max_cutoffs[type(id2)]>max_small_sigma) continue;
                 // Look for distance between particles
-                RealType r2 = getDistanceSqrNoWrap(x[id1], x[id2], dimensions);
-                if (r2 < sqr((sg[id1] + sg[id2])*cutoffs_id1[type[id2]] + skin_depth)) body(id1, id2, 0, sg[id1], sg[id2], r2);
-                else if (r2>max_reasonable) body(id1, id2, 1, sg[id1], sg[id2], r2);
+                RealType r2 = getDistanceSqrNoWrap(x(id1), x(id2), dimensions);
+                if (r2 < sqr((sg(id1) + sg(id2))*cutoffs_id1[type(id2)] + skin_depth)) body(id1, id2, 0, sg(id1), sg(id2), r2);
+                else if (r2>max_reasonable) body(id1, id2, 1, sg(id1), sg(id2), r2);
               }
             }
 

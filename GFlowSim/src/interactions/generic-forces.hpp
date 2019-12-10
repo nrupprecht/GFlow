@@ -23,7 +23,7 @@ namespace GFlowSimulation {
     HardSphereGeneric(GFlow *gflow, RealType rp) : Handler(gflow), repulsion(rp) {};
 
     //! \brief The force kernel for hard sphere forces.
-    virtual void force(const int id1, const int id2, const RealType R1, const RealType R2, const RealType rsqr, RealType *X, RealType **f) const {
+    virtual void force(const int id1, const int id2, const RealType R1, const RealType R2, const RealType rsqr, RealType *X, vec_access f) const {
       // Calculate distance, inverse distance.
       RealType r = sqrt(rsqr);
       RealType invr = 1./r;
@@ -33,8 +33,8 @@ namespace GFlowSimulation {
       // Calculate the magnitude of the force
       RealType Fn = repulsion*(R1 + R2 - r);
       // Update forces
-      sum_eq_vec_scaled<dims>(f[id1], X,  Fn);
-      sum_eq_vec_scaled<dims>(f[id2], X, -Fn);
+      sum_eq_vec_scaled<dims>(f(id1), X,  Fn);
+      sum_eq_vec_scaled<dims>(f(id2), X, -Fn);
 
       // Calculate potential
       if (Interaction::do_potential) {
@@ -93,7 +93,7 @@ namespace GFlowSimulation {
     HardSphereDsGeneric(GFlow *gflow, RealType rp) : Handler(gflow), repulsion(rp) {};
 
     //! \brief The force kernel for hard sphere forces.
-    virtual void force(const int id1, const int id2, const RealType R1, const RealType R2, const RealType rsqr, RealType *X, RealType **f) const {
+    virtual void force(const int id1, const int id2, const RealType R1, const RealType R2, const RealType rsqr, RealType *X, vec_access f) const {
       // Calculate distance, inverse distance.
       RealType r = sqrt(rsqr);
       RealType invr = 1./r;
@@ -109,8 +109,8 @@ namespace GFlowSimulation {
       // Calculate the magnitude of the force
       RealType Fn = max(RealType(0), repulsion*(R1 + R2 - r) + dissipation*vn);
       // Update forces
-      sum_eq_vec_scaled<dims>(f[id1], X,  Fn);
-      sum_eq_vec_scaled<dims>(f[id2], X, -Fn);
+      sum_eq_vec_scaled<dims>(f(id1), X,  Fn);
+      sum_eq_vec_scaled<dims>(f(id2), X, -Fn);
 
       // Calculate potential
       if (Interaction::do_potential) {
@@ -184,7 +184,7 @@ namespace GFlowSimulation {
       potential_energy_shift = 4.*strength*(g12 - g6);
     }
 
-    virtual void force(const int id1, const int id2, const RealType R1, const RealType R2, const RealType rsqr, RealType *X, RealType **f) const {
+    virtual void force(const int id1, const int id2, const RealType R1, const RealType R2, const RealType rsqr, RealType *X, vec_access f) const {
       // Calculate distance, inverse distance.
       RealType r = sqrt(rsqr);
       RealType invr = 1./r;
@@ -199,8 +199,8 @@ namespace GFlowSimulation {
       // Calculate magnitude
       RealType Fn = 24.*strength*(2.*g12 - g6)*invr;
       // Update forces
-      sum_eq_vec_scaled<dims>(f[id1], X,  Fn);
-      sum_eq_vec_scaled<dims>(f[id2], X, -Fn);
+      sum_eq_vec_scaled<dims>(f(id1), X,  Fn);
+      sum_eq_vec_scaled<dims>(f(id2), X, -Fn);
 
       // Calculate potential
       if (Interaction::do_potential) {
@@ -268,7 +268,7 @@ namespace GFlowSimulation {
       potential_energy_shift = strength/Interaction::cutoff;
     }
 
-    virtual void force(const int id1, const int id2, const RealType R1, const RealType R2, const RealType rsqr, RealType *X, RealType **f) const {
+    virtual void force(const int id1, const int id2, const RealType R1, const RealType R2, const RealType rsqr, RealType *X, vec_access f) const {
       // Calculate distance, inverse distance.
       RealType r = sqrt(rsqr);
       RealType invr = 1./r;
@@ -279,8 +279,8 @@ namespace GFlowSimulation {
       RealType Fn = strength/rsqr - strength/sqr(Interaction::cutoff);
 
       // Update forces
-      sum_eq_vec_scaled<dims>(f[id1], X,  Fn);
-      sum_eq_vec_scaled<dims>(f[id2], X, -Fn);
+      sum_eq_vec_scaled<dims>(f(id1), X,  Fn);
+      sum_eq_vec_scaled<dims>(f(id2), X, -Fn);
 
       // Calculate potential
       if (Interaction::do_potential) {
@@ -348,7 +348,7 @@ namespace GFlowSimulation {
       potential_energy_shift = 0; //\todo Calculate this.
     }
 
-    virtual void force(const int id1, const int id2, const RealType R1, const RealType R2, const RealType rsqr, RealType *X, RealType **f) const {
+    virtual void force(const int id1, const int id2, const RealType R1, const RealType R2, const RealType rsqr, RealType *X, vec_access f) const {
       // Calculate distance, inverse distance.
       RealType r = sqrt(rsqr);
       RealType invr = 1./r;
@@ -365,8 +365,8 @@ namespace GFlowSimulation {
       Fn = min(inner_force, Fn);
 
       // Update forces
-      sum_eq_vec_scaled<dims>(f[id1], X,  Fn);
-      sum_eq_vec_scaled<dims>(f[id2], X, -Fn);
+      sum_eq_vec_scaled<dims>(f(id1), X,  Fn);
+      sum_eq_vec_scaled<dims>(f(id2), X, -Fn);
 
       // Calculate potential
       if (Interaction::do_potential) {
@@ -442,12 +442,11 @@ namespace GFlowSimulation {
         om = Base::simData->ScalarData(om_add);
         tq = Base::simData->ScalarData(tq_add);
       }
-
       // Now do interactions.
-      if (om!=nullptr && tq!=nullptr) Handler::interact();
+      Handler::interact();
     }
 
-    void force(const int id1, const int id2, const RealType R1, const RealType R2, const RealType rsqr, RealType *X, RealType **f) const {
+    void force(const int id1, const int id2, const RealType R1, const RealType R2, const RealType rsqr, RealType *X, vec_access f) const {
       // Calculate distance, inverse distance.
       RealType r = sqrt(rsqr);
       RealType invr = 1./r;
@@ -479,8 +478,8 @@ namespace GFlowSimulation {
       RealType Fn = max(RealType(0.), c1 * (K_n*delta - M_eff*gamma_n*vn));
 
       // Update normal forces.
-      sum_eq_vec_scaled<dims>(f[id1], X,  Fn);
-      sum_eq_vec_scaled<dims>(f[id2], X, -Fn);
+      sum_eq_vec_scaled<dims>(f(id1), X,  Fn);
+      sum_eq_vec_scaled<dims>(f(id2), X, -Fn);
 
       // Calculate tangential force.
       RealType Vn[dims], Vt[dims];
@@ -499,7 +498,7 @@ namespace GFlowSimulation {
         RealType vt = dot_vec<dims>(Vt, Nt); //sqrt(dot_vec<dims>(Vt, Vt));        
 
         // Calculate difference in velocities at the point of intersection.
-        vt -= (om[id1]*R1 + om[id2]*R2); // Relative surface velocity due to angular velocity.
+        vt -= (om(id1)*R1 + om(id2)*R2); // Relative surface velocity due to angular velocity.
 
         // Instead of K_t * 0, it should really be based on an "angular spring" stretching, 
         // see e.g. Luding, Gran. Matter 2008, v 10, p. 235. But I'd have to keep track of the
@@ -512,12 +511,12 @@ namespace GFlowSimulation {
         else if (Ft<-maxF) Ft = -maxF;
 
         // Update tangential forces.
-        sum_eq_vec_scaled<dims>(f[id1], Nt,  Ft);
-        sum_eq_vec_scaled<dims>(f[id2], Nt, -Ft);
+        sum_eq_vec_scaled<dims>(f(id1), Nt,  Ft);
+        sum_eq_vec_scaled<dims>(f(id2), Nt, -Ft);
 
         // Update torques.
-        tq[id1] -= Ft*R1;
-        tq[id2] -= Ft*R2;
+        tq(id1) -= Ft*R1;
+        tq(id2) -= Ft*R2;
       }
 
       /*
@@ -580,7 +579,7 @@ namespace GFlowSimulation {
     int tq_add = -1;
 
     //! \brief Pointers to necessary data.
-    mutable RealType *om = nullptr, *tq = nullptr;
+    mutable scalar_access om, tq;
   };
 
   // --- Define specific forces
@@ -616,12 +615,11 @@ namespace GFlowSimulation {
         om = Base::simData->ScalarData(om_add);
         tq = Base::simData->ScalarData(tq_add);
       }
-
-      // Now do interactions.
-      if (om!=nullptr && tq!=nullptr) Handler::interact();
+      // Interact.
+      Handler::interact();
     }
 
-    void force(const int id1, const int id2, const RealType R1, const RealType R2, const RealType rsqr, RealType *X, RealType **f) const {
+    void force(const int id1, const int id2, const RealType R1, const RealType R2, const RealType rsqr, RealType *X, vec_access f) const {
       // Calculate distance, inverse distance.
       RealType r = sqrt(rsqr);
       RealType invr = 1./r;
@@ -647,8 +645,8 @@ namespace GFlowSimulation {
       RealType Fn = max(RealType(0.), K_n*delta - M_eff*gamma_n*vn);
 
       // Update normal forces.
-      sum_eq_vec_scaled<dims>(f[id1], X,  Fn);
-      sum_eq_vec_scaled<dims>(f[id2], X, -Fn);
+      sum_eq_vec_scaled<dims>(f(id1), X,  Fn);
+      sum_eq_vec_scaled<dims>(f(id2), X, -Fn);
 
       // Calculate tangential force.
       RealType Vn[dims], Vt[dims];
@@ -668,7 +666,7 @@ namespace GFlowSimulation {
         RealType vt = dot_vec<dims>(Vt, Nt); //sqrt(dot_vec<dims>(Vt, Vt));
 
         // Calculate difference in velocities at the point of intersection.
-        vt -= om[id1]*R1 + om[id2]*R2; // Relative surface velocity due to angular velocity.
+        vt -= om(id1)*R1 + om(id2)*R2; // Relative surface velocity due to angular velocity.
 
         // Instead of K_t * 0, it should really be based on an "angular spring" stretching, 
         // see e.g. Luding, Gran. Matter 2008, v 10, p. 235. But I'd have to keep track of the
@@ -681,12 +679,12 @@ namespace GFlowSimulation {
         else if (Ft<-maxF) Ft = -maxF;
 
         // Update tangential forces.
-        sum_eq_vec_scaled<dims>(f[id1], Nt, Ft);
-        sum_eq_vec_scaled<dims>(f[id2], Nt, -Ft);
+        sum_eq_vec_scaled<dims>(f(id1), Nt, Ft);
+        sum_eq_vec_scaled<dims>(f(id2), Nt, -Ft);
 
         // Update torques.
-        tq[id1] -= Ft*R1;
-        tq[id2] -= Ft*R2;
+        tq(id1) -= Ft*R1;
+        tq(id2) -= Ft*R2;
       }
 
       // Calculate potential
@@ -746,7 +744,7 @@ namespace GFlowSimulation {
     int tq_add = -1;
 
     //! \brief Pointers to necessary data.
-    mutable RealType *om = nullptr, *tq = nullptr;
+    mutable scalar_access om, tq;
   };
 
   // --- Define specific forces
@@ -784,12 +782,11 @@ namespace GFlowSimulation {
         om = Base::simData->ScalarData(om_add);
         tq = Base::simData->ScalarData(tq_add);
       }
-
       // Now do interactions.
-      if (th!=nullptr && om!=nullptr && tq!=nullptr) Handler::interact();
+      Handler::interact();
     }
 
-    void force(const int id1, const int id2, const RealType R1, const RealType R2, const RealType rsqr, RealType *X, RealType **f) const {
+    void force(const int id1, const int id2, const RealType R1, const RealType R2, const RealType rsqr, RealType *X, vec_access f) const {
       // Calculate distance, inverse distance.
       RealType r = sqrt(rsqr);
       RealType invr = 1./r;
@@ -809,7 +806,7 @@ namespace GFlowSimulation {
     int tq_add = -1;
 
     //! \brief Pointers to necessary data.
-    mutable RealType *th = nullptr, *om = nullptr, *tq = nullptr;
+    mutable scalar_access th, om, tq;
   };
 
   //! \brief Define the TriangleForce2DVLP class to be Triangle force using verlet list pairs container.

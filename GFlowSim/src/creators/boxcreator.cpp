@@ -137,9 +137,9 @@ namespace GFlowSimulation {
     hs_relax(gflow, 0.1); // Make sure particles don't stop on top of one another
     
     // Set the integrator
-    if      (over_damped_flag) gflow->integrator = new OverdampedIntegrator(gflow);
+    if      (over_damped_flag) gflow->integrator = choose_overdamped_integrator(gflow, sim_dimensions);
     else if (langevin_temp>=0) gflow->integrator = new LangevinIntegrator(gflow, langevin_temp);
-    else                       gflow->integrator = new VelocityVerlet(gflow);
+    else                       gflow->integrator = choose_velocity_verlet(gflow, sim_dimensions);
     // Set integrator initial time step
     gflow->integrator->setDT(dt);
 

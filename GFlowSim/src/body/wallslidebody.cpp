@@ -22,18 +22,18 @@ namespace GFlowSimulation {
     // Set all velocities to zero
     auto v = simData->V();
     for (auto id : local_ids)
-      zeroVec(v[id], sim_dimensions);
+      zeroVec(v(id), sim_dimensions);
 
     // Check length
     auto x = simData->X();
     auto sg = simData->Sg();
     Vec max(sim_dimensions), min(sim_dimensions);
-    copyVec(x[local_ids[0]], min);
+    copyVec(x(local_ids[0]), min);
     max = min;
     for (auto id : local_ids) {
       for (int d=0; d<sim_dimensions; ++d) {
-        RealType xd = x[id][d];
-        RealType r = sg[id];
+        RealType xd = x(id, d);
+        RealType r = sg(id);
         if (xd-r<min[d]) min[d] = xd-r;
         else if (max[d]<xd+r) max[d] = xd+r;
       }
@@ -61,12 +61,12 @@ namespace GFlowSimulation {
     // Accumulation loop
     for (const auto id : local_ids) {
       // Accumulate mass
-      if (im[id]>0) M += 1./im[id];
+      if (im(id)>0) M += 1./im(id);
       else has_inf = true;
       // Accumulate force
-      Fnet += f[id][slide_dimension];
+      Fnet += f(id, slide_dimension);
       // Clear the force vector.
-      zeroVec(f[id], sim_dimensions);
+      zeroVec(f(id), sim_dimensions);
     }
 
     // Check if any object had infinite mass
@@ -77,7 +77,7 @@ namespace GFlowSimulation {
     // Force setting loop
     for (const auto id : local_ids) {
       // Set the slide dimension component of force.
-      f[id][slide_dimension] = 1./im[id] * A;
+      f(id, slide_dimension) = 1./im(id) * A;
     }
   }
 

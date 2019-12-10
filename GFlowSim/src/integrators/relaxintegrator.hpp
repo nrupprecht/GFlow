@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
 
-  class RelaxIntegrator : public OverdampedIntegrator {
+  template<int dimensions> class RelaxIntegrator : public OverdampedIntegrator<dimensions> {
   public:
     //! \brief Default constructor.
     RelaxIntegrator(GFlow*);
@@ -23,6 +23,24 @@ namespace GFlowSimulation {
     //! \brief The minimum number of iterations to let the simulation run for.
     int min_iterations;
   };
+
+  // Include the implementation file.
+  #include "relax-integrator.tpp"
+
+  inline Integrator* choose_relax_integrator(GFlow *gflow, int sim_dimensions) {
+    switch (sim_dimensions) {
+      case 1:
+        return new RelaxIntegrator<1>(gflow);
+      case 2:
+        return new RelaxIntegrator<2>(gflow);
+      case 3: 
+        return new RelaxIntegrator<3>(gflow);
+      case 4: 
+        return new RelaxIntegrator<4>(gflow);
+      default:
+        throw BadDimension();
+    }
+  }
 
 }
 #endif // __RELAX_INTEGRATOR_HPP__GFLOW__
