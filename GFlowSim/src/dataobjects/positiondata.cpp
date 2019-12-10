@@ -11,7 +11,7 @@ namespace GFlowSimulation {
     add_vector_data_entry("X");
     add_vector_data_entry("V");
     add_scalar_data_entry("Sg");
-    add_integer_data_entry("Type");
+    if (gflow->getNTypes()>1) add_integer_data_entry("Type");
     //add_scalar_data_entry("StripeX");
     //add_scalar_data_entry("Om");
   };
@@ -21,15 +21,6 @@ namespace GFlowSimulation {
     storeData.set_scalar_data(scalar_data_entries);
     storeData.set_integer_data(integer_data_entries);
     storeData.initialize(simData);
-
-    /*
-    visual_bounds = Bounds(2);
-    visual_bounds.min[0] = -24;
-    visual_bounds.max[0] = 96;
-    visual_bounds.min[1] = -18;
-    visual_bounds.max[1] = 18;
-    */
-
     // Do this after initialize, so bounds are not overwritten.
     storeData.set_data_boundary(visual_bounds);
     // Store initial data (t=0 data).
