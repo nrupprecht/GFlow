@@ -55,7 +55,7 @@ inline void NoseHooverVelocityVerlet<dimensions>::update_positions() {
 
   // Do serially
   #if SIMD_TYPE==SIMD_NONE
-    for (i=0; i<total; ++i) x[i] += dt*v[i];
+    for (int i=0; i<total; ++i) x[i] += dt*v[i];
   // Do with SIMD
   #else
     // Set dt
