@@ -118,28 +118,6 @@ namespace GFlowSimulation {
     integer_access IntegerData(int);
     integer_access IntegerData(const string&);
 
-    // --- Constant accessors
-
-    // const RealType** X() const;
-    // const RealType*  X(int) const;
-    // const RealType&  X(int, int) const;
-    // const RealType** V() const;
-    // const RealType*  V(int) const;
-    // const RealType&  V(int, int) const;
-    // const RealType** F() const;
-    // const RealType*  F(int) const;
-    // const RealType&  F(int, int) const;
-
-    // const RealType* Sg() const;
-    // const RealType& Sg(int) const;
-    // const RealType* Im() const;
-    // const RealType& Im(int) const;
-
-    // const int* Type() const;
-    // const int& Type(int) const;
-    // const int* Id() const;
-    // const int& Id(int) const;
-
     bool Valid(int) const;
 
     // --- Data creation and request

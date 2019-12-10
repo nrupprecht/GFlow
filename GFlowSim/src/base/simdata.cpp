@@ -380,11 +380,11 @@ namespace GFlowSimulation {
   }
 
   RealType* SimData::X(int i) {
-    return vdata[0][i];
+    return X()(i);
   }
 
   RealType& SimData::X(int i, int d) {
-    return vdata[0][i][d];
+    return X()(i, d);
   }
 
   vec_access SimData::V() {
@@ -392,11 +392,11 @@ namespace GFlowSimulation {
   }
 
   RealType* SimData::V(int i) {
-    return vdata[1][i];
+    return V()(i);
   }
 
   RealType& SimData::V(int i, int d) {
-    return vdata[1][i][d];
+    return V()(i, d);
   }
 
   vec_access SimData::F() {
@@ -404,11 +404,11 @@ namespace GFlowSimulation {
   }
 
   RealType* SimData::F(int i) {
-    return vdata[2][i];
+    return F()(i);
   }
 
   RealType& SimData::F(int i, int d) {
-    return vdata[2][i][d];
+    return F()(i, d);
   }
 
   vec_access SimData::VectorData(int i) {
@@ -426,7 +426,7 @@ namespace GFlowSimulation {
   }
 
   RealType& SimData::Sg(int i) {
-    return sdata[0][i];
+    return Sg()(i);
   }
 
   scalar_access SimData::Im() {
@@ -434,7 +434,7 @@ namespace GFlowSimulation {
   }
 
   RealType& SimData::Im(int i) {
-    return sdata[1][i];
+    return Im()(i);
   }
 
   scalar_access SimData::ScalarData(int i) {
@@ -452,7 +452,7 @@ namespace GFlowSimulation {
   }
 
   int& SimData::Type(int i) {
-    return idata[0][i];
+    return Type()(i);
   }
 
   integer_access SimData::Id() {
@@ -460,7 +460,7 @@ namespace GFlowSimulation {
   }
 
   int& SimData::Id(int i) {
-    return idata[1][i];
+    return Id()(i);
   }
 
   integer_access SimData::IntegerData(int i) {
@@ -472,74 +472,6 @@ namespace GFlowSimulation {
     int i = getIntegerData(name);
     return IntegerData(i);
   }
-
-  // const vec_access SimData::X() const {
-  //   return const_cast<const RealType**>(vdata[0]);
-  // }
-
-  // const RealType* SimData::X(int i) const {
-  //   return vdata[0][i];
-  // }
-
-  // const RealType& SimData::X(int i, int d) const {
-  //   return vdata[0][i][d];
-  // }
-
-  // const RealType** SimData::V() const {
-  //   return const_cast<const RealType**>(vdata[1]);
-  // }
-
-  // const RealType* SimData::V(int i) const {
-  //   return vdata[1][i];
-  // }
-
-  // const RealType& SimData::V(int i, int d) const {
-  //   return vdata[1][i][d];
-  // }
-
-  // const RealType** SimData::F() const {
-  //   return const_cast<const RealType**>(vdata[2]);
-  // }
-
-  // const RealType* SimData::F(int i) const {
-  //   return vdata[2][i];
-  // }
-
-  // const RealType& SimData::F(int i, int d) const {
-  //   return vdata[2][i][d];
-  // }
-
-  // const RealType* SimData::Sg() const {
-  //   return sdata[0];
-  // }
-
-  // const RealType& SimData::Sg(int i) const {
-  //   return sdata[0][i];
-  // }
-
-  // const RealType* SimData::Im() const {
-  //   return sdata[1];
-  // }
-
-  // const RealType& SimData::Im(int i) const {
-  //   return sdata[1][i];
-  // }
-
-  // const int* SimData::Type() const {
-  //   return idata[0];
-  // }
-
-  // const int& SimData::Type(int i) const {
-  //   return idata[0][i];
-  // }
-
-  // const int* SimData::Id() const {
-  //   return idata[1];
-  // }
-
-  // const int& SimData::Id(int i) const {
-  //   return idata[1][i];
-  // }
 
   bool SimData::Valid(int i) const {
     return -1<idata[1][i];
