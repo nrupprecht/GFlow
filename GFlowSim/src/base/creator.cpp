@@ -126,8 +126,8 @@ namespace GFlowSimulation {
     int size = gflow->simData->size_owned();
     int rank = topology->getRank();
 
+    // Gather the number of particles on each processor.
     vector<int> array(topology->getNumProc());
-
     MPIObject::mpi_allgather(size, array);
 
     if (rank>0) {
@@ -143,9 +143,6 @@ namespace GFlowSimulation {
       // Get local id of the particle
       int id = simData->getLocalID(fix.global_id);
       if (0<=id && id<simData->size()) {
-
-        if (simData->Im(id)==0) cout << "BAD: " << simData->getTopology()->getRank() << " -- " << fix.global_id << ". Local: " << id << endl;
-
         // Set the initial velocity of the particle.
         copyVec(fix.velocity, simData->V(id));
       }
