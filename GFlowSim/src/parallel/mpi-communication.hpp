@@ -182,13 +182,13 @@ namespace MPIObject {
 
   template<typename T> inline void mpi_gather(const T& data, vector<T>& buffer) {
     #if USE_MPI == 1
-    MPI_Gather(&data, 1, mpi_type<T>(), buffer.data(), 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Gather(&data, 1, mpi_type<T>(), buffer.data(), 1, mpi_type<T>(), 0, MPI_COMM_WORLD);
     #endif
   }
 
-  inline void mpi_gather(const float& data, vector<float>& buffer) {
+  template<typename T> inline void mpi_allgather(const T& data, vector<T>& buffer) {
     #if USE_MPI == 1
-    MPI_Gather(&data, 1, MPI_FLOAT, buffer.data(), 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Allgather(&data, 1, mpi_type<T>(), buffer.data(), 1, mpi_type<T>(), MPI_COMM_WORLD);
     #endif
   }
 

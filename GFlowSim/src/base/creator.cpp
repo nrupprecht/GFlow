@@ -121,11 +121,31 @@ namespace GFlowSimulation {
     delete rx_integrator;
   }
 
+  void Creator::correct_global_ids(GFlow *gflow) {
+    auto topology = gflow->getTopology();
+    int size = gflow->simData->size_owned();
+    int rank = topology->getRank();
+
+    vector<int> array(topology->getNumProc());
+
+    MPIObject::mpi_allgather(size, array);
+
+    if (rank>0) {
+      int shift = std::accumulate(array.begin(), array.begin()+rank, 0);
+      auto id = gflow->getSimData()->Id();
+      // Correct global indices.
+      for (int i=0; i<size; ++i) id(i) += shift;
+    }
+  }
+
   void Creator::fix_particle_velocities(shared_ptr<SimData> simData) {
     for (auto &fix : particle_fixers) {
       // Get local id of the particle
       int id = simData->getLocalID(fix.global_id);
       if (0<=id && id<simData->size()) {
+
+        if (simData->Im(id)==0) cout << "BAD: " << simData->getTopology()->getRank() << " -- " << fix.global_id << ". Local: " << id << endl;
+
         // Set the initial velocity of the particle.
         copyVec(fix.velocity, simData->V(id));
       }

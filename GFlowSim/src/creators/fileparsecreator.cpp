@@ -96,6 +96,9 @@ namespace GFlowSimulation {
       throw;
     }
     build_message += "Done.\n";
+
+    //! \brief Collect the global ids.
+    Creator::correct_global_ids(gflow);
     
     // Timing
     auto end_time = current_time();

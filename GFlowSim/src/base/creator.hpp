@@ -48,6 +48,7 @@ namespace GFlowSimulation {
     //! \brief Set the boundary condition flags.
     void setBCFlag(BCFlag b);
 
+    //! \brief Set the dimensionality of the simulation being created.
     void setDimensions(int);
 
 
@@ -62,6 +63,9 @@ namespace GFlowSimulation {
     //! Relaxation function that uses the native forces and an overdamped integrator. It runs for some amount of time, 
     //! the discards the integrator and resets the timers.
     static void relax(class GFlow*, RealType=0.25);
+
+    //! \brief Only needed for multiprocessor MPI runs. Corrects the global ids of particles on different processors so that they are all unique.
+    static void correct_global_ids(class GFlow*);
 
     //! \brief Use the particle fixers to assign particle velocities.
     void fix_particle_velocities(shared_ptr<SimData>);

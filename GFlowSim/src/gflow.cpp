@@ -554,20 +554,6 @@ namespace GFlowSimulation {
     // Get a pointer to position data and the number of particles in simData
     auto x = simData->X();
     int size = simData->size();
-    // for (int n=0; n<size; ++n) 
-    //   for (int d=0; d<sim_dimensions; ++d) {
-    //     RealType min_bound = bounds.min[d], max_bound = bounds.max[d], width = bounds.wd(d);
-    //     if (boundaryConditions[d]==BCFlag::WRAP) {
-    //       // Create a local copy
-    //       RealType xlocal = x(n, d);
-    //       // Periodic boundary correction.
-    //       if (xlocal<min_bound) xlocal = max_bound-fmod(min_bound-xlocal, width);
-    //       else if (max_bound<=xlocal) xlocal = fmod(xlocal-min_bound, width)+min_bound;
-    //       // Set
-    //       x(n, d) = xlocal;
-    //     }
-    //   }
-
     for (int d=0; d<sim_dimensions; ++d) {
       RealType min_bound = bounds.min[d], max_bound = bounds.max[d], width = bounds.wd(d);
       if (boundaryConditions[d]==BCFlag::WRAP) {
@@ -629,19 +615,20 @@ namespace GFlowSimulation {
     boundaryForce = 0;
     boundaryEnergy = 0;
     // Reflect all the particles
-    for (int d=0; d<sim_dimensions; ++d)
+    for (int d=0; d<sim_dimensions; ++d) {
+      RealType min_bound = bounds.min[d], max_bound = bounds.max[d];
       if (boundaryConditions[d]==BCFlag::REPL) { 
         for (int n=0; n<size; ++n) {
           // Create a local copy
-          if (x(n, d)<bounds.min[d]) {
-            RealType dx = bounds.min[d] - x(n, d);
+          if (x(n, d)<min_bound) {
+            RealType dx = min_bound - x(n, d);
             RealType F = repulsion*dx + dissipation*clamp(-v(n, d));
             f(n, d) += F;
             boundaryForce += F;
             boundaryEnergy += 0.5*repulsion*sqr(dx);
           }
-          else if (bounds.max[d]<x(n, d)) {
-            RealType dx = (x(n, d) - bounds.max[d]);
+          else if (max_bound<x(n, d)) {
+            RealType dx = (x(n, d) - max_bound);
             RealType F = repulsion*dx + dissipation*clamp(v(n, d));
             f(n, d) -= F;
             boundaryForce += F;
@@ -649,6 +636,7 @@ namespace GFlowSimulation {
           }
         }
       }
+    }
 
     // Start simdata timer.
     simData->stop_timer();

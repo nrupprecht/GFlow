@@ -39,6 +39,8 @@ namespace GFlowSimulation {
     RealType dtheta = 2.*PI / n_particles, theta = 0;
     auto process_bounds = gflow->getTopology()->getProcessBounds();
 
+    cout << "Bounds: " << gflow->getTopology()->getRank() << ": " << process_bounds << endl;
+
     // Place particles
     auto simData = gflow->getSimData(); // Get the simdata
     Vec pos(sim_dimensions), Zero(sim_dimensions);
@@ -53,6 +55,8 @@ namespace GFlowSimulation {
         int gid = simData->getNextGlobalID();
         // Add the particle to simdata. It is a particle of infinite mass.
         simData->addParticle(pos.data, Zero.data, sigma, 0, type);
+
+        cout << "Global: " << gflow->getTopology()->getRank() << " -> "<< gid << ", x=" << pos << endl;
       }
     }
 

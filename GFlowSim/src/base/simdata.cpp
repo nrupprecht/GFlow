@@ -86,12 +86,15 @@ namespace GFlowSimulation {
           int rank = topology->getRank();
           int numProc = topology->getNumProc();
           for (int i=0; i<_size; ++i) {
-            if (Type(i)>-1 && !topology->owned_particle(X(i))) markForRemoval(i);
+            if (Type(i)>-1 && !topology->owned_particle(X(i)))
+              markForRemoval(i);
           }
         }
       }
     #endif
     //*****
+
+    //doParticleRemoval();
 
     // Sort the particles by position
     sortParticles();
@@ -264,7 +267,7 @@ namespace GFlowSimulation {
       } while (Type(count_back)<0);
 
       if (count_back>id) {
-        swap_particle(count_back, id); //** Formerly move_particle
+        swap_particle(count_back, id);
         ++removed;
       }
       else break;
@@ -295,6 +298,7 @@ namespace GFlowSimulation {
     // Quick sort
     quick_sort(0, _number-1, 0);
     recursion_help (0, _number-1, 1);
+
     // Set needs remake flag
     setNeedsRemake(true);
   }
@@ -872,8 +876,8 @@ namespace GFlowSimulation {
     if (use_id_map) {
       auto it1 = id_map.find(g1);
       auto it2 = id_map.find(g2);
-      if (id_map.end()!=it1 && id_map.end()!=it2) 
-        std::swap(it1->second, it2->second);
+      if (it1!=id_map.end()) it1->second = id2;
+      if (it2!=id_map.end()) it2->second = id1;
     }
 
     // Set flag
