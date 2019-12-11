@@ -118,8 +118,6 @@ namespace GFlowSimulation {
     integer_access IntegerData(int);
     integer_access IntegerData(const string&);
 
-    bool Valid(int) const;
-
     // --- Data creation and request
 
     // The request versions get the data entry's place if it exists, and creates it if it doesn't.

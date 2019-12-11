@@ -95,9 +95,10 @@ namespace GFlowSimulation {
   }
 
   //! Find the max of two objects
-  template<typename T> inline T max(T a, T b) {
-    return a>b ? a : b;
-  }
+  // template<typename T> inline T max(T a, T b) {
+  //   return a>b ? a : b;
+  // }
+  using std::max;
 
   template<typename T> inline T max(T a, T b, T c) {
     return max(max(a, b), c);
@@ -108,9 +109,10 @@ namespace GFlowSimulation {
   }
 
   //! Find the min of two objects
-  template<typename T> inline T min(T a, T b) {
-    return a<b ? a : b;
-  }
+  // template<typename T> inline T min(T a, T b) {
+  //   return a<b ? a : b;
+  // }
+  using std::min;
 
   template<typename T> inline T min(T a, T b, T c) {
     return min(min(a, b), c);
@@ -126,6 +128,16 @@ namespace GFlowSimulation {
 
   template<typename T> inline T sign(T a) {
     return a<0 ? T(-1.) : T(1.);
+  }
+
+  //! \brief Byte convert a data type.
+  //!
+  //! This will only work if sizeof(S)==sizeof(T).
+  template<typename S, typename T> S byte_cast(T data) {
+    // We must have that S and T take up the same amount of memory.
+    static_assert(sizeof(S)==sizeof(T));
+    // Reinterpret casting.
+    return *reinterpret_cast<S*>(&data);
   }
 
   //! \brief A helper function that turns a linear address into a tuple address.

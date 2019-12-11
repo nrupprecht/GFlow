@@ -338,18 +338,19 @@ namespace GFlowSimulation {
     // First pass: update the primary (actual) particle from the force data of the halo particles.
     // Doing this in two passes takes care of the fact that some particles may generate multiple halos.
     // We only have to update the forces, and then let the integrator take care of the rest.
+    auto f = F();
     for (int i=0; i<halo_map.size(); i+=2) {
       int hid = halo_map[i]; // Halo id.
       int pid = halo_map[i+1]; // Primary id.
       // Update force
-      plusEqVec(vdata[2][pid], vdata[2][hid], sim_dimensions);
+      plusEqVec(f(pid), f(hid), sim_dimensions);
     }
     // Second pass: update the force of the halo particles to match that of the primary particle.
     for (int i=0; i<halo_map.size(); i+=2) {
       int hid = halo_map[i]; // Halo id.
       int pid = halo_map[i+1]; // Primary id.
       // Update force
-      copyVec(vdata[2][pid], vdata[2][hid], sim_dimensions);
+      copyVec(f(pid), f(hid), sim_dimensions);
     }
 
     // Start simdata timer.
@@ -471,10 +472,6 @@ namespace GFlowSimulation {
   integer_access SimData::IntegerData(const string& name) {
     int i = getIntegerData(name);
     return IntegerData(i);
-  }
-
-  bool SimData::Valid(int i) const {
-    return -1<idata[1][i];
   }
 
   int SimData::requestVectorData(string name) {
@@ -943,7 +940,7 @@ namespace GFlowSimulation {
     /// --- Go through all particles, deciding which ones should migrate to other processors.
     exchange_search_timer.start_timer();
     for (int id=0; id < _size; ++id) {
-      if (Valid(id) && !bounds.contains(X(id))) {
+      if (Type(id)>-1 && !bounds.contains(X(id))) {
         // Check which processor the particle actually belongs on. We can use the send_ids buffer since we are going to 
         // clear it anyways.
         int n_rank = topology->domain_ownership(X(id));
@@ -1006,13 +1003,16 @@ namespace GFlowSimulation {
     // Search for particles that should be ghosts on other processors.
     ghost_search_timer.start_timer();
     vector<int> overlaps; // Helping vector
+    auto x = X();
+    auto rd = Sg();
+    auto type = Type();
     RealType skin_depth = handler->getSkinDepth();
     for (int id=0; id < _size; ++id) {
       // The particle cutoff that should be used to test whether the particle is close enough to another domain.
       // \todo There may be a better/more correct way to do this.
-      RealType cutoff = 2 * Sg(id) * forceMaster->getMaxCutoff(Type(id)) + skin_depth;
+      RealType cutoff = 2 * rd(id) * forceMaster->getMaxCutoff(type(id)) + skin_depth;
       // Check if the particle overlaps with another domain.
-      topology->domain_overlaps(X(id), cutoff, overlaps);
+      topology->domain_overlaps(x(id), cutoff, overlaps);
 
       // Store the particle id in the send_ghost_list entry for every processor we need to send this particle to as a ghost.
       for (auto proc_n : overlaps) send_ghost_list[proc_n].push_back(id);            
@@ -1047,7 +1047,7 @@ namespace GFlowSimulation {
     gflow->stopMPIGhostTimer();
 
     // Sync up after ghost exchange
-    //MPIObject::barrier(barrier_timer); // DON'T NEED THIS (?)
+    // MPIObject::barrier(barrier_timer); // DON'T NEED THIS (?)
   }
 
   inline void SimData::send_ghost_updates() {
@@ -1185,14 +1185,18 @@ namespace GFlowSimulation {
       // Make sure buffer is big enough to send data.
       if (buffer.size()<size*data_width) buffer.resize(size*data_width);
       // Send the actual data. Copy data into buffer
+      int n_vectors = vdata.size(), n_scalars = sdata.size(), n_integers = idata.size();
       for (int j=0; j<size; ++j) {
         int id = send_ids[j];
         // Pack vector data.
-        for (int i=0; i<vdata.size(); ++i) copyVec(vdata[i][id], &buffer[data_width*j + i*sim_dimensions], sim_dimensions);
+        for (int i=0; i<n_vectors; ++i) 
+          copyVec(vdata[i][id], &buffer[data_width*j + i*sim_dimensions], sim_dimensions);
         // Pack scalar data.
-        for (int i=0; i<sdata.size(); ++i) buffer[data_width*j + vdata.size()*sim_dimensions + i] = sdata[i][id];
+        for (int i=0; i<n_scalars; ++i) 
+          buffer[data_width*j + vdata.size()*sim_dimensions + i] = sdata[i][id];
         // Pack integer data.
-        for (int i=0; i<idata.size(); ++i) buffer[data_width*j + vdata.size()*sim_dimensions + sdata.size() + i] = idata[i][id];
+        for (int i=0; i<n_integers; ++i) 
+          buffer[data_width*j + n_vectors*sim_dimensions + n_scalars + i] = byte_cast<RealType>(idata[i][id]); //*reinterpret_cast<RealType*>(&idata[i][id]);
         // Mark particle for removal.
         if (remove) markForRemoval(id);
       }
@@ -1212,10 +1216,10 @@ namespace GFlowSimulation {
       // Find the center of the neighbor's bounds.
       RealType bcm[4], xrel[4]; // Assumes sim_dimensions <= 4.
       topology->get_neighbor_bounds(n_index).center(bcm);
-
       // Make sure buffer is big enough to send data.
       if (buffer.size()<size*data_width) buffer.resize(size*data_width);
       // Send the actual data. Copy data into buffer
+      int n_vectors = vdata.size(), n_scalars = sdata.size(), n_integers = idata.size();
       for (int j=0; j<size; ++j) {
         int id = send_ids[j];
         // Get the position of the particle, relative to the other processor.
@@ -1225,12 +1229,14 @@ namespace GFlowSimulation {
         // \todo Automate a way to specify arbitrary subsets of the particle data to send.
         copyVec(xrel, &buffer[data_width*j], sim_dimensions); // Position
         // Send the rest of the data the normal way. Pack vector data.
-        for (int i=1; i<vdata.size(); ++i) copyVec(vdata[i][id], &buffer[data_width*j + i*sim_dimensions], sim_dimensions);
+        for (int i=1; i<n_vectors; ++i) 
+          copyVec(vdata[i][id], &buffer[data_width*j + i*sim_dimensions], sim_dimensions);
         // Pack scalar data.
-        for (int i=0; i<sdata.size(); ++i) buffer[data_width*j + vdata.size()*sim_dimensions + i] = sdata[i][id];
+        for (int i=0; i<n_scalars; ++i) 
+          buffer[data_width*j + n_vectors*sim_dimensions + i] = sdata[i][id];
         // Pack integer data.
-        for (int i=0; i<idata.size(); ++i) 
-          buffer[data_width*j + vdata.size()*sim_dimensions + sdata.size() + i] = *reinterpret_cast<RealType*>(&idata[i][id]);
+        for (int i=0; i<n_integers; ++i)
+          buffer[data_width*j + n_vectors*sim_dimensions + n_scalars + i] = byte_cast<RealType>(idata[i][id]); // *reinterpret_cast<RealType*>(&idata[i][id]);
       }
       // Send the data (non-blocking).
       MPI_Isend(buffer.data(), size*data_width, MPI_FLOAT, n_rank, tag, MPI_COMM_WORLD, send_request);
@@ -1251,16 +1257,18 @@ namespace GFlowSimulation {
       MPI_Status status;
       MPI_Recv(buffer.data(), size*data_width, MPI_FLOAT, n_rank, tag, MPI_COMM_WORLD, &status);
       // Add particle.
+      int n_vectors = vdata.size(), n_scalars = sdata.size(), n_integers = idata.size();
       for (int j=0; j<size; ++j) {
         // Add a spot for a particle, then copy the data into this particle.
         int id = addParticle(); // Get id of new particle.
         // Unpack vector data.
-        for (int i=0; i<vdata.size(); ++i) copyVec(&buffer[data_width*j + i*sim_dimensions], vdata[i][id], sim_dimensions);
+        for (int i=0; i<n_vectors; ++i) copyVec(&buffer[data_width*j + i*sim_dimensions], vdata[i][id], sim_dimensions);
         // Unpack scalar data.
-        for (int i=0; i<sdata.size(); ++i) sdata[i][id] = buffer[data_width*j + vdata.size()*sim_dimensions + i];
+        for (int i=0; i<n_scalars; ++i) sdata[i][id] = buffer[data_width*j + n_vectors*sim_dimensions + i];
         // Unpack integer data.
-        for (int i=0; i<idata.size(); ++i) 
-          idata[i][id] = *reinterpret_cast<int*>(&buffer[data_width*j + vdata.size()*sim_dimensions + sdata.size() + i]);
+        for (int i=0; i<n_integers; ++i) {
+          idata[i][id] = byte_cast<int>(buffer[data_width*j + n_vectors*sim_dimensions + n_scalars + i]); // *reinterpret_cast<int*>(&buffer[data_width*j + n_vectors*sim_dimensions + n_scalars + i]);
+        }
       } 
     }
     // Return the number of particles that were received.

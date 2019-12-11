@@ -554,10 +554,24 @@ namespace GFlowSimulation {
     // Get a pointer to position data and the number of particles in simData
     auto x = simData->X();
     int size = simData->size();
-    for (int n=0; n<size; ++n) 
-      for (int d=0; d<sim_dimensions; ++d) {
-        RealType min_bound = bounds.min[d], max_bound = bounds.max[d], width = bounds.wd(d);
-        if (boundaryConditions[d]==BCFlag::WRAP) {
+    // for (int n=0; n<size; ++n) 
+    //   for (int d=0; d<sim_dimensions; ++d) {
+    //     RealType min_bound = bounds.min[d], max_bound = bounds.max[d], width = bounds.wd(d);
+    //     if (boundaryConditions[d]==BCFlag::WRAP) {
+    //       // Create a local copy
+    //       RealType xlocal = x(n, d);
+    //       // Periodic boundary correction.
+    //       if (xlocal<min_bound) xlocal = max_bound-fmod(min_bound-xlocal, width);
+    //       else if (max_bound<=xlocal) xlocal = fmod(xlocal-min_bound, width)+min_bound;
+    //       // Set
+    //       x(n, d) = xlocal;
+    //     }
+    //   }
+
+    for (int d=0; d<sim_dimensions; ++d) {
+      RealType min_bound = bounds.min[d], max_bound = bounds.max[d], width = bounds.wd(d);
+      if (boundaryConditions[d]==BCFlag::WRAP) {
+        for (int n=0; n<size; ++n) {
           // Create a local copy
           RealType xlocal = x(n, d);
           // Periodic boundary correction.
@@ -567,6 +581,7 @@ namespace GFlowSimulation {
           x(n, d) = xlocal;
         }
       }
+    }
 
     // Start simdata timer.
     simData->stop_timer();
@@ -580,22 +595,24 @@ namespace GFlowSimulation {
     auto x = simData->X(), v = simData->V();
     int size = simData->size_owned();
     // Reflect all the particles
-    for (int d=0; d<sim_dimensions; ++d)
+    for (int d=0; d<sim_dimensions; ++d) {
+      RealType min_bound = bounds.min[d], max_bound = bounds.max[d];
       if (boundaryConditions[d]==BCFlag::REFL) { 
         for (int n=0; n<size; ++n) {
           // Create a local copy
           RealType xlocal = x(n, d);
-          if (xlocal<bounds.min[d]) {
-            xlocal = 2*bounds.min[d] - xlocal ;
+          if (xlocal<min_bound) {
+            xlocal = 2*min_bound - xlocal ;
             v(n, d) = -v(n, d);
           }
-          else if (bounds.max[d]<xlocal) {
-            xlocal = 2*bounds.max[d] - xlocal;
+          else if (max_bound<xlocal) {
+            xlocal = 2*max_bound - xlocal;
             v(n, d) = -v(n, d);
           }
           x(n, d) = xlocal;
         }
       }
+    }
 
     // Start simdata timer.
     simData->stop_timer();
