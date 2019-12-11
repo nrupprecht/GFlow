@@ -131,7 +131,7 @@ namespace GFlowSimulation {
     //! \brief Whether to create a 3D image, or just a projection when rendering in 3D
     //!
     //! True - 3D image, False - projection.
-    bool choice_3d = false;
+    bool choice_3d = true;
 
     //! \brief Whether the (3D) camera has been set up by anyone or anything.
     bool camera_set = false;

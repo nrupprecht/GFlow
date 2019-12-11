@@ -29,12 +29,13 @@ namespace GFlowSimulation {
 
     if (sim_dimensions>4) throw false;
 
+    auto f = simData->F();
     RealType force[4];
     auto im = Base::simData->Im();
     for (int n=0; n<size; ++n) {
       RealType mass = im(n)>0 ? 1./im(n) : 0;
       scalarMultVec(mass, acceleration, force, sim_dimensions);
-      plusEqVec(Base::simData->F(n), force, sim_dimensions);
+      plusEqVec(f(n), force, sim_dimensions);
     }
   }
 

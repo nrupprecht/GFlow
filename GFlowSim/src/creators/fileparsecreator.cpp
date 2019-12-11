@@ -258,9 +258,9 @@ namespace GFlowSimulation {
     else gflow->setAllBCs(BCFlag::WRAP);
 
     // --- Constant, uniform acceleration.
-    Vec g(0);
-    parser.argVec("Gravity");
-    if (g.size()!=0) gflow->addModifier(new ConstantAcceleration(gflow, g.data));
+    Vec g = parser.argVec("Gravity");
+    if (g.size()!=0)
+      gflow->addModifier(new ConstantAcceleration(gflow, g.data));
 
     // --- Attraction towards the center of the bounds
     RealType att = 0;
