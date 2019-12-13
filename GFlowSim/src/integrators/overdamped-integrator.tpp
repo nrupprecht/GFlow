@@ -4,11 +4,9 @@
 #include "../utility/simd_utility.hpp"
 
 template<int dimensions>
-OverdampedIntegrator<dimensions>::OverdampedIntegrator(GFlow *gflow) : Integrator(gflow) {
+OverdampedIntegrator<dimensions>::OverdampedIntegrator(GFlow *gflow) : OverdampedIntegratorBase(gflow) {
   // Set dt
   dt = min_dt;
-  // Set step delay to zero
-  step_delay = 0;
 };
 
 template<int dimensions>
@@ -26,16 +24,25 @@ void OverdampedIntegrator<dimensions>::post_forces() {
 
   // Call to parent class.
   Integrator::post_forces();
-  // Determine the propper time step.
-  determine_time_step();
+
+  // Potentially recalculate time step.
+  if (adjust_dt && step_delay<=step_count) {
+    calculate_time_step();
+    step_count = 0;
+  }
+  else {
+    ++step_count;
+    // Recheck the maximum acceleration if it is zero (zero likely means that no data has been gathered).
+    if (maximum_acceleration==0) calculate_time_step();
+  }
 
   // Number of (real - non ghost) particles.
   int total = dimensions*simData->size_owned();
   if (total==0) return;
 
-  // Time step
+  // Time step.
   RealType dt = Integrator::dt;
-  // Get arrays
+  // Get arrays.
   auto x = simData->X(), v = simData->V(), f = simData->F();
   auto im = simData->Im();
 
@@ -46,7 +53,7 @@ void OverdampedIntegrator<dimensions>::post_forces() {
     x[i] += dampingConstant*im[id]*f[i]*dt;      
   }
   #else
-  // Set simd vector with dampingConstant * dt.
+  // Set simd vector with (dampingConstant * dt).
   simd_float g_dt = simd_set1(dampingConstant*dt);
   int i;
   for (i=0; i<=total-simd_data_size; i+=simd_data_size) {
@@ -58,7 +65,7 @@ void OverdampedIntegrator<dimensions>::post_forces() {
     // Store result.
     x.store_simd(i, _x);
   }
-  // Left overs.
+  // Left overs
   for (; i<total; ++i)
     x[i] += dampingConstant*im[i/dimensions]*f[i]*dt;
   #endif
@@ -68,32 +75,19 @@ void OverdampedIntegrator<dimensions>::post_forces() {
 }
 
 template<int dimensions>
-void OverdampedIntegrator<dimensions>::setDamping(RealType d) {
-  dampingConstant = d;
-}
-
-template<int dimensions>
-inline void OverdampedIntegrator<dimensions>::determine_time_step() {
+void OverdampedIntegrator<dimensions>::calculate_time_step() {
+  // Get the maximum acceleration of any particle. 
   // We need a condition on maximum force (actually acceleration), not maximum velocity, since dx/dt ~ F.
-  if (!adjust_dt || simData->number()==0) return;
-
-  // Check if enough time has gone by
-  if (step_count < step_delay) {
-    ++step_count;
-    // If max acceleration is zero, it may because we have never checked what it is.
-    maximum_acceleration = get_max_acceleration();
-    // Return
-    return;
-  }
-  // Reset step count
-  step_count = 0;
-  // Get the maximum acceleration of any particle
   maximum_acceleration = get_max_acceleration();
-  // No data
+  // If no data, just return.
   if (maximum_acceleration==0) return;
   // Set the timestep - acceleration is proportional to velocity (w/ constant dampingConstant)
-  dt = characteristic_length/(dampingConstant*maximum_acceleration*static_cast<RealType>(target_steps)); 
-  // Make sure timestep stays in the [min_dt, max_dt] bounds.
+  dt = characteristic_length/(dampingConstant*maximum_acceleration*static_cast<RealType>(target_steps));
   if (dt>max_dt) dt = max_dt;
   else if (dt<min_dt) dt = min_dt;
+
+  #if USE_MPI == 1
+    // Sync timesteps
+    if (topology->getNumProc()>1) MPIObject::mpi_min(dt);
+  #endif
 }

@@ -5,6 +5,30 @@
 
 namespace GFlowSimulation {
 
+  /** 
+  *  \brief Base class for overdamped integrators. Since all those integrators are dimension specific,
+  *  this class provides a way to implement accessors and mutators without having to specify a template
+  *  dimension.
+  */
+  class OverdampedIntegratorBase : public Integrator {
+  public:
+    OverdampedIntegratorBase(GFlow *gflow) : Integrator(gflow) {};
+
+    //! \brief Override the normal integrator pre-step, since there are no velocities when using the overdamped integrator.
+    virtual void pre_step() override {};
+
+    //! \brief Set damping constant.
+    void setDamping(real d) { if (d>=0) dampingConstant = d; }
+
+  protected:
+
+    //! \brief Damping constant.
+    RealType dampingConstant = DEFAULT_DAMPING_CONSTANT;
+
+    //! \brief The maximum acceleration
+    RealType maximum_acceleration = 0;
+  };
+
   /**
   *  \brief Overdamped integrator
   *
@@ -21,7 +45,7 @@ namespace GFlowSimulation {
   *
   *  \see OverdampedLangevinIntegrator
   */
-  template<int dimensions> class OverdampedIntegrator : public Integrator {
+  template<int dimensions> class OverdampedIntegrator : public OverdampedIntegratorBase {
   public:
     //! \brief Constructor.
     OverdampedIntegrator(GFlow*);
@@ -29,39 +53,18 @@ namespace GFlowSimulation {
     //! \brief Make sure appropriate values are set.
     virtual void pre_integrate() override;
 
-    //! \brief Override the integrator's pre-step, since there are no velocities when using the overdamped integrator.
-    //! 
-    //! The default integrator prestep adjusts the timestep so that the fastest particle can only traverse its own radius 
-    //! in at least a set number of steps.
-    virtual void pre_step() override {};
-
     //! \brief The post forces routine. The integrator only needs to act here.
     virtual void post_forces() override;
 
-    // --- Accessors
-
-    RealType getDamping() const { return dampingConstant; }
-
-    // --- Mutators
-
-    //! \brief Set damping constant.
-    void setDamping(RealType);
-
   protected:
-    //! \brief Determine a good time step to use.
-    inline void determine_time_step();
-
-    //! \brief Damping constant.
-    RealType dampingConstant = 0.1; // DEFAULT_DAMPING_CONSTANT
-
-    //! \brief The maximum acceleration
-    RealType maximum_acceleration = 0;
+    //! \brief Calculate the timestep.
+    void calculate_time_step();
   };
 
   // Include the implementation file.
   #include "overdamped-integrator.tpp"
 
-  inline Integrator* choose_overdamped_integrator(GFlow *gflow, int sim_dimensions) {
+  inline OverdampedIntegratorBase* choose_overdamped_integrator(GFlow *gflow, int sim_dimensions) {
     switch (sim_dimensions) {
       case 1:
         return new OverdampedIntegrator<1>(gflow);

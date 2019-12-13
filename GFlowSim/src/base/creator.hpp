@@ -56,13 +56,13 @@ namespace GFlowSimulation {
     //!
     //! This function gives the simdata an overdamped integrator and hard sphere interactions, runs it for some amount
     //! of time, then discards the integrator and resets the timers.
-    static void hs_relax(class GFlow*, RealType=0.25, bool=true);
+    static void hs_relax(class GFlow*, RealType=0.25, bool=true, HeadNode* = nullptr);
 
     //! \brief Native version of the relaxation function.
     //!
     //! Relaxation function that uses the native forces and an overdamped integrator. It runs for some amount of time, 
     //! the discards the integrator and resets the timers.
-    static void relax(class GFlow*, RealType=0.25);
+    static void relax(class GFlow*, RealType=0.25, HeadNode* = nullptr);
 
     //! \brief Only needed for multiprocessor MPI runs. Corrects the global ids of particles on different processors so that they are all unique.
     static void correct_global_ids(class GFlow*);

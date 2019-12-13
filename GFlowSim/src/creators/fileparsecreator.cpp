@@ -386,7 +386,7 @@ namespace GFlowSimulation {
     // --- Natural relax of the simulation
     relax_time = 0.;
     parser.firstArg("Relax", relax_time);
-    if (relax_time>0) relax(gflow, relax_time);
+    if (relax_time>0) relax(gflow, relax_time, parser.getNode("Relax"));
 
     // --- Reconcile overlaps
     if (parser.begin("Reconcile")) {

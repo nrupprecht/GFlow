@@ -64,6 +64,12 @@ Fill: Wall {
   Spacing: 2*MaxR
 }
 
-Relax: 0.01
+// No HS relax.
+HSRelax: 0
+
+// Relax using native forces.
+Relax: 0.1 {
+  StepDelay: 0
+}
 
 

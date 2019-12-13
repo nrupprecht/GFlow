@@ -30,7 +30,8 @@ namespace GFlowSimulation {
   
   void Integrator::pre_step() {
     // If we are not adjusting dt, we are done.
-    if (!adjust_dt) return;
+    //! \todo Non-primary integrators should be allowed to request shorter timesteps.
+    if (!adjust_dt || !isPrimaryIntegrator()) return;
     // Check if enough time has gone by
     if (step_count < step_delay) {
       ++step_count;
@@ -109,7 +110,7 @@ namespace GFlowSimulation {
     return min_dt;
   }
 
-  RealType Integrator::get_max_velocity() {
+  RealType Integrator::get_max_velocity() const {
     // Check the velocity components of all the particles
     auto v = simData->V();
 
@@ -145,7 +146,7 @@ namespace GFlowSimulation {
     return maxV*sqrt(sim_dimensions);
   }
 
-  RealType Integrator::get_max_acceleration() {
+  RealType Integrator::get_max_acceleration() const {
     // Check the acceleration components of all the particles
     auto f = simData->F();
     auto im = simData->Im();
@@ -162,6 +163,10 @@ namespace GFlowSimulation {
 
     // Return the max acceleration
     return maxA;
+  }
+
+  bool Integrator::isPrimaryIntegrator() const {
+    return (this==integrator);
   }
 
 }

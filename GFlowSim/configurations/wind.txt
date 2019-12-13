@@ -53,13 +53,13 @@ Fill: Area {
     Type: 0
   }
 
-  Number: Phi=0.925 {
+  Number: Phi=0.92 {
     TypeA : 1
   }
 
   Excluded: Sphere {
     : 0, 0
-    : Radius + 2*MinR
+    : Radius + 4*MinR
   }
 
   Velocity: Velocity, 0
@@ -72,8 +72,8 @@ Fill: Circle {
   Type: 1
 }
 
-Reconcile: Remove=0.9
+//Reconcile: Remove=0.9
 
-Relax: 1
+HSRelax: 0.5
 
 Modifier: WindTunnel=Velocity

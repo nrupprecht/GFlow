@@ -35,7 +35,7 @@ namespace GFlowSimulation {
     sim_dimensions = d;
   }
   
-  void Creator::hs_relax(GFlow* gflow, RealType time, bool relax_integrator) {
+  void Creator::hs_relax(GFlow* gflow, RealType time, bool relax_integrator, HeadNode *head) {
     // Check for valid object
     if (gflow==nullptr) return;
     
@@ -89,7 +89,7 @@ namespace GFlowSimulation {
     delete hsForce;
   }
 
-  void Creator::relax(class GFlow *gflow, RealType time) {
+  void Creator::relax(class GFlow *gflow, RealType time, HeadNode *head) {
     // Check for valid object
     if (gflow==nullptr) return;
 
@@ -98,9 +98,24 @@ namespace GFlowSimulation {
 
     // Use overdamped integrator for relaxation
     Integrator *integrator = gflow->integrator; // Save integrator
-    Integrator *rx_integrator = choose_relax_integrator(gflow, sim_dimensions);
-    rx_integrator->setMinDT(1e-7);
+    OverdampedIntegratorBase *rx_integrator = choose_relax_integrator(gflow, sim_dimensions);
     gflow->integrator = rx_integrator;
+
+    // Parse a head node to set up the relaxation.
+    if (head) {
+      // Create a parser
+      TreeParser parser(head);
+      // Add a heading.
+      parser.addHeadingOptional("StepDelay");
+      parser.addHeadingOptional("DampingConstant");
+      // Gather parameters
+      int step_delay;
+      if (parser.firstArg("StepDelay", step_delay)) rx_integrator->setStepDelay(step_delay);
+      RealType x = 0;
+      if (parser.firstArg("DampingConstant", x)) rx_integrator->setDamping(x);
+      if (parser.firstArg("MinDT", x)) rx_integrator->setMinDT(x);
+      if (parser.firstArg("MaxDT", x)) rx_integrator->setMaxDT(x);
+    }
 
     // Make sure all forces are zero
     gflow->simData->clearF();

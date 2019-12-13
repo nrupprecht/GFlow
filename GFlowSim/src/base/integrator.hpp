@@ -51,10 +51,13 @@ namespace GFlowSimulation {
     RealType getMinDT() const;
 
     //! \brief Returns the maximum velocity.
-    RealType get_max_velocity();
+    RealType get_max_velocity() const;
 
     //! \brief Returns the maximum acceleration.
-    RealType get_max_acceleration();
+    RealType get_max_acceleration() const;
+
+    //! \brief Return whether this is the primary integrator.
+    bool isPrimaryIntegrator() const;
 
     // GFlow is a friend class
     friend class GFlow;

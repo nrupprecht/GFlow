@@ -14,23 +14,20 @@ namespace GFlowSimulation {
 
     //! \brief Checks whether the maximum acceleration is low enough. 
     //! If it is, it signals an end to the simulation.
-    virtual void pre_step() override;
+    virtual void post_forces() override;
 
   protected:
     //! \brief The target maximum acceleration.
-    RealType allowable_acceleration = 0.05;
+    RealType allowable_acceleration = 0.1f;
 
     //! \brief The minimum number of iterations to let the simulation run for.
     int min_iterations = 10;
-
-    //! \brief Whether to adjust the damping constant.
-    bool adjust_damping = true;
   };
 
   // Include the implementation file.
   #include "relax-integrator.tpp"
 
-  inline Integrator* choose_relax_integrator(GFlow *gflow, int sim_dimensions) {
+  inline OverdampedIntegratorBase* choose_relax_integrator(GFlow *gflow, int sim_dimensions) {
     switch (sim_dimensions) {
       case 1:
         return new RelaxIntegrator<1>(gflow);

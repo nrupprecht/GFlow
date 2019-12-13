@@ -19,22 +19,10 @@ void RelaxIntegrator<dimensions>::pre_integrate() {
 }
 
 template<int dimensions>
-void RelaxIntegrator<dimensions>::pre_step() {
+void RelaxIntegrator<dimensions>::post_forces() {
   // Calculates maximum_acceleration, sets time step.
-  OverdampedIntegrator<dimensions>::pre_step();
-
-  // Allow damping to decay.
-  if (min_iterations<Integrator::gflow->getIter() && adjust_damping && this->maximum_acceleration<25 && this->dampingConstant<1) {
-    this->dampingConstant *= 1.5;
-    if (1<this->dampingConstant) 
-      this->dampingConstant = 1.f;
-  }
+  OverdampedIntegrator<dimensions>::post_forces();
   
   // If accelerations are slow enough, end the simulation.
-  if (
-    this->maximum_acceleration<allowable_acceleration 
-    && (adjust_damping ? this->dampingConstant==1 : true) 
-    && min_iterations<Integrator::gflow->getIter()
-  ) 
-    Integrator::gflow->terminate();
+  if (this->maximum_acceleration<allowable_acceleration && min_iterations<Integrator::gflow->getIter()) Integrator::gflow->terminate();
 }
