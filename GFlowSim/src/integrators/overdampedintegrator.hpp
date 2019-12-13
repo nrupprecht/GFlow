@@ -19,7 +19,7 @@ namespace GFlowSimulation {
   *  will push each other away, but will not have a velocity explosion, even if
   *  they are badly overlapping.
   *
-  *  @see OverdampedLangevinIntegrator
+  *  \see OverdampedLangevinIntegrator
   */
   template<int dimensions> class OverdampedIntegrator : public Integrator {
   public:
@@ -30,17 +30,29 @@ namespace GFlowSimulation {
     virtual void pre_integrate() override;
 
     //! \brief Override the integrator's pre-step, since there are no velocities when using the overdamped integrator.
-    virtual void pre_step() override;
+    //! 
+    //! The default integrator prestep adjusts the timestep so that the fastest particle can only traverse its own radius 
+    //! in at least a set number of steps.
+    virtual void pre_step() override {};
 
     //! \brief The post forces routine. The integrator only needs to act here.
     virtual void post_forces() override;
+
+    // --- Accessors
+
+    RealType getDamping() const { return dampingConstant; }
+
+    // --- Mutators
 
     //! \brief Set damping constant.
     void setDamping(RealType);
 
   protected:
+    //! \brief Determine a good time step to use.
+    inline void determine_time_step();
+
     //! \brief Damping constant.
-    RealType dampingConstant;
+    RealType dampingConstant = 0.1; // DEFAULT_DAMPING_CONSTANT
 
     //! \brief The maximum acceleration
     RealType maximum_acceleration = 0;

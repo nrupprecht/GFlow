@@ -614,9 +614,9 @@ namespace GFlowSimulation {
       if (-1<om_add && -1<tq_add) {
         om = Base::simData->ScalarData(om_add);
         tq = Base::simData->ScalarData(tq_add);
-      }
-      // Interact.
-      Handler::interact();
+        // Interact.
+        Handler::interact();
+      }    
     }
 
     void force(const int id1, const int id2, const RealType R1, const RealType R2, const RealType rsqr, RealType *X, vec_access f) const {
@@ -674,10 +674,11 @@ namespace GFlowSimulation {
         // for now.
         RealType Ft = - (K_t*0 + M_eff*gamma_t*vt);
 
-        RealType maxF = fabs(mu*Fn);
-        if (Ft>maxF) Ft = mu*Fn;
-        else if (Ft<-maxF) Ft = -maxF;
-
+        // We need to truncate the force, so that fabs(Ft) <= mu * Fn
+        RealType maxF = mu*Fn;
+        if (Ft<-maxF) Ft = -mu*Fn;
+        else if (maxF<Ft) Ft = mu*Fn;
+        
         // Update tangential forces.
         sum_eq_vec_scaled<dims>(f(id1), Nt, Ft);
         sum_eq_vec_scaled<dims>(f(id2), Nt, -Ft);
@@ -716,7 +717,6 @@ namespace GFlowSimulation {
       parser.addHeadingOptional("GammaT");
       parser.addHeadingOptional("Mu");
       // Gather parameters
-      RealType cut = -1.;
       parser.firstArg("Kn", K_n);
       parser.firstArg("Kt", K_t);
       parser.firstArg("GammaN", gamma_n);
@@ -781,9 +781,9 @@ namespace GFlowSimulation {
         th = Base::simData->ScalarData(th_add);
         om = Base::simData->ScalarData(om_add);
         tq = Base::simData->ScalarData(tq_add);
-      }
-      // Now do interactions.
-      Handler::interact();
+        // Now do interactions.
+        Handler::interact();
+      }    
     }
 
     void force(const int id1, const int id2, const RealType R1, const RealType R2, const RealType rsqr, RealType *X, vec_access f) const {

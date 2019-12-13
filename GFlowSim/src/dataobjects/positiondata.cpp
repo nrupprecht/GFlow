@@ -56,7 +56,6 @@ namespace GFlowSimulation {
       dirName += ("/"+dataName+"/");
     // Make a directory for the data
     mkdir(dirName.c_str(), 0777);
-
     return storeData.write(dirName+"data.csv", positions);
   }
 

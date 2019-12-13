@@ -18,10 +18,13 @@ namespace GFlowSimulation {
 
   protected:
     //! \brief The target maximum acceleration.
-    RealType allowable_acceleration;
+    RealType allowable_acceleration = 0.05;
 
     //! \brief The minimum number of iterations to let the simulation run for.
-    int min_iterations;
+    int min_iterations = 10;
+
+    //! \brief Whether to adjust the damping constant.
+    bool adjust_damping = true;
   };
 
   // Include the implementation file.

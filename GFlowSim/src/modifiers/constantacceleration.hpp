@@ -5,7 +5,7 @@
 
 namespace GFlowSimulation {
 
-  /** @brief Applies a constant acceleration to all objects
+  /** \brief Applies a constant acceleration to all objects
   *
   *  Does exactly what it sounds like it would. It calculates what force is
   *  necessary to give objects the required acceleration, then applies that
@@ -14,19 +14,18 @@ namespace GFlowSimulation {
   */
   class ConstantAcceleration : public Modifier {
   public:
-    //! Default constructor.
+    //! \brief Default constructor.
     ConstantAcceleration(GFlow*);
-    //! Acceleration setting constructor.
+    //! \brief Acceleration setting constructor.
     ConstantAcceleration(GFlow*, RealType*);
-    //! Single component setting constructor/
+    //! \brief Single component setting constructor/
     ConstantAcceleration(GFlow*, RealType, int=1);
-    //! @brief Destructor.
-    ~ConstantAcceleration();
 
+    //! \brief Apply the needed force to all objects.
     virtual void post_forces();
 
   private:
-    RealType *acceleration;
+    Vec acceleration;
   };
 }
 #endif // __CONSTANT_ACCELERATOIN_HPP__GFLOW__

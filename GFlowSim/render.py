@@ -23,8 +23,8 @@ dir_path = args['directory']
 load_path = dir_path + "/general/Pos"
 save_path = dir_path + "/" + output
 
-print ("Looking for images in ", load_path)
-print ("Will save file in ", save_path)
+print ("Looking for images in {}.".format(load_path))
+print ("Will save file in {}.".format(save_path))
 
 images = []
 for f in os.listdir(load_path):
@@ -32,7 +32,7 @@ for f in os.listdir(load_path):
         images.append(f)
 
 if len(images)==0 : 
-    print ("No images.\n")
+    print ("No images.")
     exit()
 
 

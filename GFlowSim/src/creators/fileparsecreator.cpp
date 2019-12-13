@@ -171,6 +171,7 @@ namespace GFlowSimulation {
     parser.addHeadingOptional("Fill");
     parser.addHeadingOptional("Particle");
     parser.addHeadingOptional("Modifier");
+    parser.addHeadingOptional("HSRelax");
     parser.addHeadingOptional("Relax");
     parser.addHeadingOptional("Reconcile");
     // Check headings for validity.
@@ -377,10 +378,15 @@ namespace GFlowSimulation {
     // Initialize handler
     gflow->handler->initialize();
 
-    // --- Relax the simulation
+    // --- Hard sphere relax the simulation. We do this by default.
     RealType relax_time = 0.5;
-    parser.firstArg("Relax", relax_time);
+    parser.firstArg("HSRelax", relax_time);
     if (relax_time>0) hs_relax(gflow, relax_time);
+
+    // --- Natural relax of the simulation
+    relax_time = 0.;
+    parser.firstArg("Relax", relax_time);
+    if (relax_time>0) relax(gflow, relax_time);
 
     // --- Reconcile overlaps
     if (parser.begin("Reconcile")) {

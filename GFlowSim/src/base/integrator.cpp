@@ -115,16 +115,18 @@ namespace GFlowSimulation {
 
     // Find maxV
     RealType maxV = 0;
-    const int total = sim_dimensions*simData->size();
 
     #if SIMD_TYPE==SIMD_NONE
     // Do serially
-    for (int i=0; i<total; ++i)
-      if (maxV<fabs(v[i])) maxV = fabs(v[i]);
+    for (int i=0; i<simData->size_owned(); ++i) {
+      Real magnitude = magnitudeVec(v(i), sim_dimensions);
+      if (maxV<magnitude) maxV = magnitude;
+    }
+    return maxV;
     #else 
     // Do as much as we can in parallel
     simd_float _maxv = simd_set1(0.);
-    int i=0;
+    int i=0, total = simData->size_owned() * sim_dimensions;
     for (; i<total-simd_data_size; i += simd_data_size) {
       simd_float _va = simd_abs(v.load_to_simd(i)); // simd_abs(simd_load(&v[i]));
       simd_float _mask = simd_less_than(_maxv, _va);
@@ -149,17 +151,17 @@ namespace GFlowSimulation {
     auto im = simData->Im();
 
     // Reset the maximum acceleration of any particle.
-    RealType maxA = 0.;
-    const int total = sim_dimensions*simData->size();
-
+    RealType maxA = -1.;
     // Do serially
-    for (int i=0; i<total; ++i) {
-      RealType a = fabs(f[i]*im[i/sim_dimensions]);
-      if (a>maxA) maxA = a;
+    for (int i=0; i<simData->size_owned(); ++i) {
+      if (im[i]>0) {
+        RealType a = magnitudeVec(f(i), sim_dimensions)*im[i];
+        if (a>maxA) maxA = a;
+      }
     }
 
     // Return the max acceleration
-    return maxA*sqrt(sim_dimensions);
+    return maxA;
   }
 
 }

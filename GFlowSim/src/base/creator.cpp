@@ -63,11 +63,7 @@ namespace GFlowSimulation {
     gflow->forceMaster = &forceMaster; // Give it to gflow
 
     // All particles interact as hard spheres
-    for (int n1=0; n1<ntypes; ++n1) 
-      for (int n2=n1; n2<ntypes; ++n2) {
-        if (master->typesInteract(n1, n2))
-          forceMaster.setInteraction(n1, n2, hsForce);
-      }
+    forceMaster.setInteraction(hsForce);
 
     // Make sure all forces are zero
     gflow->simData->clearF();
@@ -103,6 +99,7 @@ namespace GFlowSimulation {
     // Use overdamped integrator for relaxation
     Integrator *integrator = gflow->integrator; // Save integrator
     Integrator *rx_integrator = choose_relax_integrator(gflow, sim_dimensions);
+    rx_integrator->setMinDT(1e-7);
     gflow->integrator = rx_integrator;
 
     // Make sure all forces are zero
