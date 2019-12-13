@@ -46,6 +46,9 @@ namespace GFlowSimulation {
 
     // Assign what types of borders the region managed by this handler has.
     assign_border_types();
+
+    // The handler is now initialized.
+    initialized = true;
   }
 
   void InteractionHandler::pre_integrate() {
@@ -203,9 +206,9 @@ namespace GFlowSimulation {
   void InteractionHandler::setSkinDepth(RealType s) {
     // If the skin depth is the same, we don't have to do anything. Don't allow the skin depth to be negative or zero.
     if (skin_depth!=s && s>0) {
-      InteractionHandler::setSkinDepth(s);
+      skin_depth = s;
       // We have to reinitialize
-      initialize();
+      if (initialized) initialize();
     }
   }
 
@@ -231,6 +234,7 @@ namespace GFlowSimulation {
     RealType rho = simData->size() / process_bounds.vol();
     RealType candidate = inv_sphere_volume((2.2*target_list_size)/rho + 0.5*sphere_volume(max_small_sigma, sim_dimensions), sim_dimensions) - 2*max_small_sigma;
     skin_depth = max(static_cast<RealType>(0.5 * max_small_sigma), candidate);
+
     // Use the same skin depth on all processors - take the average.
     if (topology && topology->getNumProc()>1) {
       MPIObject::mpi_sum(skin_depth);

@@ -210,7 +210,7 @@ namespace GFlowSimulation {
     //!
     //! The extra amount around a particle that the domain should count as being a particle neighbor. So if
     //! d(x, y) < rx + ry + skin_depth, the particles are neighbors.
-    RealType skin_depth = DEFAULT_SKIN_DEPTH;
+    RealType skin_depth = 0;
 
     //! \brief The target number of particles in each particle's verlet list.
     //!

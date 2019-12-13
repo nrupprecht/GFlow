@@ -71,4 +71,10 @@ Relax: 0.1 {
   StepDelay: 0
 }
 
+// By default, the simulator assumes that particles are spread out homogeneously
+// and it uses this assumption to calculate a good skin depth. But we know that
+// this is not a good assumption for this setup, so we pick a skin depth for ourselves.
+// I haven't confirmed that this is the *best* skin depth.
+SkinDepth: 0.25*MaxR
+
 

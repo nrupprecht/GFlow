@@ -174,6 +174,7 @@ namespace GFlowSimulation {
     parser.addHeadingOptional("HSRelax");
     parser.addHeadingOptional("Relax");
     parser.addHeadingOptional("Reconcile");
+    parser.addHeadingOptional("SkinDepth");
     // Check headings for validity.
     parser.check();
 
@@ -402,6 +403,9 @@ namespace GFlowSimulation {
         else throw BadStructure("Unrecognized remove option, [" + parser.argName() + "].");
       } while (parser.next());
     }
+
+    real skin = 0;
+    if (parser.firstArg("SkinDepth", skin)) gflow->handler->setSkinDepth(skin);
     
     // Reconstruct handler.
     gflow->handler->construct();
