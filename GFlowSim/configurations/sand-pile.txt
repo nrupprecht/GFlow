@@ -10,7 +10,6 @@ Var: MaxR=0.05
 Bounds: {
   : -width, width // X
   : 0, height // Y
-  //: 0, width // Z
 }
 
 Integrator: VelocityVerlet {
@@ -36,7 +35,7 @@ Gravity: 0, -9.8
 Fill: Area {
   // Fill all the simulation with particles
   Bounds: {
-    : -0.25*width, 0.25*width
+    : -0.1*width, 0.1*width
     : 3*MaxR, 0.75*height
   }
 

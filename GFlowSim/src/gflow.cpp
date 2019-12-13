@@ -166,14 +166,6 @@ namespace GFlowSimulation {
     Timer timer;
     timer.start();
 
-    #if USE_MPI == 1
-    if (topology->getNumProc()>1) {
-      // For now, set this to a value that I know is good. Otherwise, the default value is 8, which really slows things down.
-      if      (sim_dimensions==2) handler->setUpdateDelaySteps(15);
-      else if (sim_dimensions==3) handler->setUpdateDelaySteps(46);
-    }
-    #endif // USE_MPI == 1
-
     // Do integration for the requested amount of time
     while (_running && requested_time>0) {
 

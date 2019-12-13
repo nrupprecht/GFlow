@@ -10,7 +10,17 @@
 namespace GFlowSimulation {
 
   InteractionHandler::InteractionHandler(GFlow *gflow) : Base(gflow), velocity(gflow->getSimDimensions()), process_bounds(sim_dimensions), simulation_bounds(sim_dimensions),
-    border_type_up(sim_dimensions, 0), border_type_down(sim_dimensions, 0) {};
+    border_type_up(sim_dimensions, 0), border_type_down(sim_dimensions, 0) {
+    // By default, use fixed remakes when doing parallel runs.
+    #if USE_MPI==1
+    if (MPIObject::getNumProc()>1) {
+      update_decision_type = 1;
+      // Default number of steps.
+      if      (sim_dimensions==2) update_delay_steps = 15;
+      else if (sim_dimensions==3) update_delay_steps = 46;
+    }
+    #endif // USE_MPI==1
+  };
 
   InteractionHandler::~InteractionHandler() {
     if (positions) dealloc_array_2d(positions);
@@ -34,13 +44,6 @@ namespace GFlowSimulation {
     // Get the array of max cutoffs.
     max_cutoffs = forceMaster->getMaxCutoff();
 
-    #if USE_MPI==1
-    if (topology!=nullptr && topology->getNumProc()>1) {
-      //*** Just use this condition, for now. \todo Sync when remakes and updates happen.
-      update_decision_type = 1;
-    }
-    #endif
-
     // Assign what types of borders the region managed by this handler has.
     assign_border_types();
   }
@@ -58,6 +61,10 @@ namespace GFlowSimulation {
     steps_since_last_remake = 0;
     update_delay = 1.0e-4;
 
+    // Reset statistics
+    ave_miss = 0.f;
+    missed_target = 0;
+
     // Do construction.
     construct();
   }
@@ -73,12 +80,19 @@ namespace GFlowSimulation {
     // Get the current simulation time
     RealType current_time = gflow->getElapsedTime();
 
-    // If simdata needs a remake, we give it a remake
-    if (simData->getNeedsRemake()) construct();
-    else if (update_decision_type==0 && current_time-last_update>update_delay) {
-      if (gflow->getNumInteractions()>0 && check_needs_remake()) construct();
-    }
-    else if (update_decision_type==1 && update_delay_steps<=steps_since_last_remake) {
+    // Check if we need to reconstruct the handler.
+    bool do_construct = (
+      simData->getNeedsRemake() 
+      || (update_decision_type==0 && current_time-last_update>update_delay && gflow->getNumInteractions()>0 && check_needs_remake())
+      || (update_decision_type==1 && update_delay_steps<=steps_since_last_remake) 
+    );
+
+    #if USE_MPI==1
+      // Sync timesteps.
+      if (topology->getNumProc()>1 && update_decision_type==0) MPIObject::mpi_or(do_construct);
+    #endif // USE_MPI==1
+
+    if (do_construct) {
       if (gflow->getUseForces()) construct();
       else simData->update();
     }
