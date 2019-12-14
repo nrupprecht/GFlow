@@ -78,23 +78,19 @@ namespace GFlowSimulation {
     if (send_ghost_omega) ghost_data_width += 1; // In two dimensions, omega is a scalar.
     #endif
 
-    //*****
     #if USE_MPI == 1
-      if (topology->getNumProc()>1) {
-        // Temporary fix - get rid of all particles not hosted on this processor.
-        if (_size>0 && topology->is_initialized() ) {
-          int rank = topology->getRank();
-          int numProc = topology->getNumProc();
-          for (int i=0; i<_size; ++i) {
-            if (Type(i)>-1 && !topology->owned_particle(X(i)))
-              markForRemoval(i);
-          }
+    if (topology->getNumProc()>1) {
+      // Temporary fix - get rid of all particles not hosted on this processor.
+      if (_size>0 && topology->is_initialized() ) {
+        int rank = topology->getRank();
+        int numProc = topology->getNumProc();
+        for (int i=0; i<_size; ++i) {
+          if (Type(i)>-1 && !topology->owned_particle(X(i)))
+            markForRemoval(i);
         }
       }
+    }
     #endif
-    //*****
-
-    //doParticleRemoval();
 
     // Sort the particles by position
     sortParticles();

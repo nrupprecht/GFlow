@@ -102,8 +102,9 @@ namespace GFlowSimulation {
       for (int d=0; d<sim_dimensions; ++d) X[d] = (drand48()-0.5)*width;
       simData->addParticle(X, V, radius, im, 0);
     }
+
     // --- Initialize handler
-    gflow->handler->initialize();
+    gflow->initialize();
     
     // --- Handle forces
     gflow->forceMaster->setNTypes(1); // Only one type of particle

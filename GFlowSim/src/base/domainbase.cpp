@@ -19,7 +19,7 @@ namespace GFlowSimulation {
     if (process_bounds.vol()<=0 || isnan(process_bounds.vol()) || simData==nullptr || simData->size()==0) return;
 
     // Calculate skin depth if one has not been set.
-    if (skin_depth==0) calculate_skin_depth();
+    if (!skin_depth_set) calculate_skin_depth();
 
     // Use max_small_sigma. It is important that all processors share a consistent min_small_cutoff, which is calculated to
     // be 2*max_small_sigma + skin_depth. This can be achieved by sharing a max_small_sigma, and skin_depth.

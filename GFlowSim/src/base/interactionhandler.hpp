@@ -212,6 +212,9 @@ namespace GFlowSimulation {
     //! d(x, y) < rx + ry + skin_depth, the particles are neighbors.
     RealType skin_depth = 0;
 
+    //! \brief If true, we do not calculate skin depths.
+    bool skin_depth_set = false;
+
     //! \brief The target number of particles in each particle's verlet list.
     //!
     //! Despite the fact that particles come in integer numbers, the target list size is a real, since it

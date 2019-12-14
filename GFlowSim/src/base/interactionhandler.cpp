@@ -207,6 +207,7 @@ namespace GFlowSimulation {
     // If the skin depth is the same, we don't have to do anything. Don't allow the skin depth to be negative or zero.
     if (skin_depth!=s && s>0) {
       skin_depth = s;
+      skin_depth_set = true;
       // We have to reinitialize
       if (initialized) initialize();
     }
