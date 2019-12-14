@@ -742,7 +742,7 @@ namespace GFlowSimulation {
     std::ofstream fout;
 
     if (rank==0) {
-      fout.open(writeDirectory+"/mpi-log.txt");
+      fout.open(writeDirectory+"/mpi-log.csv");
       if (fout.fail()) {
         // Write error message
         std::cerr << "Failed to open file [" << writeDirectory << "/run_log.txt]." << endl;
@@ -752,31 +752,11 @@ namespace GFlowSimulation {
 
     // --- Helper functions
 
-    auto format_al = [] (string str, int size) -> string {
-      int remainder = size-str.length();
-      for (int i=0; i<remainder; ++i) str += ' ';
-      return str;
-    };
-
-    auto format_ar = [] (string str, int size) -> string {
-      string str2;
-      int remainder = size-str.length();
-      for (int i=0; i<remainder; ++i) str2 += ' ';
-      str2 += str;
-      return str2;
-    };
-
-    auto repeat = [] (char c, int size) -> string {
-      string str;
-      for (int i=0; i<size; ++i) str += c;
-      return str;
-    };
-
     auto print_row_int = [&] (const string& descriptor, int val, vector<int>& vec) {
       MPIObject::mpi_gather(val, vec);
       if (rank==0) {
-        fout << format_al(descriptor, left_align) << "|";
-        for (int i=0; i<num_proc; ++i) fout << format_ar(toStr(vec[i]), column_width);
+        fout << descriptor;
+        for (int i=0; i<num_proc; ++i) fout << "," << vec[i];
         fout << "\n";
       }
     };
@@ -784,8 +764,8 @@ namespace GFlowSimulation {
     auto print_row_float = [&] (const string& descriptor, float val, vector<float>& vec) {
       MPIObject::mpi_gather(val, vec);
       if (rank==0) {
-        fout << format_al(descriptor, left_align) << "|";
-        for (int i=0; i<num_proc; ++i) fout << format_ar(toStr(vec[i]), column_width);
+        fout << descriptor;
+        for (int i=0; i<num_proc; ++i) fout << "," << vec[i];
         fout << "\n";
       }
     };
@@ -793,28 +773,17 @@ namespace GFlowSimulation {
     auto pretty_print_row_float = [&] (const string& descriptor, float val, vector<float>& vec, float normalize, const string& sep) {
       MPIObject::mpi_gather(val, vec);
       if (rank==0) {
-        fout << format_al(descriptor, left_align) << "|";
-        for (int i=0; i<num_proc; ++i) fout << format_ar(pprint(vec[i]/normalize, 3, 2)+sep, column_width);
+        fout << descriptor;
+        for (int i=0; i<num_proc; ++i) fout << "," << pprint(vec[i]/normalize, 3, 2) << "%";
         fout << "\n";
       }
     };
 
-    // Print Header
-    fout << "**********          RUN LOG          **********\n";
-    fout << "*******  GFlow Granular Simulator v 4.0 *******\n";
-    fout << "********** 2018, Nathaniel Rupprecht **********\n";
-    fout << "***********************************************\n\n";
+    // --- End of helper lambdas, now print data to file.
 
     // Print column labels - ranks.
-    fout << repeat(' ', left_align+1);
     for (int i=0; i<topology->getNumProc(); ++i)
-      fout << format_ar("Rank "+ toStr(i), column_width);
-    fout << "\n";
-
-    // Print separator
-    fout << repeat('-', left_align);
-    fout << "X";
-    fout << repeat('-', num_proc*column_width);
+      fout << ",Rank " << i;
     fout << "\n";
 
     // --- Print information for each processor
@@ -824,8 +793,8 @@ namespace GFlowSimulation {
 
     int neighbors = simData->neighbor_ranks.size();
     MPIObject::mpi_gather(neighbors, int_vector);
-    fout << format_al("# Neighbors:", left_align) << "|";
-    for (int i=0; i<num_proc; ++i) fout << format_ar(toStr(int_vector[i]), column_width);
+    fout << "# Neighbors:";
+    for (int i=0; i<num_proc; ++i) fout << ", " << int_vector[i];
     fout << "\n";
 
     int size = simData->number_owned();
@@ -842,11 +811,7 @@ namespace GFlowSimulation {
     float ratio = handler->getProcessBounds().aspect_ratio();
     print_row_float("Aspect ratio:", ratio, float_vector);
 
-
-    // --- Print separator
-    fout << repeat('-', left_align);
-    fout << "X";
-    fout << repeat('-', num_proc*column_width);
+    // Separate by a row.
     fout << "\n";
 
     // If timing was done.
@@ -874,11 +839,10 @@ namespace GFlowSimulation {
         labels[7] = "Ghost search time:";
       }
 
-      for (int i=0; i<n_timers; ++i) {
+      for (int i=0; i<n_timers; ++i)
         pretty_print_row_float(labels[i], timing[i], float_vector, 0.01*run_time, "%");
-      }
     }
-#endif // USE_MPI==1
+    #endif // USE_MPI==1
 
     // Close the file stream.
     if (rank==0) fout.close();

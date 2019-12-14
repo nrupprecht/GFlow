@@ -4,6 +4,7 @@
 #include "../gflow.hpp"
 #include "interactionhandler.hpp"
 #include "../utility/vectormath.hpp"
+#include "../compute/neighbor-history.hpp"
 #include "simdata.hpp"
 
 namespace GFlowSimulation {
@@ -68,6 +69,9 @@ namespace GFlowSimulation {
     friend class GFlow;
 
   protected:
+
+    //! \brief A pointer to a class that can be used to keep track of neighbor history data (if need be).
+    NeighborHistory *neighbor_history = nullptr;
 
     //! \brief The verlet lists for interactions that do not need to worry about wrapping distances.
     //!
