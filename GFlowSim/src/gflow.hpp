@@ -125,7 +125,6 @@ namespace GFlowSimulation {
     const vector<class Bonded*>& getBondedInteractions() const;
 
     //! \brief Get the sim data object.
-    //class SimData* getSimData();
     shared_ptr<class SimData> getSimData();
 
     //! \brief Get the data master object.
@@ -139,6 +138,9 @@ namespace GFlowSimulation {
 
     //! \brief Get the topology.
     class Topology* getTopology();
+
+    //! \brief Get the interaction handler.
+    class InteractionHandler* getInteractionHandler();
 
     //! \brief Get the number of integrators that gflow has.
     int getNumIntegrators() const; 

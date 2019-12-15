@@ -120,6 +120,7 @@ int main(int argc, char **argv) {
   RealType skin = 0.;
   bool quiet = false;
   RealType gravity = 0.;
+  RealType skin_depth = -1.;
   bool damping = false;
   bool adjustDT = true;
   int target_steps = -1;
@@ -176,6 +177,7 @@ int main(int argc, char **argv) {
   parser.get("skin", skin);
   parser.get("quiet", quiet);
   parser.get("gravity", gravity);
+  parser.get("skindepth", skin_depth);
   parser.get("damping", damping);
   parser.get("adjustDT", adjustDT);
   parser.get("target_steps", target_steps);
@@ -309,6 +311,7 @@ int main(int argc, char **argv) {
   if (target_steps>0) gflow->getIntegrator()->setTargetSteps(target_steps);
   if (step_delay>0) gflow->getIntegrator()->setStepDelay(step_delay);
   if (gravity!=0) gflow->addModifier(new ConstantAcceleration(gflow, gravity));
+  if (skin_depth>0) gflow->getInteractionHandler()->setSkinDepth(skin_depth);
   if (damping) gflow->addModifier(new LinearVelocityDamping(gflow));
 
   // Turns off forces.

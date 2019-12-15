@@ -405,6 +405,10 @@ namespace GFlowSimulation {
     return topology;
   }
 
+  InteractionHandler* GFlow::getInteractionHandler() {
+    return handler;
+  }
+
   int GFlow::getNumIntegrators() const {
     return (integrator!=nullptr ? 1 : 0) + additional_integrators.size();
   }

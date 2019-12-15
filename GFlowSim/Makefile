@@ -65,8 +65,7 @@ endif
 #OPENCV   := $(shell pkg-config --cflags --libs opencv)
 CFLAGS   := -c $(CSTD) $(DEBUG) $(OPTIMIZE) $(FLAGS)
 
-all: $(BIN)/$(APP) $(BIN)/vistools $(BIN)/test-driver
-#$(BIN)/lineattraction $(BIN)/wallattraction $(BIN)/polymerattraction $(BIN)/demonrates
+all: $(BIN)/$(APP) $(BIN)/vistools 
 
 # Executables
 
@@ -80,10 +79,10 @@ $(BIN)/vistools: obj/vistools.o $(OBJS)
 	@echo "Linking $@..."
 	@$(CC) -o $@ obj/vistools.o $(OBJS)
 
-$(BIN)/test-driver: obj/test-driver.o $(OBJS)
-	@mkdir -p `dirname $@`
-	@echo "Linking $@..."
-	@$(CC) -o $@ $< $(OBJS)
+#$(BIN)/test-driver: obj/test-driver.o $(OBJS)
+#	@mkdir -p `dirname $@`
+#	@echo "Linking $@..."
+#	@$(CC) -o $@ $< $(OBJS)
 
 #$(BIN)/lineattraction: obj/lineattraction.o $(OBJS)
 #	@mkdir -p `dirname $@`
@@ -124,10 +123,10 @@ $(OBJ)/vistools.o: src/applications/vistools.cpp
 	@echo "Compiling $<..."
 	@$(CC) $(CFLAGS) $< -o $@
 
-$(OBJ)/test-driver.o: src/applications/test-driver.cpp
-	@mkdir -p `dirname $@`
-	@echo "Compiling $<..."
-	@$(CC) $(CFLAGS) $< -o $@
+#$(OBJ)/test-driver.o: src/applications/test-driver.cpp
+#	@mkdir -p `dirname $@`
+#	@echo "Compiling $<..."
+#	@$(CC) $(CFLAGS) $< -o $@
 
 #$(OBJ)/lineattraction.o: src/applications/lineattraction.cpp
 #	@mkdir -p `dirname $@`
@@ -161,9 +160,4 @@ forces:
 .PHONY : creators
 creators:
 	rm obj/src/creators/*
-	make
-
-.PHONY : remake
-remake:
-	rm -f obj/test-driver.o
 	make

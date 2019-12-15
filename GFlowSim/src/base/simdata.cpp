@@ -23,8 +23,8 @@ namespace GFlowSimulation {
   }
 
   SimData::~SimData() {
-    for (auto &v : vdata)
-      if (v) dealloc_array_2d(v);
+    for (auto &v : vdata) 
+      if (v) delete [] v;
     vdata.clear();
     for (auto &s : sdata)
       if (s) delete [] s;
@@ -139,12 +139,12 @@ namespace GFlowSimulation {
   //! @brief Reserve space for particles, extending the lengths of all arrays to the requested size.
   void SimData::reserve(int num) {
     for (auto &v : vdata) {
-      if (v) dealloc_array_2d(v);
-      v = alloc_array_2d<RealType>(num, sim_dimensions);
+      if (v) delete [] v;
+      v = new real[num*sim_dimensions];
     }
     for (auto &s : sdata) {
       if (s) delete [] s;
-      s = new RealType[num]; // Valgrind says there is an error here.
+      s = new real[num]; // Valgrind says there is an error here.
     }
     for (auto &i : idata) {
       if (i) delete [] i;
@@ -377,44 +377,44 @@ namespace GFlowSimulation {
   }
 
   vec_access SimData::X() {
-    return vec_access(vdata[0]);
+    return vec_access(vdata[0], sim_dimensions);
   }
 
-  RealType* SimData::X(int i) {
+  RealType* SimData::X(const int i) {
     return X()(i);
   }
 
-  RealType& SimData::X(int i, int d) {
+  RealType& SimData::X(const int i, const int d) {
     return X()(i, d);
   }
 
   vec_access SimData::V() {
-    return vec_access(vdata[1]);
+    return vec_access(vdata[1], sim_dimensions);
   }
 
-  RealType* SimData::V(int i) {
+  RealType* SimData::V(const int i) {
     return V()(i);
   }
 
-  RealType& SimData::V(int i, int d) {
+  RealType& SimData::V(const int i, const int d) {
     return V()(i, d);
   }
 
   vec_access SimData::F() {
-    return vec_access(vdata[2]);
+    return vec_access(vdata[2], sim_dimensions);
   }
 
-  RealType* SimData::F(int i) {
+  RealType* SimData::F(const int i) {
     return F()(i);
   }
 
-  RealType& SimData::F(int i, int d) {
+  RealType& SimData::F(const int i, const int d) {
     return F()(i, d);
   }
 
-  vec_access SimData::VectorData(int i) {
+  vec_access SimData::VectorData(const int i) {
     if (i<0 || vdata.size()<=i) throw false; // \todo Real error
-    return vec_access(vdata[i]);
+    return vec_access(vdata[i], sim_dimensions);
   }
 
   vec_access SimData::VectorData(const string& name) {
@@ -422,11 +422,15 @@ namespace GFlowSimulation {
     return VectorData(i);
   }
 
+  real* SimData::VectorData(const int i, const int id) {
+    return VectorData(i)(id);
+  }
+
   scalar_access SimData::Sg() {
     return scalar_access(sdata[0]);
   }
 
-  RealType& SimData::Sg(int i) {
+  RealType& SimData::Sg(const int i) {
     return Sg()(i);
   }
 
@@ -434,11 +438,11 @@ namespace GFlowSimulation {
     return scalar_access(sdata[1]);
   }
 
-  RealType& SimData::Im(int i) {
+  RealType& SimData::Im(const int i) {
     return Im()(i);
   }
 
-  scalar_access SimData::ScalarData(int i) {
+  scalar_access SimData::ScalarData(const int i) {
     if (i<0 || sdata.size()<=i) throw false; // \todo Real error
     return scalar_access(sdata[i]);
   }
@@ -446,6 +450,10 @@ namespace GFlowSimulation {
   scalar_access SimData::ScalarData(const string& name) {
     int i = getScalarData(name);
     return ScalarData(i);
+  }
+
+  real& SimData::ScalarData(const int i, const int id) {
+    return ScalarData(i)(id);
   }
 
   integer_access SimData::Type() {
@@ -460,11 +468,11 @@ namespace GFlowSimulation {
     return integer_access(idata[1]);
   }
 
-  int& SimData::Id(int i) {
+  int& SimData::Id(const int i) {
     return Id()(i);
   }
 
-  integer_access SimData::IntegerData(int i) {
+  integer_access SimData::IntegerData(const int i) {
     if (i<0 || idata.size()<=i) throw false; // \todo Real error
     return integer_access(idata[i]);
   }
@@ -480,8 +488,7 @@ namespace GFlowSimulation {
     if (it!=vector_data_map.end()) return it->second;
     // Otherwise, create a data entry
     vector_data_map.emplace(name, vdata.size());
-    RealType **address = alloc_array_2d<RealType>(_capacity, sim_dimensions);
-    vdata.push_back(address);
+    vdata.push_back(new real[_capacity*sim_dimensions]);
     // Return the entry
     return vdata.size()-1;
   }
@@ -806,16 +813,16 @@ namespace GFlowSimulation {
     int new_capacity = _capacity + num;
     // Allocate new vector data arrays
     for (auto &v : vdata) {
-      RealType **nv = alloc_array_2d<RealType>(new_capacity, sim_dimensions);
+      RealType *nv = new real[new_capacity*sim_dimensions];
       // Delete old array, set new
       if (v) {
   	    // Transfer data
-  	    copyVec(*v, *nv, _size*sim_dimensions);
+  	    copyVec(v, nv, _size*sim_dimensions);
         // Delete old
-        dealloc_array_2d(v);
+        delete [] v;
       }
       // Initialize the reset of the data
-      setVec(*nv, _size*sim_dimensions, new_capacity*sim_dimensions, static_cast<RealType>(0.));
+      setVec(nv, _size*sim_dimensions, new_capacity*sim_dimensions, static_cast<real>(0.));
       // Set pointer
       v = nv;
     }
@@ -853,7 +860,7 @@ namespace GFlowSimulation {
   }
 
   void SimData::reset_particle(int id) {
-    for (auto v : vdata) zeroVec(v[id], sim_dimensions);
+    for (int i=0; i<vdata.size(); ++i) zeroVec(VectorData(i)(id), sim_dimensions);
     for (auto s : sdata) s[id] = 0.;
     for (auto i : idata) i[id] = -1;
   }
@@ -864,9 +871,18 @@ namespace GFlowSimulation {
     int g2 = Id(id2);
 
     // Transfer data
-    for (auto v : vdata) swapVec(v[id1], v[id2], sim_dimensions);
-    for (auto s : sdata) std::swap(s[id1], s[id2]);
-    for (auto i : idata) std::swap(i[id1], i[id2]);
+    for (int i=0; i<vdata.size(); ++i) {
+      auto v = VectorData(i);
+      swapVec(v(id1), v(id2), sim_dimensions);
+    }
+    for (int i=0; i<sdata.size(); ++i) {
+      auto s = ScalarData(i);
+      std::swap(s(id1), s(id2));
+    }
+    for (int i=0; i<idata.size(); ++i) {
+      auto id = IntegerData(i);
+      std::swap(id(id1), id(id2));
+    }
     
     // Swap global ids
     if (use_id_map) {
@@ -1190,7 +1206,7 @@ namespace GFlowSimulation {
         int id = send_ids[j];
         // Pack vector data.
         for (int i=0; i<n_vectors; ++i) 
-          copyVec(vdata[i][id], &buffer[data_width*j + i*sim_dimensions], sim_dimensions);
+          copyVec(VectorData(i)(id) /*vdata[i][id]*/, &buffer[data_width*j + i*sim_dimensions], sim_dimensions);
         // Pack scalar data.
         for (int i=0; i<n_scalars; ++i) 
           buffer[data_width*j + vdata.size()*sim_dimensions + i] = sdata[i][id];
@@ -1230,13 +1246,13 @@ namespace GFlowSimulation {
         copyVec(xrel, &buffer[data_width*j], sim_dimensions); // Position
         // Send the rest of the data the normal way. Pack vector data.
         for (int i=1; i<n_vectors; ++i) 
-          copyVec(vdata[i][id], &buffer[data_width*j + i*sim_dimensions], sim_dimensions);
+          copyVec(VectorData(i)(id) /*vdata[i][id]*/, &buffer[data_width*j + i*sim_dimensions], sim_dimensions);
         // Pack scalar data.
         for (int i=0; i<n_scalars; ++i) 
-          buffer[data_width*j + n_vectors*sim_dimensions + i] = sdata[i][id];
+          buffer[data_width*j + n_vectors*sim_dimensions + i] = ScalarData(i)(id); /*sdata[i][id];*/
         // Pack integer data.
         for (int i=0; i<n_integers; ++i)
-          buffer[data_width*j + n_vectors*sim_dimensions + n_scalars + i] = byte_cast<RealType>(idata[i][id]); // *reinterpret_cast<RealType*>(&idata[i][id]);
+          buffer[data_width*j + n_vectors*sim_dimensions + n_scalars + i] = byte_cast<RealType>(IntegerData(i)(id)); // idata[i][id]);
       }
       // Send the data (non-blocking).
       MPI_Isend(buffer.data(), size*data_width, MPI_FLOAT, n_rank, tag, MPI_COMM_WORLD, send_request);
@@ -1262,12 +1278,12 @@ namespace GFlowSimulation {
         // Add a spot for a particle, then copy the data into this particle.
         int id = addParticle(); // Get id of new particle.
         // Unpack vector data.
-        for (int i=0; i<n_vectors; ++i) copyVec(&buffer[data_width*j + i*sim_dimensions], vdata[i][id], sim_dimensions);
+        for (int i=0; i<n_vectors; ++i) copyVec(&buffer[data_width*j + i*sim_dimensions], VectorData(i)(id) /*vdata[i][id]*/, sim_dimensions);
         // Unpack scalar data.
         for (int i=0; i<n_scalars; ++i) sdata[i][id] = buffer[data_width*j + n_vectors*sim_dimensions + i];
         // Unpack integer data.
         for (int i=0; i<n_integers; ++i) {
-          idata[i][id] = byte_cast<int>(buffer[data_width*j + n_vectors*sim_dimensions + n_scalars + i]); // *reinterpret_cast<int*>(&buffer[data_width*j + n_vectors*sim_dimensions + n_scalars + i]);
+          idata[i][id] = byte_cast<int>(buffer[data_width*j + n_vectors*sim_dimensions + n_scalars + i]);
         }
       } 
     }

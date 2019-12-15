@@ -88,17 +88,18 @@ namespace GFlowSimulation {
 
     // --- Get vector data
     vec_access X();
-    RealType*  X(int);
-    RealType&  X(int, int);
+    RealType*  X(const int);
+    RealType&  X(const int, const int);
     vec_access V();
-    RealType*  V(int);
-    RealType&  V(int, int);
+    RealType*  V(const int);
+    RealType&  V(const int, const int);
     vec_access F();
-    RealType*  F(int);
-    RealType&  F(int, int);
+    RealType*  F(const int);
+    RealType&  F(const int, const int);
 
-    vec_access VectorData(int);
+    vec_access VectorData(const int);
     vec_access VectorData(const string&);
+    real* VectorData(const int, const int);
 
     // --- Get scalar data
     scalar_access Sg();
@@ -106,17 +107,19 @@ namespace GFlowSimulation {
     scalar_access Im();
     RealType& Im(int);
 
-    scalar_access ScalarData(int);
+    scalar_access ScalarData(const int);
     scalar_access ScalarData(const string&);
+    real& ScalarData(const int, const int);
 
     // --- Get integer data
     integer_access Type();
-    int& Type(int);
+    int& Type(const int);
     integer_access Id();
-    int& Id(int);
+    int& Id(const int);
 
-    integer_access IntegerData(int);
+    integer_access IntegerData(const int);
     integer_access IntegerData(const string&);
+    int& IntegerData(const int, const int);
 
     // --- Data creation and request
 
@@ -314,7 +317,7 @@ namespace GFlowSimulation {
     //! \brief Vector data.
     //!
     //! Contains postion (0), velocity (1), and force (2).
-    vector<RealType**> vdata;
+    vector<RealType*> vdata;
 
     //! \brief Scalar data.
     //! 
@@ -488,20 +491,20 @@ namespace GFlowSimulation {
     vec_access() {};
 
     //! \brief Access a vector.
-    real* operator() (const int id) { return data_ptr[id]; }
-    const real* operator() (const int id) const { return data_ptr[id]; }
+    real* operator() (const int id) { return &data_ptr[id*sim_dimensions]; }
+    const real* operator() (const int id) const { return &data_ptr[id*sim_dimensions]; }
     //! \brief Access a component of a vector.
-    real& operator() (const int id, const int d) { return data_ptr[id][d]; }
-    real operator() (const int id, const int d) const { return data_ptr[id][d]; }
+    real& operator() (const int id, const int d) { return data_ptr[id*sim_dimensions+d]; }
+    real operator() (const int id, const int d) const { return data_ptr[id*sim_dimensions+d]; }
     //! \brief Access a component via contiguous index.
-    real& operator[] (const int contiguous_index) { return (*data_ptr)[contiguous_index]; }
-    real operator[] (const int contiguous_index) const { return (*data_ptr)[contiguous_index]; }
+    real& operator[] (const int contiguous_index) { return data_ptr[contiguous_index]; }
+    real operator[] (const int contiguous_index) const { return data_ptr[contiguous_index]; }
 
     //! \brief Load contiguous entries into simd vector
-    simd_float load_to_simd(const int contiguous_index) { return simd_load_u(&data_ptr[0][contiguous_index]); }
+    simd_float load_to_simd(const int contiguous_index) { return simd_load_u(&data_ptr[contiguous_index]); }
 
     //! \brief Store from a simd vector into contiguous entries.
-    void store_simd(const int contiguous_index, const simd_float value) { simd_store_u(value, &data_ptr[0][contiguous_index]); }
+    void store_simd(const int contiguous_index, const simd_float value) { simd_store_u(value, &data_ptr[contiguous_index]); }
 
     //! \brief Return whether the underlying pointer is null.
     bool isnull() { return data_ptr==nullptr; }
@@ -510,10 +513,13 @@ namespace GFlowSimulation {
 
   private:
     //! \brief Private constructor, so only ParticleContainer can create a vec_access.
-    vec_access(real** data) : data_ptr(data) {};
+    vec_access(real* data, int dims) : data_ptr(data), sim_dimensions(dims) {};
+
+    //! \brief The width of a vector.
+    int sim_dimensions;
 
     //! \brief Pointer to the underlying data.
-    real **data_ptr = nullptr;
+    real *data_ptr = nullptr;
   };
 
   //! \brief Struct for accessing the underlying scalar data of SimData in a layout agnostic manner.
