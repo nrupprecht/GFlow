@@ -8,10 +8,13 @@ Var: Velocity=2.2
 Var: Length=25
 Var: Height=10
 Var: Front=10
-Var: Mu=0.25
+Var: Mu=0.75
 Var: Radius=1
-Var: Gamma=10000
-Var: Kappa=50000
+Var: kappaN=1000000
+Var: kappaT=290000
+Var: gammaN=10000
+Var: gammaT=10000
+
 
 // This is a 2d simulation
 Dimensions: 2
@@ -35,8 +38,10 @@ NTypes: 2
 // Creates a random force network of HardSphere and Lennard-Jones forces
 Force-grid: Hertz {
   Mu: Mu
-  GammaN: Gamma
-  Kn: Kappa
+  Kn: kappaN
+  Kt: kappaT
+  GammaN: gammaN
+  GammaT: gammaT
 }
 
 // Fill an area with particles
@@ -71,8 +76,6 @@ Fill: Circle {
   Radius: Radius
   Type: 1
 }
-
-//Reconcile: Remove=0.9
 
 HSRelax: 0.5
 

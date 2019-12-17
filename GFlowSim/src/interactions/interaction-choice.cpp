@@ -5,7 +5,7 @@
 namespace GFlowSimulation {
   
   Interaction* InteractionChoice::choose(GFlow *gflow, const string &token, int sim_dimensions) {
-    string err = "Nothing per-say invalid about requesting this force in this dimension, it just isn't coded in";
+    string err = " Nothing per-say invalid about requesting this force in this dimension, it just isn't coded in";
     if (token==NoneToken) return nullptr;
     else if (token==HardSphereToken) {
       if      (sim_dimensions==1) return new HardSphereVLP<1>(gflow);

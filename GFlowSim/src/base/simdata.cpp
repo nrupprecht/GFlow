@@ -482,6 +482,10 @@ namespace GFlowSimulation {
     return IntegerData(i);
   }
 
+  int& SimData::IntegerData(const int i, const int id) {
+    return IntegerData(i)(id);
+  }
+
   int SimData::requestVectorData(string name) {
     // Check if the data already exists
     auto it = vector_data_map.find(name);
@@ -1206,13 +1210,13 @@ namespace GFlowSimulation {
         int id = send_ids[j];
         // Pack vector data.
         for (int i=0; i<n_vectors; ++i) 
-          copyVec(VectorData(i)(id) /*vdata[i][id]*/, &buffer[data_width*j + i*sim_dimensions], sim_dimensions);
+          copyVec(VectorData(i)(id), &buffer[data_width*j + i*sim_dimensions], sim_dimensions);
         // Pack scalar data.
         for (int i=0; i<n_scalars; ++i) 
-          buffer[data_width*j + vdata.size()*sim_dimensions + i] = sdata[i][id];
+          buffer[data_width*j + vdata.size()*sim_dimensions + i] = ScalarData(i, id);
         // Pack integer data.
         for (int i=0; i<n_integers; ++i) 
-          buffer[data_width*j + n_vectors*sim_dimensions + n_scalars + i] = byte_cast<RealType>(idata[i][id]); //*reinterpret_cast<RealType*>(&idata[i][id]);
+          buffer[data_width*j + n_vectors*sim_dimensions + n_scalars + i] = byte_cast<RealType>(IntegerData(i, id));
         // Mark particle for removal.
         if (remove) markForRemoval(id);
       }
@@ -1246,13 +1250,13 @@ namespace GFlowSimulation {
         copyVec(xrel, &buffer[data_width*j], sim_dimensions); // Position
         // Send the rest of the data the normal way. Pack vector data.
         for (int i=1; i<n_vectors; ++i) 
-          copyVec(VectorData(i)(id) /*vdata[i][id]*/, &buffer[data_width*j + i*sim_dimensions], sim_dimensions);
+          copyVec(VectorData(i, id), &buffer[data_width*j + i*sim_dimensions], sim_dimensions);
         // Pack scalar data.
         for (int i=0; i<n_scalars; ++i) 
-          buffer[data_width*j + n_vectors*sim_dimensions + i] = ScalarData(i)(id); /*sdata[i][id];*/
+          buffer[data_width*j + n_vectors*sim_dimensions + i] = ScalarData(i, id);
         // Pack integer data.
         for (int i=0; i<n_integers; ++i)
-          buffer[data_width*j + n_vectors*sim_dimensions + n_scalars + i] = byte_cast<RealType>(IntegerData(i)(id)); // idata[i][id]);
+          buffer[data_width*j + n_vectors*sim_dimensions + n_scalars + i] = byte_cast<RealType>(IntegerData(i, id));
       }
       // Send the data (non-blocking).
       MPI_Isend(buffer.data(), size*data_width, MPI_FLOAT, n_rank, tag, MPI_COMM_WORLD, send_request);
@@ -1278,12 +1282,14 @@ namespace GFlowSimulation {
         // Add a spot for a particle, then copy the data into this particle.
         int id = addParticle(); // Get id of new particle.
         // Unpack vector data.
-        for (int i=0; i<n_vectors; ++i) copyVec(&buffer[data_width*j + i*sim_dimensions], VectorData(i)(id) /*vdata[i][id]*/, sim_dimensions);
+        for (int i=0; i<n_vectors; ++i) 
+          copyVec(&buffer[data_width*j + i*sim_dimensions], VectorData(i, id), sim_dimensions);
         // Unpack scalar data.
-        for (int i=0; i<n_scalars; ++i) sdata[i][id] = buffer[data_width*j + n_vectors*sim_dimensions + i];
+        for (int i=0; i<n_scalars; ++i) 
+          ScalarData(i, id) = buffer[data_width*j + n_vectors*sim_dimensions + i];
         // Unpack integer data.
         for (int i=0; i<n_integers; ++i) {
-          idata[i][id] = byte_cast<int>(buffer[data_width*j + n_vectors*sim_dimensions + n_scalars + i]);
+          IntegerData(i, id) = byte_cast<int>(buffer[data_width*j + n_vectors*sim_dimensions + n_scalars + i]);
         }
       } 
     }

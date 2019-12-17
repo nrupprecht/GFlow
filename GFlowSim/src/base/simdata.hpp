@@ -628,6 +628,4 @@ namespace GFlowSimulation {
   typedef SimData::integer_access integer_access;
 
 }
-
-
 #endif // __ATOMS_HPP_GFLOW__

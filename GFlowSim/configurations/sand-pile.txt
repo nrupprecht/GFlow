@@ -3,8 +3,8 @@ Dimensions: 2
 Var: phi=0.8
 Var: width=24
 Var: height=4
-Var: MinR=0.03
-Var: MaxR=0.05
+Var: MinR=0.02
+Var: MaxR=0.06
 
 // Set the simulation bounds
 Bounds: {
@@ -19,7 +19,7 @@ Integrator: VelocityVerlet {
 Boundary: Repulse
 
 // Set the number of particle types
-NTypes: 1
+NTypes: 2
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
 Force-grid: Hertz {
@@ -27,6 +27,7 @@ Force-grid: Hertz {
   Kt: 290000
   GammaN: 10000
   GammaT: 5000
+  Mu: 0.75
 }
 
 Gravity: 0, -9.8
@@ -35,7 +36,7 @@ Gravity: 0, -9.8
 Fill: Area {
   // Fill all the simulation with particles
   Bounds: {
-    : -0.1*width, 0.1*width
+    : -0.125*width, 0.125*width
     : 3*MaxR, 0.75*height
   }
 
@@ -61,6 +62,7 @@ Fill: Wall {
   End: width, MaxR
   Radius: MaxR
   Spacing: 2*MaxR
+  Type: 1
 }
 
 // No HS relax.

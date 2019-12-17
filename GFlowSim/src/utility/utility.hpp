@@ -62,6 +62,7 @@ namespace GFlowSimulation {
 
   // Define what type of floating point data to use
   typedef float RealType;
+  typedef float real;
 
   // Unsigned int
   typedef unsigned int uint;

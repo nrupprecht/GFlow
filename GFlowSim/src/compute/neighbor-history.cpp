@@ -2,10 +2,14 @@
 
 namespace GFlowSimulation {
 
-  bool NeighborHistory::in_contact(int id0, int id1) const {
-    if (id1<id0) std::swap(id0, id1);
+  int& NeighborHistory::in_contact(const int id0, const int j) {
+    // See if id1 is in id0's contact vector.
+    return contact_vector[id0][j];
+  }
 
-    return false;
+  real& NeighborHistory::value(const int id0, const int j) {
+    // Return the history value. For the sake of speed, we don't check bounds.
+    return value_vector[id0][j];
   }
 
 }

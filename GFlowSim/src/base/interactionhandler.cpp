@@ -160,7 +160,7 @@ namespace GFlowSimulation {
     // Call traverse cells, marking particles that overlap too much for removal.
     traversePairs([&] (int id1, int id2, int, RealType r1, RealType r2, RealType rsqr) {
       RealType overlap = r1 + r2 - sqrt(rsqr);
-      if (overlap/min(r1, r2) > factor) simData->markForRemoval(id2);
+      if (overlap/min(r1, r2) > factor && simData->Im(id1)>0) simData->markForRemoval(id2);
     });
 
     // Remove particles
@@ -236,11 +236,13 @@ namespace GFlowSimulation {
     RealType candidate = inv_sphere_volume((2.2*target_list_size)/rho + 0.5*sphere_volume(max_small_sigma, sim_dimensions), sim_dimensions) - 2*max_small_sigma;
     skin_depth = max(static_cast<RealType>(0.5 * max_small_sigma), candidate);
 
+    #if USE_MPI==1
     // Use the same skin depth on all processors - take the average.
     if (topology && topology->getNumProc()>1) {
       MPIObject::mpi_sum(skin_depth);
       skin_depth /= static_cast<RealType>(topology->getNumProc());
     }
+    #endif
   }
 
   void InteractionHandler::calculate_max_small_sigma() {
@@ -361,7 +363,6 @@ namespace GFlowSimulation {
   inline void InteractionHandler::set_up_grids() {
     // Get ntypes 
     ntypes = forceMaster->getNTypes();
-
     if (gflow->getUseForces()) {
       // Handle cutoff grid.
       if (cutoff_grid) dealloc_array_2d(cutoff_grid);
@@ -417,11 +418,12 @@ namespace GFlowSimulation {
 
   void InteractionHandler::pair_interaction(const int id1, const int id2, const int list) {
     // Make sure it is not the case that both particles are not real.
-    if (!simData->isReal(id1) && !simData->isReal(id2)) return;
+    // if (!simData->isReal(id1) && !simData->isReal(id2)) return;
+    
     // Get the interaction.
-    Interaction *it = interaction_grid[simData->Type(id1)][simData->Type(id2)];
+    Interaction *pair_force = interaction_grid[simData->Type(id1)][simData->Type(id2)];
     // A null force means no interaction
-    if (it) it->addPair(id1, id2, list);
+    if (pair_force) pair_force->addPair(id1, id2, list);
   }
 
 }

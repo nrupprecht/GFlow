@@ -11,10 +11,10 @@ namespace GFlowSimulation {
   * \brief Generic class for basic hard sphere forces.
   *
   */
-  template<int dims, template<int, class> class handler> class HardSphereGeneric : public handler<dims, HardSphereGeneric<dims, handler> > {
+  template<int dims, template<int, class, bool> class handler> class HardSphereGeneric : public handler<dims, HardSphereGeneric<dims, handler>, false> {
   public:
     //! \brief Typedef for the handler type.
-    typedef handler<dims, HardSphereGeneric<dims, handler> > Handler;
+    typedef handler<dims, HardSphereGeneric<dims, handler>, false> Handler;
 
     //! \brief Constructor.
     HardSphereGeneric(GFlow *gflow) : Handler(gflow) {};
@@ -81,10 +81,10 @@ namespace GFlowSimulation {
   * \brief Generic class for hard sphere forces with dissipation.
   *
   */
-  template<int dims, template<int, class> class handler> class HardSphereDsGeneric : public handler<dims, HardSphereDsGeneric<dims, handler> > {
+  template<int dims, template<int, class, bool> class handler> class HardSphereDsGeneric : public handler<dims, HardSphereDsGeneric<dims, handler>, false> {
   public:
     //! \brief Typedef for the handler type.
-    typedef handler<dims, HardSphereDsGeneric<dims, handler> > Handler;
+    typedef handler<dims, HardSphereDsGeneric<dims, handler>, false> Handler;
 
     //! \brief Constructor.
     HardSphereDsGeneric(GFlow *gflow) : Handler(gflow) {};
@@ -157,10 +157,10 @@ namespace GFlowSimulation {
   * \brief Generic class for lennard jones forces.
   *
   */
-  template<int dims, template<int, class> class handler> class LennardJonesGeneric : public handler<dims, LennardJonesGeneric<dims, handler> > {
+  template<int dims, template<int, class, bool> class handler> class LennardJonesGeneric : public handler<dims, LennardJonesGeneric<dims, handler>, false> {
   public:
     //! \brief Typedef for the handler type.
-    typedef handler<dims, LennardJonesGeneric<dims, handler> > Handler;
+    typedef handler<dims, LennardJonesGeneric<dims, handler>, false> Handler;
 
     //! \brief Constructor.
     LennardJonesGeneric(GFlow *gflow) : Handler(gflow) {
@@ -246,10 +246,10 @@ namespace GFlowSimulation {
   * \brief Generic class for (short range) coulombic forces.
   *
   */
-  template<int dims, template<int, class> class handler> class CoulombGeneric : public handler<dims, CoulombGeneric<dims, handler> > {
+  template<int dims, template<int, class, bool> class handler> class CoulombGeneric : public handler<dims, CoulombGeneric<dims, handler>, false> {
   public:
     //! \brief Typedef for the handler type.
-    typedef handler<dims, CoulombGeneric<dims, handler> > Handler;
+    typedef handler<dims, CoulombGeneric<dims, handler>, false> Handler;
 
     //! \brief Constructor.
     CoulombGeneric(GFlow *gflow) : Handler(gflow) {
@@ -257,7 +257,7 @@ namespace GFlowSimulation {
     };
 
     //! \brief Constructor, sets strength.
-    CoulombGeneric(GFlow *gflow, RealType str) : handler<dims, CoulombGeneric<dims, handler> >(gflow), strength(str) {
+    CoulombGeneric(GFlow *gflow, RealType str) : Handler(gflow), strength(str) {
       setCutoff(3.);
     };
 
@@ -326,10 +326,10 @@ namespace GFlowSimulation {
   * \brief Generic class for Buckingham forces.
   *
   */
-  template<int dims, template<int, class> class handler> class BuckinghamGeneric : public handler<dims, BuckinghamGeneric<dims, handler> > {
+  template<int dims, template<int, class, bool> class handler> class BuckinghamGeneric : public handler<dims, BuckinghamGeneric<dims, handler>, false> {
   public:
     //! \brief Typedef for the handler type.
-    typedef handler<dims, BuckinghamGeneric<dims, handler> > Handler;
+    typedef handler<dims, BuckinghamGeneric<dims, handler>, false> Handler;
 
     //! \brief Constructor.
     BuckinghamGeneric(GFlow *gflow) : Handler(gflow) {
@@ -420,10 +420,10 @@ namespace GFlowSimulation {
   * \brief Generic class for Hertz-type forces.
   *
   */
-  template<int dims, template<int, class> class handler> class HertzGeneric : public handler<dims, HertzGeneric<dims, handler> > {
+  template<int dims, template<int, class, bool> class handler> class HertzGeneric : public handler<dims, HertzGeneric<dims, handler>, false> {
   public:
     //! \brief Typedef for the handler type.
-    typedef handler<dims, HertzGeneric<dims, handler> > Handler;
+    typedef handler<dims, HertzGeneric<dims, handler>, false> Handler;
 
     //! \brief Constructor.
     HertzGeneric(GFlow *gflow) : Handler(gflow) {
@@ -490,12 +490,12 @@ namespace GFlowSimulation {
       subtract_vec<dims>(V, Vn, Vt);
 
       // Angular velocities.
-      if (dims==2 && mu>0) {
+      if (dims==2) {
         // Tangential normal direction for 2d.
         RealType Nt[dims];
         Nt[0] = -X[1];
         Nt[1] =  X[0];
-        RealType vt = dot_vec<dims>(Vt, Nt); //sqrt(dot_vec<dims>(Vt, Vt));        
+        RealType vt = dot_vec<dims>(Vt, Nt);
 
         // Calculate difference in velocities at the point of intersection.
         vt -= (om(id1)*R1 + om(id2)*R2); // Relative surface velocity due to angular velocity.
@@ -504,7 +504,9 @@ namespace GFlowSimulation {
         // see e.g. Luding, Gran. Matter 2008, v 10, p. 235. But I'd have to keep track of the
         // history of particles, even between neighbor list updates, which is too much of a pain 
         // for now.
-        RealType Ft = - c1 * (K_t*0 + M_eff*gamma_t*vt);
+        //RealType Ft = - c1 * (K_t*0 + M_eff*gamma_t*vt);
+        RealType Ft = -(mu*fabs(Fn)*sign(vt) + c1*M_eff*gamma_t*vt);
+
 	       // Limit the maximum force.
         RealType maxF = fabs(mu*Fn);
         if      (Ft> maxF) Ft =  maxF;
@@ -551,7 +553,6 @@ namespace GFlowSimulation {
       parser.addHeadingOptional("GammaT");
       parser.addHeadingOptional("Mu");
       // Gather parameters
-      RealType cut = -1.;
       parser.firstArg("Kn", K_n);
       parser.firstArg("Kt", K_t);
       parser.firstArg("GammaN", gamma_n);
@@ -593,10 +594,10 @@ namespace GFlowSimulation {
   * \brief Generic class for Hertz-type forces.
   *
   */
-  template<int dims, template<int, class> class handler> class HookeGeneric : public handler<dims, HookeGeneric<dims, handler> > {
+  template<int dims, template<int, class, bool> class handler> class HookeGeneric : public handler<dims, HookeGeneric<dims, handler>, false> {
   public:
     //! \brief Typedef for the handler type.
-    typedef handler<dims, HookeGeneric<dims, handler> > Handler;
+    typedef handler<dims, HookeGeneric<dims, handler>, false> Handler;
 
     //! \brief Constructor.
     HookeGeneric(GFlow *gflow) : Handler(gflow) {
@@ -758,10 +759,10 @@ namespace GFlowSimulation {
   *  \brief Generic class for Triangle - Triangle interaction. Only defined for 2D simulations.
   *
   */
-  template<template<int, class> class handler> class TriangleForce2D : public handler<2, HookeGeneric<2, handler> > {
+  template<template<int, class, bool> class handler> class TriangleForce2D : public handler<2, HookeGeneric<2, handler>, false> {
   public:
     //! \brief Typedef for the handler type.
-    typedef handler<2, HookeGeneric<2, handler> > Handler;
+    typedef handler<2, HookeGeneric<2, handler>, false> Handler;
 
     TriangleForce2D(GFlow *gflow) : Handler(gflow) {
       // Add the needed data entries and integrator.
