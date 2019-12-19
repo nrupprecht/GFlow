@@ -5,6 +5,9 @@
 namespace GFlowSimulation {
 
   WindTunnel::WindTunnel(GFlow *gflow, RealType v) : Modifier(gflow), velocity(v), halfWidth(4.), acceleration(2.) {
+    // Make sure half widths are not too large.
+    halfWidth = std::min(0.1f*gflow->getBounds().wd(0), halfWidth);
+    // Set bounds.
     leftBound  = gflow->getBounds().min[0] + halfWidth;
     rightBound = gflow->getBounds().max[0] - halfWidth;
   }

@@ -120,7 +120,7 @@ namespace GFlowSimulation {
     #if SIMD_TYPE==SIMD_NONE
     // Do serially
     for (int i=0; i<simData->size_owned(); ++i) {
-      Real magnitude = magnitudeVec(v(i), sim_dimensions);
+      real magnitude = magnitudeVec(v(i), sim_dimensions);
       if (maxV<magnitude) maxV = magnitude;
     }
     return maxV;
