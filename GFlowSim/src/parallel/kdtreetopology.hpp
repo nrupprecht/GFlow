@@ -82,6 +82,23 @@ namespace GFlowSimulation {
     //! \brief Return the bounds of the i-th neighboring processor.
     virtual const Bounds& get_neighbor_bounds(int) const override;
 
+    // --- Object exchange
+
+    //! \brief Exchange particles that belong to other processors.
+    //!
+    //! Move particles that belong to other domains to those domains, and delete them from here. Then recieve
+    //! particles from other domains that belong to this domain.
+    virtual void exchange_particles() override;
+
+    //! \brief Send and receive ghost particles.
+    virtual void create_ghost_particles() override;
+
+    //! \brief Send data to other processors to update ghost data.
+    virtual void send_ghost_updates() override;
+
+    //! \brief Receive data from other processors to update ghosts on this processor.
+    virtual void recv_ghost_updates() override;
+
   private:
 
     //! \brief Compute the KD tree decomposition of the simulation bounds.
@@ -94,6 +111,20 @@ namespace GFlowSimulation {
 
     //! \brief Determine which neighbors we might have to send ghosts particles to.
     void determine_sendable_neighbor_ranks();
+
+    // --- Sending helpers
+
+    //! \brief Pack up the particle data for the specified ids and send it to another processor, optionally deleting the original particles
+    //! from this processor.
+    inline void send_particle_data(const vector<int>&, int, vector<RealType>&, MPI_Request*, int, bool=false);
+
+    //! \brief Send particles, so that their position relative to the other processor is minimal. Used for sending ghost particles.
+    inline void send_particle_data_relative(const vector<int>&, int, vector<RealType>&, MPI_Request*, int, int);
+
+    //! \brief Recieve particle information, and use it to create new particles. Return the number of particles recieved.
+    inline int recv_new_particle_data(int, vector<RealType>&, int);
+
+    // --- Data
 
     //! \brief The root of the kd tree.
     KDTreeTopNode *root = nullptr;

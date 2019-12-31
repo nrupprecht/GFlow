@@ -65,6 +65,9 @@ namespace GFlowSimulation {
     // --- Initialize all the subobjects
     simData->initialize();
 
+    if (topology) topology->initialize();
+    else non_null = false;
+
     if(integrator) integrator->initialize();
     else non_null = false;
 
@@ -75,9 +78,6 @@ namespace GFlowSimulation {
     else non_null = false;
 
     if (dataMaster) dataMaster->initialize();
-    else non_null = false;
-
-    if (topology) topology->initialize();
     else non_null = false;
 
     for (auto &md : modifiers) {
@@ -196,8 +196,8 @@ namespace GFlowSimulation {
       // Update ghost particles. This the positions of particles on this processor that are ghosts on other processors back to 
       // the other processors. This should be done after VV second half kick happens.
       if (!_handler_remade && _use_ghosts) {
-        simData->startGhostParticleUpdates();
-        simData->finishGhostParticleUpdates(); 
+        topology->send_ghost_updates();
+        topology->recv_ghost_updates();
       }
 
       // Calculate interactions and forces.

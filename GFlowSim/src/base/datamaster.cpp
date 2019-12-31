@@ -506,12 +506,12 @@ namespace GFlowSimulation {
         formats("- MPI ranks:", toStr(numProc));
         fout << "  - Ghost time per step:      " << gflow->mpi_ghost_timer.get_time()/iterations << "\n";
         fout << "  - Ghost fraction:           " << toStrRT(gflow->mpi_ghost_timer.get_time() / run_time) << "\n";
-        fout << "  - Last # ghosts sent:       " << simData->getLastNGhostsSent() << "\n";
-        fout << "  - Last # ghosts received:   " << simData->getLastNGhostsRecv() << "\n";
+        fout << "  - Last # ghosts sent:       " << topology->getLastNGhostsSent() << "\n";
+        fout << "  - Last # ghosts received:   " << topology->getLastNGhostsRecv() << "\n";
         fout << "  - Time per exchange:        " << gflow->mpi_exchange_timer.get_time()/handler->getNumberOfRemakes() << "\n";
         fout << "  - Exchange fraction:        " << toStrRT((iterations*gflow->mpi_exchange_timer.get_time())/(run_time*handler->getNumberOfRemakes())) << "\n";
-        fout << "  - Last # exchange sent:     " << simData->getLastNExchangeSent() << "\n";
-        fout << "  - Last # exchange received: " << simData->getLastNExchangeRecv() << "\n";
+        fout << "  - Last # exchange sent:     " << topology->getLastNExchangeSent() << "\n";
+        fout << "  - Last # exchange received: " << topology->getLastNExchangeRecv() << "\n";
         fout << "\n";
       }
     }
@@ -791,7 +791,7 @@ namespace GFlowSimulation {
     vector<int> int_vector(num_proc, 0);
     vector<float> float_vector(num_proc, 0.f);
 
-    int neighbors = simData->neighbor_ranks.size();
+    int neighbors = topology->getNumNeighbors();
     MPIObject::mpi_gather(neighbors, int_vector);
     fout << "# Neighbors:";
     for (int i=0; i<num_proc; ++i) fout << ", " << int_vector[i];

@@ -129,7 +129,7 @@ namespace GFlowSimulation {
     simd_float _maxv = simd_set1(0.);
     int i=0, total = simData->size_owned() * sim_dimensions;
     for (; i<total-simd_data_size; i += simd_data_size) {
-      simd_float _va = simd_abs(v.load_to_simd(i)); // simd_abs(simd_load(&v[i]));
+      simd_float _va = simd_abs(v.load_to_simd(i));
       simd_float _mask = simd_less_than(_maxv, _va);
       simd_update_masked(_maxv, _va, _mask);
     }
