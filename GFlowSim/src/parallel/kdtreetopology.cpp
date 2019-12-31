@@ -403,7 +403,7 @@ namespace GFlowSimulation {
       Bounds& bounds = node->bounds;
 
       // \todo What about large particles?
-      RealType cutoff = handler->getSkinDepth();
+      RealType cutoff = 0.1; // handler->getSkinDepth();
 
       // Get minimim image dispacement between centers of the bounds.
       bounds.center(bcm.data);
@@ -412,7 +412,7 @@ namespace GFlowSimulation {
       // Check if the processor bounds are adjacent.
       bool adjacent = true;
       for (int d=0; d<sim_dimensions && adjacent; ++d) {
-        if (0.5*(process_bounds.wd(d) + bounds.wd(d)) + cutoff < fabs(dx[d])) adjacent = false;
+        if (fabs(dx[d]) > 0.5*(process_bounds.wd(d) + bounds.wd(d)) + cutoff) adjacent = false;
       }
 
       if (adjacent) {
