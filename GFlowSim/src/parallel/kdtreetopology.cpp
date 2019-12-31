@@ -18,12 +18,12 @@ namespace GFlowSimulation {
     if (simulation_bounds.vol()<=0) return;
 
     // Initialize.
+    if (root) delete root;
     root = new KDTreeTopNode(simulation_bounds, 0);
     compute_decomp(0, numProc, root, 0);
 
     // Compute neighbors for this processor. 
     find_neighbors();
-    
 
     // Allocate helper arrays.
     allocate_arrays();
@@ -336,9 +336,6 @@ namespace GFlowSimulation {
       node->right = nullptr;
     }
 
-    // Correct dimension
-    //dim %= sim_dimensions;
-
     // Decide on splitting dimension. This splits along the largest dimension.
     RealType maxwidth = node->bounds.wd(0);
     dim = 0;
@@ -528,6 +525,7 @@ namespace GFlowSimulation {
           simData->IntegerData(i, id) = byte_cast<int>(buffer[data_width*j + n_vectors*sim_dimensions + n_scalars + i]);
       } 
     }
+
     // Return the number of particles that were received.
     return size;
   }

@@ -393,89 +393,11 @@ namespace GFlowSimulation {
     // -*-*-*- MPI/Parallel related -*-*-*-
     #if USE_MPI == 1
 
-    
-
-    // //! \brief Exchange particles that belong to other processors.
-    // //!
-    // //! Move particles that belong to other domains to those domains, and delete them from here. Then recieve
-    // //! particles from other domains that belong to this domain.
-    // inline void exchange_particles();
-
-    // //! \brief Figure out which particles should be ghost particles, and send copies of them to neighboring processors.
-    // inline void create_ghost_particles();
-
-    // //! \brief Send ghost particle updates to other processors.
-    // inline void send_ghost_updates();
-    // //! \brief Start receiving ghost particle updates.
-    // inline void start_ghost_recv();
-    // //! \brief Receive ghost particle updates from other processors and store data.
-    // inline void recv_ghost_updates();
-
-    // //! \brief Pack up the particle data for the specified ids and send it to another processor, optionally deleting the original particles
-    // //! from this processor.
-    // inline void send_particle_data(const vector<int>&, int, vector<RealType>&, MPI_Request*, int, bool=false);
-
-    // //! \brief Send particles, so that their position relative to the other processor is minimal. Used for sending ghost particles.
-    // inline void send_particle_data_relative(const vector<int>&, int, vector<RealType>&, MPI_Request*, int, int);
-
-    // //! \brief Recieve particle information, and use it to create new particles. Return the number of particles recieved.
-    // inline int recv_new_particle_data(int, vector<RealType>&, int);
-
     //! \brief Width of data to send when migrating particles.
     int data_width = 0;
 
     //! \brief Width of data to send when sending ghost particle information.
     int ghost_data_width = 0;
-
-    // //! \brief All the processors that are neighbors.
-    // vector<int> neighbor_ranks;
-
-    // //! \brief Maps rank to position in neighbor_ranks.
-    // std::map<int, int> neighbor_map;
-
-    // /// Sending data
-
-    // //! \brief The i-th vector in the array contains ids of the particles that should be sent from this processor
-    // //! to the i-th neighboring processor.
-    // vector<vector<int> > send_ids;
-
-    // /// Recieving data.
-
-    // //! \brief The i-th entry in the vector contains the number of particles (NOT data size) that we need to send to 
-    // //! the i-th neighboring processor.
-    // vector<int> send_size;
-    
-    // //! \brief The i-th entry in the vector contains the number of particles (NOT data size) that the i-th neighboring 
-    // //! processor will send to this processor.
-    // vector<int> recv_size;
-
-    // //! \brief Record the last number of ghost particles we had to send (so we can keep track).
-    // int _last_n_ghosts_sent = 0;
-    // //! \brief Record the last number of ghost particles we had to receive (so we can keep track).
-    // int _last_n_ghosts_recv = 0;
-    // //! \brief Record the last number of particles exchanged to other processors.
-    // int _last_n_exchange_sent = 0;
-    // //! \brief Record the last number of particles exchanged from other processors.
-    // int _last_n_exchange_recv = 0;
-
-    // //! \brief List of particles to send as ghosts to neighboring processors. The i-th entry is for the i-th neighbor. The processor id
-    // //! can be found by asking the topology (for now this only applies to KD tree, but it probably should be changed to apply to all types
-    // //! of topologies).
-    // vector<vector<int> > send_ghost_list;
-
-    // //! \brief How many ghost particles we will recieve from each neighbor processor.
-    // vector<int> recv_ghost_sizes;
-
-    // /// Sending and receiving data.
-
-    // //! \brief A buffer for sending data.
-    // vector<vector<RealType>> buffer_list;
-
-    // //! \brief A buffer for receiving data.
-    // vector<vector<RealType> > recv_buffer;
-
-    // vector<MPI_Request> recv_request_list;
-    // vector<MPI_Request> send_request_list;
 
     // --- What types of data to send to adjacent processors.
 

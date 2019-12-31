@@ -74,9 +74,6 @@ namespace GFlowSimulation {
     if (n_size>0) {
       // Send ids array.
       send_ids.resize(n_size);
-
-      cout << "Send ids size: " << send_ids.size() << endl;
-
       // Send ghost list array.
       send_ghost_list.resize(n_size);
       // Request list arrays.

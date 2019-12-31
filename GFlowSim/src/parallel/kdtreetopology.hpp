@@ -134,9 +134,6 @@ namespace GFlowSimulation {
     //! \brief A vector of all the (other) processor nodes (leaves of the tree).
     vector<KDTreeTopNode*> all_processor_nodes;
 
-    //! \brief The ranks of processors that are potential neighbors of this processor.
-    vector<int> neighbor_ranks;
-
     //! \brief The nodes of the i-th neighbors for this node. Useful for checking what neighbor's bounds are.
     vector<KDTreeTopNode*> neighbor_nodes;
   };
