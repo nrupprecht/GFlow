@@ -16,6 +16,9 @@
 // For strlen
 #include <cstring>
 
+// For std::bad_alloc
+#include <new>
+
 /*
 *  --- NOTES:
 *  Running functions dynamically:
@@ -340,13 +343,18 @@ int main(int argc, char **argv) {
   try {
     gflow->run();
   }
+  catch (const std::bad_alloc& err) {
+    cout << "Rank: " << rank << ": std::bad_alloc. Message: " << err.what() << "\n";
+    throw;
+  }
   catch (Exception *exc) {
-    if (!quiet)
-      cout << "Rank: " << rank << ", Message: " << exc->message << endl;
+    //if (!quiet)
+    cout << "Rank: " << rank << ", Message: " << exc->message << "\n";
     throw;
   }
   catch (...) {
-    if (!quiet) cout << "Exited with exception.\n";
+    //if (!quiet) 
+    cout << "Exited with exception.\n";
     // Write accumulated data to files
     if (rank==0) gflow->writeData(writeDirectory);
     // Rethrow the exception
