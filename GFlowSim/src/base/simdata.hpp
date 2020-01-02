@@ -350,22 +350,14 @@ namespace GFlowSimulation {
 
     // -*-*-*- Numbers -*-*-*-
 
-    //! \brief Number of owned particles on this processor.
+    //! \brief Number of particles on this processor.
     vector<int> _number;
-
-    vector<int> _size;
 
     //! \brief The last entry in a data array that might contain valid particles.
     //!
     //! Often, this might be the entry after the last valid particle on the processor. However, if the last valid particle was deleted, 
     //! this might not be the case.
-    int _size_owned = 0;
-
-    //! \brief The last entry in a data array that might contain valid ghost particles. 
-    //!
-    //! Often, this might be the entry after the last valid particle on the processor. However, if the last valid ghost particle was deleted, 
-    //! this might not be the case.
-    int _size_ghost = 0;
+    vector<int> _size;
 
     //! \brief Copy this data from force master.
     int _ntypes = 0;

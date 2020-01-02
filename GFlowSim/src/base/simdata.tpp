@@ -60,7 +60,7 @@ template<unsigned particle_type> int SimData::addParticle(const real *x, const r
   Type<particle_type>(size) = type;
   if (particle_type==0) {
     if (use_id_map) id_map[particle_type].emplace(size, next_global_id);
-    Id(size) = next_global_id++;
+    Id<0>(size) = next_global_id++;
   }
   ++_number[particle_type];
   ++size;
@@ -71,12 +71,13 @@ template<unsigned particle_type> int SimData::addParticle(const real *x, const r
 template<unsigned particle_type> void SimData::markForRemoval(const int id) {
   static_assert(check_particle_type(particle_type));
   // If the particle has already been marked for removal, or is beyond the end of the array, return.
-  if (Type(id)<0 || id>=_size_owned) return;
+  if (Type<particle_type>(id)<0 || id>=_size[particle_type]) return;
   // Mark for removal, clear some data
-  remove_list.emplace(id);
-  Type<particle_type>(id) = -1;
+  if (particle_type==0) remove_list.emplace(id);
   if (use_id_map) id_map[particle_type].erase(Id<particle_type>(id));
-  Id<particle_type>(id) = -1;
+  Type<particle_type>(id) = -1;
+  // Decrement number of particles.
+  _number[particle_type] -= 1;
 }
 
 // --- Data access

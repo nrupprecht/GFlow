@@ -9,6 +9,9 @@
 
 namespace GFlowSimulation {
 
+
+
+
   SimData::SimData(GFlow *gflow) : Base(gflow) {
     data_entries = vector<particle_data>(max_particle_types, particle_data(sim_dimensions));
     _number = vector<int>(max_particle_types, 0);
@@ -48,8 +51,8 @@ namespace GFlowSimulation {
 
     #if USE_MPI == 1
     // Temporary fix - get rid of all particles not hosted on this processor.
-    if (topology->getNumProc()>1 && _size_owned>0 && topology->is_initialized())
-      for (int i=0; i<_size_owned; ++i)
+    if (topology->getNumProc()>1 && _size[0]>0 && topology->is_initialized())
+      for (int i=0; i<_size[0]; ++i)
         if (!topology->owned_particle(X(i))) markForRemoval(i);
     #endif
 
@@ -91,23 +94,22 @@ namespace GFlowSimulation {
     removeHaloAndGhostParticles();
 
     // Do actual particle removal.
-    doParticleRemoval();
-
-    // Set markers.
-    _size_ghost = 0;  
+    doParticleRemoval(); 
   }
 
   void SimData::reserve(int num) {
     // Reserve space for owned particles.
-    data_entries[0].reserve(num);
-    // Reset numbers
-    _number[0] = 0;
-    _size[0] = 0;
+    if (_number[0]>0 || data_entries[0].capacity()<num) {
+      data_entries[0].reserve(num);
+      // Reset numbers
+      _number[0] = 0;
+      _size[0] = 0;
+    }
   }
 
   void SimData::doParticleRemoval() {
     // If there is nothing to remove, we're done
-    if (remove_list.empty() || _number[0]==0) return;
+    if (remove_list.empty()) return;
 
     // Start simdata timer.
     start_timer();
@@ -126,9 +128,7 @@ namespace GFlowSimulation {
       }
       else break;
     }
-    // Decrease number.
-    _number[0] -= remove_list.size();
-    // Array is compressed.
+    // Array is compressed. Number is decremented in markForRemoval function.
     _size[0] = _number[0];
     // Clear the remove list
     remove_list.clear();
@@ -148,8 +148,8 @@ namespace GFlowSimulation {
     // Make sure all particles are valid, and compressed
     doParticleRemoval(); // This only sets the needs remake flag if it removes particles.
     // Quick sort
-    quick_sort(0, _size_owned-1, 0);
-    recursion_help (0, _size_owned-1, 1);
+    quick_sort(0, _size[0]-1, 0);
+    recursion_help (0, _size[0]-1, 1);
     // Set needs remake flag
     setNeedsRemake(true);
   }
@@ -160,7 +160,7 @@ namespace GFlowSimulation {
     // Make sure all particles are valid, and compressed
     doParticleRemoval(); // This only sets the needs remake flag if it removes particles.
     // FOR NOW: JUST SORT ALONG X AXIS
-    quick_sort(0, _size_owned-1, 0);
+    quick_sort(0, _size[0]-1, 0);
     // Set needs remake flag
     setNeedsRemake(true);
   }
@@ -318,7 +318,7 @@ namespace GFlowSimulation {
     start_timer();
 
     // Remove ghost particles by setting them to type -1.
-    for (int i=0; i<_number[1]; ++i) Type<1>(i) = -1;
+    for (int i=0; i<_size[1]; ++i) Type<1>(i) = -1;
     // Set counters to zero.
     _size[1] = _number[1] = 0;
 

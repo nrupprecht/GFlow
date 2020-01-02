@@ -28,14 +28,23 @@ namespace GFlowSimulation {
 
     int add_vector_entry() {
       if (_capacity==0) vdata.push_back(nullptr);
-      else vdata.push_back(static_cast<real*>(malloc(_capacity*sim_dimensions*sizeof(real))));
+      else {
+        // auto ptr = static_cast<real*>(malloc(_capacity*sim_dimensions*sizeof(real)));
+        real *ptr = new real[_capacity*sim_dimensions];
+        vdata.push_back(ptr);
+
+        cout << "Added ptr: " << ptr << endl;
+      }
       // Return address of new entry.
       return vdata.size()-1;
     }
 
     int add_scalar_entry() {
       if (_capacity==0) sdata.push_back(nullptr);
-      else sdata.push_back(static_cast<real*>(malloc(_capacity*sizeof(real))));
+      else {
+        real *ptr = new real[_capacity]; // static_cast<real*>(malloc(_capacity*sizeof(real)))
+        sdata.push_back(ptr);
+      }
       // Return address of new entry.
       return sdata.size()-1;
     }
@@ -43,7 +52,8 @@ namespace GFlowSimulation {
     int add_integer_entry() {
       if (_capacity==0) idata.push_back(nullptr);
       else {
-        auto ptr = static_cast<int*>(malloc(_capacity*sizeof(int)));
+        //auto ptr = static_cast<int*>(malloc(_capacity*sizeof(int)));
+        int *ptr = new int[_capacity];
         std::fill(ptr, ptr+_capacity, -1);
         idata.push_back(ptr);
       }
@@ -57,11 +67,11 @@ namespace GFlowSimulation {
       int new_capacity = _capacity + additional_capacity;
 
       // Allocate new vector data arrays
-      create_memory(vdata, new_capacity, sim_dimensions, static_cast<real>(0.f));
+      create_memory<real>(vdata, new_capacity, sim_dimensions, static_cast<real>(0.f));
       // Allocate new scalar data arrays
-      create_memory(sdata, new_capacity, 1, static_cast<real>(0.f));
+      create_memory<real>(sdata, new_capacity, 1, static_cast<real>(0.f));
       // Allocate new integer data
-      create_memory(idata, new_capacity, 1, -1);
+      create_memory<int>(idata, new_capacity, 1, -1);
       
       // Set capacity.
       _capacity = new_capacity;
@@ -88,7 +98,7 @@ namespace GFlowSimulation {
     //! \brief Helper function that clears a single vector of arrays.
     template<typename T> inline void clear_type(vector<T*>& data_vector) {
       for (auto& ptr : data_vector) {
-        if (ptr) delete [] ptr; // free(ptr);
+        if (ptr) delete [] ptr; //free(ptr);
         ptr = nullptr;
       }
     }
@@ -100,24 +110,26 @@ namespace GFlowSimulation {
         // If there was no entry (array was size 0), allocate memory.
         if (ptr==nullptr) {
           //ptr = static_cast<T*>(malloc(alloc_size));
-          ptr = new T[data_width*desired_capacity];
-          std::fill(ptr, ptr + desired_capacity, default_value);
+          ptr = new T[desired_capacity*data_width];
         }
-        // If there was memory, try realloc.
+        // If there was memory, try realloc. We know that ptr!=nullptr.
         else {
           T* new_ptr = nullptr; // static_cast<T*>(realloc(ptr, alloc_size));
+
           // If this didn't work, we need to create a new pointer, copy the data, 
           // free the old data, and set the old ptr to be the new ptr.
           if (new_ptr==nullptr) {
             //new_ptr = static_cast<T*>(malloc(alloc_size));
-            new_ptr = new T[data_width*desired_capacity];
-            std::copy(ptr, ptr + _capacity, new_ptr);
+            new_ptr = new T[desired_capacity*data_width];
+            if (_capacity) std::copy(ptr, ptr + _capacity*data_width, new_ptr);
             //free(ptr);
             delete [] ptr;
             ptr = new_ptr;
-            std::fill(ptr + _capacity, ptr + desired_capacity, default_value);
           }
+          
         }
+        // Fill the rest of the vector with the default value.
+        std::fill(ptr + _capacity*data_width, ptr + desired_capacity*data_width, default_value);
       }
     }
 
@@ -135,7 +147,6 @@ namespace GFlowSimulation {
     //! \brief The capacity of the arrays (in entries, so an array of vectors will have _capacity * sim_dimensions reals in it).
     unsigned _capacity = 0;
   };
-
 
 }
 #endif // __PARTICLE_DATA_HPP__GFLOW__

@@ -26,7 +26,7 @@ void KDTreeTopology::send_particle_data(const vector<int>& send_id_list, int n_r
       for (int i=0; i<n_integers; ++i) 
         buffer[data_width*j + n_vectors*sim_dimensions + n_scalars + i] = byte_cast<RealType>(simData->IntegerData<particle_type>(i, id));
       // Mark particle for removal.
-      if (remove && particle_type==0) simData->markForRemoval(id);
+      if (remove) simData->markForRemoval<particle_type>(id);
     }
     // Send the data (non-blocking).
     MPI_Isend(buffer.data(), size*data_width, MPI_FLOAT, n_rank, tag, MPI_COMM_WORLD, send_request);

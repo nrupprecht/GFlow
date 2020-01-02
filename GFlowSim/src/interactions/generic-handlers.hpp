@@ -106,8 +106,8 @@ namespace GFlowSimulation {
       // Get the data pointers.
       auto x0 = simData->X<first_particle_type>();
       auto x1 = simData->X();
-      auto rd0 = simData->Sg();
-      auto rd1 = simData->Sg<first_particle_type>();
+      auto rd0 = simData->Sg<first_particle_type>();
+      auto rd1 = simData->Sg();
 
       // Set up internal arrays.
       static_cast<const ForceType*>(this)->template set_types<first_particle_type, 0>();
@@ -218,8 +218,8 @@ namespace GFlowSimulation {
       // Get the data pointers.
       auto x0 = simData->X<first_particle_type>();
       auto x1 = simData->X();
-      auto rd0 = simData->Sg();
-      auto rd1 = simData->Sg<first_particle_type>();
+      auto rd0 = simData->Sg<first_particle_type>();
+      auto rd1 = simData->Sg();
 
       // Set up internal arrays.
       static_cast<const ForceType*>(this)->template set_types<first_particle_type, 0>();
@@ -326,8 +326,8 @@ namespace GFlowSimulation {
       // Get the data pointers.
       auto x0 = simData->X<first_particle_type>();
       auto x1 = simData->X();
-      auto rd0 = simData->Sg();
-      auto rd1 = simData->Sg<first_particle_type>();
+      auto rd0 = simData->Sg<first_particle_type>();
+      auto rd1 = simData->Sg();
 
       // Set up internal arrays.
       static_cast<const ForceType*>(this)->template set_types<first_particle_type, 0>();
@@ -435,8 +435,8 @@ namespace GFlowSimulation {
       // Get the data pointers.
       auto x0 = simData->X<first_particle_type>();
       auto x1 = simData->X();
-      auto rd0 = simData->Sg();
-      auto rd1 = simData->Sg<first_particle_type>();
+      auto rd0 = simData->Sg<first_particle_type>();
+      auto rd1 = simData->Sg();
 
       // Set up internal arrays.
       static_cast<const ForceType*>(this)->template set_types<first_particle_type, 0>();
