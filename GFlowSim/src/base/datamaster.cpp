@@ -327,7 +327,7 @@ namespace GFlowSimulation {
     // --- Print timing summary
     RealType requestedTime = Base::gflow ? Base::gflow->getTotalRequestedTime() : 0;
     RealType ratio = Base::gflow->getTotalTime()/run_time;
-    int iterations = Base::gflow->getIter(), particles = Base::simData->number_owned();
+    int iterations = Base::gflow->getIter(), particles = simData->number_owned();
     MPIObject::mpi_sum0(particles);
 
     // --- Print helping lambda functions.
@@ -438,7 +438,7 @@ namespace GFlowSimulation {
 
     // Calculate volume that the particles on each processor take up.
     RealType vol = 0;
-    for (int n=0; n<Base::simData->number(); ++n) vol += pow(simData->Sg(n), sim_dimensions);
+    for (int n=0; n<simData->number(); ++n) vol += pow(simData->Sg(n), sim_dimensions);
     vol *= pow(PI, sim_dimensions/2.) / tgamma(sim_dimensions/2. + 1.);
     // Get the total volume all of the particles on all processors take up.
     MPIObject::mpi_sum0(vol);
@@ -480,14 +480,14 @@ namespace GFlowSimulation {
       }
       fout << "\n";
       fout << "  - Number of particles:      " << particles << "\n";
-      int types = Base::simData->ntypes();
+      int types = simData->ntypes();
       if (types>1) {
         int *count = new int[types];
         for (int ty=0; ty<types; ++ty) count[ty] = 0;
-        for (int n=0; n<Base::simData->number(); ++n) ++count[Base::simData->Type(n)];
+        for (int n=0; n<simData->number(); ++n) ++count[simData->Type(n)];
         for (int ty=0; ty<types; ++ty)
           fout << "     Type " << toStr(ty) << ":                  " << count[ty] << " (" << 
-            100 * count[ty] / static_cast<RealType>(Base::simData->number()) << "%)\n";
+            100 * count[ty] / static_cast<RealType>(simData->number()) << "%)\n";
         delete [] count;
       }
       
@@ -599,41 +599,41 @@ namespace GFlowSimulation {
 
   inline void DataMaster::writeParticleData(std::ostream& out) {
     // If there are no particles
-    if (Base::simData->number()==0) {
+    if (simData->number()==0) {
       cout << "No particles.\n";
     }
     // If there are particles, record data about them.
     RealType asigma(0), amass(0), aden(0), aspeed(0), ake(0);
-    RealType maxsigma = Base::simData->Sg(0), maxmass = 1./Base::simData->Im(0), 
-      maxden = 1./(Base::simData->Im(0)*sphere_volume(maxsigma, sim_dimensions)),
-      maxspeed = magnitudeVec(Base::simData->V(0), sim_dimensions), 
-      maxke = sqr(magnitudeVec(Base::simData->V(0), sim_dimensions))*(1./Base::simData->Im(0));
+    RealType maxsigma = simData->Sg(0), maxmass = 1./simData->Im(0), 
+      maxden = 1./(simData->Im(0)*sphere_volume(maxsigma, sim_dimensions)),
+      maxspeed = magnitudeVec(simData->V(0), sim_dimensions), 
+      maxke = sqr(magnitudeVec(simData->V(0), sim_dimensions))*(1./simData->Im(0));
     RealType minsigma = maxsigma, minmass = maxmass, minden = maxden, minspeed = maxspeed, minke = maxke;
     int count = 0; // There may be infinitely massive objects, or invalid objects. We do not count these in the averages.
-    for (int n=0; n<Base::simData->size(); ++n) {
-      if (Base::simData->Type(n)<0 || Base::simData->Im(n)<=0) continue;
+    for (int n=0; n<simData->size_owned(); ++n) {
+      if (simData->Type(n)<0 || simData->Im(n)<=0) continue;
       // Radius
-      RealType sig = Base::simData->Sg(n);
+      RealType sig = simData->Sg(n);
       asigma += sig; 
       if (sig<minsigma) minsigma = sig;
       if (sig>maxsigma) maxsigma = sig;
       // Speed
-      RealType speed = magnitudeVec(Base::simData->V(n), sim_dimensions);
+      RealType speed = magnitudeVec(simData->V(n), sim_dimensions);
       aspeed += speed;
       if (speed<minspeed) minspeed = speed;
       if (speed>maxspeed) maxspeed = speed;
       // Mass
-      RealType mass = 1./Base::simData->Im(n);
+      RealType mass = 1./simData->Im(n);
       amass += mass;
       if (mass<minmass) minmass = mass;
       if (mass>maxmass) maxmass = mass;
       // Density
-      RealType den = 1./(Base::simData->Im(n)*sphere_volume(sig, sim_dimensions));
+      RealType den = 1./(simData->Im(n)*sphere_volume(sig, sim_dimensions));
       aden += den;
       if (den<minden) minden = den;
       if (den>maxden) maxden = den;
       // Kinetic energy
-      RealType ke = sqr(magnitudeVec(Base::simData->V(n), sim_dimensions))*(1./Base::simData->Im(n));
+      RealType ke = sqr(magnitudeVec(simData->V(n), sim_dimensions))*(1./simData->Im(n));
       ake += ke;
       if (ke<minke) minke = ke;
       if (ke>maxke) maxke = ke;

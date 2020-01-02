@@ -1,4 +1,4 @@
-#include "averagevelocitydata.hpp"
+#include "average-velocity-data.hpp"
 // Other files
 #include "../../base/simdata.hpp"
 
@@ -19,10 +19,9 @@ namespace GFlowSimulation {
     auto v = simData->V();
     auto im = simData->Im();
     auto type = simData->Type();
-    int size = simData->size();
     // Compute totals
     int count = 0;
-    for (int n=0; n<size; ++n)
+    for (int n=0; n<simData->size_owned(); ++n)
       if (im[n]>0 && type[n]>-1) {
         if (!isnan(v(n, 0))) { // Presumably, if one component is nan, all are.
           for (int d=0; d<sim_dimensions; ++d)

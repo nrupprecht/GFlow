@@ -8,9 +8,12 @@
 #include <set> // For storing sets of holes in the arrays
 #include <unordered_map> // For mapping owned particles to halo particles
 
-#include "../test/d-vec.hpp"
+#include "particle-data.hpp"
 
 namespace GFlowSimulation {
+
+  //! \brief The number of different particle data containers that are in a SimData.
+  constexpr unsigned max_particle_types = 2;
 
   //! \brief Class that holds all the atom data for a domain.
   //!
@@ -27,9 +30,6 @@ namespace GFlowSimulation {
     //! \brief Default constructor.
     SimData(GFlow*);
 
-    //! \brief Destructor.
-    ~SimData();
-
     //! \brief Initialize the atom container.
     virtual void initialize() override;
 
@@ -44,20 +44,26 @@ namespace GFlowSimulation {
 
     //! \brief Add a default particle, the properties of this particle should be set from the outside after this is called. Returns
     //! the id of the added particle.
-    int addParticle();
+    template<unsigned=0> int addParticle();
 
     //! \brief Add several default particles. Same as calling addParticle multiple times. Returns the id of the first particle added.
-    int addParticle(int);
+    template<unsigned=0> int addParticle(int);
 
     //! \brief Add a particle to the simdata. Returns the id of the added particle.
     //!
     //! Add a particle to the simdata. This is the public version of the function, so we can only add owned particles. 
     //! Depending on how many particles are in the array, and the array capacities, it may be necessary to resize the array 
     //! to add the particle.
-    int addParticle(const RealType*, const RealType*, const RealType, const RealType, const int);
+    //!
+    //! \param x The position of the particle.
+    //! \param v The velocity of the particle.
+    //! \param sg The cutoff radius of the particle.
+    //! \param im The inverse mass of the particle.
+    //! \param type The type of the particle.
+    template<unsigned=0> int addParticle(const real*, const real*, const real, const real, const int);
 
     // \brief Mark a particle for removal.
-    void markForRemoval(const int);
+    template<unsigned=0> void markForRemoval(const int);
 
     //! \brief Remove all the particles that need to be removed, consolidate data.
     void doParticleRemoval();
@@ -82,44 +88,40 @@ namespace GFlowSimulation {
 
     // --- Accessors
 
-    struct vec_access;
-    struct scalar_access;
-    struct integer_access;
-
     // --- Get vector data
-    vec_access X();
-    RealType*  X(const int);
-    RealType&  X(const int, const int);
-    vec_access V();
-    RealType*  V(const int);
-    RealType&  V(const int, const int);
-    vec_access F();
-    RealType*  F(const int);
-    RealType&  F(const int, const int);
+    template<unsigned=0> vec_access X();
+    template<unsigned=0> real*  X(const int);
+    template<unsigned=0> real&  X(const int, const int);
+    template<unsigned=0> vec_access V();
+    template<unsigned=0> real*  V(const int);
+    template<unsigned=0> real&  V(const int, const int);
+    template<unsigned=0> vec_access F();
+    template<unsigned=0> real*  F(const int);
+    template<unsigned=0> real&  F(const int, const int);
 
-    vec_access VectorData(const int);
-    vec_access VectorData(const string&);
-    real* VectorData(const int, const int);
+    template<unsigned=0, bool=true> vec_access VectorData(const int);
+    template<unsigned=0> vec_access VectorData(const string&);
+    template<unsigned=0> real* VectorData(const int, const int);
 
     // --- Get scalar data
-    scalar_access Sg();
-    RealType& Sg(int);
-    scalar_access Im();
-    RealType& Im(int);
+    template<unsigned=0> scalar_access Sg();
+    template<unsigned=0> real& Sg(int);
+    template<unsigned=0> scalar_access Im();
+    template<unsigned=0> real& Im(int);
 
-    scalar_access ScalarData(const int);
-    scalar_access ScalarData(const string&);
-    real& ScalarData(const int, const int);
+    template<unsigned=0, bool=true> scalar_access ScalarData(const int);
+    template<unsigned=0> scalar_access ScalarData(const string&);
+    template<unsigned=0> real& ScalarData(const int, const int);
 
     // --- Get integer data
-    integer_access Type();
-    int& Type(const int);
-    integer_access Id();
-    int& Id(const int);
+    template<unsigned=0> integer_access Type();
+    template<unsigned=0> int& Type(const int);
+    template<unsigned=0> integer_access Id();
+    template<unsigned=0> int& Id(const int);
 
-    integer_access IntegerData(const int);
-    integer_access IntegerData(const string&);
-    int& IntegerData(const int, const int);
+    template<unsigned=0, bool=true> integer_access IntegerData(const int);
+    template<unsigned=0> integer_access IntegerData(const string&);
+    template<unsigned=0> int& IntegerData(const int, const int);
 
     // --- Data creation and request
 
@@ -133,13 +135,19 @@ namespace GFlowSimulation {
     int getScalarData(string);
     int getIntegerData(string);
 
-    int nvectors() const { return vdata.size(); }
-    int nscalars() const { return sdata.size(); }
-    int nintegers() const { return idata.size(); }
+    //! \brief Get the number of vector data entries.
+    int nvectors() const { return data_entries[0].nvectors(); }
+    //! \brief Get the number of scalar data entries.
+    int nscalars() const { return data_entries[0].nscalars(); }
+    //! \brief Get the number of integer data entries.
+    int nintegers() const { return data_entries[0].nintegers(); }
 
     // --- Halo and Ghost particles
 
     //! \brief Create a halo particle of a certain particle, with a certain displacement from the original particle.
+    //!
+    //! \param id The id of the particle to copy
+    //! \param displacement How should the halo particle be displaced relative to the original particle.
     void createHaloOf(int, const Vec&);
 
     //! \brief Mark all halo particles for removal and clear halo particle data.
@@ -158,11 +166,11 @@ namespace GFlowSimulation {
 
     // --- Particle size information
 
-    //! \brief The size of the part of the arrays that may contain valid particles.
-    int size() const;
-
-    //! \brief The size of the part of the arrays that may contained valid owned (non-ghost) particles.
+    //! \brief The size (in particle entries) of the arrays that may contained valid owned (non-ghost) particles.
     int size_owned() const;
+
+    //! \brief The size (in particle entries) of the arrays that may contain valid ghost particles.
+    int size_ghosts() const;
 
     //! \brief Return the number of particles on the processor.
     int number() const;
@@ -172,9 +180,6 @@ namespace GFlowSimulation {
 
     //! \brief Return the number of ghost particles on this processor.
     int number_ghosts() const;
-
-    //! \brief Get the index of the first ghost particle.
-    int first_ghost() const;
 
     //! \brief Return the number of types of particles.
     int ntypes() const;
@@ -232,24 +237,7 @@ namespace GFlowSimulation {
     //! \brief Get the last number of exchange particles that we received from other processors.
     int getLastNExchangeRecv();
 
-    //! \brief Is this the local id of an owned particle.
-    //!
-    //! If isReal is true, isHalo and isGhost will be false.
-    bool isReal(int);
-
-    //! \brief Is this the local id of a halo particle.
-    bool isHalo(int);
-
-    //! \brief Is this the local id of a ghost particle.
-    bool isGhost(int);
-
     // --- Mutators
-
-    //! \brief Set the position of the first halo particle in the array.
-    void setFirstHalo(int);
-
-    //! \brief Set the position of the first ghost particle in the array.
-    void setFirstGhost(int);
 
     //! \brief Set the needs remake flag.
     void setNeedsRemake(bool=true);
@@ -278,7 +266,6 @@ namespace GFlowSimulation {
 
     friend class ForceMaster;
     friend class DataMaster;
-
     friend class KDTreeTopology;
 
     // --- MPI related timers.
@@ -299,7 +286,7 @@ namespace GFlowSimulation {
     void resize_owned(int);
 
     //! \brief Set all values for a particle to default values
-    void reset_particle(int);
+    template<unsigned=0> void reset_particle(int);
 
     //! \brief Swap two particle's data.
     void swap_particle(int, int);
@@ -320,20 +307,22 @@ namespace GFlowSimulation {
 
     // -*-*-*- Particle data -*-*-*-
 
-    //! \brief Vector data.
-    //!
-    //! Contains postion (0), velocity (1), and force (2).
-    vector<RealType*> vdata;
+    vector<particle_data> data_entries;
 
-    //! \brief Scalar data.
-    //! 
-    //! Contains sigma (0), inverse mass (1). Can also contain repulsion, dissipation, coefficient of friction, etc.
-    vector<RealType*> sdata;
+    // //! \brief Vector data. Entries are for owned and ghost particle arrays.
+    // //!
+    // //! Contains postion (0), velocity (1), and force (2).
+    // vector<real*> vdata[2];
 
-    //! \brief Integer data.
-    //!
-    //! Contains type (0), global id (1). Can also contain body membership information, etc.
-    vector<int*> idata;
+    // //! \brief Scalar data. Entries are for owned and ghost particle arrays.
+    // //! 
+    // //! Contains sigma (0), inverse mass (1). Can also contain repulsion, dissipation, coefficient of friction, etc.
+    // vector<real*> sdata[2];
+
+    // //! \brief Integer data. Entries are for owned and ghost particle arrays.
+    // //!
+    // //! Contains type (0), global id (1). Can also contain body membership information, etc.
+    // vector<int*> idata[2];
 
     // -*-*-*- Data mapping -*-*-*-
 
@@ -348,7 +337,7 @@ namespace GFlowSimulation {
     int next_global_id = 0;
 
     //! \brief A map between global and local ids, <global, local>.
-    std::unordered_map<int, int> id_map;
+    vector<std::unordered_map<int, int> > id_map;
 
     //! \brief Whether to use the id_map.
     bool use_id_map = true;
@@ -361,31 +350,22 @@ namespace GFlowSimulation {
 
     // -*-*-*- Numbers -*-*-*-
 
-    //! \brief Number of particles on this processor. Counts halo or ghost particle.
-    int _number = 0; 
-    //! \brief Number of halo particle on this processor.
-    int _number_halo = 0;
-    //! \brief Number of ghost particles on this processor.
-    int _number_ghost = 0;
+    //! \brief Number of owned particles on this processor.
+    vector<int> _number;
 
-    //! \brief The last part of the array that might contain valid particles.
+    vector<int> _size;
+
+    //! \brief The last entry in a data array that might contain valid particles.
     //!
     //! Often, this might be the entry after the last valid particle on the processor. However, if the last valid particle was deleted, 
     //! this might not be the case.
-    int _size = 0;
+    int _size_owned = 0;
 
-    //! \brief The total capacity of the particle data arrays.
-    int _capacity = 0;
-
-    //! \brief The position of the first halo particle. This assumes that halo particles are stored contiguously.
+    //! \brief The last entry in a data array that might contain valid ghost particles. 
     //!
-    //! If this value is == to _size, then there are no halo particles.
-    int _first_halo = 0;
-
-    //! \brief The position of the first ghost particle. This assumes that ghost particles are stored contiguously.
-    //!
-    //! If this value is == to _size, then there are no ghost particles.
-    int _first_ghost = 0;
+    //! Often, this might be the entry after the last valid particle on the processor. However, if the last valid ghost particle was deleted, 
+    //! this might not be the case.
+    int _size_ghost = 0;
 
     //! \brief Copy this data from force master.
     int _ntypes = 0;
@@ -408,151 +388,8 @@ namespace GFlowSimulation {
     #endif
   };
 
-
-  // ----- Data access classes ----- //
-
-
-  //! \brief Struct for accessing the underlying vector data of SimData in a layout agnostic manner.
-  struct SimData::vec_access {
-    //! \brief Create a null vec_access object, to be assigned later.
-    vec_access() {};
-
-    //! \brief Access a vector.
-    real* operator() (const int id) { return &data_ptr[id*sim_dimensions]; }
-    const real* operator() (const int id) const { return &data_ptr[id*sim_dimensions]; }
-    //! \brief Access a component of a vector.
-    real& operator() (const int id, const int d) { return data_ptr[id*sim_dimensions+d]; }
-    real operator() (const int id, const int d) const { return data_ptr[id*sim_dimensions+d]; }
-    //! \brief Access a component via contiguous index.
-    real& operator[] (const int contiguous_index) { return data_ptr[contiguous_index]; }
-    real operator[] (const int contiguous_index) const { return data_ptr[contiguous_index]; }
-
-    //! \brief Load contiguous entries into simd vector
-    simd_float load_to_simd(const int contiguous_index) { return simd_load_u(&data_ptr[contiguous_index]); }
-
-    //! \brief Store from a simd vector into contiguous entries.
-    void store_simd(const int contiguous_index, const simd_float value) { simd_store_u(value, &data_ptr[contiguous_index]); }
-
-    //! \brief Return whether the underlying pointer is null.
-    bool isnull() { return data_ptr==nullptr; }
-
-    friend SimData;
-
-  private:
-    //! \brief Private constructor, so only ParticleContainer can create a vec_access.
-    vec_access(real* data, int dims) : data_ptr(data), sim_dimensions(dims) {};
-
-    //! \brief The width of a vector.
-    int sim_dimensions;
-
-    //! \brief Pointer to the underlying data.
-    real *data_ptr = nullptr;
-  };
-
-  //! \brief Struct for accessing the underlying scalar data of SimData in a layout agnostic manner.
-  struct SimData::scalar_access {
-    //! \brief Create a null scalar_access object, to be assigned later.
-    scalar_access() {};
-
-    real& operator() (const int i) { return data_ptr[i]; }
-    real operator() (const int i) const { return data_ptr[i]; }
-
-    real& operator[] (const int i) { return data_ptr[i]; }
-    real operator[] (const int i) const { return data_ptr[i]; }
-
-    //! \brief Load data to a simd vector such that the data aligns with the dimensionality of vectors.
-    //!
-    //! For example, if sim_dimensions==2, and we are using SSE, and 2 | k, im.valign_load_to_simd(k) -> { im[2*k], im[k], im[k+1], im[k+1] }.
-    template<int dims> 
-    simd_float valign_load_to_simd(const int contiguous_index) {
-      #if SIMD_TYPE==SIMD_NONE
-      return data_ptr[contiguous_index];
-      #elif SIMD_TYPE==SIMD_SSE3
-      return _mm_set_ps(
-        data_ptr[(contiguous_index+3)/dims], 
-        data_ptr[(contiguous_index+2)/dims],
-        data_ptr[(contiguous_index+1)/dims], 
-        data_ptr[contiguous_index/dims]
-      );
-      #elif SIMD_TYPE==AVX || SIMD_TYPE==AVX2
-      return _mm256_set_ps(
-        data_ptr[(contiguous_index+7)/dims],
-        data_ptr[(contiguous_index+6)/dims],
-        data_ptr[(contiguous_index+5)/dims],
-        data_ptr[(contiguous_index+4)/dims],
-        data_ptr[(contiguous_index+3)/dims],
-        data_ptr[(contiguous_index+2)/dims],
-        data_ptr[(contiguous_index+1)/dims],
-        data_ptr[contiguous_index/dims],
-      );
-      #elif SIMD_TYPE==SIMD_MIC
-      return _mm512_set_ps(
-        data_ptr[(contiguous_index+15)/dims],
-        data_ptr[(contiguous_index+14)/dims],
-        data_ptr[(contiguous_index+13)/dims],
-        data_ptr[(contiguous_index+12)/dims],
-        data_ptr[(contiguous_index+11)/dims],
-        data_ptr[(contiguous_index+10)/dims],
-        data_ptr[(contiguous_index+9)/dims],
-        data_ptr[(contiguous_index+8)/dims]
-        data_ptr[(contiguous_index+7)/dims],
-        data_ptr[(contiguous_index+6)/dims],
-        data_ptr[(contiguous_index+5)/dims],
-        data_ptr[(contiguous_index+4)/dims],
-        data_ptr[(contiguous_index+3)/dims],
-        data_ptr[(contiguous_index+2)/dims],
-        data_ptr[(contiguous_index+1)/dims],
-        data_ptr[contiguous_index/dims]
-      );
-      #endif
-    }
-
-    //! \brief Load a series of contiguous data to a simd vector.
-    simd_float load_to_simd(const int contiguous_index) { return simd_load_u(&data_ptr[contiguous_index]); }
-
-    //! \brief Store a simd vector to contiguous data.
-    void store_simd(const int contiguous_index, simd_float value) { simd_store_u(value, &data_ptr[contiguous_index]); }
-
-    //! \brief Return whether the underlying pointer is null.
-    bool isnull() { return data_ptr==nullptr; }
-
-    friend SimData;
-
-  private:
-    //! \brief Private constructor, so only ParticleContainer can create a scalar_access.
-    scalar_access(real* data) : data_ptr(data) {};
-
-    //! \brief Pointer to the underlying data.
-    real *data_ptr = nullptr;
-  };
-
-  //! \brief Struct for accessing the underlying integer data of SimData in a layout agnostic manner.
-  struct SimData::integer_access {
-    //! \brief Create a null integer_access object, to be assigned later.
-    integer_access() {};
-
-    int& operator() (const int i) { return data_ptr[i]; }
-    int operator() (const int i) const { return data_ptr[i]; }
-
-    int& operator[] (const int i) { return data_ptr[i]; }
-    int operator[] (const int i) const { return data_ptr[i]; }
-
-    //! \brief Return whether the underlying pointer is null.
-    bool isnull() { return data_ptr==nullptr; }
-
-    friend SimData;
-
-  private:
-    //! \brief Private constructor, so only ParticleContainer can create a scalar_access.
-    integer_access(int* data) : data_ptr(data) {};
-
-    //! \brief Pointer to the underlying data.
-    int *data_ptr = nullptr;
-  };
-
-  typedef SimData::vec_access vec_access;
-  typedef SimData::scalar_access scalar_access;
-  typedef SimData::integer_access integer_access;
+  // Include template accessor function definitions.
+  #include "simdata.tpp"
 
 }
 #endif // __ATOMS_HPP_GFLOW__

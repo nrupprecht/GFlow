@@ -14,15 +14,14 @@ namespace GFlowSimulation {
     auto om = simData->ScalarData(om_add);
     auto im = simData->Im();
     auto type = simData->Type();
-    int size = Base::simData->size();
 
     // Check if there is rotational motion.
     if (om.isnull()) return;
 
     // Average the angular velocity, weighing by particle mass.
     RealType mass = 0, omega = 0;
-    for (int n=0; n<size; ++n) {
-      if (im[n]>0 && -1<type[n] && simData->isReal(n)) {
+    for (int n=0; n<simData->size_owned(); ++n) {
+      if (im[n]>0 && -1<type[n]) {
         RealType m = 1./im[n];
         omega += om[n]*m;
         mass += m;

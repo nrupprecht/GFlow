@@ -189,7 +189,7 @@ namespace GFlowSimulation {
     if (simData==nullptr) return;
     // Find minimum mass particle.
     RealType im = 0;
-    for (int i=0; i<simData->size(); ++i)
+    for (int i=0; i<simData->size_owned(); ++i)
       if (simData->Im(i)>im) im = simData->Im(i);
     if (im==0) return;
     // Set min mass.

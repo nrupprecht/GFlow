@@ -10,7 +10,7 @@ namespace GFlowSimulation {
   
   void QuadraticVelocityDamping::pre_forces() {
     // Get the size of the data that we need to go through.
-    int size = simData->size();
+    int size = simData->size_owned();
     // Get arrays
     auto v = simData->V(), f = simData->F();
 
@@ -22,10 +22,10 @@ namespace GFlowSimulation {
     int i=0;
     simd_float _d_inv_v_char = simd_set1(damping*sqr(inv_v_char));
     for (; i<size*sim_dimensions-simd_data_size; i+=simd_data_size) {
-      simd_float _f = f.load_to_simd(i); // simd_load(&f[i]);
-      simd_float _v = v.load_to_simd(i); // simd_load(&v[i]);
+      simd_float _f = f.load_to_simd(i);
+      simd_float _v = v.load_to_simd(i);
       _f -= _d_inv_v_char * _v * _v;
-      f.store_simd(i, _f); // simd_store(_f, &f[i]);
+      f.store_simd(i, _f);
     }
     for (; i<size*sim_dimensions; ++i)
       f[i] -= damping * sqr(v[i]*inv_v_char);

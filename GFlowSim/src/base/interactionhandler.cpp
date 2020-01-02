@@ -232,7 +232,7 @@ namespace GFlowSimulation {
 
   void InteractionHandler::calculate_skin_depth() {
     // Try to pick a skin depth such that the expected number of particles in each verlet list is the chosen number.
-    RealType rho = simData->size() / process_bounds.vol();
+    RealType rho = simData->size_owned() / process_bounds.vol();
     RealType candidate = inv_sphere_volume((2.2*target_list_size)/rho + 0.5*sphere_volume(max_small_sigma, sim_dimensions), sim_dimensions) - 2*max_small_sigma;
     skin_depth = max(static_cast<RealType>(0.5 * max_small_sigma), candidate);
 
@@ -247,7 +247,7 @@ namespace GFlowSimulation {
 
   void InteractionHandler::calculate_max_small_sigma() {
     // Make sure we have what we need.
-    if (forceMaster==nullptr || simData==nullptr || simData->size()==0) return;
+    if (forceMaster==nullptr || simData==nullptr || simData->size_owned()==0) return;
 
     // Make sure force master has interaction array set up
     forceMaster->initialize_does_interact();
@@ -273,7 +273,7 @@ namespace GFlowSimulation {
     // Threshhold sigma is between average and maximum sigma
     RealType threshold = 0.5*(sigma + max_sigma), max_under = sigma;
     if (threshold!=sigma) {
-      for (int n=0; n<simData->size(); ++n) {
+      for (int n=0; n<simData->size_owned(); ++n) {
         // Check that the type is valid, and is an interacting type
         int type = simData->Type(n);
         if (type<0 || !forceMaster->typeInteracts(type)) 
@@ -320,7 +320,7 @@ namespace GFlowSimulation {
 
   void InteractionHandler::record_positions() {
     // What particle to start at
-    int start = (simData->getFirstHalo()>-1) ? simData->getFirstHalo() : simData->size();
+    int start = simData->size_owned();
     // How many samples to keep
     int samples = sample_size>0 ? min(sample_size, start) : start;
     
@@ -347,7 +347,7 @@ namespace GFlowSimulation {
     // We can try sampling the motion of a subset of particles, but this would only work in a
     // homogenous simulation. If there is a localized area of fast moving particles, this would not
     // be guarenteed to pick this up.
-    int start = (simData->getFirstHalo()>-1) ? simData->getFirstHalo() : simData->size();
+    int start = simData->size_owned();
 
     // Start at the end, since separate special particles are often added at the end of a setup
     for (int i=0; i<size; ++i) {
@@ -417,9 +417,6 @@ namespace GFlowSimulation {
   }
 
   void InteractionHandler::pair_interaction(const int id1, const int id2, const int list) {
-    // Make sure it is not the case that both particles are not real.
-    // if (!simData->isReal(id1) && !simData->isReal(id2)) return;
-    
     // Get the interaction.
     Interaction *pair_force = interaction_grid[simData->Type(id1)][simData->Type(id2)];
     // A null force means no interaction

@@ -1,4 +1,4 @@
-#include "avevelocitydata.hpp"
+#include "average-speed-data.hpp"
 // Other files
 #include "../../base/simdata.hpp"
 #include "../../utility/vectormath.hpp"
@@ -6,20 +6,19 @@
 
 namespace GFlowSimulation {
   // Constructor
-  AveVelocityData::AveVelocityData(GFlow *gflow) : GraphObject(gflow, "AveV", "time", "average velocity") {};
+  AverageSpeedData::AverageSpeedData(GFlow *gflow) : GraphObject(gflow, "AveV", "time", "average velocity") {};
 
-  void AveVelocityData::post_step() {
+  void AverageSpeedData::post_step() {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
 
     // Get and store data
     RealType av = 0;
-    auto v = Base::simData->V();
-    auto im = Base::simData->Im();
-    auto type = Base::simData->Type();
-    int size = Base::simData->size();
+    auto v = simData->V();
+    auto im = simData->Im();
+    auto type = simData->Type();
     int count = 0;
-    for (int n=0; n<size; ++n)
+    for (int n=0; n<simData->size_owned(); ++n)
       if (im[n]>0 && type[n]>-1) {
         av += magnitudeVec(v(n), sim_dimensions);
         ++count;

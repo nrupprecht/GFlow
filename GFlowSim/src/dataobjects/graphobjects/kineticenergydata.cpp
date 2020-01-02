@@ -10,7 +10,7 @@ namespace GFlowSimulation {
     // Get data.
     RealType ke = calculate_kinetic(simData, false);
     // Store data. These functions work correctly with multiprocessor runs.
-    if (useAve) gatherAverageData(gflow->getElapsedTime(), ke, simData->size());
+    if (useAve) gatherAverageData(gflow->getElapsedTime(), ke, simData->size_owned());
     else gatherData(gflow->getElapsedTime(), ke);
   }
 
@@ -18,12 +18,11 @@ namespace GFlowSimulation {
     RealType ke = 0;
     auto v = simData->V();
     auto im = simData->Im();
-    int size = simData->number_owned();
     int sim_dimensions = simData->getSimDimensions();
     int count = 0;
-    for (int n=0; n<size; ++n) {
+    for (int n=0; n<simData->size_owned(); ++n) {
       RealType vsqr = sqr(v(n), sim_dimensions);
-      if (im[n]>0 && simData->isReal(n) && !isnan(vsqr)) {
+      if (im[n]>0 && !isnan(vsqr)) {
         RealType m = 1./im(n);
         ke += m*vsqr;
         ++count;

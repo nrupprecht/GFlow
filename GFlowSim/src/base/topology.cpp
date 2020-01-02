@@ -65,8 +65,7 @@ namespace GFlowSimulation {
     return true;
     #endif
   }
-
-
+  
   void Topology::allocate_arrays() {
     // Get data from topology
     #if USE_MPI == 1

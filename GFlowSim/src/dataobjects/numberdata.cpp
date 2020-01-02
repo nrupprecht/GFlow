@@ -7,20 +7,20 @@ namespace GFlowSimulation {
   NumberData::NumberData(GFlow *gflow) : DataObject(gflow, "NumberData") {};
 
   void NumberData::post_step() {
-    int ntypes = Base::simData->ntypes();
+    int ntypes = simData->ntypes();
 
     if (numberData.empty()) numberData = vector<vector<RPair> >(ntypes);
     vector<int> nums(ntypes, 0);
 
-    int size = Base::simData->size();
+    int size = simData->size_owned();
     for (int n=0; n<size; ++n) {
-      int type = Base::simData->Type(n);
+      int type = simData->Type(n);
       if (-1<type && type<ntypes)
         ++nums[type];
     }
 
     // Store data
-    RealType time = Base::gflow->getElapsedTime();
+    RealType time = gflow->getElapsedTime();
     for (int i=0; i<ntypes; ++i)
       numberData[i].push_back(RPair(time, static_cast<RealType>(nums[i])));
   }

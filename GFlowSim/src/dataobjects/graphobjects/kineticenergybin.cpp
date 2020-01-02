@@ -17,7 +17,7 @@ namespace GFlowSimulation {
     auto x = simData->X();
     auto v = simData->V();
     auto im = simData->Im();
-    int size = simData->size();
+    int size = simData->size_owned();
     int sim_dimensions = simData->getSimDimensions();
     for (int n=0; n<size; ++n)
       if (im[n]>0) {

@@ -10,6 +10,11 @@
 namespace GFlowSimulation {
 
   SimData::SimData(GFlow *gflow) : Base(gflow) {
+    data_entries = vector<particle_data>(max_particle_types, particle_data(sim_dimensions));
+    _number = vector<int>(max_particle_types, 0);
+    _size = vector<int>(max_particle_types, 0);
+    id_map = vector<std::unordered_map<int, int> >(max_particle_types);
+
     // Add default vector data entries
     addVectorData("X");
     addVectorData("V");
@@ -22,18 +27,6 @@ namespace GFlowSimulation {
     addIntegerData("ID");
   }
 
-  SimData::~SimData() {
-    for (auto &v : vdata) 
-      if (v) delete [] v;
-    vdata.clear();
-    for (auto &s : sdata)
-      if (s) delete [] s;
-    sdata.clear();
-    for (auto &i : idata)
-      if (i) delete [] i;
-    idata.clear();
-  }
-
   //! @brief Initialize the atom container.
   void SimData::initialize() {
     // Call base's initialize
@@ -44,7 +37,7 @@ namespace GFlowSimulation {
 
     // Set data width - send all data to adjacent processors when migrating ghosts.
     // \todo We don't actually need to migrate force data.
-    data_width = vdata.size()*sim_dimensions + sdata.size() + idata.size();
+    data_width = nvectors()*sim_dimensions + nscalars() + nintegers();
 
     // Set ghost data width - position (sim_dimensions).
     ghost_data_width = sim_dimensions;
@@ -54,17 +47,10 @@ namespace GFlowSimulation {
     if (send_ghost_omega) ghost_data_width += 1; // In two dimensions, omega is a scalar.
 
     #if USE_MPI == 1
-    if (topology->getNumProc()>1) {
-      // Temporary fix - get rid of all particles not hosted on this processor.
-      if (_size>0 && topology->is_initialized() ) {
-        int rank = topology->getRank();
-        int numProc = topology->getNumProc();
-        for (int i=0; i<_size; ++i) {
-          if (Type(i)>-1 && !topology->owned_particle(X(i)))
-            markForRemoval(i);
-        }
-      }
-    }
+    // Temporary fix - get rid of all particles not hosted on this processor.
+    if (topology->getNumProc()>1 && _size_owned>0 && topology->is_initialized())
+      for (int i=0; i<_size_owned; ++i)
+        if (!topology->owned_particle(X(i))) markForRemoval(i);
     #endif
 
     // Sort the particles by position
@@ -90,7 +76,7 @@ namespace GFlowSimulation {
     #if USE_MPI == 1
     // Set data width - send all data to adjacent processors when migrating ghosts.
     // \todo We don't actually need to migrate force data.
-    data_width = vdata.size()*sim_dimensions + sdata.size() + idata.size();
+    data_width = nvectors()*sim_dimensions + nscalars() + nintegers();
     // Set ghost data width - position (sim_dimensions).
     ghost_data_width = sim_dimensions;
     // Do we need to send velocity?
@@ -108,129 +94,26 @@ namespace GFlowSimulation {
     doParticleRemoval();
 
     // Set markers.
-    _first_halo = _first_ghost = _size;    
+    _size_ghost = 0;  
   }
 
-  //! @brief Reserve space for particles, extending the lengths of all arrays to the requested size.
   void SimData::reserve(int num) {
-    for (auto &v : vdata) {
-      if (v) delete [] v;
-      v = new real[num*sim_dimensions];
-    }
-    for (auto &s : sdata) {
-      if (s) delete [] s;
-      s = new real[num]; // Valgrind says there is an error here.
-    }
-    for (auto &i : idata) {
-      if (i) delete [] i;
-      i = new int[num];
-    }
+    // Reserve space for owned particles.
+    data_entries[0].reserve(num);
     // Reset numbers
-    _number = 0;
-    _size = 0;
-    _capacity = num;
-  }
-
-  int SimData::addParticle() {
-    if (_size+1 > _capacity) {
-      int new_capacity = max(32, static_cast<int>(0.25*_capacity));
-      resize_owned(new_capacity);
-    }
-    // Reset all data
-    reset_particle(_size);
-    // Set type, give a global id
-    Type(_size) = 0;
-    if (use_id_map) id_map.emplace(_size, next_global_id);
-    Id(_size) = next_global_id++;
-    ++_number;
-    ++_size;
-
-    // Assumes that there are no halo or ghost particles.
-    ++_first_halo;
-    ++_first_ghost;
-    // Return particle id.
-    return _size-1;
-  }
-
-  //! \param num The number of particle slots to add.
-  int SimData::addParticle(int num) {
-    if (num<=0) return -1;
-    if (_size+num > _capacity) {
-      int new_capacity = max(32, static_cast<int>(0.25*(num+_size-_capacity)));
-      resize_owned(new_capacity);
-    }
-    int address = _size;
-    for (int i=0; i<num; ++i) {
-      // Reset all data
-      reset_particle(_size);
-      // Set type, give a global id
-      Type(_size) = 0;
-      if (use_id_map) id_map.emplace(_size, next_global_id);
-      Id(_size) = next_global_id++;
-      ++_number;
-      ++_size;
-
-      // Assumes that there are no halo or ghost particles.
-      ++_first_halo;
-      ++_first_ghost;
-    }
-    // Return first particle id.
-    return address;
-  }
-
-  //! \param x The position of the particle.
-  //! \param v The velocity of the particle.
-  //! \param sg The cutoff radius of the particle.
-  //! \param im The inverse mass of the particle.
-  //! \param type The type of the particle.
-  int SimData::addParticle(const RealType *x, const RealType *v, const RealType sg, const RealType im, const int type) {
-    // If not enough spots to add a new owned particle, create more
-    if (_size+1 > _capacity) {
-      int new_capacity = max(32, static_cast<int>(0.25*_size));
-      resize_owned(new_capacity);
-    }
-    // Reset all data
-    reset_particle(_size);
-    // Set data
-    copyVec(x, X(_size), sim_dimensions);
-    copyVec(v, V(_size), sim_dimensions);
-    Sg(_size) = sg;
-    Im(_size) = im;
-    Type(_size) = type;
-    if (use_id_map) id_map.emplace(_size, next_global_id);
-    Id(_size) = next_global_id++;
-    ++_number;
-    ++_size;
-
-    // Assumes that there are no halo or ghost particles.
-    ++_first_halo;
-    ++_first_ghost;
-    // Return particle id.
-    return _size-1;
-  }
-
-  void SimData::markForRemoval(const int id) {
-    // If the particle has already been marked for removal, or is beyond the end of the array, return.
-    if (Type(id)<0 || id>=_size) return;
-    // Mark for removal, clear some data
-    remove_list.emplace(id);
-    Type(id) = -1;
-    if (use_id_map) id_map.erase(Id(id));
-    Id(id) = -1;
-    // This is probably unneccesary, but set V, F to zero.
-    zeroVec(V(id), sim_dimensions);
-    zeroVec(F(id), sim_dimensions);
+    _number[0] = 0;
+    _size[0] = 0;
   }
 
   void SimData::doParticleRemoval() {
     // If there is nothing to remove, we're done
-    if (remove_list.empty() || _number==0) return;
+    if (remove_list.empty() || _number[0]==0) return;
 
     // Start simdata timer.
     start_timer();
 
     // Fill in all holes
-    int count_back = _size, removed = 0;
+    int count_back = _size[0], removed = 0;
     for(auto id : remove_list) {
       // The type of a particle that has been marked for removal is -1.
       do {
@@ -244,11 +127,9 @@ namespace GFlowSimulation {
       else break;
     }
     // Decrease number.
-    _number -= remove_list.size();
+    _number[0] -= remove_list.size();
     // Array is compressed.
-    _size = _number;
-    _first_ghost = _size;
-    _first_halo = _size;
+    _size[0] = _number[0];
     // Clear the remove list
     remove_list.clear();
 
@@ -264,23 +145,22 @@ namespace GFlowSimulation {
   void SimData::sortParticles() {
     // We must first remove halo and ghost particles.
     removeHaloAndGhostParticles();
-
     // Make sure all particles are valid, and compressed
     doParticleRemoval(); // This only sets the needs remake flag if it removes particles.
-
     // Quick sort
-    quick_sort(0, _number-1, 0);
-    recursion_help (0, _number-1, 1);
-
+    quick_sort(0, _size_owned-1, 0);
+    recursion_help (0, _size_owned-1, 1);
     // Set needs remake flag
     setNeedsRemake(true);
   }
 
   void SimData::sortParticles(Vec& direction) {
+    // We must first remove halo and ghost particles.
+    removeHaloAndGhostParticles();
     // Make sure all particles are valid, and compressed
     doParticleRemoval(); // This only sets the needs remake flag if it removes particles.
     // FOR NOW: JUST SORT ALONG X AXIS
-    quick_sort(0, _number-1, 0);
+    quick_sort(0, _size_owned-1, 0);
     // Set needs remake flag
     setNeedsRemake(true);
   }
@@ -289,7 +169,7 @@ namespace GFlowSimulation {
     // Most of the time, we probably won't need to remove any particles. We only need to remake structures if we do. So keep track.
     bool removed_some = false;
     // Look for bad particles.
-    for (int i=0; i<_size; ++i) {
+    for (int i=0; i<_size[0]; ++i) {
       for (int d=0; d<sim_dimensions; ++d) {
         // If a component of position or velocity is nan, remove that particle.
         if (isnan(X(i, d)) || isnan(V(i, d))) {
@@ -309,6 +189,7 @@ namespace GFlowSimulation {
   }
 
   void SimData::updateHaloParticles() {
+    /*
     // Start simdata timer.
     start_timer();
 
@@ -332,120 +213,7 @@ namespace GFlowSimulation {
 
     // Start simdata timer.
     stop_timer();
-  }
-
-  vec_access SimData::X() {
-    return vec_access(vdata[0], sim_dimensions);
-  }
-
-  RealType* SimData::X(const int i) {
-    return X()(i);
-  }
-
-  RealType& SimData::X(const int i, const int d) {
-    return X()(i, d);
-  }
-
-  vec_access SimData::V() {
-    return vec_access(vdata[1], sim_dimensions);
-  }
-
-  RealType* SimData::V(const int i) {
-    return V()(i);
-  }
-
-  RealType& SimData::V(const int i, const int d) {
-    return V()(i, d);
-  }
-
-  vec_access SimData::F() {
-    return vec_access(vdata[2], sim_dimensions);
-  }
-
-  RealType* SimData::F(const int i) {
-    return F()(i);
-  }
-
-  RealType& SimData::F(const int i, const int d) {
-    return F()(i, d);
-  }
-
-  vec_access SimData::VectorData(const int i) {
-    if (i<0 || vdata.size()<=i) throw false; // \todo Real error
-    return vec_access(vdata[i], sim_dimensions);
-  }
-
-  vec_access SimData::VectorData(const string& name) {
-    int i = getVectorData(name);
-    return VectorData(i);
-  }
-
-  real* SimData::VectorData(const int i, const int id) {
-    return VectorData(i)(id);
-  }
-
-  scalar_access SimData::Sg() {
-    return scalar_access(sdata[0]);
-  }
-
-  RealType& SimData::Sg(const int i) {
-    return Sg()(i);
-  }
-
-  scalar_access SimData::Im() {
-    return scalar_access(sdata[1]);
-  }
-
-  RealType& SimData::Im(const int i) {
-    return Im()(i);
-  }
-
-  scalar_access SimData::ScalarData(const int i) {
-    // If i is bad, return a null access.
-    if (i<0 || sdata.size()<=i) return scalar_access();
-    return scalar_access(sdata[i]);
-  }
-
-  scalar_access SimData::ScalarData(const string& name) {
-    int i = getScalarData(name);
-    // Return access to the data.
-    if (0<i) return ScalarData(i);
-    // Return a null scalar access.
-    else return scalar_access();
-  }
-
-  real& SimData::ScalarData(const int i, const int id) {
-    return ScalarData(i)(id);
-  }
-
-  integer_access SimData::Type() {
-    return integer_access(idata[0]);
-  }
-
-  int& SimData::Type(int i) {
-    return Type()(i);
-  }
-
-  integer_access SimData::Id() {
-    return integer_access(idata[1]);
-  }
-
-  int& SimData::Id(const int i) {
-    return Id()(i);
-  }
-
-  integer_access SimData::IntegerData(const int i) {
-    if (i<0 || idata.size()<=i) throw false; // \todo Real error
-    return integer_access(idata[i]);
-  }
-
-  integer_access SimData::IntegerData(const string& name) {
-    int i = getIntegerData(name);
-    return IntegerData(i);
-  }
-
-  int& SimData::IntegerData(const int i, const int id) {
-    return IntegerData(i)(id);
+    */
   }
 
   int SimData::requestVectorData(string name) {
@@ -453,10 +221,11 @@ namespace GFlowSimulation {
     auto it = vector_data_map.find(name);
     if (it!=vector_data_map.end()) return it->second;
     // Otherwise, create a data entry
-    vector_data_map.emplace(name, vdata.size());
-    vdata.push_back(new real[_capacity*sim_dimensions]);
+    for_each(data_entries.begin(), data_entries.end(), [] (auto entry) { entry.add_vector_entry(); });
+    int address = nvectors()-1;
+    vector_data_map.emplace(name, address);
     // Return the entry
-    return vdata.size()-1;
+    return address;
   }
 
   int SimData::requestScalarData(string name) {
@@ -464,11 +233,11 @@ namespace GFlowSimulation {
     auto it = scalar_data_map.find(name);
     if (it!=scalar_data_map.end()) return it->second;
     // Otherwise, create a data entry
-    scalar_data_map.emplace(name, sdata.size());
-    RealType *address = new RealType[_capacity];
-    sdata.push_back(address);
+    for_each(data_entries.begin(), data_entries.end(), [] (auto entry) { entry.add_scalar_entry(); });
+    int address = nscalars()-1;
+    scalar_data_map.emplace(name, address);
     // Return the entry
-    return sdata.size()-1;
+    return address;
   }
 
   int SimData::requestIntegerData(string name) {
@@ -476,11 +245,11 @@ namespace GFlowSimulation {
     auto it = integer_data_map.find(name);
     if (it!=integer_data_map.end()) return it->second;
     // Otherwise, create a data entry
-    integer_data_map.emplace(name, idata.size());
-    int *address = new int[_capacity];
-    idata.push_back(address);
+    for_each(data_entries.begin(), data_entries.end(), [] (auto entry) { entry.add_integer_entry(); });
+    int address = nintegers()-1;
+    integer_data_map.emplace(name, address);
     // Return the entry
-    return idata.size()-1;
+    return address;
   }
 
   int SimData::getVectorData(string name) {
@@ -504,17 +273,16 @@ namespace GFlowSimulation {
     else return -1;
   }
 
-  //! \param id The id of the particle to copy
-  //! \param displacement How should the halo particle be displaced relative to the original particle.
   void SimData::createHaloOf(int id, const Vec& displacement) {
+    /*
     // Record local ids
     halo_map.push_back(_size); // Halo local id
     halo_map.push_back(id);    // Original local id
     // Make a copy of the particle
     Vec x(sim_dimensions, X(id));
     Vec v(sim_dimensions, V(id));
-    RealType radius = Sg(id);
-    RealType im = Im(id);
+    real radius = Sg(id);
+    real im = Im(id);
     int type = Type(id);
     // Add a particle to be the halo particle.
     addParticle(x.data, v.data, radius, im, type);
@@ -523,9 +291,11 @@ namespace GFlowSimulation {
     // Increment the halo particles counter.
     ++_number_halo;
     //! \todo There may be other data we should copy
+    */
   }
 
   void SimData::removeHaloParticles() {
+    /*
     // Start timer.
     start_timer();
 
@@ -539,17 +309,18 @@ namespace GFlowSimulation {
 
     // Stop timer.
     stop_timer();
+    */
   }
 
-  void SimData::removeGhostParticles() {
+  void SimData::removeGhostParticles() { //**
   #if USE_MPI == 1
     // Start timer.
     start_timer();
 
-    // Check if this is necessary.
-    if (_number_ghost<=0) return;
-    // Remove ghost particles.
-    for (int i=0; i<_number_ghost; ++i) markForRemoval(_first_ghost+i);
+    // Remove ghost particles by setting them to type -1.
+    for (int i=0; i<_number[1]; ++i) Type<1>(i) = -1;
+    // Set counters to zero.
+    _size[1] = _number[1] = 0;
 
     // Stop timer.
     stop_timer();
@@ -583,18 +354,11 @@ namespace GFlowSimulation {
         // particles from other domains that belong to this domain.
         topology->exchange_particles();
 
-        // Start adding ghost particles here.
-        int save_first_ghost = _size;
-
         // --- Look for particles that need to be ghosts on other processors.
         if (gflow->use_ghosts()) {
           // Create ghost particles.
           topology->create_ghost_particles();
         }
-
-        // Adding new particles increments _first_halo and _first_ghost, so we have to correct them.
-        _first_ghost = save_first_ghost;
-        _first_halo  = save_first_ghost;
       }
       // If there is only one processor, even though this is an MPI run.
       else doParticleRemoval();
@@ -604,28 +368,24 @@ namespace GFlowSimulation {
     #endif // USE_MPI == 1
   }
 
-  int SimData::size() const {
-    return _size;
+  int SimData::size_owned() const {
+    return _size[0];
   }
 
-  int SimData::size_owned() const {
-    return _first_ghost;
+  int SimData::size_ghosts() const {
+    return _size[1];
   }
 
   int SimData::number() const {
-    return _number;
+    return std::accumulate(_number.begin(), _number.end(), 0);
   }
 
   int SimData::number_owned() const {
-    return _number - _number_halo - _number_ghost;
+    return _number[0];
   }
 
   int SimData::number_ghosts() const {
-    return _number_ghost;
-  }
-
-  int SimData::first_ghost() const {
-    return _first_ghost;
+    return _number[1];
   }
 
   int SimData::ntypes() const {
@@ -637,7 +397,7 @@ namespace GFlowSimulation {
     start_timer();
     // Clear velocities
     auto v = V();
-    for (int i=0; i<_size*sim_dimensions; ++i) v[i] = 0;
+    for (int i=0; i<_size[0]*sim_dimensions; ++i) v[i] = 0;
     // Stop simdata timer.
     stop_timer();
   }
@@ -647,7 +407,7 @@ namespace GFlowSimulation {
     start_timer();
     // Clear forces
     auto f = F();
-    for (int i=0; i<_size*sim_dimensions; ++i) f[i] = 0;
+    for (int i=0; i<_size[0]*sim_dimensions; ++i) f[i] = 0;
     // Stop simdata timer.
     stop_timer();
   }
@@ -659,7 +419,7 @@ namespace GFlowSimulation {
     int address = getScalarData(id);
     if (address>=0) {
       auto entry = ScalarData(address);
-      for (int i=0; i<_size; ++i) entry(i) = 0;
+      for (int i=0; i<_size[0]; ++i) entry(i) = 0;
     }
     // Stop simdata timer.
     stop_timer();
@@ -667,9 +427,9 @@ namespace GFlowSimulation {
 
   int SimData::getLocalID(int global) const {
     if (use_id_map) {
-      auto it = id_map.find(global);
+      auto it = id_map[0].find(global);
       // Return the global iterator. We use -1 to mean "no such particle."
-      return it==id_map.end() ? -1 : it->second;
+      return it==id_map[0].end() ? -1 : it->second;
     }
     return -2;
   }
@@ -690,34 +450,6 @@ namespace GFlowSimulation {
     return needs_remake;
   }
 
-  int SimData::getFirstHalo() {
-    return _first_halo;
-  }
-
-  int SimData::getFirstGhost() {
-    return _first_ghost;
-  }
-
-  bool SimData::isReal(int id) {
-    return -1<id && id<_first_halo;
-  }
-
-  bool SimData::isHalo(int id) {
-    return _first_halo <= id && id < _first_ghost;
-  }
-
-  bool SimData::isGhost(int id) {
-    return _first_ghost <= id && id < _size;
-  }
-
-  void SimData::setFirstHalo(int id) {
-    _first_halo = id;
-  }
-
-  void SimData::setFirstGhost(int id) {
-    _first_ghost = id;
-  }
-
   void SimData::setNeedsRemake(bool r) {
     // Set the local flag. \todo Only use flags in gflow?
     needs_remake = r;
@@ -729,74 +461,20 @@ namespace GFlowSimulation {
 
   void SimData::addVectorData(string name) {
     vector_data_map.emplace(name, vector_data_map.size());
-    vdata.push_back(nullptr);
+    for(auto &entry : data_entries)
+      entry.add_vector_entry();
   }
 
   void SimData::addScalarData(string name) {
     scalar_data_map.emplace(name, scalar_data_map.size());
-    sdata.push_back(nullptr);
+    for(auto &entry : data_entries)
+      entry.add_scalar_entry();
   }
 
   void SimData::addIntegerData(string name) {
     integer_data_map.emplace(name, integer_data_map.size());
-    idata.push_back(nullptr);
-  }
-
-  void SimData::resize_owned(int num) {
-    // Compute new capacity
-    int new_capacity = _capacity + num;
-    // Allocate new vector data arrays
-    for (auto &v : vdata) {
-      RealType *nv = new real[new_capacity*sim_dimensions];
-      // Delete old array, set new
-      if (v) {
-  	    // Transfer data
-  	    copyVec(v, nv, _size*sim_dimensions);
-        // Delete old
-        delete [] v;
-      }
-      // Initialize the reset of the data
-      setVec(nv, _size*sim_dimensions, new_capacity*sim_dimensions, static_cast<real>(0.));
-      // Set pointer
-      v = nv;
-    }
-    // Allocate new scalar data arrays
-    for (auto &s : sdata) {
-      RealType *ns = new RealType[new_capacity];
-      // Delete old array, set new
-      if (s) {
-      	// Transfer data
-      	copyVec(s, ns, _size);
-      	// Delete old 
-      	delete [] s;
-      }
-      // Initialize the rest of the data
-      setVec(ns, _size, new_capacity, static_cast<RealType>(0.));
-      // Set pointer
-      s = ns;
-    }
-    // Allocate new integer data
-    for (auto &i : idata) {
-      int *ni = new int[new_capacity];
-      // Delete old array, set new
-      if (i) {
-      	// Transfer data
-      	copyVec(i, ni, _size);
-      	delete [] i;
-      }
-      // Initialize the rest of the data
-      setVec(ni, _size, new_capacity, -1); // Set to -1 so type will be -1
-      // Set pointer
-      i = ni;
-    }
-    // Set new sizes
-    _capacity += num;
-  }
-
-  void SimData::reset_particle(int id) {
-    for (int i=0; i<vdata.size(); ++i) zeroVec(VectorData(i)(id), sim_dimensions);
-    for (auto s : sdata) s[id] = 0.;
-    for (auto i : idata) i[id] = -1;
+    for(auto &entry : data_entries)
+      entry.add_integer_entry();
   }
 
   void SimData::swap_particle(int id1, int id2) {
@@ -805,25 +483,25 @@ namespace GFlowSimulation {
     int g2 = Id(id2);
 
     // Transfer data
-    for (int i=0; i<vdata.size(); ++i) {
+    for (int i=0; i<nvectors(); ++i) {
       auto v = VectorData(i);
       swapVec(v(id1), v(id2), sim_dimensions);
     }
-    for (int i=0; i<sdata.size(); ++i) {
+    for (int i=0; i<nscalars(); ++i) {
       auto s = ScalarData(i);
       std::swap(s(id1), s(id2));
     }
-    for (int i=0; i<idata.size(); ++i) {
+    for (int i=0; i<nintegers(); ++i) {
       auto id = IntegerData(i);
       std::swap(id(id1), id(id2));
     }
     
     // Swap global ids
     if (use_id_map) {
-      auto it1 = id_map.find(g1);
-      auto it2 = id_map.find(g2);
-      if (it1!=id_map.end()) it1->second = id2;
-      if (it2!=id_map.end()) it2->second = id1;
+      auto it1 = id_map[0].find(g1);
+      auto it2 = id_map[0].find(g2);
+      if (it1!=id_map[0].end()) it1->second = id2;
+      if (it2!=id_map[0].end()) it2->second = id1;
     }
 
     // Set flag
@@ -839,7 +517,7 @@ namespace GFlowSimulation {
   }
 
   int SimData::quick_sort_partition(int start, int end, int dim) {
-    RealType pivot = X((start + end)/2, dim);
+    real pivot = X((start + end)/2, dim);
     int i = start-1, j = end+1;
     while (true) {
       do {
@@ -867,8 +545,8 @@ namespace GFlowSimulation {
         recursion_help (i*ds, (i+1)*ds, dim+1);
       }
       // Potentially, there is some left over
-      quick_sort(sort_bins*ds, _number-1, dim);
-      recursion_help (sort_bins*ds, _number-1, dim+1);
+      quick_sort(sort_bins*ds, _number[0]-1, dim);
+      recursion_help (sort_bins*ds, _number[0]-1, dim+1);
     }
   }
 

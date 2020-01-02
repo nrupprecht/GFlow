@@ -19,7 +19,7 @@ namespace GFlowSimulation {
     step_count = step_delay;
     // Compute average radius
     characteristic_length = 0;
-    for (int n=0; n<simData->size(); ++n) {
+    for (int n=0; n<simData->size_owned(); ++n) {
       if (simData->Type(n)<0) continue;
       characteristic_length += simData->Sg(n);
     }

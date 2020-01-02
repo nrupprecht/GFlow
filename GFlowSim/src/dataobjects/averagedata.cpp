@@ -13,7 +13,7 @@ namespace GFlowSimulation {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
     // Store data
-    RealType time = Base::gflow->getElapsedTime();
+    RealType time = gflow->getElapsedTime();
     RealType *dat = new RealType[dataWidth];
     // Put in values
     dat[0] = time;
@@ -21,12 +21,12 @@ namespace GFlowSimulation {
     dat[2] = 0;
     dat[3] = 0;
     // Get and store data
-    int size = Base::simData->size(), number = Base::simData->number();
+    int size = simData->size_owned(), number = simData->number_owned();
     for (int n=0; n<size; ++n) {
-      if (Base::simData->Type(n)<0) continue;
-      dat[1] += magnitudeVec(Base::simData->X(n), sim_dimensions);
-      dat[2] += magnitudeVec(Base::simData->V(n), sim_dimensions);
-      dat[3] += magnitudeVec(Base::simData->F(n), sim_dimensions);
+      if (simData->Type(n)<0) continue;
+      dat[1] += magnitudeVec(simData->X(n), sim_dimensions);
+      dat[2] += magnitudeVec(simData->V(n), sim_dimensions);
+      dat[3] += magnitudeVec(simData->F(n), sim_dimensions);
     }
     // Put in values
     dat[1] /= number;

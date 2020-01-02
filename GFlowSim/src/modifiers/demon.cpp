@@ -178,7 +178,7 @@ namespace GFlowSimulation {
     bool doesInteract = (forceMaster->getInteraction(0, 0)!=nullptr);
   
     RealType im = 0;
-    int iter = 0, sz = simData->size();
+    int iter = 0, sz = simData->size_owned();
     while (im==0 && iter<sz) {
       im = simData->Im(iter);
       ++iter;
@@ -241,7 +241,7 @@ namespace GFlowSimulation {
     auto side = simData->IntegerData(side_entry);
 
     // Check all particles
-    for (int i=0; i<simData->size(); ++i) {
+    for (int i=0; i<simData->size_owned(); ++i) {
       // Don't count walls.
       if (im(i)==0) continue;
       // Find current side
@@ -280,7 +280,7 @@ namespace GFlowSimulation {
     // Make sure side is a valid array.
     if (side.isnull()) return;
     // Check all particles
-    for (int i=0; i<simData->size(); ++i) {
+    for (int i=0; i<simData->size_owned(); ++i) {
       // Find current side
       int sd = get_side(x(i));
       // Write side data
@@ -290,16 +290,16 @@ namespace GFlowSimulation {
 
   inline void Demon::checkpoint_data() {
     // Resize arrays if needbe
-    if (checkpoint_x.size()!=simData->size()) {
+    if (checkpoint_x.size()!=simData->size_owned()) {
       // Resize vectors
-      checkpoint_x = vector<Vec>(simData->size(), Vec(sim_dimensions));
-      checkpoint_v = vector<Vec>(simData->size(), Vec(sim_dimensions));
+      checkpoint_x = vector<Vec>(simData->size_owned(), Vec(sim_dimensions));
+      checkpoint_v = vector<Vec>(simData->size_owned(), Vec(sim_dimensions));
     }
     // Get arrays from simdata
     auto x = simData->X();
     auto v = simData->V();
     // Write simdata to arrays
-    for (int i=0; i<simData->size(); ++i) {
+    for (int i=0; i<simData->size_owned(); ++i) {
       copyVec(x(i), checkpoint_x[i]);
       copyVec(v(i), checkpoint_v[i]);
     }
@@ -313,14 +313,14 @@ namespace GFlowSimulation {
 
   inline void Demon::revert_to_last_checkpoint(bool construct) {
     // Check that sizes are the same
-    if (simData->size()!=checkpoint_x.size()) throw false;
+    if (simData->size_owned()!=checkpoint_x.size()) throw false;
 
     // Get arrays from simdata
     auto x = simData->X();
     auto v = simData->V();
 
     // Write arrays to simdata
-    for (int i=0; i<simData->size(); ++i) {
+    for (int i=0; i<simData->size_owned(); ++i) {
       copyVec(checkpoint_x[i], x(i));
       copyVec(checkpoint_v[i], v(i));
     }

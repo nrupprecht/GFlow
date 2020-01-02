@@ -23,7 +23,7 @@ namespace GFlowSimulation {
     int size = simData->size_owned();
     int count = 0;
     for (int n=0; n<size; ++n) {
-      if (im[n]>0 && -1<type[n] && simData->isReal(n)) {
+      if (im[n]>0 && -1<type[n]) {
         energy += sqr(v(n), sim_dimensions)/im[n];
         ++count;
       }
@@ -43,7 +43,7 @@ namespace GFlowSimulation {
       auto om = simData->ScalarData(om_add);
       auto sg = simData->Sg();
       for (int n=0; n<size; ++n) {
-        if (im[n]>0 && -1<type[n] && simData->isReal(n)) {
+        if (im[n]>0 && -1<type[n]) {
           RealType II = 0.5*sqr(sg[n])/im[n];
           energy += II*sqr(om[n]);
         }

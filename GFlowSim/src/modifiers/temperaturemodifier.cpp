@@ -19,7 +19,7 @@ namespace GFlowSimulation {
     if (sim_dimensions>4) throw false;
 
     // Get data
-    int size = simData->size();
+    int size = simData->size_owned();
     auto v = simData->V();
     auto f = simData->F();
     auto rd = simData->Sg();

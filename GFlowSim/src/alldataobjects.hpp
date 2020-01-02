@@ -17,7 +17,7 @@
 
 // Graph objects
 #include "dataobjects/graphobjects/average-omega-data.hpp"
-#include "dataobjects/graphobjects/avevelocitydata.hpp"
+#include "dataobjects/graphobjects/average-speed-data.hpp"
 #include "dataobjects/graphobjects/bonded-energy-data.hpp"
 #include "dataobjects/graphobjects/boundaryforcedata.hpp"
 #include "dataobjects/graphobjects/center-correlation.hpp"
@@ -34,8 +34,8 @@
 #include "dataobjects/graphobjects/total-energy-data.hpp"
 
 // Multigraph objects
-#include "dataobjects/multigraphobjects/averagepositiondata.hpp"
-#include "dataobjects/multigraphobjects/averagevelocitydata.hpp"
+#include "dataobjects/multigraphobjects/average-position-data.hpp"
+#include "dataobjects/multigraphobjects/average-velocity-data.hpp"
 #include "dataobjects/multigraphobjects/groupnetforce.hpp"
 #include "dataobjects/multigraphobjects/groupangular.hpp"
 #include "dataobjects/multigraphobjects/lineentropicforce.hpp"

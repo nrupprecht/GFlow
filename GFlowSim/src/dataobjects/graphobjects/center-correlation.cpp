@@ -13,7 +13,6 @@ namespace GFlowSimulation {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
     // Get some data
-    int size = simData->size();
     RealType dr = radius/nbins;
     Bounds bnds = gflow->getBounds();
     // Create center coordinate
@@ -21,7 +20,7 @@ namespace GFlowSimulation {
     center[0] = 0;
     for (int d=0; d<sim_dimensions; ++d) center[d] = bnds.min[d] + 0.5*bnds.wd(d);
     // Look through all particles
-    for (int n=0; n<size; ++n) {
+    for (int n=0; n<simData->size_owned(); ++n) {
       if (simData->Im(n)>0) { // Only look at movable particles
         // Measure distance from a line at x=0.
         subtractVec(simData->X(n), center.data, acc.data, sim_dimensions);

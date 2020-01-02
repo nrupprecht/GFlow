@@ -549,7 +549,7 @@ namespace GFlowSimulation {
 
     // Get a pointer to position data and the number of particles in simData
     auto x = simData->X();
-    int size = simData->size();
+    int size = simData->size_owned();
     for (int d=0; d<sim_dimensions; ++d) {
       RealType min_bound = bounds.min[d], max_bound = bounds.max[d], width = bounds.wd(d);
       if (boundaryConditions[d]==BCFlag::WRAP) {

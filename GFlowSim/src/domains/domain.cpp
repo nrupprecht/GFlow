@@ -78,17 +78,17 @@ namespace GFlowSimulation {
   void Domain::constructFor(int id1, bool insert) {
     // Find all neighor particles.
     auto x = simData->X();
-    auto sg = simData->Sg();
+    auto rd = simData->Sg();
     vector<int> neighbors;
     // Search for nearby particles.
     Vec X(sim_dimensions);
     X.wrap(x(id1), sim_dimensions);
-    getAllWithin(X, neighbors, 2*sg(id1) + skin_depth);
+    getAllWithin(X, neighbors, 2*rd(id1) + skin_depth);
     X.unwrap();
     // Build lists for the particle. List type 2.
     for (auto id2 : neighbors) {
       RealType r = gflow->getDistance(x(id1), x(id2));
-      if (r<sg(id1)+sg(id2)+skin_depth)
+      if (r<rd(id1)+rd(id2)+skin_depth)
         pair_interaction(id1, id2, 2);
     }
     // If insert flag is set to true, insert into cells
@@ -114,7 +114,7 @@ namespace GFlowSimulation {
 
     // Find potential neighbors
     auto x = simData->X();
-    auto sg = simData->Sg();
+    auto rd = simData->Sg();
     auto type = simData->Type();
 
     // Go through all the cells in the simulation.
@@ -124,7 +124,7 @@ namespace GFlowSimulation {
         int id1 = *p;
         if (type(id1)<0) continue;
         RealType *cutoffs_id1 = cutoff_grid[type(id1)];
-        RealType sigma1 = sg(id1)*max_cutoffs[type(id1)];
+        RealType sigma1 = rd(id1)*max_cutoffs[type(id1)];
 
         // If sigma is <= than max_small_sigma, only look through cell stencil
         if (sigma1<=max_small_sigma) {
@@ -132,23 +132,23 @@ namespace GFlowSimulation {
           for (auto q = p+1; q!=c.particle_ids.end(); ++q) {
             int id2 = *q;
             // If the other particle is a large particle, it will take care of this interaction
-            if (type(id1)<0 || sg(id2)*max_cutoffs[type(id2)]>max_small_sigma) continue;
+            if (type(id1)<0 || rd(id2)*max_cutoffs[type(id2)]>max_small_sigma) continue;
             // Look for distance between particles
             RealType r2 = getDistanceSqrNoWrap(x(id1), x(id2), sim_dimensions);
-            if (r2 < sqr((sg(id1) + sg(id2)*cutoffs_id1[type(id2)] + skin_depth)))
-              body(id1, id2, 0, sg(id1), sg(id2), r2);
+            if (r2 < sqr((rd(id1) + rd(id2)*cutoffs_id1[type(id2)] + skin_depth)))
+              body(id1, id2, 0, rd(id1), rd(id2), r2);
           }
           // Seach through list of adjacent cells
           for (const auto &d : c.adjacent)
             for (const auto id2 : d->particle_ids) {
               // If the other particle is a large particle, it will take care of this interaction
-              if (type(id2)<0 || sg(id2)*max_cutoffs[type(id2)]>max_small_sigma) continue;
+              if (type(id2)<0 || rd(id2)*max_cutoffs[type(id2)]>max_small_sigma) continue;
               // Look for distance between particles
               RealType r2 = getDistanceSqrNoWrap(x(id1), x(id2), sim_dimensions);
-              if (r2 < sqr((sg(id1) + sg(id2))*cutoffs_id1[type(id2)] + skin_depth))
-                body(id1, id2, 0, sg(id1), sg(id2), r2);
+              if (r2 < sqr((rd(id1) + rd(id2))*cutoffs_id1[type(id2)] + skin_depth))
+                body(id1, id2, 0, rd(id1), rd(id2), r2);
               else if (r2>max_reasonable)
-                body(id1, id2, 1, sg(id1), sg(id2), r2);                
+                body(id1, id2, 1, rd(id1), rd(id2), r2);                
             }
         }
         
@@ -184,12 +184,12 @@ namespace GFlowSimulation {
               tuple_to_linear(linear, tuple1);
               for (auto &id2 : cells[linear].particle_ids) {
                 // If the other particle is a larger particle, it will take care of this interaction
-                if (id1==id2 || sg(id2)>sigma1) continue;
+                if (id1==id2 || rd(id2)>sigma1) continue;
                 RealType r2 = getDistanceSqrNoWrap(x(id1), x(id2), sim_dimensions);
-                if (r2 < sqr((sigma1 + sg(id2))*cutoffs_id1[type(id2)] + skin_depth))
-                  body(id1, id2, 0, sigma1, sg(id2), r2);
+                if (r2 < sqr((sigma1 + rd(id2))*cutoffs_id1[type(id2)] + skin_depth))
+                  body(id1, id2, 0, sigma1, rd(id2), r2);
                 else if (max_reasonable<r2)
-                  body(id1, id2, 1, sigma1, sg(id2), r2);
+                  body(id1, id2, 1, sigma1, rd(id2), r2);
               }
             }
           } 
@@ -212,23 +212,23 @@ namespace GFlowSimulation {
     }
 
     // Get data.
-    auto x = simData->X();
-    auto sg = simData->Sg();
-    auto type = simData->Type();
+    auto x = simData->X(), x_g = simData->X<1>();
+    auto rd = simData->Sg(), rd_g = simData->Sg<1>();
+    auto type = simData->Type(), type_g = simData->Type<1>();
 
     // Traverse all ghost particles.
-    for (int id1 = simData->first_ghost(); id1<simData->size(); ++id1) {
+    for (int id1 = 0; id1<simData->size_ghosts(); ++id1) {
       // The index of the cell that ghost particle id1 is in.
-      int index = get_halo_cell_index(x(id1));
-      RealType *cutoffs_id1 = cutoff_grid[type(id1)];
+      int index = get_halo_cell_index(x_g(id1));
+      RealType *cutoffs_id1 = cutoff_grid[type_g(id1)];
       // Look at particles in the same cell and in neighboring cells.
       auto cell = cells[index];
       // Neighboring cells. The same cell is one of its "neighbors."
       for (auto c : cell.adjacent) {
         for (auto id2 : c->particle_ids) {
-          RealType r2 = getDistanceSqrNoWrap(x(id1), x(id2), sim_dimensions);
-          if (r2 < sqr((sg(id1) + sg(id2))*cutoffs_id1[type(id2)] + skin_depth) || max_reasonable<r2)
-            body(id1, id2, 2, sg(id1), sg(id2), r2);
+          RealType r2 = getDistanceSqrNoWrap(x_g(id1), x(id2), sim_dimensions);
+          if (r2 < sqr((rd_g(id1) + rd(id2))*cutoffs_id1[type(id2)] + skin_depth) || max_reasonable<r2)
+            body(id1, id2, 2, rd_g(id1), rd(id2), r2);
         }
       }
     }

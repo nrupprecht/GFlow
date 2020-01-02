@@ -13,7 +13,7 @@ namespace GFlowSimulation {
     auto st = simData->ScalarData(entry);
     auto x = simData->X();
     // Set initial heights
-    for (int i=0; i<simData->size(); i+=sim_dimensions)
+    for (int i=0; i<simData->size_owned(); i+=sim_dimensions)
       st(i) = x(i, 1);
   }
   
@@ -28,7 +28,7 @@ namespace GFlowSimulation {
     auto st = simData->ScalarData(entry);
 
     // Set heights for particles in the window
-    for (int i=0; i<simData->size(); i+=sim_dimensions)
+    for (int i=0; i<simData->size_owned(); i+=sim_dimensions)
       if (x(i, 0) < bound) st(i) = x(i, 1);
 
     // Update time point

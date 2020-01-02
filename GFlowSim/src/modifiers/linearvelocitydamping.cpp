@@ -10,7 +10,7 @@ namespace GFlowSimulation {
 
   void LinearVelocityDamping::pre_forces() {
     // Get the size of the data that we need to go through.
-    int size = simData->size();
+    int size = simData->size_owned();
     // Get arrays
     auto v = simData->V(), f = simData->F();
 

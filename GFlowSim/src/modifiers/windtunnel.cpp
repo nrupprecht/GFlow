@@ -20,7 +20,7 @@ namespace GFlowSimulation {
     if (sim_dimensions>4) throw BadDimension();
         
     auto x = simData->X(), v = simData->V(), f = simData->F();
-    int size = simData->size();
+    int size = simData->size_owned();
     for (int i=0; i<size; ++i) {
       if (x(i, 0) < leftBound || rightBound < x(i,0)) {
         // Act like an overdamped integrator. Hopefully, this will reduce the occurence of waves getting propagated around the tube.

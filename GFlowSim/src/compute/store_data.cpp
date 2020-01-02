@@ -114,8 +114,7 @@ namespace GFlowSimulation {
         ++data_pointer;
       }
       if (write_processor_info) {
-        if (simData->isReal(n)) data[data_pointer] = 2*simData->getTopology()->getRank();
-        else data[data_pointer] = 2*simData->getTopology()->getRank() + 1;
+        data[data_pointer] = simData->getTopology()->getRank();
         ++data_pointer;
       }
     }

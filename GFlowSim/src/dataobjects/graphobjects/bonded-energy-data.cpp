@@ -18,7 +18,7 @@ namespace GFlowSimulation {
     for (auto it : bonded_interactions) energy += it->getPotential();
     
     // Store data. These functions work correctly with multiprocessor runs.
-    if (useAve) gatherAverageData(gflow->getElapsedTime(), energy, simData->size());
+    if (useAve) gatherAverageData(gflow->getElapsedTime(), energy, simData->size_owned());
     else gatherData(gflow->getElapsedTime(), energy);
   }
 

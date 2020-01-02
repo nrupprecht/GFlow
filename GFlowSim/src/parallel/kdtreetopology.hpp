@@ -3,6 +3,8 @@
 
 #include "../base/topology.hpp"
 
+#include "../base/simdata.hpp"
+
 namespace GFlowSimulation {
 
   struct KDTreeTopNode {
@@ -116,13 +118,13 @@ namespace GFlowSimulation {
 
     //! \brief Pack up the particle data for the specified ids and send it to another processor, optionally deleting the original particles
     //! from this processor.
-    inline void send_particle_data(const vector<int>&, int, vector<RealType>&, MPI_Request*, int, bool=false);
+    template<unsigned=0> void send_particle_data(const vector<int>&, int, vector<RealType>&, MPI_Request*, int, bool=false);
 
     //! \brief Send particles, so that their position relative to the other processor is minimal. Used for sending ghost particles.
-    inline void send_particle_data_relative(const vector<int>&, int, vector<RealType>&, MPI_Request*, int, int);
+    template<unsigned=0> void send_particle_data_relative(const vector<int>&, int, vector<RealType>&, MPI_Request*, int, int);
 
     //! \brief Recieve particle information, and use it to create new particles. Return the number of particles recieved.
-    inline int recv_new_particle_data(int, vector<RealType>&, int);
+    template<unsigned=0> int recv_new_particle_data(int, vector<RealType>&, int);
 
     // --- Data
 
@@ -137,6 +139,9 @@ namespace GFlowSimulation {
     //! \brief The nodes of the i-th neighbors for this node. Useful for checking what neighbor's bounds are.
     vector<KDTreeTopNode*> neighbor_nodes;
   };
+
+  // Include template functions.
+  #include "kdtreetopology.tpp"
 
 }
 

@@ -1,4 +1,4 @@
-#include "averagepositiondata.hpp"
+#include "average-position-data.hpp"
 // Other files
 #include "../../base/simdata.hpp"
 

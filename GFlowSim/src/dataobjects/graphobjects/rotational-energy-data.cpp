@@ -18,14 +18,13 @@ namespace GFlowSimulation {
     auto im = simData->Im();
     auto sg = simData->Sg();
     auto type = simData->Type();
-    int size = Base::simData->size();
     int count = 0;
 
     // Check if there is rotational motion.
     if (om.isnull()) return;
 
-    for (int n=0; n<size; ++n) {
-      if (im[n]>0 && -1<type[n] && simData->isReal(n)) {
+    for (int n=0; n<simData->size_owned(); ++n) {
+      if (im[n]>0 && -1<type[n]) {
         RealType II = 0.5*sqr(sg[n])/im[n];
         energy += II*sqr(om[n]);
         ++count;

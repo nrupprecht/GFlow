@@ -28,7 +28,6 @@ namespace GFlowSimulation {
     auto x = simData->X();
     auto id = simData->Id();
     auto type = simData->Type();
-    auto size = simData->size();
     // Update local ids?
     if (locals_changed) update_local_ids();
     locals_changed = false;

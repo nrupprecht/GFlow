@@ -87,14 +87,14 @@ namespace GFlowSimulation {
 
       // Do forces for ghosts.
       potential_factor = 0.5f;
-      dolist<true>(2);
+      dolist<true, 1>(2);
       potential_factor = 1.0f;
     }
 
   private:
 
     //! \brief Do the forces for a single list. 
-    template<bool wrapping> inline void dolist(const int list) const {
+    template<bool wrapping, int first_particle_type=0> inline void dolist(const int list) const {
       // Reference to the requested list.
       const vector<int> &verlet_list = verlet[list];
       // If there are no particles, return.
@@ -104,13 +104,13 @@ namespace GFlowSimulation {
       auto& heads = head_list[list];
 
       // Get the data pointers.
-      auto x = simData->X();
-      auto f = simData->F();
-      auto rd = simData->Sg();
+      auto x0 = simData->X<first_particle_type>();
+      auto x1 = simData->X();
+      auto rd0 = simData->Sg();
+      auto rd1 = simData->Sg<first_particle_type>();
 
-      // Make sure all needed pointers are non null.
-      // \todo Should probably have some sort of global error message system.
-      if (x==nullptr || f==nullptr || rd==nullptr) return;
+      // Set up internal arrays.
+      static_cast<const ForceType*>(this)->template set_types<first_particle_type, 0>();
 
       // Needed constants
       RealType R1, R2, rsqr, r, X[dims];
@@ -139,17 +139,17 @@ namespace GFlowSimulation {
           // Get id of neighbor.
           int id2 = verlet_list[j];
           // Calculate displacement.
-          subtract_vec<dims>(x(id1), x(id2), X);
+          subtract_vec<dims>(x0(id1), x1(id2), X);
           // Harmonic corrections to distance.
           if (wrapping) harmonic_correction<dims>(bcs, X, widths);
           // Calculate squared distance
           rsqr = dot_vec<dims>(X, X);
           // Get radii
-          R1 = rd(id1);
-          R2 = rd(id2);
+          R1 = rd0(id1);
+          R2 = rd1(id2);
           // If close, interact.
           if (rsqr < sqr((R1 + R2)*cutoff)) 
-            static_cast<const ForceType*>(this)->force(id1, id2, R1, R2, rsqr, X, f);
+            static_cast<const ForceType*>(this)->force(id1, id2, R1, R2, rsqr, X);
         }
       }
     }
@@ -204,21 +204,25 @@ namespace GFlowSimulation {
 
       // Do forces for ghosts.
       potential_factor = 0.5f;
-      dolist<true>(verlet[2]);
+      dolist<true, 1>(verlet[2]);
       potential_factor = 1.0f;
     }
 
   private:
 
     //! \brief Do the forces for a single list. 
-    template<bool wrapping> inline void dolist(const vector<int>& verlet_list) const {
+    template<bool wrapping, int first_particle_type=0> inline void dolist(const vector<int>& verlet_list) const {
       // If the list is empty, return.
       if (verlet_list.empty()) return;
 
       // Get the data pointers.
-      auto x = simData->X();
-      auto f = simData->F();
-      auto rd = simData->Sg();
+      auto x0 = simData->X<first_particle_type>();
+      auto x1 = simData->X();
+      auto rd0 = simData->Sg();
+      auto rd1 = simData->Sg<first_particle_type>();
+
+      // Set up internal arrays.
+      static_cast<const ForceType*>(this)->template set_types<first_particle_type, 0>();
 
       // Needed constants
       RealType R1, R2, rsqr, r, X[dims];
@@ -240,20 +244,19 @@ namespace GFlowSimulation {
         int id1 = verlet_list[i];
         int id2 = verlet_list[i+1];
         // Calculate displacement.
-        subtract_vec<dims>(x(id1), x(id2), X);
+        subtract_vec<dims>(x0(id1), x1(id2), X);
         // Harmonic corrections to distance.
         if (wrapping) harmonic_correction<dims>(bcs, X, widths);
         // Calculate squared distance
         rsqr = dot_vec<dims>(X, X);
         // Get radii
-        R1 = rd(id1);
-        R2 = rd(id2);
+        R1 = rd0(id1);
+        R2 = rd1(id2);
         // If close, interact.
         if (rsqr < sqr((R1 + R2)*cutoff)) 
-          static_cast<const ForceType*>(this)->force(id1, id2, R1, R2, rsqr, X, f);
+          static_cast<const ForceType*>(this)->force(id1, id2, R1, R2, rsqr, X);
       }
     }
-    
   };
 
 
@@ -309,21 +312,25 @@ namespace GFlowSimulation {
 
       // Do forces for ghosts.
       potential_factor = 0.5f;
-      dolist<true>(verlet_pairs[2]);
+      dolist<true, 1>(verlet_pairs[2]);
       potential_factor = 1.0f;
     }
 
   private:
 
     //! \brief Do the forces for a single list. 
-    template<bool wrapping> inline void dolist(const vector<pair<int, int> >& verlet_list) const {
+    template<bool wrapping, int first_particle_type=0> inline void dolist(const vector<pair<int, int> >& verlet_list) const {
       // If the list is empty, return.
       if (verlet_list.empty()) return;
 
       // Get the data pointers.
-      auto x = simData->X();
-      auto f = simData->F();
-      auto rd = simData->Sg();
+      auto x0 = simData->X<first_particle_type>();
+      auto x1 = simData->X();
+      auto rd0 = simData->Sg();
+      auto rd1 = simData->Sg<first_particle_type>();
+
+      // Set up internal arrays.
+      static_cast<const ForceType*>(this)->template set_types<first_particle_type, 0>();
 
       // Needed constants
       RealType R1, R2, rsqr, r, X[dims];
@@ -345,17 +352,17 @@ namespace GFlowSimulation {
         int id1 = vpair.first;
         int id2 = vpair.second;
         // Calculate displacement.
-        subtract_vec<dims>(x(id1), x(id2), X);
+        subtract_vec<dims>(x0(id1), x1(id2), X);
         // Harmonic corrections to distance.
         if (wrapping) harmonic_correction<dims>(bcs, X, widths);
         // Calculate squared distance
         rsqr = dot_vec<dims>(X, X);
         // Get radii
-        R1 = rd(id1);
-        R2 = rd(id2);
+        R1 = rd0(id1);
+        R2 = rd1(id2);
         // If close, interact.
         if (rsqr < sqr((R1 + R2)*cutoff))
-          static_cast<const ForceType*>(this)->force(id1, id2, R1, R2, rsqr, X, f);
+          static_cast<const ForceType*>(this)->force(id1, id2, R1, R2, rsqr, X);
       }
     }
 
@@ -415,23 +422,27 @@ namespace GFlowSimulation {
 
       // Do forces for ghosts.
       potential_factor = 0.5;
-      dolist<true>(neighbor_list[2]);
+      dolist<true, 1>(neighbor_list[2]);
       potential_factor = 1.0;
     }
 
   private:
     //! \brief Do the forces for a single list. 
-    template<bool wrapping> inline void dolist(const vector<vector<int> >& neighborlist) const {
+    template<bool wrapping, int first_particle_type> inline void dolist(const vector<vector<int> >& neighborlist) const {
       // If the list is empty, return.
       if (neighborlist.empty()) return;
 
       // Get the data pointers.
-      auto x = simData->X();
-      auto f = simData->F();
-      auto rd = simData->Sg();
+      auto x0 = simData->X<first_particle_type>();
+      auto x1 = simData->X();
+      auto rd0 = simData->Sg();
+      auto rd1 = simData->Sg<first_particle_type>();
+
+      // Set up internal arrays.
+      static_cast<const ForceType*>(this)->template set_types<first_particle_type, 0>();
 
       // Needed constants
-      RealType R1, R2, rsqr, r, X[dims];
+      RealType R0, R1, rsqr, r, X[dims];
 
       // Get the bounds and boundary conditions...
       BCFlag bcs[dims];
@@ -449,22 +460,22 @@ namespace GFlowSimulation {
         auto &n_list = neighborlist[id0];
         if (n_list.empty()) continue;
         // Get radius of first particle.
-        real *x1 = x(id0);
-        R1 = rd(id0);
+        real *X0 = x0(id0);
+        R0 = rd0(id0);
         // Go through the neighbors of id1.
         for (int j=0; j<n_list.size(); ++j) {
           int id1 = n_list[j];
           // Calculate displacement.
-          subtract_vec<dims>(x1, x(id1), X);
+          subtract_vec<dims>(X0, x1(id1), X);
           // Harmonic corrections to distance.
           if (wrapping) harmonic_correction<dims>(bcs, X, widths);
           // Calculate squared distance
           rsqr = dot_vec<dims>(X, X);
           // Get radii
-          R2 = rd(id1);
+          R1 = rd1(id1);
           // If close, interact.
-          if (rsqr < sqr((R1 + R2)*cutoff))
-            static_cast<const ForceType*>(this)->force(id0, id1, R1, R2, rsqr, X, f);
+          if (rsqr < sqr((R0 + R1)*cutoff))
+            static_cast<const ForceType*>(this)->force(id0, id1, R0, R1, rsqr, X);
           // Unset history.
           else if (using_history) {
             neighbor_history->in_contact(id0, j) = false;

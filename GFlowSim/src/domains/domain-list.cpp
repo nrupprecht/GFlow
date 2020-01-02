@@ -141,7 +141,7 @@ namespace GFlowSimulation {
 
   void DomainList::structure_updates() {
     // Clear particle list
-    if (particle_list.size()<simData->size()) particle_list = vector<int>(simData->size(), -1);
+    if (particle_list.size()<simData->size_owned()) particle_list = vector<int>(simData->size_owned(), -1);
     else {
       for (auto& p : particle_list) p = -1;
     }
@@ -150,7 +150,7 @@ namespace GFlowSimulation {
     for (auto& p : cell_list) p = -1;
 
     // Fill cells
-    for (int i=0; i<simData->size(); ++i) {
+    for (int i=0; i<simData->size_owned(); ++i) {
       // Get the cell the particle belongs in.
       int index = get_cell_index(simData->X(i));
       // Basically insert particle i into the front of the cell linked list.

@@ -9,10 +9,10 @@ namespace GFlowSimulation {
   //! to move at a specific velocity (or at least very near it). This drives particle flow through the simulation.
   class WindTunnel : public Modifier {
   public:
-    //! @brief Constructor.
+    //! \brief Constructor.
     WindTunnel(GFlow*, RealType);
 
-    //! @brief Enforce wind tunnel conditions.
+    //! \brief Enforce wind tunnel conditions.
     virtual void post_forces() override;
 
   private:

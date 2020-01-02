@@ -17,7 +17,7 @@ namespace GFlowSimulation {
   void ConstantAcceleration::post_forces() {
     if (sim_dimensions>4) throw false;
     
-    int size = Base::simData->size();
+    int size = simData->size_owned();
     auto f = simData->F();
     auto im = simData->Im();
     RealType force[4];

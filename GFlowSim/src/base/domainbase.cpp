@@ -16,7 +16,7 @@ namespace GFlowSimulation {
     InteractionHandler::initialize();
 
     // If bounds are unset, then don't make sectors. We cannot initialize if simdata is null
-    if (process_bounds.vol()<=0 || isnan(process_bounds.vol()) || simData==nullptr || simData->size()==0) return;
+    if (process_bounds.vol()<=0 || isnan(process_bounds.vol()) || simData==nullptr || simData->size_owned()==0) return;
 
     // Calculate skin depth if one has not been set.
     if (!skin_depth_set) calculate_skin_depth();
