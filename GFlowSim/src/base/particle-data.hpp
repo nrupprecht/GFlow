@@ -88,7 +88,7 @@ namespace GFlowSimulation {
     //! \brief Helper function that clears a single vector of arrays.
     template<typename T> inline void clear_type(vector<T*>& data_vector) {
       for (auto& ptr : data_vector) {
-        if (ptr) free(ptr);
+        if (ptr) delete [] ptr; // free(ptr);
         ptr = nullptr;
       }
     }
@@ -99,18 +99,21 @@ namespace GFlowSimulation {
       for (auto &ptr : data_vector) {
         // If there was no entry (array was size 0), allocate memory.
         if (ptr==nullptr) {
-          ptr = static_cast<T*>(malloc(alloc_size));
+          //ptr = static_cast<T*>(malloc(alloc_size));
+          ptr = new T[data_width*desired_capacity];
           std::fill(ptr, ptr + desired_capacity, default_value);
         }
         // If there was memory, try realloc.
         else {
-          T* new_ptr = static_cast<T*>(realloc(ptr, alloc_size));
+          T* new_ptr = nullptr; // static_cast<T*>(realloc(ptr, alloc_size));
           // If this didn't work, we need to create a new pointer, copy the data, 
           // free the old data, and set the old ptr to be the new ptr.
           if (new_ptr==nullptr) {
-            new_ptr = static_cast<T*>(malloc(alloc_size));
+            //new_ptr = static_cast<T*>(malloc(alloc_size));
+            new_ptr = new T[data_width*desired_capacity];
             std::copy(ptr, ptr + _capacity, new_ptr);
-            free(ptr);
+            //free(ptr);
+            delete [] ptr;
             ptr = new_ptr;
             std::fill(ptr + _capacity, ptr + desired_capacity, default_value);
           }

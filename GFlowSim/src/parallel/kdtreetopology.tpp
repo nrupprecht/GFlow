@@ -56,7 +56,7 @@ void KDTreeTopology::send_particle_data_relative(const vector<int>& send_id_list
     for (int j=0; j<size; ++j) {
       int id = send_id_list[j];
       // Get the position of the particle, relative to the other processor.
-      gflow->getDisplacement(simData->X<1>(id), bcm, xrel);
+      gflow->getDisplacement(simData->X<particle_type>(id), bcm, xrel);
       plusEqVec(xrel, bcm, sim_dimensions);
       // Copy particle information to the buffer, using the relative position. 
       // \todo Automate a way to specify arbitrary subsets of the particle data to send.

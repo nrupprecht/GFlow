@@ -173,8 +173,9 @@ namespace GFlowSimulation {
     // --- Send ghost particles to other processors.
     //ghost_send_timer.start_timer();
     // Send particle information, but do not delete the original particles, since they will be ghosts on the other processors.
+    // Uses <0> since ghost particles for the other processor are owned particles on this processor.
     for (int i=0; i<neighbor_ranks.size(); ++i)
-      send_particle_data_relative<1>(send_ghost_list[i], neighbor_ranks[i], buffer_list[i], &send_request_list[i], send_ghost_tag, i);
+      send_particle_data_relative<0>(send_ghost_list[i], neighbor_ranks[i], buffer_list[i], &send_request_list[i], send_ghost_tag, i);
     //ghost_send_timer.stop_timer();
 
     // Reset n_ghosts.
