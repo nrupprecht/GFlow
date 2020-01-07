@@ -74,7 +74,7 @@ namespace GFlowSimulation {
         // Set the velocity.
         zeroVec(v(id), sim_dimensions);
         v(id, 0) = driving_velocity;
-        plusEqVecScaled(v(id), f(id), DEFAULT_DAMPING_CONSTANT*im(id), sim_dimensions);
+        plusEqVecScaled(v(id), f(id), 0.05f*DEFAULT_DAMPING_CONSTANT*im(id), sim_dimensions);
         // Zero the force.
         zeroVec(f(id), sim_dimensions);
       }
