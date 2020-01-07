@@ -26,24 +26,25 @@ namespace GFlowSimulation {
     // Create new particles?
     Bounds bounds = topology->getProcessBounds();
     if (bounds.min[0]<entry_threshold && gflow->getElapsedTime()-last_creation_time > entry_fraction*entry_width/driving_velocity) {
-      // Create a grid of particles. Assumes 2D. \todo Make more general.
-      real ave_d = min_r + max_r;
-      int nx = ceil(entry_fraction*entry_width/ave_d);
+      // Create a triangular lattice of particles. Assumes 2D. \todo Make more general.
+      real ave_d = min_r + max_r; // dy
+      real dr = 0.5*sqrt(3)*ave_d; // dx
+      int nx = ceil(entry_fraction*entry_width/dr);
       int ny = floor(bounds.wd(1)/ave_d);
-      real dx = ave_d;
-      real dy = ave_d;
       real X[2], V[] = {driving_velocity, 0}, R(0), Im(0);
       // Add a bunch of new particles.
+      X[0] = bounds.min[0];
       for (int ix=0; ix<nx; ++ix) {
-        X[0] = bounds.min[0] + (ix + 0.5)*dx;
+        X[1] = bounds.min[1] + (ix%2==0 ? 0.5*dr : 0);
         for (int iy=0; iy<=ny; ++iy) {
-          X[1] = bounds.min[1] + (iy + 0.5)*dy;
           // Random radius.
           R = min_r + drand48()*(max_r - min_r);
           Im = 1.f/(PI*sqr(R));
           // Add particle.
           simData->addParticle(X, V, R, Im, 0);
+          X[1] += ave_d;
         }
+        X[0] += dr;
       }
       // Set last creation time.
       last_creation_time = gflow->getElapsedTime();
