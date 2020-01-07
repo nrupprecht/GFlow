@@ -264,20 +264,10 @@ namespace GFlowSimulation {
       #endif
     }
 
+    // So ForceMaster can set ntypes.
     friend class ForceMaster;
     friend class DataMaster;
     friend class KDTreeTopology;
-
-    // --- MPI related timers.
-
-    TimedObject barrier_timer;
-    TimedObject send_timer;
-    TimedObject recv_timer;
-    TimedObject ghost_send_timer;
-    TimedObject ghost_recv_timer;
-    TimedObject ghost_wait_timer;
-    TimedObject exchange_search_timer;
-    TimedObject ghost_search_timer;
 
   private:
     // --- Helper functions.

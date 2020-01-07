@@ -5,6 +5,7 @@
 
 namespace GFlowSimulation {
 
+  //! \brief Structure for storing all that data that particles need, in SOA form.
   struct particle_data {
     //! \brief Constructor sets sim_dimensions.
     particle_data(int dims) : sim_dimensions(dims) {};
@@ -14,31 +15,38 @@ namespace GFlowSimulation {
 
     // --- Accessors ---
 
+    //! \brief Get a vector access object to the i-th vector entry.
     vec_access get_vdata(int i) { return vec_access(vdata[i], sim_dimensions); }
+    //! \brief Get a scalar access object to the i-th scalar entry.
     scalar_access get_sdata(int i) { return scalar_access(sdata[i]); }
+    //! \brief Get an integer access object to the i-th integer entry.
     integer_access get_idata(int i) { return integer_access(idata[i]); }
 
+    //! \brief The capacity (in entries) of the data arrays.
     unsigned capacity() const { return _capacity; }
 
+    //! \brief The number of vector entries.
     unsigned nvectors() const { return vdata.size(); }
+    //! \brief The number of scalar entries.
     unsigned nscalars() const { return sdata.size(); }
+    //! \brief The number of integer entries.
     unsigned nintegers() const { return idata.size(); }
 
     // --- Mutators ---
 
+    //! \brief Add another vector data entry.
     int add_vector_entry() {
       if (_capacity==0) vdata.push_back(nullptr);
       else {
         // auto ptr = static_cast<real*>(malloc(_capacity*sim_dimensions*sizeof(real)));
         real *ptr = new real[_capacity*sim_dimensions];
         vdata.push_back(ptr);
-
-        cout << "Added ptr: " << ptr << endl;
       }
       // Return address of new entry.
       return vdata.size()-1;
     }
 
+    //! \brief Add another scalar data entry.
     int add_scalar_entry() {
       if (_capacity==0) sdata.push_back(nullptr);
       else {
@@ -49,6 +57,7 @@ namespace GFlowSimulation {
       return sdata.size()-1;
     }
 
+    //! \brief Add another integer data entry.
     int add_integer_entry() {
       if (_capacity==0) idata.push_back(nullptr);
       else {
@@ -61,6 +70,7 @@ namespace GFlowSimulation {
       return idata.size()-1;
     }
 
+    //! \brief Resize the arrays to have additional capacity.
     void resize(int additional_capacity) {
       if (additional_capacity<=0) return;
       // Compute new capacity
@@ -77,6 +87,7 @@ namespace GFlowSimulation {
       _capacity = new_capacity;
     }
 
+    //! \brief Reserve some amount of space in the arrays. Clears all existing data.
     void reserve(int capacity) {
       if (capacity<=0) return;
       // Clear all existing data.
@@ -141,6 +152,7 @@ namespace GFlowSimulation {
     vector<real*> sdata;
     //! \brief Arrays for integer data.
     vector<int*> idata;
+
     //! \brief The dimensionality of vector data.
     int sim_dimensions;
 

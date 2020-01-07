@@ -152,7 +152,7 @@ namespace GFlowSimulation {
     for (int i=0; i<neighbor_ranks.size(); ++i) send_ghost_list[i].clear();
 
     // Search for particles that should be ghosts on other processors.
-    //ghost_search_timer.start_timer();
+    ghost_search_timer.start_timer();
     vector<int> overlaps; // Helping vector
     auto x = simData->X();
     auto rd = simData->Sg();
@@ -168,20 +168,20 @@ namespace GFlowSimulation {
       // Store the particle id in the send_ghost_list entry for every processor we need to send this particle to as a ghost.
       for (auto proc_n : overlaps) send_ghost_list[proc_n].push_back(id);            
     }
-    //ghost_search_timer.stop_timer();
+    ghost_search_timer.stop_timer();
 
     // --- Send ghost particles to other processors.
-    //ghost_send_timer.start_timer();
+    ghost_send_timer.start_timer();
     // Send particle information, but do not delete the original particles, since they will be ghosts on the other processors.
     // Uses <0> since ghost particles for the other processor are owned particles on this processor.
     for (int i=0; i<neighbor_ranks.size(); ++i)
       send_particle_data_relative<0>(send_ghost_list[i], neighbor_ranks[i], buffer_list[i], &send_request_list[i], send_ghost_tag, i);
-    //ghost_send_timer.stop_timer();
+    ghost_send_timer.stop_timer();
 
     // Reset n_ghosts.
     simData->_number[1] = 0;
     // Get ghosts from all neighbors.
-    //ghost_recv_timer.start_timer();
+    ghost_recv_timer.start_timer();
     for (int i=0; i<neighbor_ranks.size(); ++i) {
       // Rank of the i-th neighbor.
       int n_rank = neighbor_ranks[i];
@@ -190,7 +190,7 @@ namespace GFlowSimulation {
       // Update number of ghosts.
       simData->_number[1] += recv_ghost_sizes[i];
     }
-    //ghost_recv_timer.stop_timer();
+    ghost_recv_timer.stop_timer();
 
     // Wait on send requests so resources can be released.
     MPIObject::wait_all(send_request_list);
@@ -211,8 +211,8 @@ namespace GFlowSimulation {
     if (simData->send_ghost_omega) om = simData->ScalarData("Om");
 
     // Update the positions information of ghost particles on other processors.
+    ghost_send_timer.start_timer();
     int ghost_data_width = simData->ghost_data_width;
-    //ghost_send_timer.start_timer();
     for (int i=0; i<neighbor_ranks.size(); ++i) {
       // How many ghost particles are hosted on the i-th processor, and should have their information returned to there.
       int size = send_ghost_list[i].size();
@@ -256,7 +256,7 @@ namespace GFlowSimulation {
         MPI_Isend(buffer_list[i].data(), size*ghost_data_width, MPI_FLOAT, neighbor_ranks[i], update_ghost_tag, MPI_COMM_WORLD, &send_request_list[i]);
       }
     }
-    //ghost_send_timer.stop_timer();
+    ghost_send_timer.stop_timer();
 
     // Stop mpi timer.
     gflow->stopMPIGhostTimer();
@@ -270,7 +270,7 @@ namespace GFlowSimulation {
     _last_n_ghosts_recv = 0;
 
     // Start non-blocking receives of ghost particle data.
-    //ghost_recv_timer.start_timer();
+    ghost_recv_timer.start_timer();
     int ghost_data_width = simData->ghost_data_width;
     for (int i=0; i<neighbor_ranks.size(); ++i) {
       int size = recv_ghost_sizes[i];
@@ -283,7 +283,7 @@ namespace GFlowSimulation {
         MPI_Irecv(recv_buffer[i].data(), size*ghost_data_width, MPI_FLOAT, neighbor_ranks[i], update_ghost_tag, MPI_COMM_WORLD, &recv_request_list[i]);
       }
     }
-    //ghost_recv_timer.stop_timer();
+    ghost_recv_timer.stop_timer();
 
     // Collect received data and pack it. Get ghost data entries.
     auto x = simData->X<1>();

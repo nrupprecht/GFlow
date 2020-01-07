@@ -63,15 +63,7 @@ namespace GFlowSimulation {
   void SimData::pre_integrate() {
     // Clear the timed object timer.
     clear_timer();
-    // Clear other timers.
-    send_timer.clear_timer(); 
-    recv_timer.clear_timer(); 
-    barrier_timer.clear_timer(); 
-    ghost_send_timer.clear_timer(); 
-    ghost_recv_timer.clear_timer(); 
-    ghost_wait_timer.clear_timer();
-    exchange_search_timer.clear_timer(); 
-    ghost_search_timer.clear_timer();
+    
     // Remove any bad particles.
     removeBadParticles();
 
