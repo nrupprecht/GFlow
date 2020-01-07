@@ -469,9 +469,10 @@ namespace GFlowSimulation {
   }
 
   inline BCFlag FileParseCreator::choose_bc(const string& token) const {
-    if      (token=="Wrap")     return BCFlag::WRAP;
-    else if (token=="Reflect")  return BCFlag::REFL;
-    else if (token=="Repulse")  return BCFlag::REPL;
+    if      (token=="Wrap")    return BCFlag::WRAP;
+    else if (token=="Reflect") return BCFlag::REFL;
+    else if (token=="Repulse") return BCFlag::REPL;
+    else if (token=="Open")    return BCFlag::OPEN;
     else throw UnexpectedOption("Boundary condition choice was ["+token+"].");
   }
 
@@ -483,6 +484,13 @@ namespace GFlowSimulation {
       RealType velocity = 0;
       parser.val(velocity);
       gflow->addModifier(new WindTunnel(gflow, velocity));
+    }
+    else if (token=="StreamTunnel") {
+      real velocity(0), min_r(0), max_r(0);
+      parser.val(velocity);
+      parser.val(min_r, 1);
+      parser.val(max_r, 2);
+      gflow->addModifier(new StreamTunnel(gflow, velocity, min_r, max_r));
     }
     else throw UnexpectedOption("Modifier choice was ["+token+"].");
   }

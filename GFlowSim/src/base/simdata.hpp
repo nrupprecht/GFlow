@@ -217,7 +217,9 @@ namespace GFlowSimulation {
     Bounds getBounds() const;
 
     //! \brief Get the needs remake flag.
-    bool getNeedsRemake();
+    bool getNeedsRemake() const;
+    //! \brief Get the needs local remake flag.
+    bool getNeedsLocalRemake() const;
 
     //! \brief Get the position of the first halo particle in the array.
     int getFirstHalo();
@@ -241,6 +243,8 @@ namespace GFlowSimulation {
 
     //! \brief Set the needs remake flag.
     void setNeedsRemake(bool=true);
+    //! \brief Set the needs local remake flag.
+    void setNeedsLocalRemake(bool=true);
 
     //! \brief Add a vector data entry.
     void addVectorData(string);
@@ -294,25 +298,13 @@ namespace GFlowSimulation {
 
     //! \brief A flag that can be set to true whenever something happens that might invalidate the current data.
     bool needs_remake = false;
+    //! \brief A flag that can be set whenever interaction pairs should be reprocessed, but a full rebuild (which would involve MPI)
+    //! doesn't need to be / can't be done.
+    bool needs_local_remake = false;
 
     // -*-*-*- Particle data -*-*-*-
 
     vector<particle_data> data_entries;
-
-    // //! \brief Vector data. Entries are for owned and ghost particle arrays.
-    // //!
-    // //! Contains postion (0), velocity (1), and force (2).
-    // vector<real*> vdata[2];
-
-    // //! \brief Scalar data. Entries are for owned and ghost particle arrays.
-    // //! 
-    // //! Contains sigma (0), inverse mass (1). Can also contain repulsion, dissipation, coefficient of friction, etc.
-    // vector<real*> sdata[2];
-
-    // //! \brief Integer data. Entries are for owned and ghost particle arrays.
-    // //!
-    // //! Contains type (0), global id (1). Can also contain body membership information, etc.
-    // vector<int*> idata[2];
 
     // -*-*-*- Data mapping -*-*-*-
 

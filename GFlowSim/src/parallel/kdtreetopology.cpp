@@ -89,7 +89,7 @@ namespace GFlowSimulation {
     for (int i=0; i<neighbor_ranks.size(); ++i) send_ids[i].clear();
     
     /// --- Go through all particles, deciding which ones should migrate to other processors.
-    //exchange_search_timer.start_timer();
+    exchange_search_timer.start_timer();
     auto x = simData->X();
     auto type = simData->Type();
     for (int id=0; id < simData->size_owned(); ++id) {
@@ -108,14 +108,13 @@ namespace GFlowSimulation {
         }
       }
     }
-
-    //exchange_search_timer.stop_timer();
+    exchange_search_timer.stop_timer();
 
     // Send particle information, deleting the particles that we send.
-    //send_timer.start_timer();
+    send_timer.start_timer();
     for (int i=0; i<neighbor_ranks.size(); ++i) 
       send_particle_data(send_ids[i], neighbor_ranks[i], buffer_list[i], &send_request_list[i], send_particle_tag, true);
-    //send_timer.stop_timer();
+    send_timer.stop_timer();
 
     // Stop mpi timer. Particle removal counts as a simdata update task.
     gflow->stopMPIExchangeTimer();
@@ -130,12 +129,12 @@ namespace GFlowSimulation {
     // --- Receive particles from other processors.
 
     // Recieve particle information, and use it to create new particles.
-    //recv_timer.start_timer();
+    recv_timer.start_timer();
     for (int i=0; i<neighbor_ranks.size(); ++i) {
       int n_rank = neighbor_ranks[i];
       _last_n_exchange_recv += recv_new_particle_data(n_rank, recv_buffer[i], send_particle_tag);
     }
-    //recv_timer.stop_timer();
+    recv_timer.stop_timer();
 
     // Stop mpi timer.
     gflow->stopMPIExchangeTimer();
@@ -193,7 +192,7 @@ namespace GFlowSimulation {
     ghost_recv_timer.stop_timer();
 
     // Wait on send requests so resources can be released.
-    MPIObject::wait_all(send_request_list);
+    MPIObject::wait_all(send_request_list, ghost_wait_timer);
     
     // Stop mpi timer.
     gflow->stopMPIGhostTimer();
@@ -283,7 +282,6 @@ namespace GFlowSimulation {
         MPI_Irecv(recv_buffer[i].data(), size*ghost_data_width, MPI_FLOAT, neighbor_ranks[i], update_ghost_tag, MPI_COMM_WORLD, &recv_request_list[i]);
       }
     }
-    ghost_recv_timer.stop_timer();
 
     // Collect received data and pack it. Get ghost data entries.
     auto x = simData->X<1>();
@@ -316,9 +314,10 @@ namespace GFlowSimulation {
         }
       }
     }
+    ghost_recv_timer.stop_timer();
 
     // Wait for the data that we sent in send_ghost_updates to be sent, so resources can be released.
-    MPIObject::wait_all(send_request_list);
+    MPIObject::wait_all(send_request_list, ghost_wait_timer);
 
     // Stop mpi timer.
     gflow->stopMPIGhostTimer();

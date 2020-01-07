@@ -528,6 +528,7 @@ namespace GFlowSimulation {
       sum_eq_vec_scaled<dims>(f0(id0), X,  Fn);
       sum_eq_vec_scaled<dims>(f1(id1), X, -Fn);
 
+      /*
       // Calculate tangential force.
       RealType Vn[dims], Vt[dims];
       // Create the Vn (normal velocity component) vector.
@@ -535,6 +536,7 @@ namespace GFlowSimulation {
       scalar_mult_eq_vec<dims>(Vn, vn);
       // Subtract, setting Vt = V - Vn.
       subtract_vec<dims>(V, Vn, Vt);
+      */
 
       /*
       // Angular velocities.

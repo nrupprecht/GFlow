@@ -8,6 +8,7 @@
 #include "modifiers/linearvelocitydamping.hpp"
 #include "modifiers/quadraticvelocitydamping.hpp"
 #include "modifiers/windtunnel.hpp"
+#include "modifiers/stream-tunnel.hpp"
 #include "modifiers/stripe-x.hpp"
 #include "modifiers/torque-remover.hpp"
 #include "modifiers/force-remover.hpp"

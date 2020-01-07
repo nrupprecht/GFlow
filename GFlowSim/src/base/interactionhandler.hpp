@@ -35,6 +35,9 @@ namespace GFlowSimulation {
 
     //! \brief Construct objects for interactions. This contains common construction tasks.
     virtual void construct();
+    
+    //! \brief Construct interactions, but don't change particle ids or do any MPI related tasks.
+    virtual void construct_local();
 
     //! \brief Construct interactions for a single particle.
     //!

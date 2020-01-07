@@ -95,10 +95,13 @@ namespace GFlowSimulation {
       if (topology->getNumProc()>1 && update_decision_type==0) MPIObject::mpi_or(do_construct);
     #endif // USE_MPI==1
 
+    // Do a full construct.
     if (do_construct) {
       if (gflow->getUseForces()) construct();
       else simData->update();
     }
+    // Do a local construct.
+    else if (simData->getNeedsLocalRemake()) construct_local();
   }
 
   void InteractionHandler::construct() {
@@ -129,6 +132,40 @@ namespace GFlowSimulation {
     // Set gflow flags. This should happen before any return points.
     gflow->handler_needs_remake() = false;
     gflow->handler_remade() = true;
+    simData->setNeedsLocalRemake(false); // A full remake is more thorough than a local remake.
+
+    // If there are no interaction, or the forceMaster is null, we don't need to make any verlet lists
+    if (!gflow->getInteractions().empty() && forceMaster!=nullptr && gflow->getUseForces()) {
+      // Update data structures.
+      structure_updates();
+
+      // The interaction function
+      auto interaction_function = [&] (int id1, int id2, int w_type, RealType, RealType, RealType) {
+        pair_interaction(id1, id2, w_type);
+      };
+      
+      // Traverse cells, adding particle pairs that are within range of one another to the interaction.
+      traversePairs(interaction_function);
+      // Traverse ghost particle - real particle pairs.
+      if (simData->number_ghosts()>0) traverseGhostPairs(interaction_function);
+      
+      // Close all interactions.
+      forceMaster->close();
+    }
+    
+    // Stop timer.
+    stop_timer();
+  }
+
+  void InteractionHandler::construct_local() {
+    // Start timed object timer.
+    start_timer();
+
+    // Reset the verlet lists of all the forces and make sure force master has interaction array set up
+    forceMaster->clear();
+    forceMaster->initialize_does_interact();
+    // Unset flag.
+    simData->setNeedsLocalRemake(false);
 
     // If there are no interaction, or the forceMaster is null, we don't need to make any verlet lists
     if (!gflow->getInteractions().empty() && forceMaster!=nullptr && gflow->getUseForces()) {

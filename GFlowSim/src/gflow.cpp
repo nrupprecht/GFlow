@@ -619,14 +619,14 @@ namespace GFlowSimulation {
           // Create a local copy
           if (x(n, d)<min_bound) {
             RealType dx = min_bound - x(n, d);
-            RealType F = repulsion*dx + dissipation*clamp(-v(n, d));
+            RealType F = 10*repulsion*dx + dissipation*clamp(-v(n, d));
             f(n, d) += F;
             boundaryForce += F;
             boundaryEnergy += 0.5*repulsion*sqr(dx);
           }
           else if (max_bound<x(n, d)) {
             RealType dx = (x(n, d) - max_bound);
-            RealType F = repulsion*dx + dissipation*clamp(v(n, d));
+            RealType F = 10*repulsion*dx + dissipation*clamp(v(n, d));
             f(n, d) -= F;
             boundaryForce += F;
             boundaryEnergy += 0.5*repulsion*sqr(dx);

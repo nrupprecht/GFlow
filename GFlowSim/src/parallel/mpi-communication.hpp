@@ -68,6 +68,12 @@ namespace MPIObject {
     MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
   }
 
+  inline void wait_all(vector<MPI_Request>& requests, TimedObject &timer) {
+    timer.start_timer();
+    MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
+    timer.stop_timer();
+  }
+
   inline bool test(MPI_Request& request) {
     int valid = 0;
     MPI_Test(&request, &valid, MPI_STATUS_IGNORE);
