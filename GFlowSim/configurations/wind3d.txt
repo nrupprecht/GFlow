@@ -63,4 +63,6 @@ Particle {
 
 Reconcile: Remove=0.5
 
-Modifier: WindTunnel=Velocity
+Modifier: WindTunnel {
+  Velocity: Velocity
+}

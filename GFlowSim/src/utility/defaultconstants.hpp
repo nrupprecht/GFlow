@@ -95,6 +95,7 @@ namespace GFlowSimulation {
   *  this array is only const.
   */
   const double MaxPackings[] = { 
+    0.,                     // d=0 -> Placeholder.
     1.,                     // d=1 -> Optimal
     PI*sqrt(3.)/6.,         // d=2 -> Optimal
     PI*sqrt(2.)/6.,         // d=3 -> Optimal

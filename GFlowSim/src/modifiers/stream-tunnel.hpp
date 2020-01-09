@@ -7,6 +7,8 @@ namespace GFlowSimulation {
   
   class StreamTunnel : public Modifier {
   public:
+    //! \brief Default constructor.
+    StreamTunnel(GFlow*);
     //! \brief Constructor, sets velocity, min and max radii.
     StreamTunnel(GFlow*, const real, const real, const real);
 
@@ -18,6 +20,9 @@ namespace GFlowSimulation {
 
     //! \brief Enforce wind tunnel conditions.
     virtual void post_forces() override;
+
+    //! \brief Create this object from parse node data.
+    virtual void parse_construct(HeadNode*, const std::map<string, string>&) override;
 
   private:
     //! \brief The amount of space in which we create and push particles.

@@ -48,7 +48,6 @@ namespace GFlowSimulation {
       else throw InvalidInteraction(token + ", " + toStr(sim_dimensions) + "." + err);
     }
     else if (token==HertzToken) {
-      
       if      (sim_dimensions==1) return new HertzVLP<1>(gflow);
       else if (sim_dimensions==2) return new HertzVLP<2>(gflow);
       else if (sim_dimensions==3) return new HertzVLP<3>(gflow);

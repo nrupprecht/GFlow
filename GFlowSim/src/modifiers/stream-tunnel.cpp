@@ -5,8 +5,18 @@
 
 namespace GFlowSimulation {
 
+  StreamTunnel::StreamTunnel(GFlow *gflow) 
+    : Modifier(gflow), driving_velocity(2.f), min_r(0.05f), max_r(0.05f), phi_target(MaxPackings[sim_dimensions])
+  {
+    entry_width = min(entry_width, 0.1f*gflow->getBounds().wd(0));
+    exit_width = min(exit_width, 0.1f*gflow->getBounds().wd(0));
+    // Set thresholds.
+    entry_threshold = entry_width + gflow->getBounds().min[0];
+    exit_threshold = gflow->getBounds().max[0] - exit_width;
+  };
+
   StreamTunnel::StreamTunnel(GFlow *gflow, const real speed, const real mr, const real Mr) 
-    : Modifier(gflow), driving_velocity(speed), min_r(mr), max_r(Mr)
+    : Modifier(gflow), driving_velocity(speed), min_r(mr), max_r(Mr), phi_target(MaxPackings[sim_dimensions])
   {
     entry_width = min(entry_width, 0.1f*gflow->getBounds().wd(0));
     exit_width = min(exit_width, 0.1f*gflow->getBounds().wd(0));
@@ -27,22 +37,17 @@ namespace GFlowSimulation {
     // Create new particles?
     Bounds bounds = topology->getProcessBounds();
     if (bounds.min[0]<entry_threshold && gflow->getElapsedTime()-last_creation_time > entry_fraction*entry_width/driving_velocity) {
-
-      real spacing_factor = 1.f;
-      // 1.25 -> rho = 0.58
-      // 1.5 -> rho = 0.5
-      // 1.75 -> rho = 0.31
-      // 2 -> rho = 0.27
-
+      // Figure out what the spacing should be.
+      real spacing_factor = sqrt(MaxPackings[sim_dimensions]/phi_target);
       // Create a triangular lattice of particles. Assumes 2D. \todo Make more general.
       real ave_d = min_r + max_r; // dy
-      real tri_x = 0.5*sqrt(3)*ave_d;
+      real tri_x = 0.5*sqrt(3.)*ave_d;
       real dy = spacing_factor*ave_d;
       real dx = spacing_factor*tri_x;
       int nx = ceil(entry_fraction*entry_width/dx);
       int ny = floor(bounds.wd(1)/dy);
       ProportionalRandomEngine random_radius(min_r, max_r, sim_dimensions);
-      real X[2], V[] = {driving_velocity, 0}, R(0), Im(0), vol(0);
+      real X[2], Xi[2], V[] = {driving_velocity, 0}, R(0), Im(0), vol(0);
       // Add a bunch of new particles.
       X[0] = bounds.min[0];
       for (int ix=0; ix<nx; ++ix) {
@@ -51,8 +56,10 @@ namespace GFlowSimulation {
           // Random radius.
           R = random_radius.generate();
           Im = 1.f/(PI*sqr(R));
+          // Small position perturbation.
+          for (int d=0; d<sim_dimensions; ++d) Xi[d] = X[d] + 0.25*spacing_factor*tri_x*randNormal();
           // Add particle.
-          simData->addParticle(X, V, R, Im, 0);
+          simData->addParticle(Xi, V, R, Im, 0);
           X[1] += dy;
           vol += sphere_volume(R, sim_dimensions);
         }
@@ -97,6 +104,21 @@ namespace GFlowSimulation {
       // Remove particle.
       if (x(id, 0)>max_bound) simData->markForRemoval(id);
     }
+  }
+
+  void StreamTunnel::parse_construct(HeadNode *head, const std::map<string, string> &variables) {
+    // Create a parser
+    TreeParser parser(head, variables);
+    // Add a heading.
+    parser.addHeadingOptional("MinR");
+    parser.addHeadingOptional("MaxR");
+    parser.addHeadingOptional("Phi");
+    parser.addHeadingOptional("Velocity");
+    // Gather parameters
+    parser.firstArg("MinR", min_r);
+    parser.firstArg("MaxR", max_r);
+    parser.firstArg("Phi", phi_target);
+    parser.firstArg("Velocity", driving_velocity);
   }
 
 

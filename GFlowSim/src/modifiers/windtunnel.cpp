@@ -4,7 +4,15 @@
 
 namespace GFlowSimulation {
 
-  WindTunnel::WindTunnel(GFlow *gflow, RealType v) : Modifier(gflow), velocity(v), halfWidth(4.), acceleration(2.) {
+  WindTunnel::WindTunnel(GFlow *gflow, RealType v) : Modifier(gflow), velocity(v) {
+    // Make sure half widths are not too large.
+    halfWidth = std::min(0.1f*gflow->getBounds().wd(0), halfWidth);
+    // Set bounds.
+    leftBound  = gflow->getBounds().min[0] + halfWidth;
+    rightBound = gflow->getBounds().max[0] - halfWidth;
+  }
+
+  WindTunnel::WindTunnel(GFlow *gflow) : Modifier(gflow), velocity(0) {
     // Make sure half widths are not too large.
     halfWidth = std::min(0.1f*gflow->getBounds().wd(0), halfWidth);
     // Set bounds.
@@ -31,6 +39,15 @@ namespace GFlowSimulation {
         zeroVec(f(i), sim_dimensions);
       }
     }
+  }
+
+  void WindTunnel::parse_construct(HeadNode *head, const std::map<string, string> &variables) {
+    // Create a parser
+    TreeParser parser(head, variables);
+    // Add a heading.
+    parser.addHeadingOptional("Velocity");
+    // Gather parameters
+    parser.firstArg("Velocity", velocity);
   }
 
 }

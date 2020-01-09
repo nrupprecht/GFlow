@@ -481,16 +481,14 @@ namespace GFlowSimulation {
     string token = parser.argName();
 
     if (token=="WindTunnel") {
-      RealType velocity = 0;
-      parser.val(velocity);
-      gflow->addModifier(new WindTunnel(gflow, velocity));
+      Modifier *wind_tunnel = new WindTunnel(gflow);
+      wind_tunnel->parse_construct(head, variables);
+      gflow->addModifier(wind_tunnel);
     }
     else if (token=="StreamTunnel") {
-      real velocity(0), min_r(0), max_r(0);
-      parser.val(velocity);
-      parser.val(min_r, 1);
-      parser.val(max_r, 2);
-      gflow->addModifier(new StreamTunnel(gflow, velocity, min_r, max_r));
+      Modifier *stream_tunnel = new StreamTunnel(gflow);
+      stream_tunnel->parse_construct(head, variables);
+      gflow->addModifier(stream_tunnel);
     }
     else throw UnexpectedOption("Modifier choice was ["+token+"].");
   }
