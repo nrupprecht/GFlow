@@ -42,7 +42,8 @@ namespace GFlowSimulation {
     real min_r;
     //! The max radius of an added particle.
     real max_r;
-
+    //! \brief The target system (volume) density.
+    real phi_target = 0.9;
   };
 
 }

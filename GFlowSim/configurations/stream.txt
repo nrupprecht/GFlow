@@ -36,13 +36,13 @@ Boundary: {
 NTypes: 2
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
-Force-grid: HardSphereDs /*Hertz {
+Force-grid: Hertz {
   Mu: Mu
   Kn: kappaN
   Kt: kappaT
   GammaN: gammaN
   GammaT: gammaT
-}*/
+}
 
 // Fill an area with particles
 Fill: Area {

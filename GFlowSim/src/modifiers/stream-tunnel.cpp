@@ -1,6 +1,7 @@
 #include "stream-tunnel.hpp"
 // Other files
 #include "../base/topology.hpp"
+#include "../utility/randomengines.hpp"
 
 namespace GFlowSimulation {
 
@@ -26,33 +27,46 @@ namespace GFlowSimulation {
     // Create new particles?
     Bounds bounds = topology->getProcessBounds();
     if (bounds.min[0]<entry_threshold && gflow->getElapsedTime()-last_creation_time > entry_fraction*entry_width/driving_velocity) {
+
+      real spacing_factor = 1.f;
+      // 1.25 -> rho = 0.58
+      // 1.5 -> rho = 0.5
+      // 1.75 -> rho = 0.31
+      // 2 -> rho = 0.27
+
       // Create a triangular lattice of particles. Assumes 2D. \todo Make more general.
       real ave_d = min_r + max_r; // dy
-      real dr = 0.5*sqrt(3)*ave_d; // dx
-      int nx = ceil(entry_fraction*entry_width/dr);
-      int ny = floor(bounds.wd(1)/ave_d);
-      real X[2], V[] = {driving_velocity, 0}, R(0), Im(0);
+      real tri_x = 0.5*sqrt(3)*ave_d;
+      real dy = spacing_factor*ave_d;
+      real dx = spacing_factor*tri_x;
+      int nx = ceil(entry_fraction*entry_width/dx);
+      int ny = floor(bounds.wd(1)/dy);
+      ProportionalRandomEngine random_radius(min_r, max_r, sim_dimensions);
+      real X[2], V[] = {driving_velocity, 0}, R(0), Im(0), vol(0);
       // Add a bunch of new particles.
       X[0] = bounds.min[0];
       for (int ix=0; ix<nx; ++ix) {
-        X[1] = bounds.min[1] + (ix%2==0 ? 0.5*dr : 0);
+        X[1] = bounds.min[1] + (ix%2==0 ? 0.5*dx : 0) + 0.5*dy;
         for (int iy=0; iy<=ny; ++iy) {
           // Random radius.
-          R = min_r + drand48()*(max_r - min_r);
+          R = random_radius.generate();
           Im = 1.f/(PI*sqr(R));
           // Add particle.
           simData->addParticle(X, V, R, Im, 0);
-          X[1] += ave_d;
+          X[1] += dy;
+          vol += sphere_volume(R, sim_dimensions);
         }
-        X[0] += dr;
+        X[0] += dx;
       }
       // Set last creation time.
       last_creation_time = gflow->getElapsedTime();
       simData->setNeedsLocalRemake();
+      // Achieved density.
+      real pf = vol / (entry_fraction*entry_width * bounds.wd(1));
     }
   }
 
-  void StreamTunnel::post_forces() {
+  void StreamTunnel::post_forces() { 
     // Only run the stream tunnel during an actual simulation and if we have a topology object.
     if (topology==nullptr || gflow->getRunMode()!=RunMode::SIM) return;
     Bounds processor_bounds = topology->getProcessBounds();
