@@ -28,6 +28,8 @@ namespace GFlowSimulation {
   void StreamTunnel::pre_integrate() {
     // So particles have a chance to get farther away at the beginning.
     last_creation_time = 0;
+    // Calculate initial spacing factor.
+    spacing_factor = sqrt(MaxPackings[sim_dimensions]/phi_target);
   }
 
   void StreamTunnel::pre_forces() {
@@ -37,8 +39,6 @@ namespace GFlowSimulation {
     // Create new particles?
     Bounds bounds = topology->getProcessBounds();
     if (bounds.min[0]<entry_threshold && gflow->getElapsedTime()-last_creation_time > entry_fraction*entry_width/driving_velocity) {
-      // Figure out what the spacing should be.
-      real spacing_factor = sqrt(MaxPackings[sim_dimensions]/phi_target);
       // Create a triangular lattice of particles. Assumes 2D. \todo Make more general.
       real ave_d = min_r + max_r; // dy
       real tri_x = 0.5*sqrt(3.)*ave_d;
@@ -46,18 +46,19 @@ namespace GFlowSimulation {
       real dx = spacing_factor*tri_x;
       int nx = ceil(entry_fraction*entry_width/dx);
       int ny = floor(bounds.wd(1)/dy);
+      constexpr real perturbation_strength = 0.25;
       ProportionalRandomEngine random_radius(min_r, max_r, sim_dimensions);
-      real X[2], Xi[2], V[] = {driving_velocity, 0}, R(0), Im(0), vol(0);
+      real X[2], Xi[2], V[] = {driving_velocity, 0}, R(0), Im(0), vol(0); // Assumes 2 dimensions.
       // Add a bunch of new particles.
       X[0] = bounds.min[0];
       for (int ix=0; ix<nx; ++ix) {
         X[1] = bounds.min[1] + (ix%2==0 ? 0.5*dx : 0) + 0.5*dy;
-        for (int iy=0; iy<=ny; ++iy) {
+        for (int iy=0; iy<ny; ++iy) {
           // Random radius.
           R = random_radius.generate();
           Im = 1.f/(PI*sqr(R));
           // Small position perturbation.
-          for (int d=0; d<sim_dimensions; ++d) Xi[d] = X[d] + 0.25*spacing_factor*tri_x*randNormal();
+          for (int d=0; d<sim_dimensions; ++d) Xi[d] = X[d] + perturbation_strength*spacing_factor*tri_x*randNormal();
           // Add particle.
           simData->addParticle(Xi, V, R, Im, 0);
           X[1] += dy;
@@ -70,6 +71,8 @@ namespace GFlowSimulation {
       simData->setNeedsLocalRemake();
       // Achieved density.
       real pf = vol / (entry_fraction*entry_width * bounds.wd(1));
+      // Correct spacing factor for next time.
+      spacing_factor -= 0.1*(phi_target - pf);
     }
   }
 

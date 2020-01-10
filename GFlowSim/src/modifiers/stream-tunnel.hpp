@@ -32,14 +32,6 @@ namespace GFlowSimulation {
     //! \brief The fraction of the entry width that should be used to add particles.
     real entry_fraction = 0.25f;
 
-    //! \brief The place at which particles should start being effected by the velocity field.
-    real entry_threshold;
-    //! \brief The place at which particles should stop being effected by the velocity field.
-    real exit_threshold;
-
-    //! \brief The amount of time since we last created particles.
-    real last_creation_time = 0.f;
-
     //! \brief The velocity at which the particles should be driven.
     real driving_velocity = 1.f;
 
@@ -49,6 +41,20 @@ namespace GFlowSimulation {
     real max_r;
     //! \brief The target system (volume) density.
     real phi_target = 0.9;
+
+    // --- Internal parameters ---
+
+    //! \brief The place at which particles should start being effected by the velocity field.
+    real entry_threshold;
+    //! \brief The place at which particles should stop being effected by the velocity field.
+    real exit_threshold;
+
+    //! \brief The amount of time since we last created particles.
+    real last_creation_time = 0.f;
+
+    //! \brief How to space the lattice of particles to get the correct volume density.
+    real spacing_factor;
+
   };
 
 }
