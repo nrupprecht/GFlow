@@ -22,6 +22,8 @@ namespace GFlowSimulation {
     // Set the forces
     Vec F(sim_dimensions);
     findNetForce(F.data);
+    // Data reduction.
+    MPIObject::mpi_sum0(F.data, F.sim_dimensions);
     // Set each dimension of force.
     for (int d=0; d<sim_dimensions; ++d) getY(d) = F[d];
   }

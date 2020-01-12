@@ -24,6 +24,7 @@ namespace GFlowSimulation {
     // --- Parameters
     RealType radius = 1., sigma = 0.05;
     int type = 0;
+    bool track = true;
     // --- Gather parameters
     Vec center = parser.argVec("Center");
     // Check that vectors are good.
@@ -32,12 +33,20 @@ namespace GFlowSimulation {
     parser.firstArg("Radius", radius);
     parser.firstArg("Sigma", sigma);
     parser.firstArg("Type", type);
+    parser.firstArg("Track", track);
 
     // Compute number of particles, angle.
     RealType circumference = 2*PI*radius;
     int n_particles = max(static_cast<int>(ceil(0.5 * circumference / sigma)), 1);
     RealType dtheta = 2.*PI / n_particles, theta = 0;
     auto process_bounds = gflow->getTopology()->getProcessBounds();
+
+    // Group net force object
+    GroupNetForce *netforce = nullptr;
+    if (track) {
+      netforce = new GroupNetForce(gflow);
+      gflow->addDataObject(netforce);
+    }
 
     // Place particles
     auto simData = gflow->getSimData(); // Get the simdata
@@ -53,6 +62,8 @@ namespace GFlowSimulation {
         int gid = simData->getNextGlobalID();
         // Add the particle to simdata. It is a particle of infinite mass.
         simData->addParticle(pos.data, Zero.data, sigma, 0, type);
+
+        if (track) netforce->add(gid);
       }
     }
 

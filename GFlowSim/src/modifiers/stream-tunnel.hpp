@@ -55,6 +55,9 @@ namespace GFlowSimulation {
     //! \brief How to space the lattice of particles to get the correct volume density.
     real spacing_factor;
 
+    real last_x_coord;
+    bool shift_x = true;
+
   };
 
 }

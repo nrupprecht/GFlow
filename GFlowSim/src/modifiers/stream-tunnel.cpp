@@ -30,6 +30,8 @@ namespace GFlowSimulation {
     last_creation_time = 0;
     // Calculate initial spacing factor.
     spacing_factor = sqrt(MaxPackings[sim_dimensions]/phi_target);
+    // Set current_x_coord
+    last_x_coord = gflow->getBounds().min[0];
   }
 
   void StreamTunnel::pre_forces() {
@@ -38,21 +40,25 @@ namespace GFlowSimulation {
     
     // Create new particles?
     Bounds bounds = topology->getProcessBounds();
-    if (bounds.min[0]<entry_threshold && gflow->getElapsedTime()-last_creation_time > entry_fraction*entry_width/driving_velocity) {
+    // Position of particles created at the previous last_x_coord;
+    real current_x_coord = last_x_coord + driving_velocity * (gflow->getElapsedTime() - last_creation_time);
+    real cutoff_position = bounds.min[0] + entry_fraction * entry_width;
+    if (bounds.min[0]<entry_threshold && cutoff_position<current_x_coord) {
       // Create a triangular lattice of particles. Assumes 2D. \todo Make more general.
       real ave_d = min_r + max_r; // dy
       real tri_x = 0.5*sqrt(3.)*ave_d;
       real dy = spacing_factor*ave_d;
       real dx = spacing_factor*tri_x;
-      int nx = ceil(entry_fraction*entry_width/dx);
+      int nx = floor((current_x_coord - bounds.min[0])/dx);
       int ny = floor(bounds.wd(1)/dy);
       constexpr real perturbation_strength = 0.25;
       ProportionalRandomEngine random_radius(min_r, max_r, sim_dimensions);
       real X[2], Xi[2], V[] = {driving_velocity, 0}, R(0), Im(0), vol(0); // Assumes 2 dimensions.
       // Add a bunch of new particles.
-      X[0] = bounds.min[0];
+      X[0] = current_x_coord;
       for (int ix=0; ix<nx; ++ix) {
-        X[1] = bounds.min[1] + (ix%2==0 ? 0.5*dx : 0) + 0.5*dy;
+        X[1] = bounds.min[1] + (shift_x ? 0.5*dx : 0) + 0.5*dy;
+        shift_x = !shift_x;
         for (int iy=0; iy<ny; ++iy) {
           // Random radius.
           R = random_radius.generate();
@@ -64,8 +70,10 @@ namespace GFlowSimulation {
           X[1] += dy;
           vol += sphere_volume(R, sim_dimensions);
         }
-        X[0] += dx;
+        X[0] -= dx;
       }
+      // Save last x coord.
+      last_x_coord = X[0];
       // Set last creation time.
       last_creation_time = gflow->getElapsedTime();
       simData->setNeedsLocalRemake();
