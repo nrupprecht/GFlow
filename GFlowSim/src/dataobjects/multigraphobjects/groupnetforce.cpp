@@ -6,7 +6,7 @@ namespace GFlowSimulation {
 
   void GroupNetForce::post_step() {
     // Only record if enough time has gone by and there are particles to keep track of.
-    if (!DataObject::_check() || size()==0) return;
+    if (!DataObject::_check()) return;
 
     // Make sure local ids are up to date.
     if (locals_changed) {
@@ -16,7 +16,6 @@ namespace GFlowSimulation {
 
     // Add a new entry to modify
     addEntry();
-
     // Set the time
     getX() = Base::gflow->getElapsedTime();
     // Set the forces
