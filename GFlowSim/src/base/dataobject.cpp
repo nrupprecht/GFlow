@@ -3,14 +3,12 @@
 namespace GFlowSimulation {
 
   DataObject::DataObject(GFlow *gflow, const string& name) 
-    : Base(gflow), dataName(name), delay(1./20.), lastRecording(-10.), type(DataObjectType::GENERAL), locals_changed(false) {
-      object_counter = 1;
-    };
+    : Base(gflow), dataName(name), delay(1./20.), lastRecording(-10.), type(DataObjectType::GENERAL), 
+      locals_changed(false), gather_bounds(gflow->getBounds()), object_counter(1) {};
 
   DataObject::DataObject(GFlow *gflow, const string& name, DataObjectType t)
-    : Base(gflow), dataName(name), delay(1./20.), lastRecording(-10.), type(t), locals_changed(false) {
-      object_counter = 1;
-    };
+    : Base(gflow), dataName(name), delay(1./20.), lastRecording(-10.), type(t), locals_changed(false), 
+      gather_bounds(gflow->getBounds()), object_counter(1) {};
 
   void DataObject::pre_integrate() {
     lastRecording = -10;

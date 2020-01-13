@@ -21,10 +21,17 @@ namespace GFlowSimulation {
     // Set the forces
     Vec F(sim_dimensions);
     findNetForce(F.data);
+    
+    cout << topology->getRank() << ": " << F << endl;
+
     // Data reduction.
-    MPIObject::mpi_sum0(F.data, sim_dimensions);
+    // MPIObject::mpi_sum0(F.data, sim_dimensions);
+
+    cout << topology->getRank() << endl;
     // Set each dimension of force.
-    for (int d=0; d<sim_dimensions; ++d) getY(d) = F[d];
+    if (topology->getRank()==0) {
+      for (int d=0; d<sim_dimensions; ++d) getY(d) = F[d];
+    }
   }
 
 }

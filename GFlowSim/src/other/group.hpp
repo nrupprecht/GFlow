@@ -85,7 +85,7 @@ namespace GFlowSimulation {
     //! \brief Check how far a position is from a group object.
     //!
     //! Depending on the type of group, this could be done in different ways.
-    virtual RealType distance(RealType*);
+    virtual RealType distance(const RealType*);
 
     //! \brief Update the vector of local ids to correspond to the correct particles.
     void update_local_ids() const;
@@ -101,7 +101,7 @@ namespace GFlowSimulation {
     //! \brief Weak pointer to the simdata object the group exists in.
     //!
     //! I could probably replace this with a shared_ptr - it probably wouldn't matter. I will have to test and see which is faster (if it matters).
-    std::weak_ptr<SimData> sim_data;
+    std::shared_ptr<SimData> sim_data;
 
   };
 
