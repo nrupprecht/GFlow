@@ -107,6 +107,9 @@ namespace GFlowSimulation {
     //! \brief Whether the local ids for sim data have changed. This will be set from the outside.
     bool locals_changed;
 
+    //! \brief We only gather data when the run mode is not SIM when this flag is true.
+    bool gather_during_setup = false;
+
     // --- Data
 
     //! \brief The name of the data we are gathering - will be used to write to files.

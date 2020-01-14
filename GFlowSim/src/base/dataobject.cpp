@@ -60,6 +60,7 @@ namespace GFlowSimulation {
   }
 
   bool DataObject::_check() {
+    if (!gather_during_setup && gflow->getRunMode()!=RunMode::SIM) return false;
     // Only record if enough time has gone by
     RealType time = Base::gflow->getElapsedTime();
     // If not enough time has gone by, return false

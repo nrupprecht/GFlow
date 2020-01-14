@@ -14,14 +14,13 @@ namespace GFlowSimulation {
       locals_changed = false;
     }
 
-    // Add a new entry to modify
+    // Add a new entry to modify.
     addEntry();
-    // Set the time
+    // Set the time.
     getX() = Base::gflow->getElapsedTime();
-    // Set the forces
+    // Set the forces.
     Vec F(sim_dimensions);
     findNetForce(F.data);
-
     // Data reduction.
     MPIObject::mpi_sum0(F.data, sim_dimensions);
 

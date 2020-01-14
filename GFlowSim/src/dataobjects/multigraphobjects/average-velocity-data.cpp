@@ -33,8 +33,6 @@ namespace GFlowSimulation {
           ++count;
         }
       }
-    // Check if there was anything to store
-    if (count==0) return;
 
     // Create an entry with the average data. This function handles multiprocessor runs correctly.
     gatherAverageData(Base::gflow->getElapsedTime(), ave, count);
