@@ -39,11 +39,6 @@ namespace GFlowSimulation {
 
   class DataObject : public Base {
   public:
-    //! \brief Default constructor.
-    DataObject(GFlow *, const string&);
-
-    //! \brief Data type setting constructor.
-    DataObject(GFlow *, const string&, DataObjectType);
 
     //! \brief Virtual destructor.
     //!
@@ -91,6 +86,13 @@ namespace GFlowSimulation {
     friend class GFlow;
 
   protected:
+
+    //! \brief Default constructor.
+    DataObject(GFlow *, const string&);
+
+    //! \brief Data type setting constructor.
+    DataObject(GFlow *, const string&, DataObjectType);
+    
     // --- Helper functions
 
     //! \brief Get what the directory name for the data should be.
@@ -104,6 +106,9 @@ namespace GFlowSimulation {
 
     //! \brief Whether the local ids for sim data have changed. This will be set from the outside.
     bool locals_changed;
+
+    //! \brief We only gather data when the run mode is not SIM when this flag is true.
+    bool gather_during_setup = false;
 
     // --- Data
 
@@ -126,6 +131,9 @@ namespace GFlowSimulation {
 
     //! \brief What number data object this is.
     int object_counter;
+
+    //! \brief Bounds that can be used to restrict where the object from which we gather data can be.
+    Bounds gather_bounds;
   };
 
 }

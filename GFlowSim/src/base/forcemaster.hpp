@@ -33,7 +33,7 @@ namespace GFlowSimulation {
     void interact_ghosts();
 
     //! \brief Get a pointer to the force that the particle pair belongs in. Null means no force.
-    Interaction* getInteraction(int, int);
+    shared_ptr<Interaction> getInteraction(int, int);
 
     //! \brief Clear all the verlet lists of all the forces.
     void clear();
@@ -74,10 +74,10 @@ namespace GFlowSimulation {
 
     //! \brief Set the force in the force grid - this also adds it to the force vector here and in the GFlow
     //! object if it is not already in those locations.
-    void setInteraction(int, int, Interaction*, bool=true);
+    void setInteraction(int, int, shared_ptr<Interaction>, bool=true);
 
     //! \brief Set all the interactions to be of the same type.
-    void setInteraction(Interaction*);
+    void setInteraction(shared_ptr<Interaction>);
 
     //! \brief Set the calculate potential flag for all interactions.
     void setCalculatePotential(bool);
@@ -102,13 +102,13 @@ namespace GFlowSimulation {
     RealType time_scale_factor = 0.02;
 
     //! \brief Interaction grid.
-    vector<vector<Interaction*> > grid;
+    vector<vector<shared_ptr<Interaction> > > grid;
 
     //! \brief Cutoff factors for each particle type
     vector<RealType> max_cutoffs;
 
     //! \brief Pointers to all the forces that exist in the simulation.
-    vector<Interaction*> interactions;
+    vector<shared_ptr<Interaction> > interactions;
 
     //! \brief Number of particle types.
     int ntypes;

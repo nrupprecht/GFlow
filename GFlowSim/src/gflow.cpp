@@ -7,12 +7,14 @@
 #include "allmodifiers.hpp"
 #include "alltopologies.hpp"
 #include "allbonded.hpp"
+#include "allbodies.hpp"
 
 namespace GFlowSimulation {
 
   GFlow::GFlow(int dims) : requested_time(0), total_requested_time(0), elapsed_time(0), total_time(0), 
     iter(0), repulsion(DEFAULT_HARD_SPHERE_REPULSION), dissipation(0), center_attraction(0), sim_dimensions(dims),
     bounds(dims)
+    
   {
     // Set up basic objects. The integrator will be created by the creator.
     simData = std::make_shared<SimData>(this);
@@ -40,22 +42,22 @@ namespace GFlowSimulation {
     dataMaster = nullptr;
     forceMaster = nullptr;
     topology = nullptr;
-    for (auto &md : modifiers) {
-      if (md) delete md;
-      md = nullptr;
-    }
-    for (auto &it : interactions) {
-      if (it) delete it;
-      it = nullptr;
-    }
-    for (auto &it : bondedInteractions) {
-      if (it) delete it;
-      it = nullptr;
-    }
-    for (auto &it : bodies) {
-      if (it) delete it;
-      it = nullptr;
-    }
+    // for (auto &md : modifiers) {
+    //   if (md) delete md;
+    //   md = nullptr;
+    // }
+    // for (auto &it : interactions) {
+    //   if (it) delete it;
+    //   it = nullptr;
+    // }
+    // for (auto &it : bondedInteractions) {
+    //   if (it) delete it;
+    //   it = nullptr;
+    // }
+    // for (auto &it : bodies) {
+    //   if (it) delete it;
+    //   it = nullptr;
+    // }
     if (boundaryConditions) delete [] boundaryConditions;
     boundaryConditions = nullptr;
   }
@@ -108,8 +110,8 @@ namespace GFlowSimulation {
     base->forceMaster  = forceMaster;
     base->topology     = topology;
     // Set vectors
-    base->modifiersPtr = &modifiers;
-    base->interactionsPtr = &interactions;
+    // base->modifiersPtr = &modifiers;
+    // base->interactionsPtr = &interactions;
   }
 
   void GFlow::run(long double rt) {
@@ -376,15 +378,14 @@ namespace GFlowSimulation {
     return pair<int, char**>(argc, argv);
   }
 
-  const vector<class Interaction*>& GFlow::getInteractions() const {
+  const vector<shared_ptr<class Interaction> >& GFlow::getInteractions() const {
     return interactions;
   }
 
-  const vector<class Bonded*>& GFlow::getBondedInteractions() const {
+  const vector<shared_ptr<class Bonded> >& GFlow::getBondedInteractions() const {
     return bondedInteractions;
   }
 
-  //SimData* GFlow::getSimData() {
   shared_ptr<class SimData> GFlow::getSimData() {
     return simData;
   }
@@ -460,23 +461,23 @@ namespace GFlowSimulation {
     return runMode;
   }
 
-  void GFlow::addInteraction(Interaction *inter) {
-    if (inter!=nullptr && !contains(interactions, inter))
+  void GFlow::addInteraction(shared_ptr<Interaction> inter) {
+    if (inter && !contains(interactions, inter))
       interactions.push_back(inter);
   }
 
-  void GFlow::addBonded(Bonded *bnd) {
-    if (bnd!=nullptr && !contains(bondedInteractions, bnd))
+  void GFlow::addBonded(shared_ptr<Bonded> bnd) {
+    if (bnd && !contains(bondedInteractions, bnd))
       bondedInteractions.push_back(bnd);
   }
 
-  void GFlow::addBody(class Body *bdy) {
-    if (bdy!=nullptr && !contains(bodies, bdy))
+  void GFlow::addBody(shared_ptr<Body> bdy) {
+    if (bdy && !contains(bodies, bdy))
       bodies.push_back(bdy);
   }
 
-  void GFlow::addIntegrator(Integrator *it) {
-    if (it!=nullptr)
+  void GFlow::addIntegrator(shared_ptr<Integrator> it) {
+    if (it)
       additional_integrators.push_back(it);
   }
 
@@ -618,14 +619,14 @@ namespace GFlowSimulation {
           // Create a local copy
           if (x(n, d)<min_bound) {
             RealType dx = min_bound - x(n, d);
-            RealType F = repulsion*dx + dissipation*clamp(-v(n, d));
+            RealType F = 10*repulsion*dx + dissipation*clamp(-v(n, d));
             f(n, d) += F;
             boundaryForce += F;
             boundaryEnergy += 0.5*repulsion*sqr(dx);
           }
           else if (max_bound<x(n, d)) {
             RealType dx = (x(n, d) - max_bound);
-            RealType F = repulsion*dx + dissipation*clamp(v(n, d));
+            RealType F = 10*repulsion*dx + dissipation*clamp(v(n, d));
             f(n, d) -= F;
             boundaryForce += F;
             boundaryEnergy += 0.5*repulsion*sqr(dx);
@@ -674,11 +675,11 @@ namespace GFlowSimulation {
     if (handler) handler->removeOverlapping(fraction);
   }
 
-  void GFlow::addDataObject(class DataObject* dob) {
+  void GFlow::addDataObject(shared_ptr<DataObject> dob) {
     if (dob) dataMaster->addDataObject(dob);
   }
 
-  void GFlow::addModifier(class Modifier* mod) {
+  void GFlow::addModifier(shared_ptr<Modifier> mod) {
     if (mod) modifiers.push_back(mod);
   }
 
@@ -768,7 +769,7 @@ namespace GFlowSimulation {
     // If there are no modifiers, there is nothing to do!
     if (modifiers.empty()) return;
     // List of modifiers to remove
-    vector< std::list<Modifier*>::iterator > remove;
+    vector< decltype(modifiers)::iterator > remove;
     // Find modifiers that need to be removed
     for (auto it = modifiers.begin(); it!=modifiers.end(); ++it) {
       if ((*it)->getRemove()) remove.push_back(it);

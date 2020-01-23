@@ -7,6 +7,9 @@ namespace GFlowSimulation {
   AveragePositionData::AveragePositionData(GFlow *gflow) : MultiGraphObject(gflow, "AvePos", "time", "position", gflow->getSimDimensions()) {
     for (int i=0; i<gflow->getSimDimensions(); ++i)
       axis_y[i] = "Ave pos - X[" + toStr(i) + "]";
+
+    // Hardcode this for now. Only record particles close to the incoming (newly created) particles.
+    gather_bounds.min[0] = std::min(gflow->getBounds().min[0]/2.f, -4.f);
   };
 
   void AveragePositionData::post_step() {
@@ -23,7 +26,7 @@ namespace GFlowSimulation {
     // Compute totals
     int count = 0;
     for (int n=0; n<size; ++n)
-      if (im[n]>0 && !isnan(x(n, 0)) && type[n]>-1) { // Presumably, if one component is nan, all are.
+      if (im[n]>0 && !isnan(x(n, 0)) && type[n]>-1 && gather_bounds.contains(x(n))) { // Presumably, if one component is nan, all are.
         for (int d=0; d<sim_dimensions; ++d)
           ave[d] += x(n, d);
         ++count;

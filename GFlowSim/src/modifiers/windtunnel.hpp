@@ -11,25 +11,30 @@ namespace GFlowSimulation {
   public:
     //! \brief Constructor.
     WindTunnel(GFlow*, RealType);
+    //! \brief Constructor.
+    WindTunnel(GFlow*);
 
     //! \brief Enforce wind tunnel conditions.
     virtual void post_forces() override;
 
+    //! \brief Create this object from parse node data.
+    virtual void parse_construct(HeadNode*, const std::map<string, string>&) override;
+
   private:
     //! \brief The half-width of the area in which particles are corralled by the velocity field.
-    RealType halfWidth;
+    RealType halfWidth = 4.f;
 
     //! \brief The place at which particles should stop being effected by the velocity field.
-    RealType leftBound;
+    RealType leftBound = 0.f;
 
     //! \brief The place at which particles should start being effected by the velocity field.
-    RealType rightBound;
+    RealType rightBound = 0.f;
 
     //! \brief The target acceleration for the particles in the velocity field.
-    RealType acceleration;
+    RealType acceleration = 2.f;
 
     //! \brief The velocity given to particles that are transfered.
-    RealType velocity;
+    RealType velocity = 2.f;
   };
 
 }

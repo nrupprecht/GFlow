@@ -241,7 +241,6 @@ namespace GFlowSimulation {
           region->pick_position(X.data);
           ++attempts;
         } while (excluded_contains(X) && attempts<=max_attempts);
-
         // Choose a type of particle to create
         int pt = choice(generator);
         ParticleTemplate &particle_creator = particle_template_numbers.empty() ? particle_templates[0] : template_vector.at(pt);

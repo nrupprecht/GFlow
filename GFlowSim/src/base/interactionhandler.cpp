@@ -27,7 +27,6 @@ namespace GFlowSimulation {
     positions = nullptr;
     if (cutoff_grid) dealloc_array_2d(cutoff_grid);
     cutoff_grid = nullptr;
-    if (interaction_grid) dealloc_array_2d(interaction_grid);
   }
 
   void InteractionHandler::initialize() {
@@ -95,10 +94,13 @@ namespace GFlowSimulation {
       if (topology->getNumProc()>1 && update_decision_type==0) MPIObject::mpi_or(do_construct);
     #endif // USE_MPI==1
 
+    // Do a full construct.
     if (do_construct) {
       if (gflow->getUseForces()) construct();
       else simData->update();
     }
+    // Do a local construct.
+    else if (simData->getNeedsLocalRemake()) construct_local();
   }
 
   void InteractionHandler::construct() {
@@ -129,6 +131,40 @@ namespace GFlowSimulation {
     // Set gflow flags. This should happen before any return points.
     gflow->handler_needs_remake() = false;
     gflow->handler_remade() = true;
+    simData->setNeedsLocalRemake(false); // A full remake is more thorough than a local remake.
+
+    // If there are no interaction, or the forceMaster is null, we don't need to make any verlet lists
+    if (!gflow->getInteractions().empty() && forceMaster!=nullptr && gflow->getUseForces()) {
+      // Update data structures.
+      structure_updates();
+
+      // The interaction function
+      auto interaction_function = [&] (int id1, int id2, int w_type, RealType, RealType, RealType) {
+        pair_interaction(id1, id2, w_type);
+      };
+      
+      // Traverse cells, adding particle pairs that are within range of one another to the interaction.
+      traversePairs(interaction_function);
+      // Traverse ghost particle - real particle pairs.
+      if (simData->number_ghosts()>0) traverseGhostPairs(interaction_function);
+      
+      // Close all interactions.
+      forceMaster->close();
+    }
+    
+    // Stop timer.
+    stop_timer();
+  }
+
+  void InteractionHandler::construct_local() {
+    // Start timed object timer.
+    start_timer();
+
+    // Reset the verlet lists of all the forces and make sure force master has interaction array set up
+    forceMaster->clear();
+    forceMaster->initialize_does_interact();
+    // Unset flag.
+    simData->setNeedsLocalRemake(false);
 
     // If there are no interaction, or the forceMaster is null, we don't need to make any verlet lists
     if (!gflow->getInteractions().empty() && forceMaster!=nullptr && gflow->getUseForces()) {
@@ -367,14 +403,12 @@ namespace GFlowSimulation {
       // Handle cutoff grid.
       if (cutoff_grid) dealloc_array_2d(cutoff_grid);
       cutoff_grid = ntypes>0 ? alloc_array_2d<RealType>(ntypes, ntypes) : nullptr; 
-      // Handle interaction grid.
-      if (interaction_grid) dealloc_array_2d(interaction_grid);
-      interaction_grid = ntypes>0 ? alloc_array_2d<Interaction*>(ntypes, ntypes) : nullptr;
+      // Copy force master's interaction grid.
+      interaction_grid = forceMaster->grid;
 
       // Set interaction and cutoff grid.
       for (int j=0; j<ntypes; ++j)
         for (int i=0; i<ntypes; ++i) {
-          interaction_grid[i][j] = forceMaster->grid[i][j];
           cutoff_grid[i][j] = (interaction_grid[i][j]) ? interaction_grid[i][j]->getCutoff() : 0.;
         }
       }
@@ -418,7 +452,7 @@ namespace GFlowSimulation {
 
   void InteractionHandler::pair_interaction(const int id1, const int id2, const int list) {
     // Get the interaction.
-    Interaction *pair_force = interaction_grid[simData->Type(id1)][simData->Type(id2)];
+    auto pair_force = interaction_grid[simData->Type(id1)][simData->Type(id2)];
     // A null force means no interaction
     if (pair_force) pair_force->addPair(id1, id2, list);
   }

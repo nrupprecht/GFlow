@@ -59,11 +59,11 @@ inline void VelocityVerlet<dimensions>::update_positions() {
   simd_float _dt = simd_set1(dt);
   int i;
   for (i=0; i<=total-simd_data_size; i+=simd_data_size) {
-    simd_float _x = x.load_to_simd(i); // simd_load(&x[i]);
-    simd_float _v = v.load_to_simd(i); // simd_load(&v[i]);
+    simd_float _x = x.load_to_simd(i);
+    simd_float _v = v.load_to_simd(i);
     simd_float _dx = _dt * _v;
     simd_float _xn = _x + _dx;
-    x.store_simd(i, _xn); //simd_store(X_new, &x[i]);
+    x.store_simd(i, _xn);
   }
   // Left overs
   for (; i<total; ++i) x[i] += dt*v[i];
@@ -90,14 +90,14 @@ inline void VelocityVerlet<dimensions>::update_velocities() {
   int i;
   for (i=0; i<total-simd_data_size; i+=simd_data_size) {
     // Load data to simd vectors.
-    simd_float _f = f.load_to_simd(i); //simd_load(&f[i]);
-    simd_float _v = v.load_to_simd(i); // simd_load(&v[i]);
-    simd_float _im = im.template valign_load_to_simd<dimensions>(i); // simd_load_constant<1>(im, i);
+    simd_float _f = f.load_to_simd(i);
+    simd_float _v = v.load_to_simd(i);
+    simd_float _im = im.template valign_load_to_simd<dimensions>(i);
     // Calculate new velocity
     simd_float _dv = _hdt * _im * _f;
     simd_float _vn = _v + _dv;
     // Store the updated velocity
-    v.store_simd(i, _vn); // simd_store(V_new, &v[i]);
+    v.store_simd(i, _vn);
   }
   // Left overs
   for (; i<total; ++i) v[i] += hdt*im[i/dimensions]*f[i];

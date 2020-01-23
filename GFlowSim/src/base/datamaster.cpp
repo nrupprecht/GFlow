@@ -12,22 +12,17 @@ namespace GFlowSimulation {
 
   DataMaster::DataMaster(GFlow *gflow) : Base(gflow) {};
 
-  DataMaster::~DataMaster() {
-    for (auto& dob : dataObjects)
-      if (dob) delete dob;
-  }
-
   void DataMaster::initialize() {
     Base::initialize();
     for (auto& dob : dataObjects)
       if (dob) dob->initialize();
   }
 
-  void DataMaster::addDataObject(DataObject *dob) {
+  void DataMaster::addDataObject(shared_ptr<DataObject> dob) {
     dataObjects.push_back(dob);
   }
 
-  const vector<DataObject*>& DataMaster::getDataObjects() const {
+  const vector<shared_ptr<DataObject> >& DataMaster::getDataObjects() const {
     return dataObjects;
   }
 
@@ -819,14 +814,14 @@ namespace GFlowSimulation {
       const int n_timers = 8;
       float timing[n_timers];
       string labels[n_timers];
-      timing[0] = simData->send_timer.get_time();
-      timing[1] = simData->recv_timer.get_time();
-      timing[2] = simData->barrier_timer.get_time();
-      timing[3] = simData->exchange_search_timer.get_time();
-      timing[4] = simData->ghost_send_timer.get_time();
-      timing[5] = simData->ghost_recv_timer.get_time();
-      timing[6] = simData->ghost_wait_timer.get_time();
-      timing[7] = simData->ghost_search_timer.get_time();
+      timing[0] = topology->send_timer.get_time();
+      timing[1] = topology->recv_timer.get_time();
+      timing[2] = topology->barrier_timer.get_time();
+      timing[3] = topology->exchange_search_timer.get_time();
+      timing[4] = topology->ghost_send_timer.get_time();
+      timing[5] = topology->ghost_recv_timer.get_time();
+      timing[6] = topology->ghost_wait_timer.get_time();
+      timing[7] = topology->ghost_search_timer.get_time();
 
       if (rank==0) {
         labels[0] = "Exchange send time:";

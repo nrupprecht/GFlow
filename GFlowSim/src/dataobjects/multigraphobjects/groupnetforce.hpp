@@ -6,7 +6,7 @@
 
 namespace GFlowSimulation {
 
-  class GroupNetForce : public MultiGraphObject, Group {
+  class GroupNetForce : public MultiGraphObject, public Group {
   public:
     //! \brief Default constructor.
     GroupNetForce(GFlow*);

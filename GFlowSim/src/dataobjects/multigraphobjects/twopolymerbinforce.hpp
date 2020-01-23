@@ -42,13 +42,13 @@ namespace GFlowSimulation {
     void setFirstPolymer(Group&);
 
     //! \brief Set the first angle harmonic chain.
-    void setFirstChain(class AngleHarmonicChain*);
+    void setFirstChain(shared_ptr<class AngleHarmonicChain>);
 
     //! \brief Set the second polymer.
     void setSecondPolymer(Group&);
 
     //! \brief Set the second angle harmonic chain.
-    void setSecondChain(class AngleHarmonicChain*);
+    void setSecondChain(shared_ptr<class AngleHarmonicChain>);
 
   protected:
     //! \brief Find the forces on the primary particles in the first group projected along the minimum
@@ -77,10 +77,10 @@ namespace GFlowSimulation {
     Group polyB;
 
     //! \brief The "left" chain.
-    class AngleHarmonicChain *chainA = nullptr;
+    shared_ptr<class AngleHarmonicChain> chainA;
 
     //! \brief The "right" chain.
-    class AngleHarmonicChain *chainB = nullptr;
+    shared_ptr<class AngleHarmonicChain> chainB;
 
   };
 

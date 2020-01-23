@@ -7,6 +7,9 @@ namespace GFlowSimulation {
   AverageVelocityData::AverageVelocityData(GFlow *gflow) : MultiGraphObject(gflow, "AveVel", "time", "velocity", gflow->getSimDimensions()) {
     for (int i=0; i<gflow->getSimDimensions(); ++i)
       axis_y[i] = "Ave vel - V[" + toStr(i) + "]";
+
+    // Hardcode this for now. Only record particles close to the incoming (newly created) particles.
+    gather_bounds.min[0] = std::min(gflow->getBounds().min[0]/2.f, -4.f);
   };
 
   void AverageVelocityData::post_step() {
@@ -16,6 +19,7 @@ namespace GFlowSimulation {
     // Get and store data
     Vec ave(sim_dimensions);
 
+    auto x = simData->X();
     auto v = simData->V();
     auto im = simData->Im();
     auto type = simData->Type();
@@ -23,14 +27,12 @@ namespace GFlowSimulation {
     int count = 0;
     for (int n=0; n<simData->size_owned(); ++n)
       if (im[n]>0 && type[n]>-1) {
-        if (!isnan(v(n, 0))) { // Presumably, if one component is nan, all are.
+        if (!isnan(v(n, 0)) && gather_bounds.contains(x(n))) { // Presumably, if one component is nan, all are.
           for (int d=0; d<sim_dimensions; ++d)
             ave[d] += v(n, d);
           ++count;
         }
       }
-    // Check if there was anything to store
-    if (count==0) return;
 
     // Create an entry with the average data. This function handles multiprocessor runs correctly.
     gatherAverageData(Base::gflow->getElapsedTime(), ave, count);

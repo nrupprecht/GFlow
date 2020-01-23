@@ -10,8 +10,6 @@ namespace GFlowSimulation {
   void LineEntropicForce::post_step() {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
-    // No particles to keep track of.
-    if (group.size()==0) return;
 
     // Make sure local ids are up to date.
     if (locals_changed) group.update_local_ids();
@@ -36,9 +34,12 @@ namespace GFlowSimulation {
     // Compute the normalization
     RealType norm = 1./(rho * KB * T * length);
 
-    // Set the forces
+    // Set the forces.
     Vec F(sim_dimensions);
     group.findNetForce(F.data);
+    // Data reduction.
+    MPIObject::mpi_sum0(F.data, sim_dimensions);
+
     // Set each dimension of force.
     for (int d=0; d<sim_dimensions; ++d) getY(d) = norm*F[d]; 
   }

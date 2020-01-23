@@ -72,9 +72,10 @@ namespace GFlowSimulation {
     class InteractionHandler *handler;
     class DataMaster   *dataMaster; 
     class ForceMaster  *forceMaster; 
+    
     // References to vectors
-    std::list<class Modifier*> *modifiersPtr;
-    vector<class Interaction*> *interactionsPtr;
+    // std::list<class Modifier*> *modifiersPtr;
+    // vector<class Interaction*> *interactionsPtr;
 
     #ifndef DIMENSIONS_DEFINED
     //! \brief The number of dimensions in the simulation. We get this from GFlow.

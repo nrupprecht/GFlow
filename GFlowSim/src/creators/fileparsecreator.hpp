@@ -58,7 +58,7 @@ namespace GFlowSimulation {
     inline Integrator* choose_integrator(HeadNode*) const;
 
     //! \brief Parse a tree to select an interaction.
-    inline Interaction* choose_interaction(HeadNode*) const;
+    inline shared_ptr<Interaction> choose_interaction(HeadNode*) const;
 
     //! \brief Convert a string to a BCFlag.
     inline BCFlag choose_bc(const string&) const;

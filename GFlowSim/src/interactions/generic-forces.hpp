@@ -454,7 +454,8 @@ namespace GFlowSimulation {
   //! \brief Define the LennardJonesVLP class to be lennard jones force using verlet list pairs container.
   template<int dims> using BuckinghamVLP = BuckinghamGeneric<dims, VerletListPairs>;
   template<int dims> using BuckinghamVLVP = BuckinghamGeneric<dims, VerletListVecPairs>;
-  
+
+
   
   /*
   * \brief Generic class for Hertz-type forces.
@@ -469,10 +470,10 @@ namespace GFlowSimulation {
     HertzGeneric(GFlow *gflow) : Handler(gflow) {
       // Add the needed data entries and integrator.
       if (dims==2) {
-        om_add = Base::simData->requestScalarData("Om");
-        tq_add = Base::simData->requestScalarData("Tq");
-        // Add an angular integrator.
-        Base::gflow->addIntegrator(new AngularVelocityVerlet2d(gflow));
+        // om_add = Base::simData->requestScalarData("Om");
+        // tq_add = Base::simData->requestScalarData("Tq");
+        // // Add an angular integrator.
+        // Base::gflow->addIntegrator(new AngularVelocityVerlet2d(gflow));
       }
     };
 
@@ -484,12 +485,12 @@ namespace GFlowSimulation {
       v1 = Base::simData->V<second_type>();
       im0 = Base::simData->Im<first_type>();
       im1 = Base::simData->Im<second_type>();
-      if (-1<om_add && -1<tq_add) {  
-        om0 = Base::simData->ScalarData<first_type>(om_add);
-        om1 = Base::simData->ScalarData<second_type>(om_add);
-        tq0 = Base::simData->ScalarData<first_type>(tq_add);
-        tq1 = Base::simData->ScalarData<second_type>(tq_add);
-      }
+      // if (-1<om_add && -1<tq_add) {  
+      //   om0 = Base::simData->ScalarData<first_type>(om_add);
+      //   om1 = Base::simData->ScalarData<second_type>(om_add);
+      //   tq0 = Base::simData->ScalarData<first_type>(tq_add);
+      //   tq1 = Base::simData->ScalarData<second_type>(tq_add);
+      // }
     }
 
     void force(const int id0, const int id1, const RealType R1, const RealType R2, const RealType rsqr, RealType *X) const {
@@ -527,6 +528,7 @@ namespace GFlowSimulation {
       sum_eq_vec_scaled<dims>(f0(id0), X,  Fn);
       sum_eq_vec_scaled<dims>(f1(id1), X, -Fn);
 
+      /*
       // Calculate tangential force.
       RealType Vn[dims], Vt[dims];
       // Create the Vn (normal velocity component) vector.
@@ -534,7 +536,9 @@ namespace GFlowSimulation {
       scalar_mult_eq_vec<dims>(Vn, vn);
       // Subtract, setting Vt = V - Vn.
       subtract_vec<dims>(V, Vn, Vt);
+      */
 
+      /*
       // Angular velocities.
       if (dims==2) {
         // Tangential normal direction for 2d.
@@ -566,18 +570,16 @@ namespace GFlowSimulation {
         tq0(id0) -= Ft*R1;
         tq1(id1) -= Ft*R2;
       }
-
-      /*
+      */
+      
       // Calculate potential
       if (Interaction::do_potential) {
         //Interaction::potential += 0;
       }
-      */
       // Calculate virial
       if (Interaction::do_virial) {
         Interaction::virial += Fn*r;
       }
-      
     }
 
     void setKn(const RealType kn) { K_n = 0<=kn ? kn : K_n; }
@@ -653,7 +655,7 @@ namespace GFlowSimulation {
         om_add = Base::simData->requestScalarData("Om");
         tq_add = Base::simData->requestScalarData("Tq");
         // Add an angular integrator.
-        Base::gflow->addIntegrator(new AngularVelocityVerlet2d(gflow));
+        Base::gflow->addIntegrator(make_shared<AngularVelocityVerlet2d>(gflow));
       }
     };
 

@@ -24,8 +24,7 @@ namespace GFlowSimulation {
     //! \brief How wide the window is that we consider the setting part.
     RealType window;
 
-    // So we don't apply the force all the time - this is taxing because of all the random numbers
-    // we need to generate
+    // So we don't apply the force all the time.
     RealType lastUpdate, updateDelay;
   };
 

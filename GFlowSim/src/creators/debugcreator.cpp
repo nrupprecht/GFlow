@@ -1,4 +1,6 @@
 #include "debugcreator.hpp"
+// Other files
+#include "../interactions/interaction-choice.hpp"
 
 namespace GFlowSimulation {
 
@@ -66,9 +68,9 @@ namespace GFlowSimulation {
 
     // --- Handle forces
     gflow->forceMaster->setNTypes(1);
-    Interaction *force = nullptr;
-    if (lj) force = new LennardJonesVLP<2>(gflow);
-    else    force = new HardSphereVLP<2>(gflow);
+    shared_ptr<Interaction> force;
+    if (lj) force = InteractionChoice::choose(gflow, LennardJonesToken, sim_dimensions);
+    else    force = InteractionChoice::choose(gflow, HardSphereToken, sim_dimensions);
     gflow->forceMaster->setInteraction(0, 0, force);
 
     // Set skin depth

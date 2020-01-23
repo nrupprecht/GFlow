@@ -63,15 +63,7 @@ namespace GFlowSimulation {
   void SimData::pre_integrate() {
     // Clear the timed object timer.
     clear_timer();
-    // Clear other timers.
-    send_timer.clear_timer(); 
-    recv_timer.clear_timer(); 
-    barrier_timer.clear_timer(); 
-    ghost_send_timer.clear_timer(); 
-    ghost_recv_timer.clear_timer(); 
-    ghost_wait_timer.clear_timer();
-    exchange_search_timer.clear_timer(); 
-    ghost_search_timer.clear_timer();
+    
     // Remove any bad particles.
     removeBadParticles();
 
@@ -137,6 +129,8 @@ namespace GFlowSimulation {
     // Arguably, you still might want to remake. There could be extra entries in the verlet list that 
     // it would be better to get rid of.
     if (removed>0) setNeedsRemake();
+    // Local ids have been changed.
+    dataMaster->setLocalsChanged(true);
 
     // Start simdata timer.
     stop_timer();
@@ -446,8 +440,12 @@ namespace GFlowSimulation {
     return gflow->getBounds();
   }
 
-  bool SimData::getNeedsRemake() {
+  bool SimData::getNeedsRemake() const {
     return needs_remake;
+  }
+
+  bool SimData::getNeedsLocalRemake() const {
+    return needs_local_remake;
   }
 
   void SimData::setNeedsRemake(bool r) {
@@ -457,6 +455,10 @@ namespace GFlowSimulation {
     gflow->simdata_needs_remake() = r;
     // If set to true, tell datamaster that local ids may have changed.
     if (r) dataMaster->setLocalsChanged(r);
+  }
+
+  void SimData::setNeedsLocalRemake(bool r) {
+    needs_local_remake = r;
   }
 
   void SimData::addVectorData(string name) {

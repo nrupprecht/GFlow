@@ -73,9 +73,14 @@ template<unsigned particle_type> void SimData::markForRemoval(const int id) {
   // If the particle has already been marked for removal, or is beyond the end of the array, return.
   if (Type<particle_type>(id)<0 || id>=_size[particle_type]) return;
   // Mark for removal, clear some data
-  if (particle_type==0) remove_list.emplace(id);
+  if (particle_type==0) remove_list.emplace(id); // All ghost particles will be removed eventually.
   if (use_id_map) id_map[particle_type].erase(Id<particle_type>(id));
   Type<particle_type>(id) = -1;
+  // Set position to be far away, so it will not be able to apply force on real particles.
+  // This is mostly for the case where a particle that is a ghost particle on another processor gets erased.
+  // The fact that this happens is not communicated, but if we move the particle really far away, it will be
+  // as if the particle disappeared.
+  X<particle_type>(id, 0) = -1000000.f;
   // Decrement number of particles.
   _number[particle_type] -= 1;
 }

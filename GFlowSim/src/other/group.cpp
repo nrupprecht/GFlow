@@ -4,8 +4,8 @@
 
 namespace GFlowSimulation {
 
-  Group::Group(shared_ptr<SimData> simData) {
-    sim_data = simData;
+  Group::Group(shared_ptr<SimData> sim_data) {
+    sim_data = sim_data;
   }
 
   Group::Group(GFlow* gflow) {
@@ -43,20 +43,20 @@ namespace GFlowSimulation {
   }
 
   void Group::findCenterOfMass(RealType *rcm) const {
-    if (size()==0 || sim_data.expired()) return;
-    // Get the dimensionaliry
-    auto simData = sim_data.lock();
-    int sim_dimensions = simData->getSimDimensions();
+    int sim_dimensions = sim_data->getSimDimensions();
+    zeroVec(rcm, sim_dimensions);
+    if (size()==0) return;
+
     // Dispacement vector
     Vec dr(sim_dimensions), r0(sim_dimensions), Rcm(sim_dimensions);
 
     // Get the bounds and boundary conditions
-    auto gflow = simData->getGFlow();
+    auto gflow = sim_data->getGFlow();
     Bounds bounds = gflow->getBounds(); // Simulation bounds
 
     // Get position, mass arrays
-    auto x = simData->X();
-    auto im = simData->Im();
+    auto x = sim_data->X();
+    auto im = sim_data->Im();
     RealType mass = 0;
 
     // Set reference point
@@ -87,17 +87,16 @@ namespace GFlowSimulation {
   }
 
   void Group::findCOMVelocity(RealType *v) const {
+    int sim_dimensions = sim_data->getSimDimensions();
+    zeroVec(v, sim_dimensions);
     if (size()==0) return;
-    // Get the dimensionaliry
-    auto simData = sim_data.lock();
-    int sim_dimensions = simData->getSimDimensions();
     // Zero vector
     zeroVec(v, sim_dimensions);
     // Compute new momentum
     RealType mass = 0;
     for (auto id : local_ids) {
-      RealType m = 1./simData->Im(id);
-      plusEqVecScaled(v, simData->V(id), m, sim_dimensions);
+      RealType m = 1./sim_data->Im(id);
+      plusEqVecScaled(v, sim_data->V(id), m, sim_dimensions);
       mass += m;
     }
     // Normalize
@@ -107,21 +106,19 @@ namespace GFlowSimulation {
   void Group::addVelocity(RealType *V) const {
     if (size()==0) return;
     // Get the dimensionality
-    auto simData = sim_data.lock();
-    int sim_dimensions = simData->getSimDimensions();
+    int sim_dimensions = sim_data->getSimDimensions();
     // Get arrays
-    auto v = simData->V();
+    auto v = sim_data->V();
     for (auto id : local_ids) plusEqVec(v(id), V, sim_dimensions);
   }
 
   void Group::addAcceleration(RealType *A) const {
     if (size()==0) return;
     // Get the dimensionaliry
-    auto simData = sim_data.lock();
-    int sim_dimensions = simData->getSimDimensions();
+    int sim_dimensions = sim_data->getSimDimensions();
     // Get arrays
-    auto f = simData->F();
-    auto im = simData->Im();
+    auto f = sim_data->F();
+    auto im = sim_data->Im();
     for (auto id : local_ids) {
       if (im(id)>0) {
         RealType mass = 1./im(id);
@@ -143,9 +140,8 @@ namespace GFlowSimulation {
 
   RealType Group::getChainedLength() const {
     RealType length = 0;
-    auto simData = sim_data.lock();
-    auto x = simData->X();
-    auto gflow = simData->getGFlow();
+    auto x = sim_data->X();
+    auto gflow = sim_data->getGFlow();
     // Compute distances between adjacent (in the order defined by the id list) particles.
     for (int i=0; i<local_ids.size()-1; ++i) {
       int id1 = local_ids[i], id2 = local_ids[i+1];
@@ -164,29 +160,27 @@ namespace GFlowSimulation {
     local_ids.push_back(id);
   }
 
-  RealType Group::distance(RealType *point) {
+  RealType Group::distance(const RealType *point) {
     if (size()==0) return -1.;
     // Get positions
-    auto simData = sim_data.lock();
-    auto x = simData->X();
+    auto x = sim_data->X();
     RealType _distance(1000000.), minimum_distance(1000000.);
     // Find closest object in the group to the point.
     for (auto id : local_ids) {
-      _distance = simData->getGFlow()->getDistance(x(id), point);
+      _distance = sim_data->getGFlow()->getDistance(x(id), point);
       if (_distance<minimum_distance) minimum_distance = _distance;
     }
     return _distance;
   }
 
   void Group::findNetForce(RealType *frc) const {
+    int sim_dimensions = sim_data->getSimDimensions();
+    zeroVec(frc, sim_dimensions);
     if (size()==0) return;
-    // Get the dimensionality
-    auto simData = sim_data.lock();
-    int sim_dimensions = simData->getSimDimensions();
     // Zero vector
     zeroVec(frc, sim_dimensions);
     // Force array
-    auto f = simData->F();
+    auto f = sim_data->F();
     // Compute net force
     for (auto id : local_ids) plusEqVec(frc, f(id), sim_dimensions);
   }
@@ -194,10 +188,9 @@ namespace GFlowSimulation {
   RealType Group::findTotalMass() const {
     if (size()==0) return 0;
     // Total the mass
-    auto simData = sim_data.lock();
     RealType m = 0, im = 0;;
     for (auto id : local_ids) {
-      im = simData->Im(id);
+      im = sim_data->Im(id);
       if (im==0) return 0;
       m += 1./im;
     }
@@ -208,14 +201,13 @@ namespace GFlowSimulation {
   void Group::findClosestObject(const RealType *point, RealType *displacement) const {
     if (size()==0) return;
     // Get dimensionality.
-    auto simData = sim_data.lock();
-    int sim_dimensions = simData->getSimDimensions();
-    auto x = simData->X();
+    int sim_dimensions = sim_data->getSimDimensions();
+    auto x = sim_data->X();
     Vec disp(sim_dimensions), maxDisp(sim_dimensions);
     RealType maxD = 0;
     // Find closest object in the group to the point.
     for (auto id : local_ids) {
-      simData->getGFlow()->getDisplacement(x(id), point, disp.data);
+      sim_data->getGFlow()->getDisplacement(x(id), point, disp.data);
       RealType d = sqr(disp);
       if (d>maxD) {
         maxD = d;
@@ -228,11 +220,10 @@ namespace GFlowSimulation {
   void Group::update_local_ids() const {
     // Make sure sizes are the same
     int _size = size();
-    auto simData = sim_data.lock();
     // Update local ids
     for (int i=0; i<_size; ++i) {
       int gid = global_ids[i];;
-      int lid = simData->getLocalID(gid);
+      int lid = sim_data->getLocalID(gid);
       local_ids[i] = lid;
     }
   }

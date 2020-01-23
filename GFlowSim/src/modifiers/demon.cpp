@@ -11,12 +11,12 @@ namespace GFlowSimulation {
 
   Demon::Demon(GFlow *gflow) : Modifier(gflow), Group(gflow), tau(0.1), startTime(0) {
     // Set up data objects
-    kineticL = new GraphObject(gflow, "KineticL", "t", "KE");
-    kineticR = new GraphObject(gflow, "KineticR", "t", "KE");
-    numberL  = new GraphObject(gflow, "NumberL", "t", "number");
-    numberR  = new GraphObject(gflow, "NumberR", "t", "number");
-    current_E = new GraphObject(gflow, "CurrentE", "t", "dE");
-    current_N = new GraphObject(gflow, "CurrentN", "t", "dE");
+    kineticL = make_shared<GraphObject>(gflow, "KineticL", "t", "KE");
+    kineticR = make_shared<GraphObject>(gflow, "KineticR", "t", "KE");
+    numberL  = make_shared<GraphObject>(gflow, "NumberL", "t", "number");
+    numberR  = make_shared<GraphObject>(gflow, "NumberR", "t", "number");
+    current_E = make_shared<GraphObject>(gflow, "CurrentE", "t", "dE");
+    current_N = make_shared<GraphObject>(gflow, "CurrentN", "t", "dE");
     
     // Add data objects to gflow.
     gflow->addDataObject(kineticL);
@@ -27,7 +27,7 @@ namespace GFlowSimulation {
     gflow->addDataObject(current_N);
 
     // Create parameters object
-    parameters = new Parameters(gflow);
+    parameters = make_shared<Parameters>(gflow);
     gflow->addDataObject(parameters);
 
     // Default door choice function - direction demon.
@@ -66,7 +66,7 @@ namespace GFlowSimulation {
 
     // --- Look for an animation object, so we can modify it.
     for (auto obj : dataMaster->getDataObjects()) {
-      PositionData *ob = dynamic_cast<PositionData*>(obj);
+      auto ob = std::dynamic_pointer_cast<PositionData>(obj);
       if (ob) animate_object = ob;
     }
     // Reset
@@ -202,7 +202,7 @@ namespace GFlowSimulation {
     partition_position = x;
   }
 
-  void Demon::setInteraction(DemonWall* w) {
+  void Demon::setInteraction(shared_ptr<DemonWall> w) {
     demon_interaction = w;
   }
 

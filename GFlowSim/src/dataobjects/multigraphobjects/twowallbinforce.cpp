@@ -5,7 +5,9 @@
 
 namespace GFlowSimulation {
 
-  TwoWallBinForce::TwoWallBinForce(GFlow *gflow, WallSlideBody *wa, WallSlideBody *wb) : MultiGraphObject(gflow, "TwoWallBinForce", "x", "<F>", 2), wallA(wa), wallB(wb) {
+  TwoWallBinForce::TwoWallBinForce(GFlow *gflow, shared_ptr<WallSlideBody> wa, shared_ptr<WallSlideBody> wb) 
+    : MultiGraphObject(gflow, "TwoWallBinForce", "x", "<F>", 2), wallA(wa), wallB(wb) 
+  {
     // Data
     resetData(nbins);
     // Set counts to not be written
@@ -21,10 +23,10 @@ namespace GFlowSimulation {
 
   void TwoWallBinForce::post_forces() {
     // Only record if enough time has gone by
-    if (!DataObject::_check() || wallA==nullptr || wallB==nullptr) return;
+    if (!DataObject::_check() || !wallA || !wallB) return;
 
     // Compute the temperature of the system.
-    int n_solvent = simData->number(); //  - wallA->size() = wallB->size();
+    int n_solvent = simData->number();
     RealType KB = gflow->getKB();
     // Get KE per (non infinitely massive) particle.
     RealType ke = KineticEnergyData::calculate_kinetic(simData, true);

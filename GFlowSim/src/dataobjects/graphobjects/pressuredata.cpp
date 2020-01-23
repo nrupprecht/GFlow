@@ -30,7 +30,7 @@ namespace GFlowSimulation {
     int number = simData->number();
     RealType factor = 1./(sim_dimensions*V);
     RealType Ptot = number*KB*T/V;
-    const vector<Interaction*>& interactions = gflow->getInteractions();
+    const auto & interactions = gflow->getInteractions();
     // Get the virials from all the interactions
     for (const auto it : interactions) {
       //! P = N k T/V + 1/(sim_dimensions*V) \sum_i (r_i \dot F_i)

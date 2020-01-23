@@ -12,8 +12,10 @@ namespace GFlowSimulation {
     //! \brief Default constructor, takes the number of dimensions. Sets numProc and rank.
     Topology(GFlow*);
 
-    //! \brief Destructor.
+    //! \brief Virtual destructor.
     virtual ~Topology() {};
+
+    virtual void pre_integrate() override;
 
     //! \brief Initialize the topology.
     virtual void initialize() override;
@@ -112,6 +114,17 @@ namespace GFlowSimulation {
       return -1;
       #endif
     }
+
+    // --- MPI related timers.
+
+    TimedObject barrier_timer;
+    TimedObject send_timer;
+    TimedObject recv_timer;
+    TimedObject ghost_send_timer;
+    TimedObject ghost_recv_timer;
+    TimedObject ghost_wait_timer;
+    TimedObject exchange_search_timer;
+    TimedObject ghost_search_timer; 
 
   protected:
 

@@ -35,6 +35,9 @@ namespace GFlowSimulation {
 
     //! \brief Construct objects for interactions. This contains common construction tasks.
     virtual void construct();
+    
+    //! \brief Construct interactions, but don't change particle ids or do any MPI related tasks.
+    virtual void construct_local();
 
     //! \brief Construct interactions for a single particle.
     //!
@@ -169,7 +172,7 @@ namespace GFlowSimulation {
     int ntypes = 0;
 
     //! \brief Interaction grid.
-    Interaction*** interaction_grid = nullptr;
+    vector<vector<shared_ptr<Interaction> > > interaction_grid;
 
     //! \brief An array of cutoffs, ntypes x ntypes.
     RealType **cutoff_grid = nullptr;

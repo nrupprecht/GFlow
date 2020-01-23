@@ -19,17 +19,14 @@ namespace GFlowSimulation {
     //! \brief Constructor.
     DataMaster(GFlow*);
 
-    //! \brief Destructor.
-    ~DataMaster();
-
     //! \brief Initialize all the data objects the data master controls.
     virtual void initialize() override;
     
     //! \brief Add a data object - we are subsequently in charge of the data object.
-    void addDataObject(DataObject*);
+    void addDataObject(shared_ptr<DataObject>);
 
     //! \brief Get a reference to the data objects vector.
-    const vector<DataObject*>& getDataObjects() const;
+    const vector<shared_ptr<DataObject> >& getDataObjects() const;
 
     //! \brief Set the command data
     void setCommand(int, char**);
@@ -110,7 +107,7 @@ namespace GFlowSimulation {
     RealType startRecTime = 0;
 
     //! The data objects we are responsible for.
-    vector<DataObject*> dataObjects;
+    vector<shared_ptr<DataObject> > dataObjects;
 
     //! \brief Files that should be written to the summary directory: {name, contents}.
     vector<pair<string, string> > files;

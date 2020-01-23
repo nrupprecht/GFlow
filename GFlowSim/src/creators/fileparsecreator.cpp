@@ -265,7 +265,7 @@ namespace GFlowSimulation {
     // --- Constant, uniform acceleration.
     Vec g = parser.argVec("Gravity");
     if (g.size()!=0)
-      gflow->addModifier(new ConstantAcceleration(gflow, g.data));
+      gflow->addModifier(make_shared<ConstantAcceleration>(gflow, g.data));
 
     // --- Attraction towards the center of the bounds
     RealType att = 0;
@@ -309,7 +309,7 @@ namespace GFlowSimulation {
     }
     // The interaction grid is specified.
     else { 
-      std::map<string, Interaction*> interactions;
+      std::map<string, shared_ptr<Interaction> > interactions;
       string token;
       int t1, t2;
       parser.begin();
@@ -327,7 +327,7 @@ namespace GFlowSimulation {
           if (t1<0 || t2<0 || NTypes<=t1 || NTypes<=t2) throw BadStructure("Illegal particle type in force grid.");
           // If the interaction has not occured yet, create one.
           if (interactions.find(token)==interactions.end()) {	    
-            interactions.insert(std::pair<string, Interaction*>(token, ParseConstructor::getInteraction(parser.getNode(), variables, token, gflow)));
+            interactions.insert(make_pair(token, ParseConstructor::getInteraction(parser.getNode(), variables, token, gflow)));
           }
           // Set the interparticle interaction
           gflow->forceMaster->setInteraction(t1, t2, interactions.find(token)->second);
@@ -463,15 +463,16 @@ namespace GFlowSimulation {
     return integrator;
   }
 
-  inline Interaction* FileParseCreator::choose_interaction(HeadNode *head) const {
+  inline shared_ptr<Interaction> FileParseCreator::choose_interaction(HeadNode *head) const {
     string token = head->params[2]->partA;
     return InteractionChoice::choose(gflow, token, sim_dimensions);
   }
 
   inline BCFlag FileParseCreator::choose_bc(const string& token) const {
-    if      (token=="Wrap")     return BCFlag::WRAP;
-    else if (token=="Reflect")  return BCFlag::REFL;
-    else if (token=="Repulse")  return BCFlag::REPL;
+    if      (token=="Wrap")    return BCFlag::WRAP;
+    else if (token=="Reflect") return BCFlag::REFL;
+    else if (token=="Repulse") return BCFlag::REPL;
+    else if (token=="Open")    return BCFlag::OPEN;
     else throw UnexpectedOption("Boundary condition choice was ["+token+"].");
   }
 
@@ -480,9 +481,14 @@ namespace GFlowSimulation {
     string token = parser.argName();
 
     if (token=="WindTunnel") {
-      RealType velocity = 0;
-      parser.val(velocity);
-      gflow->addModifier(new WindTunnel(gflow, velocity));
+      auto wind_tunnel = make_shared<WindTunnel>(gflow);
+      wind_tunnel->parse_construct(head, variables);
+      gflow->addModifier(wind_tunnel);
+    }
+    else if (token=="StreamTunnel") {
+      auto stream_tunnel = make_shared<StreamTunnel>(gflow);
+      stream_tunnel->parse_construct(head, variables);
+      gflow->addModifier(stream_tunnel);
     }
     else throw UnexpectedOption("Modifier choice was ["+token+"].");
   }
@@ -539,11 +545,11 @@ namespace GFlowSimulation {
         string token = parser.argName();
         // Check token
         if (token=="CV") {
-          gflow->addModifier(new ConstantVelocity(gflow, g_id, V.data));
+          gflow->addModifier(make_shared<ConstantVelocity>(gflow, g_id, V.data));
         }
         else if (token=="CV-D") {
           RealType D = 0;
-          if (parser.arg(D)) gflow->addModifier(new ConstantVelocityDistance(gflow, g_id, V.data, D));
+          if (parser.arg(D)) gflow->addModifier(make_shared<ConstantVelocityDistance>(gflow, g_id, V.data, D));
           else throw BadStructure("Distance needs to be specified for CV-D modifier.");
         }
         else throw BadStructure("Unrecognized modifer option, ["+token+"].");
@@ -556,9 +562,9 @@ namespace GFlowSimulation {
 
   inline void FileParseCreator::makeRandomForces() {
     // Assign random interactions, either HardSphere, LennardJones, or Coulomb (for now), and with equal probability (for now)
-    Interaction *hs = InteractionChoice::choose(gflow, HardSphereToken, sim_dimensions);
-    Interaction *lj = InteractionChoice::choose(gflow, LennardJonesToken, sim_dimensions);
-    Interaction *cl = InteractionChoice::choose(gflow, CoulombToken, sim_dimensions);
+    auto hs = InteractionChoice::choose(gflow, HardSphereToken, sim_dimensions);
+    auto lj = InteractionChoice::choose(gflow, LennardJonesToken, sim_dimensions);
+    auto cl = InteractionChoice::choose(gflow, CoulombToken, sim_dimensions);
     // Assign random (but symmetric) interactions
     for (int i=0; i<NTypes; ++i) {
       // Self interaction
