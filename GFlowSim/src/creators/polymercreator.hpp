@@ -48,19 +48,19 @@ namespace GFlowSimulation {
     bool useAngle = true;
 
     //! \brief A unified group correlation object. Note - this is handed to gflow, so this object should not attempt to delete it.
-    class GroupCorrelation *correlation = nullptr;
+    shared_ptr<class GroupCorrelation> correlation;
 
     //! \brief Two polymer correlation object.
-    class TwoPolymerBinForce *polycorr = nullptr;
+    shared_ptr<class TwoPolymerBinForce> polycorr;
 
     //! \brief Harmonic bonds object.
-    class HarmonicBond *harmonicbonds = nullptr;
+    shared_ptr<class HarmonicBond> harmonicbonds;
 
     //! \brief Angle harmonic chain object.
-    class AngleHarmonicChain *harmonicchain = nullptr;
+    shared_ptr<class AngleHarmonicChain> harmonicchain;
 
     //! \brief The most recently created line entropic force.
-    class LineEntropicForce *entropicForce = nullptr;
+    shared_ptr<class LineEntropicForce> entropicForce;
 
     //! \brief When true, space all particles an equal distance from each other, regardless of their radii.
     //!

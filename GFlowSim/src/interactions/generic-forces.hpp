@@ -655,7 +655,7 @@ namespace GFlowSimulation {
         om_add = Base::simData->requestScalarData("Om");
         tq_add = Base::simData->requestScalarData("Tq");
         // Add an angular integrator.
-        Base::gflow->addIntegrator(new AngularVelocityVerlet2d(gflow));
+        Base::gflow->addIntegrator(make_shared<AngularVelocityVerlet2d>(gflow));
       }
     };
 

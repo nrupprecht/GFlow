@@ -12,22 +12,17 @@ namespace GFlowSimulation {
 
   DataMaster::DataMaster(GFlow *gflow) : Base(gflow) {};
 
-  DataMaster::~DataMaster() {
-    for (auto& dob : dataObjects)
-      if (dob) delete dob;
-  }
-
   void DataMaster::initialize() {
     Base::initialize();
     for (auto& dob : dataObjects)
       if (dob) dob->initialize();
   }
 
-  void DataMaster::addDataObject(DataObject *dob) {
+  void DataMaster::addDataObject(shared_ptr<DataObject> dob) {
     dataObjects.push_back(dob);
   }
 
-  const vector<DataObject*>& DataMaster::getDataObjects() const {
+  const vector<shared_ptr<DataObject> >& DataMaster::getDataObjects() const {
     return dataObjects;
   }
 

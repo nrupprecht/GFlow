@@ -235,9 +235,9 @@ namespace GFlowSimulation {
     return nullptr;
   }
 
-  Interaction* ParseConstructor::getInteraction(HeadNode *head, const std::map<string, string>& variables, string token, GFlow *gflow) {
+  shared_ptr<Interaction> ParseConstructor::getInteraction(HeadNode *head, const std::map<string, string>& variables, string token, GFlow *gflow) {
     // Choose the interaction
-    Interaction *interaction = InteractionChoice::choose(gflow, token, gflow->getSimDimensions());
+    auto interaction = InteractionChoice::choose(gflow, token, gflow->getSimDimensions());
     // Have the interaction construct itself.
     if (interaction) interaction->parse_construct(head, variables);
     // Return

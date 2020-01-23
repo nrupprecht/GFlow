@@ -33,7 +33,7 @@ namespace GFlowSimulation {
   class InteractionChoice {
   public:
     //! \brief Choose an interaction given a token and a dimensionality.
-    static Interaction* choose(GFlow *gflow, const string &token, int sim_dimensions);
+    static shared_ptr<Interaction> choose(GFlow *gflow, const string &token, int sim_dimensions);
   };
 
 }
