@@ -24,7 +24,7 @@ namespace GFlowSimulation {
     // --- Parameters
     RealType radius = 1., sigma = 0.05;
     int type = 0;
-    bool track = true;
+    bool track = false;
     // --- Gather parameters
     Vec center = parser.argVec("Center");
     // Check that vectors are good.

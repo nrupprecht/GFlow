@@ -65,10 +65,10 @@ namespace GFlowSimulation {
     vector<int> dims;
 
     //! \brief The widths of a cell in each dimension
-    vector<RealType> widths;
+    vector<real> widths;
 
     //! \brief The inverse widths of a cell in each dimension
-    vector<RealType> inverseW;
+    vector<real> inverseW;
 
     //! \brief The number of halo or ghost sectors added below.
     //!
@@ -86,7 +86,7 @@ namespace GFlowSimulation {
     //! Cells will be at least this wide in each dimension, but since an integral number of them have
     //! to fit in the domain in each dimension, the actual widths will be different. They will be at
     //! least this large though.
-    RealType target_cell_size = 0.;
+    real target_cell_size = 0.;
   };
 
 }

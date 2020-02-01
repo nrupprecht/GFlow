@@ -93,7 +93,7 @@ namespace GFlowSimulation {
   protected:
 
     //! \brief The global ids of the particles in the group.
-    vector<int> global_ids;
+    mutable vector<int> global_ids;
 
     //! \brief The local ids of the particles in the group.
     mutable vector<int> local_ids;

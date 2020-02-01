@@ -219,13 +219,20 @@ namespace GFlowSimulation {
 
   void Group::update_local_ids() const {
     // Make sure sizes are the same
-    int _size = size();
+    int _size = size(), _count = 0;
     // Update local ids
     for (int i=0; i<_size; ++i) {
-      int gid = global_ids[i];;
+      int gid = global_ids[i];
       int lid = sim_data->getLocalID(gid);
-      local_ids[i] = lid;
+      if (-1<lid) {
+	// Potentially shrink global id list by moving up the ids.
+	local_ids[_count] = lid;
+	global_ids[_count] = global_ids[i];
+	++_count;
+      }
     }
+    global_ids.resize(_count);
+    local_ids.resize(_count);
   }
 
 }
