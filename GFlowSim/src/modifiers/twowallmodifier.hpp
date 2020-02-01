@@ -37,7 +37,7 @@ namespace GFlowSimulation {
 
   private:
     //! \brief The walls.
-    WallSlideBody wallA, wallB;
+    shared_ptr<WallSlideBody> wallA, wallB;
 
     //! \brief Max distance before force starts
     RealType max_distance;
@@ -49,7 +49,7 @@ namespace GFlowSimulation {
     RealType acceleration;
 
     //! \brief Pointer to the data object that monitors the walls.
-    TwoWallBinForce *data_object = nullptr;
+    shared_ptr<TwoWallBinForce> data_object;
   };
 
 }

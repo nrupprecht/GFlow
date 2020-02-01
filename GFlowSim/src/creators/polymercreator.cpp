@@ -87,9 +87,9 @@ namespace GFlowSimulation {
 
     // Create a group correlation object
     if (correlation==nullptr && useCorr) {
-      correlation = new GroupCorrelation(gflow);
+      correlation = make_shared<GroupCorrelation>(gflow);
       // Create a group correlation object
-      correlation = new GroupCorrelation(gflow);
+      correlation = make_shared<GroupCorrelation>(gflow);
       correlation->setRadius(2.5*rP);
       correlation->setNBins(150);
       // Add the correlation object
@@ -97,7 +97,7 @@ namespace GFlowSimulation {
     }
 
     if (number==2) {
-      polycorr = new TwoPolymerBinForce(gflow);
+      polycorr = make_shared<TwoPolymerBinForce>(gflow);
       polycorr->setCType(idC);
       polycorr->setRadius(rP);
       polycorr->setMaxDistance(2.5*rP);
@@ -121,7 +121,7 @@ namespace GFlowSimulation {
         else group = createRandomPolymer(gflow, length, phi, idP, idC);
 
         // Add a correlation item.
-        if (i==0) gflow->addDataObject(new PersistenceLength(gflow, group));
+        if (i==0) gflow->addDataObject(make_shared<PersistenceLength>(gflow, group));
 
         if (polycorr) {
           if (n_polymers==1) {
@@ -146,27 +146,27 @@ namespace GFlowSimulation {
 
     // Add bonds object to gflow
     if (sim_dimensions==2) {
-      if (harmonicbonds==nullptr && !useAngle) {
-        harmonicbonds = new HarmonicBond_2d(gflow);
+      if (!harmonicbonds && !useAngle) {
+        harmonicbonds = make_shared<HarmonicBond_2d>(gflow);
         gflow->addBonded(harmonicbonds);
       }
       if (useAngle) {
-        harmonicchain = new AngleHarmonicChain_2d(gflow);
+        harmonicchain = make_shared<AngleHarmonicChain_2d>(gflow);
       }
     }
     else if (sim_dimensions==3) {
-      if (harmonicbonds==nullptr && !useAngle) {
-        harmonicbonds = new HarmonicBond_3d(gflow);
+      if (!harmonicbonds && !useAngle) {
+        harmonicbonds = make_shared<HarmonicBond_3d>(gflow);
         gflow->addBonded(harmonicbonds);
       }
-      if (useAngle) harmonicchain = new AngleHarmonicChain_3d(gflow);
+      if (useAngle) harmonicchain = make_shared<AngleHarmonicChain_3d>(gflow);
     }
     else {
-      if (harmonicbonds==nullptr && !useAngle) {
-        harmonicbonds = new HarmonicBond(gflow);
+      if (!harmonicbonds && !useAngle) {
+        harmonicbonds = make_shared<HarmonicBond>(gflow);
         gflow->addBonded(harmonicbonds);
       }
-      if (useAngle) harmonicchain = nullptr; // <-----------
+      //if (useAngle) harmonicchain = nullptr; // <-----------
     }
     
     // Add the harmonic bonds modifier.
@@ -334,7 +334,7 @@ namespace GFlowSimulation {
       else sd->addParticle(X.data, ZERO.data, rC, imC, idC);
 
       // Add bond - if we are using angle harmonic chains, then we only need to add particles to those.
-      if (gid1!=-1 && harmonicbonds && harmonicchain!=nullptr) harmonicbonds->addBond(gid1, gid2);
+      if (gid1!=-1 && harmonicbonds && harmonicchain) harmonicbonds->addBond(gid1, gid2);
       if (harmonicchain) harmonicchain->addAtom(gid2);
 
       // Add to group
@@ -489,7 +489,7 @@ namespace GFlowSimulation {
     x[1] -= 0.5*length;
 
     // Remove harmonic bonds, so the particles will not be added.
-    HarmonicBond *bonds = harmonicbonds;
+    auto bonds = harmonicbonds;
     harmonicbonds = nullptr;
 
     // Shift x to the left 
@@ -504,7 +504,7 @@ namespace GFlowSimulation {
     Group group2 = createRandomLine(gflow, x.data, phi, length, spacing);
 
     // Add the two wall modifier
-    TwoWallModifier *walls = new TwoWallModifier(gflow, group1, group2);
+    auto walls = make_shared<TwoWallModifier>(gflow, group1, group2);
     walls->setMinDistance(0.); // No minimum distance
     walls->setMaxDistance(5.*rP);
     walls->setBinsDataObject(100);

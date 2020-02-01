@@ -75,13 +75,13 @@ namespace GFlowSimulation {
       do {
         if (parser.argName()=="Demon") {
           // Create a demon
-          Demon *demon = new Demon(gflow);
+          auto demon = make_shared<Demon>(gflow);
           Vec center(sim_dimensions);
           gflow->getBounds().center(center.data);
           // Set partition position center.
           demon->setPartitionPosition(center[0]);
           // Set group.
-          *dynamic_cast<Group*>(demon) = wall_group;
+          *std::dynamic_pointer_cast<Group>(demon) = wall_group;
 	        // Check for demon's time constant
           RealType tau = 0;
           if (parser.firstArg("Tau", tau)) demon->setTau(tau);
@@ -90,10 +90,10 @@ namespace GFlowSimulation {
       	  if (parser.firstArg("Type", demon_type)) demon->setDemon(demon_type);
           // Find any demon wall interaction and give it to the demon.
           for (auto it : gflow->getInteractions()) {
-            DemonWall* d = dynamic_cast<DemonWall*>(it);
-            if (d!=nullptr) {
-              demon->setInteraction(d);
-              break;
+            auto demon_wall = std::dynamic_pointer_cast<DemonWall>(it);
+            if (demon_wall) {
+              demon->setInteraction(demon_wall);
+              break; // Only find the first demon_wall.
             }
           }
 

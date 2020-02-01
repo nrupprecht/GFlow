@@ -43,13 +43,13 @@ namespace GFlowSimulation {
     int sim_dimensions = gflow->getSimDimensions();
 
     // Save gflow's data
-    Integrator *integrator = gflow->integrator; // Save integrator
-    ForceMaster *master    = gflow->forceMaster; // Save old master
-    vector<Interaction*> interactions = gflow->interactions; // Save old forces
+    auto integrator = gflow->integrator; // Save integrator
+    auto master    = gflow->forceMaster; // Save old master
+    auto interactions = gflow->interactions; // Save old forces
 
     // Use hard sphere forces
     int ntypes = gflow->getNTypes();
-    Interaction *hsForce = InteractionChoice::choose(gflow, HardSphereToken, sim_dimensions);
+    auto hsForce = InteractionChoice::choose(gflow, HardSphereToken, sim_dimensions);
     
     // New force master - has only hard sphere forces.
     ForceMaster forceMaster(gflow, ntypes);
@@ -86,7 +86,6 @@ namespace GFlowSimulation {
 
     // Clean up
     delete rx_integrator;
-    delete hsForce;
   }
 
   void Creator::relax(class GFlow *gflow, RealType time, HeadNode *head) {

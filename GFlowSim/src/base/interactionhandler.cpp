@@ -27,7 +27,6 @@ namespace GFlowSimulation {
     positions = nullptr;
     if (cutoff_grid) dealloc_array_2d(cutoff_grid);
     cutoff_grid = nullptr;
-    if (interaction_grid) dealloc_array_2d(interaction_grid);
   }
 
   void InteractionHandler::initialize() {
@@ -404,14 +403,12 @@ namespace GFlowSimulation {
       // Handle cutoff grid.
       if (cutoff_grid) dealloc_array_2d(cutoff_grid);
       cutoff_grid = ntypes>0 ? alloc_array_2d<RealType>(ntypes, ntypes) : nullptr; 
-      // Handle interaction grid.
-      if (interaction_grid) dealloc_array_2d(interaction_grid);
-      interaction_grid = ntypes>0 ? alloc_array_2d<Interaction*>(ntypes, ntypes) : nullptr;
+      // Copy force master's interaction grid.
+      interaction_grid = forceMaster->grid;
 
       // Set interaction and cutoff grid.
       for (int j=0; j<ntypes; ++j)
         for (int i=0; i<ntypes; ++i) {
-          interaction_grid[i][j] = forceMaster->grid[i][j];
           cutoff_grid[i][j] = (interaction_grid[i][j]) ? interaction_grid[i][j]->getCutoff() : 0.;
         }
       }
@@ -455,7 +452,7 @@ namespace GFlowSimulation {
 
   void InteractionHandler::pair_interaction(const int id1, const int id2, const int list) {
     // Get the interaction.
-    Interaction *pair_force = interaction_grid[simData->Type(id1)][simData->Type(id2)];
+    auto pair_force = interaction_grid[simData->Type(id1)][simData->Type(id2)];
     // A null force means no interaction
     if (pair_force) pair_force->addPair(id1, id2, list);
   }

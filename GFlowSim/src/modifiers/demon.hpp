@@ -41,7 +41,7 @@ namespace GFlowSimulation {
     void setPartitionPosition(RealType);
 
     //! \brief Set the demon wall interaction.
-    void setInteraction(DemonWall*);
+    void setInteraction(shared_ptr<DemonWall>);
 
     //! \brief Set the start time for the door.
     void setStartTime(RealType);
@@ -95,7 +95,7 @@ namespace GFlowSimulation {
     static bool number_demon(int, int, RealType, RealType);
 
     //! \brief The demon wall interaction.
-    DemonWall *demon_interaction = nullptr;
+    shared_ptr<DemonWall> demon_interaction;
 
     //! \brief Whether the door is open.
     bool door_open = true;
@@ -144,15 +144,15 @@ namespace GFlowSimulation {
     int opened_tau = 0, closed_tau = 0;
 
     //! \brief Data objects for recording demon statistics.
-    GraphObject *kineticL, *kineticR, *numberL, *numberR, *current_E, *current_N;
+    shared_ptr<GraphObject> kineticL, kineticR, numberL, numberR, current_E, current_N;
 
     //! \brief A pointer to a position data object that we try to find in datamaster.
     //!
     //! Having this allows us to modify the animation object to correctly animate what is happening.
-    class PositionData *animate_object = nullptr;
+    shared_ptr<class PositionData> animate_object;
 
     //! \brief A pointer to a parameters object.
-    class Parameters *parameters = nullptr;
+    shared_ptr<class Parameters> parameters;
 
     //! \brief Save the last record time of the animation object.
     RealType animate_last_recording = 0;

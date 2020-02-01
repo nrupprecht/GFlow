@@ -26,7 +26,7 @@ namespace GFlowSimulation {
     static RandomEngine* getRandomEngine(HeadNode*, const std::map<string, string>&, string&, GFlow*);
 
     //! \brief Parse a node to create an interaction.
-    static Interaction* getInteraction(HeadNode*, const std::map<string, string>&, string, GFlow*);
+    static shared_ptr<Interaction> getInteraction(HeadNode*, const std::map<string, string>&, string, GFlow*);
 
   };
 

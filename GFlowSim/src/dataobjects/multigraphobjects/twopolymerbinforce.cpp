@@ -102,7 +102,7 @@ namespace GFlowSimulation {
     polyA = g;
   }
 
-  void TwoPolymerBinForce::setFirstChain(AngleHarmonicChain *ch) {
+  void TwoPolymerBinForce::setFirstChain(shared_ptr<class AngleHarmonicChain> ch) {
     chainA = ch; 
   }
 
@@ -110,7 +110,7 @@ namespace GFlowSimulation {
     polyB = g;
   }
 
-  void TwoPolymerBinForce::setSecondChain(AngleHarmonicChain *ch) {
+  void TwoPolymerBinForce::setSecondChain(shared_ptr<class AngleHarmonicChain> ch) {
     chainB = ch; 
   }
 
@@ -121,7 +121,7 @@ namespace GFlowSimulation {
     // Select objects
     Group& first  = (choice==0) ? polyA : polyB;
     Group& second = (choice==0) ? polyB : polyA;
-    AngleHarmonicChain *firstCh  = (choice==0) ? chainA : chainB;
+    auto firstCh  = (choice==0) ? chainA : chainB;
     // For holding the force on a particle.
     Vec force(sim_dimensions);
 

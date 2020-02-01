@@ -42,9 +42,9 @@ namespace GFlowSimulation {
     auto process_bounds = gflow->getTopology()->getProcessBounds();
 
     // Group net force object
-    GroupNetForce *netforce = nullptr;
+    shared_ptr<GroupNetForce> netforce = nullptr;
     if (track) {
-      netforce = new GroupNetForce(gflow);
+      auto netforce = make_shared<GroupNetForce>(gflow);
       gflow->addDataObject(netforce);
     }
 

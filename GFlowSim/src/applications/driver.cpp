@@ -274,33 +274,33 @@ int main(int argc, char **argv) {
 
   // --- Add data objects
   gflow->setStartRecTime(startRecTime);
-  if (snapshot)    gflow->addDataObject(new EndingSnapshot(gflow));
-  if (totalKE||ke) gflow->addDataObject(new KineticEnergyData(gflow, ke));
-  if (rotE)        gflow->addDataObject(new RotationalEnergyData(gflow));
-  if (kebin>0)     gflow->addDataObject(new KineticEnergyBin(gflow, kebin));
-  if (energy)      gflow->addDataObject(new TotalEnergyData(gflow));
-  if (bondenergy)  gflow->addDataObject(new BondedEnergyData(gflow));
-  if (keTypes)     gflow->addDataObject(new KineticEnergyTypesData(gflow, true));
-  if (aveOm)       gflow->addDataObject(new AverageOmegaData(gflow));
-  if (bdForces)    gflow->addDataObject(new BoundaryForceData(gflow));
-  if (timestep)    gflow->addDataObject(new TimeStepData(gflow));
-  if (averages)    gflow->addDataObject(new AverageData(gflow));
-  if (aveV)        gflow->addDataObject(new AverageVelocityData(gflow));
-  if (aveP)        gflow->addDataObject(new AveragePositionData(gflow));
-  if (dev)         gflow->addDataObject(new OscillationData(gflow));
-  if (minDistances)gflow->addDataObject(new MinInteractingDistance(gflow));
-  if (percolation) gflow->addDataObject(new PercolationData(gflow, skin));
-  if (psnapshot)   gflow->addDataObject(new PercolationSnapshot(gflow, skin));
-  if (memdist)     gflow->addDataObject(new MemoryDistance(gflow));
-  if (pressure)    gflow->addDataObject(new PressureData(gflow));
-  if (numberdata)  gflow->addDataObject(new NumberData(gflow));
-  if (centercorr)  gflow->addDataObject(new CenterCorrelation(gflow));
-  if (velocityvp)  gflow->addDataObject(new VelocityVolumePlot(gflow));
-  if (radiusvp)    gflow->addDataObject(new RadiusVolumePlot(gflow));
-  if (stripex)     gflow->addModifier(new StripeX(gflow));
+  if (snapshot)    gflow->addDataObject(make_shared<EndingSnapshot>(gflow));
+  if (totalKE||ke) gflow->addDataObject(make_shared<KineticEnergyData>(gflow, ke));
+  if (rotE)        gflow->addDataObject(make_shared<RotationalEnergyData>(gflow));
+  if (kebin>0)     gflow->addDataObject(make_shared<KineticEnergyBin>(gflow, kebin));
+  if (energy)      gflow->addDataObject(make_shared<TotalEnergyData>(gflow));
+  if (bondenergy)  gflow->addDataObject(make_shared<BondedEnergyData>(gflow));
+  if (keTypes)     gflow->addDataObject(make_shared<KineticEnergyTypesData>(gflow, true));
+  if (aveOm)       gflow->addDataObject(make_shared<AverageOmegaData>(gflow));
+  if (bdForces)    gflow->addDataObject(make_shared<BoundaryForceData>(gflow));
+  if (timestep)    gflow->addDataObject(make_shared<TimeStepData>(gflow));
+  if (averages)    gflow->addDataObject(make_shared<AverageData>(gflow));
+  if (aveV)        gflow->addDataObject(make_shared<AverageVelocityData>(gflow));
+  if (aveP)        gflow->addDataObject(make_shared<AveragePositionData>(gflow));
+  if (dev)         gflow->addDataObject(make_shared<OscillationData>(gflow));
+  if (minDistances)gflow->addDataObject(make_shared<MinInteractingDistance>(gflow));
+  if (percolation) gflow->addDataObject(make_shared<PercolationData>(gflow, skin));
+  if (psnapshot)   gflow->addDataObject(make_shared<PercolationSnapshot>(gflow, skin));
+  if (memdist)     gflow->addDataObject(make_shared<MemoryDistance>(gflow));
+  if (pressure)    gflow->addDataObject(make_shared<PressureData>(gflow));
+  if (numberdata)  gflow->addDataObject(make_shared<NumberData>(gflow));
+  if (centercorr)  gflow->addDataObject(make_shared<CenterCorrelation>(gflow));
+  if (velocityvp)  gflow->addDataObject(make_shared<VelocityVolumePlot>(gflow));
+  if (radiusvp)    gflow->addDataObject(make_shared<RadiusVolumePlot>(gflow));
+  if (stripex)     gflow->addModifier(make_shared<StripeX>(gflow));
   // Add this last, as it takes the most time.
   if (animate) {
-    auto pd = new PositionData(gflow);
+    auto pd = make_shared<PositionData>(gflow);
     gflow->addDataObject(pd);
     if (videoLength>0) pd->setFPS((20.*videoLength)/time);
   }
@@ -309,13 +309,13 @@ int main(int argc, char **argv) {
   gflow->setPrintUpdates(print);
 
   // --- Add modifiers
-  if (temperature>0) gflow->addModifier(new TemperatureModifier(gflow, temperature));
-  // Timestep adjustment
+  if (temperature>0) gflow->addModifier(make_shared<TemperatureModifier>(gflow, temperature));
+  // Add or modify some things.
+  if (gravity!=0)     gflow->addModifier(make_shared<ConstantAcceleration>(gflow, gravity));
+  if (damping)        gflow->addModifier(make_shared<LinearVelocityDamping>(gflow));
+  if (skin_depth>0)   gflow->getInteractionHandler()->setSkinDepth(skin_depth);
+  if (step_delay>0)   gflow->getIntegrator()->setStepDelay(step_delay);
   if (target_steps>0) gflow->getIntegrator()->setTargetSteps(target_steps);
-  if (step_delay>0) gflow->getIntegrator()->setStepDelay(step_delay);
-  if (gravity!=0) gflow->addModifier(new ConstantAcceleration(gflow, gravity));
-  if (skin_depth>0) gflow->getInteractionHandler()->setSkinDepth(skin_depth);
-  if (damping) gflow->addModifier(new LinearVelocityDamping(gflow));
 
   // Turns off forces.
   if (!forces) gflow->setUseForces(false);

@@ -57,7 +57,7 @@ namespace GFlowSimulation {
     stop_timer();
   }
 
-  Interaction* ForceMaster::getInteraction(int type1, int type2) {
+  shared_ptr<Interaction> ForceMaster::getInteraction(int type1, int type2) {
     if (ntypes<=type1 || ntypes<=type2 || type1<0 || type2<0) return nullptr;
     return grid[type1][type2];
   }
@@ -126,8 +126,8 @@ namespace GFlowSimulation {
     // Set ntypes for this object
     ntypes = n;
     if (simData) simData->_ntypes = n;
-    // Resize and erase array
-    grid = vector<vector<Interaction*> >(n, vector<Interaction*>(n, nullptr));
+    // Resize and erase array. Use decltype since the type of grid is very long.
+    grid = decltype(grid)(n, vector<shared_ptr<Interaction> >(n, nullptr));
     // Resize and reset doesInteract
     doesInteract = vector<bool>(ntypes, false);
     for (int i=0; i<ntypes; ++i) doesInteract[i] = false; // Since all interactions in the grid are null
@@ -135,14 +135,14 @@ namespace GFlowSimulation {
     max_cutoffs = vector<RealType>(ntypes, 1.);
   }
   
-  void ForceMaster::setInteraction(int type1, int type2, Interaction *it, bool reflexive) {
+  void ForceMaster::setInteraction(int type1, int type2, shared_ptr<Interaction> it, bool reflexive) {
     // Set interaction between type1 and type2 to be *it.
     grid[type1][type2] = it;
     // If reflexive, then the interaction doesn't care which type of particle is "first" in the pairing,
     // and type2 interacts with type1 via the same interaction.
     if (reflexive) grid[type2][type1] = it;
     // Add to the list if it is not already there and isn't null.
-    if (it!=nullptr && !contains(interactions, it)) interactions.push_back(it);
+    if (it && !contains(interactions, it)) interactions.push_back(it);
     // Add to gflow's list if it is not already there and isn't null. GFlow will check for this.
     gflow->addInteraction(it);
     // Update max_cutoffs
@@ -153,7 +153,7 @@ namespace GFlowSimulation {
     }
   }
 
-  void ForceMaster::setInteraction(Interaction *it) {
+  void ForceMaster::setInteraction(shared_ptr<Interaction> it) {
     for (int i=0; i<ntypes; ++i)
       for (int j=i; j<ntypes; ++j)
         setInteraction(i, j, it, true);

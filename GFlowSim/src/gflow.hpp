@@ -119,10 +119,10 @@ namespace GFlowSimulation {
     pair<int, char**> getCommand() const;
 
     //! \brief Get the vector of nonbonded interactions.
-    const vector<class Interaction*>& getInteractions() const;
+    const vector<shared_ptr<class Interaction> >& getInteractions() const;
 
     //! \brief Get the vector of bonded interactions.
-    const vector<class Bonded*>& getBondedInteractions() const;
+    const vector<shared_ptr<class Bonded> >& getBondedInteractions() const;
 
     //! \brief Get the sim data object.
     shared_ptr<class SimData> getSimData();
@@ -168,16 +168,16 @@ namespace GFlowSimulation {
     //! \brief Add an interaction. 
     //!
     //! GFlow only adds the interaction if it is non null.
-    void addInteraction(Interaction*);
+    void addInteraction(shared_ptr<Interaction>);
 
     //! \brief Add a bonded interaction.
-    void addBonded(class Bonded*);
+    void addBonded(shared_ptr<class Bonded>);
 
     //! \brief Add a body.
-    void addBody(class Body*);
+    void addBody(shared_ptr<class Body>);
 
     //! \brief Add another integrator.
-    void addIntegrator(class Integrator*);
+    void addIntegrator(shared_ptr<class Integrator>);
 
     //! \brief Set the command info
     void setCommand(int, char**);
@@ -234,10 +234,10 @@ namespace GFlowSimulation {
     void removeOverlapping(RealType);
 
     //! \brief Add a data object.
-    void addDataObject(class DataObject*);
+    void addDataObject(shared_ptr<class DataObject>);
 
     //! \brief Add a modifier object.
-    void addModifier(class Modifier*);
+    void addModifier(shared_ptr<class Modifier>);
 
     //! \brief Reset all timers (use e.g. after doing relaxation of a random initial state).
     void resetAllTimes();
@@ -336,20 +336,20 @@ namespace GFlowSimulation {
     class Topology    *topology = nullptr;     // Processor topology
 
     //! \brief Additional integrators. \todo Do this better.
-    vector<class Integrator*> additional_integrators;
+    vector<shared_ptr<class Integrator> > additional_integrators;
 
     //! \brief A vector of objects that should modify the simulation at some point(s) during execution.
-    std::list<class Modifier*> modifiers;
+    std::list<shared_ptr<class Modifier> > modifiers;
 
     //! \brief All the short range, non-bonded, forces that can happen - which ones correspond to which pairs of particles is controlled by
     // the ForceMaster object.
-    vector<class Interaction*> interactions;
+    vector<shared_ptr<class Interaction> > interactions;
 
     //! \brief All the bonded forces that can happen.
-    vector<class Bonded*> bondedInteractions;
+    vector<shared_ptr<class Bonded> > bondedInteractions;
 
     //! \brief All the bodies in the simulation.
-    vector<class Body*> bodies;
+    vector<shared_ptr<class Body> > bodies;
 
     //! \brief How much time we have been requested to run for.
     long double requested_time;

@@ -9,7 +9,7 @@ namespace GFlowSimulation {
   class TwoWallBinForce : public MultiGraphObject {
   public:
     //! \brief Default constructor
-    TwoWallBinForce(GFlow*, WallSlideBody*, WallSlideBody*);
+    TwoWallBinForce(GFlow*, shared_ptr<WallSlideBody>, shared_ptr<WallSlideBody>);
 
     //! \brief Clear preexisting data.
     virtual void pre_integrate() override;
@@ -40,10 +40,10 @@ namespace GFlowSimulation {
     RealType max_distance = 0.22;
 
     //! \brief The "left" wall.
-    WallSlideBody *wallA = nullptr;
+    shared_ptr<WallSlideBody> wallA;
     
     //! \brief The "right" wall.
-    WallSlideBody *wallB = nullptr;
+    shared_ptr<WallSlideBody> wallB;
 
   };
 
