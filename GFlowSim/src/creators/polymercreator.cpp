@@ -166,7 +166,7 @@ namespace GFlowSimulation {
         harmonicbonds = make_shared<HarmonicBond>(gflow);
         gflow->addBonded(harmonicbonds);
       }
-      //if (useAngle) harmonicchain = nullptr; // <-----------
+      if (useAngle) harmonicchain = nullptr;
     }
     
     // Add the harmonic bonds modifier.
@@ -251,7 +251,7 @@ namespace GFlowSimulation {
     randomNormalVec(V.data, sim_dimensions);
 
     // Set parameters for creating the polymer
-    //*****
+    //***** Ad hoc and hard-coded. *****
     RealType middleX = 0.5*gflow->getBounds().wd(0)+gflow->getBounds().min[0];
     RealType dir = n_polymers & 0x1 ? 1. : -1.;
     X[0] = middleX + 0.25*dir*floor(n_polymers+1)/2;

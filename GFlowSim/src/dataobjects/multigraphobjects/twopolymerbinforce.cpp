@@ -116,6 +116,7 @@ namespace GFlowSimulation {
 
   inline void TwoPolymerBinForce::find_forces(int choice, RealType norm) {
     auto x = simData->X();
+    auto f = simData->F();
     Vec X1(sim_dimensions), X2(sim_dimensions), dX(sim_dimensions), A(sim_dimensions), B(sim_dimensions);
 
     // Select objects
@@ -124,7 +125,6 @@ namespace GFlowSimulation {
     auto firstCh  = (choice==0) ? chainA : chainB;
     // For holding the force on a particle.
     Vec force(sim_dimensions);
-
     // Check polymer A.
     for (int i=0; i<first.size(); ++i) {
       // Get id of particle from first group.
@@ -134,12 +134,12 @@ namespace GFlowSimulation {
       // Two minimum distance to any particles in the other group. Start with a huge number.
       RealType minD1 = 10000., minD2 = 10000;
       // Store position of first particle.
-      X1 = x[id1];
+      X1 = x(id1);
       // Iterate through particles in second polymer
       for (int j=0; j<second.size(); ++j) {
         int id2 = second.at(j);
         // Copy vector
-        X2 = x[id2];
+        X2 = x(id2);
         gflow->getDisplacement(X2.data, X1.data, dX.data);
         //dX = X2 - X1;
         //gflow->minimumImage(dX.data);
@@ -177,7 +177,7 @@ namespace GFlowSimulation {
         RealType dr = (max_distance - min_distance)/nbins;
         int bx = static_cast<int>((minD1-min_distance)/dr);
         // Get the net force on the particle.
-        force = simData->F(id1);
+        force = f(id1);
         // Normalize displacement vector.
         A.normalize();
         // If we can, subtract away the force of the polymer on itself.

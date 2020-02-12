@@ -134,7 +134,7 @@ namespace GFlowSimulation {
     simData->setNeedsLocalRemake(false); // A full remake is more thorough than a local remake.
 
     // If there are no interaction, or the forceMaster is null, we don't need to make any verlet lists
-    if (!gflow->getInteractions().empty() && forceMaster!=nullptr && gflow->getUseForces()) {
+    if (!gflow->getInteractions().empty() && forceMaster && gflow->getUseForces()) {
       // Update data structures.
       structure_updates();
 
@@ -167,7 +167,7 @@ namespace GFlowSimulation {
     simData->setNeedsLocalRemake(false);
 
     // If there are no interaction, or the forceMaster is null, we don't need to make any verlet lists
-    if (!gflow->getInteractions().empty() && forceMaster!=nullptr && gflow->getUseForces()) {
+    if (!gflow->getInteractions().empty() && forceMaster && gflow->getUseForces()) {
       // Update data structures.
       structure_updates();
 
@@ -283,7 +283,7 @@ namespace GFlowSimulation {
 
   void InteractionHandler::calculate_max_small_sigma() {
     // Make sure we have what we need.
-    if (forceMaster==nullptr || simData==nullptr || simData->size_owned()==0) return;
+    if (!forceMaster || !simData || simData->size_owned()==0) return;
 
     // Make sure force master has interaction array set up
     forceMaster->initialize_does_interact();

@@ -9,6 +9,11 @@ namespace GFlowSimulation {
   Visualization::Visualization() : do_wrap(true) {
     createColorBank(10); // Default size - 10
     resolution = 1536;
+
+    // colorBank.push_back(RGBApixel(215, 215, 215));
+    // colorBank.push_back(RGBApixel(255, 255, 255));
+    // colorBank.push_back(RGBApixel(145, 145, 145));
+    // resolution = 0.6*1024;    
   };
 
   bool Visualization::load_and_create(string loadName, string saveName) {

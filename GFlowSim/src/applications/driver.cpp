@@ -302,7 +302,9 @@ int main(int argc, char **argv) {
   if (animate) {
     auto pd = make_shared<PositionData>(gflow);
     gflow->addDataObject(pd);
-    if (videoLength>0) pd->setFPS((20.*videoLength)/time);
+    real videoTime = startRecTime>0 ? time - startRecTime : time;
+    if (videoLength<0) videoLength = videoTime;
+    if (videoTime>0) pd->setFPS((20.*videoLength)/videoTime);
   }
   if (fps>0) gflow->setFPS(fps); // Do after data objects are loaded
   gflow->setDMCmd(argc, argv);
