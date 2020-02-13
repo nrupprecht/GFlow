@@ -3,6 +3,7 @@
 #include "interaction.hpp"
 #include "integrator.hpp"
 #include "simdata.hpp"
+#include "topology.hpp"
 
 namespace GFlowSimulation {
 
@@ -48,7 +49,7 @@ namespace GFlowSimulation {
 
   void ForceMaster::interact_ghosts() {
     // Check if there are any interactions
-    if (interactions.empty()) return;
+    if (interactions.empty() || topology->getNumProc()==1) return;
     // Start timer
     start_timer();
     // Run all interactions

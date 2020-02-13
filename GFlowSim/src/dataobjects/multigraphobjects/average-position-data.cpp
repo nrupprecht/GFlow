@@ -5,7 +5,7 @@
 namespace GFlowSimulation {
 
   AveragePositionData::AveragePositionData(GFlow *gflow) : MultiGraphObject(gflow, "AvePos", "time", "position", gflow->getSimDimensions()) {
-    for (int i=0; i<gflow->getSimDimensions(); ++i)
+    for (int i=0; i<sim_dimensions; ++i)
       axis_y[i] = "Ave pos - X[" + toStr(i) + "]";
 
     // Hardcode this for now. Only record particles close to the incoming (newly created) particles.

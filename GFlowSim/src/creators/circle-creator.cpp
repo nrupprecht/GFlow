@@ -24,7 +24,7 @@ namespace GFlowSimulation {
     // --- Parameters
     RealType radius = 1., sigma = 0.05;
     int type = 0;
-    bool track = false;
+    bool track = true;
     // --- Gather parameters
     Vec center = parser.argVec("Center");
     // Check that vectors are good.
@@ -44,7 +44,7 @@ namespace GFlowSimulation {
     // Group net force object
     shared_ptr<GroupNetForce> netforce = nullptr;
     if (track) {
-      auto netforce = make_shared<GroupNetForce>(gflow);
+      netforce = make_shared<GroupNetForce>(gflow);
       gflow->addDataObject(netforce);
     }
 
@@ -62,7 +62,7 @@ namespace GFlowSimulation {
         int gid = simData->getNextGlobalID();
         // Add the particle to simdata. It is a particle of infinite mass.
         simData->addParticle(pos.data, Zero.data, sigma, 0, type);
-
+        // Add particle to group net force data object.
         if (track) netforce->add(gid);
       }
     }

@@ -328,7 +328,6 @@ namespace GFlowSimulation {
 
     // --- Data - public so anyone can access it
     shared_ptr<class SimData> simData;
-    //class SimData     *simData = nullptr;      // Particle data
     class Integrator  *integrator = nullptr;   // Integrator
     class InteractionHandler *handler = nullptr;      
     class DataMaster  *dataMaster = nullptr;   // DataMaster object for unified data collection  

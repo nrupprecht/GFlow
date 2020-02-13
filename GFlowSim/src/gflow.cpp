@@ -42,22 +42,6 @@ namespace GFlowSimulation {
     dataMaster = nullptr;
     forceMaster = nullptr;
     topology = nullptr;
-    // for (auto &md : modifiers) {
-    //   if (md) delete md;
-    //   md = nullptr;
-    // }
-    // for (auto &it : interactions) {
-    //   if (it) delete it;
-    //   it = nullptr;
-    // }
-    // for (auto &it : bondedInteractions) {
-    //   if (it) delete it;
-    //   it = nullptr;
-    // }
-    // for (auto &it : bodies) {
-    //   if (it) delete it;
-    //   it = nullptr;
-    // }
     if (boundaryConditions) delete [] boundaryConditions;
     boundaryConditions = nullptr;
   }
@@ -294,6 +278,9 @@ namespace GFlowSimulation {
     dataMaster->post_integrate();
     forceMaster->post_integrate();
     for (auto m : modifiers) m->post_integrate();
+
+    // Don't leave the timer hanging, even though it doesn't matter.
+    timer.stop();
 
     // Back to idle mode
     setRunMode(RunMode::IDLE);
