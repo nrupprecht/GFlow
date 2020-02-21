@@ -17,26 +17,11 @@ namespace GFlowSimulation {
       update_local_ids();
       locals_changed = false;
     }
-
-    // Add a new entry to modify.
-    addEntry();
-    // Set the time.
-    //getX() = gflow->getElapsedTime();
-    // Set the forces.
+    
+    // Gather and store data on processor 0.
     Vec F(sim_dimensions);
     findNetForce(F.data);
-
-    // Gather and store data on processor 0.
     gatherData(gflow->getElapsedTime(), F);
-    /*
-    // Data reduction.
-    MPIObject::mpi_sum0(F.data, sim_dimensions);
-
-    // Set each dimension of force.
-    if (topology->getRank()==0) {
-      for (int d=0; d<sim_dimensions; ++d) getY(d) = F[d];
-    }
-    */
   }
 
 }
