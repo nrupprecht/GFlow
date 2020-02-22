@@ -43,7 +43,13 @@ namespace GFlowSimulation {
     // Position of particles created at the previous last_x_coord;
     real current_x_coord = last_x_coord + driving_velocity * (gflow->getElapsedTime() - last_creation_time);
     real cutoff_position = bounds.min[0] + entry_fraction * entry_width;
-    if (bounds.min[0]<entry_threshold && cutoff_position<current_x_coord) {
+
+    // We have to decide which processors should add particles to the simulations. We should only have processors whose left (processor) 
+    // bound touches the simulation bound to add particles to the simulation. This simulates particles coming in from the left end of the 
+    // system. I didn't do it this way at first, and just checked whether bounds.min[0]<entry_threshold, and processors that were to the right
+    // of the leftmost processor, but still partially overlapped with entry_threshold, tried to add particles too. So particles were created
+    // on top of particles that were being pushed out from the leftmost processor. It was a bad idea.
+    if (bounds.min[0]==topology->getSimulationBounds().min[0] && cutoff_position<current_x_coord) {
       // Create a triangular lattice of particles. Assumes 2D. \todo Make more general.
       real ave_d = min_r + max_r; // dy
       real tri_x = 0.5*sqrt(3.)*ave_d;
@@ -90,7 +96,9 @@ namespace GFlowSimulation {
     Bounds processor_bounds = topology->getProcessBounds();
     Bounds bounds = gflow->getBounds();
 
-    // We don't overlap with anything.
+    // We don't overlap with anything. Only processors with processor_bounds.min[0]==simulation_bounds.min[0] should
+    // *add* new particles to the system, but any processor that overlaps the entry_threshold must apply special damping
+    // to the particles with x[0]<entry_threshold.
     if (entry_threshold<processor_bounds.min[0] && processor_bounds.max[0]<exit_threshold) return;
 
     // Act like an overdamped integrator. Periodically add new particles.
