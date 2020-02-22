@@ -253,24 +253,39 @@ int main(int argc, char **argv) {
     }
   }
 
-  // --- Create a gflow simulation
-  GFlow *gflow = creator->createSimulation();
-  if (gflow==nullptr) {
-    if (!quiet) cout << "GFlow was null. Exiting.\n";
-    return 1;
-  }
+  // Flag that we can use to sync whether any mpi rank encountered errors.
+  bool no_errors = true;
 
-  // Whether we want to do full timing or not.
-  TimedObject::setTimingOn(timing);
+  // --- Create a gflow simulation
+  GFlow *gflow = nullptr;
+  try {
+    gflow = creator->createSimulation();
+  }
+  catch (...) {
+    cout << "Creator encountered error while creating the simulation. Exiting.\n";
+    no_errors = false;
+  }
+  if (gflow==nullptr && no_errors) {
+    if (!quiet) cout << "GFlow was null. Exiting.\n";
+    no_errors = false;
+  }
+  MPIObject::mpi_and(no_errors);
+  if (!no_errors) return 1;
 
   // --- Make sure we didn't enter any illegal tokens - do this after gflow creation since creator uses flags
+
   try {
     parser.check();
   }
   catch (ArgParse::UncheckedToken illegal) {
     if (!quiet) cout << "Illegal option: [" << illegal.token << "]. Exiting.\n";
-    exit(1);
+    no_errors = false;
   }
+  MPIObject::mpi_and(no_errors);
+  if (!no_errors) return 1;
+
+  // Whether we want to do full timing or not.
+  TimedObject::setTimingOn(timing);
 
   // --- Add data objects
   gflow->setStartRecTime(startRecTime);

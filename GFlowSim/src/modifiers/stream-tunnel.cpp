@@ -38,32 +38,31 @@ namespace GFlowSimulation {
     // Only run the stream tunnel during an actual simulation and if we have a topology object.
     if (topology==nullptr || gflow->getRunMode()!=RunMode::SIM) return;
     
-    // Create new particles?
-    Bounds bounds = topology->getProcessBounds();
     // Position of particles created at the previous last_x_coord;
+    Bounds processor_bounds = topology->getProcessBounds();
     real current_x_coord = last_x_coord + driving_velocity * (gflow->getElapsedTime() - last_creation_time);
-    real cutoff_position = bounds.min[0] + entry_fraction * entry_width;
+    real cutoff_position = processor_bounds.min[0] + entry_fraction * entry_width;
 
     // We have to decide which processors should add particles to the simulations. We should only have processors whose left (processor) 
     // bound touches the simulation bound to add particles to the simulation. This simulates particles coming in from the left end of the 
-    // system. I didn't do it this way at first, and just checked whether bounds.min[0]<entry_threshold, and processors that were to the right
+    // system. I didn't do it this way at first, and just checked whether processor_bounds.min[0]<entry_threshold, and processors that were to the right
     // of the leftmost processor, but still partially overlapped with entry_threshold, tried to add particles too. So particles were created
     // on top of particles that were being pushed out from the leftmost processor. It was a bad idea.
-    if (bounds.min[0]==topology->getSimulationBounds().min[0] && cutoff_position<current_x_coord) {
+    if (processor_bounds.min[0]==topology->getSimulationBounds().min[0] && cutoff_position<current_x_coord) {
       // Create a triangular lattice of particles. Assumes 2D. \todo Make more general.
       real ave_d = min_r + max_r; // dy
       real tri_x = 0.5*sqrt(3.)*ave_d;
       real dy = spacing_factor*ave_d;
       real dx = spacing_factor*tri_x;
-      int nx = floor((current_x_coord - bounds.min[0])/dx);
-      int ny = floor(bounds.wd(1)/dy);
+      int nx = floor((current_x_coord - processor_bounds.min[0])/dx);
+      int ny = floor(processor_bounds.wd(1)/dy);
       constexpr real perturbation_strength = 0.25;
       ProportionalRandomEngine random_radius(min_r, max_r, sim_dimensions);
       real X[2], Xi[2], V[] = {driving_velocity, 0}, R(0), Im(0), vol(0); // Assumes 2 dimensions.
       // Add a bunch of new particles.
       X[0] = current_x_coord;
       for (int ix=0; ix<nx; ++ix) {
-        X[1] = bounds.min[1] + (shift_x ? 0.5*dx : 0) + 0.5*dy;
+        X[1] = processor_bounds.min[1] + (shift_x ? 0.5*dx : 0) + 0.5*dy;
         shift_x = !shift_x;
         for (int iy=0; iy<ny; ++iy) {
           // Random radius.
@@ -84,7 +83,7 @@ namespace GFlowSimulation {
       last_creation_time = gflow->getElapsedTime();
       simData->setNeedsLocalRemake();
       // Achieved density.
-      real pf = vol / (entry_fraction*entry_width * bounds.wd(1));
+      real pf = vol / (entry_fraction*entry_width * processor_bounds.wd(1));
       // Correct spacing factor for next time.
       spacing_factor -= 0.1*(phi_target - pf);
     }
