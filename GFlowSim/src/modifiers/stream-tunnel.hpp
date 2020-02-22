@@ -53,7 +53,7 @@ namespace GFlowSimulation {
     real last_creation_time = 0.f;
 
     //! \brief How to space the lattice of particles to get the correct volume density.
-    real spacing_factor;
+    real spacing_factor = 1.;
 
     real last_x_coord;
     bool shift_x = true;

@@ -133,7 +133,7 @@ int main(int argc, char **argv) {
   RealType videoLength = -1.;
   RealType dt = 0.001;
   RealType maxDT = -1;
-  long double time = 10;
+  long double time = 10.;
   bool print = false;
   string writeDirectory = "RunData";
   int boundary = 1;
@@ -141,8 +141,9 @@ int main(int argc, char **argv) {
   bool timing = true;
   string monitor = ""; // Monitor file
   // Modifiers
-  RealType temperature = 0;
+  RealType temperature = 0.;
 
+  // <--- End of options.
 
   // Flag that we can use to sync whether any mpi rank encountered errors (not set by parser).
   bool no_errors = true;

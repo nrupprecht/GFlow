@@ -50,7 +50,7 @@ namespace GFlowSimulation {
     // on top of particles that were being pushed out from the leftmost processor. It was a bad idea.
     if (processor_bounds.min[0]==topology->getSimulationBounds().min[0] && cutoff_position<current_x_coord) {
       // Create a triangular lattice of particles. Assumes 2D. \todo Make more general.
-      real ave_d = min_r + max_r; // dy
+      real ave_d = min_r + max_r;
       real tri_x = 0.5*sqrt(3.)*ave_d;
       real dy = spacing_factor*ave_d;
       real dx = spacing_factor*tri_x;
@@ -60,8 +60,8 @@ namespace GFlowSimulation {
       ProportionalRandomEngine random_radius(min_r, max_r, sim_dimensions);
       real X[2], Xi[2], V[] = {driving_velocity, 0}, R(0), Im(0), vol(0); // Assumes 2 dimensions.
       // Add a bunch of new particles.
-      X[0] = current_x_coord;
-      for (int ix=0; ix<nx; ++ix) {
+      X[0] = current_x_coord - dx;
+      for (int ix=1; ix<nx; ++ix) {
         X[1] = processor_bounds.min[1] + (shift_x ? 0.5*dx : 0) + 0.5*dy;
         shift_x = !shift_x;
         for (int iy=0; iy<ny; ++iy) {
@@ -83,7 +83,7 @@ namespace GFlowSimulation {
       last_creation_time = gflow->getElapsedTime();
       simData->setNeedsLocalRemake();
       // Achieved density.
-      real pf = vol / (entry_fraction*entry_width * processor_bounds.wd(1));
+      real pf = vol / (current_x_coord * processor_bounds.wd(1));
       // Correct spacing factor for next time.
       spacing_factor -= 0.1*(phi_target - pf);
     }
