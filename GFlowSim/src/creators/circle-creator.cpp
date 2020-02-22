@@ -35,6 +35,9 @@ namespace GFlowSimulation {
     parser.firstArg("Type", type);
     parser.firstArg("Track", track);
 
+    // If the radius is zero or negative, that means that we should not actually create a circle. Return here.
+    if (radius<=0) return;
+
     // Compute number of particles, angle.
     RealType circumference = 2*PI*radius;
     int n_particles = max(static_cast<int>(ceil(0.5 * circumference / sigma)), 1);

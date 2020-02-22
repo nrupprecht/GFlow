@@ -60,8 +60,8 @@ namespace GFlowSimulation {
       ProportionalRandomEngine random_radius(min_r, max_r, sim_dimensions);
       real X[2], Xi[2], V[] = {driving_velocity, 0}, R(0), Im(0), vol(0); // Assumes 2 dimensions.
       // Add a bunch of new particles.
-      X[0] = current_x_coord - dx;
-      for (int ix=1; ix<nx; ++ix) {
+      X[0] = current_x_coord;
+      for (int ix=0; ix<nx; ++ix) {
         X[1] = processor_bounds.min[1] + (shift_x ? 0.5*dx : 0) + 0.5*dy;
         shift_x = !shift_x;
         for (int iy=0; iy<ny; ++iy) {
@@ -82,8 +82,8 @@ namespace GFlowSimulation {
       // Set last creation time.
       last_creation_time = gflow->getElapsedTime();
       simData->setNeedsLocalRemake();
-      // Achieved density.
-      real pf = vol / (current_x_coord * processor_bounds.wd(1));
+      // Achieved density. This seems to maintain the correct density.
+      real pf = vol / ((current_x_coord - last_x_coord + 0.5*dx) * processor_bounds.wd(1));
       // Correct spacing factor for next time.
       spacing_factor -= 0.1*(phi_target - pf);
     }
