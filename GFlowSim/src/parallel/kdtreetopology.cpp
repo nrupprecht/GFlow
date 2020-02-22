@@ -134,13 +134,12 @@ namespace GFlowSimulation {
       int n_rank = neighbor_ranks[i];
       _last_n_exchange_recv += recv_new_particle_data(n_rank, recv_buffer[i], send_particle_tag);
     }
+    // Wait for send request to be filled, so resources can be released.
+    MPIObject::wait_all(send_request_list);
     recv_timer.stop_timer();
 
     // Stop mpi timer.
     gflow->stopMPIExchangeTimer();
-
-    // Wait for send request to be filled, so resources can be released.
-    MPIObject::wait_all(send_request_list);
   }
 
   void KDTreeTopology::create_ghost_particles() {

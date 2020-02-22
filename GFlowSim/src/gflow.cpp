@@ -14,7 +14,6 @@ namespace GFlowSimulation {
   GFlow::GFlow(int dims) : requested_time(0), total_requested_time(0), elapsed_time(0), total_time(0), 
     iter(0), repulsion(DEFAULT_HARD_SPHERE_REPULSION), dissipation(0), center_attraction(0), sim_dimensions(dims),
     bounds(dims)
-    
   {
     // Set up basic objects. The integrator will be created by the creator.
     simData = std::make_shared<SimData>(this);
