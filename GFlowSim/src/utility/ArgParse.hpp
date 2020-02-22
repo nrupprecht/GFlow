@@ -68,7 +68,7 @@ class ArgParse {
       	tlist.push_back(pair<string,string>(tok,val));
       	checked.push_back(false);
       }
-      else throw IllegalToken(argv[i][0]);
+      else throw IllegalToken(argv[i]);
     }
   }
 
@@ -112,8 +112,8 @@ class ArgParse {
   /// Exception classes
   class IllegalToken {
   public:
-    IllegalToken(char d) : c(d) {};
-    char c;
+    IllegalToken(char *s) : str(s) {};
+    char *str;
   };
 
   /// Exception class

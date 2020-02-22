@@ -140,12 +140,25 @@ int main(int argc, char **argv) {
   bool forces = true;
   bool timing = true;
   string monitor = ""; // Monitor file
-
   // Modifiers
   RealType temperature = 0;
 
+
+  // Flag that we can use to sync whether any mpi rank encountered errors (not set by parser).
+  bool no_errors = true;
+
   // --- For getting command line arguments
-  ArgParse parser(argc, processor_argv);
+  ArgParse parser;
+  try {
+    parser.set(argc, processor_argv);
+  }
+  catch (ArgParse::IllegalToken tok) {
+    cout << "Illegal token in command line argument: " << tok.str << ". Exiting.\n";
+    no_errors = false;
+  }
+  MPIObject::mpi_and(no_errors);
+  if (!no_errors) return 1;
+  
   parser.get("debug", debug_flag); 
   parser.get("load", load);
   parser.get("animate", animate);
@@ -252,9 +265,6 @@ int main(int argc, char **argv) {
       break;
     }
   }
-
-  // Flag that we can use to sync whether any mpi rank encountered errors.
-  bool no_errors = true;
 
   // --- Create a gflow simulation
   GFlow *gflow = nullptr;
