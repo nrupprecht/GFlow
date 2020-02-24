@@ -7,6 +7,7 @@ namespace GFlowSimulation {
   AverageVelocityData::AverageVelocityData(GFlow *gflow) : MultiGraphObject(gflow, "AveVel", "time", "velocity", gflow->getSimDimensions()) {
     for (int i=0; i<gflow->getSimDimensions(); ++i)
       axis_y[i] = "Ave vel - V[" + toStr(i) + "]";
+    
 
     // Hardcode this for now. Only record particles close to the incoming (newly created) particles.
     gather_bounds.min[0] = std::min(gflow->getBounds().min[0]/2.f, -4.f);
@@ -18,7 +19,6 @@ namespace GFlowSimulation {
     
     // Get and store data
     Vec ave(sim_dimensions);
-
     auto x = simData->X();
     auto v = simData->V();
     auto im = simData->Im();

@@ -55,8 +55,10 @@ namespace GFlowSimulation {
     //! \brief How to space the lattice of particles to get the correct volume density.
     real spacing_factor = 1.;
 
+    //! \brief The last (target) x coordiate at which particles were created.
     real last_x_coord;
-    bool shift_x = true;
+    //! \brief If true, we should shift the particles up by sqrt(3)/2, to create a good triangular lattice.
+    bool shift_y = true;
 
   };
 

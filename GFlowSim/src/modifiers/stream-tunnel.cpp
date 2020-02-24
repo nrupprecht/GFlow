@@ -40,6 +40,7 @@ namespace GFlowSimulation {
     
     // Position of particles created at the previous last_x_coord;
     Bounds processor_bounds = topology->getProcessBounds();
+    Bounds simulation_bounds = topology->getSimulationBounds();
     real current_x_coord = last_x_coord + driving_velocity * (gflow->getElapsedTime() - last_creation_time);
     real cutoff_position = processor_bounds.min[0] + entry_fraction * entry_width;
 
@@ -48,7 +49,7 @@ namespace GFlowSimulation {
     // system. I didn't do it this way at first, and just checked whether processor_bounds.min[0]<entry_threshold, and processors that were to the right
     // of the leftmost processor, but still partially overlapped with entry_threshold, tried to add particles too. So particles were created
     // on top of particles that were being pushed out from the leftmost processor. It was a bad idea.
-    if (processor_bounds.min[0]==topology->getSimulationBounds().min[0] && cutoff_position<current_x_coord) {
+    if (processor_bounds.min[0]==simulation_bounds.min[0] && cutoff_position<current_x_coord) {
       // Create a triangular lattice of particles. Assumes 2D. \todo Make more general.
       real ave_d = min_r + max_r;
       real tri_x = 0.5*sqrt(3.)*ave_d;
@@ -62,8 +63,8 @@ namespace GFlowSimulation {
       // Add a bunch of new particles.
       X[0] = current_x_coord;
       for (int ix=0; ix<nx; ++ix) {
-        X[1] = processor_bounds.min[1] + (shift_x ? 0.5*dx : 0) + 0.5*dy;
-        shift_x = !shift_x;
+        X[1] = processor_bounds.min[1] + (shift_y ? 0.5*dx : 0) + 0.5*dy;
+        shift_y = !shift_y;
         for (int iy=0; iy<ny; ++iy) {
           // Random radius.
           R = random_radius.generate();

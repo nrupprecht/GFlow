@@ -3,6 +3,7 @@
 
 #include "dataobject.hpp"
 #include "../other/timedobject.hpp"
+#include "../utility/database.hpp"
 
 namespace GFlowSimulation {
 
@@ -92,6 +93,9 @@ namespace GFlowSimulation {
 
     //! \brief Write more technical MPI related data to its own separate file.
     inline bool writeMPIFile(string);
+
+    //! \brief A database that holds timing information. Will only be used by processor 0.
+    DataBase run_statistics;
 
     //! \brief Command line arguments.
     int argc = 0;

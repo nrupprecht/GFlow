@@ -148,7 +148,7 @@ namespace GFlowSimulation {
       addEntry(x);
       // Store data
       RealType c = static_cast<RealType>(count);
-      for (int d=0; d<sim_dimensions; ++d) getY(d) = yvals[d] / c;
+      for (int d=0; d<yvals.size(); ++d) getY(d) = yvals[d] / c;
     }
   }
 
@@ -160,7 +160,7 @@ namespace GFlowSimulation {
       // Add an entry with the given x value.
       addEntry(x);
       // Store data
-      for (int d=0; d<sim_dimensions; ++d) getY(d) = yvals[d];
+      for (int d=0; d<yvals.size(); ++d) getY(d) = yvals[d];
     }
   }
 

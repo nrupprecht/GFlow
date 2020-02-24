@@ -388,23 +388,31 @@ namespace GFlowSimulation {
       formats("- Ratio:", toStrRT(ratio));
       formats("- Inverse Ratio:", toStrRT(1./ratio));
       fout << "\n";
+    }
 
-      if (Base::gflow->getTotalTime()>0 && TimedObject::getTimingOn()) {
-        fout << "Timing breakdown:\n";
-        const int entries = 9;
-        double timing[entries], total = 0;
-        // Set timing entries.
-        timing[0] = integrator->get_time();
-        timing[1] = handler->get_time();
-        timing[2] = forceMaster->get_time();
-        timing[3] = gflow->bonded_timer.get_time();
-        timing[4] = gflow->body_timer.get_time();
-        timing[5] = get_time();
-        timing[6] = simData->get_time();
-        timing[7] = gflow->mpi_exchange_timer.get_time();
-        timing[8] = gflow->mpi_ghost_timer.get_time();
-        double forces_time = timing[2] + timing[3] + timing[4];
-        double mpi_time = timing[7] + timing[8];
+    if (Base::gflow->getTotalTime()>0 && TimedObject::getTimingOn()) {
+      fout << "Timing breakdown:\n";
+      constexpr int entries = 9;
+      double timing[entries], total = 0;
+      // Set timing entries.
+      timing[0] = integrator->get_time();
+      timing[1] = handler->get_time();
+      timing[2] = forceMaster->get_time();
+      timing[3] = gflow->bonded_timer.get_time();
+      timing[4] = gflow->body_timer.get_time();
+      timing[5] = get_time();
+      timing[6] = simData->get_time();
+      timing[7] = gflow->mpi_exchange_timer.get_time();
+      timing[8] = gflow->mpi_ghost_timer.get_time();
+      double forces_time = timing[2] + timing[3] + timing[4];
+      double mpi_time = timing[7] + timing[8];
+
+      // vector<double> timing_vector[entries];
+      // for (int i=0; i<entries; ++i) {
+      //   MPIObject::mpi_gather(timing[i], timing_vector[i]);
+      // }
+
+      if (rank==0) {
         // Print timing data.
         fout << "  -- Integration:             " << toStrPP(timing[0]/run_time*100) << sep << timing[0] << "\n";
         fout << "  -- Pre-forces, domain:      " << toStrPP(timing[1]/run_time*100) << sep << timing[1] << "\n";
@@ -428,8 +436,8 @@ namespace GFlowSimulation {
         }
         fout << "\n";
       }
-      else fout << "No timing data.\n\n";
     }
+    else if (rank==0) fout << "No timing data.\n\n";
 
     // Calculate volume that the particles on each processor take up.
     RealType vol = 0;
