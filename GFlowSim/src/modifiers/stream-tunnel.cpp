@@ -28,7 +28,8 @@ namespace GFlowSimulation {
   void StreamTunnel::pre_integrate() {
     // So particles have a chance to get farther away at the beginning.
     last_creation_time = 0;
-    // Calculate initial spacing factor.
+    // Calculate initial spacing factor - this will not be very accurate, but after a few rounds, the adjustment of the
+    // spacing factor should compensate.
     spacing_factor = sqrt(MaxPackings[sim_dimensions]/phi_target);
     // Set current_x_coord
     last_x_coord = gflow->getBounds().min[0];

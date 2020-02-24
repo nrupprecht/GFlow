@@ -40,6 +40,7 @@
 #include "dataobjects/multigraphobjects/lineentropicforce.hpp"
 #include "dataobjects/multigraphobjects/number-data.hpp"
 #include "dataobjects/multigraphobjects/oscillation-data.hpp"
+#include "dataobjects/multigraphobjects/phi-data.hpp"
 #include "dataobjects/multigraphobjects/twowallbinforce.hpp"
 #include "dataobjects/multigraphobjects/twopolymerbinforce.hpp"
 

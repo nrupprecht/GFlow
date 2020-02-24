@@ -25,7 +25,10 @@ namespace GFlowSimulation {
     RealType ave(int);
 
     //! \brief Get a single data entry as a vector or RPairs.
-    vector<RPair> getEntry(int);
+    vector<RPair> getEntry(int) const;
+
+    //! \brief Get the number of datapoints entered into the multigraph object.
+    int size() const;
 
     //! \brief Exception class for trying to access data when there is none.
     struct EmptyData : public Exception {

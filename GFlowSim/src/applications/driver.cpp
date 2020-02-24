@@ -33,6 +33,17 @@ using namespace GFlowSimulation;
 
 #include "../other/evaluation.hpp"
 
+void finalize_mpi() {
+  // Finalize mpi
+  #if USE_MPI == 1
+  #if _CLANG_ == 1
+  MPI_Finalize();
+  #else
+  MPI::Finalize();
+  #endif
+  #endif
+}
+
 int main(int argc, char **argv) {
   // MPI related.
   int rank(0), numProc(1);
@@ -113,6 +124,7 @@ int main(int argc, char **argv) {
   bool memdist = false;
   bool pressure = false;
   bool numberdata = false;
+  bool phidata = false;
   bool stripex = false;
   bool centercorr = false;
   bool velocityvp = false;
@@ -158,7 +170,10 @@ int main(int argc, char **argv) {
     no_errors = false;
   }
   MPIObject::mpi_and(no_errors);
-  if (!no_errors) return 1;
+  if (!no_errors) {
+    finalize_mpi();
+    return 1;
+  }
   
   parser.get("debug", debug_flag); 
   parser.get("load", load);
@@ -186,6 +201,7 @@ int main(int argc, char **argv) {
   parser.get("memdist", memdist);
   parser.get("pressure", pressure);
   parser.get("numberdata", numberdata);
+  parser.get("phidata", phidata);
   parser.get("stripex", stripex);
   parser.get("centercorr", centercorr);
   parser.get("velocityvp", velocityvp);
@@ -281,7 +297,10 @@ int main(int argc, char **argv) {
     no_errors = false;
   }
   MPIObject::mpi_and(no_errors);
-  if (!no_errors) return 1;
+  if (!no_errors) {
+    finalize_mpi();
+    return 1;
+  }
 
   // --- Make sure we didn't enter any illegal tokens - do this after gflow creation since creator uses flags
 
@@ -293,7 +312,10 @@ int main(int argc, char **argv) {
     no_errors = false;
   }
   MPIObject::mpi_and(no_errors);
-  if (!no_errors) return 1;
+  if (!no_errors) {
+    finalize_mpi();
+    return 1;
+  }
 
   // Whether we want to do full timing or not.
   TimedObject::setTimingOn(timing);
@@ -320,6 +342,7 @@ int main(int argc, char **argv) {
   if (memdist)     gflow->addDataObject(make_shared<MemoryDistance>(gflow));
   if (pressure)    gflow->addDataObject(make_shared<PressureData>(gflow));
   if (numberdata)  gflow->addDataObject(make_shared<NumberData>(gflow));
+  if (phidata)     gflow->addDataObject(make_shared<PhiData>(gflow));
   if (centercorr)  gflow->addDataObject(make_shared<CenterCorrelation>(gflow));
   if (velocityvp)  gflow->addDataObject(make_shared<VelocityVolumePlot>(gflow));
   if (radiusvp)    gflow->addDataObject(make_shared<RadiusVolumePlot>(gflow));
@@ -351,6 +374,7 @@ int main(int argc, char **argv) {
   // Set time step and request time
   if (!gflow->hasIntegrator()) {
     if (!quiet) cout << "GFlow does not have an integrator. Exiting.";
+    finalize_mpi();
     return 0;
   }
   gflow->setDT(dt);
@@ -372,24 +396,30 @@ int main(int argc, char **argv) {
     gflow->run();
   }
   catch (const std::bad_alloc& err) {
-    cout << "Rank: " << rank << ": std::bad_alloc. Message: " << err.what() << "\n";
-    throw;
+    cout << "Exception caught on rank: " << rank << ": std::bad_alloc. Message: " << err.what() << "\n";
+    no_errors = false;
   }
-  catch (Exception *exc) {
+  catch (const Exception exc) {
     //if (!quiet)
-    cout << "Rank: " << rank << ", Message: " << exc->message << "\n";
-    throw;
+    cout << "Exception caught on rank: " << rank << ", Message: " << exc.message << "\n";
+    no_errors = false;
   }
   catch (...) {
     //if (!quiet) 
-    cout << "Exited with exception.\n";
+    cout << "Exception (not inheriting from Exception class) caught on rank.\n";
     // Write accumulated data to files
     if (rank==0) gflow->writeData(writeDirectory);
-    // Rethrow the exception
-    throw;
+    no_errors = false;
   }
   // More detailed exception handling
   // @todo Exception handling.
+
+  MPIObject::mpi_and(no_errors);
+  if (!no_errors) {
+    cout << "One or more processors exited with exception. Exiting.\n";
+    finalize_mpi();
+    return 1;
+  }
 
   #if USE_MPI == 1
   // Sync here.
@@ -414,17 +444,8 @@ int main(int argc, char **argv) {
   #if USE_MPI == 1
   // Sync here.
   MPIObject::barrier();
+  finalize_mpi();
   #endif // USE_MPI == 1
-  
-  // Finalize mpi
-  #if USE_MPI == 1
-  #if _CLANG_ == 1
-  MPI_Finalize();
-  #else
-  MPI::Finalize();
-  #endif
-  if (!quiet && rank==0) cout << "Finalized MPI.\n";
-  #endif
   
   return 0;
 }

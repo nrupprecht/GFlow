@@ -74,7 +74,7 @@ namespace GFlowSimulation {
     return total/ndata_points;
   }
 
-  vector<RPair> MultiGraphObject::getEntry(int i) {
+  vector<RPair> MultiGraphObject::getEntry(int i) const {
     if (i<0 || ndata<=i || ndata_points==0) return vector<RPair>();
     // Accumulate data
     vector<RPair> entry;
@@ -82,6 +82,10 @@ namespace GFlowSimulation {
       entry.push_back(RPair(multi_data[0][j], multi_data[i+1][j]));
     // Return data
     return entry;
+  }
+
+  int MultiGraphObject::size() const {
+    return multi_data.size();
   }
 
   void MultiGraphObject::resetData(int size) {
