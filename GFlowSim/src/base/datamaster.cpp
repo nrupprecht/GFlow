@@ -286,6 +286,11 @@ namespace GFlowSimulation {
     int rank = topology->getRank();
     int numProc = topology->getNumProc();
 
+    // Set up database
+    run_statistics.clear();
+    run_statistics.setNRows(numProc);
+    run_statistics.setRowName("Processor");
+
     // File stream.
     std::ofstream fout;
     // Only rank 0 needs a file stream.
@@ -394,23 +399,55 @@ namespace GFlowSimulation {
       fout << "Timing breakdown:\n";
       constexpr int entries = 9;
       double timing[entries], total = 0;
+      string labels[entries];
       // Set timing entries.
       timing[0] = integrator->get_time();
+      labels[0] = "Integration";
       timing[1] = handler->get_time();
+      labels[1] = "InteractionHandler";
       timing[2] = forceMaster->get_time();
+      labels[2] = "ForceMaster";
       timing[3] = gflow->bonded_timer.get_time();
+      labels[3] = "Bonded forces";
       timing[4] = gflow->body_timer.get_time();
+      labels[4] = "Body fixes";
       timing[5] = get_time();
+      labels[5] = "Data objects";
       timing[6] = simData->get_time();
+      labels[6] = "SimData";
       timing[7] = gflow->mpi_exchange_timer.get_time();
+      labels[7] = "MPI Exchange";
       timing[8] = gflow->mpi_ghost_timer.get_time();
+      labels[8] = "MPI Ghosts";
+      for (int i=0; i<entries; ++i) total += timing[i];
       double forces_time = timing[2] + timing[3] + timing[4];
       double mpi_time = timing[7] + timing[8];
 
-      // vector<double> timing_vector[entries];
-      // for (int i=0; i<entries; ++i) {
-      //   MPIObject::mpi_gather(timing[i], timing_vector[i]);
-      // }
+
+      if (numProc>1) {
+        vector<double> timing_vector(numProc);
+        for (int i=0; i<entries; ++i) {
+          MPIObject::mpi_gather(timing[i], timing_vector);
+          if (rank==0 && 
+            std::any_of(timing_vector.begin(), timing_vector.end(), [](double t){return t!=0;})
+          ) {
+            run_statistics.addColumn(labels[i], timing_vector);
+            auto column = std::dynamic_pointer_cast<GenericEntry<double> >(run_statistics.last());
+            column->setUsePercent(true, run_time);
+          }
+          //cout << labels[i] << ": " << timing[i] << " :: " << timing_vector[0] << ", " << timing_vector[1] << endl;
+        }
+        // Get the "other" time.
+        MPIObject::mpi_gather(run_time - total, timing_vector);
+        if (rank==0 && 
+            std::any_of(timing_vector.begin(), timing_vector.end(), [](double t){return t!=0;})
+          ) {
+          run_statistics.addColumn("Other", timing_vector);
+          auto column = std::dynamic_pointer_cast<GenericEntry<double> >(run_statistics.last());
+          column->setUsePercent(true, run_time);
+        }
+      }
+
 
       if (rank==0) {
         // Print timing data.
@@ -420,7 +457,7 @@ namespace GFlowSimulation {
         fout << "  -- Data objects:            " << toStrPP(timing[5]/run_time*100) << sep << timing[5] << "\n";
         fout << "  -- Simdata updates:         " << toStrPP(timing[6]/run_time*100) << sep << timing[6] << "\n";
         if (mpi_time>0) fout << "  -- MPI related:             " << toStrPP(mpi_time/run_time*100) << sep << mpi_time << "\n";
-        for (int i=0; i<entries; ++i) total += timing[i];
+        
         fout << "  -- Other:                   " << std::setprecision(3) << toStrPP((1. - total/run_time)*100) << sep << run_time - total << "\n";
         fout << "\n";
         // Timing breakdown for forces.
@@ -734,93 +771,98 @@ namespace GFlowSimulation {
   }
 
   inline bool DataMaster::writeMPIFile(string writeDirectory) {
-    // --- Values
-
     const int left_align = 25;
     const int column_width = 10;
     const int rank = topology->getRank();
     const int num_proc = topology->getNumProc();
+    //std::ofstream fout;
 
-    // Stream.
-    std::ofstream fout;
-
-    if (rank==0) {
-      fout.open(writeDirectory+"/mpi-log.csv");
-      if (fout.fail()) {
-        // Write error message
-        std::cerr << "Failed to open file [" << writeDirectory << "/run_log.txt]." << endl;
-        return false;
-      }
-    }
+    // if (rank==0) {
+    //   fout.open(writeDirectory+"/mpi-log.csv");
+    //   if (fout.fail()) {
+    //     // Write error message
+    //     std::cerr << "Failed to open file [" << writeDirectory << "/run_log.txt]." << endl;
+    //     return false;
+    //   }
+    // }
 
     // --- Helper functions
 
-    auto print_row_int = [&] (const string& descriptor, int val, vector<int>& vec) {
-      MPIObject::mpi_gather(val, vec);
-      if (rank==0) {
-        fout << descriptor;
-        for (int i=0; i<num_proc; ++i) fout << "," << vec[i];
-        fout << "\n";
-      }
-    };
+    // auto print_row_int = [&] (const string& descriptor, int val, vector<int>& vec) {
+    //   MPIObject::mpi_gather(val, vec);
+    //   if (rank==0) {
+    //     fout << descriptor;
+    //     for (int i=0; i<num_proc; ++i) fout << "," << vec[i];
+    //     fout << "\n";
+    //   }
+    // };
 
-    auto print_row_float = [&] (const string& descriptor, float val, vector<float>& vec) {
-      MPIObject::mpi_gather(val, vec);
-      if (rank==0) {
-        fout << descriptor;
-        for (int i=0; i<num_proc; ++i) fout << "," << vec[i];
-        fout << "\n";
-      }
-    };
+    // auto print_row_float = [&] (const string& descriptor, float val, vector<float>& vec) {
+    //   MPIObject::mpi_gather(val, vec);
+    //   if (rank==0) {
+    //     fout << descriptor;
+    //     for (int i=0; i<num_proc; ++i) fout << "," << vec[i];
+    //     fout << "\n";
+    //   }
+    // };
 
-    auto pretty_print_row_float = [&] (const string& descriptor, float val, vector<float>& vec, float normalize, const string& sep) {
-      MPIObject::mpi_gather(val, vec);
-      if (rank==0) {
-        fout << descriptor;
-        for (int i=0; i<num_proc; ++i) fout << "," << pprint(vec[i]/normalize, 3, 2) << "%";
-        fout << "\n";
-      }
-    };
+    // auto pretty_print_row_float = [&] (const string& descriptor, float val, vector<float>& vec, float normalize, const string& sep) {
+    //   MPIObject::mpi_gather(val, vec);
+    //   if (rank==0) {
+    //     fout << descriptor;
+    //     for (int i=0; i<num_proc; ++i) fout << "," << pprint(vec[i]/normalize, 3, 2) << "%";
+    //     fout << "\n";
+    //   }
+    // };
 
     // --- End of helper lambdas, now print data to file.
 
     // Print column labels - ranks.
-    for (int i=0; i<topology->getNumProc(); ++i)
-      fout << ",Rank " << i;
-    fout << "\n";
+    // for (int i=0; i<topology->getNumProc(); ++i)
+    //   fout << ",Rank " << i;
+    // fout << "\n";
 
     // --- Print information for each processor
     #if USE_MPI==1
     vector<int> int_vector(num_proc, 0);
-    vector<float> float_vector(num_proc, 0.f);
+    vector<double> float_vector(num_proc, 0.f);
 
     int neighbors = topology->getNumNeighbors();
     MPIObject::mpi_gather(neighbors, int_vector);
-    fout << "# Neighbors:";
-    for (int i=0; i<num_proc; ++i) fout << ", " << int_vector[i];
-    fout << "\n";
+    run_statistics.addColumn("# Neighbors", int_vector);
+    //fout << "# Neighbors:";
+    // for (int i=0; i<num_proc; ++i) fout << ", " << int_vector[i];
+    // fout << "\n";
 
     int size = simData->number_owned();
-    print_row_int("# Particles:", size, int_vector);
+    MPIObject::mpi_gather(size, int_vector);
+    run_statistics.addColumn("# Owned", int_vector);
+    //print_row_int("# Particles:", size, int_vector);
 
     int ghosts = simData->number_ghosts();
-    print_row_int("# Ghosts:", ghosts, int_vector);
+    MPIObject::mpi_gather(ghosts, int_vector);
+    run_statistics.addColumn("# Ghosts", int_vector);
+    //print_row_int("# Ghosts:", ghosts, int_vector);
 
     // Volume of bounds.
-    float volume = handler->getProcessBounds().vol();
-    print_row_float("Volume:", volume, float_vector);
+    double volume = handler->getProcessBounds().vol();
+    MPIObject::mpi_gather(volume, float_vector);
+    run_statistics.addColumn("Volume", float_vector);
+    //print_row_float("Volume:", volume, float_vector);
 
     // Aspect ratio of bounds.
-    float ratio = handler->getProcessBounds().aspect_ratio();
-    print_row_float("Aspect ratio:", ratio, float_vector);
+    double ratio = handler->getProcessBounds().aspect_ratio();
+    MPIObject::mpi_gather(ratio, float_vector);
+    run_statistics.addColumn("Aspect ratio", float_vector);
+    //print_row_float("Aspect ratio:", ratio, float_vector);
 
     // Separate by a row.
-    fout << "\n";
+    //fout << "\n";
 
     // If timing was done.
     if (gflow->getTotalTime()>0 && TimedObject::getTimingOn()) {
       const int n_timers = 8;
-      float timing[n_timers];
+      double timing[n_timers];
       string labels[n_timers];
       timing[0] = topology->send_timer.get_time();
       timing[1] = topology->recv_timer.get_time();
@@ -832,23 +874,33 @@ namespace GFlowSimulation {
       timing[7] = topology->ghost_search_timer.get_time();
 
       if (rank==0) {
-        labels[0] = "Exchange send time:";
-        labels[1] = "Exchange recv time:";
-        labels[2] = "Exchange barrier time:";
-        labels[3] = "Exchange search time:";
-        labels[4] = "Ghost send time:";
-        labels[5] = "Ghost recv time:";
-        labels[6] = "Ghost wait time:";
-        labels[7] = "Ghost search time:";
+        labels[0] = "Exch. send";
+        labels[1] = "Exch. recv";
+        labels[2] = "Exch. barrier";
+        labels[3] = "Exch. search";
+        labels[4] = "Ghost send";
+        labels[5] = "Ghost recv";
+        labels[6] = "Ghost wait";
+        labels[7] = "Ghost search";
       }
 
-      for (int i=0; i<n_timers; ++i)
-        pretty_print_row_float(labels[i], timing[i], float_vector, 0.01*run_time, "%");
+      for (int i=0; i<n_timers; ++i) {
+        MPIObject::mpi_gather(timing[i], float_vector);
+        if (rank==0) {
+          run_statistics.addColumn(labels[i], float_vector);
+          auto ptr = std::dynamic_pointer_cast<GenericEntry<double> >(run_statistics.last());
+          ptr->setUsePercent(true, run_time);
+
+          //pretty_print_row_float(labels[i], timing[i], float_vector, 0.01*run_time, "%");
+        }
+      }
     }
     #endif // USE_MPI==1
 
+    if (rank==0) run_statistics.printToCSV(writeDirectory+"/mpi-log.csv");
+
     // Close the file stream.
-    if (rank==0) fout.close();
+    //if (rank==0) fout.close();
 
     // Return success.
     return true;

@@ -39,7 +39,7 @@ namespace GFlowSimulation {
     Vec X(sim_dimensions), V(sim_dimensions), F(sim_dimensions);
     II = L = T = 0;
 
-    for (int i=0; i<size(); ++i) {
+    for (int i=0; i<Group::size(); ++i) {
       int id = at(i);
       // Get the position and force.
       X = simData->X(id);
