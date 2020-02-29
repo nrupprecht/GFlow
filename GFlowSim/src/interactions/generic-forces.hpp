@@ -95,10 +95,14 @@ namespace GFlowSimulation {
     typedef handler<dims, HardSphereDsGeneric<dims, handler>, false> Handler;
 
     //! \brief Constructor.
-    HardSphereDsGeneric(GFlow *gflow) : Handler(gflow) {};
+    HardSphereDsGeneric(GFlow *gflow) : Handler(gflow) {
+      Base::simData->setSendGhostVelocity(true);
+    };
 
     //! \brief Constructor, sets repulsion
-    HardSphereDsGeneric(GFlow *gflow, RealType rp) : Handler(gflow), repulsion(rp) {};
+    HardSphereDsGeneric(GFlow *gflow, RealType rp) : Handler(gflow), repulsion(rp) {
+      Base::simData->setSendGhostVelocity(true);
+    };
 
     template<int first_type, int second_type>
     void set_types() const {
@@ -468,6 +472,7 @@ namespace GFlowSimulation {
 
     //! \brief Constructor.
     HertzGeneric(GFlow *gflow) : Handler(gflow) {
+      Base::simData->setSendGhostVelocity(true);
       // Add the needed data entries and integrator.
       if (dims==2) {
         // om_add = Base::simData->requestScalarData("Om");
@@ -650,6 +655,7 @@ namespace GFlowSimulation {
 
     //! \brief Constructor.
     HookeGeneric(GFlow *gflow) : Handler(gflow) {
+      Base::simData->setSendGhostVelocity(true);
       // Add the needed data entries and integrator.
       if (dims==2) {
         om_add = Base::simData->requestScalarData("Om");

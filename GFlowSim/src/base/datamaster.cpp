@@ -397,6 +397,7 @@ namespace GFlowSimulation {
 
     if (Base::gflow->getTotalTime()>0 && TimedObject::getTimingOn()) {
       fout << "Timing breakdown:\n";
+      if (numProc>1) fout << "(Averages)\n";
       constexpr int entries = 9;
       double timing[entries], total = 0;
       string labels[entries];
@@ -434,8 +435,9 @@ namespace GFlowSimulation {
             run_statistics.addColumn(labels[i], timing_vector);
             auto column = std::dynamic_pointer_cast<GenericEntry<double> >(run_statistics.last());
             column->setUsePercent(true, run_time);
+            // Average the reported numbers, so the run_summary file prints the average times.
+            timing[i] = std::accumulate(timing_vector.begin(), timing_vector.end(), 0.) / numProc;
           }
-          //cout << labels[i] << ": " << timing[i] << " :: " << timing_vector[0] << ", " << timing_vector[1] << endl;
         }
         // Get the "other" time.
         MPIObject::mpi_gather(run_time - total, timing_vector);
@@ -447,7 +449,6 @@ namespace GFlowSimulation {
           column->setUsePercent(true, run_time);
         }
       }
-
 
       if (rank==0) {
         // Print timing data.
@@ -775,52 +776,6 @@ namespace GFlowSimulation {
     const int column_width = 10;
     const int rank = topology->getRank();
     const int num_proc = topology->getNumProc();
-    //std::ofstream fout;
-
-    // if (rank==0) {
-    //   fout.open(writeDirectory+"/mpi-log.csv");
-    //   if (fout.fail()) {
-    //     // Write error message
-    //     std::cerr << "Failed to open file [" << writeDirectory << "/run_log.txt]." << endl;
-    //     return false;
-    //   }
-    // }
-
-    // --- Helper functions
-
-    // auto print_row_int = [&] (const string& descriptor, int val, vector<int>& vec) {
-    //   MPIObject::mpi_gather(val, vec);
-    //   if (rank==0) {
-    //     fout << descriptor;
-    //     for (int i=0; i<num_proc; ++i) fout << "," << vec[i];
-    //     fout << "\n";
-    //   }
-    // };
-
-    // auto print_row_float = [&] (const string& descriptor, float val, vector<float>& vec) {
-    //   MPIObject::mpi_gather(val, vec);
-    //   if (rank==0) {
-    //     fout << descriptor;
-    //     for (int i=0; i<num_proc; ++i) fout << "," << vec[i];
-    //     fout << "\n";
-    //   }
-    // };
-
-    // auto pretty_print_row_float = [&] (const string& descriptor, float val, vector<float>& vec, float normalize, const string& sep) {
-    //   MPIObject::mpi_gather(val, vec);
-    //   if (rank==0) {
-    //     fout << descriptor;
-    //     for (int i=0; i<num_proc; ++i) fout << "," << pprint(vec[i]/normalize, 3, 2) << "%";
-    //     fout << "\n";
-    //   }
-    // };
-
-    // --- End of helper lambdas, now print data to file.
-
-    // Print column labels - ranks.
-    // for (int i=0; i<topology->getNumProc(); ++i)
-    //   fout << ",Rank " << i;
-    // fout << "\n";
 
     // --- Print information for each processor
     #if USE_MPI==1
@@ -830,34 +785,24 @@ namespace GFlowSimulation {
     int neighbors = topology->getNumNeighbors();
     MPIObject::mpi_gather(neighbors, int_vector);
     run_statistics.addColumn("# Neighbors", int_vector);
-    //fout << "# Neighbors:";
-    // for (int i=0; i<num_proc; ++i) fout << ", " << int_vector[i];
-    // fout << "\n";
 
     int size = simData->number_owned();
     MPIObject::mpi_gather(size, int_vector);
     run_statistics.addColumn("# Owned", int_vector);
-    //print_row_int("# Particles:", size, int_vector);
 
     int ghosts = simData->number_ghosts();
     MPIObject::mpi_gather(ghosts, int_vector);
     run_statistics.addColumn("# Ghosts", int_vector);
-    //print_row_int("# Ghosts:", ghosts, int_vector);
 
     // Volume of bounds.
     double volume = handler->getProcessBounds().vol();
     MPIObject::mpi_gather(volume, float_vector);
     run_statistics.addColumn("Volume", float_vector);
-    //print_row_float("Volume:", volume, float_vector);
 
     // Aspect ratio of bounds.
     double ratio = handler->getProcessBounds().aspect_ratio();
     MPIObject::mpi_gather(ratio, float_vector);
     run_statistics.addColumn("Aspect ratio", float_vector);
-    //print_row_float("Aspect ratio:", ratio, float_vector);
-
-    // Separate by a row.
-    //fout << "\n";
 
     // If timing was done.
     if (gflow->getTotalTime()>0 && TimedObject::getTimingOn()) {
