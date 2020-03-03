@@ -169,7 +169,7 @@ namespace GFlowSimulation {
     if (!do_checks(data)) return;
     // Draw all particles
     for (int i=0; i<data.size(); i+=dataWidth) {
-      // Get valudes
+      // Get values
       const float *pos, *vel; 
       float sigma, distance, omega, stripex; 
       int type, proc;

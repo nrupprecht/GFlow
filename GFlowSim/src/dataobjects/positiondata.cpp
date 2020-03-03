@@ -10,6 +10,7 @@ namespace GFlowSimulation {
     // The data to gather
     add_vector_data_entry("X");
     add_vector_data_entry("V");
+    add_magnitude_data_entry("F");
     add_scalar_data_entry("Sg");
     if (gflow->getNTypes()>1) add_integer_data_entry("Type");
     //add_scalar_data_entry("StripeX");
@@ -18,6 +19,7 @@ namespace GFlowSimulation {
 
   void PositionData::pre_integrate() {
     storeData.set_vector_data(vector_data_entries);
+    storeData.set_magnitude_data(magnitude_data_entries);
     storeData.set_scalar_data(scalar_data_entries);
     storeData.set_integer_data(integer_data_entries);
     storeData.initialize(simData);
@@ -61,6 +63,10 @@ namespace GFlowSimulation {
 
   void PositionData::add_vector_data_entry(string entry) {
     vector_data_entries.push_back(entry);
+  }
+
+  void PositionData::add_magnitude_data_entry(string entry) {
+    magnitude_data_entries.push_back(entry);
   }
 
   void PositionData::add_scalar_data_entry(string entry) {

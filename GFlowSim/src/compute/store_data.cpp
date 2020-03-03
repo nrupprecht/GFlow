@@ -21,6 +21,7 @@ namespace GFlowSimulation {
     // Get data positions, calculate data width.
     dataWidth = 0;
     vector<string> temp;
+    // 
     for (auto entry : vector_data_entries) {
       int pos = simData->getVectorData(entry);
       if (-1<pos) {
@@ -31,6 +32,18 @@ namespace GFlowSimulation {
     }
     vector_data_entries = temp;
     temp.clear();
+    //
+    for (auto entry : magnitude_data_entries) {
+      int pos = simData->getVectorData(entry);
+      if (-1<pos) {
+        temp.push_back(entry);
+        magnitude_data_positions.push_back(pos);
+        ++dataWidth;
+      }
+    }
+    magnitude_data_entries = temp;
+    temp.clear();
+    //
     for (auto entry : scalar_data_entries) {
       int pos = simData->getScalarData(entry);
       if (-1<pos) {
@@ -39,6 +52,7 @@ namespace GFlowSimulation {
         ++dataWidth;
       }
     }
+    //
     scalar_data_entries = temp;
     temp.clear();
     for (auto entry : integer_data_entries) {
@@ -57,6 +71,10 @@ namespace GFlowSimulation {
 
   void StoreData::set_vector_data(const vector<string>& v) {
     vector_data_entries = v;
+  }
+
+  void StoreData::set_magnitude_data(const vector<string>& v) {
+    magnitude_data_entries = v;
   }
 
   void StoreData::set_scalar_data(const vector<string>& v) {
@@ -103,6 +121,11 @@ namespace GFlowSimulation {
         auto vd = simData->VectorData(v);
         if (!vd.isnull()) copyVec(vd(n), &data[data_pointer], sim_dimensions);
         data_pointer += sim_dimensions;
+      }
+      for (auto m : magnitude_data_positions) {
+        auto vd = simData->VectorData(m);
+        if (!vd.isnull()) data[data_pointer] = magnitudeVec(vd(n), sim_dimensions);
+        ++data_pointer;
       }
       for (auto s : scalar_data_positions) {
         auto sd = simData->ScalarData(s);
@@ -190,8 +213,12 @@ namespace GFlowSimulation {
     }
     fout << "\n";
 
-    // Scalar data types
-    fout << scalar_data_entries.size() << ",";
+    // Scalar data types (including magnitude entries - these come first).
+    fout << (magnitude_data_entries.size() + scalar_data_entries.size()) << ",";
+    for (int i=0; i<magnitude_data_entries.size(); ++i) {
+      fout << magnitude_data_entries[i] << "-M";
+      if (i!=magnitude_data_entries.size()-1 || !scalar_data_entries.empty()) fout << ",";
+    }
     for (int i=0; i<scalar_data_entries.size(); ++i) {
       fout << scalar_data_entries[i];
       if (i!=scalar_data_entries.size()-1) fout << ",";

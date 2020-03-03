@@ -28,6 +28,7 @@ namespace GFlowSimulation {
     virtual bool writeToFile(string, bool=true) override;
 
     void add_vector_data_entry(string);
+    void add_magnitude_data_entry(string);
     void add_scalar_data_entry(string);
     void add_integer_data_entry(string);
 
@@ -62,6 +63,8 @@ namespace GFlowSimulation {
     vector<string> integer_data_entries;
 
     StoreData storeData;
+
+    vector<string> magnitude_data_entries;
   };
 
 }

@@ -13,6 +13,7 @@ namespace GFlowSimulation {
     void initialize(shared_ptr<class SimData>);
 
     void set_vector_data(const vector<string>&);
+    void set_magnitude_data(const vector<string>&);
     void set_scalar_data(const vector<string>&);
     void set_integer_data(const vector<string>&);
 
@@ -42,12 +43,13 @@ namespace GFlowSimulation {
 
     // Data names and places
     vector<string> vector_data_entries;
-    vector<int> vector_data_positions;
-
+    vector<string> magnitude_data_entries;
     vector<string> scalar_data_entries;
-    vector<int> scalar_data_positions;
-
     vector<string> integer_data_entries;
+
+    vector<int> vector_data_positions;
+    vector<int> magnitude_data_positions;
+    vector<int> scalar_data_positions;
     vector<int> integer_data_positions;
 
     //! \brief Whether to write processor ownership related info. This would be the last entry.

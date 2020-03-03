@@ -154,6 +154,14 @@ namespace GFlowSimulation {
     vector<string> vector_data;
     vector<string> scalar_data;
     vector<string> integer_data;
+
+    //! \brief Choice of how to color the particles. 
+    //!
+    //! 0 - Other
+    //! 1 - Use vector data.
+    //! 2 - Use scalar data.
+    //! 3 - Use integer data.
+    int selection = 0;
   };
 
 }
