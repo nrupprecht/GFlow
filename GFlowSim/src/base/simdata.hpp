@@ -251,6 +251,25 @@ namespace GFlowSimulation {
       #endif
     }
 
+    // --- MPI related
+
+    //! \brief Pack a buffer with the particle data of the particles indicated by the id list. If remove is true,
+    //! remove them from SimData after packing them up. 
+    //!
+    //! This function is only for owned particles.
+    void pack_buffer(const vector<int>&, vector<real>&, bool=true);
+
+    //! \brief Pack a buffer with whatever information is needed to create ghost particles.
+    void pack_ghost_buffer(const vector<int>&, vector<real>&, const Vec&);
+    
+    //! \brief Unpack a buffer of (full) particle data into any of the particle data arrays.
+    //!
+    //! By picking particle_type, this can be used to unpack owned or ghost particles.
+    template<unsigned=0>
+    void unpack_buffer(const int, const vector<real>&);
+
+    // --- Friends
+
     // So ForceMaster can set ntypes.
     friend class ForceMaster;
     friend class DataMaster;

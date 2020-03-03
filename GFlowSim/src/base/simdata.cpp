@@ -402,6 +402,62 @@ namespace GFlowSimulation {
       entry.add_integer_entry();
   }
 
+  void SimData::pack_buffer(const vector<int> &id_list, vector<real> &buffer, bool remove) {
+    int size = id_list.size();
+    // Make sure buffer is big enough to send data.
+    if (buffer.size()<size*data_width) buffer.resize(size*data_width);
+    // Send the actual data. Copy data into buffer
+    int n_vectors = nvectors(), n_scalars = nscalars(), n_integers = nintegers();
+    for (int j=0; j<size; ++j) {
+      int id = id_list[j];
+      // Pack vector data.
+      for (int i=0; i<n_vectors; ++i) 
+        copyVec(VectorData<0>(i, id), &buffer[data_width*j + i*sim_dimensions], sim_dimensions);
+      // Pack scalar data.
+      for (int i=0; i<n_scalars; ++i) 
+        buffer[data_width*j + n_vectors*sim_dimensions + i] = ScalarData<0>(i, id);
+      // Pack integer data.
+      for (int i=0; i<n_integers; ++i) 
+        buffer[data_width*j + n_vectors*sim_dimensions + n_scalars + i] = byte_cast<RealType>(IntegerData<0>(i, id));
+      // Mark particle for removal.
+      if (remove) markForRemoval<0>(id);
+    }
+  }
+
+  void SimData::pack_ghost_buffer(const vector<int> &id_list, vector<real> &buffer, const Vec& dx) {
+    /*
+    int j = 0;
+    auto x = simData->X();
+    auto v = simData->V();
+    bool send_ghost_velocity = simData->send_ghost_velocity, send_ghost_omega = simData->send_ghost_omega;
+
+    // Get the center of the bounds of this processor, so we can send particles with relative locations.
+    real bcm[4], xrel[4];
+    topology->getProcessBounds().center(bcm);
+
+    for (int id : id_list) {
+      // Get the position of the particle, relative to the other processor.
+      gflow->getDisplacement(x(id), bcm, xrel);
+      plusEqVec(xrel, bcm, sim_dimensions);
+      // Copy the (relative) vector to the buffer.
+      copyVec(xrel, &buffer_list[i][ghost_data_width*j], sim_dimensions);
+      int pointer = sim_dimensions;
+      // Possibly send velocity data.
+      if (send_ghost_velocity) {
+        copyVec(v(id), &buffer_list[i][ghost_data_width*j + pointer], sim_dimensions);
+        pointer += sim_dimensions; // Adjust counter.
+      }
+      // Possibly send angular velocity data.
+      if (send_ghost_omega) {
+        buffer_list[i][ghost_data_width*j + pointer] = om(id);
+        ++pointer; // Adjust counter.
+      }
+      // Increment.
+      ++j;
+    }
+    */
+  }
+
   void SimData::swap_particle(int id1, int id2) {
     // Get global IDs
     int g1 = Id(id1);

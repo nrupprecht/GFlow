@@ -15,6 +15,7 @@ namespace GFlowSimulation {
   //! @brief Compute how the simulation space should be divided up.
   void KDTreeTopology::computeTopology() {
     // Check for valid bounds.
+
     if (simulation_bounds.vol()<=0) return;
 
     // Initialize.
@@ -93,6 +94,7 @@ namespace GFlowSimulation {
     auto x = simData->X();
     auto type = simData->Type();
     for (int id=0; id < simData->size_owned(); ++id) {
+
       if (type(id)>-1 && !process_bounds.contains(x(id))) {
         // Check which processor the particle actually belongs on. We can use the send_ids buffer since we are going to 
         // clear it anyways.

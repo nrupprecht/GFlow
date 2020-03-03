@@ -8,13 +8,15 @@ inline constexpr bool check_particle_type(unsigned pt) {
 
 // --- Particle insertion / deletion
 
-template<unsigned particle_type> int SimData::addParticle() {
+template<unsigned particle_type> 
+int SimData::addParticle() {
   // Just call the more general add particle function. That function has the assert, so there is no need for one here.
   return addParticle<particle_type>(1);
 }
 
 //! \param num The number of particle slots to add.
-template<unsigned particle_type> int SimData::addParticle(int num) {
+template<unsigned particle_type> 
+int SimData::addParticle(int num) {
   static_assert(check_particle_type(particle_type));
   // Can't add a negative number of particles.
   if (num<=0) return -1;
@@ -41,7 +43,8 @@ template<unsigned particle_type> int SimData::addParticle(int num) {
   return address;
 }
 
-template<unsigned particle_type> int SimData::addParticle(const real *x, const real *v, const real sg, const real im, const int type) {
+template<unsigned particle_type> 
+int SimData::addParticle(const real *x, const real *v, const real sg, const real im, const int type) {
   static_assert(check_particle_type(particle_type));
   // If not enough spots to add a new owned particle, create more.
   int capacity = data_entries[particle_type].capacity();
@@ -68,7 +71,8 @@ template<unsigned particle_type> int SimData::addParticle(const real *x, const r
   return size-1;
 }
 
-template<unsigned particle_type> void SimData::markForRemoval(const int id) {
+template<unsigned particle_type> 
+void SimData::markForRemoval(const int id) {
   static_assert(check_particle_type(particle_type));
   // If the particle has already been marked for removal, or is beyond the end of the array, return.
   if (Type<particle_type>(id)<0 || id>=_size[particle_type]) return;
@@ -87,53 +91,63 @@ template<unsigned particle_type> void SimData::markForRemoval(const int id) {
 
 // --- Data access
 
-template<unsigned particle_type> vec_access SimData::X() {
+template<unsigned particle_type> 
+vec_access SimData::X() {
   // Since position data must exist, we don't need checks.
   return VectorData<particle_type, false>(0);
 }
 
-template<unsigned particle_type> real*  SimData::X(const int id) {
+template<unsigned particle_type> 
+real* SimData::X(const int id) {
   static_assert(check_particle_type(particle_type));
   return X<particle_type>()(id);
 }
 
-template<unsigned particle_type> real&  SimData::X(const int id, const int dim) {
+template<unsigned particle_type> 
+real& SimData::X(const int id, const int dim) {
   static_assert(check_particle_type(particle_type));
   return X<particle_type>()(id, dim);
 }
 
-template<unsigned particle_type> vec_access SimData::V() {
+template<unsigned particle_type> 
+vec_access SimData::V() {
   // Since velocity data must exist, we don't need checks.
   return VectorData<particle_type, false>(1);
 }
 
-template<unsigned particle_type> real*  SimData::V(const int id) {
+template<unsigned particle_type> 
+real* SimData::V(const int id) {
   static_assert(check_particle_type(particle_type));
   return V<particle_type>()(id);
 }
 
-template<unsigned particle_type> real&  SimData::V(const int id, const int dim) {
+template<unsigned particle_type> 
+real& SimData::V(const int id, const int dim) {
   static_assert(check_particle_type(particle_type));
   return V<particle_type>()(id, dim);
 }
 
-template<unsigned particle_type> vec_access SimData::F() {
+template<unsigned particle_type> 
+vec_access SimData::F() {
   // Since force data must exist, we don't need checks.
   return VectorData<particle_type, false>(2);
 }
 
-template<unsigned particle_type> real*  SimData::F(const int id) {
+template<unsigned particle_type> 
+real* SimData::F(const int id) {
   static_assert(check_particle_type(particle_type));
   return F<particle_type>()(id);
 }
 
-template<unsigned particle_type> real&  SimData::F(const int id, const int dim) {
+template<unsigned particle_type> 
+real& SimData::F(const int id, const int dim) {
   static_assert(check_particle_type(particle_type));
   return F<particle_type>()(id, dim);
 }
 
 // This is the main function for getting vector data.
-template<unsigned particle_type, bool safe_checks> vec_access SimData::VectorData(const int entry) {
+template<unsigned particle_type, bool safe_checks> 
+vec_access SimData::VectorData(const int entry) {
   static_assert(check_particle_type(particle_type));
   // If we are using safe checks, make sure entry corresponds to a valid entry.
   if (safe_checks) {
@@ -144,35 +158,42 @@ template<unsigned particle_type, bool safe_checks> vec_access SimData::VectorDat
   else return data_entries[particle_type].get_vdata(entry); 
 }
 
-template<unsigned particle_type> vec_access SimData::VectorData(const string& name) {
+template<unsigned particle_type> 
+vec_access SimData::VectorData(const string& name) {
   const int entry = getVectorData(name);
   return VectorData<particle_type>(entry);
 }
 
-template<unsigned particle_type> real* SimData::VectorData(const int entry, const int id) {
+template<unsigned particle_type> 
+real* SimData::VectorData(const int entry, const int id) {
   return VectorData<particle_type>(entry)(id);
 }
 
 // --- Scalar data ---
 
-template<unsigned particle_type> scalar_access SimData::Sg() {
+template<unsigned particle_type> 
+scalar_access SimData::Sg() {
   return ScalarData<particle_type>(0);
 }
 
-template<unsigned particle_type> real& SimData::Sg(int id) {
+template<unsigned particle_type> 
+real& SimData::Sg(int id) {
   return Sg<particle_type>()(id);
 }
 
-template<unsigned particle_type> scalar_access SimData::Im() {
+template<unsigned particle_type> 
+scalar_access SimData::Im() {
   return ScalarData<particle_type>(1);
 }
 
-template<unsigned particle_type> real& SimData::Im(int id) {
+template<unsigned particle_type> real& 
+SimData::Im(int id) {
   return Im<particle_type>()(id);
 }
 
 // This is the main function for getting scalar data.
-template<unsigned particle_type, bool safe_checks> scalar_access SimData::ScalarData(const int entry) {
+template<unsigned particle_type, bool safe_checks> 
+scalar_access SimData::ScalarData(const int entry) {
   static_assert(check_particle_type(particle_type));
   // If we are using safe checks, make sure entry corresponds to a valid entry.
   if (safe_checks) {
@@ -183,37 +204,44 @@ template<unsigned particle_type, bool safe_checks> scalar_access SimData::Scalar
   else return data_entries[particle_type].get_sdata(entry); 
 }
 
-template<unsigned particle_type> scalar_access SimData::ScalarData(const string& name) {
+template<unsigned particle_type> 
+scalar_access SimData::ScalarData(const string& name) {
   const int entry = getScalarData(name);
   return ScalarData<particle_type>(entry);
 }
 
-template<unsigned particle_type> real& SimData::ScalarData(const int entry, const int id) {
+template<unsigned particle_type> 
+real& SimData::ScalarData(const int entry, const int id) {
   return ScalarData<particle_type>(entry)(id);
 }
 
 // --- Integer data ---
 
-template<unsigned particle_type> integer_access SimData::Type() {
+template<unsigned particle_type> 
+integer_access SimData::Type() {
   // Since type data must exist, we don't need checks.
   return IntegerData<particle_type, false>(0);
 }
 
-template<unsigned particle_type> int& SimData::Type(const int id) {
+template<unsigned particle_type> 
+int& SimData::Type(const int id) {
   return Type<particle_type>()(id);
 }
 
-template<unsigned particle_type> integer_access SimData::Id() {
+template<unsigned particle_type> 
+integer_access SimData::Id() {
 // Since global id data must exist, we don't need checks.
   return IntegerData<particle_type, false>(1);
 }
 
-template<unsigned particle_type> int& SimData::Id(const int id) {
+template<unsigned particle_type> 
+int& SimData::Id(const int id) {
   return Id<particle_type>()(id);
 }
 
 // This is the main function for getting integer data.
-template<unsigned particle_type, bool safe_checks> integer_access SimData::IntegerData(const int entry) {
+template<unsigned particle_type, bool safe_checks> 
+integer_access SimData::IntegerData(const int entry) {
   static_assert(check_particle_type(particle_type));
   // If we are using safe checks, make sure entry corresponds to a valid entry.
   if (safe_checks) {
@@ -224,18 +252,39 @@ template<unsigned particle_type, bool safe_checks> integer_access SimData::Integ
   else return data_entries[particle_type].get_idata(entry); 
 }
 
-template<unsigned particle_type> integer_access SimData::IntegerData(const string& name) {
+template<unsigned particle_type> 
+integer_access SimData::IntegerData(const string& name) {
   const int entry = getScalarData(name);
   return IntegerData<particle_type>(entry);
 }
 
-template<unsigned particle_type> int& SimData::IntegerData(const int entry, const int id) {
+template<unsigned particle_type> 
+int& SimData::IntegerData(const int entry, const int id) {
   return IntegerData<particle_type>(entry)(id);
+}
+
+template<unsigned particle_type>
+void SimData::unpack_buffer(const int n_particles, const vector<real>& buffer) {
+  int n_vectors = nvectors(), n_scalars = nscalars(), n_integers = nintegers();
+  for (int j=0; j<n_particles; ++j) {
+    // Add a spot for a particle, then copy the data into this particle.
+    int id = addParticle<particle_type>(); // Get a local id for new particle.
+    // Unpack vector data.
+    for (int i=0; i<n_vectors; ++i) 
+      copyVec(&buffer[data_width*j + i*sim_dimensions], VectorData<particle_type>(i, id), sim_dimensions);
+    // Unpack scalar data.
+    for (int i=0; i<n_scalars; ++i) 
+      ScalarData<particle_type>(i, id) = buffer[data_width*j + n_vectors*sim_dimensions + i];
+    // Unpack integer data.
+    for (int i=0; i<n_integers; ++i)
+      IntegerData<particle_type>(i, id) = byte_cast<int>(buffer[data_width*j + n_vectors*sim_dimensions + n_scalars + i]);
+  } 
 }
 
 // --- Helper functions
 
-template<unsigned particle_type> void SimData::reset_particle(int id) {
+template<unsigned particle_type> 
+void SimData::reset_particle(int id) {
   for (int i=0; i<nvectors(); ++i) zeroVec(VectorData<particle_type>(i, id), sim_dimensions);
   for (int i=0; i<nscalars(); ++i) ScalarData<particle_type>(i, id) = 0.;
   for (int i=0; i<nintegers(); ++i) IntegerData<particle_type>(i, id) = -1;
