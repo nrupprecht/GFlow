@@ -23,8 +23,17 @@ namespace GFlowSimulation {
     //! Read a csv file and create images from all the data in the file.
     bool load_and_create(string, string);
 
-    //! \brief Manually set the size of te color bank.
+    //! \brief Set the size of the color bank.
     void setColorBankSize(int);
+
+    //! \brief Choose the color selection method.
+    void setColorSelectionMethod(const unsigned int);
+
+    //! \brief Choose the name of the data entry that should be processed to get the color data.
+    void setSelectionName(const string);
+
+    //! \brief Select what function should be used to turn data into a color.
+    void setColorFunctionSelection(const unsigned int);
 
     //! \brief Set a radius multiplier factor.
     //!
@@ -34,8 +43,11 @@ namespace GFlowSimulation {
     //! \brief Set the coloring option.
     void setColorOption(int);
 
+    //! \brief Set the resolution.
     void setResolution(int);
 
+    //! \brief Set the "meta-parameters" of this visualization class based on the store data object.
+    // This would include the number of dimensions, number of types, the data entry names, etc.
     void setMetaParameters(const class StoreData&);
 
     //! \brief Create a directory filled with BMP renderings of the system.
@@ -56,26 +68,32 @@ namespace GFlowSimulation {
 
   private:
 
-    inline void findMaxVSqr(const vector<vector<float> >&);
+    //! \brief Find the scale factors for the requested vector data.
+    inline void findVectorScaleFactors(const vector<float>&);
+    //! \brief Find the scale factors for the requested scalar data.
+    inline void findScalarScaleFactors(const vector<float>&);
 
-    inline void findAverageVelocity(const vector<vector<float> >&);
+    //! \brief Find the scale factors for whatever type of data was requested.
+    inline void determineScaleFactors(const vector<float>&);
 
-    inline void findMaxDistance(const vector<vector<float> >&);
-
-    inline void createColorBank(int);
-
+    //! \brief Access a color from the color bank.
     inline RGBApixel getColor(int) const;
 
+    //! \brief Reset all place pointers.
     inline void resetPlaces();
 
+    //! \brief Find all the requisite place pointers.
     inline void findPlaces();
 
+    //! \brief Do whatever checks are needed to make sure everything is in order to render a frame.
     inline bool do_checks(const vector<float>&);
 
-    inline void get_values(const float*, const float* &, const float* &, float&, int&, float&, float&, float&, int&);
+    //! \brief Get the needed values from a particle data entry. What is needed will include the position and radius,
+    //! and whatever data is needed for rendering.
+    inline void get_values(const float*, const float*&, float&, const float*&, float&, int&);
 
     //! \brief Determine what color a particle should be.
-    inline void determine_color(RGBApixel&, int, const float*, const float*, int, float, float, float, int);
+    inline void determine_color(RGBApixel&, int, const float*, float&, int&);
 
     //! \brief Set up the camera to be in the standard position.
     inline void standard_camera_setup();
@@ -89,28 +107,10 @@ namespace GFlowSimulation {
     //! \brief Where the position data starts.
     int pos_place = -1;
 
-    //! \brief Where the velocity data starts.
-    int vel_place = -1;
-
     //! \brief Where in the data for a particle is the radius.
     int sg_place = -1;
 
-    //! \brief Where in the data for a particle is its type.
-    int type_place = -1;
-
-    //! \brief Where in the data for a particle is the distance traveled.
-    int distance_place = -1;
-
-    //! \brief Where in the data for particle is the angular velocity.
-    int omega_place = -1;
-
-    //! \brief Where in the data the stripe data is.
-    int stripex_place = -1;
-
-    //! \brief Where in the data the processor information is.
-    int proc_place = -1;
-
-    //! \brief The width of the data.
+    //! \brief The width of the data for a single particle.
     int dataWidth = 0;
 
     //! \brief The number of particle types.
@@ -136,9 +136,8 @@ namespace GFlowSimulation {
     //! \brief Whether the (3D) camera has been set up by anyone or anything.
     bool camera_set = false;
 
-    float maxVsqr = -1.;
-    Vec aveV = Vec(2);
-    float maxDistance = -1.;
+    //! \brief How much larger/smaller the drawn radius should be compared to the radius specified in the data.
+    //! The default is, of course, 1.
     float radius_multiple = 1.;
 
     //! \brief How the particles should be colored.
@@ -161,7 +160,27 @@ namespace GFlowSimulation {
     //! 1 - Use vector data.
     //! 2 - Use scalar data.
     //! 3 - Use integer data.
-    int selection = 0;
+    unsigned int color_selection_method = 0;
+
+    //! \brief The name of the entry that should be used to color the particles.
+    string selection_name;
+
+    //! \brief A flag that determines which function should be applied to the chosen data to produce a color.
+    unsigned int color_function_selection = 0;
+
+    // Only one of these selectors will actually be used. Which one is used is determined by the color_selection_method flag.
+
+    //! \brief Pointer to the place in a particle data entry where the required vector data starts.
+    int v_select = -1;
+    //! \brief Pointer to the place in a particle data entry where the required scalar data is.
+    int s_select = -1;
+    //! \brief Pointer to the place in a particle data entry where the required integer data is.
+    int i_select = -1;
+
+    float v_scale_max = 0.f;
+    Vec v_scale_average;
+    float s_scale_min = 0.f, s_scale_max = 1.f, s_scale_average;
+    int i_scale_min = 0, i_scale_max = 1;
   };
 
 }

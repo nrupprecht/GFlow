@@ -6,14 +6,9 @@
 
 namespace GFlowSimulation {
 
-  Visualization::Visualization() : do_wrap(true) {
-    createColorBank(10); // Default size - 10
+  Visualization::Visualization() : do_wrap(true), v_scale_average(2) {
+    setColorBankSize(10);
     resolution = 1536;
-
-    // colorBank.push_back(RGBApixel(215, 215, 215));
-    // colorBank.push_back(RGBApixel(255, 255, 255));
-    // colorBank.push_back(RGBApixel(145, 145, 145));
-    // resolution = 0.6*1024;    
   };
 
   bool Visualization::load_and_create(string loadName, string saveName) {
@@ -29,6 +24,7 @@ namespace GFlowSimulation {
     dataWidth = loader.getDataWidth();
     ntypes = loader.getNTypes();
     dimensions = loader.getDimensions();
+    v_scale_average = Vec(dimensions);
     bounds = loader.getBounds();
     // Get entries
     vector_data = loader.get_vector_data();
@@ -62,6 +58,18 @@ namespace GFlowSimulation {
     }
   }
 
+  void Visualization::setColorSelectionMethod(const unsigned int method) {
+    color_selection_method = method;
+  }
+
+  void Visualization::setSelectionName(const string name) {
+    selection_name = name;
+  }
+
+  void Visualization::setColorFunctionSelection(const unsigned int f_number) {
+    color_function_selection = f_number;
+  }
+
   void Visualization::setRadiusMultiple(float r) {
     radius_multiple = r;
   }
@@ -83,7 +91,7 @@ namespace GFlowSimulation {
     vector_data = storeData.get_vector_data();
     scalar_data = storeData.get_scalar_data();
     integer_data = storeData.get_integer_data();
-    // Find data positoins
+    // Find data positions
     findPlaces();
   }
 
@@ -91,12 +99,7 @@ namespace GFlowSimulation {
     cout << "Starting image write.\n";
     // Timing
     auto start_time = current_time();
-    // Find the maximum velocity (if needed)
-    if (color_option==2)
-      findMaxVSqr(data);
-    // Find the maximum distance (if needed)
-    else if (color_option==4)
-      findMaxDistance(data);
+    
     // Create frames
     for (int i=0; i<data.size(); ++i) {
       string fileName = dirName + "/frame" + toStr(i) + ".bmp";
@@ -114,12 +117,6 @@ namespace GFlowSimulation {
     cout << "Starting image write.\n";
     // Timing
     auto start_time = current_time();
-    // Find the maximum velocity (if needed)
-    if (color_option==2)
-      findMaxVSqr(data);
-    // Find the maximum distance (if needed)
-    else if (color_option==4)
-      findMaxDistance(data);
 
     if (choice_3d) {
       // Set up the camera
@@ -167,22 +164,21 @@ namespace GFlowSimulation {
     image.coverPalette(background);
     // Do checks of positions
     if (!do_checks(data)) return;
+    determineScaleFactors(data);
     // Draw all particles
     for (int i=0; i<data.size(); i+=dataWidth) {
       // Get values
-      const float *pos, *vel; 
-      float sigma, distance, omega, stripex; 
-      int type, proc;
-      get_values(&data[i], pos, vel, sigma, type, distance, omega, stripex, proc);
-      // If type<0, continue
-      if (type<0) continue;      
+      const float *pos, *v_data; 
+      float sigma, s_data; 
+      int i_data;
+      get_values(&data[i], pos, sigma, v_data, s_data, i_data);     
       // Find the center of the particle
       float xf = (pos[0] - left)/wx;
       float yf = (pos[1] - bott)/wy;
       float rf = sigma/wx;
       // --- Determine the color
       RGBApixel color = RGB_Green;
-      determine_color(color, i, pos, vel, type, distance, omega, stripex, proc);
+      determine_color(color, i, v_data, s_data, i_data);
       // --- Create the color function.
       // xf, yf \in [-1, 1] (roughly - could be a bit larger)
       std::function<RGBApixel(float, float, bool&)> colorF = 
@@ -201,9 +197,6 @@ namespace GFlowSimulation {
       // Draw the particle
       image.drawCircle(pos[0] - left, pos[1] - bott, radius_multiple*sigma, colorF, do_wrap);
     }
-    // Reset
-    maxVsqr = -1;
-    maxDistance = -1;
     // Save image
     palette.writeToFile(fileName);
   }
@@ -225,15 +218,14 @@ namespace GFlowSimulation {
     image.coverPalette(background);
     // Do checks of positions
     if (!do_checks(data)) return;
+    determineScaleFactors(data);
     // Draw all particles
     for (int i=0; i<data.size(); i+=dataWidth) {
-      // Get valudes
-      const float *pos, *vel; 
-      float sigma, distance, omega, stripex; 
-      int type, proc;
-      get_values(&data[i], pos, vel, sigma, type, distance, omega, stripex, proc);
-      // If type<0, continue
-      if (type<0) continue;
+      // Get values
+      const float *pos, *v_data; 
+      float sigma, s_data; 
+      int i_data;
+      get_values(&data[i], pos, sigma, v_data, s_data, i_data);
       // Find the center of the particle
       float xf = (pos[0] - left)/wx;
       float yf = (pos[1] - bott)/wy;
@@ -245,7 +237,7 @@ namespace GFlowSimulation {
 
       // --- Determine the color
       RGBApixel color = RGB_Green;
-      determine_color(color, i, pos, vel, type, distance, omega, stripex, proc);
+      determine_color(color, i, v_data, s_data, i_data);
       // --- Create the color function.
       // xf, yf \in [-1, 1] (roughly - could be a bit larger)
       std::function<RGBApixel(float, float, bool&)> colorF = 
@@ -264,9 +256,6 @@ namespace GFlowSimulation {
       // Draw the particle
       image.drawCircle(pos[0] - left, pos[1] - bott, rf*radius_multiple*sigma, colorF, do_wrap);
     }
-    // Reset
-    maxVsqr = -1;
-    maxDistance = -1;
     // Save image
     palette.writeToFile(fileName);
   }
@@ -280,15 +269,15 @@ namespace GFlowSimulation {
     RGBApixel color;
     // Do checks of positions
     if (!do_checks(data)) return;
+    determineScaleFactors(data);
     // Add all particles to the ray tracer
-    const float *pos, *vel; 
-    float sigma, distance, omega, stripex; 
-    int type, proc;
+    const float *pos, *v_data; 
+    float sigma, s_data; 
+    int i_data;
     for (int i=0; i<data.size(); i+=dataWidth) {
-      // Get values
-      get_values(&data[i], pos, vel, sigma, type, distance, omega, stripex, proc);
+      get_values(&data[i], pos, sigma, v_data, s_data, i_data);
       // Determine the color
-      determine_color(color, i, pos, vel, type, distance, omega, stripex, proc);      
+      determine_color(color, i, v_data, s_data, i_data);   
       // Add the sphere to the ray tracer.
       tracer.addSphere(pos, sigma, color);
     }
@@ -301,66 +290,53 @@ namespace GFlowSimulation {
     tracer.saveImage(fileName);
   }
 
-  inline void Visualization::findMaxVSqr(const vector<vector<float> >& dataVector) {
-    // Check that we have velocity data
-    if (vel_place<0) return;
-    // Reset
-    maxVsqr = 0;
-    // Look for max vsqr
-    for (int iter=0; iter<dataVector.size(); ++iter) {
-      if (dataVector[iter].empty()) continue;
-      const float *data = &dataVector[iter][0];
-      int number = dataVector[iter].size()/dataWidth;
-      for (int i=0; i<number; ++i) {
-        float V = sqr(data[i*dataWidth + vel_place]);
-        if (V>maxVsqr) maxVsqr = V;
-      }
+  inline void Visualization::findVectorScaleFactors(const vector<float>& data_frame) {
+    if (v_select<0 || dataWidth<=v_select) {
+      cout << "Error: invalid vector selection.\n";
+      return;
     }
-    // Take the sqrt
-    maxVsqr = sqrt(maxVsqr);
+    v_scale_max = 0.f;
+    v_scale_average = Vec(dimensions);
+    for (int i=v_select; i<data_frame.size(); i+=dataWidth) {
+      float magnitude = magnitudeVec(&data_frame[i], dimensions);
+      if (magnitude>v_scale_max) v_scale_max = magnitude;
+      plusEqVec(v_scale_average.data, &data_frame[i], dimensions);
+    }
+    v_scale_average *= (dataWidth/data_frame.size());
   }
 
-  inline void Visualization::findAverageVelocity(const vector<vector<float> >& dataVector) {
-    // Check that we have velocity data
-    if (vel_place<0) return;
-    aveV.zero();
-    // Average velocity.
-    int total = 0;
-    for (int iter=0; iter<dataVector.size(); ++iter) {
-      const float *data = &dataVector[iter][0];
-      int number = dataVector[iter].size()/dataWidth;
-      for (int i=0; i<number; ++i) {
-        // Accumulate velocity.
-        plusEqVec(aveV.data, &data[i*dataWidth + vel_place], 2);
-      }
-      total += number;  
+  inline void Visualization::findScalarScaleFactors(const vector<float>& data_frame) {
+    if (s_select<0 || dataWidth<=s_select) {
+      cout << "Error: invalid scalar selection.\n";
+      return;
     }
-    // Average the velocity vector.
-    scalarMultVec(1./total, aveV.data, 2);
+    s_scale_min = data_frame[s_select], s_scale_max = data_frame[s_select];
+    s_scale_average = 0;
+    for (int i=s_select; i<data_frame.size(); i+=dataWidth) {
+      real scalar_value = data_frame[i];
+      if (scalar_value<s_scale_min) s_scale_min = scalar_value;
+      else if (scalar_value>s_scale_max) s_scale_max = scalar_value;
+      s_scale_average += scalar_value;
+    }
+    s_scale_average *= (dataWidth/data_frame.size());
   }
 
-  inline void Visualization::findMaxDistance(const vector<vector<float> >& dataVector) {
-    // Check that we have distance data
-    if (distance_place<0) return;
-    // Reset
-    maxDistance = 0;
-    // Look for max distance - start after first iteration.
-    for (int iter=0; iter<dataVector.size(); ++iter) {
-      if (dataVector[iter].empty()) continue;
-      const float *data = &dataVector[iter][0];
-      int number = dataVector[iter].size()/dataWidth;
-      for (int i=0; i<number; ++i) {
-        float D = data[i*dataWidth + distance_place];
-        if (D>maxDistance) maxDistance = D;
+  inline void Visualization::determineScaleFactors(const vector<float>& data_frame) {
+    switch (color_selection_method) {
+      case 0: {
+        break;
       }
-    }
-  }
-
-  inline void Visualization::createColorBank(int size) {
-    if (size>0) {
-      colorBank.clear();
-      for (int i=0; i<size; ++i)
-        colorBank.push_back(randomColor());
+      case 1: {
+        findVectorScaleFactors(data_frame);
+        break;
+      }
+      case 2: {
+        findScalarScaleFactors(data_frame);
+        break;
+      }
+      case 3: {
+        break;
+      }
     }
   }
 
@@ -370,12 +346,10 @@ namespace GFlowSimulation {
 
   inline void Visualization::resetPlaces() {
     pos_place = -1;
-    vel_place = -1;
     sg_place = -1;
-    type_place = -1;
-    distance_place = -1;
-    omega_place = -1;
-    stripex_place = -1;
+    v_select = -1;
+    s_select = -1;
+    i_select = -1;
   }
 
   inline void Visualization::findPlaces() {
@@ -385,20 +359,79 @@ namespace GFlowSimulation {
       return -1;
     };
 
+    if (color_selection_method==0) {
+      // Use a predefined method to color the particles.
+      // 0 - Type
+      // 1 - Random
+      // 2 - Velocity magnitude
+      // 3 - Orientation
+      // 4 - Distance
+      // 5 - x-stripe
+      // 6 - processor
+      // 7 - angular velocity
+      switch (color_option) {
+        case 0: {
+
+          color_selection_method = 2;
+          selection_name = "F-M";
+  /*
+          color_selection_method = 3;
+          selection_name = "Type";
+          */
+          break;
+        }
+        case 1: {
+          color_selection_method = 0;
+          break;
+        }
+        case 2: {
+          color_selection_method = 1;
+          selection_name = "V";
+          break;
+        }
+        case 3: {
+          color_selection_method = 1;
+          selection_name = "V";
+          break;
+        }
+        case 4: {
+          color_selection_method = 3;
+          selection_name = "Distance";
+          break;
+        }
+        case 5: {
+          color_selection_method = 2;
+          selection_name = "StripeX";
+          break;
+        }
+        case 6: {
+          color_selection_method = 3;
+          selection_name = "Proc";
+          break;
+        }
+        case 7: {
+          color_selection_method = 2;
+          selection_name = "Om";
+          break;
+        }
+      }
+    }
+
     // Vector data
     pos_place = find("X", vector_data)*dimensions;
-    vel_place = find("V", vector_data)*dimensions;
+    if (color_selection_method==1) v_select = find(selection_name, vector_data)*dimensions;
+    else v_select = -1;
 
     // Scalar data
-    int shift     = vector_data.size()*dimensions;
-    sg_place      = find("Sg", scalar_data) + shift;
-    stripex_place = find("StripeX", scalar_data) + shift;   
-    omega_place   = find("Om", scalar_data) + shift; 
+    int shift = vector_data.size()*dimensions;
+    sg_place = find("Sg", scalar_data) + shift;
+    if (color_selection_method==2) s_select = find(selection_name, scalar_data) + shift;
+    else s_select = -1;
 
     // Integer data
     shift += scalar_data.size();
-    type_place = find("Type", integer_data) + shift;
-    proc_place = find("Proc", integer_data) + shift;
+    if (color_selection_method==3) i_select = find(selection_name, integer_data) + shift;
+    else i_select = -1;
   }
 
   inline bool Visualization::do_checks(const vector<float>& data) {
@@ -407,59 +440,72 @@ namespace GFlowSimulation {
       cout << "No position data detected. This is essential. Exiting.\n";
       return false;
     }
-    else if ((color_option==2 || color_option==3) && vel_place<0) {
-      cout << "No velocity data detected. Switching to color option 0.\n";
-      color_option = 0;
-    }
-    else if (color_option==4 && distance_place<0) {
-      cout << "No distance data detected. Switching to color option 0.\n";
-      color_option = 0;
-    }
-    else if (color_option==5 && stripex_place<0) {
-      cout << "No stripe-x data detected. Switching to color option 0.\n";
-      color_option = 0;
-    }
-    else if (color_option==7 && omega_place<0) {
-      cout << "No angular velocity data detected. Switching to color option 0.\n";
-      color_option = 0;
-    }
-    // Make sure we have the appropriate normalization factors.
-    // This will generally only happen when we are making a single image.
-    if (color_option==0 && ntypes>colorBank.size()) {
-      createColorBank(ntypes);
-    }
-    if (color_option==2 && maxVsqr<0) {
-      auto pack_data = vector<vector<float> >(1, data);
-      findMaxVSqr(pack_data);
-    }
-    if (color_option==3) {
-      auto pack_data = vector<vector<float> >(1, data);
-      findAverageVelocity(pack_data); // This finds the average velocity.
-    }
-    else if (color_option==4 && maxDistance<0) {
-      auto pack_data = vector<vector<float> >(1, data);
-      findMaxDistance(pack_data);
-    }
 
     // Return success
     return true;
   }
 
-  inline void Visualization::get_values(const float * pdata, const float * &pos, const float * &vel, float& sigma, int& type, float& distance, float& omega, float& stripex, int& proc) {
-    // Get individual entries
+  inline void Visualization::get_values(
+    const float * pdata,
+    const float * &pos, 
+    float& sigma, 
+    const float * &v_data, 
+    float &s_data, 
+    int &i_data
+  ) {
+    // Essential data.
     pos = pos_place<0 ? nullptr : &pdata[pos_place];
-    vel = vel_place<0 ? nullptr : &pdata[vel_place]; // Point to start of velocity data
     sigma = sg_place<0 ? 0 : pdata[sg_place]; // Get sigma
-    type = type_place<0 ? 0 : static_cast<int>(pdata[type_place]); // Get type
-    distance = distance_place<0 ? 0 : pdata[distance_place]; // Get distance traveled
-    omega = omega_place<0 ? 0 : pdata[omega_place];
-    stripex  = stripex_place<0  ? 0 : pdata[stripex_place];
-    proc = proc_place<0 ? 0 : pdata[proc_place];
+    // Data for coloring particles.
+    v_data = v_select>=0 ? &pdata[v_select] : nullptr;
+    s_data = s_select>=0 ? pdata[s_select] : 0.f;
+    i_data = i_select>=0 ? static_cast<int>(pdata[i_select]) : 0;
   }
 
-  inline void Visualization::determine_color(RGBApixel& color, int i, const float *pos, const float *vel, int type, float distance, float omega, float stripex, int proc) {
+  inline void Visualization::determine_color(RGBApixel& color, int i, const float *v_data, float &s_data, int &i_data) {
+    switch (color_selection_method) {
+      case 0: {
+        // Color randomly
+        color = getColor(i);
+        break;
+      }
+      case 1: {
+        // Color by magnitude.
+        float value = magnitudeVec(v_data, dimensions) / s_scale_max;
+        color = RGBApixel(floor(255*value), 0, 200*(1-value));
+
+        // Color by direction - only for 2+ dimensions, and only considers x,y directions.
+        float theta = atan2(v_data[1] - v_scale_average[1], v_data[0] - v_scale_average[0]);
+        color = colorAngle(theta);
+        break;
+      }
+      case 2: {
+        // Color by magnitude.
+        //float value = s_data / s_scale_max;
+        float value = log( 1. + 100.*s_data / s_scale_max) / log(101.);
+        color = RGBApixel(floor(255*value), 0, 200*(1-value));
+        break;
+      }
+      case 3: {
+        // Color by integer.
+        color = getColor(i_data);
+        break;
+      }
+    }
+
+    /*
     if (!colorBank.empty()) {
       switch (color_option) {
+        
+        // 0 - Type
+        // 1 - Random
+        // 2 - Velocity magnitude
+        // 3 - Orientation
+        // 4 - Distance
+        // 5 - x-stripe
+        // 6 - processor
+        // 7 - angular velocity
+
         default:
         case 0: { // Color by type
           color = getColor(type);
@@ -523,6 +569,7 @@ namespace GFlowSimulation {
         }
       }
     }
+    */
   }
 
   inline void Visualization::standard_camera_setup() {
