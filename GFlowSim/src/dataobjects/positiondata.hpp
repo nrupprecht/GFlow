@@ -37,7 +37,8 @@ namespace GFlowSimulation {
     //! \brief Set the visual bounds. Only particles within these bounds will be saved.
     void set_visual_bounds(const Bounds&);
 
-    // The demon modifer is a friend.
+    // The demon modifer is a friend. This way, the demon can correct the video 
+    // when it resets the clock and closes the door.
     friend class Demon;
 
   private:

@@ -7,16 +7,20 @@ namespace GFlowSimulation {
   
   class StoreData {
   public:
-    StoreData();
 
     //! \brief Compute the data places.
     void initialize(shared_ptr<class SimData>);
 
+    //! \brief Set the list of vector data elements to store.
     void set_vector_data(const vector<string>&);
+    //! \brief Set the list of vector magnitudes to store.
     void set_magnitude_data(const vector<string>&);
+    //! \brief Set the list of scalar data elements to store.
     void set_scalar_data(const vector<string>&);
+    //! \brief Set the list of integer data elements to store.
     void set_integer_data(const vector<string>&);
 
+    //! \brief Set the bounds for which particle data should be captured.
     void set_data_boundary(const Bounds&);
 
     const vector<string>& get_vector_data() const;
@@ -26,19 +30,22 @@ namespace GFlowSimulation {
     //! \brief Store data to a vector.
     void store(vector<float>&);
 
+    //! \brief Write a collection of data frames to a csv file.
     bool write(const string&, const vector<vector<float> >&);
-
+    //! \brief Write a single data frame to a csv file.
     bool write(const string&, const vector<float>&);
 
     //! \brief Get the bounds.
     const Bounds& getBounds() const;
     //! \brief Get the data width
     int getDataWidth() const;
+    //! \brief Get the dimensionality.
     int getDimensions() const;
+    //! \brief Get the number of types.
     int getNTypes() const;
 
   private:
-
+    //! \brief Helper function that writes information about the types of data that the csv file contains.
     inline void writeHeader(ofstream&, int) const;
 
     // Data names and places
@@ -53,16 +60,16 @@ namespace GFlowSimulation {
     vector<int> integer_data_positions;
 
     //! \brief Whether to write processor ownership related info. This would be the last entry.
-    bool write_processor_info;
+    bool write_processor_info = true;
 
     //! \brief The bounds data.
-    Bounds bounds;
+    Bounds bounds = Bounds(2);
     //! \brief The data width.
-    int dataWidth;
+    int dataWidth = 0;
     //! \brief The number of dimensions.
-    int sim_dimensions;
+    int sim_dimensions = 0;
     //! \brief The number of types.
-    int nTypes;
+    int nTypes = 0;
 
     //! \brief A pointer to the simdata class the data comes from.
     shared_ptr<class SimData> simData;

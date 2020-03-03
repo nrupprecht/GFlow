@@ -13,7 +13,9 @@ int main(int argc, char** argv) {
   string directory = "RunData";
   string subdirectory = "general/Pos";
   string saveDirectory = "RunData";
+  string selectionName = "V";
   double radius_multiple = 1.;
+  int colorSelect = -1;
   int colorOption = 0;
   int resolution = 1.5*1024;
   // Modes of operation
@@ -25,8 +27,10 @@ int main(int argc, char** argv) {
   parser.get("directory", directory);
   parser.get("directory", saveDirectory); // By default, save to the same directory
   parser.get("saveDirectory", saveDirectory); // But the defualt can be overruled
+  parser.get("selectionName", selectionName);
   parser.get("subdirectory", subdirectory);
   parser.get("radius_multiple", radius_multiple);
+  parser.get("colorSelect", colorSelect);
   parser.get("colorOption", colorOption);
   parser.get("resolution", resolution);
   parser.get("snapshot", snapshot);
@@ -45,6 +49,10 @@ int main(int argc, char** argv) {
   visualization.setRadiusMultiple(radius_multiple);
   visualization.setColorOption(colorOption);
   visualization.setResolution(resolution);
+  if (0<=colorSelect) {
+    visualization.setColorSelectionMethod(colorSelect);
+    visualization.setSelectionName(selectionName);
+  }
 
   // --- Load the data and create an image
   

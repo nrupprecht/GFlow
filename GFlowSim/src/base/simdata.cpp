@@ -9,9 +9,6 @@
 
 namespace GFlowSimulation {
 
-
-
-
   SimData::SimData(GFlow *gflow) : Base(gflow) {
     data_entries = vector<particle_data>(max_particle_types, particle_data(sim_dimensions));
     _number = vector<int>(max_particle_types, 0);
@@ -30,7 +27,6 @@ namespace GFlowSimulation {
     addIntegerData("ID");
   }
 
-  //! @brief Initialize the atom container.
   void SimData::initialize() {
     // Call base's initialize
     Base::initialize();
@@ -83,7 +79,7 @@ namespace GFlowSimulation {
 
   void SimData::post_integrate() {
     // Mark extraneous particles for removal
-    removeHaloAndGhostParticles();
+    removeGhostParticles();
 
     // Do actual particle removal.
     doParticleRemoval(); 
@@ -138,7 +134,7 @@ namespace GFlowSimulation {
 
   void SimData::sortParticles() {
     // We must first remove halo and ghost particles.
-    removeHaloAndGhostParticles();
+    removeGhostParticles();
     // Make sure all particles are valid, and compressed
     doParticleRemoval(); // This only sets the needs remake flag if it removes particles.
     // Quick sort
@@ -150,7 +146,7 @@ namespace GFlowSimulation {
 
   void SimData::sortParticles(Vec& direction) {
     // We must first remove halo and ghost particles.
-    removeHaloAndGhostParticles();
+    removeGhostParticles();
     // Make sure all particles are valid, and compressed
     doParticleRemoval(); // This only sets the needs remake flag if it removes particles.
     // FOR NOW: JUST SORT ALONG X AXIS
@@ -180,34 +176,6 @@ namespace GFlowSimulation {
       setNeedsRemake(true);
     }
     return removed_some;
-  }
-
-  void SimData::updateHaloParticles() {
-    /*
-    // Start simdata timer.
-    start_timer();
-
-    // First pass: update the primary (actual) particle from the force data of the halo particles.
-    // Doing this in two passes takes care of the fact that some particles may generate multiple halos.
-    // We only have to update the forces, and then let the integrator take care of the rest.
-    auto f = F();
-    for (int i=0; i<halo_map.size(); i+=2) {
-      int hid = halo_map[i]; // Halo id.
-      int pid = halo_map[i+1]; // Primary id.
-      // Update force
-      plusEqVec(f(pid), f(hid), sim_dimensions);
-    }
-    // Second pass: update the force of the halo particles to match that of the primary particle.
-    for (int i=0; i<halo_map.size(); i+=2) {
-      int hid = halo_map[i]; // Halo id.
-      int pid = halo_map[i+1]; // Primary id.
-      // Update force
-      copyVec(f(pid), f(hid), sim_dimensions);
-    }
-
-    // Start simdata timer.
-    stop_timer();
-    */
   }
 
   int SimData::requestVectorData(string name) {
@@ -267,47 +235,8 @@ namespace GFlowSimulation {
     else return -1;
   }
 
-  void SimData::createHaloOf(int id, const Vec& displacement) {
-    /*
-    // Record local ids
-    halo_map.push_back(_size); // Halo local id
-    halo_map.push_back(id);    // Original local id
-    // Make a copy of the particle
-    Vec x(sim_dimensions, X(id));
-    Vec v(sim_dimensions, V(id));
-    real radius = Sg(id);
-    real im = Im(id);
-    int type = Type(id);
-    // Add a particle to be the halo particle.
-    addParticle(x.data, v.data, radius, im, type);
-    int id2 = _size-1;
-    plusEqVec(X(id2), displacement.data, sim_dimensions); // Displace halo particle
-    // Increment the halo particles counter.
-    ++_number_halo;
-    //! \todo There may be other data we should copy
-    */
-  }
-
-  void SimData::removeHaloParticles() {
-    /*
-    // Start timer.
-    start_timer();
-
-    // Mark halo particles for removal
-    for (int i=0; i<halo_map.size(); i+=2) 
-      markForRemoval(halo_map[i]);
-    // Clear halo data
-    halo_map.clear();
-    // Clear the halo particle counter.
-    _number_halo = 0;
-
-    // Stop timer.
-    stop_timer();
-    */
-  }
-
-  void SimData::removeGhostParticles() { //**
-  #if USE_MPI == 1
+  void SimData::removeGhostParticles() {
+    #if USE_MPI == 1
     // Start timer.
     start_timer();
 
@@ -318,17 +247,12 @@ namespace GFlowSimulation {
 
     // Stop timer.
     stop_timer();
-  #endif
-  }
-
-  void SimData::removeHaloAndGhostParticles() {
-    removeGhostParticles();
-    removeHaloParticles();
+    #endif
   }
 
   void SimData::update() {
     /// Remove old halo and ghost particles
-    removeHaloAndGhostParticles();
+    removeGhostParticles();
 
     // Wrap the particles, so they are in their cannonical positions
     gflow->wrapPositions();
@@ -343,7 +267,6 @@ namespace GFlowSimulation {
 
       // If there are multiple processors.
       if (numProc>1) {
-
         // Move particles that belong to other domains to those domains, and delete them from here. Then receive
         // particles from other domains that belong to this domain.
         topology->exchange_particles();

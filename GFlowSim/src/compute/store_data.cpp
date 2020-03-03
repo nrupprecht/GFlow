@@ -5,8 +5,6 @@
 
 namespace GFlowSimulation {
 
-  StoreData::StoreData() : bounds(2), dataWidth(0), sim_dimensions(0), nTypes(0), write_processor_info(true) {}
-
   void StoreData::initialize(shared_ptr<SimData> sd) {
     // Make sure simData is non-null
     if (sd==nullptr) return;

@@ -218,9 +218,6 @@ namespace GFlowSimulation {
 
       // --> Post-forces
       for (auto m : modifiers) m->post_forces(); // -- This is where modifiers should do forces (if they need to)
-      // Update halo particles. This should be done after all force calculations, but before the next integration steps.
-      // For this reason, this occurs *after* modifiers do their post-force routine.
-      simData->updateHaloParticles();
       // Continue with normal order of updates.
       simData->post_forces();
       integrator->post_forces();                 // -- This is where VV second half kick happens (if applicable)

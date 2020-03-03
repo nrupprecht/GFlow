@@ -371,13 +371,8 @@ namespace GFlowSimulation {
       // 7 - angular velocity
       switch (color_option) {
         case 0: {
-
-          color_selection_method = 2;
-          selection_name = "F-M";
-  /*
           color_selection_method = 3;
           selection_name = "Type";
-          */
           break;
         }
         case 1: {
@@ -470,13 +465,23 @@ namespace GFlowSimulation {
         break;
       }
       case 1: {
-        // Color by magnitude.
-        float value = magnitudeVec(v_data, dimensions) / s_scale_max;
-        color = RGBApixel(floor(255*value), 0, 200*(1-value));
 
-        // Color by direction - only for 2+ dimensions, and only considers x,y directions.
-        float theta = atan2(v_data[1] - v_scale_average[1], v_data[0] - v_scale_average[0]);
-        color = colorAngle(theta);
+        switch (color_function_selection) {
+          default:
+          case 0: {
+            // Color by magnitude.
+            float value = magnitudeVec(v_data, dimensions) / v_scale_max;
+            color = RGBApixel(floor(255*value), 0, 200*(1-value));
+            break;
+          }
+          case 1: {
+            // Color by direction - only for 2+ dimensions, and only considers x,y directions.
+            float theta = atan2(v_data[1] - v_scale_average[1], v_data[0] - v_scale_average[0]);
+            color = colorAngle(theta);
+            break;
+          }
+        }
+
         break;
       }
       case 2: {

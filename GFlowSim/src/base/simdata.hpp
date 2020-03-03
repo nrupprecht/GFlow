@@ -77,9 +77,6 @@ namespace GFlowSimulation {
     //! \brief Remove particles that have NAN positions or velocities. Return true if any were removed. If the flag is set to true, do particle removal if any particles were marked for removal.
     bool removeBadParticles(bool=true);
 
-    //! \brief Update the primary particle that halo particles correspond to.
-    void updateHaloParticles();
-
     //! \brief Update particles on other processors.
     void startGhostParticleUpdates();
 
@@ -142,24 +139,10 @@ namespace GFlowSimulation {
     //! \brief Get the number of integer data entries.
     int nintegers() const { return data_entries[0].nintegers(); }
 
-    // --- Halo and Ghost particles
-
-    //! \brief Create a halo particle of a certain particle, with a certain displacement from the original particle.
-    //!
-    //! \param id The id of the particle to copy
-    //! \param displacement How should the halo particle be displaced relative to the original particle.
-    void createHaloOf(int, const Vec&);
-
-    //! \brief Mark all halo particles for removal and clear halo particle data.
-    void removeHaloParticles();
+    // --- Ghost particles
 
     //! \brief Mark all ghost particles for removal and clear ghost particle data.
     void removeGhostParticles();
-
-    //! \brief Remove both halo and ghost particles.
-    //!
-    //! This simply calls remove_halo_particles and remove_ghost_particles.
-    void removeHaloAndGhostParticles();
 
     //! \brief Update simdata, migrate particles to other processors, handle assignment and initialization of ghost particles.
     void update();
