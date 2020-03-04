@@ -48,9 +48,6 @@ int main(int argc, char **argv) {
   // MPI related.
   int rank(0), numProc(1);
 
-  // So arguments can be passed around.
-  char **processor_argv = argv;
-
   #if USE_MPI == 1
   MPI_Init(&argc, &argv);
   // Get rank and number of processors.
@@ -61,7 +58,7 @@ int main(int argc, char **argv) {
   MPIObject::mpi_broadcast(argc);
   vector<int> arg_sizes(argc, 0);
   // Allocate processor arguments.
-  processor_argv = new char*[argc];
+  char **processor_argv = new char*[argc];
 
   // Broadcast to everyone else.
   if (rank==0) {
@@ -169,6 +166,9 @@ int main(int argc, char **argv) {
     cout << "Illegal token in command line argument: " << tok.str << ". Exiting.\n";
     no_errors = false;
   }
+  // Make sure this gets deleted even if there was an error.
+  delete [] processor_argv;
+  // Now that that's done, check for errors.
   MPIObject::mpi_and(no_errors);
   if (!no_errors) {
     finalize_mpi();
@@ -288,12 +288,16 @@ int main(int argc, char **argv) {
   try {
     gflow = creator->createSimulation();
   }
+  catch (const Exception exc) {
+    cout << "Exception caught on rank: " << rank << ", Message: " << exc.message << "\n";
+    no_errors = false;
+  }
   catch (...) {
-    cout << "Creator encountered error while creating the simulation. Exiting.\n";
+    cout << "Creator encountered error (not inheriting from exception) on rank " << rank << " while creating the simulation. Exiting.\n";
     no_errors = false;
   }
   if (gflow==nullptr && no_errors) {
-    if (!quiet) cout << "GFlow was null. Exiting.\n";
+    if (!quiet) cout << "GFlow was null on rank " << rank << ". Exiting.\n";
     no_errors = false;
   }
   MPIObject::mpi_and(no_errors);
@@ -373,7 +377,7 @@ int main(int argc, char **argv) {
 
   // Set time step and request time
   if (!gflow->hasIntegrator()) {
-    if (!quiet) cout << "GFlow does not have an integrator. Exiting.";
+    if (!quiet) cout << "GFlow does not have an integrator on rank " << rank << ". Exiting.";
     finalize_mpi();
     return 0;
   }
@@ -400,7 +404,6 @@ int main(int argc, char **argv) {
     no_errors = false;
   }
   catch (const Exception exc) {
-    //if (!quiet)
     cout << "Exception caught on rank: " << rank << ", Message: " << exc.message << "\n";
     no_errors = false;
   }

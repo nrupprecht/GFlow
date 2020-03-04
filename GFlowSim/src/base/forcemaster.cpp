@@ -104,7 +104,7 @@ namespace GFlowSimulation {
     if (type==-1) return false;
     // Else, first make sure array is in bounds.
     if (type<0 || ntypes<=type) 
-      throw ParticleTypeError("From typeInteractions function.");
+      throw ParticleTypeError("From ForceMaster::typeInteracts(int) function. Type=" +toStr(type) + ". ntypes=" + toStr(ntypes));
     // If it is, return.
     return doesInteract[type];
   }
@@ -114,7 +114,7 @@ namespace GFlowSimulation {
     if (type1==-1 || type2==-1) return false;
     // Else, first make sure array is in bounds
     if (type1<0 || ntypes<=type1 || type2<0 || ntypes<type2) 
-      throw ParticleTypeError("From typeInteractions function.");
+      throw ParticleTypeError("From ForceMaster::typeInteracts(int, int) function. Type1=" + toStr(type1) + ", Type2=" + toStr(type2) + ". ntypes=" + toStr(ntypes));
     // If it is, return.
     return grid[type1][type2]!=nullptr;
   }
