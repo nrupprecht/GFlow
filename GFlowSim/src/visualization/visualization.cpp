@@ -399,14 +399,19 @@ namespace GFlowSimulation {
           selection_name = "StripeX";
           break;
         }
-        case 6: {
+        case 6: { // Color by proc #.
           color_selection_method = 3;
           selection_name = "Proc";
           break;
         }
-        case 7: {
+        case 7: { // Color by angular velocity.
           color_selection_method = 2;
           selection_name = "Om";
+          break;
+        }
+        case 8: { // Color by force.
+          color_selection_method = 2;
+          selection_name = "F-M";
           break;
         }
       }

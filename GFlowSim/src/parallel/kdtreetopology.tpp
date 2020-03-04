@@ -25,38 +25,10 @@ void KDTreeTopology::send_particle_data_relative(const vector<int>& send_id_list
   MPIObject::send_single(size, n_rank, send_size_tag);
   // Send the actual particles, if there are any.
   if (size>0) {
-    // Get data width from simdata.
-    int data_width = simData->data_width;
-    // Find the center of the neighbor's bounds.
-    RealType bcm[4], xrel[4]; // Assumes sim_dimensions <= 4.
-    get_neighbor_bounds(n_index).center(bcm);
-    // Make sure buffer is big enough to send data.
-    if (buffer.size()<size*data_width) buffer.resize(size*data_width);
-    // Send the actual data. Copy data into buffer
-    int n_vectors = simData->nvectors(), n_scalars = simData->nscalars(), n_integers = simData->nintegers();
-    for (int j=0; j<size; ++j) {
-      int id = send_id_list[j];
-      // Get the position of the particle, relative to the other processor.
-      gflow->getDisplacement(simData->X<particle_type>(id), bcm, xrel);
-      plusEqVec(xrel, bcm, sim_dimensions);
-      // Copy particle information to the buffer, using the relative position. 
-      // \todo Automate a way to specify arbitrary subsets of the particle data to send.
-      copyVec(xrel, &buffer[data_width*j], sim_dimensions); // Position
-      // Send the rest of the data the normal way. Pack vector data.
-      for (int i=1; i<n_vectors; ++i) 
-        copyVec(simData->VectorData<particle_type>(i, id), &buffer[data_width*j + i*sim_dimensions], sim_dimensions);
-      // Pack scalar data.
-      for (int i=0; i<n_scalars; ++i) 
-        buffer[data_width*j + n_vectors*sim_dimensions + i] = simData->ScalarData<particle_type>(i, id);
-      // Pack integer data.
-      for (int i=0; i<n_integers; ++i)
-        buffer[data_width*j + n_vectors*sim_dimensions + n_scalars + i] = byte_cast<RealType>(simData->IntegerData<particle_type>(i, id));
-    }
-
-    //simData->pack_buffer_relative(send_id_list, buffer, false);
-
-    // Send the data (non-blocking).
-    MPI_Isend(buffer.data(), size*data_width, MPI_FLOAT, n_rank, tag, MPI_COMM_WORLD, send_request);
+    Vec neighbor_center(sim_dimensions);
+    get_neighbor_bounds(n_index).center(neighbor_center.data);
+    simData->pack_buffer_relative<particle_type>(send_id_list, buffer, neighbor_center);
+    MPI_Isend(buffer.data(), size*simData->data_width, MPI_FLOAT, n_rank, tag, MPI_COMM_WORLD, send_request);
   }
   else *send_request = MPI_REQUEST_NULL;
 }

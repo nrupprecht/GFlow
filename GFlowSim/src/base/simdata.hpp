@@ -261,12 +261,18 @@ namespace GFlowSimulation {
 
     //! \brief Pack a buffer with whatever information is needed to create ghost particles.
     void pack_ghost_buffer(const vector<int>&, vector<real>&, const Vec&);
+
+    template<unsigned=0>
+    void pack_buffer_relative(const vector<int>&, vector<real>&, const Vec&);
     
     //! \brief Unpack a buffer of (full) particle data into any of the particle data arrays.
     //!
     //! By picking particle_type, this can be used to unpack owned or ghost particles.
     template<unsigned=0>
     void unpack_buffer(const int, const vector<real>&);
+
+    //! \brief Unpack a buffer of ghost particle information.
+    void unpack_ghost_buffer(const int, const vector<real>&, const int);
 
     // --- Friends
 

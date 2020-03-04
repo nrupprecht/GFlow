@@ -264,6 +264,35 @@ int& SimData::IntegerData(const int entry, const int id) {
 }
 
 template<unsigned particle_type>
+void SimData::pack_buffer_relative(const vector<int>& id_list, vector<real>& buffer, const Vec& center_point) {
+  int size = id_list.size();
+  if (buffer.size()<size*data_width) buffer.resize(size*data_width);
+  // Send the actual data. Copy data into buffer.
+  RealType dx[4]; // Assumes sim_dimensions <= 4.
+  int n_vectors = nvectors(), n_scalars = nscalars(), n_integers = nintegers();
+  auto x = X<particle_type>();
+  for (int j=0; j<size; ++j) {
+    int id = id_list[j];
+    // Get the position of the particle, relative to the other processor.
+    gflow->getDisplacement(x(id), center_point.data, dx);
+    plusEqVec(dx, center_point.data, sim_dimensions);
+    // Copy particle information to the buffer, using the relative position. 
+    // \todo Automate a way to specify arbitrary subsets of the particle data to send.
+    copyVec(dx, &buffer[data_width*j], sim_dimensions); // Position
+    // Send the rest of the data the normal way. Pack vector data.
+    for (int i=1; i<n_vectors; ++i) 
+      copyVec(VectorData<particle_type>(i, id), &buffer[data_width*j + i*sim_dimensions], sim_dimensions);
+    // Pack scalar data.
+    for (int i=0; i<n_scalars; ++i) 
+      buffer[data_width*j + n_vectors*sim_dimensions + i] = ScalarData<particle_type>(i, id);
+    // Pack integer data.
+    for (int i=0; i<n_integers; ++i)
+      buffer[data_width*j + n_vectors*sim_dimensions + n_scalars + i] = byte_cast<RealType>(IntegerData<particle_type>(i, id));
+  }
+  
+}
+
+template<unsigned particle_type>
 void SimData::unpack_buffer(const int n_particles, const vector<real>& buffer) {
   int n_vectors = nvectors(), n_scalars = nscalars(), n_integers = nintegers();
   for (int j=0; j<n_particles; ++j) {

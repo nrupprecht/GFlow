@@ -164,7 +164,6 @@ namespace GFlowSimulation {
       RealType cutoff = 2 * rd(id) * forceMaster->getMaxCutoff(type(id)) + skin_depth;
       // Check if the particle overlaps with another domain.
       topology->domain_overlaps(x(id), cutoff, overlaps);
-
       // Store the particle id in the send_ghost_list entry for every processor we need to send this particle to as a ghost.
       for (auto proc_n : overlaps) send_ghost_list[proc_n].push_back(id);            
     }
@@ -205,11 +204,6 @@ namespace GFlowSimulation {
 
     // Reset counter.
     _last_n_ghosts_sent = 0;
-
-    // Possibly get a pointer to angular velocity data.
-    scalar_access om;
-    if (simData->send_ghost_omega) om = simData->ScalarData("Om");
-
     // Update the positions information of ghost particles on other processors.
     ghost_send_timer.start_timer();
     int ghost_data_width = simData->ghost_data_width;
@@ -220,39 +214,9 @@ namespace GFlowSimulation {
       if (size>0) {
         // Update counter.
         _last_n_ghosts_sent += size;
-        // Make sure buffer is large enough.
-        if (buffer_list[i].size()<size*ghost_data_width) buffer_list[i].resize(size*ghost_data_width);
-
-        // Find the center of the neighbor's bounds.
-        RealType bcm[4], xrel[4]; // Assumes sim_dimensions <= 4.
-        get_neighbor_bounds(i).center(bcm);
-        
-        // Pack the data into buffer_list
-        int j = 0;
-        auto x = simData->X();
-        auto v = simData->V();
-        bool send_ghost_velocity = simData->send_ghost_velocity, send_ghost_omega = simData->send_ghost_omega;
-        for (int id : send_ghost_list[i]) {
-          // Get the position of the particle, relative to the other processor.
-          gflow->getDisplacement(x(id), bcm, xrel);
-          plusEqVec(xrel, bcm, sim_dimensions);
-          // Copy the (relative) vector to the buffer.
-          copyVec(xrel, &buffer_list[i][ghost_data_width*j], sim_dimensions);
-          int pointer = sim_dimensions;
-          // Possibly send velocity data.
-          if (send_ghost_velocity) {
-            copyVec(v(id), &buffer_list[i][ghost_data_width*j + pointer], sim_dimensions);
-            pointer += sim_dimensions; // Adjust counter.
-          }
-          // Possibly send angular velocity data.
-          if (send_ghost_omega) {
-            buffer_list[i][ghost_data_width*j + pointer] = om(id);
-            ++pointer; // Adjust counter.
-          }
-          // Increment.
-          ++j;
-        }
-        // Send the data (non-blocking) back to the processor.
+        Vec neighbor_center(sim_dimensions);
+        get_neighbor_bounds(i).center(neighbor_center.data);
+        simData->pack_ghost_buffer(send_ghost_list[i], buffer_list[i], neighbor_center);
         MPI_Isend(buffer_list[i].data(), size*ghost_data_width, MPI_FLOAT, neighbor_ranks[i], update_ghost_tag, MPI_COMM_WORLD, &send_request_list[i]);
       }
     }
@@ -284,37 +248,17 @@ namespace GFlowSimulation {
       }
     }
 
-    // Collect received data and pack it. Get ghost data entries.
-    auto x = simData->X<1>();
-    auto v = simData->V<1>();
-    bool send_ghost_velocity = simData->send_ghost_velocity, send_ghost_omega = simData->send_ghost_omega;
-    // Possibly get a pointer to angular velocity data.
-    scalar_access om = simData->ScalarData<1>("Om");
     // Receive all data. Since there are no ghosts, the id of the first ghost is 0.
-    for (int i=0, id=0; i<neighbor_ranks.size(); ++i) {
-      int size = recv_ghost_sizes[i];
+    int size = 0;
+    for (int i=0, id=0; i<neighbor_ranks.size(); ++i, id+=size) {
+      size = recv_ghost_sizes[i];
       if (size>0) {
         // Wait for request to be filled.
-        //MPIObject::wait(recv_request_list[i], ghost_wait_timer);
         MPIObject::wait(recv_request_list[i]);
-
-        // Unpack the position data into the ghost particles.
-        for (int j=0; j<size; ++j, ++id) {
-          copyVec(&recv_buffer[i][ghost_data_width*j], x(id), sim_dimensions);
-          int pointer = sim_dimensions;
-          // Possibly receive velocity data.
-          if (send_ghost_velocity) {
-            copyVec(&buffer_list[i][ghost_data_width*j + pointer], v(id), sim_dimensions);
-            pointer += sim_dimensions; // Adjust counter.
-          }
-          // Possibly receive angular velocity data.
-          if (send_ghost_omega) {
-            om(id) = buffer_list[i][ghost_data_width*j + pointer];
-            ++pointer; // Adjust counter.
-          }
-        }
+        simData->unpack_ghost_buffer(size, recv_buffer[i], id);
       }
     }
+
     ghost_recv_timer.stop_timer();
 
     // Wait for the data that we sent in send_ghost_updates to be sent, so resources can be released.

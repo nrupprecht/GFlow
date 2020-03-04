@@ -402,7 +402,7 @@ namespace GFlowSimulation {
       entry.add_integer_entry();
   }
 
-  void SimData::pack_buffer(const vector<int> &id_list, vector<real> &buffer, bool remove) {
+  void SimData::pack_buffer(const vector<int>& id_list, vector<real>& buffer, bool remove) {
     int size = id_list.size();
     // Make sure buffer is big enough to send data.
     if (buffer.size()<size*data_width) buffer.resize(size*data_width);
@@ -424,38 +424,55 @@ namespace GFlowSimulation {
     }
   }
 
-  void SimData::pack_ghost_buffer(const vector<int> &id_list, vector<real> &buffer, const Vec& dx) {
-    /*
-    int j = 0;
+  void SimData::pack_ghost_buffer(const vector<int>& id_list, vector<real>& buffer, const Vec& center_point) {
+    // We do buffer sizing here, if neccessary.
+    int size = id_list.size();
+    if (buffer.size()<size*ghost_data_width) buffer.resize(size*ghost_data_width);
     auto x = simData->X();
     auto v = simData->V();
-    bool send_ghost_velocity = simData->send_ghost_velocity, send_ghost_omega = simData->send_ghost_omega;
-
-    // Get the center of the bounds of this processor, so we can send particles with relative locations.
-    real bcm[4], xrel[4];
-    topology->getProcessBounds().center(bcm);
-
-    for (int id : id_list) {
-      // Get the position of the particle, relative to the other processor.
-      gflow->getDisplacement(x(id), bcm, xrel);
-      plusEqVec(xrel, bcm, sim_dimensions);
-      // Copy the (relative) vector to the buffer.
-      copyVec(xrel, &buffer_list[i][ghost_data_width*j], sim_dimensions);
-      int pointer = sim_dimensions;
+    auto om = simData->ScalarData("Om"); // This should be null if "Om" is not a valid data name.
+    for (int j=0; j<size; ++j) {
+      int id = id_list[j];
+      // Get the position of the particle, relative to the other processor. Find the minimum image distance (dx)
+      // between the given center point (which will be the center of another processor's bounds) and the particle
+      // position, then give the ghost particle the position center_point + dx.
+      real* buffer_x = &buffer[ghost_data_width*j], dx[4];
+      gflow->getDisplacement(x(id), center_point.data, dx);
+      copyVec(center_point.data, buffer_x, sim_dimensions);
+      plusEqVec(buffer_x, dx, sim_dimensions);
       // Possibly send velocity data.
+      int pointer = sim_dimensions;
       if (send_ghost_velocity) {
-        copyVec(v(id), &buffer_list[i][ghost_data_width*j + pointer], sim_dimensions);
+        copyVec(v(id), &buffer[ghost_data_width*j + pointer], sim_dimensions);
         pointer += sim_dimensions; // Adjust counter.
       }
       // Possibly send angular velocity data.
       if (send_ghost_omega) {
-        buffer_list[i][ghost_data_width*j + pointer] = om(id);
+        buffer[ghost_data_width*j + pointer] = om(id);
         ++pointer; // Adjust counter.
       }
-      // Increment.
-      ++j;
     }
-    */
+  }
+
+  void SimData::unpack_ghost_buffer(const int n_particles, const vector<real>& buffer, const int start_id) {
+    auto x = simData->X<1>();
+    auto v = simData->V<1>();
+    auto om = simData->ScalarData<1>("Om"); // This should be null if "Om" is not a valid data name.
+    // Unpack the position data into the ghost particles.
+    for (int j=0, id=start_id; j<n_particles; ++j, ++id) {
+      copyVec(&buffer[ghost_data_width*j], x(id), sim_dimensions);
+      int pointer = sim_dimensions;
+      // Possibly receive velocity data.
+      if (send_ghost_velocity) {
+        copyVec(&buffer[ghost_data_width*j + pointer], v(id), sim_dimensions);
+        pointer += sim_dimensions; // Adjust counter.
+      }
+      // Possibly receive angular velocity data.
+      if (send_ghost_omega) {
+        om(id) = buffer[ghost_data_width*j + pointer];
+        ++pointer; // Adjust counter.
+      }
+    }
   }
 
   void SimData::swap_particle(int id1, int id2) {
