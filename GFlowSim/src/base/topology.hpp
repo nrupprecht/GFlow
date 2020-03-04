@@ -128,6 +128,12 @@ namespace GFlowSimulation {
 
   protected:
 
+    //! \brief Function that changes the number counter in simdata.
+    void change_simdata_number(const int, const int) const;
+
+    //! \brief Function that sets a simdata number counter to zero.
+    void clear_simdata_number(const int) const;
+
     //! \brief Allocate the arrays used to store particle transfer data.
     void allocate_arrays();
 

@@ -475,6 +475,14 @@ namespace GFlowSimulation {
     }
   }
 
+  int SimData::get_data_width() const {
+    return data_width;
+  }
+
+  int SimData::get_ghost_data_width() const {
+    return ghost_data_width;
+  }
+
   void SimData::swap_particle(int id1, int id2) {
     // Get global IDs
     int g1 = Id(id1);

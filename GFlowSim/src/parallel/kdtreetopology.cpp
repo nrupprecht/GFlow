@@ -178,7 +178,7 @@ namespace GFlowSimulation {
     ghost_send_timer.stop_timer();
 
     // Reset n_ghosts.
-    simData->_number[1] = 0;
+    clear_simdata_number(1);
     // Get ghosts from all neighbors.
     ghost_recv_timer.start_timer();
     for (int i=0; i<neighbor_ranks.size(); ++i) {
@@ -187,7 +187,7 @@ namespace GFlowSimulation {
       // Receive ghost particles, create new particles for them.
       recv_ghost_sizes[i] = recv_new_particle_data<1>(n_rank, recv_buffer[i], send_ghost_tag);
       // Update number of ghosts.
-      simData->_number[1] += recv_ghost_sizes[i];
+      change_simdata_number(1, recv_ghost_sizes[i]);
     }
     ghost_recv_timer.stop_timer();
 
@@ -206,7 +206,7 @@ namespace GFlowSimulation {
     _last_n_ghosts_sent = 0;
     // Update the positions information of ghost particles on other processors.
     ghost_send_timer.start_timer();
-    int ghost_data_width = simData->ghost_data_width;
+    int ghost_data_width = simData->get_ghost_data_width();
     for (int i=0; i<neighbor_ranks.size(); ++i) {
       // How many ghost particles are hosted on the i-th processor, and should have their information returned to there.
       int size = send_ghost_list[i].size();
@@ -235,7 +235,7 @@ namespace GFlowSimulation {
 
     // Start non-blocking receives of ghost particle data.
     ghost_recv_timer.start_timer();
-    int ghost_data_width = simData->ghost_data_width;
+    int ghost_data_width = simData->get_ghost_data_width();
     for (int i=0; i<neighbor_ranks.size(); ++i) {
       int size = recv_ghost_sizes[i];
       // Only expect a message if size is positive.

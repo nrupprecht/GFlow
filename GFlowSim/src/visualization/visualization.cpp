@@ -361,14 +361,15 @@ namespace GFlowSimulation {
 
     if (color_selection_method==0) {
       // Use a predefined method to color the particles.
-      // 0 - Type
-      // 1 - Random
-      // 2 - Velocity magnitude
-      // 3 - Orientation
-      // 4 - Distance
-      // 5 - x-stripe
-      // 6 - processor
-      // 7 - angular velocity
+      // 0 - Type.
+      // 1 - Random coloring.
+      // 2 - Velocity magnitude.
+      // 3 - Orientation.
+      // 4 - Distance traveled.
+      // 5 - x-stripe.
+      // 6 - processor #.
+      // 7 - angular velocity.
+      // 8 - Force magnitude.
       switch (color_option) {
         case 0: {
           color_selection_method = 3;
@@ -387,6 +388,7 @@ namespace GFlowSimulation {
         case 3: {
           color_selection_method = 1;
           selection_name = "V";
+          color_function_selection = 1;
           break;
         }
         case 4: {

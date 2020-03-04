@@ -1,6 +1,7 @@
 #include "topology.hpp"
 // Other files
 #include "../gflow.hpp"
+#include "simdata.hpp"
 
 namespace GFlowSimulation {
 
@@ -76,6 +77,14 @@ namespace GFlowSimulation {
     process_bounds = b;
     return true;
     #endif
+  }
+
+  void Topology::change_simdata_number(const int index, const int amount) const {
+    simData->_number[index] += amount;
+  }
+
+  void Topology::clear_simdata_number(const int index) const {
+    simData->_number[index] = 0;
   }
   
   void Topology::allocate_arrays() {

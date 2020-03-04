@@ -262,6 +262,9 @@ namespace GFlowSimulation {
     //! \brief Pack a buffer with whatever information is needed to create ghost particles.
     void pack_ghost_buffer(const vector<int>&, vector<real>&, const Vec&);
 
+    //! \brief Pack a buffer with all data, but use the position of the particles relative to the given point.
+    //!
+    //! This function is used/useful for sending ghost particles, but is not needed to update ghost particles.
     template<unsigned=0>
     void pack_buffer_relative(const vector<int>&, vector<real>&, const Vec&);
     
@@ -274,12 +277,18 @@ namespace GFlowSimulation {
     //! \brief Unpack a buffer of ghost particle information.
     void unpack_ghost_buffer(const int, const vector<real>&, const int);
 
+    //! \brief Get the data width for a whole particle.
+    int get_data_width() const;
+
+    //! \brief Get the data width for a ghost particle.
+    int get_ghost_data_width() const;
+
     // --- Friends
 
     // So ForceMaster can set ntypes.
     friend class ForceMaster;
     friend class DataMaster;
-    friend class KDTreeTopology;
+    friend class Topology;
 
   private:
     // --- Helper functions.
