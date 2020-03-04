@@ -110,6 +110,9 @@ namespace GFlowSimulation {
     void set_types() const {
       f0 = Base::simData->F<first_type>();
       f1 = Base::simData->F<second_type>();
+
+      v0 = Base::simData->V<first_type>();
+      v1 = Base::simData->V<second_type>();
     }
 
     //! \brief The force kernel for hard sphere forces.
@@ -123,7 +126,7 @@ namespace GFlowSimulation {
       
       // Calculate relative velocity.
       RealType V[dims];
-      subtract_vec<dims>(Base::simData->V(id1), Base::simData->V(id0), V);
+      subtract_vec<dims>(v1(id1), v0(id0), V);
       // Calculate normal velocity.
       RealType vn = dot_vec<dims>(V, X);
       // Calculate the magnitude of the force
@@ -165,7 +168,7 @@ namespace GFlowSimulation {
     //! \brief The dissipation constant.
     RealType dissipation = DEFAULT_HARD_SPHERE_DISSIPATION;
 
-    mutable vec_access f0, f1;
+    mutable vec_access f0, f1, v0, v1;
   };
 
   // --- Define specific forces
@@ -584,9 +587,9 @@ namespace GFlowSimulation {
       */
       
       // Calculate potential
-      if (Interaction::do_potential) {
-        //Interaction::potential += 0;
-      }
+      // if (Interaction::do_potential) {
+      //   Interaction::potential += 0;
+      // }
       // Calculate virial
       if (Interaction::do_virial) {
         Interaction::virial += Fn*r;
@@ -651,7 +654,7 @@ namespace GFlowSimulation {
 
 
   /*
-  * \brief Generic class for Hertz-type forces.
+  * \brief Generic class for Hooke-type forces.
   *
   */
   template<int dims, template<int, class, bool> class handler> 
