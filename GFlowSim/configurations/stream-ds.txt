@@ -1,0 +1,83 @@
+// Granular "wind tunnel" simulation
+// For small radii, e.g. 0.0125-0.015, needed a max dt of 0.0002.
+
+// VARIABLES
+Var: MinR=0.030
+Var: MaxR=0.036
+Var: Velocity=2.2
+Var: Length=25
+Var: Height=10
+Var: Front=10
+Var: Mu=0.75
+Var: Radius=1
+Var: kappaN=100000
+Var: kappaT=29000
+Var: gammaN=10000
+Var: gammaT=10000
+Var: phi=0.9069
+
+
+// This is a 2d simulation
+Dimensions: 2
+
+// Set the simulation bounds
+Bounds: {
+  : -Front, Length  // X
+  : -Height, Height // Y
+}
+
+Integrator: VelocityVerlet
+
+Boundary: {
+  : Open
+  : Repulse
+}
+
+// Set the number of particle types
+NTypes: 2
+
+// Creates a random force network of HardSphere and Lennard-Jones forces
+Force-grid: HardSphereDs
+
+// Fill an area with particles
+Fill: Area {
+  // Fill all the simulation with particles
+  Bounds: Full
+
+  Template: TypeA {
+    Radius: Proportional {
+      Min: MinR
+      Max: MaxR
+    }
+    Mass: Density=1
+    Type: 0
+  }
+
+  Number: Phi=phi {
+    TypeA : 1
+  }
+
+  Excluded: Sphere {
+    : 0, 0
+    : Radius + 4*MinR
+  }
+
+  Velocity: Velocity, 0
+}
+
+Fill: Circle {
+  Center: 0, 0
+  Sigma: MinR
+  Radius: Radius
+  Type: 1
+}
+
+HSRelax: 0.5
+
+Modifier: StreamTunnel {
+  Velocity: Velocity
+  MinR: MinR
+  MaxR: MaxR
+  Phi: phi 
+}
+

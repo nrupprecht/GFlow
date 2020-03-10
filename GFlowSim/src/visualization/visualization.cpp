@@ -384,10 +384,8 @@ namespace GFlowSimulation {
         }
         case 2: {
           // Check whether velocity magnitude is an entry. If not, try to use the velocity itself.
-          if (
-            auto it = std::find(scalar_data.begin(), scalar_data.end(), "V-M"); 
-            it!=scalar_data.end()
-          ) {
+	  auto it = std::find(scalar_data.begin(), scalar_data.end(), "V-M");
+          if (it!=scalar_data.end()) {
             color_selection_method = 2;
             selection_name = "V-M";
           }
