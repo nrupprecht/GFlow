@@ -112,27 +112,18 @@ namespace GFlowSimulation {
     real max_bound = gflow->getBounds().max[0];
     for (int id=0; id<simData->size_owned(); ++id) {
       if (type(id)<0) continue;
-      if (x(id, 0)<entry_threshold) {
-        // Set the velocity.
-        zeroVec(v(id), sim_dimensions);
-        v(id, 0) = driving_velocity;
-        plusEqVecScaled(v(id), f(id), 0.05f*DEFAULT_DAMPING_CONSTANT*im(id), sim_dimensions);
-        // Zero the force.
-        zeroVec(f(id), sim_dimensions);
-      }
-      /*
-      else if (exit_threshold < x(id, 0)) {
-        // Set the velocity.
-        zeroVec(v(id), sim_dimensions);
-        v(id, 0) = driving_velocity;
-        plusEqVecScaled(v(id), f(id), 0.05f*DEFAULT_DAMPING_CONSTANT*im(id), sim_dimensions);
-        // Zero the force.
-        zeroVec(f(id), sim_dimensions);
-      }
-      */
-      
       // Remove particle.
       if (x(id, 0)>max_bound) simData->markForRemoval(id);
+      else {
+        if (x(id, 0)<entry_threshold || exit_threshold < x(id, 0)) {
+          // Set the velocity.
+          zeroVec(v(id), sim_dimensions);
+          v(id, 0) = driving_velocity;
+          plusEqVecScaled(v(id), f(id), 0.05f*DEFAULT_DAMPING_CONSTANT*im(id), sim_dimensions);
+          // Zero the force.
+          zeroVec(f(id), sim_dimensions);
+        }
+      }
     }
   }
 
