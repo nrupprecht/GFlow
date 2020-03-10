@@ -14,7 +14,19 @@ namespace GFlowSimulation {
   *  a vector<vector<float>> (for movies). Meta-data such as the physical bounds, data width, number of
   *  particle types, etc. must be set from the outside if using the createVideo or create image functions,
   *  but will be taken from the load object if using the load_and_create function.
-  */
+  * 
+  *  There are a number of pre-defined coloring options that can be set using the "setColorOption" function.
+  *   0 - Type.
+  *   1 - Random coloring.
+  *   2 - Velocity magnitude.
+  *   3 - Orientation.
+  *   4 - Distance traveled.
+  *   5 - x-stripe.
+  *   6 - Processor #.
+  *   7 - Angular velocity.
+  *   8 - Force magnitude.
+  * 
+  **/
   class Visualization {
   public:
     //! \brief Constructor.

@@ -2,15 +2,15 @@
 // Other files
 #include "../utility/printingutility.hpp"
 #include "../base/simdata.hpp"
-//#include "../visualization/visualization.hpp"
 
 namespace GFlowSimulation {
   // Constructor
   PositionData::PositionData(GFlow *gflow) : DataObject(gflow, "Pos"), visual_bounds(gflow->getBounds()) {
     // The data to gather
     add_vector_data_entry("X");
-    add_vector_data_entry("V");
-    add_magnitude_data_entry("F");
+    // add_vector_data_entry("V");
+    add_magnitude_data_entry("V");
+    // add_magnitude_data_entry("F");
     add_scalar_data_entry("Sg");
     if (gflow->getNTypes()>1) add_integer_data_entry("Type");
     //add_scalar_data_entry("StripeX");

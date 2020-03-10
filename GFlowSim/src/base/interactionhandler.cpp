@@ -10,17 +10,7 @@
 namespace GFlowSimulation {
 
   InteractionHandler::InteractionHandler(GFlow *gflow) : Base(gflow), velocity(gflow->getSimDimensions()), process_bounds(sim_dimensions), simulation_bounds(sim_dimensions),
-    border_type_up(sim_dimensions, 0), border_type_down(sim_dimensions, 0) {
-    // By default, use fixed remakes when doing parallel runs.
-    #if USE_MPI==1
-    if (MPIObject::getNumProc()>1) {
-      update_decision_type = 1;
-      // Default number of steps.
-      if      (sim_dimensions==2) update_delay_steps = 15;
-      else if (sim_dimensions==3) update_delay_steps = 46;
-    }
-    #endif // USE_MPI==1
-  };
+    border_type_up(sim_dimensions, 0), border_type_down(sim_dimensions, 0) {};
 
   InteractionHandler::~InteractionHandler() {
     if (positions) dealloc_array_2d(positions);

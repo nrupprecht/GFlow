@@ -251,10 +251,7 @@ namespace GFlowSimulation {
   }
 
   void SimData::update() {
-    /// Remove old halo and ghost particles
     removeGhostParticles();
-
-    // Wrap the particles, so they are in their cannonical positions
     gflow->wrapPositions();
 
     #if USE_MPI == 1
@@ -270,12 +267,8 @@ namespace GFlowSimulation {
         // Move particles that belong to other domains to those domains, and delete them from here. Then receive
         // particles from other domains that belong to this domain.
         topology->exchange_particles();
-
-        // --- Look for particles that need to be ghosts on other processors.
-        if (gflow->use_ghosts()) {
-          // Create ghost particles.
-          topology->create_ghost_particles();
-        }
+        // For testing purposes, we can *not* use ghost particles. This shouldn't be done when trying to actually simulate something.
+        if (gflow->use_ghosts()) topology->create_ghost_particles();
       }
       // If there is only one processor, even though this is an MPI run.
       else doParticleRemoval();
@@ -523,15 +516,20 @@ namespace GFlowSimulation {
   }
 
   int SimData::quick_sort_partition(int start, int end, int dim) {
-    real pivot = X((start + end)/2, dim);
+    auto x = X();
+    // Pivot on the median of the first, middle, and last element in the array.
+    real trio[] = { x(start, dim), x((start+end)/2, dim), x(end, dim)};
+    std::sort(trio, trio+3);
+    real pivot = trio[1];
+    //real pivot = X((start + end)/2, dim);
     int i = start-1, j = end+1;
     while (true) {
       do {
         ++i;
-      } while (X(i, dim)<pivot);
+      } while (x(i, dim)<pivot);
       do {
         --j;
-      } while (X(j, dim)>pivot);      
+      } while (x(j, dim)>pivot);      
       // Termination condition
       if (j<=i) return j;
       // If not, swap particles i and j

@@ -383,8 +383,18 @@ namespace GFlowSimulation {
           break;
         }
         case 2: {
-          color_selection_method = 1;
-          selection_name = "V";
+          // Check whether velocity magnitude is an entry. If not, try to use the velocity itself.
+          if (
+            auto it = std::find(scalar_data.begin(), scalar_data.end(), "V-M"); 
+            it!=scalar_data.end()
+          ) {
+            color_selection_method = 2;
+            selection_name = "V-M";
+          }
+          else {
+            color_selection_method = 1;
+            selection_name = "V";
+          }
           break;
         }
         case 3: {
@@ -440,12 +450,18 @@ namespace GFlowSimulation {
 
   inline bool Visualization::do_checks(const vector<float>& data) {
     // Check what data we have, make sure we can make the requested image
-    if (dataWidth==0 || pos_place<0) {
+    if (dataWidth==0) {
+      cout << "Data width is zero. This means there is no data, or something is very wrong. Exiting.\n";
+      return false;
+    }
+    if (pos_place<0) {
       cout << "No position data detected. This is essential. Exiting.\n";
       return false;
     }
-
-    // Return success
+    if (sg_place<0) {
+      cout << "No radius data detected. This is essential. Exiting.\n";
+      return false;
+    }
     return true;
   }
 
@@ -469,12 +485,11 @@ namespace GFlowSimulation {
   inline void Visualization::determine_color(RGBApixel& color, int i, const float *v_data, float &s_data, int &i_data) {
     switch (color_selection_method) {
       case 0: {
-        // Color randomly
+        // Color randomly, by order in the data. This will cause particles to switch colors when exchanging particles.
         color = getColor(i);
         break;
       }
       case 1: {
-
         switch (color_function_selection) {
           default:
           case 0: {
@@ -490,13 +505,22 @@ namespace GFlowSimulation {
             break;
           }
         }
-
         break;
       }
       case 2: {
+        float value = 0.f;
         // Color by magnitude.
-        //float value = s_data / s_scale_max;
-        float value = log( 1. + 100.*s_data / s_scale_max) / log(101.);
+        switch (color_function_selection) {
+          default:
+          case 0: {
+            float value = s_data / s_scale_max;
+            break;
+          }
+          case 1: {
+            float value = log( 1. + 100.*s_data / s_scale_max) / log(101.);
+            break;
+          }
+        }
         color = RGBApixel(floor(255*value), 0, 200*(1-value));
         break;
       }
@@ -506,84 +530,6 @@ namespace GFlowSimulation {
         break;
       }
     }
-
-    /*
-    if (!colorBank.empty()) {
-      switch (color_option) {
-        
-        // 0 - Type
-        // 1 - Random
-        // 2 - Velocity magnitude
-        // 3 - Orientation
-        // 4 - Distance
-        // 5 - x-stripe
-        // 6 - processor
-        // 7 - angular velocity
-
-        default:
-        case 0: { // Color by type
-          color = getColor(type);
-          break;
-        }
-        case 1: { // Color randomly
-          color = getColor(i);
-          break;
-        }
-        case 2: { // Color by velocity
-          if (vel) {
-            float V = magnitudeVec(vel, dimensions)/maxVsqr;
-            color = RGBApixel(floor(255*V), 0, 200*(1-V));
-          }
-          break;
-        }
-        case 3: { // Color by orientation
-          if (vel) {
-            float theta = atan2(vel[1] - aveV[1], vel[0] - aveV[0]);
-            color = colorAngle(theta);
-          }
-          break;
-        }
-        case 4: { // Color by distance
-          float D = maxDistance==0 ? 1. : log(1.f + distance)/log(1.f + maxDistance);
-          color = RGBApixel(floor(255*D), floor(255*(1-D)), 0);
-          break;
-        }
-        case 5: { // Color by xstripe
-          RealType stripe_width = 0.5;
-          int s = (stripex - bounds.min[1])/stripe_width;
-          int c = s%4;	  
-          switch (c) {
-            case 0:
-              color = RGB_Green;
-              break;
-            case 1:
-              color = RGB_Blue;
-              break;
-            case 2:
-              color = RGB_White;
-              break;
-            case 3:
-              color = RGB_Red;
-              break;
-          }
-          break;
-        }
-        case 6: { // Color by processor data
-          color = getColor(proc);
-          break;
-        }
-        case 7: {
-          RealType scaled = fabs(omega/(2.*PI));
-          RealType sign = omega>0. ? 1. : -1.;
-          const RealType control = 100.;
-          RealType factor = 0.5*sign*control*scaled/(1.+control*scaled) + 0.5;
-          // Select color
-          color = RGBApixel(0, 255*factor, 255*(1-factor)); // Temporary
-          break;
-        }
-      }
-    }
-    */
   }
 
   inline void Visualization::standard_camera_setup() {
