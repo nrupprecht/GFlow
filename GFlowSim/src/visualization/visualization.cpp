@@ -77,7 +77,7 @@ namespace GFlowSimulation {
   void Visualization::setColorOption(int opt) {
     color_selection_method = 0;
     color_option = opt; 
-    //findPlaces();
+    findPlaces();
   }
 
   void Visualization::setResolution(int r) {
