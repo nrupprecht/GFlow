@@ -97,6 +97,8 @@ namespace GFlowSimulation {
     //! \brief Find all the requisite place pointers.
     inline void findPlaces();
 
+    inline bool chooseSelectionType(const unsigned, const string&);
+
     //! \brief Do whatever checks are needed to make sure everything is in order to render a frame.
     inline bool do_checks(const vector<float>&);
 

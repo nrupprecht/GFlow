@@ -76,8 +76,8 @@ namespace GFlowSimulation {
 
   void Visualization::setColorOption(int opt) {
     color_selection_method = 0;
-    color_option = opt;
-    findPlaces();
+    color_option = opt; 
+    //findPlaces();
   }
 
   void Visualization::setResolution(int r) {
@@ -374,8 +374,7 @@ namespace GFlowSimulation {
       // 8 - Force magnitude.
       switch (color_option) {
         case 0: {
-          color_selection_method = 3;
-          selection_name = "Type";
+          chooseSelectionType(3, "Type");
           break;
         }
         case 1: {
@@ -383,47 +382,33 @@ namespace GFlowSimulation {
           break;
         }
         case 2: {
-          // Check whether velocity magnitude is an entry. If not, try to use the velocity itself.
-	  auto it = std::find(scalar_data.begin(), scalar_data.end(), "V-M");
-          if (it!=scalar_data.end()) {
-            color_selection_method = 2;
-            selection_name = "V-M";
-          }
-          else {
-            color_selection_method = 1;
-            selection_name = "V";
-          }
+          if (!chooseSelectionType(2, "V-M")) 
+            chooseSelectionType(1, "V");
           break;
         }
         case 3: {
-          color_selection_method = 1;
-          selection_name = "V";
+          chooseSelectionType(1, "V");
           color_function_selection = 1;
           break;
         }
         case 4: {
-          color_selection_method = 3;
-          selection_name = "Distance";
+          chooseSelectionType(2, "Distance");
           break;
         }
         case 5: {
-          color_selection_method = 2;
-          selection_name = "StripeX";
+          chooseSelectionType(2, "StripeX");
           break;
         }
         case 6: { // Color by proc #.
-          color_selection_method = 3;
-          selection_name = "Proc";
+          chooseSelectionType(3, "Proc");
           break;
         }
         case 7: { // Color by angular velocity.
-          color_selection_method = 2;
-          selection_name = "Om";
+          chooseSelectionType(2, "Om");
           break;
         }
         case 8: { // Color by force.
-          color_selection_method = 2;
-          selection_name = "F-M";
+          chooseSelectionType(2, "F-M");
           break;
         }
       }
@@ -444,6 +429,42 @@ namespace GFlowSimulation {
     shift += scalar_data.size();
     if (color_selection_method==3) i_select = find(selection_name, integer_data) + shift;
     else i_select = -1;
+  }
+
+  inline bool Visualization::chooseSelectionType(const unsigned try_selection_method, const string& try_name) {
+    switch (try_selection_method) {
+      case 0:
+        return true;
+      case 1: {
+        auto it = std::find(vector_data.begin(), vector_data.end(), try_name);
+        if (it!=vector_data.end()) {
+          color_selection_method = try_selection_method;
+          selection_name = try_name;
+          return true;
+        }
+        else return false;
+      }
+      case 2: {
+        auto it = std::find(scalar_data.begin(), scalar_data.end(), try_name);
+        if (it!=scalar_data.end()) {
+          color_selection_method = try_selection_method;
+          selection_name = try_name;
+          return true;
+        }
+        else return false;
+      }
+      case 3: {
+        auto it = std::find(integer_data.begin(), integer_data.end(), try_name);
+        if (it!=integer_data.end()) {
+          color_selection_method = try_selection_method;
+          selection_name = try_name;
+          return true;
+        }
+        else return false;
+      }
+      default:
+        return false;
+    }
   }
 
   inline bool Visualization::do_checks(const vector<float>& data) {
@@ -511,15 +532,15 @@ namespace GFlowSimulation {
         switch (color_function_selection) {
           default:
           case 0: {
-            float value = s_data / s_scale_max;
+            value = (s_data - s_scale_min) / (s_scale_max - s_scale_min);
             break;
           }
           case 1: {
-            float value = log( 1. + 100.*s_data / s_scale_max) / log(101.);
+            value = log( 1. + 100.*s_data / s_scale_max) / log(101.);
             break;
           }
         }
-        color = RGBApixel(floor(255*value), 0, 200*(1-value));
+        color = RGBApixel(floor(255*value), 0, ceil(200*(1-value)));
         break;
       }
       case 3: {
