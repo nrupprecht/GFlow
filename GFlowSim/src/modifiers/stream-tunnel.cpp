@@ -51,7 +51,7 @@ namespace GFlowSimulation {
     // of the leftmost processor, but still partially overlapped with entry_threshold, tried to add particles too. So particles were created
     // on top of particles that were being pushed out from the leftmost processor. It was a bad idea.
     if (processor_bounds.min[0]==simulation_bounds.min[0] && cutoff_position<current_x_coord) {
-      // Create a triangular lattice of particles. Assumes 2D. \todo Make more general.
+      // Create a triangular lattice of particles. Assumes 2D.
       real ave_d = min_r + max_r;
       real tri_x = 0.5*sqrt(3.)*ave_d;
       real dy = spacing_factor*ave_d;
@@ -95,7 +95,6 @@ namespace GFlowSimulation {
     // Only run the stream tunnel during an actual simulation and if we have a topology object.
     if (topology==nullptr || gflow->getRunMode()!=RunMode::SIM) return;
     Bounds processor_bounds = topology->getProcessBounds();
-    Bounds bounds = gflow->getBounds();
 
     // We don't overlap with anything. Only processors with processor_bounds.min[0]==simulation_bounds.min[0] should
     // *add* new particles to the system, but any processor that overlaps the entry_threshold must apply special damping
@@ -141,6 +140,5 @@ namespace GFlowSimulation {
     parser.firstArg("Phi", phi_target);
     parser.firstArg("Velocity", driving_velocity);
   }
-
 
 }
