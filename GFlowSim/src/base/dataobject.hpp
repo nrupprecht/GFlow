@@ -70,6 +70,9 @@ namespace GFlowSimulation {
     //! \brief Set the locals_changed flag.
     void setLocalsChanged(bool);
 
+    //! \brief Set the gather bounds.
+    void setGatherBounds(const Bounds&);
+
     //! \brief Reset the total objects counter to zero.
     //static void resetTotalObjects();
 

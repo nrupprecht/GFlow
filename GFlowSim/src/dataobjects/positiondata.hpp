@@ -41,12 +41,9 @@ namespace GFlowSimulation {
     // when it resets the clock and closes the door.
     friend class Demon;
 
-  private:
+  protected:
 
-    //! \brief The bounds in which we want to record data.
-    Bounds visual_bounds;
-
-    //! \brief  The time steps of when the data was gathered
+    //! \brief The time steps of when the data was gathered
     vector<float> timeStamps;
 
     //! \brief Contains all the relevant data for a time step.
@@ -58,14 +55,20 @@ namespace GFlowSimulation {
     //! \brief Initial positions of particle.
     vector<float> initial_data;
 
-    // Data names and places
+    //! \brief Vector data names.
     vector<string> vector_data_entries;
+    //! \brief Vector magnitude data names.
+    vector<string> magnitude_data_entries;
+    //! \brief Scalar data names.
     vector<string> scalar_data_entries;
+    //! \brief Integer data names.
     vector<string> integer_data_entries;
 
+    //! \brief A store data object.
     StoreData storeData;
 
-    vector<string> magnitude_data_entries;
+    //! \brief A function that can be used to only record some particles.
+    std::function<bool(shared_ptr<SimData>, int)> select_function;
   };
 
 }

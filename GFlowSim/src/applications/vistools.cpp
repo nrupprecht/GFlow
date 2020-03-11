@@ -11,7 +11,8 @@ int main(int argc, char** argv) {
 
   // --- Options
   string directory = "RunData";
-  string subdirectory = "general/Pos";
+  string subdirectory = "general";
+  string dataName = "Pos";
   string saveDirectory = "RunData";
   string selectionName = "V";
   double radius_multiple = 1.;
@@ -29,6 +30,7 @@ int main(int argc, char** argv) {
   parser.get("saveDirectory", saveDirectory); // But the defualt can be overruled
   parser.get("selectionName", selectionName);
   parser.get("subdirectory", subdirectory);
+  parser.get("data", dataName);
   parser.get("radius_multiple", radius_multiple);
   parser.get("colorSelect", colorSelect);
   parser.get("colorOption", colorOption);
@@ -55,7 +57,6 @@ int main(int argc, char** argv) {
   }
 
   // --- Load the data and create an image
-  
   if (snapshot) {
     visualization.load_and_create(directory+"/general/Snapshot/data.csv", saveDirectory+"/general/Snapshot");
     // Compute field properties
@@ -65,11 +66,11 @@ int main(int argc, char** argv) {
     }
   }
   else {
-    visualization.load_and_create(directory+"/"+subdirectory+"/data.csv", saveDirectory+"/"+subdirectory);
+    visualization.load_and_create(directory+"/"+subdirectory+"/"+dataName+"/data.csv", saveDirectory+"/"+subdirectory+"/"+dataName);
     // Compute field properties
     if (field) {
       FieldProperties field_properties;
-      field_properties.load_and_create(directory+"/"+subdirectory);
+      field_properties.load_and_create(directory+"/"+subdirectory+"/"+dataName);
     }
   }
 

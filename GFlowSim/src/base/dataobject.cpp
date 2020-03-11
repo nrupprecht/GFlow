@@ -34,6 +34,10 @@ namespace GFlowSimulation {
     locals_changed = r;
   }
 
+  void DataObject::setGatherBounds(const Bounds& bnds) {
+    gather_bounds = bnds;
+  }
+
   int DataObject::getObjectCounter() {
     return object_counter;
   }

@@ -101,7 +101,6 @@ namespace GFlowSimulation {
     cout << "Starting image write.\n";
     // Timing
     auto start_time = current_time();
-    
     // Create frames
     for (int i=0; i<data.size(); ++i) {
       string fileName = dirName + "/frame" + toStr(i) + ".bmp";
@@ -149,6 +148,9 @@ namespace GFlowSimulation {
   }
 
   void Visualization::createImage(string fileName, const vector<float>& data) {
+
+    cout << data.size() << endl;
+
     // Get some data from the bounds
     float buffer = 0.f;
     float wx = bounds.wd(0) + 2*buffer, wy = bounds.wd(1) + 2*buffer, left = bounds.min[0] - buffer, bott = bounds.min[1] - buffer;
@@ -293,6 +295,7 @@ namespace GFlowSimulation {
   }
 
   inline void Visualization::findVectorScaleFactors(const vector<float>& data_frame) {
+    if (data_frame.empty()) return;
     if (v_select<0 || dataWidth<=v_select) {
       cout << "Error: invalid vector selection.\n";
       return;
@@ -308,6 +311,7 @@ namespace GFlowSimulation {
   }
 
   inline void Visualization::findScalarScaleFactors(const vector<float>& data_frame) {
+    if (data_frame.empty()) return;
     if (s_select<0 || dataWidth<=s_select) {
       cout << "Error: invalid scalar selection.\n";
       return;
@@ -324,6 +328,7 @@ namespace GFlowSimulation {
   }
 
   inline void Visualization::determineScaleFactors(const vector<float>& data_frame) {
+    if (data_frame.empty()) return;
     switch (color_selection_method) {
       case 0: {
         break;

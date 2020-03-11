@@ -109,12 +109,55 @@ namespace GFlowSimulation {
     // Set up data
     data = vector<float>(dataWidth*number, 0);
 
+    // Fill the array.
+    int data_pointer = 0;
+    for (int n=0; n<size; ++n) {
+      // If not a particle, continue.
+      if (simData->Type(n)<0) continue;
+
+      // Copy data
+      for (auto v : vector_data_positions) {
+        auto vd = simData->VectorData(v);
+        if (!vd.isnull()) copyVec(vd(n), &data[data_pointer], sim_dimensions);
+        data_pointer += sim_dimensions;
+      }
+      for (auto m : magnitude_data_positions) {
+        auto vd = simData->VectorData(m);
+        if (!vd.isnull()) data[data_pointer] = magnitudeVec(vd(n), sim_dimensions);
+        ++data_pointer;
+      }
+      for (auto s : scalar_data_positions) {
+        auto sd = simData->ScalarData(s);
+        if (!sd.isnull()) data[data_pointer] = sd[n];
+        ++data_pointer;
+      }
+      for (auto i : integer_data_positions) {
+        auto id = simData->IntegerData(i);
+        if (!id.isnull()) data[data_pointer] = id[n]; 
+        ++data_pointer;
+      }
+      if (write_processor_info) {
+        data[data_pointer] = simData->getTopology()->getRank();
+        ++data_pointer;
+      }
+    }
+  }
+
+  void StoreData::store(vector<float>& data, std::function<bool(std::shared_ptr<SimData>, int)> select_function) {
+    data.clear();
+    int size = simData->size_owned();
+    int number = simData->number_owned();
+
+    // If there are no particles/no data, return
+    if (dataWidth==0 || simData==nullptr || number==0) return;
+    
     // Fill the array
     int data_pointer = 0;
     for (int n=0; n<size; ++n) {
-      // If not a particle, continue
-      if (simData->Type(n)<0) continue;
+      // If not a particle, or this is not a selected particle, continue.
+      if (simData->Type(n)<0 || !select_function(simData, n)) continue;
       // Copy data
+      data.resize(data.size() + dataWidth);
       for (auto v : vector_data_positions) {
         auto vd = simData->VectorData(v);
         if (!vd.isnull()) copyVec(vd(n), &data[data_pointer], sim_dimensions);
@@ -151,7 +194,10 @@ namespace GFlowSimulation {
     writeHeader(fout, positions.size());
 
     // Print out the actual data - first the number of particles, then the particle data
-    for (auto &v : positions) fout << v.size() << "," << toCSV(v) << "\n";
+    for (auto &v : positions) {
+      if (v.empty()) fout << "0\n";
+      else fout << v.size() << "," << toCSV(v) << "\n";
+    }
     fout.close();
 
     // Return success
@@ -167,7 +213,8 @@ namespace GFlowSimulation {
     writeHeader(fout, 1);
 
     // Print out the actual data - first the number of particles, then the particle data
-    fout << positions.size() << "," << toCSV(positions) << "\n";
+    if (positions.empty()) fout << "0\n";
+    else fout << positions.size() << "," << toCSV(positions) << "\n";
     fout.close();
 
     // Return success

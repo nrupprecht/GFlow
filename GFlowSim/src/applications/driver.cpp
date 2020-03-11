@@ -98,6 +98,7 @@ int main(int argc, char **argv) {
 
   // Data to gather
   bool animate = false; // Record positions
+  real cavity = -1.f;
   bool snapshot = false;
   bool sectorData = false; // Record sector information
   bool ke = false; // Record kinetic energy
@@ -178,6 +179,7 @@ int main(int argc, char **argv) {
   parser.get("debug", debug_flag); 
   parser.get("load", load);
   parser.get("animate", animate);
+  parser.get("cavity", cavity);
   parser.get("snapshot", snapshot);
   parser.get("sectorData", sectorData);
   parser.get("KE", ke);
@@ -351,13 +353,18 @@ int main(int argc, char **argv) {
   if (velocityvp)  gflow->addDataObject(make_shared<VelocityVolumePlot>(gflow));
   if (radiusvp)    gflow->addDataObject(make_shared<RadiusVolumePlot>(gflow));
   if (stripex)     gflow->addModifier(make_shared<StripeX>(gflow));
-  // Add this last, as it takes the most time.
+
+  real videoTime = startRecTime>0 ? time - startRecTime : time;
+  if (videoLength<0) videoLength = videoTime;
   if (animate) {
     auto pd = make_shared<PositionData>(gflow);
     gflow->addDataObject(pd);
-    real videoTime = startRecTime>0 ? time - startRecTime : time;
-    if (videoLength<0) videoLength = videoTime;
     if (videoTime>0) pd->setFPS((20.*videoLength)/videoTime);
+  }
+  if (0<cavity) {
+    auto cv = make_shared<CavityPositions>(gflow, cavity);
+    gflow->addDataObject(cv);
+    if (videoTime>0) cv->setFPS((20.*videoLength)/videoTime);
   }
   if (fps>0) gflow->setFPS(fps); // Do after data objects are loaded
   gflow->setDMCmd(argc, argv);

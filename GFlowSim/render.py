@@ -12,15 +12,17 @@ ap = argparse.ArgumentParser()
 ap.add_argument("-ext", "--extension", required=False, default='bmp', help="extension name. default is 'bmp'.")
 ap.add_argument("-o", "--output", required=False, default='output.mp4', help="output video file")
 ap.add_argument("-dir", "--directory", required=False, default='RunData', help="Directory in which the run data is stored.")
+ap.add_argument("-data", "--dataname", required=False, default="Pos", help="Name of the data to use to make images.")
 args = vars(ap.parse_args())
 
 # Arguments
 ext = args['extension']
 output = args['output']
 dir_path = args['directory']
+data_name = args["dataname"]
 
 # Look for images in the 'Pos' subdirectory
-load_path = dir_path + "/general/Pos"
+load_path = dir_path + "/general/" + data_name
 save_path = dir_path + "/" + output
 
 print ("Looking for images in {}.".format(load_path))

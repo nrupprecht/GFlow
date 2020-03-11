@@ -5,6 +5,7 @@
 
 // General objects
 #include "dataobjects/averagedata.hpp"
+#include "dataobjects/cavity-positions.hpp"
 #include "dataobjects/clustering.hpp"
 #include "dataobjects/ending-snapshot.hpp"
 #include "dataobjects/kineticenergytypesdata.hpp"

@@ -2,6 +2,7 @@
 
 ColorOption=0
 Directory="RunData"
+Data="Pos"
 
 if [ $1 ]
 then 
@@ -13,5 +14,11 @@ then
     Directory=$2
 fi
 
-./bin/vistools -colorOption=$ColorOption -directory=$Directory
-python render.py -dir=$Directory
+if [ $3 ]
+then
+    Data=$3
+fi
+
+./bin/vistools -colorOption=$ColorOption -directory=$Directory -data=$Data
+
+python render.py -dir=$Directory -data=$Data

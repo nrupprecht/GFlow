@@ -5,16 +5,12 @@
 
 namespace GFlowSimulation {
   // Constructor
-  PositionData::PositionData(GFlow *gflow) : DataObject(gflow, "Pos"), visual_bounds(gflow->getBounds()) {
-    // The data to gather
+  PositionData::PositionData(GFlow *gflow) : DataObject(gflow, "Pos") {
+    // The data to gather.
     add_vector_data_entry("X");
-    // add_vector_data_entry("V");
     add_magnitude_data_entry("V");
-    // add_magnitude_data_entry("F");
     add_scalar_data_entry("Sg");
     if (gflow->getNTypes()>1) add_integer_data_entry("Type");
-    //add_scalar_data_entry("StripeX");
-    //add_scalar_data_entry("Om");
   };
 
   void PositionData::pre_integrate() {
@@ -24,7 +20,7 @@ namespace GFlowSimulation {
     storeData.set_integer_data(integer_data_entries);
     storeData.initialize(simData);
     // Do this after initialize, so bounds are not overwritten.
-    storeData.set_data_boundary(visual_bounds);
+    storeData.set_data_boundary(gather_bounds);
     // Store initial data (t=0 data).
     storeData.store(initial_data);
   }
@@ -33,15 +29,11 @@ namespace GFlowSimulation {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
 
-    // Record what time it was
-    float time = Base::gflow->getElapsedTime();
-    timeStamps.push_back(time);
-
-    // Record all the data
+    // Record and store all the data, optionally using a selection function.
     vector<float> data;
-
-    // Store the data for this processor.
-    storeData.store(data);
+    timeStamps.push_back(gflow->getElapsedTime());
+    if (static_cast<bool>(select_function)) storeData.store(data, select_function);
+    else storeData.store(data);
 
     // Collect addition data from other processors.
     MPIObject::mpi_reduce0_position_data(data);
@@ -84,7 +76,7 @@ namespace GFlowSimulation {
   }
 
   void PositionData::set_visual_bounds(const Bounds& bnds) {
-    visual_bounds = bnds;
+    gather_bounds = bnds;
   }
 
 }

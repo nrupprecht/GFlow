@@ -29,6 +29,8 @@ namespace GFlowSimulation {
 
     //! \brief Store data to a vector.
     void store(vector<float>&);
+    //! \brief Store data to a vector of particles that fit the criteria of some boolean function.
+    void store(vector<float>&, std::function<bool(std::shared_ptr<SimData>, int)>);
 
     //! \brief Write a collection of data frames to a csv file.
     bool write(const string&, const vector<vector<float> >&);
