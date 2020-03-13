@@ -12,7 +12,7 @@ int main(int argc, char** argv) {
   // --- Options
   string directory = "RunData";
   string subdirectory = "general";
-  string dataName = "Pos";
+  string dataName = "Pos-1";
   string saveDirectory = "RunData";
   string selectionName = "V";
   double radius_multiple = 1.;
@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
     }
   }
   else {
-    visualization.load_and_create(directory+"/"+subdirectory+"/"+dataName+"/data.csv", saveDirectory+"/"+subdirectory+"/"+dataName);
+    visualization.load_and_create(directory+"/"+subdirectory+"/"+dataName+"/"+dataName+".csv", saveDirectory+"/"+subdirectory+"/"+dataName);
     // Compute field properties
     if (field) {
       FieldProperties field_properties;

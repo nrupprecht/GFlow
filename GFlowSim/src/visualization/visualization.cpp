@@ -14,7 +14,7 @@ namespace GFlowSimulation {
   bool Visualization::load_and_create(string loadName, string saveName) {
     // Create a loader to load the data
     auto start_load = current_time();
-    cout << "Starting load...\n";
+    cout << "Starting load of [" << loadName << "] ...\n";
     LoadData loader;
     if (!loader.load(loadName)) return false;
     auto  end_load = current_time();
