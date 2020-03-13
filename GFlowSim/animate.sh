@@ -2,7 +2,7 @@
 
 ColorOption=0
 Directory="RunData"
-Data="Pos"
+Data="Pos-1"
 
 if [ $1 ]
 then 
