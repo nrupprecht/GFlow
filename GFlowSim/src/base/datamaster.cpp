@@ -115,7 +115,7 @@ namespace GFlowSimulation {
       start_timer();
       // Call for all data objects.
       for (auto& dob : dataObjects) {
-	if (dob) dob->post_integrate();
+	      if (dob) dob->post_integrate();
       }
       // Stop timing.
       stop_timer();
@@ -162,14 +162,14 @@ namespace GFlowSimulation {
         }
         case DataObjectType::VOLUMEPLOT: {
           has_volumeplot_objects = true;
+          break;
         }
         case DataObjectType::GENERAL: {
           has_general_objects = true;
           break;
         }
-        default: {
+        default:
           break;
-        }
       }
     }
 

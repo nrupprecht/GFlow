@@ -116,6 +116,7 @@ int main(int argc, char **argv) {
   bool aveV = false;
   bool aveP = false;
   bool dev = false;
+  real cavity_stat = 0;
   bool minDistances = false;
   bool percolation = false;
   bool psnapshot = false;
@@ -197,6 +198,7 @@ int main(int argc, char **argv) {
   parser.get("aveV", aveV);
   parser.get("aveP", aveP);
   parser.get("dev", dev);
+  parser.get("cavity-stat", cavity_stat);
   parser.get("minDistances", minDistances);
   parser.get("percolation", percolation);
   parser.get("psnapshot", psnapshot);
@@ -342,6 +344,7 @@ int main(int argc, char **argv) {
   if (aveV)        gflow->addDataObject(make_shared<AverageVelocityData>(gflow));
   if (aveP)        gflow->addDataObject(make_shared<AveragePositionData>(gflow));
   if (dev)         gflow->addDataObject(make_shared<OscillationData>(gflow));
+  if (0<cavity_stat) gflow->addDataObject(make_shared<CavityStatistics>(gflow, cavity_stat));
   if (minDistances)gflow->addDataObject(make_shared<MinInteractingDistance>(gflow));
   if (percolation) gflow->addDataObject(make_shared<PercolationData>(gflow, skin));
   if (psnapshot)   gflow->addDataObject(make_shared<PercolationSnapshot>(gflow, skin));

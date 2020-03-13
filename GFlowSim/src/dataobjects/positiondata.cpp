@@ -42,24 +42,11 @@ namespace GFlowSimulation {
   }
 
   bool PositionData::writeToFile(string fileName, bool useName) {
-    /*
     // The name of the directory for this data
-    string dirName = fileName;
-    if (*fileName.rbegin()=='/') // Make sure there is a /
-      dirName += dataName+"/";
-    else 
-      dirName += ("/"+dataName+"/");
-    // Make a directory for the data
-    mkdir(dirName.c_str(), 0777);
-    */
-    
-    // The name of the directory for this data
-    string dirName = _correctDirName(fileName);
+    string dirName = useName ? _correctDirName(fileName) : fileName;
     // Create a directory for all the data
-    mkdir(dirName.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH); //, 0777);
-    string name = dirName+dataName+"-"+toStr(object_counter)+".csv";
-
-    return storeData.write(name, positions);
+    mkdir(dirName.c_str(), 0777);
+    return storeData.write(dirName+dataName+"-"+toStr(object_counter)+".csv", positions);
   }
 
   void PositionData::add_vector_data_entry(string entry) {

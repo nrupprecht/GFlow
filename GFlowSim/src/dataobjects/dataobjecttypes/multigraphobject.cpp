@@ -15,13 +15,11 @@ namespace GFlowSimulation {
     resetData();
   }
 
-  bool MultiGraphObject::writeToFile(string fileName, bool make_directory) {
+  bool MultiGraphObject::writeToFile(string fileName, bool useName) {
     // The name of the directory for this data
     string dirName = _correctDirName(fileName);
-    // Create a directory for all the data
-    if (make_directory) mkdir(dirName.c_str(), 0777);
-    string name = dirName+dataName+"-"+toStr(object_counter)+".csv";
-    return MultiGraphData::write_to_file(name);
+    mkdir(dirName.c_str(), 0777);
+    return MultiGraphData::write_to_file(dirName, dataName+"-"+toStr(object_counter));
   }
 
 }

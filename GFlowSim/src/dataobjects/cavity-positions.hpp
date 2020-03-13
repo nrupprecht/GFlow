@@ -15,9 +15,6 @@ namespace GFlowSimulation {
   public:
     CavityPositions(GFlow*, real);
 
-    virtual void post_step() override;
-
-    virtual bool writeToFile(string, bool) override;
   private:
     //! \brief Only particles with v_x < limit_velocity will be recorded.
     real limit_velocity;

@@ -16,7 +16,7 @@ namespace GFlowSimulation {
     //! \brief Write data to a file - if true, the string is a path, and you should use your own name as the file name.
     //!
     //! Returns true for success.
-    virtual bool write_to_file(const string&);
+    virtual bool write_to_file(const string&, const string&);
 
     //! \brief Compute averages of data.
     real ave(int);

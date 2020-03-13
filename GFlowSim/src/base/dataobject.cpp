@@ -50,13 +50,15 @@ namespace GFlowSimulation {
     lastRecording = t;
   }
 
-  string DataObject::_correctDirName(string fileName) {
-    string dirName = fileName;
-    if (*fileName.rbegin()=='/') // Make sure there is a /
-      dirName += dataName+"/";
-    else 
-      dirName += ("/"+dataName+"-"+toStr(object_counter)+"/");
-    return dirName;
+  string DataObject::_correctDirName(string dirName /*fileName*/) {
+    return dirName + ((*dirName.rbegin()=='/') ? "" : "/") + dataName+"-"+toStr(object_counter)+"/";
+
+    // string dirName = fileName;
+    // if (*fileName.rbegin()=='/') // Make sure there is a /
+    //   dirName += dataName+"-"+toStr(object_counter)+"/";
+    // else 
+    //   dirName += ("/"+dataName+"-"+toStr(object_counter)+"/");
+    // return dirName;
   }
 
   void DataObject::_makeDir(string dirName) {

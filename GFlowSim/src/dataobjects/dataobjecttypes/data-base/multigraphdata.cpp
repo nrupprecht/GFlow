@@ -24,13 +24,13 @@ namespace GFlowSimulation {
     resetData();
   };
 
-  bool MultiGraphData::write_to_file(const string& fileName) {
+  bool MultiGraphData::write_to_file(const string& dirName, const string& dataName) {
     // Check if there's anything to do
     if (multi_data.empty() || multi_data[0].empty()) return true;
-    
-    ofstream fout(fileName);
+
+    ofstream fout(dirName+dataName+".csv");
     if (fout.fail()) {
-      cout << "File [" << fileName << "] failed to open for MultiGraphData write.\n";
+      cout << "File [" << (dirName+"/"+dataName+".csv") << "] failed to open for MultiGraphData write.\n";
       return false;
     }
     // Print out the data
@@ -46,8 +46,11 @@ namespace GFlowSimulation {
     }
     fout.close();
     // Print out all the axes labels.
-    fout.open(fileName+"-axes.csv");
-    if (fout.fail()) return false;
+    fout.open(dirName+"/axes.csv");
+    if (fout.fail()) {
+      cout << "File [" << (dirName+"/axes.csv") << "] failed to open for MultiGraphData write.\n";
+      return false;
+    }
     for (int i=0; i<ndata; ++i)
       if (write_data[i]) fout << axis_x << "," << axis_y[i] << endl;
     fout.close();

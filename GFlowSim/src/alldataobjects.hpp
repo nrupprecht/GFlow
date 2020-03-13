@@ -36,6 +36,7 @@
 // Multigraph objects
 #include "dataobjects/multigraphobjects/average-position-data.hpp"
 #include "dataobjects/multigraphobjects/average-velocity-data.hpp"
+#include "dataobjects/multigraphobjects/cavity-statistics.hpp"
 #include "dataobjects/multigraphobjects/groupnetforce.hpp"
 #include "dataobjects/multigraphobjects/groupangular.hpp"
 #include "dataobjects/multigraphobjects/lineentropicforce.hpp"

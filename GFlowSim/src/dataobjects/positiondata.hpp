@@ -24,14 +24,20 @@ namespace GFlowSimulation {
     virtual void post_step() override;
 
     //! \brief Write data to a file - if true, the string is a path, and you should use your own name as the file name.
-    // Returns true for success.
+    //!
+    //! Returns true for success.
     virtual bool writeToFile(string, bool=true) override;
 
+    //! \brief Request to store a vector data entry.
     void add_vector_data_entry(string);
+    //! \brief Request to store the magnitude of a vector data entry.
     void add_magnitude_data_entry(string);
+    //! \brief Request to store a scalar data entry.
     void add_scalar_data_entry(string);
+    //! \brief Request to store an integer data entry.
     void add_integer_data_entry(string);
 
+    //! \brief Clear all the requested data entries, of every type.
     void clear_all_data_entries();
 
     //! \brief Set the visual bounds. Only particles within these bounds will be saved.
