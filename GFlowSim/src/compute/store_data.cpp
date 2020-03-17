@@ -103,19 +103,16 @@ namespace GFlowSimulation {
     data.clear();
     int size = simData->size_owned();
     int number = simData->number_owned();
-
     // If there are no particles/no data, return
     if (dataWidth==0 || simData==nullptr || number==0) return;
-    // Set up data
-    data = vector<float>(dataWidth*number, 0);
 
     // Fill the array.
     int data_pointer = 0;
     for (int n=0; n<size; ++n) {
       // If not a particle, continue.
-      if (simData->Type(n)<0) continue;
-
+      if (simData->Type(n)<0 || !bounds.contains(simData->X(n))) continue;
       // Copy data
+      data.resize(data.size() + dataWidth);
       for (auto v : vector_data_positions) {
         auto vd = simData->VectorData(v);
         if (!vd.isnull()) copyVec(vd(n), &data[data_pointer], sim_dimensions);
@@ -147,7 +144,6 @@ namespace GFlowSimulation {
     data.clear();
     int size = simData->size_owned();
     int number = simData->number_owned();
-
     // If there are no particles/no data, return
     if (dataWidth==0 || simData==nullptr || number==0) return;
     
@@ -155,7 +151,7 @@ namespace GFlowSimulation {
     int data_pointer = 0;
     for (int n=0; n<size; ++n) {
       // If not a particle, or this is not a selected particle, continue.
-      if (simData->Type(n)<0 || !select_function(simData, n)) continue;
+      if (simData->Type(n)<0 || !bounds.contains(simData->X(n)) || !select_function(simData, n)) continue;
       // Copy data
       data.resize(data.size() + dataWidth);
       for (auto v : vector_data_positions) {
