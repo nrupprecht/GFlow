@@ -401,6 +401,9 @@ namespace GFlowSimulation {
     //! \brief Timer used to time how long the body execution takes.
     TimedObject body_timer;
 
+    //! \brief Timer used to time how long the simulation took running modifiers.
+    TimedObject modifier_timer;
+
     //! \brief Timer used to time how much time mpi particle exchange operations take up. This timer should be started and stopped 
     //! by classes invoking MPI.
     TimedObject mpi_exchange_timer;

@@ -64,33 +64,33 @@ namespace GFlowSimulation {
 
   protected:
     //! \brief The current time step.
-    RealType dt;
+    RealType dt = 1e-4;
     //! \brief Whether we should adjust dt or not.
-    bool adjust_dt;
+    bool adjust_dt = true;
     //! \brief Minimum acceptable timestep.
-    RealType min_dt;
+    RealType min_dt = 1e-6;
     //! \brief Maximum acceptable timestep.
-    RealType max_dt;
+    RealType max_dt = 0.002;
 
     //! \brief Target motion factor.
     //!
     //! How many timesteps we want it to take for a particle to traverse its own radius.
-    int target_steps;
+    int target_steps = 20;
 
     //! \brief How many steps between checking velocities.
-    int step_delay;
+    int step_delay = 10;
 
     //! \brief Count steps between checking velocities.
-    int step_count;
+    int step_count = 0;
 
     //! \brief Whether the integrator should use the velocity to calculate the timestep.
-    bool use_v;
+    bool use_v = true;
 
     //! \brief Whether the integrator should use the acceleration to calculate the timestep.
-    bool use_a;
+    bool use_a = false;
 
     //! \brief A characteristic length to use in the calculation of time step size.
-    RealType characteristic_length;
+    RealType characteristic_length = 0.05;
   };
 
 }

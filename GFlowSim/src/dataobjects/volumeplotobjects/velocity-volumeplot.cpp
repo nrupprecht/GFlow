@@ -12,7 +12,7 @@ namespace GFlowSimulation {
     auto v = simData->V();
     Vec V(2);
     for (int i=0; i<simData->size_owned(); ++i) {
-      if (focus_bounds.contains(x(i))) {
+      if (gather_bounds.contains(x(i))) {
         // Have the pointer of V point to v.
         V.wrap(v(i), 2);
         // Add to bin by position.

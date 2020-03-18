@@ -10,14 +10,12 @@ namespace MPIObject {
 
   #if USE_MPI == 1
   //! \brief MPI Type functions. This allows MPI types to be statically determined in template functions.
-  template<typename T> inline MPI_Datatype mpi_type() {
-    throw false;
-    return MPI_INT;
-  }
+  template<typename T> inline MPI_Datatype mpi_type();
   template<> inline MPI_Datatype mpi_type<float>() { return MPI_FLOAT; }
   template<> inline MPI_Datatype mpi_type<double>() { return MPI_DOUBLE; }
   template<> inline MPI_Datatype mpi_type<char>() { return MPI_CHAR; }
   template<> inline MPI_Datatype mpi_type<int>() { return MPI_INT; }
+  template<> inline MPI_Datatype mpi_type<bool>() { return MPI_INT; }
   #endif // USE_MPI == 1
 
   inline int getRank() {
@@ -115,6 +113,14 @@ namespace MPIObject {
     // If rank 0, gather to the same buffer.
     if (rank==0) MPI_Reduce(MPI_IN_PLACE, buffer, counts, mpi_type<T>(), MPI_SUM, 0, MPI_COMM_WORLD);
     else MPI_Reduce(buffer, buffer, counts, mpi_type<T>(), MPI_SUM, 0, MPI_COMM_WORLD);
+    #endif
+  }
+
+  //! \brief Do an mpi reduce, sum a vector of terms on node 0.
+  template<typename T> 
+  inline void mpi_sum0(vector<T>& buffer) {
+    #if USE_MPI == 1
+    mpi_sum0(buffer.data(), buffer.size());
     #endif
   }
 

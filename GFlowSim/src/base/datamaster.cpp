@@ -398,7 +398,7 @@ namespace GFlowSimulation {
     if (Base::gflow->getTotalTime()>0 && TimedObject::getTimingOn()) {
       fout << "Timing breakdown:\n";
       if (numProc>1) fout << "(Averages)\n";
-      constexpr int entries = 9;
+      constexpr int entries = 10;
       double timing[entries], total = 0;
       string labels[entries];
       // Set timing entries.
@@ -420,11 +420,13 @@ namespace GFlowSimulation {
       labels[7] = "MPI Exchange";
       timing[8] = gflow->mpi_ghost_timer.get_time();
       labels[8] = "MPI Ghosts";
+      timing[9] = gflow->modifier_timer.get_time();
+      labels[9] = "Modifiers";
       for (int i=0; i<entries; ++i) total += timing[i];
       double forces_time = timing[2] + timing[3] + timing[4];
       double mpi_time = timing[7] + timing[8];
 
-
+      // Here, we gather all the timing data and put it into rank 0's timing database.
       if (numProc>1) {
         vector<double> timing_vector(numProc);
         for (int i=0; i<entries; ++i) {
@@ -457,6 +459,7 @@ namespace GFlowSimulation {
         fout << "  -- Forces:                  " << toStrPP(forces_time/run_time*100) << sep << forces_time << "\n";
         fout << "  -- Data objects:            " << toStrPP(timing[5]/run_time*100) << sep << timing[5] << "\n";
         fout << "  -- Simdata updates:         " << toStrPP(timing[6]/run_time*100) << sep << timing[6] << "\n";
+        fout << "  -- Modifiers:               " << toStrPP(timing[9]/run_time*100) << sep << timing[9] << "\n";
         if (mpi_time>0) fout << "  -- MPI related:             " << toStrPP(mpi_time/run_time*100) << sep << mpi_time << "\n";
         
         fout << "  -- Other:                   " << std::setprecision(3) << toStrPP((1. - total/run_time)*100) << sep << run_time - total << "\n";
@@ -521,17 +524,21 @@ namespace GFlowSimulation {
       }
       fout << "\n";
       fout << "  - Number of particles:      " << particles << "\n";
-      int types = simData->ntypes();
-      if (types>1) {
-        int *count = new int[types];
-        for (int ty=0; ty<types; ++ty) count[ty] = 0;
-        for (int n=0; n<simData->number(); ++n) ++count[simData->Type(n)];
-        for (int ty=0; ty<types; ++ty)
-          fout << "     Type " << toStr(ty) << ":                  " << count[ty] << " (" << 
-            100 * count[ty] / static_cast<RealType>(simData->number()) << "%)\n";
-        delete [] count;
+    }
+
+    int types = simData->ntypes();
+    if (types>1) {
+      vector<int> count(types, 0);
+      for (int n=0; n<simData->number(); ++n) ++count[simData->Type(n)]; // We should have number==size_owned
+      MPIObject::mpi_sum0(count);
+      if (rank==0) {
+        for (int i=0; i<types; ++i)
+          fout << "     Type " << toStr(i) << ":                  " << count[i] << " (" << 
+            100 * count[i] / static_cast<RealType>(particles) << "%)\n";
       }
-      
+    }
+
+    if (rank==0) { 
       // Calculate packing fraction.
       RealType phi = vol/Base::gflow->getBounds().vol();
       fout << "  - Packing fraction:         " << phi << "\n";

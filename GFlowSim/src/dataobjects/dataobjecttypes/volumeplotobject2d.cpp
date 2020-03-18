@@ -7,23 +7,22 @@ namespace GFlowSimulation {
   // --- VolumePlotObject2D ---
 
   VolumePlotObject2D::VolumePlotObject2D(GFlow *gflow, const string& name, int width) : DataObject(gflow, name, DataObjectType::VOLUMEPLOT), 
-    data_width(width), focus_bounds(2)
+    data_width(width)
   {
-    focus_bounds = gflow->getBounds();
-    if (width<=0) throw false; // \todo Real Exception.
+    if (width<=0) throw Exception("Data width is <= 0 in VolumePlotObject2D constructor.");
     // Create some default entry names.
     for (int i=0; i<data_width; ++i) entry_names.push_back("value-"+toStr(i));
   };
 
   void VolumePlotObject2D::pre_integrate() {
     // If needed, set the focus bounds to be the simulation bounds.
-    if (focus_bounds.vol()==0) focus_bounds = gflow->getBounds();
+    if (gather_bounds.vol()==0) gather_bounds = gflow->getBounds();
 
     // If binX, binY not set, choose automatically.
     int new_bin_x = binX, new_bin_y = binY;
     if (binX==0 || binY==0) {
-      RealType wx = focus_bounds.wd(0);
-      RealType wy = focus_bounds.wd(1);
+      RealType wx = gather_bounds.wd(0);
+      RealType wy = gather_bounds.wd(1);
       // Set up bins so the larger direction has default_max_bins # of bins.
       if (wx<wy) {
         new_bin_y = default_max_bins;
@@ -55,11 +54,11 @@ namespace GFlowSimulation {
     if (fout.fail()) return false;
 
     // Print out the data
-    RealType dx = focus_bounds.wd(0) / binX, dy = focus_bounds.wd(1) / binY;
+    RealType dx = gather_bounds.wd(0) / binX, dy = gather_bounds.wd(1) / binY;
     for (int bx=0; bx<binX; ++bx) 
       for (int by=0; by<binY; ++by) {
         // Print coordinates of the center of the bin.
-        fout << focus_bounds.min[0] + (bx + 0.5)*dx << "," << focus_bounds.min[1] + (by + 0.5)*dy;
+        fout << gather_bounds.min[0] + (bx + 0.5)*dx << "," << gather_bounds.min[1] + (by + 0.5)*dy;
         // Print out data
         for (int d=0; d<data_width; ++d)
           fout << "," << (counts[bx][by]>0 ? binning[bx][by][d] / counts[bx][by] : 0 );
@@ -102,8 +101,8 @@ namespace GFlowSimulation {
     binX = by;
     binY = by;
     // Calculate invdx, invdy
-    invdx = binX / focus_bounds.wd(0);
-    invdy = binY / focus_bounds.wd(1);
+    invdx = binX / gather_bounds.wd(0);
+    invdy = binY / gather_bounds.wd(1);
   }
 
   void VolumePlotObject2D::setPrintCounts(bool p) {
@@ -117,16 +116,16 @@ namespace GFlowSimulation {
 
   void VolumePlotObject2D::addToBin(RealType px, RealType py, int d, RealType v, bool inc) {
     // Calculate bin index.
-    int x = static_cast<int>(invdx*(px - focus_bounds.min[0]));
-    int y = static_cast<int>(invdy*(py - focus_bounds.min[1]));
+    int x = static_cast<int>(invdx*(px - gather_bounds.min[0]));
+    int y = static_cast<int>(invdy*(py - gather_bounds.min[1]));
     // Add to bin by bin index.
     if (0<=x && x<binX && 0<=y && y<binY) addToBin(x, y, d, v, inc);
   }
 
   void VolumePlotObject2D::addToBin(RealType px, RealType py, Vec& v) {
     // Calculate bin index.
-    int x = static_cast<int>(invdx*(px - focus_bounds.min[0]));
-    int y = static_cast<int>(invdy*(py - focus_bounds.min[1]));
+    int x = static_cast<int>(invdx*(px - gather_bounds.min[0]));
+    int y = static_cast<int>(invdy*(py - gather_bounds.min[1]));
 
     if (0<=x && x<binX && 0<=y && y<binY) {
       // Add data entries to consecutive bins.

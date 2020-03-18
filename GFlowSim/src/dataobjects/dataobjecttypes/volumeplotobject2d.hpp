@@ -46,11 +46,6 @@ namespace GFlowSimulation {
 
   protected:
 
-    //! \brief What part of the simulation to focus on. 
-    //!
-    //! It could be the whole thing.
-    Bounds focus_bounds;
-
     //! \brief The size of the bin tuples.
     int data_width = 1;
 

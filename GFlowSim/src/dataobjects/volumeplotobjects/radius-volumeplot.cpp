@@ -10,7 +10,8 @@ namespace GFlowSimulation {
     auto x = simData->X();
     auto r = simData->Sg();
     for (int i=0; i<simData->size_owned(); ++i) {
-      if (min_radius < r[i] && r[i] < max_radius && focus_bounds.contains(x(i))) addToBin(x(i, 0), x(i, 1), r[i]);
+      if (min_radius < r[i] && r[i] < max_radius && gather_bounds.contains(x(i))) 
+        addToBin(x(i, 0), x(i, 1), r[i]);
     }
     // Increment
     ++recorded_frames;

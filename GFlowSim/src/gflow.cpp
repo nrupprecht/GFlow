@@ -155,14 +155,22 @@ namespace GFlowSimulation {
     while (_running && requested_time>0) {
 
       // --> Pre-step
-      for (auto m : modifiers) m->pre_step();
+      if (!modifiers.empty()) {
+        modifier_timer.start_timer();
+        for (auto m : modifiers) m->pre_step();
+        modifier_timer.stop_timer();
+      }
       integrator->pre_step();
       for (auto it : additional_integrators) it->pre_step();
       dataMaster->pre_step();
       handler->pre_step();
 
       // --> Pre-force
-      for (auto m : modifiers) m->pre_forces();
+      if (!modifiers.empty()) {
+        modifier_timer.start_timer();
+        for (auto m : modifiers) m->pre_forces();
+        modifier_timer.stop_timer();
+      }
       integrator->pre_forces(); // -- This is where VV first half kick happens (if applicable)
       for (auto it : additional_integrators) it->pre_forces(); // -- First half kick could also happen here.
       dataMaster->pre_forces();
@@ -217,7 +225,12 @@ namespace GFlowSimulation {
       handleModifiers();
 
       // --> Post-forces
-      for (auto m : modifiers) m->post_forces(); // -- This is where modifiers should do forces (if they need to)
+      // This is where modifiers should do forces (if they need to)
+      if (!modifiers.empty()) {
+        modifier_timer.start_timer();
+        for (auto m : modifiers) m->post_forces();
+        modifier_timer.stop_timer();
+      }
       // Continue with normal order of updates.
       simData->post_forces();
       integrator->post_forces();                 // -- This is where VV second half kick happens (if applicable)
@@ -227,7 +240,11 @@ namespace GFlowSimulation {
 
       // --> Post-step
       if (requested_time<=elapsed_time) terminate();
-      for (auto m : modifiers) m->post_step();
+      if (!modifiers.empty()) {
+        modifier_timer.start_timer();
+        for (auto m : modifiers) m->post_step();
+        modifier_timer.stop_timer();
+      }
       integrator->post_step();
       for (auto it : additional_integrators) it->post_step();
       dataMaster->post_step();

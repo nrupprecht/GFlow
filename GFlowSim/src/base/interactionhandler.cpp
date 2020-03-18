@@ -10,7 +10,12 @@
 namespace GFlowSimulation {
 
   InteractionHandler::InteractionHandler(GFlow *gflow) : Base(gflow), velocity(gflow->getSimDimensions()), process_bounds(sim_dimensions), simulation_bounds(sim_dimensions),
-    border_type_up(sim_dimensions, 0), border_type_down(sim_dimensions, 0) {};
+    border_type_up(sim_dimensions, 0), border_type_down(sim_dimensions, 0) {
+      if (sim_dimensions==2) {
+        update_decision_type = 1;
+        update_delay_steps = 15;
+      }
+    };
 
   InteractionHandler::~InteractionHandler() {
     if (positions) dealloc_array_2d(positions);
@@ -79,10 +84,8 @@ namespace GFlowSimulation {
       || (update_decision_type==1 && update_delay_steps<=steps_since_last_remake) 
     );
 
-    #if USE_MPI==1
-      // Sync timesteps.
-      if (topology->getNumProc()>1 && update_decision_type==0) MPIObject::mpi_or(do_construct);
-    #endif // USE_MPI==1
+    // Sync timesteps.
+    if (topology->getNumProc()>1 && update_decision_type==0) MPIObject::mpi_or(do_construct);
 
     // Do a full construct.
     if (do_construct) {

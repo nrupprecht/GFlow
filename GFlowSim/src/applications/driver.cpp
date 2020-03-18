@@ -418,18 +418,15 @@ int main(int argc, char **argv) {
     no_errors = false;
   }
   catch (...) {
-    //if (!quiet) 
     cout << "Exception (not inheriting from Exception class) caught on rank.\n";
-    // Write accumulated data to files
-    if (rank==0) gflow->writeData(writeDirectory);
     no_errors = false;
   }
-  // More detailed exception handling
-  // @todo Exception handling.
 
   MPIObject::mpi_and(no_errors);
   if (!no_errors) {
     cout << "One or more processors exited with exception. Exiting.\n";
+    // Write accumulated data to files
+    if (rank==0) gflow->writeData(writeDirectory);
     finalize_mpi();
     return 1;
   }
