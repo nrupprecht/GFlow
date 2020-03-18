@@ -236,27 +236,38 @@ namespace GFlowSimulation {
       // Add particles as long as we should
       while (keep_adding()) {
         // Select a position for the particle (random uniform) that does not fall within an excluded region
-        int attempts = 0;
-        do {
-          region->pick_position(X.data);
-          ++attempts;
-        } while (excluded_contains(X) && attempts<=max_attempts);
+        // int attempts = 0;
+        // do {
+        //   region->pick_position(X.data);
+        //   ++attempts;
+        // } while (excluded_contains(X) && attempts<=max_attempts);
+
+        // If a large amount of the region that a processor manages is excluded, then that processor creates particles
+        // at much higher densities than it should. We do the following so that the density of particles *in the nonexcluded region* 
+        // is the specified density.
+        // We pick a position, and then count the volume, number, and energy of the particle whether or not we actually add the particle
+        // to the simulation.
+        region->pick_position(X.data);
+
         // Choose a type of particle to create
         int pt = choice(generator);
         ParticleTemplate &particle_creator = particle_template_numbers.empty() ? particle_templates[0] : template_vector.at(pt);
         
         // Select other characteristics
         particle_creator.createParticle(X.data, sigma, im, type, N, sim_dimensions);
-        // Get next global id
-        int gid = simData->getNextGlobalID();
-        // Add the particle
-        simData->addParticle(X.data, V.data, sigma, im, type);
         // Pick an initial velocity and create the particle fixer
         if (im==0) V.zero();
         else select_velocity(V.data, X.data, sigma, im, type);
-        ParticleFixer pfix(sim_dimensions, gid);
-        pfix.velocity = V;
-        particle_fixers.push_back(pfix);
+
+        // Add the particle - only if not in the excluded region, see above note.
+        if (!excluded_contains(X)) {
+          // Get next global id
+        int gid = simData->getNextGlobalID();
+          simData->addParticle(X.data, V.data, sigma, im, type);
+          ParticleFixer pfix(sim_dimensions, gid);
+          pfix.velocity = V;
+          particle_fixers.push_back(pfix);
+        }
         // Increment volume, KE, and counter
         vol += sphere_volume(sigma, sim_dimensions);
         ke  += 0.5*sqr(V)/im;
