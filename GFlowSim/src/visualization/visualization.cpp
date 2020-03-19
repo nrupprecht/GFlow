@@ -7,7 +7,7 @@
 namespace GFlowSimulation {
 
   Visualization::Visualization() : do_wrap(true), v_scale_average(2) {
-    setColorBankSize(25);
+    setColorBankSize(75);
     resolution = 1536;
   };
 

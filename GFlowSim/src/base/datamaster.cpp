@@ -423,8 +423,6 @@ namespace GFlowSimulation {
       timing[9] = gflow->modifier_timer.get_time();
       labels[9] = "Modifiers";
       for (int i=0; i<entries; ++i) total += timing[i];
-      double forces_time = timing[2] + timing[3] + timing[4];
-      double mpi_time = timing[7] + timing[8];
 
       // Here, we gather all the timing data and put it into rank 0's timing database.
       if (numProc>1) {
@@ -451,6 +449,9 @@ namespace GFlowSimulation {
           column->setUsePercent(true, run_time);
         }
       }
+      // Do this after we have gathered all data, so we get the correct averages.
+      double forces_time = timing[2] + timing[3] + timing[4];
+      double mpi_time = timing[7] + timing[8];
 
       if (rank==0) {
         // Print timing data.
