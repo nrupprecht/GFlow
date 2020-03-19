@@ -29,7 +29,7 @@ namespace GFlowSimulation {
 
     // Set heights for particles in the window
     for (int i=0; i<simData->size_owned(); ++i)
-      if (x(i, 0)<bound) st(i) = x(i, 1) + sin(10*time);
+      if (x(i, 0)<bound) st(i) = x(i, 1);
 
     // Update time point
     lastUpdate = time;
