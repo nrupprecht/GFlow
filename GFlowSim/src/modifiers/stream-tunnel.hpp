@@ -26,9 +26,9 @@ namespace GFlowSimulation {
 
   private:
     //! \brief The amount of space in which we create and push particles.
-    real entry_width = 4.f;
+    real entry_width = 2.f;
     //! \brief The amount of space in which we stablilize particle velocity at the end.
-    real exit_width = 4.f;
+    real exit_width = 2.f;
     //! \brief The fraction of the entry width that should be used to add particles.
     real entry_fraction = 0.25f;
 
