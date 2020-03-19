@@ -191,10 +191,15 @@ namespace GFlowSimulation {
   }
 
   int SimData::requestScalarData(string name) {
+
+    cout << "Adding scalar: Name = " << name << endl;
+
+
     // Check if the data already exists
     auto it = scalar_data_map.find(name);
     if (it!=scalar_data_map.end()) return it->second;
     // Otherwise, create a data entry
+    
     for_each(data_entries.begin(), data_entries.end(), [] (auto entry) { entry.add_scalar_entry(); });
     int address = nscalars()-1;
     scalar_data_map.emplace(name, address);

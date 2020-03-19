@@ -235,13 +235,6 @@ namespace GFlowSimulation {
 
       // Add particles as long as we should
       while (keep_adding()) {
-        // Select a position for the particle (random uniform) that does not fall within an excluded region
-        // int attempts = 0;
-        // do {
-        //   region->pick_position(X.data);
-        //   ++attempts;
-        // } while (excluded_contains(X) && attempts<=max_attempts);
-
         // If a large amount of the region that a processor manages is excluded, then that processor creates particles
         // at much higher densities than it should. We do the following so that the density of particles *in the nonexcluded region* 
         // is the specified density.

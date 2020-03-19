@@ -36,7 +36,7 @@ namespace GFlowSimulation {
 
     //! \brief Add another vector data entry.
     int add_vector_entry() {
-      if (_capacity==0) vdata.push_back(nullptr);
+      if (_capacity<=0) vdata.push_back(nullptr);
       else {
         // auto ptr = static_cast<real*>(malloc(_capacity*sim_dimensions*sizeof(real)));
         real *ptr = new real[_capacity*sim_dimensions];
@@ -48,10 +48,15 @@ namespace GFlowSimulation {
 
     //! \brief Add another scalar data entry.
     int add_scalar_entry() {
-      if (_capacity==0) sdata.push_back(nullptr);
+
+      cout << "Adding scalar. Capacity is " << _capacity << endl;
+
+      if (_capacity<=0) sdata.push_back(nullptr);
       else {
         real *ptr = new real[_capacity]; // static_cast<real*>(malloc(_capacity*sizeof(real)))
         sdata.push_back(ptr);
+
+        cout << "Pointer value: " << ptr << endl;
       }
       // Return address of new entry.
       return sdata.size()-1;
@@ -59,7 +64,7 @@ namespace GFlowSimulation {
 
     //! \brief Add another integer data entry.
     int add_integer_entry() {
-      if (_capacity==0) idata.push_back(nullptr);
+      if (_capacity<=0) idata.push_back(nullptr);
       else {
         //auto ptr = static_cast<int*>(malloc(_capacity*sizeof(int)));
         int *ptr = new int[_capacity];
@@ -116,12 +121,20 @@ namespace GFlowSimulation {
 
     //! \brief Helper function for allocating or reallocating memory, and copying values.
     template<typename T> inline void create_memory(vector<T*>& data_vector, int desired_capacity, int data_width, T default_value) {
-      unsigned alloc_size = desired_capacity*data_width*sizeof(T);
+
+      cout << "Creating new memory: dw = " << data_width << ", capacity = " << _capacity << ", desired = " << desired_capacity << endl;
+
+      // unsigned alloc_size = desired_capacity*data_width*sizeof(T);
       for (auto &ptr : data_vector) {
+
+        cout << " -- Ptr = " << ptr << ", ";
+
         // If there was no entry (array was size 0), allocate memory.
         if (ptr==nullptr) {
           //ptr = static_cast<T*>(malloc(alloc_size));
           ptr = new T[desired_capacity*data_width];
+
+          cout << "creating ptr = " << ptr << endl;
         }
         // If there was memory, try realloc. We know that ptr!=nullptr.
         else {
@@ -133,6 +146,9 @@ namespace GFlowSimulation {
             //new_ptr = static_cast<T*>(malloc(alloc_size));
             new_ptr = new T[desired_capacity*data_width];
             if (_capacity) std::copy(ptr, ptr + _capacity*data_width, new_ptr);
+
+            cout << "new ptr = " << new_ptr << endl;
+
             //free(ptr);
             delete [] ptr;
             ptr = new_ptr;
