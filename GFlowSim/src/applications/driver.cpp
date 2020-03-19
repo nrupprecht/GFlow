@@ -169,6 +169,7 @@ int main(int argc, char **argv) {
     no_errors = false;
   }
   // Make sure this gets deleted even if there was an error.
+  for (int i=0; i<argc; ++i) delete [] processor_argv[i];
   delete [] processor_argv;
   // Now that that's done, check for errors.
   MPIObject::mpi_and(no_errors);
