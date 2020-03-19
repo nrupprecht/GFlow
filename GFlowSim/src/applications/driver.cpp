@@ -363,6 +363,9 @@ int main(int argc, char **argv) {
   if (animate) {
     auto pd = make_shared<PositionData>(gflow);
     gflow->addDataObject(pd);
+    if (stripex) {
+      pd->add_scalar_data_entry("StripeX");
+    }
     if (videoTime>0) pd->setFPS((20.*videoLength)/videoTime);
   }
   if (0<cavity) {

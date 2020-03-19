@@ -191,6 +191,9 @@ namespace GFlowSimulation {
     //! \brief Pointer to the place in a particle data entry where the required integer data is.
     int i_select = -1;
 
+    //! \brief Whether to update the scales for each frame.
+    bool update_scales = true;
+
     float v_scale_max = 0.f;
     Vec v_scale_average;
     float s_scale_min = 0.f, s_scale_max = 1.f, s_scale_average;

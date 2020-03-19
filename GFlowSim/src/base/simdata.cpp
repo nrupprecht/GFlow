@@ -183,7 +183,7 @@ namespace GFlowSimulation {
     auto it = vector_data_map.find(name);
     if (it!=vector_data_map.end()) return it->second;
     // Otherwise, create a data entry
-    for_each(data_entries.begin(), data_entries.end(), [] (auto entry) { entry.add_vector_entry(); });
+    for_each(data_entries.begin(), data_entries.end(), [] (auto& entry) { entry.add_vector_entry(); });
     int address = nvectors()-1;
     vector_data_map.emplace(name, address);
     // Return the entry
@@ -207,7 +207,7 @@ namespace GFlowSimulation {
     auto it = integer_data_map.find(name);
     if (it!=integer_data_map.end()) return it->second;
     // Otherwise, create a data entry
-    for_each(data_entries.begin(), data_entries.end(), [] (auto entry) { entry.add_integer_entry(); });
+    for_each(data_entries.begin(), data_entries.end(), [] (auto& entry) { entry.add_integer_entry(); });
     int address = nintegers()-1;
     integer_data_map.emplace(name, address);
     // Return the entry

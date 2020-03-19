@@ -2,7 +2,7 @@
 
 namespace GFlowSimulation {
 
-  StripeX::StripeX(GFlow *gflow) : Modifier(gflow), window(0.5), lastUpdate(0), updateDelay(0.1) {};
+  StripeX::StripeX(GFlow *gflow) : Modifier(gflow), window(1.0), lastUpdate(0), updateDelay(0.1) {};
 
   void StripeX::pre_integrate() {
     // Get the strip x entry.
@@ -13,7 +13,7 @@ namespace GFlowSimulation {
     auto st = simData->ScalarData(entry);
     auto x = simData->X();
     // Set initial heights
-    for (int i=0; i<simData->size_owned(); i+=sim_dimensions)
+    for (int i=0; i<simData->size_owned(); ++i)
       st(i) = x(i, 1);
   }
   
@@ -28,8 +28,8 @@ namespace GFlowSimulation {
     auto st = simData->ScalarData(entry);
 
     // Set heights for particles in the window
-    for (int i=0; i<simData->size_owned(); i+=sim_dimensions)
-      if (x(i, 0) < bound) st(i) = x(i, 1);
+    for (int i=0; i<simData->size_owned(); ++i)
+      if (x(i, 0)<bound) st(i) = x(i, 1) + sin(10*time);
 
     // Update time point
     lastUpdate = time;

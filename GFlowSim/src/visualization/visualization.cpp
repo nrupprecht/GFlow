@@ -7,7 +7,7 @@
 namespace GFlowSimulation {
 
   Visualization::Visualization() : do_wrap(true), v_scale_average(2) {
-    setColorBankSize(10);
+    setColorBankSize(25);
     resolution = 1536;
   };
 
@@ -325,7 +325,7 @@ namespace GFlowSimulation {
   }
 
   inline void Visualization::determineScaleFactors(const vector<float>& data_frame) {
-    if (data_frame.empty()) return;
+    if (data_frame.empty() || !update_scales) return;
     switch (color_selection_method) {
       case 0: {
         break;
@@ -363,6 +363,9 @@ namespace GFlowSimulation {
       return -1;
     };
 
+    // Reset any default parameters here.
+    update_scales = true;
+
     if (color_selection_method==0) {
       // Use a predefined method to color the particles.
       // 0 - Type.
@@ -399,6 +402,12 @@ namespace GFlowSimulation {
         }
         case 5: {
           chooseSelectionType(2, "StripeX");
+          color_function_selection = 2;
+          // Set the scales to be the max and min of the bounds, 
+          // and set update to false, so the scales remain the same.
+          update_scales = false;
+          s_scale_min = bounds.min[1];
+          s_scale_max = bounds.max[1];
           break;
         }
         case 6: { // Color by proc #.
@@ -530,19 +539,27 @@ namespace GFlowSimulation {
       }
       case 2: {
         float value = 0.f;
-        // Color by magnitude.
         switch (color_function_selection) {
           default:
+          // Color by magnitude.
           case 0: {
             value = (s_data - s_scale_min) / (s_scale_max - s_scale_min);
+            color = RGBApixel(floor(255*value), 0, ceil(200*(1-value)));
             break;
           }
           case 1: {
             value = log( 1. + 100.*s_data / s_scale_max) / log(101.);
+            color = RGBApixel(floor(255*value), 0, ceil(200*(1-value)));
+            break;
+          }
+          case 2: {
+            int select = (s_data - s_scale_min) / (s_scale_max - s_scale_min) * colorBank.size();
+            if (select<0) select = 0;
+            else if (colorBank.size()<=select) select = colorBank.size()-1;
+            color = getColor(select);
             break;
           }
         }
-        color = RGBApixel(floor(255*value), 0, ceil(200*(1-value)));
         break;
       }
       case 3: {
