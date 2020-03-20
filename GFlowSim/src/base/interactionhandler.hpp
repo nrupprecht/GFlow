@@ -198,7 +198,9 @@ namespace GFlowSimulation {
     //!
     //! 0 - Use an update delay.
     //! 1 - Update every fixed number of steps.
-    int update_decision_type = 0;
+    //! 2 - Update after a prespecified number of steps, then decide how many 
+    //      steps to wait for the next time around.
+    int update_decision_type = 2;
 
     //! \brief How many steps the domain should wait between domain redos.
     int update_delay_steps = 15;
@@ -208,6 +210,12 @@ namespace GFlowSimulation {
 
     //! \brief The number of times the domain has remade the sectors
     int number_of_remakes = 0;
+
+    //! \brief A flag that is false while the interactions do not need to be remade.
+    bool requires_remake = false;
+
+    //! \brief The number of iterations that went by before a remake was needed during the last make->remake cycle.
+    int last_remake_steps = 1;
 
     //! \brief The skin depth.
     //!

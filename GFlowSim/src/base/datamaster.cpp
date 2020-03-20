@@ -463,7 +463,7 @@ namespace GFlowSimulation {
         fout << "  -- Modifiers:               " << toStrPP(timing[9]/run_time*100) << sep << timing[9] << "\n";
         if (mpi_time>0) fout << "  -- MPI related:             " << toStrPP(mpi_time/run_time*100) << sep << mpi_time << "\n";
         
-        fout << "  -- Other:                   " << std::setprecision(3) << toStrPP((1. - total/run_time)*100) << sep << run_time - total << "\n";
+        fout << "  -- Other:                   " << toStrPP((1. - total/run_time)*100) << sep << run_time - total << "\n";
         fout << "\n";
         // Timing breakdown for forces.
         fout << "Timing - forces:\n";

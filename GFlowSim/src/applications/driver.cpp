@@ -294,15 +294,15 @@ int main(int argc, char **argv) {
     gflow = creator->createSimulation();
   }
   catch (const Exception exc) {
-    cout << "Exception caught on rank: " << rank << ", Message: " << exc.message << "\n";
+    cout << "Simulation Creation: Exception caught on rank: " << rank << ", Message: " << exc.message << "\n";
     no_errors = false;
   }
   catch (...) {
-    cout << "Creator encountered error (not inheriting from exception) on rank " << rank << " while creating the simulation. Exiting.\n";
+    cout << "Simulation Creation: Creator encountered error (not inheriting from exception) on rank " << rank << " while creating the simulation. Exiting.\n";
     no_errors = false;
   }
   if (gflow==nullptr && no_errors) {
-    if (!quiet) cout << "GFlow was null on rank " << rank << ". Exiting.\n";
+    if (!quiet) cout << "Simulation Creation: GFlow was null on rank " << rank << ". Exiting.\n";
     no_errors = false;
   }
   MPIObject::mpi_and(no_errors);

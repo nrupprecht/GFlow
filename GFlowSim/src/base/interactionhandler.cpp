@@ -10,12 +10,7 @@
 namespace GFlowSimulation {
 
   InteractionHandler::InteractionHandler(GFlow *gflow) : Base(gflow), velocity(gflow->getSimDimensions()), process_bounds(sim_dimensions), simulation_bounds(sim_dimensions),
-    border_type_up(sim_dimensions, 0), border_type_down(sim_dimensions, 0) {
-      if (sim_dimensions==2) {
-        update_decision_type = 1;
-        update_delay_steps = 15;
-      }
-    };
+    border_type_up(sim_dimensions, 0), border_type_down(sim_dimensions, 0) {};
 
   InteractionHandler::~InteractionHandler() {
     if (positions) dealloc_array_2d(positions);
@@ -57,6 +52,7 @@ namespace GFlowSimulation {
     last_update = 0;
     steps_since_last_remake = 0;
     update_delay = 1.0e-4;
+    if (update_decision_type==2) update_delay_steps = 1;
 
     // Reset statistics
     ave_miss = 0.f;
@@ -78,17 +74,36 @@ namespace GFlowSimulation {
     RealType current_time = gflow->getElapsedTime();
 
     // Check if we need to reconstruct the handler.
+    bool skin_depth_exceded = (current_time-last_update>update_delay && gflow->getNumInteractions()>0 && check_needs_remake());
+    //bool skin_depth_exceded = check_needs_remake();
     bool do_construct = (
       simData->getNeedsRemake() 
-      || (update_decision_type==0 && current_time-last_update>update_delay && gflow->getNumInteractions()>0 && check_needs_remake())
+      || (update_decision_type==0 && skin_depth_exceded)
       || (update_decision_type==1 && update_delay_steps<=steps_since_last_remake) 
+      || (update_decision_type==2 && update_delay_steps<=steps_since_last_remake)
     );
 
-    // Sync timesteps.
+    // If this is the first time this make->remake cycle that the skin depth has been exceded, mark down the number of 
+    // steps it took for this to occur.
+    if (skin_depth_exceded && !requires_remake) {
+      last_remake_steps = steps_since_last_remake;
+      requires_remake = true;
+    }
+    // It costs a lot to sync this every timesteps, but we do have to option to do this. A more
+    // sensible update strategy is update_decision_type==2.
     if (topology->getNumProc()>1 && update_decision_type==0) MPIObject::mpi_or(do_construct);
 
     // Do a full construct.
     if (do_construct) {
+      // If using update_decision_type 2, we need to sync the update_delay_steps by taking the min of last_remake_steps.
+      // If we did not actually reach a point where 
+      if (update_decision_type==2) {
+        if (!requires_remake) last_remake_steps = update_delay_steps+1;
+        update_delay_steps = last_remake_steps;
+        if (topology->getNumProc()>1) MPIObject::mpi_min(update_delay_steps);
+      }
+
+
       if (gflow->getUseForces()) construct();
       else simData->update();
     }
@@ -113,13 +128,13 @@ namespace GFlowSimulation {
     
     // Set timer
     last_update = gflow->getElapsedTime();
-    // Reset
     steps_since_last_remake = 0;
-    // Increment counter
+    //last_remake_steps = 0;
     ++number_of_remakes;
+    requires_remake = false;
 
     // Record where the particles were
-    if (update_decision_type==0 && auto_record_positions) record_positions();
+    if ((update_decision_type==0 || update_decision_type==2) && auto_record_positions) record_positions();
 
     // Set gflow flags. This should happen before any return points.
     gflow->handler_needs_remake() = false;
@@ -340,7 +355,6 @@ namespace GFlowSimulation {
     // The remake condition.
     needs_remake |= (motion_ratio > mv_ratio_tolerance * motion_factor);
 
-    //MPIObject::mpi_or(needs_remake);
     // Set the flag in gflow.
     gflow->handler_needs_remake() = needs_remake;
     // Return needs_remake.
