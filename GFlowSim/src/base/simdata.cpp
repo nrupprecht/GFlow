@@ -377,6 +377,22 @@ namespace GFlowSimulation {
     needs_local_remake = r;
   }
 
+  void SimData::shift_global_ids(const int shift) {
+    auto id = Id();
+    for (int i=0; i<size_owned(); ++i) {
+      if (0<=id[i]) id[i] += shift;
+    }
+
+    // Make a new id_map, but with the shifted ids.
+    for (auto& id_sub_map : id_map) {
+      std::unordered_map<int, int> new_map;
+      for (auto pr : id_sub_map) 
+        new_map[pr.first + shift] = pr.second;
+      // Now just move the new map to id_sub_map.
+      id_sub_map = std::move(new_map);
+    }
+  }
+
   void SimData::addVectorData(string name) {
     vector_data_map.emplace(name, vector_data_map.size());
     for(auto &entry : data_entries)
@@ -497,14 +513,20 @@ namespace GFlowSimulation {
     
     // Swap global ids
     if (use_id_map) {
-      auto it1 = id_map[0].find(g1);
-      auto it2 = id_map[0].find(g2);
+      auto it1 = (0<=g1) ? id_map[0].find(g1) : id_map[0].end();
+      auto it2 = (0<=g2) ? id_map[0].find(g2) : id_map[0].end();
+      // Since we use swap to swap a real particle into a hole, we do have to check whether we found the global id
+      // of a real particle, and got a valid iterator.
       if (it1!=id_map[0].end()) it1->second = id2;
       if (it2!=id_map[0].end()) it2->second = id1;
     }
 
     // Set flag
     setNeedsRemake(true);
+  }
+
+  void SimData::remove_global_id(const int list, const int gid) {
+    id_map[list].erase(gid);
   }
 
   void SimData::quick_sort(int start, int end, int dim) {

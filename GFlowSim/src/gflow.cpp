@@ -676,11 +676,21 @@ namespace GFlowSimulation {
   }
 
   void GFlow::addDataObject(shared_ptr<DataObject> dob) {
-    if (dob) dataMaster->addDataObject(dob);
+    if (dob) {
+      dataMaster->addDataObject(dob);
+      // Check if this object inherits from group.
+      auto group = std::dynamic_pointer_cast<Group>(dob);
+      if (group!=nullptr) global_id_reliant.push_back(group);
+    }
   }
 
   void GFlow::addModifier(shared_ptr<Modifier> mod) {
-    if (mod) modifiers.push_back(mod);
+    if (mod) {
+      modifiers.push_back(mod);
+      // Check if this object inherits from group.
+      auto group = std::dynamic_pointer_cast<Group>(mod);
+      if (group!=nullptr) global_id_reliant.push_back(group);
+    }
   }
 
   void GFlow::resetAllTimes() {

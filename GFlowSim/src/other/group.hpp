@@ -90,6 +90,9 @@ namespace GFlowSimulation {
     //! \brief Update the vector of local ids to correspond to the correct particles.
     void update_local_ids() const;
 
+    //! \brief Shifts all the global ids by a constant.
+    void shift_global_ids(const int) const;
+
   protected:
 
     //! \brief The global ids of the particles in the group.

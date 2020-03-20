@@ -9,14 +9,14 @@ inline constexpr bool check_particle_type(unsigned pt) {
 // --- Particle insertion / deletion
 
 template<unsigned particle_type> 
-int SimData::addParticle() {
+int SimData::addParticle(bool create_global_id) {
   // Just call the more general add particle function. That function has the assert, so there is no need for one here.
-  return addParticle<particle_type>(1);
+  return addParticle<particle_type>(1, create_global_id);
 }
 
 //! \param num The number of particle slots to add.
 template<unsigned particle_type> 
-int SimData::addParticle(int num) {
+int SimData::addParticle(int num, bool create_global_id) {
   static_assert(check_particle_type(particle_type));
   // Can't add a negative number of particles.
   if (num<=0) return -1;
@@ -32,8 +32,9 @@ int SimData::addParticle(int num) {
     reset_particle<particle_type>(size);
     // Set type, give a global id
     Type<particle_type>(size) = 0;
-    if (particle_type==0) {
-      if (use_id_map) id_map[particle_type].emplace(size, next_global_id);
+    if (particle_type==0 && create_global_id) {
+      //if (use_id_map) id_map[particle_type].emplace(size, next_global_id);
+      if (use_id_map) id_map[particle_type].emplace(next_global_id, size);
       Id<particle_type>(size) = next_global_id++;
     }
     ++_number[particle_type];
@@ -62,12 +63,13 @@ int SimData::addParticle(const real *x, const real *v, const real sg, const real
   Im<particle_type>(size) = im;
   Type<particle_type>(size) = type;
   if (particle_type==0) {
-    if (use_id_map) id_map[particle_type].emplace(size, next_global_id);
+    //if (use_id_map) id_map[particle_type].emplace(size, next_global_id);
+    if (use_id_map) id_map[particle_type].emplace(next_global_id, size);
     Id<0>(size) = next_global_id++;
   }
   ++_number[particle_type];
   ++size;
-  // Return particle id.
+  // Return particle (local) id.
   return size-1;
 }
 
@@ -78,7 +80,7 @@ void SimData::markForRemoval(const int id) {
   if (Type<particle_type>(id)<0 || id>=_size[particle_type]) return;
   // Mark for removal, clear some data
   if (particle_type==0) remove_list.emplace(id); // All ghost particles will be removed eventually.
-  if (use_id_map) id_map[particle_type].erase(Id<particle_type>(id));
+  if (use_id_map) remove_global_id(particle_type, Id<particle_type>(id));
   Type<particle_type>(id) = -1;
   // Set position to be far away, so it will not be able to apply force on real particles.
   // This is mostly for the case where a particle that is a ghost particle on another processor gets erased.
@@ -297,7 +299,7 @@ void SimData::unpack_buffer(const int n_particles, const vector<real>& buffer) {
   int n_vectors = nvectors(), n_scalars = nscalars(), n_integers = nintegers();
   for (int j=0; j<n_particles; ++j) {
     // Add a spot for a particle, then copy the data into this particle.
-    int id = addParticle<particle_type>(); // Get a local id for new particle.
+    int id = addParticle<particle_type>(false); // Get a local id for new particle.
     // Unpack vector data.
     for (int i=0; i<n_vectors; ++i) 
       copyVec(&buffer[data_width*j + i*sim_dimensions], VectorData<particle_type>(i, id), sim_dimensions);

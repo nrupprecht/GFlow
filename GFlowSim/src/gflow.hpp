@@ -350,6 +350,9 @@ namespace GFlowSimulation {
     //! \brief All the bodies in the simulation.
     vector<shared_ptr<class Body> > bodies;
 
+    //! \brief A vector of pointers to all objects that inherit from group, and might need to have global ids modified.
+    vector<shared_ptr<class Group> > global_id_reliant;
+
     //! \brief How much time we have been requested to run for.
     long double requested_time;
 

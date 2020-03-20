@@ -73,8 +73,9 @@ namespace GFlowSimulation {
     // Get the current simulation time
     RealType current_time = gflow->getElapsedTime();
 
-    // Check if we need to reconstruct the handler.
-    bool skin_depth_exceded = (current_time-last_update>update_delay && gflow->getNumInteractions()>0 && check_needs_remake());
+    // Check if we need to reconstruct the handler. We OR requires_remake with the check so we don't actually do
+    // the check unless we have not previously required a remake.
+    bool skin_depth_exceded = requires_remake || (current_time-last_update>update_delay && gflow->getNumInteractions()>0 && check_needs_remake());
     //bool skin_depth_exceded = check_needs_remake();
     bool do_construct = (
       simData->getNeedsRemake() 

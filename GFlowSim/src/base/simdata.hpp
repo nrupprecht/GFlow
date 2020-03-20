@@ -44,10 +44,10 @@ namespace GFlowSimulation {
 
     //! \brief Add a default particle, the properties of this particle should be set from the outside after this is called. Returns
     //! the id of the added particle.
-    template<unsigned=0> int addParticle();
+    template<unsigned=0> int addParticle(bool=true);
 
     //! \brief Add several default particles. Same as calling addParticle multiple times. Returns the id of the first particle added.
-    template<unsigned=0> int addParticle(int);
+    template<unsigned=0> int addParticle(int, bool=true);
 
     //! \brief Add a particle to the simdata. Returns the id of the added particle.
     //!
@@ -229,6 +229,9 @@ namespace GFlowSimulation {
     //! \brief Set the needs local remake flag.
     void setNeedsLocalRemake(bool=true);
 
+    //! \brief Shift all the global ids of all the particles by a constant, and correct the id map.
+    void shift_global_ids(const int);
+
     //! \brief Add a vector data entry.
     void addVectorData(string);
 
@@ -302,6 +305,9 @@ namespace GFlowSimulation {
     //! \brief Swap two particle's data.
     void swap_particle(int, int);
 
+    //! \brief Remove an entry from the id_map
+    void remove_global_id(const int, const int);
+
     //! \brief Partitions the sublist, then calls sort on each sublist.
     void quick_sort(int, int, int);
 
@@ -335,7 +341,7 @@ namespace GFlowSimulation {
     //! \brief The next global id a particle will be given.
     int next_global_id = 0;
 
-    //! \brief A map between global and local ids, <global, local>.
+    //! \brief A map between local and global ids, <global, local>.
     vector<std::unordered_map<int, int> > id_map;
 
     //! \brief Whether to use the id_map.

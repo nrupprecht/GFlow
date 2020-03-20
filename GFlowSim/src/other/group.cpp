@@ -225,14 +225,18 @@ namespace GFlowSimulation {
       int gid = global_ids[i];
       int lid = sim_data->getLocalID(gid);
       if (-1<lid) {
-	// Potentially shrink global id list by moving up the ids.
-	local_ids[_count] = lid;
-	global_ids[_count] = global_ids[i];
-	++_count;
+        // Potentially shrink global id list by moving up the ids.
+        local_ids[_count] = lid;
+        global_ids[_count] = global_ids[i];
+        ++_count;
       }
     }
     global_ids.resize(_count);
     local_ids.resize(_count);
+  }
+
+  void Group::shift_global_ids(const int shift) const {
+    for (auto &id : global_ids) id += shift;
   }
 
 }

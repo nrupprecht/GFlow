@@ -141,11 +141,13 @@ namespace GFlowSimulation {
     vector<int> array(topology->getNumProc());
     MPIObject::mpi_allgather(size, array);
 
+    // Rank 0 never needs to correct global ids.
     if (rank>0) {
       int shift = std::accumulate(array.begin(), array.begin()+rank, 0);
-      auto id = gflow->getSimData()->Id();
-      // Correct global indices.
-      for (int i=0; i<size; ++i) id(i) += shift;
+      gflow->getSimData()->shift_global_ids(shift);
+      // Correct global indices for groups.
+      for (auto group : gflow->global_id_reliant) 
+        group->shift_global_ids(shift);
     }
   }
 
