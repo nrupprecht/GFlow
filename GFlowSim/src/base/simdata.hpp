@@ -289,6 +289,7 @@ namespace GFlowSimulation {
     // --- Friends
 
     // So ForceMaster can set ntypes.
+    friend class Creator;
     friend class ForceMaster;
     friend class DataMaster;
     friend class Topology;
@@ -340,6 +341,11 @@ namespace GFlowSimulation {
 
     //! \brief The next global id a particle will be given.
     int next_global_id = 0;
+
+    //! \brief The amount that we increment next_global_id by whenever we use a global id, and need the next one.
+    //!
+    //! For multiprocessor runs, this will equal num_proc after we have corrected all the global_ids (by shifting them).
+    int d_global_id = 1;
 
     //! \brief A map between local and global ids, <global, local>.
     vector<std::unordered_map<int, int> > id_map;

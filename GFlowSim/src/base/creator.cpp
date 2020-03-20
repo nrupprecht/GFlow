@@ -136,19 +136,28 @@ namespace GFlowSimulation {
     auto topology = gflow->getTopology();
     int size = gflow->simData->size_owned();
     int rank = topology->getRank();
+    auto simData = gflow->getSimData();
 
     // Gather the number of particles on each processor.
     vector<int> array(topology->getNumProc());
     MPIObject::mpi_allgather(size, array);
 
-    // Rank 0 never needs to correct global ids.
+    // Rank 0 never needs to correct global ids. It does need to have its next_global_id updated though.
     if (rank>0) {
       int shift = std::accumulate(array.begin(), array.begin()+rank, 0);
-      gflow->getSimData()->shift_global_ids(shift);
+      simData->shift_global_ids(shift);
       // Correct global indices for groups.
       for (auto group : gflow->global_id_reliant) 
         group->shift_global_ids(shift);
     }
+
+    // Since any processor can create particles, we update next_global_id so that it points past the global
+    // IDs of current particles, and each processor has a different next_global_id. From now on, when a 
+    // processor creates a particle, it increment next_global_id by num_proc, so that we never have global id 
+    // conflicts. This may lead to certain global ids being unused, but that doesn't actually matter.
+    int total = std::accumulate(array.begin(), array.end(), 0);
+    simData->next_global_id = total + 1 + rank;
+    simData->d_global_id = topology->getNumProc();;
   }
 
   void Creator::fix_particle_velocities(shared_ptr<SimData> simData) {

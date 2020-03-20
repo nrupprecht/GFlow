@@ -35,7 +35,8 @@ int SimData::addParticle(int num, bool create_global_id) {
     if (particle_type==0 && create_global_id) {
       //if (use_id_map) id_map[particle_type].emplace(size, next_global_id);
       if (use_id_map) id_map[particle_type].emplace(next_global_id, size);
-      Id<particle_type>(size) = next_global_id++;
+      Id<particle_type>(size) = next_global_id;
+      next_global_id += d_global_id;
     }
     ++_number[particle_type];
     ++size;
@@ -66,6 +67,7 @@ int SimData::addParticle(const real *x, const real *v, const real sg, const real
     //if (use_id_map) id_map[particle_type].emplace(size, next_global_id);
     if (use_id_map) id_map[particle_type].emplace(next_global_id, size);
     Id<0>(size) = next_global_id++;
+    next_global_id += d_global_id;
   }
   ++_number[particle_type];
   ++size;
