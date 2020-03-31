@@ -44,6 +44,10 @@ namespace GFlowSimulation {
     Bounds simulation_bounds = topology->getSimulationBounds();
     real current_x_coord = last_x_coord + driving_velocity * (gflow->getElapsedTime() - last_creation_time);
     real cutoff_position = processor_bounds.min[0] + entry_fraction * entry_width;
+    
+    //**
+    spacing_factor = 1;
+    //**
 
     // We have to decide which processors should add particles to the simulations. We should only have processors whose left (processor) 
     // bound touches the simulation bound to add particles to the simulation. This simulates particles coming in from the left end of the 
@@ -87,7 +91,7 @@ namespace GFlowSimulation {
       // Achieved density. This seems to maintain the correct density.
       real pf = vol / ((current_x_coord - last_x_coord + 0.5*dx) * processor_bounds.wd(1));
       // Correct spacing factor for next time.
-      spacing_factor -= 0.1*(phi_target - pf);
+      // spacing_factor -= 0.1*(phi_target - pf);
     }
   }
 

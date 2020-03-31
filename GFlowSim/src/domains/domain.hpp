@@ -1,4 +1,3 @@
-
 #ifndef __DOMAIN_TEST_HPP__GFLOW__
 #define __DOMAIN_TEST_HPP__GFLOW__
 
