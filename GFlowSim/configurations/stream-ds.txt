@@ -16,6 +16,8 @@ Var: gammaN=10000
 Var: gammaT=10000
 Var: phi=0.9069
 
+Var: Repulsion=50
+Var: Dissipation=1
 
 // This is a 2d simulation
 Dimensions: 2
@@ -37,7 +39,10 @@ Boundary: {
 NTypes: 2
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
-Force-grid: HardSphereDs
+Force-grid: HardSphereDs {
+  Repulsion: Repulsion
+  Dissipation: Dissipation
+}
 
 // Fill an area with particles
 Fill: Area {
