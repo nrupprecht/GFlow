@@ -4,7 +4,7 @@
 #include "../base/simdata.hpp"
 
 namespace GFlowSimulation {
-  // Constructor
+  
   PositionData::PositionData(GFlow *gflow) : DataObject(gflow, "Pos") {
     // The data to gather.
     add_vector_data_entry("X");
@@ -47,32 +47,6 @@ namespace GFlowSimulation {
     // Create a directory for all the data
     mkdir(dirName.c_str(), 0777);
     return storeData.write(dirName+dataName+"-"+toStr(object_counter)+".csv", positions);
-  }
-
-  void PositionData::add_vector_data_entry(string entry) {
-    vector_data_entries.push_back(entry);
-  }
-
-  void PositionData::add_magnitude_data_entry(string entry) {
-    magnitude_data_entries.push_back(entry);
-  }
-
-  void PositionData::add_scalar_data_entry(string entry) {
-    scalar_data_entries.push_back(entry);
-  }
-
-  void PositionData::add_integer_data_entry(string entry) {
-    integer_data_entries.push_back(entry);
-  }
-
-  void PositionData::clear_all_data_entries() {
-    vector_data_entries.clear();
-    scalar_data_entries.clear();
-    integer_data_entries.clear();
-  }
-
-  void PositionData::set_visual_bounds(const Bounds& bnds) {
-    gather_bounds = bnds;
   }
 
 }

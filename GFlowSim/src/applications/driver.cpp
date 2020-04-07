@@ -48,6 +48,10 @@ int main(int argc, char **argv) {
   // MPI related.
   int rank(0), numProc(1);
 
+
+  // Allocate processor arguments. Do this outside USE_MPI.
+  char **processor_argv = argv;
+
   #if USE_MPI == 1
   MPI_Init(&argc, &argv);
   // Get rank and number of processors.
@@ -57,8 +61,7 @@ int main(int argc, char **argv) {
   // Make sure everyone gets the arguments supplied to the root processor.
   MPIObject::mpi_broadcast(argc);
   vector<int> arg_sizes(argc, 0);
-  // Allocate processor arguments.
-  char **processor_argv = new char*[argc];
+  processor_argv = new char*[argc];
 
   // Broadcast to everyone else.
   if (rank==0) {
@@ -103,7 +106,7 @@ int main(int argc, char **argv) {
   bool sectorData = false; // Record sector information
   bool ke = false; // Record kinetic energy
   bool rotE = false; // Record rotational kinetic energy
-  RealType kebin = 0;
+  real kebin = 0;
   bool energy = false; // Record total energy
   bool bondenergy = false;
   bool keTypes = false;
@@ -131,19 +134,19 @@ int main(int argc, char **argv) {
   
   // Other options
   int dimensions = 2;
-  RealType skin = 0.;
+  real skin = 0.;
   bool quiet = false;
-  RealType gravity = 0.;
-  RealType skin_depth = -1.;
+  real gravity = 0.;
+  real skin_depth = -1.;
   bool damping = false;
   bool adjustDT = true;
   int target_steps = -1;
   int step_delay = -1;
-  RealType startRecTime = 0;
-  RealType fps = -1.;
-  RealType videoLength = -1.;
-  RealType dt = 0.001;
-  RealType maxDT = -1;
+  real startRecTime = 0;
+  real fps = -1.;
+  real videoLength = -1.;
+  real dt = 0.001;
+  real maxDT = -1;
   long double time = 10.;
   bool print = false;
   string writeDirectory = "RunData";
@@ -151,8 +154,9 @@ int main(int argc, char **argv) {
   bool forces = true;
   bool timing = true;
   string monitor = ""; // Monitor file
+  real checkpoint = 0.f;
   // Modifiers
-  RealType temperature = 0.;
+  real temperature = 0.;
 
   // <--- End of options.
 
@@ -168,9 +172,11 @@ int main(int argc, char **argv) {
     cout << "Illegal token in command line argument: " << tok.str << ". Exiting.\n";
     no_errors = false;
   }
-  // Make sure this gets deleted even if there was an error.
-  for (int i=0; i<argc; ++i) delete [] processor_argv[i];
-  delete [] processor_argv;
+  // Make sure this gets deleted even if there was an error and processor_argv is dynamically allocated.
+  #if USE_MPI == 1
+    for (int i=0; i<argc; ++i) delete [] processor_argv[i];
+    delete [] processor_argv;
+  #endif // USE_MPI == 1
   // Now that that's done, check for errors.
   MPIObject::mpi_and(no_errors);
   if (!no_errors) {
@@ -232,6 +238,7 @@ int main(int argc, char **argv) {
   parser.get("boundary", boundary);
   parser.get("forces", forces);
   parser.get("timing", timing);
+  parser.get("checkpoint", checkpoint);
 
   if (!quiet && rank==0) {
     #if DEBUG==1
@@ -317,7 +324,8 @@ int main(int argc, char **argv) {
     parser.check();
   }
   catch (ArgParse::UncheckedToken illegal) {
-    if (!quiet) cout << "Illegal option: [" << illegal.token << "]. Exiting.\n";
+    // Since an illegal option will be illegal on every processor, we only have rank 0 print out an error message.
+    if (!quiet && rank==0) cout << "Illegal option: [" << illegal.token << "]. Exiting.\n";
     no_errors = false;
   }
   MPIObject::mpi_and(no_errors);
@@ -399,6 +407,13 @@ int main(int argc, char **argv) {
   if (maxDT>0) gflow->setMaxDT(maxDT);
   gflow->getIntegrator()->setAdjustDT(adjustDT);
   gflow->requestTime(time);
+
+  // Tell the data object what directory it is going to write to.
+  if (checkpoint>0) {
+    gflow->getDataMaster()->setDoCheckpoints(true);
+    gflow->getDataMaster()->setCheckpointingDelay(checkpoint);
+  }
+  gflow->getDataMaster()->setWriteDirectory(writeDirectory);
 
   // Run the simulation
   int num_particles = gflow->getNumParticles();

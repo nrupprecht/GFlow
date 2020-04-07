@@ -5,17 +5,22 @@
 
 namespace GFlowSimulation {
 
+  /** 
+   *  \brief Graphs the instantaneous pressure of all particles
+   */
   class PressureData : public GraphObject {
   public:
-    //! Constructor
+    //! \brief Constructor
     PressureData(GFlow*);
 
-    //! Collect the position data from simdata --- happens during the post-step phase
-    virtual void post_step();
+    //! \brief Turn on virial calculations for all interactions.
+    virtual void pre_integrate() override;
+
+    //! \brief Collect the position data from simdata --- happens during the post-step phase
+    virtual void post_step() override;
 
     //! \brief Calculate the kinetic energy of the particles in the simdata.
     static RealType calculate_pressure(GFlow*);
-
   };
 
 }

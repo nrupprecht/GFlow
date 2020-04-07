@@ -7,6 +7,12 @@ namespace GFlowSimulation {
 
   PressureData::PressureData(GFlow *gflow) : GraphObject(gflow, "Pressure") {};
 
+  void PressureData::pre_integrate() {
+    const auto & interactions = gflow->getInteractions();
+    // Get the virials from all the interactions
+    for (const auto it : interactions) it->setDoVirial(true);
+  }
+
   void PressureData::post_step() {
     // Only record if enough time has gone by
     if (!DataObject::_check()) return;
@@ -33,10 +39,7 @@ namespace GFlowSimulation {
     const auto & interactions = gflow->getInteractions();
     // Get the virials from all the interactions
     for (const auto it : interactions) {
-      //! P = N k T/V + 1/(sim_dimensions*V) \sum_i (r_i \dot F_i)
-      // virial = \sum_i (r_i \dot F_i)
       RealType virial = it->getVirial();
-      // Update Ptot.
       Ptot += factor*virial;
     }
 

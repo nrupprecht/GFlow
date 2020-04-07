@@ -10,7 +10,7 @@
 
 namespace GFlowSimulation {
 
-  DataMaster::DataMaster(GFlow *gflow) : Base(gflow) {};
+  DataMaster::DataMaster(GFlow *gflow) : Base(gflow), do_checkpoint_summary(false), is_directory_created(false) {};
 
   void DataMaster::initialize() {
     Base::initialize();
@@ -45,7 +45,22 @@ namespace GFlowSimulation {
     runTimer.clear();
   }
 
+  void DataMaster::markTimer() {
+    runTimer.stop();
+    run_time += runTimer.time();
+    runTimer.clear();
+    runTimer.start();
+  }
+
   void DataMaster::pre_integrate() {
+    // If we are using checkpointing, we need to create the data folder beforehand.
+    if (gflow->getRunMode()==RunMode::SIM && do_checkpoint_summary) {
+      create_directory();
+      if (topology->getRank()==0) {
+        mkdir((write_directory+"/checkpoints/").c_str(), 0777);
+        cout << "Checkpointing is turned on.\n";
+      }
+    }
     // Start run timer.
     startTimer();
     // Do preintegrate.
@@ -103,8 +118,20 @@ namespace GFlowSimulation {
       start_timer();
       // Call for all data objects.
       for (auto& dob : dataObjects)
-	if (dob) dob->post_step();
+	      if (dob) dob->post_step();
       // Stop timing.
+      stop_timer();
+    }
+
+    // Possibly do checkpointing.
+    if (do_checkpoint_summary) {
+      start_timer();
+      real current_time = gflow->getElapsedTime();
+      if (checkpoint_delay_time <= current_time - last_checkpoint_time) {
+        last_checkpoint_time = current_time;
+        writeSummary(write_directory+"/checkpoints/checkpoint-summary-"+toStr(checkpoint_count)+".txt");
+        ++checkpoint_count;
+      }
       stop_timer();
     }
   }
@@ -125,22 +152,30 @@ namespace GFlowSimulation {
     endTimer();
   }
 
+  void DataMaster::setWriteDirectory(const string& directory) {
+    if (write_directory!=directory) {
+      write_directory = directory;
+      is_directory_created = false;
+    }
+  }
+
+  bool DataMaster::writeToDirectory() {
+    if (!is_directory_created) create_directory();
+    return writeToDirectory(write_directory);
+  }
+
   bool DataMaster::writeToDirectory(string writeDirectory) {
     // Get the rank of this processor
     int rank = topology->getRank();
-
-    // --- Do file related things
     bool success = true;
+    // Call end timer in case the run failed, and therefore didn't end the timer.
+    endTimer();
 
-    if (rank==0) {
-      // Remove previously existing files if they exist
-      system(("rm -rf "+writeDirectory).c_str());
-      // Create the directory
-      mkdir(writeDirectory.c_str(), 0777);
-    }
-
-    // --- Write a summary
-    writeSummary(writeDirectory);
+    setWriteDirectory(writeDirectory);
+    create_directory();
+    writeSummary(writeDirectory+"/run_summary.txt");
+    writeLogFile(writeDirectory+"/log.txt");
+    if (topology->getNumProc()>1) writeMPIFile(writeDirectory+"/mpi-log.csv");
 
     // Only rank 0 needs to do things after this point.
     if (rank!=0) return success;
@@ -281,7 +316,30 @@ namespace GFlowSimulation {
     for (auto dob : dataObjects) dob->setLocalsChanged(c);
   }
 
-  inline bool DataMaster::writeSummary(string writeDirectory) {
+  void DataMaster::setCheckpointingDelay(real delay) {
+    if (delay>0) checkpoint_delay_time = delay;
+  }
+
+  void DataMaster::setDoCheckpoints(bool flag) {
+    do_checkpoint_summary = flag;
+  }
+
+  inline void DataMaster::create_directory(bool force_create) {
+    if (topology->getRank()!=0) return; // Only rank 0 can create the directory
+    if (!is_directory_created || force_create) {
+      // If there is no directory name, create one randomly.
+      if (write_directory.empty())
+        setWriteDirectory("auto-dir-" + toStr(static_cast<int>(drand48()*10000)));
+      // Remove previously existing files if they exist
+      system(("rm -rf "+write_directory).c_str());
+      // Create the directory
+      mkdir(write_directory.c_str(), 0777);
+      cout << "Creating directory [" << write_directory << "].\n";
+      is_directory_created = true;
+    }
+  }
+
+  inline bool DataMaster::writeSummary(string directory) {
     // Get the rank of this process. Rank 0 will do all the writing.
     int rank = topology->getRank();
     int numProc = topology->getNumProc();
@@ -291,29 +349,23 @@ namespace GFlowSimulation {
     run_statistics.setNRows(numProc);
     run_statistics.setRowName("Processor");
 
-    // File stream.
+    // File stream. Only rank 0 needs a file stream.
     std::ofstream fout;
-    // Only rank 0 needs a file stream.
     if (rank==0) {
-      fout.open(writeDirectory+"/run_summary.txt");
+      fout.open(directory);
       if (fout.fail()) {
-        // Write error message
-        std::cerr << "Failed to open file [" << writeDirectory << "/run_summary.txt]." << endl;
+        std::cerr << "Failed to open file [" << directory << "]." << endl;
         return false;
       }
     }
 
-    // End timer - in case the run failed, and therefore didn't end the timer
-    endTimer();
     // Print pretty header.
     if (rank==0) {
-      // Print Header
       fout << "**********          SUMMARY          **********\n";
       fout << "*******  GFlow Granular Simulator v 4.0 *******\n";
       fout << "********** 2018, Nathaniel Rupprecht **********\n";
       fout << "***********************************************\n\n";
-      // Print command
-      if (argc>0) {
+      if (argc>0) { // Print command
         for (int c=0; c<argc; ++c) fout << argv[c] << " ";
       }
       else { // Try to get command from gflow
@@ -323,11 +375,14 @@ namespace GFlowSimulation {
       }
       fout << "\n\n";
     }
+    // Update run_time.
+    markTimer();
     
     // --- Print timing summary
-    RealType requestedTime = Base::gflow ? Base::gflow->getTotalRequestedTime() : 0;
-    RealType ratio = Base::gflow->getTotalTime()/run_time;
-    int iterations = Base::gflow->getIter(), particles = simData->number_owned();
+    RealType requestedTime = gflow ? gflow->getTotalRequestedTime() : 0;
+    RealType ratio = gflow->getTotalTime()/run_time;
+
+    int iterations = gflow->getIter(), particles = simData->number_owned();
     MPIObject::mpi_sum0(particles);
 
     // --- Print helping lambda functions.
@@ -390,6 +445,7 @@ namespace GFlowSimulation {
       formats("- Ratio x Particles:", toStrRT(ratio*particles));
       formats("- Iter x Particles / s:", toStrRT(iterations*(particles/run_time)));
       formats("- Interaction pairs / s:", toStrRT(operations));
+      if (numProc>1) formats("- Pairs / s * procs:", toStrRT(operations/numProc));
       formats("- Ratio:", toStrRT(ratio));
       formats("- Inverse Ratio:", toStrRT(1./ratio));
       fout << "\n";
@@ -442,8 +498,9 @@ namespace GFlowSimulation {
         // Get the "other" time.
         MPIObject::mpi_gather(run_time - total, timing_vector);
         if (rank==0 && 
-            std::any_of(timing_vector.begin(), timing_vector.end(), [](double t){return t!=0;})
-          ) {
+          std::any_of(timing_vector.begin(), timing_vector.end(), [](double t){return t!=0;})
+        )
+        {
           run_statistics.addColumn("Other", timing_vector);
           auto column = std::dynamic_pointer_cast<GenericEntry<double> >(run_statistics.last());
           column->setUsePercent(true, run_time);
@@ -631,16 +688,8 @@ namespace GFlowSimulation {
     if (rank==0) {
       writeParticleData(fout);
       fout << "\n";
-    }
-    
-    // Close the stream, write log files.
-    if (rank==0) {
       fout.close();
-      // Write the log file
-      writeLogFile(writeDirectory);
     }
-    // Write MPI log file.
-    if (topology->getNumProc()>1) writeMPIFile(writeDirectory);
 
     // Return success
     return true;
@@ -696,7 +745,6 @@ namespace GFlowSimulation {
     aden   *= invN;
     aspeed *= invN;
     ake    *= (0.5*invN);
-    // Print data
     out << "Particle Average Data (at finish): (Ave, [Min, Max])\n";
     out << "  - Sigma:                    " << asigma << "\n";
     out << "  - Mass:                     " << amass << "\n";
@@ -713,12 +761,12 @@ namespace GFlowSimulation {
     out << "\n";
   }
 
-  inline bool DataMaster::writeLogFile(string writeDirectory) {
+  inline bool DataMaster::writeLogFile(string directory) {
     if (topology->getRank()==0) {
-      std::ofstream fout(writeDirectory+"/log.txt");
+      std::ofstream fout(directory);
       if (fout.fail()) {
         // Write error message
-        std::cerr << "Failed to open file [" << writeDirectory << "/run_log.txt]." << endl;
+        std::cerr << "Failed to open file [" << directory << "/run_log.txt]." << endl;
         return false;
       }
       // Print Header
@@ -741,7 +789,6 @@ namespace GFlowSimulation {
         fout << "  - Github version:           " << commit_hash << "\n";
       }
       fout << "\n";
-
       fout << "SIMD info:\n";
       fout << "  - SIMD type:                ";
       switch (SIMD_TYPE) {
@@ -770,16 +817,13 @@ namespace GFlowSimulation {
           break;
         }
       }
-
-      // Close file stream
       fout.close();
     }
-
     // Return success
     return true;
   }
 
-  inline bool DataMaster::writeMPIFile(string writeDirectory) {
+  inline bool DataMaster::writeMPIFile(string directory) {
     const int left_align = 25;
     const int column_width = 10;
     const int rank = topology->getRank();
@@ -825,7 +869,6 @@ namespace GFlowSimulation {
       timing[5] = topology->ghost_recv_timer.get_time();
       timing[6] = topology->ghost_wait_timer.get_time();
       timing[7] = topology->ghost_search_timer.get_time();
-
       if (rank==0) {
         labels[0] = "Exch. send";
         labels[1] = "Exch. recv";
@@ -836,24 +879,17 @@ namespace GFlowSimulation {
         labels[6] = "Ghost wait";
         labels[7] = "Ghost search";
       }
-
       for (int i=0; i<n_timers; ++i) {
         MPIObject::mpi_gather(timing[i], float_vector);
         if (rank==0) {
           run_statistics.addColumn(labels[i], float_vector);
           auto ptr = std::dynamic_pointer_cast<GenericEntry<double> >(run_statistics.last());
           ptr->setUsePercent(true, run_time);
-
-          //pretty_print_row_float(labels[i], timing[i], float_vector, 0.01*run_time, "%");
         }
       }
     }
     #endif // USE_MPI==1
-
-    if (rank==0) run_statistics.printToCSV(writeDirectory+"/mpi-log.csv");
-
-    // Close the file stream.
-    //if (rank==0) fout.close();
+    if (rank==0) run_statistics.printToCSV(directory);
 
     // Return success.
     return true;

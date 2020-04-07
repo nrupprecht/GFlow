@@ -2,17 +2,19 @@
 #define __POSITION_DATA_HPP__GFLOW__
 
 #include "../base/dataobject.hpp"
-#include "../compute/store_data.hpp"
+//#include "../compute/store_data.hpp"
+
+#include "dataobjecttypes/data-base/particle-store-data.hpp"
 
 namespace GFlowSimulation {
 
   /*
-  *  @class PositionData
+  *  \class PositionData
   *  Records the position data of all the objects in the system.
-  *  Do this in the post-step phase
+  *  Do this in the post-step phase.
   *
   */
-  class PositionData : public DataObject {
+  class PositionData : public DataObject, public ParticleStoreData {
   public:
     //! \brief Constructor.
     PositionData(GFlow*);
@@ -28,20 +30,17 @@ namespace GFlowSimulation {
     //! Returns true for success.
     virtual bool writeToFile(string, bool=true) override;
 
-    //! \brief Request to store a vector data entry.
-    void add_vector_data_entry(string);
-    //! \brief Request to store the magnitude of a vector data entry.
-    void add_magnitude_data_entry(string);
-    //! \brief Request to store a scalar data entry.
-    void add_scalar_data_entry(string);
-    //! \brief Request to store an integer data entry.
-    void add_integer_data_entry(string);
+    // //! \brief Request to store a vector data entry.
+    // void add_vector_data_entry(string);
+    // //! \brief Request to store the magnitude of a vector data entry.
+    // void add_magnitude_data_entry(string);
+    // //! \brief Request to store a scalar data entry.
+    // void add_scalar_data_entry(string);
+    // //! \brief Request to store an integer data entry.
+    // void add_integer_data_entry(string);
 
-    //! \brief Clear all the requested data entries, of every type.
-    void clear_all_data_entries();
-
-    //! \brief Set the visual bounds. Only particles within these bounds will be saved.
-    void set_visual_bounds(const Bounds&);
+    // //! \brief Clear all the requested data entries, of every type.
+    // void clear_all_data_entries();
 
     // The demon modifer is a friend. This way, the demon can correct the video 
     // when it resets the clock and closes the door.
@@ -61,20 +60,20 @@ namespace GFlowSimulation {
     //! \brief Initial positions of particle.
     vector<float> initial_data;
 
-    //! \brief Vector data names.
-    vector<string> vector_data_entries;
-    //! \brief Vector magnitude data names.
-    vector<string> magnitude_data_entries;
-    //! \brief Scalar data names.
-    vector<string> scalar_data_entries;
-    //! \brief Integer data names.
-    vector<string> integer_data_entries;
+    // //! \brief Vector data names.
+    // vector<string> vector_data_entries;
+    // //! \brief Vector magnitude data names.
+    // vector<string> magnitude_data_entries;
+    // //! \brief Scalar data names.
+    // vector<string> scalar_data_entries;
+    // //! \brief Integer data names.
+    // vector<string> integer_data_entries;
 
-    //! \brief A store data object.
-    StoreData storeData;
+    // //! \brief A store data object.
+    // StoreData storeData;
 
-    //! \brief A function that can be used to only record some particles.
-    std::function<bool(shared_ptr<SimData>, int)> select_function;
+    // //! \brief A function that can be used to only record some particles.
+    // std::function<bool(shared_ptr<SimData>, int)> select_function;
   };
 
 }

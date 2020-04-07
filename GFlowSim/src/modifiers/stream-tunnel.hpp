@@ -54,6 +54,8 @@ namespace GFlowSimulation {
 
     //! \brief How to space the lattice of particles to get the correct volume density.
     real spacing_factor = 1.;
+    //! \brief When this flag is true, the spacing factor is adjusted to try to maintain a specified target density.
+    bool adjust_spacing_factor = true;
 
     //! \brief The last (target) x coordiate at which particles were created.
     real last_x_coord;
