@@ -60,6 +60,13 @@ namespace GFlowSimulation {
       	if (sim_dimensions<3) vis.createImage(dirName+"/types.bmp", final_data);
       	else vis.createImage3d(dirName+"/types.bmp", final_data);
       }
+      // Possible stripex snapshot.
+      if (simData->getScalarData("StripeX")) {
+        // Type snapshot
+        vis.setColorOption(5);
+        if (sim_dimensions<3) vis.createImage(dirName+"/stripe-x.bmp", final_data);
+        else vis.createImage3d(dirName+"/stripe-x.bmp", final_data);
+      }
     }
     catch (...) {
       cout << "Error in creating snapshot. Continuing.\n";

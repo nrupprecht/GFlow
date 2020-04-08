@@ -30,10 +30,14 @@ This version also includes Doxygen style commenting which can be used to generat
 
 * How lammps implements granular physics: [presentation](https://lammps.sandia.gov/workshops/Feb10/Christoph_Kloss/granular.pdf)
 
-Run with
+From the GFlowSim directory, run with
 ```
 ./bin/driver
 ```
+
+Or load a script via
+```
+./bin/driver -load=<filename>
 
 ## TODO (infrequently updated):
 
@@ -53,7 +57,11 @@ Run with
 
 - [x] Adding/removing particles while the simulation is running.
 
-- [ ] Parallelization.
+- [x] Parallelization.
+
+- [ ] Load ballancing
+
+- [ ] More parallel topologies.
 
 - [ ] More efficient force calculation.
 
