@@ -34,6 +34,7 @@ NTypes: 2
 // Creates a random force network of HardSphere and Lennard-Jones forces
 Force-grid: HardSphereDs
 
+/*
 // Fill an area with particles
 Fill: Area {
   // Fill all the simulation with particles
@@ -54,12 +55,14 @@ Fill: Area {
 
   Velocity: Velocity, 0, 0
 }
+*/
 
 Fill: Circle {
   Center: 0, 0, 0
   Sigma: MinR
   Radius: Radius
   Type: 1
+  Scale: 2
 }
 
 Reconcile: Remove=0.5

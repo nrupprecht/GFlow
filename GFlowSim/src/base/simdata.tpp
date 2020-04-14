@@ -23,7 +23,7 @@ int SimData::addParticle(int num, bool create_global_id) {
   int capacity = data_entries[particle_type].capacity();
   int& size = _size[particle_type];
   if (size+num > capacity) {
-    int additional_capacity = max(32, static_cast<int>(0.25*(num+size-capacity)));
+    int additional_capacity = max(32, static_cast<int>(0.1*(num+size-capacity)));
     data_entries[particle_type].resize(additional_capacity);
   }
   int address = size;
@@ -52,14 +52,16 @@ int SimData::addParticle(const real *x, const real *v, const real sg, const real
   int capacity = data_entries[particle_type].capacity();
   int& size = _size[particle_type];
   if (size+1 > capacity) {
-    int additional_capacity = max(32, static_cast<int>(0.25*size));
+    int additional_capacity = max(32, static_cast<int>(0.1*size));
     data_entries[particle_type].resize(additional_capacity);
   }
   // Reset all data
   reset_particle<particle_type>(size);
   // Set data
-  copyVec(x, X<particle_type>(size), sim_dimensions);
-  copyVec(v, V<particle_type>(size), sim_dimensions);
+  if (x) copyVec(x, X<particle_type>(size), sim_dimensions);
+  else zeroVec(X<particle_type>(size), sim_dimensions);
+  if (v) copyVec(v, V<particle_type>(size), sim_dimensions);
+  else zeroVec(V<particle_type>(size), sim_dimensions);
   Sg<particle_type>(size) = sg;
   Im<particle_type>(size) = im;
   Type<particle_type>(size) = type;
