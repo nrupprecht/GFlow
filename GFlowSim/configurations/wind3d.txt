@@ -22,7 +22,7 @@ Bounds: {
 Integrator: VelocityVerlet
 
 Boundary: {
-  : Wrap
+  : Open
   : Repulse
   : Repulse
 }
@@ -31,7 +31,7 @@ Boundary: {
 NTypes: 1
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
-Force-grid: Hertz
+Force-grid: HardSphereDs
 
 // Fill an area with particles
 Fill: Area {
@@ -63,6 +63,9 @@ Particle {
 
 Reconcile: Remove=0.5
 
-Modifier: WindTunnel {
+Modifier: StreamTunnel {
   Velocity: Velocity
+  MinR: MinR
+  MaxR: MaxR
+  Phi: 0.74
 }

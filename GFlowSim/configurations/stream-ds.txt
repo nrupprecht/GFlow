@@ -10,10 +10,6 @@ Var: Height=10
 Var: Front=10
 Var: Mu=0.75
 Var: Radius=1
-Var: kappaN=100000
-Var: kappaT=29000
-Var: gammaN=10000
-Var: gammaT=10000
 Var: phi=0.9069
 
 Var: Repulsion=50
