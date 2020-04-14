@@ -10,25 +10,26 @@ Var: MaxR=0.12
 Var: Velocity=2
 Var: Length=6
 Var: Front=4
-Var: Width=4
+Var: Height=4
+Var: Radius=1
 
 // Set the simulation bounds
 Bounds: {
   : -Front, Length
-  : -Width, Width
-  : -Width, Width
+  : -Height, Height
+  : -Height, Height
 }
 
 Integrator: VelocityVerlet
 
 Boundary: {
-  : Open
+  : Wrap
   : Repulse
   : Repulse
 }
 
 // Set the number of particle types
-NTypes: 1
+NTypes: 2
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
 Force-grid: HardSphereDs
@@ -54,18 +55,24 @@ Fill: Area {
   Velocity: Velocity, 0, 0
 }
 
-Particle {
-  Position: 0, 0, 0
-  Sigma: 1
-  Velocity: 0, 0, 0
-  Mass: inf
+Fill: Circle {
+  Center: 0, 0, 0
+  Sigma: MinR
+  Radius: Radius
+  Type: 1
 }
 
 Reconcile: Remove=0.5
 
+/*
 Modifier: StreamTunnel {
   Velocity: Velocity
   MinR: MinR
   MaxR: MaxR
   Phi: 0.74
+}
+*/
+
+Modifier: WindTunnel {
+  Velocity: Velocity
 }

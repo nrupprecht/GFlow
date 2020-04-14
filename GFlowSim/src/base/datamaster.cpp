@@ -698,7 +698,8 @@ namespace GFlowSimulation {
   inline void DataMaster::writeParticleData(std::ostream& out) {
     // If there are no particles
     if (simData->number()==0) {
-      cout << "No particles.\n";
+      out << "No particles.\n";
+      return;
     }
     // If there are particles, record data about them.
     RealType asigma(0), amass(0), aden(0), aspeed(0), ake(0);

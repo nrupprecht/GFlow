@@ -54,23 +54,54 @@ namespace GFlowSimulation {
     // Place particles
     auto simData = gflow->getSimData(); // Get the simdata
     Vec pos(sim_dimensions), Zero(sim_dimensions);
-    for (int i=0; i<n_particles; ++i, theta += dtheta) {
-      // Position of next wall particles
-      pos[0] = center[0] + radius*sin(theta);
-      pos[1] = center[1] + radius*cos(theta);
 
-      // If particle is in bounds, place it.
-      if (process_bounds.contains(pos)) {
-        // Get next global id
-        int gid = simData->getNextGlobalID();
-        // Add the particle to simdata. It is a particle of infinite mass.
-        simData->addParticle(pos.data, Zero.data, sigma, 0, type);
-        // Add particle to group net force data object.
-        if (track) netforce->add(gid);
+    if (sim_dimensions==2) {
+      for (int i=0; i<n_particles; ++i, theta += dtheta) {
+        // Position of next wall particles
+        pos[0] = center[0] + radius*sin(theta);
+        pos[1] = center[1] + radius*cos(theta);
+
+        // If particle is in bounds, place it.
+        if (process_bounds.contains(pos)) {
+          // Get next global id
+          int gid = simData->getNextGlobalID();
+          // Add the particle to simdata. It is a particle of infinite mass.
+          simData->addParticle(pos.data, Zero.data, sigma, 0, type);
+          // Add particle to group net force data object.
+          if (track) netforce->add(gid);
+        }
+      }
+    }
+    else if (sim_dimensions==3) {
+      real pos2[3];
+      pos[2] = center[2];
+      for (int i=0; i<n_particles && theta <= PI; ++i, theta += dtheta) {
+        // Position of next ring of wall particles
+        pos[0] = center[0] + radius*cos(theta);
+
+        // Number of particles in the ring.
+        real radius2 = radius*sin(theta);
+        int n_particles_2 = max(static_cast<int>(ceil(0.5 * (2*PI*radius2) / sigma)), 1);
+        real dtheta2 = 2.*PI / n_particles_2, theta_2 = 0;
+
+
+        for (int j=0; j<n_particles_2; ++j, theta_2 += dtheta2) {
+          pos[1] = center[1] + radius2*cos(theta_2);
+          pos[2] = center[2] + radius2*sin(theta_2);
+
+          // If particle is in bounds, place it.
+          if (process_bounds.contains(pos)) {
+            // Get next global id
+            int gid = simData->getNextGlobalID();
+            // Add the particle to simdata. It is a particle of infinite mass.
+            simData->addParticle(pos.data, Zero.data, sigma, 0, type);
+            // Add particle to group net force data object.
+            if (track) netforce->add(gid);
+          }
+        }
       }
     }
 
   }
-
 
 }
