@@ -58,7 +58,7 @@ namespace GFlowSimulation {
     int n_particles = max(static_cast<int>(ceil(0.5 * scale * 2*PI*R / sigma)), 1);
     real dtheta = 2.*PI / n_particles;
 
-    Vec Zero(sim_dimensions);
+    Vec Zero(df);
     bool final_circle = (d+2==df);
     for (real theta = 0.; theta<PI || (final_circle && theta<2*PI); theta += dtheta) {
       real Rprime = R*sin(theta);
