@@ -61,7 +61,7 @@ namespace GFlowSimulation {
       	else vis.createImage3d(dirName+"/types.bmp", final_data);
       }
       // Possible stripex snapshot.
-      if (simData->getScalarData("StripeX")) {
+      if (simData->getScalarData("StripeX")!=-1) {
         // Type snapshot
         vis.setColorOption(5);
         if (sim_dimensions<3) vis.createImage(dirName+"/stripe-x.bmp", final_data);

@@ -2,6 +2,7 @@
 #define __STREAM_TUNNEL_HPP__GFLOW__
 
 #include "../base/modifier.hpp"
+#include "../utility/randomengines.hpp"
 
 namespace GFlowSimulation {
   
@@ -25,6 +26,9 @@ namespace GFlowSimulation {
     virtual void parse_construct(HeadNode*, const std::map<string, string>&) override;
 
   private:
+    //! \brief Function that is called recursively to fill the entry area with particles, no matter the dimensionality of the simulation.
+    inline void recursive_fill(const int, Vec&, Vec&) const;
+
     //! \brief The amount of space in which we create and push particles.
     real entry_width = 2.f;
     //! \brief The amount of space in which we stablilize particle velocity at the end.
@@ -34,13 +38,22 @@ namespace GFlowSimulation {
 
     //! \brief The velocity at which the particles should be driven.
     real driving_velocity = 1.f;
+    //! \brief A vec that stores the velocity, { driving_velocity, 0, 0, ... }.
+    Vec driving_velocity_vec;
 
     //! The min radius of an added particle.
-    real min_r;
+    real min_r = 0.05f;
     //! The max radius of an added particle.
-    real max_r;
+    real max_r = 0.05f;
     //! \brief The target system (volume) density.
-    real phi_target = 0.9;
+    real phi_target = 0.9f;
+    //! \brief The spacing needed between adjacent particles.
+    real ave_spacing = 0.05f;
+
+    //! \brief A random engine for creating particles.
+    //!
+    //! Because of C++, and how the constructor is set up, this needs to be after min_r and max_r in the class definition.
+    ProportionalRandomEngine random_radius;
 
     // --- Internal parameters ---
 
@@ -52,16 +65,8 @@ namespace GFlowSimulation {
     //! \brief The amount of time since we last created particles.
     real last_creation_time = 0.f;
 
-    //! \brief How to space the lattice of particles to get the correct volume density.
-    real spacing_factor = 1.;
-    //! \brief When this flag is true, the spacing factor is adjusted to try to maintain a specified target density.
-    bool adjust_spacing_factor = true;
-
-    //! \brief The last (target) x coordiate at which particles were created.
-    real last_x_coord;
-    //! \brief If true, we should shift the particles up by sqrt(3)/2, to create a good triangular lattice.
-    bool shift_y = true;
-
+    //! \brief The x position where we should start placing particles.
+    real next_x_coord;
   };
 
 }

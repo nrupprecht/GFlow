@@ -1,48 +1,48 @@
 #include "stream-tunnel.hpp"
 // Other files
 #include "../base/topology.hpp"
-#include "../utility/randomengines.hpp"
 
 namespace GFlowSimulation {
 
-  StreamTunnel::StreamTunnel(GFlow *gflow) 
-    : Modifier(gflow), driving_velocity(2.f), min_r(0.05f), max_r(0.05f), phi_target(MaxPackings[sim_dimensions])
+  StreamTunnel::StreamTunnel(GFlow *gflow)
+    : Modifier(gflow), phi_target(MaxPackings[sim_dimensions]), driving_velocity_vec(sim_dimensions), random_radius(min_r, max_r, sim_dimensions)
   {
     entry_width = min(entry_width, 0.1f*gflow->getBounds().wd(0));
     exit_width = min(exit_width, 0.1f*gflow->getBounds().wd(0));
     // Set thresholds.
     entry_threshold = entry_width + gflow->getBounds().min[0];
     exit_threshold = gflow->getBounds().max[0] - exit_width;
+
+    driving_velocity_vec[0] = driving_velocity;
   };
 
   StreamTunnel::StreamTunnel(GFlow *gflow, const real speed, const real mr, const real Mr) 
-    : Modifier(gflow), driving_velocity(speed), min_r(mr), max_r(Mr), phi_target(MaxPackings[sim_dimensions])
+    : Modifier(gflow), driving_velocity(speed), min_r(mr), max_r(Mr), phi_target(MaxPackings[sim_dimensions]), driving_velocity_vec(sim_dimensions), random_radius(min_r, max_r, sim_dimensions)
   {
     entry_width = min(entry_width, 0.1f*gflow->getBounds().wd(0));
     exit_width = min(exit_width, 0.1f*gflow->getBounds().wd(0));
     // Set thresholds.
     entry_threshold = entry_width + gflow->getBounds().min[0];
     exit_threshold = gflow->getBounds().max[0] - exit_width;
+
+    driving_velocity_vec[0] = driving_velocity;
   };
 
   void StreamTunnel::pre_integrate() {
     // So particles have a chance to get farther away at the beginning.
     last_creation_time = 0;
-    // Calculate initial spacing factor - this will not be very accurate, but after a few rounds, the adjustment of the
-    // spacing factor should compensate.
-    spacing_factor = sqrt(MaxPackings[sim_dimensions]/phi_target);
     // Set current_x_coord
-    last_x_coord = gflow->getBounds().min[0];
+    next_x_coord = gflow->getBounds().min[0] - 0.5*ave_spacing;
   }
 
   void StreamTunnel::pre_forces() {
     // Only run the stream tunnel during an actual simulation and if we have a topology object.
     if (topology==nullptr || gflow->getRunMode()!=RunMode::SIM) return;
     
-    // Position of particles created at the previous last_x_coord;
+    // Position of particles created at the previous next_x_coord;
     Bounds processor_bounds = topology->getProcessBounds();
     Bounds simulation_bounds = topology->getSimulationBounds();
-    real current_x_coord = last_x_coord + driving_velocity * (gflow->getElapsedTime() - last_creation_time);
+    real current_x_coord = next_x_coord + driving_velocity * (gflow->getElapsedTime() - last_creation_time);
     real cutoff_position = processor_bounds.min[0] + entry_fraction * entry_width;
 
     // We have to decide which processors should add particles to the simulations. We should only have processors whose left (processor) 
@@ -51,43 +51,13 @@ namespace GFlowSimulation {
     // of the leftmost processor, but still partially overlapped with entry_threshold, tried to add particles too. So particles were created
     // on top of particles that were being pushed out from the leftmost processor. It was a bad idea.
     if (processor_bounds.min[0]==simulation_bounds.min[0] && cutoff_position<current_x_coord) {
-      // Create a triangular lattice of particles. Assumes 2D.
-      real ave_d = min_r + max_r;
-      real tri_x = 0.5*sqrt(3.)*ave_d;
-      real dy = spacing_factor*ave_d;
-      real dx = spacing_factor*tri_x;
-      int nx = floor((current_x_coord - processor_bounds.min[0])/dx);
-      int ny = floor(processor_bounds.wd(1)/dy);
-      constexpr real perturbation_strength = 0.25;
-      ProportionalRandomEngine random_radius(min_r, max_r, sim_dimensions);
-      real X[2], Xi[2], V[] = {driving_velocity, 0}, R(0), Im(0), vol(0); // Assumes 2 dimensions.
-      // Add a bunch of new particles.
-      X[0] = current_x_coord;
-      for (int ix=0; ix<nx; ++ix) {
-        X[1] = processor_bounds.min[1] + (shift_y ? 0.5*dx : 0) + 0.5*dy;
-        shift_y = !shift_y;
-        for (int iy=0; iy<ny; ++iy) {
-          // Random radius.
-          R = random_radius.generate();
-          Im = 1.f/(PI*sqr(R));
-          // Small position perturbation.
-          for (int d=0; d<sim_dimensions; ++d) Xi[d] = X[d] + perturbation_strength*spacing_factor*tri_x*randNormal();
-          // Add particle.
-          simData->addParticle(Xi, V, R, Im, 0);
-          X[1] += dy;
-          vol += sphere_volume(R, sim_dimensions);
-        }
-        X[0] -= dx;
-      }
+      Vec pos(sim_dimensions), Xi(sim_dimensions);
+      recursive_fill(0, pos, Xi);
       // Save last x coord.
-      last_x_coord = X[0];
+      next_x_coord = pos[0];
       // Set last creation time.
       last_creation_time = gflow->getElapsedTime();
       simData->setNeedsLocalRemake();
-      // Achieved density. This seems to maintain the correct density.
-      real pf = vol / ((current_x_coord - last_x_coord + 0.5*dx) * processor_bounds.wd(1));
-      // Correct spacing factor for next time.
-      if (adjust_spacing_factor) spacing_factor -= 0.1*(phi_target - pf);
     }
   }
 
@@ -139,6 +109,47 @@ namespace GFlowSimulation {
     parser.firstArg("MaxR", max_r);
     parser.firstArg("Phi", phi_target);
     parser.firstArg("Velocity", driving_velocity);
+
+    // Update parameters.
+    random_radius = ProportionalRandomEngine(min_r, max_r, sim_dimensions);
+    driving_velocity_vec[0] = driving_velocity;
+    // This isn't the correct way to calculate average R, since we aren't using a uniform distribution, but if max_r \approx min_r, it will be 
+    // an OK approximation.
+    ave_spacing = pow( sphere_volume(0.5*(min_r + max_r), sim_dimensions) / phi_target, 1./sim_dimensions );
+  }
+
+  inline void StreamTunnel::recursive_fill(const int d, Vec& pos, Vec& Xi) const {
+    const Bounds processor_bounds = topology->getProcessBounds();
+
+    real creation_width = 0;
+    if (d==0) {
+      pos[0] = next_x_coord + driving_velocity * (gflow->getElapsedTime() - last_creation_time);
+      creation_width = pos[0] - processor_bounds.min[0];
+    }
+    else {
+      creation_width = processor_bounds.wd(d);
+      pos[d] = processor_bounds.max[d];
+    }
+
+    int number = creation_width / ave_spacing;
+    for (int i=0; i<number; ++i, pos[d] -= ave_spacing) {
+      if (d==sim_dimensions-1) {
+        real R = random_radius.generate(); // Generate random radius.
+        real Im = 1.f/sphere_volume(R, sim_dimensions);
+        // Small position perturbation.
+        Xi = pos;
+        //constexpr real perturbation_strength = 0.25;
+        for (int d=0; d<sim_dimensions; ++d) Xi[d] += 0.5*ave_spacing*randNormal();
+
+        // Add particle.
+        simData->addParticle(Xi.data, driving_velocity_vec.data, R, Im, 0);
+        //vol += sphere_volume(R, sim_dimensions);
+
+      }
+      else recursive_fill(d+1, pos, Xi);
+    }
+
+
   }
 
 }
