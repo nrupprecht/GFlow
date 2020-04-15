@@ -12,6 +12,8 @@ Var: Length=6
 Var: Front=4
 Var: Height=4
 Var: Radius=1
+Var: Repulsion=50
+Var: Dissipation=1
 
 // Set the simulation bounds
 Bounds: {
@@ -32,9 +34,15 @@ Boundary: {
 NTypes: 2
 
 // Creates a random force network of HardSphere and Lennard-Jones forces
-Force-grid: HardSphereDs
+Force-grid: {
+  : 0, 0, HardSphereDs {
+    Repulsion: Repulsion
+    Dissipation: Dissipation
+  }
+  : 0, 1, HardSphereDs
+  : 1, 1, None
+}
 
-/*
 // Fill an area with particles
 Fill: Area {
   // Fill all the simulation with particles
@@ -53,9 +61,13 @@ Fill: Area {
     TypeA : 1
   }
 
+  Excluded: Sphere {
+    : 0, 0, 0
+    : Radius + 4*MinR
+  }
+
   Velocity: Velocity, 0, 0
 }
-*/
 
 Fill: Circle {
   Center: 0, 0, 0

@@ -58,10 +58,8 @@ int SimData::addParticle(const real *x, const real *v, const real sg, const real
   // Reset all data
   reset_particle<particle_type>(size);
   // Set data
-  if (x) copyVec(x, X<particle_type>(size), sim_dimensions);
-  else zeroVec(X<particle_type>(size), sim_dimensions);
-  if (v) copyVec(v, V<particle_type>(size), sim_dimensions);
-  else zeroVec(V<particle_type>(size), sim_dimensions);
+  copyVec(x, X<particle_type>(size), sim_dimensions);
+  copyVec(v, V<particle_type>(size), sim_dimensions);
   Sg<particle_type>(size) = sg;
   Im<particle_type>(size) = im;
   Type<particle_type>(size) = type;
