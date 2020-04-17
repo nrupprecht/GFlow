@@ -12,7 +12,7 @@ Var: Mu=0.75
 Var: Radius=1
 Var: phi=0.9069
 
-Var: Repulsion=50
+Var: Repulsion=500
 Var: Dissipation=1
 
 // This is a 2d simulation

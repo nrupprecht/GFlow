@@ -9,29 +9,24 @@ namespace GFlowSimulation {
   {
     entry_width = min(entry_width, 0.1f*gflow->getBounds().wd(0));
     exit_width = min(exit_width, 0.1f*gflow->getBounds().wd(0));
-    // Set thresholds.
     entry_threshold = entry_width + gflow->getBounds().min[0];
     exit_threshold = gflow->getBounds().max[0] - exit_width;
-
     driving_velocity_vec[0] = driving_velocity;
   };
 
   StreamTunnel::StreamTunnel(GFlow *gflow, const real speed, const real mr, const real Mr) 
-    : Modifier(gflow), driving_velocity(speed), min_r(mr), max_r(Mr), phi_target(MaxPackings[sim_dimensions]), driving_velocity_vec(sim_dimensions), random_radius(min_r, max_r, sim_dimensions)
+    : Modifier(gflow), driving_velocity(speed), min_r(mr), max_r(Mr), phi_target(MaxPackings[sim_dimensions]), 
+      driving_velocity_vec(sim_dimensions), random_radius(min_r, max_r, sim_dimensions)
   {
     entry_width = min(entry_width, 0.1f*gflow->getBounds().wd(0));
     exit_width = min(exit_width, 0.1f*gflow->getBounds().wd(0));
-    // Set thresholds.
     entry_threshold = entry_width + gflow->getBounds().min[0];
     exit_threshold = gflow->getBounds().max[0] - exit_width;
-
     driving_velocity_vec[0] = driving_velocity;
   };
 
   void StreamTunnel::pre_integrate() {
-    // So particles have a chance to get farther away at the beginning.
-    last_creation_time = 0;
-    // Set current_x_coord
+    last_creation_time = 0; // So particles have a chance to get farther away at the beginning.
     next_x_coord = gflow->getBounds().min[0] - 0.5*ave_spacing;
   }
 
@@ -47,9 +42,9 @@ namespace GFlowSimulation {
 
     // We have to decide which processors should add particles to the simulations. We should only have processors whose left (processor) 
     // bound touches the simulation bound to add particles to the simulation. This simulates particles coming in from the left end of the 
-    // system. I didn't do it this way at first, and just checked whether processor_bounds.min[0]<entry_threshold, and processors that were to the right
-    // of the leftmost processor, but still partially overlapped with entry_threshold, tried to add particles too. So particles were created
-    // on top of particles that were being pushed out from the leftmost processor. It was a bad idea.
+    // system. I didn't do it this way at first, and just checked whether processor_bounds.min[0]<entry_threshold, and processors that were 
+    // to the right of the leftmost processor, but still partially overlapped with entry_threshold, tried to add particles too. So particles 
+    // were created on top of particles that were being pushed out from the leftmost processor. It was a bad idea.
     if (processor_bounds.min[0]==simulation_bounds.min[0] && cutoff_position<current_x_coord) {
       Vec pos(sim_dimensions), Xi(sim_dimensions);
       recursive_fill(0, pos, Xi);
@@ -57,7 +52,10 @@ namespace GFlowSimulation {
       next_x_coord = pos[0];
       // Set last creation time.
       last_creation_time = gflow->getElapsedTime();
-      simData->setNeedsLocalRemake();
+      // A local remake remakes the interaction handler for particles on this processor. No interprocessor communication
+      // occurs. So particles created in positions such that they would be ghost particles on other processors will not
+      // be registered as ghost particles until a full remake. This does not seem to cause any problems.
+      simData->setNeedsLocalRemake(); 
     }
   }
 
@@ -131,6 +129,9 @@ namespace GFlowSimulation {
       pos[d] = processor_bounds.max[d];
     }
 
+    // We can actually initialize stripe x data here for new particles instead of updating via the stripex modifier.
+    scalar_access stripex = simData->ScalarData("StripeX");
+
     int number = creation_width / ave_spacing;
     for (int i=0; i<number; ++i, pos[d] -= ave_spacing) {
       if (d==sim_dimensions-1) {
@@ -138,18 +139,13 @@ namespace GFlowSimulation {
         real Im = 1.f/sphere_volume(R, sim_dimensions);
         // Small position perturbation.
         Xi = pos;
-        //constexpr real perturbation_strength = 0.25;
         for (int d=0; d<sim_dimensions; ++d) Xi[d] += 0.5*ave_spacing*randNormal();
-
         // Add particle.
-        simData->addParticle(Xi.data, driving_velocity_vec.data, R, Im, 0);
-        //vol += sphere_volume(R, sim_dimensions);
-
+        int id = simData->addParticle(Xi.data, driving_velocity_vec.data, R, Im, 0);
+        if (!stripex.isnull()) stripex(id) = Xi[1]; // Here is where we can update stripex data.
       }
       else recursive_fill(d+1, pos, Xi);
     }
-
-
   }
 
 }

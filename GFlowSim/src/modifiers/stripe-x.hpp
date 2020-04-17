@@ -17,7 +17,6 @@ namespace GFlowSimulation {
     virtual void post_forces();
 
   private:
-
     //! \brief Which entry simdata saves the stripe data in.
     int entry = -1;
 
@@ -26,6 +25,10 @@ namespace GFlowSimulation {
 
     // So we don't apply the force all the time.
     RealType lastUpdate, updateDelay;
+
+    //! \brief If true, we periodically search through all the particles and update the stripe x of particles near the left edge 
+    //! of the simulation.
+    bool do_updates = false;
   };
 
 }

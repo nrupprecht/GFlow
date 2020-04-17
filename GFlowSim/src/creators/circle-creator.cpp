@@ -1,12 +1,11 @@
 #include "circle-creator.hpp"
 // Other files
 
-
 namespace GFlowSimulation {
 
   void CircleCreator::createArea(HeadNode *head, GFlow *gflow, const std::map<string, string>& variables, vector<ParticleFixer>& particle_fixers) {
     // Check if head is good
-    if (head==nullptr) return;
+    if (head==nullptr || gflow==nullptr) return;
 
     // Get the dimensions
     int sim_dimensions = gflow->getSimDimensions();

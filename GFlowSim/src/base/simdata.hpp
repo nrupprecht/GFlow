@@ -107,7 +107,7 @@ namespace GFlowSimulation {
     template<unsigned=0> real& Im(int);
 
     template<unsigned=0, bool=true> scalar_access ScalarData(const int);
-    template<unsigned=0> scalar_access ScalarData(const string&);
+    template<unsigned=0, bool=true> scalar_access ScalarData(const string&);
     template<unsigned=0> real& ScalarData(const int, const int);
 
     // --- Get integer data

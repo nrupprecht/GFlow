@@ -18,9 +18,8 @@ namespace GFlowSimulation {
   }
   
   void StripeX::post_forces() {
-    // Get the time
-    RealType time = Base::gflow->getElapsedTime();
-    if (time-lastUpdate<updateDelay || entry<0) return;
+    RealType current_time = Base::gflow->getElapsedTime();
+    if (!do_updates || current_time-lastUpdate<updateDelay || entry<0) return;
 
     // Set particles in the window
     RealType bound = simData->getBounds().min[0] + window;
@@ -32,7 +31,7 @@ namespace GFlowSimulation {
       if (x(i, 0)<bound) st(i) = x(i, 1);
 
     // Update time point
-    lastUpdate = time;
+    lastUpdate = current_time;
   }
 
 }

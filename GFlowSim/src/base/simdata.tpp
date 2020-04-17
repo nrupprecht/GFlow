@@ -208,10 +208,10 @@ scalar_access SimData::ScalarData(const int entry) {
   else return data_entries[particle_type].get_sdata(entry); 
 }
 
-template<unsigned particle_type> 
+template<unsigned particle_type, bool safe_checks> 
 scalar_access SimData::ScalarData(const string& name) {
   const int entry = getScalarData(name);
-  return ScalarData<particle_type>(entry);
+  return ScalarData<particle_type, safe_checks>(entry);
 }
 
 template<unsigned particle_type> 

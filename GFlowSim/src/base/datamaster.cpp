@@ -30,7 +30,7 @@ namespace GFlowSimulation {
     argc = ac; argv = av;
   }
 
-  void DataMaster::setInitializationTime(RealType t) {
+  void DataMaster::setInitializationTime(real t) {
     initialization_time = t;
   }
 
@@ -288,12 +288,12 @@ namespace GFlowSimulation {
     run_time = 0;
   }
 
-  void DataMaster::setStartRecTime(RealType t) {
+  void DataMaster::setStartRecTime(real t) {
     startRecTime = t;
   }
 
   // Set the fps of all the data objects
-  void DataMaster::setFPS(RealType fps) {
+  void DataMaster::setFPS(real fps) {
     for (auto &dob : dataObjects) 
       if (dob) dob->setFPS(fps);
   }
@@ -303,12 +303,12 @@ namespace GFlowSimulation {
   }
 
   // Set the fps of particular data objects
-  void DataMaster::setFPS(int obj_id, RealType fps) {
+  void DataMaster::setFPS(int obj_id, real fps) {
     if (-1<obj_id && obj_id<dataObjects.size())
       dataObjects.at(obj_id)->setFPS(fps);
   }
 
-  RealType DataMaster::getRatio() const {
+  real DataMaster::getRatio() const {
     return Base::gflow->getTotalRequestedTime()/run_time;
   }
 
@@ -379,8 +379,8 @@ namespace GFlowSimulation {
     markTimer();
     
     // --- Print timing summary
-    RealType requestedTime = gflow ? gflow->getTotalRequestedTime() : 0;
-    RealType ratio = gflow->getTotalTime()/run_time;
+    real requestedTime = gflow ? gflow->getTotalRequestedTime() : 0;
+    real ratio = gflow->getTotalTime()/run_time;
 
     int iterations = gflow->getIter(), particles = simData->number_owned();
     MPIObject::mpi_sum0(particles);
@@ -388,11 +388,11 @@ namespace GFlowSimulation {
     // --- Print helping lambda functions.
 
     // Helper lambda - checks whether run_time was non-zero. Pretty prints.
-    auto toStrPP = [&] (RealType x, int precision=3) -> string {
+    auto toStrPP = [&] (real x, int precision=3) -> string {
       return (run_time>0 ? (x>0.001 ? pprint(x, 3, 3) : pprint(0, 3, 3)) : "--");
     };
     // Helper lambda - checks whether run_time was non-zero. Normal version.
-    auto toStrRT = [&] (RealType x, int precision=3) -> string {
+    auto toStrRT = [&] (real x, int precision=3) -> string {
       return (run_time>0 ? toStr(x) : "--");
     };
     // Helper lambda for printing (time, % runtime).
@@ -539,7 +539,7 @@ namespace GFlowSimulation {
     else if (rank==0) fout << "No timing data.\n\n";
 
     // Calculate volume that the particles on each processor take up.
-    RealType vol = 0;
+    real vol = 0;
     for (int n=0; n<simData->number(); ++n) vol += pow(simData->Sg(n), sim_dimensions);
     vol *= pow(PI, sim_dimensions/2.) / tgamma(sim_dimensions/2. + 1.);
     // Get the total volume all of the particles on all processors take up.
@@ -592,13 +592,13 @@ namespace GFlowSimulation {
       if (rank==0) {
         for (int i=0; i<types; ++i)
           fout << "     Type " << toStr(i) << ":                  " << count[i] << " (" << 
-            100 * count[i] / static_cast<RealType>(particles) << "%)\n";
+            100. * static_cast<real>(count[i]) / static_cast<real>(particles) << "%)\n";
       }
     }
 
     if (rank==0) { 
       // Calculate packing fraction.
-      RealType phi = vol/Base::gflow->getBounds().vol();
+      real phi = vol/Base::gflow->getBounds().vol();
       fout << "  - Packing fraction:         " << phi << "\n";
       fout << "  - Temperature:              " << KineticEnergyData::calculate_temperature(simData) <<"\n";
       fout << "\n";
@@ -628,8 +628,8 @@ namespace GFlowSimulation {
       if (gflow->getTotalTime()>0) {
         fout << "Integration:\n";
         fout << "  - Iterations:               " << iterations << "\n";
-        fout << "  - Iterations per second:    " << toStrRT(static_cast<RealType>(iterations) / run_time) << "\n";
-        fout << "  - Time per iteration:       " << toStrRT(run_time / static_cast<RealType>(iterations)) << "\n";
+        fout << "  - Iterations per second:    " << toStrRT(static_cast<real>(iterations) / run_time) << "\n";
+        fout << "  - Time per iteration:       " << toStrRT(run_time / static_cast<real>(iterations)) << "\n";
         if (integrator) fout << "  - Time step (at end):       " << integrator->getTimeStep() << "\n";
         fout << "  - Average dt:               " << gflow->getTotalTime()/iterations << "\n";
         fout << "\n";
@@ -663,10 +663,10 @@ namespace GFlowSimulation {
         fout << "  - Average miss:             " << handler->getAverageMiss() << "\n";
         if (run_time>0) {
           fout << "  - Sector remakes:           " << handler->getNumberOfRemakes() << "\n";
-          RealType re_ps = handler->getNumberOfRemakes() / gflow->getTotalTime();
+          real re_ps = handler->getNumberOfRemakes() / gflow->getTotalTime();
           fout << "  - Remakes per second:       " << re_ps << "\n";
           fout << "  - Average remake delay:     " << 1./re_ps << "\n";
-          fout << "  - Average iters per delay:  " << static_cast<RealType>(iterations) / handler->getNumberOfRemakes() <<"\n";
+          fout << "  - Average iters per delay:  " << static_cast<real>(iterations) / handler->getNumberOfRemakes() <<"\n";
         }
       }
       fout << "\n";
@@ -702,37 +702,37 @@ namespace GFlowSimulation {
       return;
     }
     // If there are particles, record data about them.
-    RealType asigma(0), amass(0), aden(0), aspeed(0), ake(0);
-    RealType maxsigma = simData->Sg(0), maxmass = 1./simData->Im(0), 
+    real asigma(0), amass(0), aden(0), aspeed(0), ake(0);
+    real maxsigma = simData->Sg(0), maxmass = 1./simData->Im(0), 
       maxden = 1./(simData->Im(0)*sphere_volume(maxsigma, sim_dimensions)),
       maxspeed = magnitudeVec(simData->V(0), sim_dimensions), 
       maxke = sqr(magnitudeVec(simData->V(0), sim_dimensions))*(1./simData->Im(0));
-    RealType minsigma = maxsigma, minmass = maxmass, minden = maxden, minspeed = maxspeed, minke = maxke;
+    real minsigma = maxsigma, minmass = maxmass, minden = maxden, minspeed = maxspeed, minke = maxke;
     int count = 0; // There may be infinitely massive objects, or invalid objects. We do not count these in the averages.
     for (int n=0; n<simData->size_owned(); ++n) {
       if (simData->Type(n)<0 || simData->Im(n)<=0) continue;
       // Radius
-      RealType sig = simData->Sg(n);
+      real sig = simData->Sg(n);
       asigma += sig; 
       if (sig<minsigma) minsigma = sig;
       if (sig>maxsigma) maxsigma = sig;
       // Speed
-      RealType speed = magnitudeVec(simData->V(n), sim_dimensions);
+      real speed = magnitudeVec(simData->V(n), sim_dimensions);
       aspeed += speed;
       if (speed<minspeed) minspeed = speed;
       if (speed>maxspeed) maxspeed = speed;
       // Mass
-      RealType mass = 1./simData->Im(n);
+      real mass = 1./simData->Im(n);
       amass += mass;
       if (mass<minmass) minmass = mass;
       if (mass>maxmass) maxmass = mass;
       // Density
-      RealType den = 1./(simData->Im(n)*sphere_volume(sig, sim_dimensions));
+      real den = 1./(simData->Im(n)*sphere_volume(sig, sim_dimensions));
       aden += den;
       if (den<minden) minden = den;
       if (den>maxden) maxden = den;
       // Kinetic energy
-      RealType ke = sqr(magnitudeVec(simData->V(n), sim_dimensions))*(1./simData->Im(n));
+      real ke = sqr(magnitudeVec(simData->V(n), sim_dimensions))*(1./simData->Im(n));
       ake += ke;
       if (ke<minke) minke = ke;
       if (ke>maxke) maxke = ke;
@@ -740,7 +740,7 @@ namespace GFlowSimulation {
       ++count;
     }
     // Normalize
-    RealType invN = 1./static_cast<RealType>(count);
+    real invN = 1./static_cast<real>(count);
     asigma *= invN;
     amass  *= invN;
     aden   *= invN;
