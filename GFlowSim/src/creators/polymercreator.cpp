@@ -81,9 +81,6 @@ namespace GFlowSimulation {
 
     // Add bonds object to gflow
     make_bond_objects(gflow);
-    
-    // Seed global random generator
-    seedNormalDistribution();
 
     // Create a group correlation object
     if (correlation==nullptr && useCorr) {

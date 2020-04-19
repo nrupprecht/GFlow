@@ -48,7 +48,6 @@ int main(int argc, char **argv) {
   // MPI related.
   int rank(0), numProc(1);
 
-
   // Allocate processor arguments. Do this outside USE_MPI.
   char **processor_argv = argv;
 
@@ -261,6 +260,9 @@ int main(int argc, char **argv) {
   // Record the time at which the program started.
   auto start_time = current_time();
   if (!quiet && rank==0) cout << "Starting up simulation...\n";
+
+  // Seed the global generator.
+  seedGlobalGenerator();
 
   // --- This creator creates gflow simulations
   Creator *creator = nullptr;

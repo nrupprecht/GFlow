@@ -30,19 +30,12 @@ using std::chrono::duration;
 using std::chrono::duration_cast;
 
 #include <ctime>
-
 #include <cmath>
-
 #include <algorithm>
-
 #include <random>
-
 #include <stdlib.h> // For aligned_alloc
-
 #include <algorithm> // For std::copy, std::fill, etc.
-
 #include <set>
-
 #include <map>
 
 #include <memory> // For pointers
@@ -61,8 +54,8 @@ using std::weak_ptr;
 namespace GFlowSimulation {
 
   // Define what type of floating point data to use
-  typedef float RealType;
   typedef float real;
+  typedef real RealType; // This is the old typedef, gradually being replaced by real.
 
   // Unsigned int
   typedef unsigned int uint;
@@ -70,16 +63,16 @@ namespace GFlowSimulation {
   // --- Pair typedefs
 
   //! Real pair
-  typedef pair<RealType, RealType> RPair;
+  typedef pair<real, real> RPair;
 
   //! Int pair
   typedef pair<int, int> IPair;
 
   //! Real-Int pair
-  typedef pair<RealType, int> RIPair;
+  typedef pair<real, int> RIPair;
 
   //! Int-Real pair
-  typedef pair<int, RealType> IRPair;
+  typedef pair<int, real> IRPair;
 
   //! \brief A pair containing a string and an int.
   typedef pair<string, int> SIPair;
@@ -195,7 +188,7 @@ namespace GFlowSimulation {
   }
 
   //! Takes two high_resolution_clock::time_point, returns the number of seconds
-  template<typename T> inline RealType time_span(T end, T start) {
+  template<typename T> inline real time_span(T end, T start) {
     duration<double> span = duration_cast<duration<double> >(end-start);
     return span.count();
   }
@@ -240,10 +233,11 @@ namespace GFlowSimulation {
 
   //! Global random number generator
   static std::mt19937 global_generator;
-  //! Global normal distribution
-  static std::normal_distribution<RealType> global_normal_dist(0., 1.);
 
-  inline void seedNormalDistribution(unsigned seed=0) {
+  //! Global normal distribution
+  static std::normal_distribution<real> global_normal_dist(0., 1.);
+
+  inline void seedGlobalGenerator(unsigned seed=0) {
     if(seed==0) seed = static_cast<unsigned>(std::chrono::system_clock::now().time_since_epoch().count());
     global_generator = std::mt19937(seed);
   }
@@ -255,7 +249,7 @@ namespace GFlowSimulation {
 
 } // End namespace GFlowSimulation
 
-// Include this after so RealType is defined
+// Include this after so real is defined
 #include "defaultconstants.hpp"
 #include "bounds.hpp"
 #include "vec.hpp"
@@ -268,11 +262,11 @@ namespace GFlowSimulation {
 namespace GFlowSimulation {
 
   //! Computes the volume of a [D]-dimensional sphere - need PI
-  inline RealType sphere_volume(const RealType radius, const int D) {
+  inline real sphere_volume(const real radius, const int D) {
     return pow(PI, D/2.) * pow(radius, D) / tgamma(D/2. + 1.);
   }
 
-  inline RealType inv_sphere_volume(const RealType v, const int D) {
+  inline real inv_sphere_volume(const real v, const int D) {
     return pow( tgamma(D/2. + 1.) * v/ pow(PI, D/2.), 1./D);
   }
 
