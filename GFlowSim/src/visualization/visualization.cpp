@@ -119,28 +119,25 @@ namespace GFlowSimulation {
     // Timing
     auto start_time = current_time();
 
-    if (choice_3d) {
-      // Set up the camera
-      standard_camera_setup();
+    // Set up the camera
+    if (render_choice_3d==0) standard_camera_setup();
 
-      // Create all the images
-      for (int i=0; i<data.size(); ++i) {
-        string fileName = dirName + "/frame" + toStr(i) + ".bmp";
-        frame = i;
+    // Create all the images
+    for (int i=0; i<data.size(); ++i) {
+      string fileName = dirName + "/frame" + toStr(i) + ".bmp";
+      frame = i;
+      switch (render_choice_3d) {
+      case 0:
         createImage3d(fileName, data[i]);
-        // projectImage(fileName, data[i]); // For now, we just draw a projected image
-      }
-      // Clean up the ray tracer's kd tree structure.
-      tracer.empty();
-    }
-    else {
-      // Create all the images
-      for (int i=0; i<data.size(); ++i) {
-        string fileName = dirName + "/frame" + toStr(i) + ".bmp";
-        frame = i;
+        break;
+      case 1:
         projectImage(fileName, data[i]); // For now, we just draw a projected image
+        break;
       }
     }
+    // Clean up the ray tracer's kd tree structure.
+    if (render_choice_3d==0) tracer.empty();
+
     // Timing
     auto end_time = current_time();
     // Print timing.
@@ -572,7 +569,7 @@ namespace GFlowSimulation {
 
   inline void Visualization::standard_camera_setup() {
     // Set up the ray tracer - it should be empty
-    tracer.setBounds(bounds);
+    tracer.setBoundsScaled(bounds, 0.1);
     // Set the tracer's camera
     float bounds_center[3];
     float scale = 0.5*max_width(bounds);

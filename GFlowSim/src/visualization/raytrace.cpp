@@ -110,8 +110,17 @@ namespace GFlowSimulation {
     copyVec(o, camera_orientation, 3);
   }
 
-  void RayTrace::setBounds(const Bounds& b) {
-    kdTree.bounds = b;
+  void RayTrace::setBounds(const Bounds& bnds) {
+    kdTree.bounds = bnds;
+  }
+
+  void RayTrace::setBoundsScaled(const Bounds& bnds, real scale) {
+    kdTree.bounds = bnds;
+    real width[3] = { bnds.wd(0), bnds.wd(1), bnds.wd(2) };
+    for (int d=0; d<3; ++d) {
+      kdTree.bounds.min[d] -= 0.5*scale*width[d];
+      kdTree.bounds.max[d] += 0.5*scale*width[d];
+    }
   }
 
   void RayTrace::setResolution(int res) {

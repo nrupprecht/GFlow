@@ -6,35 +6,6 @@
 
 namespace GFlowSimulation {
 
-  /*
-  struct BSPNode {
-    BSPNode() : information(1 << 31), splitCoordinate(0) {};
-    
-    //unsigned int flagDimAndOffset;
-    unsigned int information;
-    // If Leaf (flag = 1)
-    // bits 0..1      : splitting dimension
-    // bits 2..30     : address bits for object list
-    // bit  31 (sign) : flag whether node is a leaf
-    
-    // If Inner (flag = 0)
-    // bits 0..1      : empty
-    // bits 2..30     : address bits for first son
-    // bit  31 (sign) : flat whether node is a leaf
-    
-    float splitCoordinate;
-  };
-  inline void setLeafFlag(BSPNode &node, unsigned int flag) {
-      node.information = node.information & 0x7FFFFFFF;
-      node.information += (flag << 31);
-  }
-  inline void setAddress(BSPNode &node, unsigned int address) {
-      node.information &= 0x80000003;
-      node.information += (address << 2);
-  }
-  inline void setSplitDim(BSPNode &node, unsigned int dim) { node.information += dim; }
-  */
-
   /* 
   *  \brief A class that creates ray-traced 3d images, for system visualization.
   *
@@ -70,6 +41,9 @@ namespace GFlowSimulation {
 
     //! \brief Set the bounds of the KD tree.
     void setBounds(const Bounds&);
+
+    //! \brief Set the bounds of the KD tree, scaled so that more (or less) space is included.
+    void setBoundsScaled(const Bounds&, real);
 
     //! \brief Set the resolution of the images the tracer will create.
     void setResolution(int);

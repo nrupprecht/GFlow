@@ -62,11 +62,12 @@ namespace GFlowSimulation {
     // This would include the number of dimensions, number of types, the data entry names, etc.
     void setMetaParameters(const class StoreData&);
 
-    //! \brief Create a directory filled with BMP renderings of the system.
+    //! \brief Create a directory filled with BMP renderings of the system, for 2D data.
     //!
     //! This can be used to create a movie.
     void createVideo2d(string, const vector<vector<float> >&);
 
+    //! \brief Create a directory filled with BMP renderings of the system, for 3D data.
     void createVideo3d(string, const vector<vector<float> >&);
 
     //! \brief Creates a single frame of 2D data.
@@ -142,11 +143,6 @@ namespace GFlowSimulation {
     //! \brief Whether to wrap at the boundaries or not
     bool do_wrap = true;
 
-    //! \brief Whether to create a 3D image, or just a projection when rendering in 3D
-    //!
-    //! True - 3D image, False - projection.
-    bool choice_3d = true;
-
     //! \brief Whether the (3D) camera has been set up by anyone or anything.
     bool camera_set = false;
 
@@ -176,6 +172,12 @@ namespace GFlowSimulation {
     //! 3 - Use integer data.
     unsigned int color_selection_method = 0;
 
+    //! \brief A flag that selects how to render 3d images.
+    //!
+    //! 0 - Ray trace 3d.
+    //! 1 - Project image.
+    unsigned int render_choice_3d = 0;
+
     //! \brief The name of the entry that should be used to color the particles.
     string selection_name;
 
@@ -193,11 +195,22 @@ namespace GFlowSimulation {
 
     //! \brief Whether to update the scales for each frame.
     bool update_scales = true;
-
+    //! \brief The maximum magnitude of the selected vector data.
     float v_scale_max = 0.f;
+    //! \brief The average of the selected vector data.
     Vec v_scale_average;
-    float s_scale_min = 0.f, s_scale_max = 1.f, s_scale_average;
-    int i_scale_min = 0, i_scale_max = 1;
+
+    //! \brief The minimum of the selected scalar data.
+    float s_scale_min = 0.f;
+    //! \brief The maximum of the selected scalar data.
+    float s_scale_max = 1.f;
+    //! \brief The average of the selected scalar data.
+    float s_scale_average = 0.f;
+
+    //! \brief The minimum of the selected integer data.
+    int i_scale_min = 0;
+    //! \brief The maximum of the selected integer data.
+    int i_scale_max = 1;
   };
 
 }
