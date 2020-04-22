@@ -11,10 +11,7 @@
 
 namespace GFlowSimulation {
 
-  GFlow::GFlow(int dims) : requested_time(0), total_requested_time(0), elapsed_time(0), total_time(0), 
-    iter(0), repulsion(DEFAULT_HARD_SPHERE_REPULSION), dissipation(0), center_attraction(0), sim_dimensions(dims),
-    bounds(dims)
-  {
+  GFlow::GFlow(int dims) : sim_dimensions(dims), simulation_bounds(dims) {
     // Set up basic objects. The integrator will be created by the creator.
     simData = std::make_shared<SimData>(this);
     integrator   = nullptr;
@@ -188,7 +185,7 @@ namespace GFlowSimulation {
 
       // Update ghost particles. This the positions of particles on this processor that are ghosts on other processors back to 
       // the other processors. This should be done after VV second half kick happens.
-      if (!_handler_remade && _use_ghosts) {
+      if (1<topology->getNumProc() && !_handler_remade && _use_ghosts) {
         topology->send_ghost_updates();
         topology->recv_ghost_updates();
       }
@@ -348,8 +345,12 @@ namespace GFlowSimulation {
     return simData->number_owned();
   }
 
-  Bounds GFlow::getBounds() const {
-    return bounds;
+  Bounds& GFlow::getBounds() {
+    return simulation_bounds;
+  }
+
+  const Bounds& GFlow::getBounds() const {
+    return simulation_bounds;
   }
 
   const BCFlag* GFlow::getBCs() const {
@@ -418,7 +419,7 @@ namespace GFlowSimulation {
     for (int d=0; d<sim_dimensions; ++d) {
       dis[d] = x[d] - y[d];
       if (boundaryConditions[d]==BCFlag::WRAP) {
-        RealType dx = bounds.max[d] - bounds.min[d] - fabs(dis[d]);
+        RealType dx = simulation_bounds.max[d] - simulation_bounds.min[d] - fabs(dis[d]);
         if (dx<fabs(dis[d])) dis[d] = dis[d]>0 ? -dx : dx;
       }      
     }
@@ -427,7 +428,7 @@ namespace GFlowSimulation {
   void GFlow::minimumImage(RealType *dis) {
     for (int d=0; d<sim_dimensions; ++d) {
       if (boundaryConditions[d]==BCFlag::WRAP) {
-        RealType dx = bounds.max[d] - bounds.min[d] - fabs(dis[d]);
+        RealType dx = simulation_bounds.max[d] - simulation_bounds.min[d] - fabs(dis[d]);
         if (dx<fabs(dis[d])) dis[d] = dis[d]>0 ? -dx : dx;
       }      
     }
@@ -435,7 +436,7 @@ namespace GFlowSimulation {
 
   void GFlow::minimumImage(RealType &dis, int d) {
     if (boundaryConditions[d]==BCFlag::WRAP) {
-      RealType dx = bounds.wd(d) - fabs(dis);
+      RealType dx = simulation_bounds.wd(d) - fabs(dis);
       if (dx<fabs(dis)) dis = dis>0 ? -dx : dx;
     }  
   }
@@ -449,7 +450,7 @@ namespace GFlowSimulation {
     for (int d=0; d<sim_dimensions; ++d) {
       RealType ds = x[d] - y[d];
       if (boundaryConditions[d]==BCFlag::WRAP) {
-        RealType dx = bounds.max[d] - bounds.min[d] - fabs(ds);
+        RealType dx = simulation_bounds.max[d] - simulation_bounds.min[d] - fabs(ds);
         if (dx<fabs(ds)) ds = ds>0 ? -dx : dx;
       }
       dist += sqr(ds);
@@ -502,10 +503,10 @@ namespace GFlowSimulation {
   }
 
   void GFlow::setBounds(const Bounds& bnds) {
-    bounds = bnds;
-    // Set topology's bounds first.
+    simulation_bounds = bnds;
+    // Set topology's simulation_bounds first.
     if (topology) topology->setSimulationBounds(bnds);
-    // Tell handler to check its bounds.
+    // Tell handler to check its simulation_bounds.
     if (handler) handler->checkBounds();
   }
 
@@ -552,7 +553,7 @@ namespace GFlowSimulation {
     auto x = simData->X();
     int size = simData->size_owned();
     for (int d=0; d<sim_dimensions; ++d) {
-      RealType min_bound = bounds.min[d], max_bound = bounds.max[d], width = bounds.wd(d);
+      RealType min_bound = simulation_bounds.min[d], max_bound = simulation_bounds.max[d], width = simulation_bounds.wd(d);
       if (boundaryConditions[d]==BCFlag::WRAP) {
         for (int n=0; n<size; ++n) {
           // Create a local copy
@@ -579,7 +580,7 @@ namespace GFlowSimulation {
     int size = simData->size_owned();
     // Reflect all the particles
     for (int d=0; d<sim_dimensions; ++d) {
-      RealType min_bound = bounds.min[d], max_bound = bounds.max[d];
+      RealType min_bound = simulation_bounds.min[d], max_bound = simulation_bounds.max[d];
       if (boundaryConditions[d]==BCFlag::REFL) { 
         for (int n=0; n<size; ++n) {
           // Create a local copy
@@ -613,7 +614,7 @@ namespace GFlowSimulation {
     boundaryEnergy = 0;
     // Reflect all the particles
     for (int d=0; d<sim_dimensions; ++d) {
-      RealType min_bound = bounds.min[d], max_bound = bounds.max[d];
+      RealType min_bound = simulation_bounds.min[d], max_bound = simulation_bounds.max[d];
       if (boundaryConditions[d]==BCFlag::REPL) { 
         for (int n=0; n<size; ++n) {
           // Create a local copy
@@ -640,11 +641,12 @@ namespace GFlowSimulation {
   }
 
   void GFlow::attractPositions() {
-    // Start simdata timer.
-    simData->start_timer();
-
     // Only do this if center_attraction is nonzero
     if (center_attraction==0) return;
+
+    // Start simdata timer.
+    simData->start_timer();
+    
     // Get a pointer to position data and the number of particles in simData
     auto x = simData->X(), f = simData->F();
     auto im = simData->Im();
@@ -652,7 +654,7 @@ namespace GFlowSimulation {
     // Find the center of the simulation
     RealType *center = new RealType[sim_dimensions];
     RealType *X = new RealType[sim_dimensions], *dX = new RealType[sim_dimensions];
-    bounds.center(center);
+    simulation_bounds.center(center);
 
     // Attract particles towards center with constant acceleration
     for (int n=0; n<size; ++n) {
@@ -779,7 +781,7 @@ namespace GFlowSimulation {
     // If there are no modifiers, there is nothing to do!
     if (modifiers.empty()) return;
     // List of modifiers to remove
-    vector< decltype(modifiers)::iterator > remove;
+    vector<decltype(modifiers)::iterator> remove;
     // Find modifiers that need to be removed
     for (auto it = modifiers.begin(); it!=modifiers.end(); ++it) {
       if ((*it)->getRemove()) remove.push_back(it);

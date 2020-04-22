@@ -551,7 +551,7 @@ namespace GFlowSimulation {
       fout << "  - Dimensions:               " << sim_dimensions << "\n";
       fout << "  - Bounds:                   ";
       for (int d=0; d<sim_dimensions; ++d) {
-        fout << "{" << Base::gflow->bounds.min[d] << "," << Base::gflow->bounds.max[d] << "} ";
+        fout << "{" << gflow->getBounds().min[d] << "," << gflow->getBounds().max[d] << "} ";
       }
       fout << "\n";
       fout << "  - Boundaries:               ";
@@ -587,7 +587,7 @@ namespace GFlowSimulation {
     int types = simData->ntypes();
     if (types>1) {
       vector<int> count(types, 0);
-      for (int n=0; n<simData->number(); ++n) ++count[simData->Type(n)]; // We should have number==size_owned
+      for (int n=0; n<simData->number_owned(); ++n) ++count[simData->Type(n)]; // We should have number==size_owned
       MPIObject::mpi_sum0(count);
       if (rank==0) {
         for (int i=0; i<types; ++i)
@@ -598,7 +598,7 @@ namespace GFlowSimulation {
 
     if (rank==0) { 
       // Calculate packing fraction.
-      real phi = vol/Base::gflow->getBounds().vol();
+      real phi = vol/gflow->getBounds().vol();
       fout << "  - Packing fraction:         " << phi << "\n";
       fout << "  - Temperature:              " << KineticEnergyData::calculate_temperature(simData) <<"\n";
       fout << "\n";

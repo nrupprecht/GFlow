@@ -48,9 +48,8 @@ namespace GFlowSimulation {
     if (processor_bounds.min[0]==simulation_bounds.min[0] && cutoff_position<current_x_coord) {
       Vec pos(sim_dimensions), Xi(sim_dimensions);
       recursive_fill(0, pos, Xi);
-      // Save last x coord.
+      // Save last x coord and the current time.
       next_x_coord = pos[0];
-      // Set last creation time.
       last_creation_time = gflow->getElapsedTime();
       // A local remake remakes the interaction handler for particles on this processor. No interprocessor communication
       // occurs. So particles created in positions such that they would be ghost particles on other processors will not
@@ -113,11 +112,12 @@ namespace GFlowSimulation {
     driving_velocity_vec[0] = driving_velocity;
     // This isn't the correct way to calculate average R, since we aren't using a uniform distribution, but if max_r \approx min_r, it will be 
     // an OK approximation.
-    ave_spacing = pow( sphere_volume(0.5*(min_r + max_r), sim_dimensions) / phi_target, 1./sim_dimensions );
+    ave_spacing = pow(sphere_volume(0.5*(min_r + max_r), sim_dimensions) / phi_target, 1./sim_dimensions);
   }
 
   inline void StreamTunnel::recursive_fill(const int d, Vec& pos, Vec& Xi) const {
     const Bounds processor_bounds = topology->getProcessBounds();
+    const Bounds simulation_bounds = topology->getSimulationBounds();
 
     real creation_width = 0;
     if (d==0) {
@@ -126,20 +126,23 @@ namespace GFlowSimulation {
     }
     else {
       creation_width = processor_bounds.wd(d);
-      pos[d] = processor_bounds.max[d];
+      // We want the underlying grid (that the particles are perturbed from) to line up on all processors.
+      // Here, we check where the part of the grid that lies on this processor starts.
+      int number_grid_points = static_cast<int>((processor_bounds.max[d] - simulation_bounds.min[d] - 0.5*ave_spacing) / ave_spacing);
+      pos[d] = simulation_bounds.min[d] + (number_grid_points + 0.5) * ave_spacing;
     }
 
     // We can actually initialize stripe x data here for new particles instead of updating via the stripex modifier.
     scalar_access stripex = simData->ScalarData("StripeX");
 
     int number = creation_width / ave_spacing;
-    for (int i=0; i<number; ++i, pos[d] -= ave_spacing) {
+    for (; processor_bounds.min[d]<pos[d]; pos[d] -= ave_spacing) {
       if (d==sim_dimensions-1) {
         real R = random_radius.generate(); // Generate random radius.
         real Im = 1.f/sphere_volume(R, sim_dimensions);
         // Small position perturbation.
         Xi = pos;
-        for (int d=0; d<sim_dimensions; ++d) Xi[d] += 0.5*ave_spacing*randNormal();
+        for (int d=0; d<sim_dimensions; ++d) Xi[d] += 0.25*ave_spacing*randNormal();
         // Add particle.
         int id = simData->addParticle(Xi.data, driving_velocity_vec.data, R, Im, 0);
         if (!stripex.isnull()) stripex(id) = Xi[1]; // Here is where we can update stripex data.

@@ -236,15 +236,15 @@ namespace GFlowSimulation {
   }
 
   void SimData::removeGhostParticles() {
+    if (_size[1]==0) return;
+
     #if USE_MPI == 1
     // Start timer.
     start_timer();
-
     // Remove ghost particles by setting them to type -1.
     for (int i=0; i<_size[1]; ++i) Type<1>(i) = -1;
     // Set counters to zero.
     _size[1] = _number[1] = 0;
-
     // Stop timer.
     stop_timer();
     #endif

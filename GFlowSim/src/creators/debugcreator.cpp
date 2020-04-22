@@ -36,8 +36,8 @@ namespace GFlowSimulation {
 
     // Set the bounds of the gflow object --- for now, just make it [0,1] in each dimension
     for (int d=0; d<sim_dimensions; ++d) {
-      gflow->bounds.min[d] = -0.5;
-      gflow->bounds.max[d] = 0.5;
+      gflow->getBounds().min[d] = -0.5;
+      gflow->getBounds().max[d] = 0.5;
     }
 
     // Set wrapping

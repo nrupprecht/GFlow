@@ -94,8 +94,8 @@ namespace GFlowSimulation {
     auto x = simData->X();
     auto type = simData->Type();
     for (int id=0; id < simData->size_owned(); ++id) {
-
-      if (type(id)>-1 && !process_bounds.contains(x(id))) {
+      // Do not remove the type check. I did, and there were errors. There must be particles that are of bad type that are still here.
+      if (-1<type(id) && !process_bounds.contains(x(id))) {
         // Check which processor the particle actually belongs on. We can use the send_ids buffer since we are going to 
         // clear it anyways.
         int n_rank = topology->domain_ownership(x(id));
@@ -257,6 +257,28 @@ namespace GFlowSimulation {
         simData->unpack_ghost_buffer(size, recv_buffer[i], id);
       }
     }
+
+    // bool still_collecting = true;
+    // vector<bool> collected(neighbor_ranks.size(), false);
+    // while (still_collecting) {
+    //   still_collecting = false; 
+    //   int size = 0; // Size must reset before each for loop traversal.
+    //   for (int i=0, id=0; i<neighbor_ranks.size(); ++i, id+=size) {
+    //     size = recv_ghost_sizes[i];
+    //     if (size>0 && !collected[i]) {
+    //       int recv_flag = 0;
+    //       MPI_Test(&recv_request_list[i], &recv_flag, MPI_STATUS_IGNORE);
+    //       // If the request is ready, then unpack.
+    //       if (recv_flag) {
+    //         simData->unpack_ghost_buffer(size, recv_buffer[i], id);
+    //         // The data has been collected.
+    //         collected[i] = true;
+    //       }
+    //       else still_collecting = true;
+    //     }
+    //     else collected[i] = true;
+    //   }
+    // }
 
     ghost_recv_timer.stop_timer();
 

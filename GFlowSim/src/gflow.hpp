@@ -80,13 +80,13 @@ namespace GFlowSimulation {
     long double getTotalTime() const;
 
     //! \brief Get the strength of the boundary force.
-    RealType getBoundaryForce() const;
+    real getBoundaryForce() const;
 
     //! \brief Get the energy associated with the domain.
-    RealType getBoundaryEnergy() const;
+    real getBoundaryEnergy() const;
 
     //! \brief Get the current time step.
-    RealType getDT() const;
+    real getDT() const;
 
     //! \brief Get the iteration.
     long int getIter() const;
@@ -97,8 +97,11 @@ namespace GFlowSimulation {
     //! \brief Get the number of particles
     int getNumParticles() const;
 
-    //! \brief Get the bounds
-    Bounds getBounds() const;
+    //! \brief Get the bounds - mutating version.
+    Bounds& getBounds();
+
+    //! \brief Get the bounds - const version.
+    const Bounds& getBounds() const;
 
     //! \brief Get the boundary conditions
     const BCFlag* getBCs() const;
@@ -146,19 +149,19 @@ namespace GFlowSimulation {
     int getNumIntegrators() const; 
 
     //! \brief Get the minimum image displacement between two positions.
-    void getDisplacement(const RealType*, const RealType*, RealType*);
+    void getDisplacement(const real*, const real*, real*);
 
     //! \brief Get the minimum image of a displacement vector.
-    void minimumImage(RealType*);
+    void minimumImage(real*);
 
     //! \brief Get the minimum image distance of a single component.
-    void minimumImage(RealType&, int);
+    void minimumImage(real&, int);
 
     //! \brief Get the minimum image distance between two positions.
-    RealType getDistance(const RealType*, const RealType*);
+    real getDistance(const real*, const real*);
 
     //! \brief Get the minimum image distance squared between two positions.
-    RealType getDistanceSqr(const RealType*, const RealType*);
+    real getDistanceSqr(const real*, const real*);
 
     //! \brief Get the run mode of the simulation.
     RunMode getRunMode();
@@ -195,28 +198,28 @@ namespace GFlowSimulation {
     void setBounds(const Bounds&);
 
     //! \brief Set the repulsion stength for repulsing boundary conditions.
-    void setRepulsion(RealType);
+    void setRepulsion(real);
 
     //! \brief Set the dissipation stength for repulsing boundary conditions.
-    void setDissipation(RealType);
+    void setDissipation(real);
 
     //! \brief Set the attraction acceleration.
-    void setAttraction(RealType);
+    void setAttraction(real);
 
     //! \brief Set the print updates flag.
     void setPrintUpdates(bool);
 
     //! \brief Set the update printing interval.
-    void setUpdateInterval(RealType);
+    void setUpdateInterval(real);
 
     //! \brief Set the run mode.
     void setRunMode(RunMode);
 
     //! \brief Set the amount of time we should run for.
-    void requestTime(RealType);
+    void requestTime(real);
 
     //! \brief Set the elapsed time.
-    void setElapsedTime(RealType);
+    void setElapsedTime(real);
 
     //! \brief Keep positions in bounds.
     void wrapPositions();
@@ -231,7 +234,7 @@ namespace GFlowSimulation {
     void attractPositions();
 
     //! \brief Instructs the interaction handler to remove particles that are overlapping by more than some fraction.
-    void removeOverlapping(RealType);
+    void removeOverlapping(real);
 
     //! \brief Add a data object.
     void addDataObject(shared_ptr<class DataObject>);
@@ -243,19 +246,19 @@ namespace GFlowSimulation {
     void resetAllTimes();
 
     //! \brief Set the start recording time.
-    void setStartRecTime(RealType);
+    void setStartRecTime(real);
 
     //! \brief Set the frames per second for all data objects.
-    void setFPS(RealType);
+    void setFPS(real);
 
     //! \brief Set the fps of particular data objects.
-    void setFPS(int, RealType);
+    void setFPS(int, real);
 
     //! \brief Set the time step.
-    void setDT(RealType);
+    void setDT(real);
 
     //! \brief Set the max timestep.
-    void setMaxDT(RealType);
+    void setMaxDT(real);
 
     //! \brief Set data master command line data.
     void setDMCmd(int, char**);
@@ -266,7 +269,7 @@ namespace GFlowSimulation {
     void giveFileToDataMaster(string, string);
 
     //! \brief Get the boltzmann constant.
-    RealType getKB() { return KB; }
+    real getKB() { return KB; }
 
     //! \brief Start the mpi timer.
     void startMPIExchangeTimer();
@@ -316,7 +319,7 @@ namespace GFlowSimulation {
     friend class ForceMaster;
     friend class DataMaster;
     friend class DataObject;
-    friend class Base;
+    //friend class Base;
 
   protected:
     // --- Private helper functions
@@ -354,43 +357,43 @@ namespace GFlowSimulation {
     vector<shared_ptr<class Group> > global_id_reliant;
 
     //! \brief How much time we have been requested to run for.
-    long double requested_time;
+    long double requested_time = 0.;
 
     //! \brief How much time has ever been requested.
-    long double total_requested_time;
+    long double total_requested_time = 0.;
 
     //! \brief How much of the requested time has been run.
-    long double elapsed_time; 
+    long double elapsed_time = 0.; 
 
     //! \brief How much time has been run over all runs.
-    long double total_time;
+    long double total_time = 0.;
 
     //! \brief The number of iterations that have passed.
-    long int iter;
+    long int iter = 0;
 
     //! \brief The simulation bounds.
-    Bounds bounds;
+    Bounds simulation_bounds;
 
     //! \brief Boundary types.
-    BCFlag *boundaryConditions;
+    BCFlag *boundaryConditions = nullptr;
 
     //! \brief The number of dimensions
     int sim_dimensions;
 
     //! \brief Strength of boundary repulsion forces.
-    RealType repulsion;
+    real repulsion = 500.f;
 
     //! \brief Dissipation for the boundary repulsion forces.
-    RealType dissipation;
+    real dissipation = 0.f;
 
     //! \brief The attraction towards the center of the simulation
-    RealType center_attraction;
+    real center_attraction = 0.f;
 
     //! \brief Total boundary force applied this iteration.
-    RealType boundaryForce;
+    real boundaryForce = 0.f;
 
     //! \brief Energy due to e.g. particles being repulsed by a boundary potential.
-    RealType boundaryEnergy = 0;
+    real boundaryEnergy = 0.f;
 
     // The command info (optional)
     int argc    = 0;
@@ -422,7 +425,7 @@ namespace GFlowSimulation {
     std::ostream *monitor = &cout;
 
     //! \brief At what intervals to print updates (in simulation seconds).
-    RealType update_interval = 250.;
+    real update_interval = 250.;
 
     //! \brief The run mode of the simulation.
     RunMode runMode = RunMode::IDLE;
@@ -452,7 +455,7 @@ namespace GFlowSimulation {
     // --- Physical constants. These are static, since they should be the same for all objects
 
     //! \brief Boltzmann constant.
-    RealType KB = 1.; 
+    real KB = 1.; 
   };
 
 }

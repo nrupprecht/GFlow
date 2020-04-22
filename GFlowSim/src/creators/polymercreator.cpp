@@ -241,7 +241,7 @@ namespace GFlowSimulation {
 
     // Random starting point
     Vec X(sim_dimensions);
-    gflow->bounds.randomPoint(X.data);
+    gflow->getBounds().randomPoint(X.data);
 
     // Random initial direction
     Vec V(sim_dimensions);
@@ -267,7 +267,7 @@ namespace GFlowSimulation {
   Group PolymerCreator::createSinglePolymer(GFlow *gflow, const RealType *x0, const RealType *v0, const vector<bool>& chain_ordering, RealType sigma_v, int idP, int idC) {
     // Get simdata and bounds
     auto sd = gflow->simData;
-    Bounds bnds = gflow->bounds;
+    Bounds bnds = gflow->getBounds();
 
     // Get number of dimensions
     int sim_dimensions = gflow->sim_dimensions;
@@ -368,7 +368,7 @@ namespace GFlowSimulation {
   Group PolymerCreator::createRandomLine(GFlow *gflow, const RealType *x, const RealType phi, const RealType length, const RealType spacing) {
     // Get simdata and bounds
     auto sd = gflow->simData;
-    Bounds bnds = gflow->bounds;
+    Bounds bnds = gflow->getBounds();
 
     // Get number of dimensions
     int sim_dimensions = gflow->sim_dimensions;
@@ -420,7 +420,7 @@ namespace GFlowSimulation {
   Group PolymerCreator::createOrderedLine(GFlow *gflow, const RealType *x, const RealType phi, const RealType length, const RealType spacing) {
     // Get simdata and bounds
     auto sd = gflow->simData;
-    Bounds bnds = gflow->bounds;
+    Bounds bnds = gflow->getBounds();
 
     // Get number of dimensions
     int sim_dimensions = gflow->sim_dimensions;
@@ -482,7 +482,7 @@ namespace GFlowSimulation {
     // Initial point and normal vector
     Vec x(sim_dimensions);
     // Find the center of the bounds
-    gflow->bounds.center(x.data);
+    gflow->getBounds().center(x.data);
     x[1] -= 0.5*length;
 
     // Remove harmonic bonds, so the particles will not be added.

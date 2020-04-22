@@ -12,7 +12,7 @@ ap = argparse.ArgumentParser()
 ap.add_argument("-ext", "--extension", required=False, default='bmp', help="extension name. default is 'bmp'.")
 ap.add_argument("-o", "--output", required=False, default='output.mp4', help="output video file")
 ap.add_argument("-dir", "--directory", required=False, default='RunData', help="Directory in which the run data is stored.")
-ap.add_argument("-data", "--dataname", required=False, default="Pos", help="Name of the data to use to make images.")
+ap.add_argument("-data", "--dataname", required=False, default="Pos-1", help="Name of the data to use to make images.")
 args = vars(ap.parse_args())
 
 # Arguments
