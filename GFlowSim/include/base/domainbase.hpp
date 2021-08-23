@@ -20,10 +20,10 @@ class DomainBase : public InteractionHandler {
   // --- Accessors
 
   //! Get the array of the number of cells in each dimension
-  const vector<int> &getDims() const;
+  const std::vector<int> &getDims() const;
 
   //! Get the array of the width of the cells in each dimension
-  const vector<RealType> &getWidths() const;
+  const std::vector<RealType> &getWidths() const;
 
   //! Get the total number of cells in the domain
   int getNumCells() const;
@@ -52,8 +52,8 @@ class DomainBase : public InteractionHandler {
   int get_halo_cell_index(const RealType *);
 
   //! \brief Turns a linear cell index into a (DIMENSIONS)-dimensional index
-  void linear_to_tuple(const int, vector<int> &);
-  void linear_to_tuple(const int, int *);
+  void linear_to_tuple(int, std::vector<int> &);
+  void linear_to_tuple(int, int *);
 
   //! \brief Turns a (DIMENSIONS)-dimensional index into a linear cell index.
   void tuple_to_linear(int &, const vector<int> &);

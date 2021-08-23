@@ -43,11 +43,11 @@ namespace GFlowSimulation {
     //! \brief The masses of the groups.
     RealType massA = 0, massB = 0;
 
-    //! \brief Max distance before force starts
-    RealType max_distance;
-
     //! \brief Min distance before force starts
     RealType min_distance;
+
+    //! \brief Max distance before force starts
+    RealType max_distance;
 
     //! \brief The springConstant.
     RealType springConstant;

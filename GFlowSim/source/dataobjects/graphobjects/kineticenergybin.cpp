@@ -6,7 +6,7 @@ KineticEnergyBin::KineticEnergyBin(GFlow *gflow)
     : GraphObject(gflow, "KEBin", "r", "kinetic energy"), center(sim_dimensions) {};
 
 KineticEnergyBin::KineticEnergyBin(GFlow *gflow, RealType r)
-    : GraphObject(gflow, "KEBin", "r", "kinetic energy"), center(sim_dimensions), radius(r) {};
+    : GraphObject(gflow, "KEBin", "r", "kinetic energy"), radius(r), center(sim_dimensions) {};
 
 void KineticEnergyBin::post_integrate() {
   // Bin width

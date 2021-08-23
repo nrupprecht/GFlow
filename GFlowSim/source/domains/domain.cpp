@@ -13,7 +13,7 @@ using namespace GFlowSimulation;
 Domain::Domain(GFlow *gflow)
     : DomainBase(gflow) {};
 
-void Domain::getAllWithin(int id1, vector<int> &neighbors, RealType distance) {
+void Domain::getAllWithin(int id1, std::vector<int> &neighbors, RealType distance) {
   // Set exclude flag so the more general getAllWithin function doesn't count id1 as a valid particle.
   _exclude = id1;
   // Wrap the position vector with a vec object.
@@ -25,7 +25,7 @@ void Domain::getAllWithin(int id1, vector<int> &neighbors, RealType distance) {
   _exclude = -1;
 }
 
-void Domain::getAllWithin(Vec X, vector<int> &neighbors, RealType distance) {
+void Domain::getAllWithin(Vec X, std::vector<int> &neighbors, RealType distance) {
   // Default distance
   if (distance < 0) {
     distance = 2 * max_small_sigma;
@@ -34,9 +34,9 @@ void Domain::getAllWithin(Vec X, vector<int> &neighbors, RealType distance) {
   neighbors.clear();
 
   // Set up
-  vector<int> tuple1(sim_dimensions), tuple2(sim_dimensions), cell_index(sim_dimensions), center(sim_dimensions),
+  std::vector<int> tuple1(sim_dimensions), tuple2(sim_dimensions), cell_index(sim_dimensions), center(sim_dimensions),
       search_dims(sim_dimensions);
-  vector<RealType> dX(sim_dimensions);
+  std::vector<RealType> dX(sim_dimensions);
 
   // Calculate sweep "radius"
   int prod = 1;
@@ -104,7 +104,7 @@ void Domain::constructFor(int id1, bool insert) {
   }
 }
 
-void Domain::traversePairs(std::function<void(int, int, int, RealType, RealType, RealType)> body) {
+void Domain::traversePairs(PairFunction body) {
   // Get the array of max cutoffs
   const vector<RealType> &max_cutoffs = forceMaster->getMaxCutoff();
 
@@ -123,7 +123,7 @@ void Domain::traversePairs(std::function<void(int, int, int, RealType, RealType,
   }
 
   // Tuples
-  vector<int> tuple1(sim_dimensions), tuple2(sim_dimensions), cell_index(sim_dimensions), center(sim_dimensions),
+  std::vector<int> tuple1(sim_dimensions), tuple2(sim_dimensions), cell_index(sim_dimensions), center(sim_dimensions),
       search_dims(sim_dimensions);
 
   // Find potential neighbors
@@ -153,7 +153,7 @@ void Domain::traversePairs(std::function<void(int, int, int, RealType, RealType,
           }
           // Look for distance between particles
           RealType r2 = getDistanceSqrNoWrap(x(id1), x(id2), sim_dimensions);
-          if (r2 < sqr((rd(id1) + rd(id2) * cutoffs_id1[type(id2)] + skin_depth))) {
+          if (r2 < sqr((rd(id1) + rd(id2)) * cutoffs_id1[type(id2)] + skin_depth)) {
             body(id1, id2, 0, rd(id1), rd(id2), r2);
           }
         }
@@ -176,7 +176,7 @@ void Domain::traversePairs(std::function<void(int, int, int, RealType, RealType,
         }
       }
 
-        // If sigma is > max_small_sigma, we have to look through more cells
+      // If sigma is > max_small_sigma, we have to look through more cells
       else {
         // Calculate sweep "radius"
         RealType search_width = 2 * sigma1 + skin_depth;

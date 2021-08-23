@@ -7,7 +7,11 @@
 using namespace GFlowSimulation;
 
 Clustering::Clustering(GFlow *gflow)
-    : Base(gflow), same_type_clusters(true), n_clusters(0), skin(0.), max_cluster_size(0) {};
+    : Base(gflow),
+      n_clusters(0),
+      max_cluster_size(0),
+      same_type_clusters(true),
+      skin(0.) {};
 
 void Clustering::findClusters() {
   // Look for clusters of particles

@@ -267,7 +267,7 @@ int InteractionHandler::getMissedTarget() const {
 }
 
 RealType InteractionHandler::getAverageMiss() const {
-  return missed_target > 0 ? ave_miss / missed_target : 0;
+  return missed_target > 0 ? ave_miss / static_cast<real>(missed_target) : 0;
 }
 
 const Bounds &InteractionHandler::getProcessBounds() const {
@@ -317,7 +317,7 @@ void InteractionHandler::checkBounds() {
 
 void InteractionHandler::calculate_skin_depth() {
   // Try to pick a skin depth such that the expected number of particles in each verlet list is the chosen number.
-  RealType rho = simData->size_owned() / process_bounds.vol();
+  RealType rho = static_cast<real>(simData->size_owned()) / process_bounds.vol();
   RealType candidate =
       inv_sphere_volume((2.2 * target_list_size) / rho + 0.5 * sphere_volume(max_small_sigma, sim_dimensions),
                         sim_dimensions) - 2 * max_small_sigma;
@@ -360,7 +360,7 @@ void InteractionHandler::calculate_max_small_sigma() {
   }
 
   if (count > 0) {
-    sigma /= count;
+    sigma /= static_cast<real>(count);
   }
   else {
     return;

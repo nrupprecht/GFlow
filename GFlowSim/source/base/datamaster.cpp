@@ -375,8 +375,8 @@ inline void DataMaster::create_directory(bool force_create) {
   } // Only rank 0 can create the directory
   if (!is_directory_created || force_create) {
     // If there is no directory name, create one randomly.
-    if (write_directory.empty())
-      setWriteDirectory("auto-dir-" + toStr(static_cast<int>(drand48() * 10000)));
+    if (write_directory.empty()){
+      setWriteDirectory("auto-dir-" + toStr(static_cast<int>(drand48() * 10000)));}
     // Remove previously existing files if they exist
     system(("rm -rf " + write_directory).c_str());
     // Create the directory
@@ -449,9 +449,7 @@ inline bool DataMaster::writeSummary(const string &directory) {
   };
   // Helper lambda for printing (time, % runtime).
   string sep = "%\t\t";
-  auto report = [&](double time) {
-    return toStrPP(time / run_time * 100) + sep + toStr(time) + "\n";
-  };
+
   // Alignment margin.
   const int margin = 30, leading = 2;
   // Helper lambdas for aligning text - string version.
@@ -683,9 +681,9 @@ inline bool DataMaster::writeSummary(const string &directory) {
     } // We should have number==size_owned
     MPIObject::mpi_sum0(count);
     if (rank == 0) {
-      for (int i = 0; i < types; ++i)
+      for (int i = 0; i < types; ++i){
         fout << "     Type " << toStr(i) << ":                  " << count[i] << " (" <<
-             100. * static_cast<real>(count[i]) / static_cast<real>(particles) << "%)\n";
+             100. * static_cast<real>(count[i]) / static_cast<real>(particles) << "%)\n";}
     }
   }
 
@@ -702,7 +700,8 @@ inline bool DataMaster::writeSummary(const string &directory) {
   if (numProc>1 && gflow->getTotalTime()>0) {
     if (rank==0) {
       fout << "MPI and parallelization:\n";
-      formats("- MPI ranks:", toStr(numProc));
+      // TODO: Get back the formats function.
+      //  ** formats("- MPI ranks:", toStr(numProc));
       fout << "  - Ghost time per step:      " << gflow->mpi_ghost_timer.get_time()/iterations << "\n";
       fout << "  - Ghost fraction:           " << toStrRT(gflow->mpi_ghost_timer.get_time() / run_time) << "\n";
       fout << "  - Last # ghosts sent:       " << topology->getLastNGhostsSent() << "\n";
@@ -947,15 +946,16 @@ inline bool DataMaster::writeLogFile(const string &directory) {
 }
 
 inline bool DataMaster::writeMPIFile(const string &directory) {
+  // --- Print information for each processor
+  #if USE_MPI == 1
+
   const int left_align = 25;
   const int column_width = 10;
   const int rank = topology->getRank();
   const int num_proc = topology->getNumProc();
 
-  // --- Print information for each processor
-  #if USE_MPI == 1
-  vector<int> int_vector(num_proc, 0);
-  vector<double> float_vector(num_proc, 0.f);
+  std::vector<int> int_vector(num_proc, 0);
+  std::vector<double> float_vector(num_proc, 0.f);
 
   int neighbors = topology->getNumNeighbors();
   MPIObject::mpi_gather(neighbors, int_vector);
@@ -1011,10 +1011,10 @@ inline bool DataMaster::writeMPIFile(const string &directory) {
       }
     }
   }
-  #endif // USE_MPI==1
   if (rank == 0) {
     run_statistics.printToCSV(directory);
   }
+  #endif // USE_MPI==1
 
   // Return success.
   return true;

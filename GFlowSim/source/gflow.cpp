@@ -159,8 +159,8 @@ void GFlow::run(long double rt) {
   mpi_ghost_timer.clear_timer();
 
   // --> Pre-integrate
-  _running = true;
-  _terminate = false;
+  running_ = true;
+  terminate_ = false;
   elapsed_time = 0;
   iter = 0;
   // Set up all objects.
@@ -186,7 +186,7 @@ void GFlow::run(long double rt) {
   timer.start();
 
   // Do integration for the requested amount of time
-  while (_running && requested_time > 0) {
+  while (running_ && requested_time > 0) {
 
     // --> Pre-step
     if (!modifiers.empty()) {
@@ -230,13 +230,13 @@ void GFlow::run(long double rt) {
 
     // Update ghost particles. This the positions of particles on this processor that are ghosts on other processors back to
     // the other processors. This should be done after VV second half kick happens.
-    if (1 < topology->getNumProc() && !_handler_remade && _use_ghosts) {
+    if (1 < topology->getNumProc() && !_handler_remade && use_ghosts_) {
       topology->send_ghost_updates();
       topology->recv_ghost_updates();
     }
 
     // Calculate interactions and forces.
-    if (_use_forces) {
+    if (use_forces_) {
       // Calculate interactions.
       forceMaster->interact();
       forceMaster->interact_ghosts();
@@ -252,9 +252,9 @@ void GFlow::run(long double rt) {
 
     /*
     // Finish updating ghost particles.
-    if (!_handler_remade && _use_ghosts) simData->finishGhostParticleUpdates();
+    if (!_handler_remade && use_ghosts_) simData->finishGhostParticleUpdates();
     // Calculate ghost particle forces
-    if (_use_forces) forceMaster->interact_ghosts();
+    if (use_forces_) forceMaster->interact_ghosts();
     */
 
     // Update bodies - this may include forces.
@@ -316,12 +316,12 @@ void GFlow::run(long double rt) {
     }
     // Possibly print updates to the screen or to a file.
     if (print_updates && topology->getRank() == 0 && runMode == RunMode::SIM &&
-        static_cast<int>((elapsed_time - dt) / update_interval) < static_cast<int>((elapsed_time) / update_interval)) {
+        static_cast<int>((elapsed_time - dt) / update_interval_) < static_cast<int>((elapsed_time) / update_interval_)) {
       RealType live_ratio = elapsed_time / timer.current();
-      (*monitor) << "Simulation time: " << static_cast<int>(elapsed_time) << "\t";
-      (*monitor) << "Ratio: " << elapsed_time / timer.current() << "\t";
-      (*monitor) << "Est. time: " << (requested_time - elapsed_time) / live_ratio << "\t";
-      (*monitor) << endl;
+      (*monitor_) << "Simulation time: " << static_cast<int>(elapsed_time) << "\t";
+      (*monitor_) << "Ratio: " << elapsed_time / timer.current() << "\t";
+      (*monitor_) << "Est. time: " << (requested_time - elapsed_time) / live_ratio << "\t";
+      (*monitor_) << endl;
     }
 
     // Reset flags.
@@ -332,7 +332,7 @@ void GFlow::run(long double rt) {
 
   // Possibly print a closing update
   if (print_updates && topology->getRank() == 0 && runMode == RunMode::SIM) {
-    (*monitor) << " ---- End of run ----\n\n";
+    (*monitor_) << " ---- End of run ----\n\n";
   }
 
   // --> Post-integrate
@@ -434,7 +434,7 @@ int GFlow::getSimDimensions() const {
 }
 
 bool GFlow::getUseForces() const {
-  return _use_forces;
+  return use_forces_;
 }
 
 pair<int, char **> GFlow::getCommand() const {
@@ -574,7 +574,7 @@ void GFlow::setBC(const int d, const BCFlag type) {
 }
 
 void GFlow::setUseForces(bool f) {
-  _use_forces = f;
+  use_forces_ = f;
 }
 
 void GFlow::setBounds(const Bounds &bnds) {
@@ -613,7 +613,7 @@ void GFlow::setPrintUpdates(bool p) {
 
 void GFlow::setUpdateInterval(RealType u) {
   if (u > 0) {
-    update_interval = u;
+    update_interval_ = u;
   }
 }
 
@@ -865,22 +865,22 @@ void GFlow::stopMPIGhostTimer() {
 
 void GFlow::syncRunning() {
   // Sync amongst processors.
-  MPIObject::mpi_or(_terminate);
+  MPIObject::mpi_or(terminate_);
   // Check if any processors called for program termination.
-  if (_terminate) {
-    _running = false;
+  if (terminate_) {
+    running_ = false;
   }
 }
 
 void GFlow::terminate() {
   // If this is the only processor, we don't have to wait for anyone.
   if (topology->getNumProc() == 1) {
-    _running = false;
+    running_ = false;
   }
   // By doing this, we only record the first termination time.
-  if (!_terminate) {
+  if (!terminate_) {
     // Set terminate flag to true.
-    _terminate = true;
+    terminate_ = true;
     // Set the terminate time
     termination_time = elapsed_time;
   }

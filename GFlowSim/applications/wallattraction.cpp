@@ -105,14 +105,14 @@ int main(int argc, char **argv) {
     // Delete old gflow
     GFlow *gflow = creator.createSimulation();
 
-    if (!check_parser(parser)) exit(1);
+    if (!check_parser(parser)){ exit(1);}
     if (gflow==nullptr) {
       cout << "GFlow was null. Exiting.\n";
       exit(1);
     }
 
     // Add an ending snapshot object
-    if (snapshot && t==trials-1) gflow->addDataObject(new EndingSnapshot(gflow));
+    if (snapshot && t==trials-1){ gflow->addDataObject(new EndingSnapshot(gflow));}
 
     // Find data objects.
     DataMaster *master = gflow->getDataMaster();
@@ -120,12 +120,12 @@ int main(int argc, char **argv) {
     // Find the data object
     DataObject *dob = nullptr;
     for (auto obj : dataObjects) {
-      if (obj->getName()=="TwoWallBinForce") dob = obj;
+      if (obj->getName()=="TwoWallBinForce"){ dob = obj;}
     }
-    if (dob==nullptr) throw false;
+    if (dob==nullptr){ throw false;}
     // Pointer
     auto *gnf = dynamic_cast<TwoWallBinForce*>(dob);
-    if (gnf==nullptr) throw false;
+    if (gnf==nullptr){ throw false;}
     gnf->setBins(bins);
 
     // Set start rec time.
@@ -168,13 +168,13 @@ int main(int argc, char **argv) {
   cout << "Runs are over. Total time:\t\t\t" << time_span(current_time(), start_time) << "\n";
 
   // Make data into an average
-  for (auto & datum : average) datum.second /= static_cast<double>(trials);
+  for (auto & datum : average){ datum.second /= static_cast<double>(trials);}
   // Find standard deviations
   vector<RealType> std(bins, 0);
   for (auto d : allData) {
-    for (int i=0; i<bins; ++i) std[i] += sqr(d[i] - average[i].second);
+    for (int i=0; i<bins; ++i){ std[i] += sqr(d[i] - average[i].second);}
   }
-  for (int i=0; i<bins; ++i) std[i] = sqrt(std[i] / (trials - 1));
+  for (int i=0; i<bins; ++i){ std[i] = sqrt(std[i] / (trials - 1));}
 
   // Print average and std dev data
   ofstream fout(writeDirectory+"/forces.csv");
@@ -197,14 +197,14 @@ int main(int argc, char **argv) {
   // First, print bins
   for (int i=0; i<bins; ++i) {
     fout << average[i].first;
-    if (i!=bins-1) fout << ",";
+    if (i!=bins-1){ fout << ",";}
   }
   fout << endl;
   // Then, print data (just <F>)
   for (const auto & datum : allData) {
     for (int i=0; i<datum.size(); ++i) {
       fout << datum[i];
-      if (i!=datum.size()-1) fout << ",";
+      if (i!=datum.size()-1){ fout << ",";}
     }
     fout << endl;
   }

@@ -12,12 +12,12 @@
 
 #include <unistd.h>
 
-bool check_parser(ArgParse& parser) {
+bool check_parser(ArgParse &parser) {
   // --- Make sure we didn't enter any illegal tokens - do this after gflow creation since creator uses flags
   try {
     parser.check();
   }
-  catch (ArgParse::UncheckedToken illegal) {
+  catch (ArgParse::UncheckedToken &illegal) {
     cout << "Illegal option: [" << illegal.token << "]. Exiting.\n";
     return false;
   }
@@ -66,20 +66,20 @@ int main(int argc, char **argv) {
   parser.get("bins", bins);
   parser.get("writeDirectory", writeDirectory);
 
-  if (!quiet && rank==0) {
-    #if DEBUG==1
+  if (!quiet && rank == 0) {
+    #if DEBUG == 1
     cout << "Running in Debug mode.\n";
     #endif
     // Print SIMD type
-    #if SIMD_TYPE==SIMD_NONE
+    #if SIMD_TYPE == SIMD_NONE
     cout << "Not using SIMD.\n";
-    #elif SIMD_TYPE==SIMD_SSE
+    #elif SIMD_TYPE == SIMD_SSE
     cout << "Using SSE.\n";
-    #elif SIMD_TYPE==SIMD_AVX
+    #elif SIMD_TYPE == SIMD_AVX
     cout << "Using AVX.\n";
-    #elif SIMD_TYPE==SIMD_AVX2
+    #elif SIMD_TYPE == SIMD_AVX2
     cout << "Using AVX2.\n";
-    #elif SIMD_TYPE==SIMD_MIC
+    #elif SIMD_TYPE == SIMD_MIC
     cout << "Using MIC.\n";
     #endif
   }
@@ -88,44 +88,54 @@ int main(int argc, char **argv) {
   auto start_time = current_time();
 
   // Record data.
-  vector<RPair> average(bins, RPair(0,0)), counts(bins, RPair(0,0));
+  vector<RPair> average(bins, RPair(0, 0)), counts(bins, RPair(0, 0));
   // All the data from the runs
   vector<vector<RealType> > allData;
 
   // Do many data gathering runs.
-  
+
   // A creator.
   FileParseCreator creator(&parser, load);
   // Set variables in creator.
   creator.setVariable("phi", toStr(phi), true); // Line density
   creator.setVariable("number", "2", true);
-  
+
   // Run some trials
-  for (int t=0; t<trials; ++t) {
+  for (int t = 0; t < trials; ++t) {
     // Delete old gflow
     GFlow *gflow = creator.createSimulation();
 
-    if (!check_parser(parser)) exit(1);
-    if (gflow==nullptr) {
+    if (!check_parser(parser)) {
+      exit(1);
+    }
+    if (gflow == nullptr) {
       cout << "GFlow was null. Exiting.\n";
       exit(1);
     }
 
     // Add an ending snapshot object
-    if (snapshot && t==trials-1) gflow->addDataObject(new EndingSnapshot(gflow));
+    if (snapshot && t == trials - 1) {
+      gflow->addDataObject(std::make_shared<EndingSnapshot>(gflow));
+    }
 
     // Find data objects.
     DataMaster *master = gflow->getDataMaster();
     auto &dataObjects = master->getDataObjects();
     // Find the data object
-    DataObject *dob = nullptr;
+    std::shared_ptr<DataObject> dob;
     for (auto obj : dataObjects) {
-      if (obj->getName()=="TwoPolymerBinForce") dob = obj;
+      if (obj->getName() == "TwoPolymerBinForce") {
+        dob = obj;
+      }
     }
-    if (dob==nullptr) throw false;
+    if (dob == nullptr) {
+      throw false;
+    }
     // Pointer
-    auto *gnf = dynamic_cast<TwoPolymerBinForce*>(dob);
-    if (gnf==nullptr) throw false;
+    auto gnf = dynamic_pointer_cast<TwoPolymerBinForce>(dob);
+    if (gnf == nullptr) {
+      throw false;
+    }
     gnf->setNBins(bins);
 
     // Set start rec time.
@@ -133,11 +143,11 @@ int main(int argc, char **argv) {
 
     // Run the program
     gflow->run(time);
-    
+
     // Accumulate forces
     auto entry = gnf->getEntry(0);
     vector<RealType> single_data(bins, 0);
-    for (int i=0; i<bins; ++i) {
+    for (int i = 0; i < bins; ++i) {
       average[i].first = entry[i].first;
       average[i].second += entry[i].second;
       single_data[i] = entry[i].second;
@@ -147,17 +157,17 @@ int main(int argc, char **argv) {
 
     // Get counts
     entry = gnf->getEntry(2);
-    for (int i=0; i<bins; ++i) {
+    for (int i = 0; i < bins; ++i) {
       counts[i].first = entry[i].first;
       counts[i].second += entry[i].second;
     }
 
     // At the last trial, record some data.
-    if (t==trials-1) {
+    if (t == trials - 1) {
       // Create the directory
       mkdir(writeDirectory.c_str(), 0777);
       // Write data for the last trial
-      gflow->writeData(writeDirectory+"/data"+toStr(t));
+      gflow->writeData(writeDirectory + "/data" + toStr(t));
     }
 
     // Clean up
@@ -168,43 +178,53 @@ int main(int argc, char **argv) {
   cout << "Runs are over. Total time:\t\t\t" << time_span(current_time(), start_time) << "\n";
 
   // Make data into an average
-  for (auto & datum : average) datum.second /= static_cast<double>(trials);
+  for (auto &datum : average) {
+    datum.second /= static_cast<double>(trials);
+  }
   // Find standard deviations
   vector<RealType> std(bins, 0);
   for (auto d : allData) {
-    for (int i=0; i<bins; ++i) std[i] += sqr(d[i] - average[i].second);
+    for (int i = 0; i < bins; ++i) {
+      std[i] += sqr(d[i] - average[i].second);
+    }
   }
-  for (int i=0; i<bins; ++i) std[i] = sqrt(std[i] / (trials - 1));
+  for (int i = 0; i < bins; ++i) {
+    std[i] = sqrt(std[i] / (trials - 1));
+  }
 
   // Print average and std dev data
-  ofstream fout(writeDirectory+"/forces.csv");
+  ofstream fout(writeDirectory + "/forces.csv");
   if (fout.fail()) {
     cout << "Ofstream failed to open file. Exiting.\n";
     return 0;
   }
-  for (int i=0; i<average.size(); ++i) {
+  for (int i = 0; i < average.size(); ++i) {
     fout << average[i].first << "," << average[i].second << "," << std[i] << endl;
   }
   // Close file stream.
   fout.close();
 
   // Print all data
-  fout.open(writeDirectory+"/alldata.csv");
+  fout.open(writeDirectory + "/alldata.csv");
   if (fout.fail()) {
     cout << "Ofstream failed to open file. Exiting.\n";
     return 0;
-  } 
+  }
   // First, print bins
-  for (int i=0; i<bins; ++i) {
+  for (int i = 0; i < bins; ++i) {
     fout << average[i].first;
-    if (i!=bins-1) fout << ",";
+    if (i != bins - 1) {
+      fout << ",";
+    }
   }
   fout << endl;
   // Then, print data (just <F>)
-  for (const auto & datum : allData) {
-    for (int i=0; i<datum.size(); ++i) {
+  for (const auto &datum : allData) {
+    for (int i = 0; i < datum.size(); ++i) {
       fout << datum[i];
-      if (i!=datum.size()-1) fout << ",";
+      if (i != datum.size() - 1) {
+        fout << ",";
+      }
     }
     fout << endl;
   }
@@ -212,16 +232,16 @@ int main(int argc, char **argv) {
   fout.close();
 
   // Print count data
-  fout.open(writeDirectory+"/counts.csv");
+  fout.open(writeDirectory + "/counts.csv");
   if (fout.fail()) {
     cout << "Ofstream failed to open file. Exiting.\n";
     return 0;
-  }  
-  for (int i=0; i<counts.size(); ++i) {
+  }
+  for (int i = 0; i < counts.size(); ++i) {
     fout << counts[i].first << "," << counts[i].second << endl;
   }
 
-  
+
   // Finalize mpi
   #if USE_MPI == 1
   #if _CLANG_ == 1
@@ -231,7 +251,7 @@ int main(int argc, char **argv) {
   #endif
   if (!quiet && rank==0) cout << "Finalized MPI.\n";
   #endif
-  
+
   return 0;
 }
 

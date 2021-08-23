@@ -41,7 +41,7 @@ class GFlow {
   void run(long double= -1);
 
   //! \brief Write data from data master to file.
-  void writeData(const string&);
+  void writeData(const string &);
 
   // --- Accessors
 
@@ -119,16 +119,16 @@ class GFlow {
   bool getUseForces() const;
 
   //! \brief Get the command line arguments.
-  pair<int, char **> getCommand() const;
+  std::pair<int, char **> getCommand() const;
 
   //! \brief Get the vector of nonbonded interactions.
-  const vector<shared_ptr<class Interaction> > &getInteractions() const;
+  const std::vector<std::shared_ptr<class Interaction>> &getInteractions() const;
 
   //! \brief Get the vector of bonded interactions.
-  const vector<shared_ptr<class Bonded> > &getBondedInteractions() const;
+  const std::vector<std::shared_ptr<class Bonded>>& getBondedInteractions() const;
 
   //! \brief Get the sim data object.
-  shared_ptr<class SimData> getSimData();
+  std::shared_ptr<class SimData> getSimData();
 
   //! \brief Get the data master object.
   class DataMaster *getDataMaster();
@@ -171,16 +171,16 @@ class GFlow {
   //! \brief Add an interaction.
   //!
   //! GFlow only adds the interaction if it is non null.
-  void addInteraction(const shared_ptr<Interaction>&);
+  void addInteraction(const std::shared_ptr<Interaction> &);
 
   //! \brief Add a bonded interaction.
-  void addBonded(const shared_ptr<class Bonded>&);
+  void addBonded(const std::shared_ptr<class Bonded> &);
 
   //! \brief Add a body.
-  void addBody(const shared_ptr<class Body>&);
+  void addBody(const std::shared_ptr<class Body> &);
 
   //! \brief Add another integrator.
-  void addIntegrator(const shared_ptr<class Integrator>&);
+  void addIntegrator(const std::shared_ptr<class Integrator> &);
 
   //! \brief Set the command info
   void setCommand(int, char **);
@@ -189,7 +189,7 @@ class GFlow {
   void setAllBCs(BCFlag);
 
   //! \brief Set a single boundary condition.
-  void setBC(const int, const BCFlag);
+  void setBC(int, BCFlag);
 
   //! \brief Set the use forces flag.
   void setUseForces(bool);
@@ -237,10 +237,10 @@ class GFlow {
   void removeOverlapping(real);
 
   //! \brief Add a data object.
-  void addDataObject(const shared_ptr<class DataObject>&);
+  void addDataObject(const shared_ptr<class DataObject> &);
 
   //! \brief Add a modifier object.
-  void addModifier(const shared_ptr<class Modifier>&);
+  void addModifier(const shared_ptr<class Modifier> &);
 
   //! \brief Reset all timers (use e.g. after doing relaxation of a random initial state).
   void resetAllTimes();
@@ -266,10 +266,10 @@ class GFlow {
   //! \brief Give a file to datamaster. The datamaster can then write this file out as part of a run summary.
   //!
   //! This is used to record what the setup file was.
-  void giveFileToDataMaster(const string&, const string&);
+  void giveFileToDataMaster(const string &, const string &);
 
   //! \brief Get the boltzmann constant.
-  real getKB() { return KB; }
+  real getKB() const { return KB; }
 
   //! \brief Start the mpi timer.
   void startMPIExchangeTimer();
@@ -288,14 +288,14 @@ class GFlow {
 
   /// --- Flags
 
-  bool &simulation_running() { return _running; }
+  bool &simulation_running() { return running_; }
   bool &simdata_needs_remake() { return _simdata_needs_remake; }
   bool &simdata_remade() { return _simdata_remade; }
   bool &handler_needs_remake() { return _handler_needs_remake; }
   bool &handler_remade() { return _handler_remade; }
 
   //! \brief Return the use ghosts flag. Only getting.
-  bool use_ghosts() const { return _use_ghosts; }
+  bool use_ghosts() const { return use_ghosts_; }
 
   //! \brief Set the terminate flag to true.
   void terminate();
@@ -341,7 +341,7 @@ class GFlow {
   inline void handleModifiers();
 
   // --- Data - public so anyone can access it
-  shared_ptr<class SimData> simData;
+  std::shared_ptr<class SimData> simData;
 
   class Integrator *integrator = nullptr;   // Integrator
   class InteractionHandler *handler = nullptr;
@@ -351,23 +351,23 @@ class GFlow {
   class Topology *topology = nullptr;     // Processor topology
 
   //! \brief Additional integrators. \todo Do this better.
-  vector<shared_ptr<class Integrator> > additional_integrators;
+  std::vector<std::shared_ptr<class Integrator> > additional_integrators;
 
   //! \brief A vector of objects that should modify the simulation at some point(s) during execution.
-  std::list<shared_ptr<class Modifier> > modifiers;
+  std::list<std::shared_ptr<class Modifier> > modifiers;
 
   //! \brief All the short range, non-bonded, forces that can happen - which ones correspond to which pairs of particles is controlled by
   // the ForceMaster object.
-  vector<shared_ptr<class Interaction> > interactions;
+  std::vector<std::shared_ptr<class Interaction> > interactions;
 
   //! \brief All the bonded forces that can happen.
-  vector<shared_ptr<class Bonded> > bondedInteractions;
+  std::vector<std::shared_ptr<class Bonded> > bondedInteractions;
 
   //! \brief All the bodies in the simulation.
-  vector<shared_ptr<class Body> > bodies;
+  std::vector<std::shared_ptr<class Body> > bodies;
 
   //! \brief A vector of pointers to all objects that inherit from group, and might need to have global ids modified.
-  vector<shared_ptr<class Group> > global_id_reliant;
+  std::vector<std::shared_ptr<class Group> > global_id_reliant;
 
   //! \brief How much time we have been requested to run for.
   long double requested_time = 0.;
@@ -435,10 +435,10 @@ class GFlow {
   bool print_updates = false;
 
   //! \brief The ostream with which to print updates.
-  std::ostream *monitor = &cout;
+  std::ostream *monitor_ = &cout;
 
   //! \brief At what intervals to print updates (in simulation seconds).
-  real update_interval = 250.;
+  real update_interval_ = 250.;
 
   //! \brief The run mode of the simulation.
   RunMode runMode = RunMode::IDLE;
@@ -446,16 +446,16 @@ class GFlow {
   // --- Flags
 
   //! \brief If true, this processor has called for the simulation to terminate.
-  bool _terminate = false;
+  bool terminate_ = false;
   //! \brief If true, the simulation should continue to run.
-  bool _running = false;
+  bool running_ = false;
   //! \brief If true, do tasks related to force computation.
-  bool _use_forces = true;
+  bool use_forces_ = true;
   //! \brief If true, and using mpi, create ghost particles.
-  bool _use_ghosts = true;
+  bool use_ghosts_ = true;
 
   //! \brief A list of "exception" that have been raised.
-  vector<Exception *> error_handling;
+  std::vector<Exception *> error_handling;
 
   bool _simdata_needs_remake = false;
   bool _simdata_remade = false;

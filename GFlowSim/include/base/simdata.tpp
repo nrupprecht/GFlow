@@ -85,15 +85,16 @@ template<unsigned particle_type>
 void SimData::markForRemoval(const int id) {
   static_assert(check_particle_type(particle_type));
   // If the particle has already been marked for removal, or is beyond the end of the array, return.
-  if (Type<particle_type>(id) < 0 || id >= _size[particle_type]) {
+  if (Type<particle_type>(id) < 0 || _size[particle_type] <= id) {
     return;
   }
   // Mark for removal, clear some data
   if (particle_type == 0) {
     remove_list.emplace(id);
   } // All ghost particles will be removed eventually.
-  if (use_id_map)
+  if (use_id_map) {
     remove_global_id(particle_type, Id<particle_type>(id));
+  }
   Type<particle_type>(id) = -1;
   // Set position to be far away, so it will not be able to apply force on real particles.
   // This is mostly for the case where a particle that is a ghost particle on another processor gets erased.
@@ -115,13 +116,13 @@ vec_access SimData::X() {
 template<unsigned particle_type>
 real *SimData::X(const int id) {
   static_assert(check_particle_type(particle_type));
-  return X < particle_type > ()(id);
+  return X<particle_type>()(id);
 }
 
 template<unsigned particle_type>
 real &SimData::X(const int id, const int dim) {
   static_assert(check_particle_type(particle_type));
-  return X < particle_type > ()(id, dim);
+  return X<particle_type>()(id, dim);
 }
 
 template<unsigned particle_type>
@@ -133,13 +134,13 @@ vec_access SimData::V() {
 template<unsigned particle_type>
 real *SimData::V(const int id) {
   static_assert(check_particle_type(particle_type));
-  return V < particle_type > ()(id);
+  return V<particle_type>()(id);
 }
 
 template<unsigned particle_type>
 real &SimData::V(const int id, const int dim) {
   static_assert(check_particle_type(particle_type));
-  return V < particle_type > ()(id, dim);
+  return V<particle_type>()(id, dim);
 }
 
 template<unsigned particle_type>
@@ -151,13 +152,13 @@ vec_access SimData::F() {
 template<unsigned particle_type>
 real *SimData::F(const int id) {
   static_assert(check_particle_type(particle_type), "Invalid particle type.");
-  return F < particle_type > ()(id);
+  return F<particle_type>()(id);
 }
 
 template<unsigned particle_type>
 real &SimData::F(const int id, const int dim) {
   static_assert(check_particle_type(particle_type), "Invalid particle type.");
-  return F < particle_type > ()(id, dim);
+  return F<particle_type>()(id, dim);
 }
 
 // This is the main function for getting vector data.
@@ -165,7 +166,7 @@ template<unsigned particle_type, bool safe_checks>
 vec_access SimData::VectorData(const int entry) {
   static_assert(check_particle_type(particle_type), "Invalid particle type.");
   // If we are using safe checks, make sure entry corresponds to a valid entry.
-  if (safe_checks) {
+  if constexpr (safe_checks) {
     if (0 <= entry && entry < nvectors()) {
       return data_entries[particle_type].get_vdata(entry);
     }
@@ -173,7 +174,7 @@ vec_access SimData::VectorData(const int entry) {
       return vec_access();
     }
   }
-    // If we are not using safe checks, assume we are safe.
+  // If we are not using safe checks, assume we are safe.
   else {
     return data_entries[particle_type].get_vdata(entry);
   }
@@ -182,7 +183,7 @@ vec_access SimData::VectorData(const int entry) {
 template<unsigned particle_type>
 vec_access SimData::VectorData(const string &name) {
   const int entry = getVectorData(name);
-  return VectorData < particle_type > (entry);
+  return VectorData<particle_type>(entry);
 }
 
 template<unsigned particle_type>
@@ -199,7 +200,7 @@ scalar_access SimData::Sg() {
 
 template<unsigned particle_type>
 real &SimData::Sg(int id) {
-  return Sg < particle_type > ()(id);
+  return Sg<particle_type>()(id);
 }
 
 template<unsigned particle_type>
@@ -210,7 +211,7 @@ scalar_access SimData::Im() {
 template<unsigned particle_type>
 real &
 SimData::Im(int id) {
-  return Im < particle_type > ()(id);
+  return Im<particle_type>()(id);
 }
 
 // This is the main function for getting scalar data.
@@ -218,7 +219,7 @@ template<unsigned particle_type, bool safe_checks>
 scalar_access SimData::ScalarData(const int entry) {
   static_assert(check_particle_type(particle_type));
   // If we are using safe checks, make sure entry corresponds to a valid entry.
-  if (safe_checks) {
+  if constexpr (safe_checks) {
     if (0 <= entry && entry < nscalars()) {
       return data_entries[particle_type].get_sdata(entry);
     }
@@ -226,7 +227,7 @@ scalar_access SimData::ScalarData(const int entry) {
       return scalar_access();
     }
   }
-    // If we are not using safe checks, assume we are safe.
+  // If we are not using safe checks, assume we are safe.
   else {
     return data_entries[particle_type].get_sdata(entry);
   }
@@ -235,12 +236,12 @@ scalar_access SimData::ScalarData(const int entry) {
 template<unsigned particle_type, bool safe_checks>
 scalar_access SimData::ScalarData(const string &name) {
   const int entry = getScalarData(name);
-  return ScalarData < particle_type, safe_checks > (entry);
+  return ScalarData<particle_type, safe_checks> (entry);
 }
 
 template<unsigned particle_type>
 real &SimData::ScalarData(const int entry, const int id) {
-  return ScalarData < particle_type > (entry)(id);
+  return ScalarData<particle_type> (entry)(id);
 }
 
 // --- Integer data ---
@@ -253,7 +254,7 @@ integer_access SimData::Type() {
 
 template<unsigned particle_type>
 int &SimData::Type(const int id) {
-  return Type < particle_type > ()(id);
+  return Type<particle_type>()(id);
 }
 
 template<unsigned particle_type>
@@ -264,7 +265,7 @@ integer_access SimData::Id() {
 
 template<unsigned particle_type>
 int &SimData::Id(const int id) {
-  return Id < particle_type > ()(id);
+  return Id<particle_type>()(id);
 }
 
 // This is the main function for getting integer data.
@@ -272,7 +273,7 @@ template<unsigned particle_type, bool safe_checks>
 integer_access SimData::IntegerData(const int entry) {
   static_assert(check_particle_type(particle_type));
   // If we are using safe checks, make sure entry corresponds to a valid entry.
-  if (safe_checks) {
+  if constexpr (safe_checks) {
     if (0 <= entry && entry < nintegers()) {
       return data_entries[particle_type].get_idata(entry);
     }
@@ -280,7 +281,7 @@ integer_access SimData::IntegerData(const int entry) {
       return integer_access();
     }
   }
-    // If we are not using safe checks, assume we are safe.
+  // If we are not using safe checks, assume we are safe.
   else {
     return data_entries[particle_type].get_idata(entry);
   }

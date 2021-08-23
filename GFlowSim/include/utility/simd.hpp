@@ -59,7 +59,7 @@
 // Include necessary files if we vectorize.
 #if SIMD_TYPE==SIMD_AVX or SIMD_TYPE==SIMD_AVX2 or SIMD_TYPE==VCP_VEC_MIC
   #include "immintrin.h"
-#elif SIMD_TYPE==SIMD_SSE3
+#elif SIMD_TYPE == SIMD_SSE3
   #include "pmmintrin.h"
 #endif
 

@@ -10,11 +10,11 @@ int main(int argc, char** argv) {
   srand48(time(0));
 
   // --- Options
-  string directory = "RunData";
-  string subdirectory = "general";
-  string dataName = "Pos-1";
-  string saveDirectory = "RunData";
-  string selectionName = "V";
+  std::string directory = "RunData";
+  std::string subdirectory = "general";
+  std::string dataName = "Pos-1";
+  std::string saveDirectory = "RunData";
+  std::string selectionName = "V";
   double radius_multiple = 1.;
   int colorSelect = -1;
   int colorOption = 0;
@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
   try {
     parser.check();
   }
-  catch (ArgParse::UncheckedToken illegal) {
+  catch (ArgParse::UncheckedToken& illegal) {
     cout << "Illegal option: [" << illegal.token << "]. Exiting.\n";
     exit(1);
   }

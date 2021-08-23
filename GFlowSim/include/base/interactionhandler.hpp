@@ -25,13 +25,13 @@ class InteractionHandler : public Base, public TimedObject {
   virtual ~InteractionHandler();
 
   //! \brief Common initialization tasks.
-  virtual void initialize() override;
+  void initialize() override;
 
   //! \brief Reset values.
-  virtual void pre_integrate() override;
+  void pre_integrate() override;
 
   //! \brief Check whether interactions should be reconstructed.
-  virtual void pre_forces() override;
+  void pre_forces() override;
 
   //! \brief Construct objects for interactions. This contains common construction tasks.
   virtual void construct();
@@ -125,7 +125,6 @@ class InteractionHandler : public Base, public TimedObject {
   friend class GFlow;
 
  protected:
-
   //! \brief Calculate a good skin depth.
   virtual void calculate_skin_depth();
 
@@ -158,7 +157,7 @@ class InteractionHandler : public Base, public TimedObject {
   //! \param id1 (Local) id of the first particle.
   //! \param id2 (Local) id of the second particle.
   //! \param list Which interaction list to add the particles to. Default list is list 0 (the non-wrapping list).
-  void pair_interaction(const int, const int, const int= 0);
+  void pair_interaction(int, int, int = 0);
 
   // --- Data ---
 

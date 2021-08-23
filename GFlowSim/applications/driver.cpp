@@ -13,9 +13,6 @@
 // MPI communicator.
 #include "parallel/mpi-communication.hpp"
 
-// For strlen
-#include <cstring>
-
 // For std::bad_alloc
 #include <new>
 
@@ -46,7 +43,8 @@ void finalize_mpi() {
 
 int main(int argc, char **argv) {
   // MPI related.
-  int rank(0), numProc(1);
+  int rank(0);
+  [[maybe_unused]] int num_proc(1);
 
   // Allocate processor arguments. Do this outside USE_MPI.
   char **processor_argv = argv;
@@ -55,7 +53,7 @@ int main(int argc, char **argv) {
   MPI_Init(&argc, &argv);
   // Get rank and number of processors.
   rank = MPIObject::getRank();
-  numProc = MPIObject::getNumProc();
+  num_proc = MPIObject::getNumProc();
 
   // Make sure everyone gets the arguments supplied to the root processor.
   MPIObject::mpi_broadcast(argc);
@@ -91,12 +89,12 @@ int main(int argc, char **argv) {
   // Wait here.
   MPIObject::barrier();
   #endif
-  
+
   // --- Options
 
   // Type of simulation
   bool debug_flag = false;
-  string load = "";
+  std::string load;
 
   // Data to gather
   bool animate = false; // Record positions
@@ -111,7 +109,7 @@ int main(int argc, char **argv) {
   bool keTypes = false;
   bool totalKE = false; // Record average kinetic energy (per particle)
   bool aveOm = false; // Average angular velocity
-  bool secRemake = false; 
+  bool secRemake = false;
   bool bdForces = false;
   bool timestep = false;
   bool averages = false;
@@ -130,7 +128,7 @@ int main(int argc, char **argv) {
   bool centercorr = false;
   bool velocityvp = false;
   bool radiusvp = false;
-  
+
   // Other options
   int dimensions = 2;
   real skin = 0.;
@@ -167,14 +165,14 @@ int main(int argc, char **argv) {
   try {
     parser.set(argc, processor_argv);
   }
-  catch (ArgParse::IllegalToken tok) {
+  catch (ArgParse::IllegalToken &tok) {
     cout << "Illegal token in command line argument: " << tok.str << ". Exiting.\n";
     no_errors = false;
   }
   // Make sure this gets deleted even if there was an error and processor_argv is dynamically allocated.
   #if USE_MPI == 1
-    for (int i=0; i<argc; ++i) delete [] processor_argv[i];
-    delete [] processor_argv;
+  for (int i=0; i<argc; ++i) delete [] processor_argv[i];
+  delete [] processor_argv;
   #endif // USE_MPI == 1
   // Now that that's done, check for errors.
   MPIObject::mpi_and(no_errors);
@@ -182,8 +180,8 @@ int main(int argc, char **argv) {
     finalize_mpi();
     return 1;
   }
-  
-  parser.get("debug", debug_flag); 
+
+  parser.get("debug", debug_flag);
   parser.get("load", load);
   parser.get("animate", animate);
   parser.get("cavity", cavity);
@@ -239,39 +237,50 @@ int main(int argc, char **argv) {
   parser.get("timing", timing);
   parser.get("checkpoint", checkpoint);
 
-  if (!quiet && rank==0) {
-    #if DEBUG==1
+  if (!quiet && rank == 0) {
+    #if DEBUG == 1
     cout << "Running in Debug mode.\n";
     #endif
+
     // Print SIMD type
-    #if SIMD_TYPE==SIMD_NONE
+    #if SIMD_TYPE == SIMD_NONE
     cout << "Not using SIMD.\n";
-    #elif SIMD_TYPE==SIMD_SSE
+    #elif SIMD_TYPE == SIMD_SSE
     cout << "Using SSE.\n";
-    #elif SIMD_TYPE==SIMD_AVX
+    #elif SIMD_TYPE == SIMD_SSE3
+    std::cout << "Using SSE3\n";
+    #elif SIMD_TYPE == SIMD_AVX
     cout << "Using AVX.\n";
-    #elif SIMD_TYPE==SIMD_AVX2
+    #elif SIMD_TYPE == SIMD_AVX2
     cout << "Using AVX2.\n";
-    #elif SIMD_TYPE==SIMD_MIC
+    #elif SIMD_TYPE == SIMD_MIC
     cout << "Using MIC.\n";
+    #else
+    std::cout << "Not using SIMD, and no flags defined!\n" << std::endl;
     #endif
   }
-  
+
   // Record the time at which the program started.
   auto start_time = current_time();
-  if (!quiet && rank==0) cout << "Starting up simulation...\n";
+  if (!quiet && rank == 0) {
+    cout << "Starting up simulation...\n";
+  }
 
   // Seed the global generator.
   seedGlobalGenerator();
 
   // --- This creator creates gflow simulations
-  Creator *creator = nullptr;
+  std::shared_ptr<Creator> creator;
   // Assign a specific type of creator
-  if (debug_flag) creator = new DebugCreator(&parser);
-  else if (load!="") {
-    creator = new FileParseCreator(&parser, load);
+  if (debug_flag) {
+    creator = std::make_shared<DebugCreator>(&parser);
   }
-  else creator = new BoxCreator(&parser);
+  else if (!load.empty()) {
+    creator = std::make_shared<FileParseCreator>(&parser, load);
+  }
+  else {
+    creator = std::make_shared<BoxCreator>(&parser);
+  }
 
   // Set dimensions
   creator->setDimensions(dimensions);
@@ -302,16 +311,19 @@ int main(int argc, char **argv) {
   try {
     gflow = creator->createSimulation();
   }
-  catch (const Exception exc) {
+  catch (const Exception &exc) {
     cout << "Simulation Creation: Exception caught on rank: " << rank << ", Message: " << exc.message << "\n";
     no_errors = false;
   }
   catch (...) {
-    cout << "Simulation Creation: Creator encountered error (not inheriting from exception) on rank " << rank << " while creating the simulation. Exiting.\n";
+    cout << "Simulation Creation: Creator encountered error (not inheriting from exception) on rank " << rank
+         << " while creating the simulation. Exiting.\n";
     no_errors = false;
   }
-  if (gflow==nullptr && no_errors) {
-    if (!quiet) cout << "Simulation Creation: GFlow was null on rank " << rank << ". Exiting.\n";
+  if (gflow == nullptr && no_errors) {
+    if (!quiet) {
+      cout << "Simulation Creation: GFlow was null on rank " << rank << ". Exiting.\n";
+    }
     no_errors = false;
   }
   MPIObject::mpi_and(no_errors);
@@ -325,9 +337,11 @@ int main(int argc, char **argv) {
   try {
     parser.check();
   }
-  catch (ArgParse::UncheckedToken illegal) {
+  catch (ArgParse::UncheckedToken &illegal) {
     // Since an illegal option will be illegal on every processor, we only have rank 0 print out an error message.
-    if (!quiet && rank==0) cout << "Illegal option: [" << illegal.token << "]. Exiting.\n";
+    if (!quiet && rank == 0) {
+      cout << "Illegal option: [" << illegal.token << "]. Exiting.\n";
+    }
     no_errors = false;
   }
   MPIObject::mpi_and(no_errors);
@@ -341,77 +355,155 @@ int main(int argc, char **argv) {
 
   // --- Add data objects
   gflow->setStartRecTime(startRecTime);
-  if (snapshot)    gflow->addDataObject(make_shared<EndingSnapshot>(gflow));
-  if (totalKE||ke) gflow->addDataObject(make_shared<KineticEnergyData>(gflow, ke));
-  if (rotE)        gflow->addDataObject(make_shared<RotationalEnergyData>(gflow));
-  if (kebin>0)     gflow->addDataObject(make_shared<KineticEnergyBin>(gflow, kebin));
-  if (energy)      gflow->addDataObject(make_shared<TotalEnergyData>(gflow));
-  if (bondenergy)  gflow->addDataObject(make_shared<BondedEnergyData>(gflow));
-  if (keTypes)     gflow->addDataObject(make_shared<KineticEnergyTypesData>(gflow, true));
-  if (aveOm)       gflow->addDataObject(make_shared<AverageOmegaData>(gflow));
-  if (bdForces)    gflow->addDataObject(make_shared<BoundaryForceData>(gflow));
-  if (timestep)    gflow->addDataObject(make_shared<TimeStepData>(gflow));
-  if (averages)    gflow->addDataObject(make_shared<AverageData>(gflow));
-  if (aveV)        gflow->addDataObject(make_shared<AverageVelocityData>(gflow));
-  if (aveP)        gflow->addDataObject(make_shared<AveragePositionData>(gflow));
-  if (dev)         gflow->addDataObject(make_shared<OscillationData>(gflow));
-  if (0<cavity_stat) gflow->addDataObject(make_shared<CavityStatistics>(gflow, cavity_stat));
-  if (minDistances)gflow->addDataObject(make_shared<MinInteractingDistance>(gflow));
-  if (percolation) gflow->addDataObject(make_shared<PercolationData>(gflow, skin));
-  if (psnapshot)   gflow->addDataObject(make_shared<PercolationSnapshot>(gflow, skin));
-  if (memdist)     gflow->addDataObject(make_shared<MemoryDistance>(gflow));
-  if (pressure)    gflow->addDataObject(make_shared<PressureData>(gflow));
-  if (numberdata)  gflow->addDataObject(make_shared<NumberData>(gflow));
-  if (phidata)     gflow->addDataObject(make_shared<PhiData>(gflow));
-  if (centercorr)  gflow->addDataObject(make_shared<CenterCorrelation>(gflow));
-  if (velocityvp)  gflow->addDataObject(make_shared<VelocityVolumePlot>(gflow));
-  if (radiusvp)    gflow->addDataObject(make_shared<RadiusVolumePlot>(gflow));
-  if (stripex)     gflow->addModifier(make_shared<StripeX>(gflow));
+  if (snapshot) {
+    gflow->addDataObject(std::make_shared<EndingSnapshot>(gflow));
+  }
+  if (totalKE || ke) {
+    gflow->addDataObject(std::make_shared<KineticEnergyData>(gflow, ke));
+  }
+  if (rotE) {
+    gflow->addDataObject(std::make_shared<RotationalEnergyData>(gflow));
+  }
+  if (kebin > 0) {
+    gflow->addDataObject(std::make_shared<KineticEnergyBin>(gflow, kebin));
+  }
+  if (energy) {
+    gflow->addDataObject(std::make_shared<TotalEnergyData>(gflow));
+  }
+  if (bondenergy) {
+    gflow->addDataObject(std::make_shared<BondedEnergyData>(gflow));
+  }
+  if (keTypes) {
+    gflow->addDataObject(std::make_shared<KineticEnergyTypesData>(gflow, true));
+  }
+  if (aveOm) {
+    gflow->addDataObject(std::make_shared<AverageOmegaData>(gflow));
+  }
+  if (bdForces) {
+    gflow->addDataObject(std::make_shared<BoundaryForceData>(gflow));
+  }
+  if (timestep) {
+    gflow->addDataObject(std::make_shared<TimeStepData>(gflow));
+  }
+  if (averages) {
+    gflow->addDataObject(std::make_shared<AverageData>(gflow));
+  }
+  if (aveV) {
+    gflow->addDataObject(std::make_shared<AverageVelocityData>(gflow));
+  }
+  if (aveP) {
+    gflow->addDataObject(std::make_shared<AveragePositionData>(gflow));
+  }
+  if (dev) {
+    gflow->addDataObject(std::make_shared<OscillationData>(gflow));
+  }
+  if (0 < cavity_stat) {
+    gflow->addDataObject(std::make_shared<CavityStatistics>(gflow, cavity_stat));
+  }
+  if (minDistances) {
+    gflow->addDataObject(std::make_shared<MinInteractingDistance>(gflow));
+  }
+  if (percolation) {
+    gflow->addDataObject(std::make_shared<PercolationData>(gflow, skin));
+  }
+  if (psnapshot) {
+    gflow->addDataObject(std::make_shared<PercolationSnapshot>(gflow, skin));
+  }
+  if (memdist) {
+    gflow->addDataObject(std::make_shared<MemoryDistance>(gflow));
+  }
+  if (pressure) {
+    gflow->addDataObject(std::make_shared<PressureData>(gflow));
+  }
+  if (numberdata) {
+    gflow->addDataObject(std::make_shared<NumberData>(gflow));
+  }
+  if (phidata) {
+    gflow->addDataObject(std::make_shared<PhiData>(gflow));
+  }
+  if (centercorr) {
+    gflow->addDataObject(std::make_shared<CenterCorrelation>(gflow));
+  }
+  if (velocityvp) {
+    gflow->addDataObject(std::make_shared<VelocityVolumePlot>(gflow));
+  }
+  if (radiusvp) {
+    gflow->addDataObject(std::make_shared<RadiusVolumePlot>(gflow));
+  }
+  if (stripex) {
+    gflow->addModifier(std::make_shared<StripeX>(gflow));
+  }
 
-  real videoTime = startRecTime>0 ? time - startRecTime : time;
-  if (videoLength<0) videoLength = videoTime;
+  real videoTime = startRecTime > 0 ? time - startRecTime : time;
+  if (videoLength < 0) {
+    videoLength = videoTime;
+  }
   if (animate) {
-    auto pd = make_shared<PositionData>(gflow);
+    auto pd = std::make_shared<PositionData>(gflow);
     gflow->addDataObject(pd);
     if (stripex) {
       pd->add_scalar_data_entry("StripeX");
     }
-    if (videoTime>0) pd->setFPS((20.*videoLength)/videoTime);
+    if (videoTime > 0) {
+      pd->setFPS((20. * videoLength) / videoTime);
+    }
   }
-  if (0<cavity) {
-    auto cv = make_shared<CavityPositions>(gflow, cavity);
+  if (0 < cavity) {
+    auto cv = std::make_shared<CavityPositions>(gflow, cavity);
     gflow->addDataObject(cv);
-    if (videoTime>0) cv->setFPS((20.*videoLength)/videoTime);
+    if (videoTime > 0) {
+      cv->setFPS((20. * videoLength) / videoTime);
+    }
   }
-  if (fps>0) gflow->setFPS(fps); // Do after data objects are loaded
+  if (fps > 0) {
+    gflow->setFPS(fps);
+  } // Do after data objects are loaded
   gflow->setDMCmd(argc, argv);
   gflow->setPrintUpdates(print);
 
   // --- Add modifiers
-  if (temperature>0) gflow->addModifier(make_shared<TemperatureModifier>(gflow, temperature));
+  if (temperature > 0) {
+    gflow->addModifier(std::make_shared<TemperatureModifier>(gflow, temperature));
+  }
   // Add or modify some things.
-  if (gravity!=0)     gflow->addModifier(make_shared<ConstantAcceleration>(gflow, gravity));
-  if (damping)        gflow->addModifier(make_shared<LinearVelocityDamping>(gflow));
-  if (skin_depth>0)   gflow->getInteractionHandler()->setSkinDepth(skin_depth);
-  if (step_delay>0)   gflow->getIntegrator()->setStepDelay(step_delay);
-  if (target_steps>0) gflow->getIntegrator()->setTargetSteps(target_steps);
+  if (gravity != 0) {
+    gflow->addModifier(std::make_shared<ConstantAcceleration>(gflow, gravity));
+  }
+  if (damping) {
+    gflow->addModifier(std::make_shared<LinearVelocityDamping>(gflow));
+  }
+  if (skin_depth > 0) {
+    gflow->getInteractionHandler()->setSkinDepth(skin_depth);
+  }
+  if (step_delay > 0) {
+    gflow->getIntegrator()->setStepDelay(step_delay);
+  }
+  if (target_steps > 0) {
+    gflow->getIntegrator()->setTargetSteps(target_steps);
+  }
 
   // Turns off forces.
-  if (!forces) gflow->setUseForces(false);
+  if (!forces) {
+    gflow->setUseForces(false);
+  }
 
   // Set time step and request time
   if (!gflow->hasIntegrator()) {
-    if (!quiet) cout << "GFlow does not have an integrator on rank " << rank << ". Exiting.";
+    if (!quiet) {
+      cout << "GFlow does not have an integrator on rank " << rank << ". Exiting.";
+    }
     finalize_mpi();
     return 0;
   }
   gflow->setDT(dt);
-  if (maxDT>0) gflow->setMaxDT(maxDT);
+  if (maxDT > 0) {
+    gflow->setMaxDT(maxDT);
+  }
   gflow->getIntegrator()->setAdjustDT(adjustDT);
   gflow->requestTime(time);
 
   // Tell the data object what directory it is going to write to.
-  if (checkpoint>0) {
+  if (checkpoint > 0) {
     gflow->getDataMaster()->setDoCheckpoints(true);
     gflow->getDataMaster()->setCheckpointingDelay(checkpoint);
   }
@@ -420,21 +512,21 @@ int main(int argc, char **argv) {
   // Run the simulation
   int num_particles = gflow->getNumParticles();
   #if USE_MPI == 1
-    // Sum all the particles on all the processors.
-    MPIObject::mpi_sum0(num_particles);
+  // Sum all the particles on all the processors.
+  MPIObject::mpi_sum0(num_particles);
   #endif
-  if (!quiet && rank==0) {
+  if (!quiet && rank == 0) {
     cout << "Initialized, ready to run:\t" << time_span(current_time(), start_time) << "\n";
     cout << "Running with " << num_particles << " particles.\n";
   }
   try {
     gflow->run();
   }
-  catch (const std::bad_alloc& err) {
+  catch (const std::bad_alloc &err) {
     cout << "Exception caught on rank: " << rank << ": std::bad_alloc. Message: " << err.what() << "\n";
     no_errors = false;
   }
-  catch (const Exception exc) {
+  catch (const Exception &exc) {
     cout << "Exception caught on rank: " << rank << ", Message: " << exc.message << "\n";
     no_errors = false;
   }
@@ -447,7 +539,9 @@ int main(int argc, char **argv) {
   if (!no_errors) {
     cout << "One or more processors exited with exception. Exiting.\n";
     // Write accumulated data to files
-    if (rank==0) gflow->writeData(writeDirectory);
+    if (rank == 0) {
+      gflow->writeData(writeDirectory);
+    }
     finalize_mpi();
     return 1;
   }
@@ -457,19 +551,26 @@ int main(int argc, char **argv) {
   MPIObject::barrier();
   #endif // USE_MPI == 1
 
-  if (!quiet && rank==0) cout << "Run is over:\t\t\t" << time_span(current_time(), start_time) << "\n";
-  if (!quiet && rank==0) cout << "Ratio was:  \t\t\t" << gflow->getDataMaster()->getRatio() << "\n";
+  if (!quiet && rank == 0) {
+    std::cout << "Run is over:\t\t\t" << time_span(current_time(), start_time) << "\n";
+  }
+  if (!quiet && rank == 0) {
+    std::cout << "Ratio was:  \t\t\t" << gflow->getDataMaster()->getRatio() << "\n";
+  }
 
   // Write accumulated data to files.
   // Only rank 0 will actually write anything, but information will need to sync, so all processes must call this function.
-  gflow->writeData(writeDirectory); 
+  gflow->writeData(writeDirectory);
 
   // Print message that data write is over.
-  if (!quiet && rank==0) cout << "Data write is over:\t\t" << time_span(current_time(), start_time) << "\n";
+  if (!quiet && rank == 0) {
+    std::cout << "Data write is over:\t\t" << time_span(current_time(), start_time) << "\n";
+  }
 
   // Delete creator, gflow
-  if (creator) delete creator;
-  if (gflow)   delete gflow;
+
+  delete gflow;
+
 
   // Final barrier, to make sure that all data has been written.
   #if USE_MPI == 1
@@ -477,6 +578,6 @@ int main(int argc, char **argv) {
   MPIObject::barrier();
   finalize_mpi();
   #endif // USE_MPI == 1
-  
+
   return 0;
 }

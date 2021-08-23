@@ -39,17 +39,19 @@ int main(int argc, char **argv) {
   parser.get("lj", adjustDT); // If using lj, adjust dt
 
   // Keep in bounds - max phi can be > 1 for bipartite
-  minPhi = minPhi<0 ? 0 : minPhi;
-  if (!bipartite_flag) maxPhi = maxPhi>1 ? 1 : maxPhi;
+  minPhi = minPhi < 0 ? 0 : minPhi;
+  if (!bipartite_flag) {
+    maxPhi = maxPhi > 1 ? 1 : maxPhi;
+  }
 
-  RealType phi, invArea = 1./(2.*DIMENSIONS*pow(width,DIMENSIONS-1));
+  RealType phi, invArea = 1. / (2. * DIMENSIONS * pow(width, DIMENSIONS - 1));
   vector<RPair> data;
 
   Creator *creator = nullptr;
-  for (int iter=0; iter<=nIters; ++iter) {
+  for (int iter = 0; iter <= nIters; ++iter) {
     // Set up
-    phi = (maxPhi-minPhi)*static_cast<RealType>(iter)/nIters + minPhi;
-    if (phi>0) {
+    phi = (maxPhi - minPhi) * static_cast<RealType>(iter) / nIters + minPhi;
+    if (phi > 0) {
       // --- Create a gflow simulation
       if (bipartite_flag) {
         BipartiteBoxCreator *bc = new BipartiteBoxCreator(&parser);
@@ -64,9 +66,9 @@ int main(int argc, char **argv) {
         creator = bc;
       }
       GFlow *gflow = creator->createSimulation();
-      if (gflow==nullptr) {
-	      cout << "GFlow was null. Exiting.\n";
-	      return 1;
+      if (gflow == nullptr) {
+        cout << "GFlow was null. Exiting.\n";
+        return 1;
       }
       // Repulsion force boundary conditions
       gflow->setAllBCs(BCFlag::REPL);
@@ -74,23 +76,29 @@ int main(int argc, char **argv) {
       BoundaryForceData *bfData = new BoundaryForceData(gflow);
       gflow->setStartRecTime(5.);
       gflow->addDataObject(bfData);
-      gflow->setRepulsion(repulsion*DEFAULT_HARD_SPHERE_REPULSION);
+      gflow->setRepulsion(repulsion * DEFAULT_HARD_SPHERE_REPULSION);
       gflow->setDT(dt);
       // Timestep adjustment
-      if (adjustDT) gflow->addModifier(new TimestepModifier(gflow));
+      if (adjustDT) {
+        gflow->addModifier(new TimestepModifier(gflow));
+      }
       gflow->run(time);
       // Data
-      data.push_back(RPair(phi, invArea*bfData->getAverage()));
+      data.push_back(RPair(phi, invArea * bfData->getAverage()));
       // GFlow will delete bfData
       delete gflow, creator;
     }
-    else data.push_back(RPair(0,0));
+    else {
+      data.push_back(RPair(0, 0));
+    }
   }
 
   cout << "pr={";
-  for (int i=0; i<data.size(); ++i) {
+  for (int i = 0; i < data.size(); ++i) {
     cout << "{" << data.at(i).first << "," << data.at(i).second << "}";
-    if (i!=data.size()-1) cout << ",";
+    if (i != data.size() - 1) {
+      cout << ",";
+    }
   }
   cout << "};\n";
 

@@ -3,13 +3,20 @@
 using namespace GFlowSimulation;
 
 TwoGroupHarmonic::TwoGroupHarmonic(GFlow *gflow)
-    : Bonded(gflow), groupA(gflow), groupB(gflow), springConstant(50.),
-      min_distance(0.), max_distance(0.15) {};
+    : Bonded(gflow),
+      groupA(gflow),
+      groupB(gflow),
+      min_distance(0.),
+      max_distance(0.15),
+      springConstant(50.) {};
 
 TwoGroupHarmonic::TwoGroupHarmonic(GFlow *gflow, Group &gA, Group &gB)
-    : Bonded(gflow), groupA(gA), groupB(gB),
-      springConstant(50.), min_distance(0.),
-      max_distance(0.15) {};
+    : Bonded(gflow),
+      groupA(gA),
+      groupB(gB),
+      min_distance(0.),
+      max_distance(0.15),
+      springConstant(50.) {};
 
 void TwoGroupHarmonic::pre_integrate() {
   groupA.update_local_ids();
